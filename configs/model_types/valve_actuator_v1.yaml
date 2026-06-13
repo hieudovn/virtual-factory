@@ -1,0 +1,30 @@
+id: valve_actuator_v1
+display_name: Valve Actuator
+category: actuation
+version: 1
+description: Actuator placeholder that maps controller output to valve opening.
+parameters:
+  travel_time_s:
+    type: number
+    default: 2.0
+  fail_action:
+    type: string
+    default: hold
+ports:
+  command_input:
+    kind: signal
+    direction: in
+  feedback_output:
+    kind: signal
+    direction: out
+  physical_output:
+    kind: command
+    direction: out
+supported_variables:
+  - command_signal
+  - opening_feedback
+  - opening_actual
+ui:
+  icon: actuator
+  group: actuation
+  layout_hint: control_node

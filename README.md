@@ -61,5 +61,5 @@ T102.level_true
 Current status:
 
 - Phase 0 documentation foundation initialized.
-- Runtime implementation has not started yet.
-- Next step: create Python project skeleton and configuration schema.
+- Project skeleton and initial configuration are being created.
+- Runtime implementation will start after config schema and graph loader are in place.

@@ -1,0 +1,1 @@
+"""Reusable equipment model skeletons."""

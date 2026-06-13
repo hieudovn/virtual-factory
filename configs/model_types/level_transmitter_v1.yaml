@@ -1,0 +1,29 @@
+id: level_transmitter_v1
+display_name: Level Transmitter
+category: instrumentation
+version: 1
+description: Sensor placeholder that converts true level into a measured industrial signal.
+parameters:
+  range_min_m:
+    type: number
+    default: 0.0
+  range_max_m:
+    type: number
+    default: 5.0
+  noise_std_m:
+    type: number
+    default: 0.0
+ports:
+  measurement_input:
+    kind: measurement
+    direction: in
+  signal_output:
+    kind: signal
+    direction: out
+supported_variables:
+  - level_true
+  - level_measured
+ui:
+  icon: gauge
+  group: instrumentation
+  layout_hint: instrument_node

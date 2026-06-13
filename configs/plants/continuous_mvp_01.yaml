@@ -1,0 +1,138 @@
+plant:
+  id: continuous_mvp_01
+  name: Continuous Water Transfer and Tank Level Control
+  type: continuous_process
+  description: >
+    MVP plant configuration for source tank, pump, control valve, destination tank,
+    measured instrumentation, PID control, and valve actuation.
+
+medium:
+  id: water
+  display_name: Water
+  density_kg_m3: 997.0
+  viscosity_pa_s: 0.00089
+  specific_heat_j_kg_k: 4182.0
+
+equipment:
+  - id: T101
+    model_type: tank_v1
+    display_name: Source Tank
+    parameters:
+      capacity_m3: 10.0
+      initial_level_m: 4.0
+  - id: P101
+    model_type: centrifugal_pump_v1
+    display_name: Centrifugal Pump
+    parameters:
+      rated_flow_m3_s: 0.012
+      rated_head_m: 18.0
+  - id: V101
+    model_type: control_valve_v1
+    display_name: Control Valve
+    parameters:
+      cv: 1.0
+      fail_position: closed
+  - id: T102
+    model_type: tank_v1
+    display_name: Destination Tank
+    parameters:
+      capacity_m3: 8.0
+      initial_level_m: 1.0
+
+connections:
+  - id: C001
+    type: physical
+    from: T101.outlet
+    to: P101.inlet
+    medium: water
+  - id: C002
+    type: physical
+    from: P101.outlet
+    to: V101.inlet
+    medium: water
+  - id: C003
+    type: physical
+    from: V101.outlet
+    to: T102.inlet
+    medium: water
+
+sensors:
+  - id: LT102
+    model_type: level_transmitter_v1
+    display_name: T102 Level Transmitter
+    measures: T102.level_true
+    output_signal: LT102_LEVEL
+  - id: FT101
+    model_type: flow_transmitter_v1
+    display_name: V101 Outlet Flow Transmitter
+    measures: V101.outlet.flow_true
+    output_signal: FT101_FLOW
+  - id: PT101
+    model_type: pressure_transmitter_v1
+    display_name: P101 Discharge Pressure Transmitter
+    measures: P101.discharge_pressure_true
+    output_signal: PT101_PRESSURE
+
+controllers:
+  - id: LIC102
+    model_type: pid_controller_v1
+    display_name: T102 Level Controller
+    pv_signal: LT102_LEVEL
+    setpoint: 2.5
+    output_signal: LIC102_OUT
+    scan_time_s: 0.5
+    parameters:
+      kp: 1.0
+      ki: 0.1
+      kd: 0.0
+
+actuators:
+  - id: VA101
+    model_type: valve_actuator_v1
+    display_name: V101 Valve Actuator
+    command_signal: LIC102_OUT
+    feedback_signal: V101_OPENING_FEEDBACK
+    actuates: V101.opening_actual
+
+signals:
+  LT102_LEVEL:
+    category: industrial_signal
+    publish: true
+    unit: m
+    source: LT102
+  FT101_FLOW:
+    category: industrial_signal
+    publish: true
+    unit: m3/s
+    source: FT101
+  PT101_PRESSURE:
+    category: industrial_signal
+    publish: true
+    unit: kPa
+    source: PT101
+  LIC102_OUT:
+    category: controller_signal
+    publish: true
+    unit: percent
+    source: LIC102
+  V101_OPENING_FEEDBACK:
+    category: actuator_feedback
+    publish: true
+    unit: percent
+    source: VA101
+  T102_LEVEL_TRUE:
+    category: internal_truth
+    publish: false
+    unit: m
+    source: T102.level_true
+
+output_policy:
+  mode: industrial
+  publish_categories:
+    - industrial_signal
+    - controller_signal
+    - actuator_feedback
+    - industrial_event
+  forbidden_categories:
+    - internal_truth
+  rule: internal_truth must not be published

@@ -1,0 +1,31 @@
+id: control_valve_v1
+display_name: Control Valve
+category: equipment
+version: 1
+description: Control valve placeholder for future opening, restriction, and flow behavior.
+parameters:
+  cv:
+    type: number
+    default: 1.0
+  fail_position:
+    type: string
+    default: closed
+ports:
+  inlet:
+    kind: physical
+    direction: in
+    medium: liquid
+  outlet:
+    kind: physical
+    direction: out
+    medium: liquid
+  opening_command:
+    kind: command
+    direction: in
+supported_variables:
+  - opening_actual
+  - outlet.flow_true
+ui:
+  icon: valve
+  group: equipment
+  layout_hint: process_node

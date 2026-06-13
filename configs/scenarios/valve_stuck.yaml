@@ -1,0 +1,10 @@
+id: valve_stuck
+display_name: Valve Stuck
+description: Scenario stub for a valve actuator or valve movement fault.
+plant_id: continuous_mvp_01
+events:
+  - time_s: 300
+    type: todo
+    description: Add stuck valve behavior after fault models exist.
+todo:
+  - Model measured symptoms without publishing hidden fault truth in industrial mode.

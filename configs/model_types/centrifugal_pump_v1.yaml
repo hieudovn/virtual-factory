@@ -1,0 +1,29 @@
+id: centrifugal_pump_v1
+display_name: Centrifugal Pump
+category: equipment
+version: 1
+description: Pump model placeholder for future pressure and flow behavior.
+parameters:
+  rated_flow_m3_s:
+    type: number
+    default: 0.01
+  rated_head_m:
+    type: number
+    default: 20.0
+ports:
+  inlet:
+    kind: physical
+    direction: in
+    medium: liquid
+  outlet:
+    kind: physical
+    direction: out
+    medium: liquid
+supported_variables:
+  - flow_true
+  - discharge_pressure_true
+  - speed_true
+ui:
+  icon: pump
+  group: equipment
+  layout_hint: process_node

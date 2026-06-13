@@ -1,0 +1,10 @@
+id: pump_degradation
+display_name: Pump Degradation
+description: Scenario stub for gradual pump performance loss.
+plant_id: continuous_mvp_01
+events:
+  - time_s: 600
+    type: todo
+    description: Add pump degradation after degradation models exist.
+todo:
+  - Keep degradation truth internal unless reflected through measured signals.

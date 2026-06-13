@@ -1,0 +1,29 @@
+id: tank_v1
+display_name: Tank
+category: equipment
+version: 1
+description: Configurable tank model placeholder for future inventory and level dynamics.
+parameters:
+  capacity_m3:
+    type: number
+    default: 10.0
+  initial_level_m:
+    type: number
+    default: 1.0
+ports:
+  inlet:
+    kind: physical
+    direction: in
+    medium: liquid
+  outlet:
+    kind: physical
+    direction: out
+    medium: liquid
+supported_variables:
+  - level_true
+  - volume_true
+  - pressure_true
+ui:
+  icon: tank
+  group: equipment
+  layout_hint: process_node

@@ -1,0 +1,29 @@
+id: pressure_transmitter_v1
+display_name: Pressure Transmitter
+category: instrumentation
+version: 1
+description: Sensor placeholder that converts true pressure into a measured industrial signal.
+parameters:
+  range_min_kpa:
+    type: number
+    default: 0.0
+  range_max_kpa:
+    type: number
+    default: 500.0
+  noise_std_kpa:
+    type: number
+    default: 0.0
+ports:
+  measurement_input:
+    kind: measurement
+    direction: in
+  signal_output:
+    kind: signal
+    direction: out
+supported_variables:
+  - pressure_true
+  - pressure_measured
+ui:
+  icon: gauge
+  group: instrumentation
+  layout_hint: instrument_node
