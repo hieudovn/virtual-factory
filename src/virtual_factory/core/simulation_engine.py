@@ -5,24 +5,40 @@ hard-code a specific plant, including the first continuous-process MVP.
 """
 
 from dataclasses import dataclass, field
-from typing import Any
+
+from virtual_factory.core.runtime_factory import RuntimeAssembly, build_runtime
+from virtual_factory.core.runtime_state import RuntimeState
+from virtual_factory.core.schema import PlantConfig
 
 
 @dataclass(slots=True)
 class SimulationEngine:
     """Coordinates time, plant graph, models, and telemetry policies."""
 
-    plant_config: dict[str, Any]
-    state: dict[str, Any] = field(default_factory=dict)
+    plant_config: PlantConfig
+    assembly: RuntimeAssembly | None = None
+    initialized: bool = False
+    state: RuntimeState = field(default_factory=RuntimeState)
 
     def initialize(self) -> None:
-        """Prepare runtime state from configuration without running physics."""
-        self.state["initialized"] = True
+        """Build runtime objects and initialize equipment truth state."""
+        self.assembly = build_runtime(self.plant_config)
+        self.state = self.assembly.state
+        for equipment in self.assembly.equipment.values():
+            equipment.initialize_state(self.state)
+        self.initialized = True
 
-    def step(self) -> None:
-        """Advance the simulation by one tick.
+    def step(self) -> dict[str, dict[str, object]]:
+        """Advance signal flow by one tick and return a state snapshot."""
+        if not self.initialized:
+            self.initialize()
+        assert self.assembly is not None
 
-        Detailed physics, controller execution, and telemetry generation are
-        intentionally deferred to later implementation phases.
-        """
-        raise NotImplementedError("Simulation stepping is not implemented yet.")
+        for sensor in self.assembly.sensors.values():
+            sensor.sample(self.state)
+        for controller in self.assembly.controllers.values():
+            controller.execute(self.state)
+        for actuator in self.assembly.actuators.values():
+            actuator.update(self.state)
+
+        return self.state.snapshot()
