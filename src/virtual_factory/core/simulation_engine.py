@@ -11,6 +11,7 @@ from virtual_factory.core.runtime_factory import RuntimeAssembly, build_runtime
 from virtual_factory.core.runtime_state import RuntimeState
 from virtual_factory.core.schema import PlantConfig
 from virtual_factory.equipment.process_dynamics import update_continuous_process
+from virtual_factory.telemetry.telemetry_frame import build_publishable_frame
 
 
 @dataclass(slots=True)
@@ -35,7 +36,7 @@ class SimulationEngine:
             equipment.initialize_state(self.state)
         self.initialized = True
 
-    def step(self) -> dict[str, dict[str, object]]:
+    def step(self) -> dict[str, object]:
         """Advance one tick and return a state snapshot.
 
         Current MVP timing samples sensors for controller input, applies
@@ -46,16 +47,43 @@ class SimulationEngine:
         if not self.initialized:
             self.initialize()
         assert self.assembly is not None
+        timestamp_s = self.time_manager.now()
 
         for sensor in self.assembly.sensors.values():
-            sensor.sample(self.state)
+            sensor.sample(
+                self.state,
+                timestamp_s=timestamp_s,
+                signal_config=self.plant_config.signals.get(sensor.output_signal),
+            )
         for controller in self.assembly.controllers.values():
-            controller.execute(self.state)
+            controller.execute(
+                self.state,
+                timestamp_s=timestamp_s,
+                signal_config=self.plant_config.signals.get(controller.output_signal),
+            )
         for actuator in self.assembly.actuators.values():
-            actuator.update(self.state)
+            feedback_config = (
+                self.plant_config.signals.get(actuator.feedback_signal)
+                if actuator.feedback_signal
+                else None
+            )
+            actuator.update(self.state, timestamp_s=timestamp_s, feedback_signal_config=feedback_config)
         update_continuous_process(self.plant_config, self.state, self.dt_s)
         for sensor in self.assembly.sensors.values():
-            sensor.sample(self.state)
+            sensor.sample(
+                self.state,
+                timestamp_s=timestamp_s,
+                signal_config=self.plant_config.signals.get(sensor.output_signal),
+            )
+        telemetry_frame = build_publishable_frame(
+            self.plant_config,
+            self.state,
+            self.assembly.output_policy,
+            timestamp_s,
+        )
+        self.assembly.telemetry_store.append_frame(telemetry_frame)
         self.time_manager.advance()
 
-        return self.state.snapshot()
+        snapshot = self.state.snapshot()
+        snapshot["telemetry_latest"] = telemetry_frame
+        return snapshot

@@ -46,5 +46,11 @@ def test_flow_and_pressure_transmitters_measure_updated_truth() -> None:
     engine = SimulationEngine(config, dt_s=1.0)
     snapshot = engine.step()
 
-    assert snapshot["signals"]["FT101_FLOW"] == pytest.approx(snapshot["truth"]["V101.outlet.flow_true"])
-    assert snapshot["signals"]["PT101_PRESSURE"] == pytest.approx(snapshot["truth"]["P101.discharge_pressure_true"])
+    assert engine.state.get_signal_numeric("FT101_FLOW") == pytest.approx(
+        snapshot["truth"]["V101.outlet.flow_true"],
+        abs=0.0001,
+    )
+    assert engine.state.get_signal_numeric("PT101_PRESSURE") == pytest.approx(
+        snapshot["truth"]["P101.discharge_pressure_true"],
+        abs=0.01,
+    )

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from virtual_factory.core.runtime_state import RuntimeState
-from virtual_factory.core.schema import ActuatorConfig
+from virtual_factory.core.schema import ActuatorConfig, SignalConfig
 
 
 @dataclass(slots=True)
@@ -37,6 +37,11 @@ class BaseActuator:
         """Optional actuator feedback signal produced by this actuator."""
         return self.config.feedback_signal
 
-    def update(self, state: RuntimeState) -> None:
+    def update(
+        self,
+        state: RuntimeState,
+        timestamp_s: float = 0.0,
+        feedback_signal_config: SignalConfig | None = None,
+    ) -> None:
         """Apply the command signal to the physical target."""
         raise NotImplementedError

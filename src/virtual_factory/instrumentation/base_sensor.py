@@ -1,10 +1,11 @@
 """Base sensor abstraction."""
 
+import random
 from dataclasses import dataclass, field
 from typing import Any
 
 from virtual_factory.core.runtime_state import RuntimeState
-from virtual_factory.core.schema import SensorConfig
+from virtual_factory.core.schema import SensorConfig, SignalConfig
 
 
 @dataclass(slots=True)
@@ -32,8 +33,38 @@ class BaseSensor:
         """Measured signal produced by this sensor."""
         return self.config.output_signal
 
-    def sample(self, state: RuntimeState) -> None:
+    def sample(
+        self,
+        state: RuntimeState,
+        timestamp_s: float = 0.0,
+        signal_config: SignalConfig | None = None,
+    ) -> None:
         """Read physical truth and write a measured signal."""
-        # TODO: Add sensor fault, range, delay, and quality behavior.
+        # TODO: Add delay buffer and sensor fault behavior.
         value = state.get_truth(self.measures, 0.0)
-        state.set_signal(self.output_signal, value)
+        value = self._apply_noise(value)
+        value = self._apply_resolution(value)
+        state.set_signal_value(
+            self.output_signal,
+            value,
+            timestamp_s=timestamp_s,
+            unit=signal_config.unit if signal_config else None,
+            category=signal_config.category if signal_config else "industrial_signal",
+            quality=str(self.parameters.get("quality", "GOOD")),
+            source=signal_config.source if signal_config else self.id,
+        )
+
+    def _apply_noise(self, value: Any) -> Any:
+        noise_std = float(self.parameters.get("noise_std", 0.0))
+        if noise_std <= 0 or not isinstance(value, int | float):
+            return value
+        return float(value) + random.gauss(0.0, noise_std)
+
+    def _apply_resolution(self, value: Any) -> Any:
+        resolution = self.parameters.get("resolution")
+        if resolution is None or not isinstance(value, int | float):
+            return value
+        resolution_value = float(resolution)
+        if resolution_value <= 0:
+            return value
+        return round(round(float(value) / resolution_value) * resolution_value, 12)

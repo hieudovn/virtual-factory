@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from virtual_factory.core.runtime_state import RuntimeState
-from virtual_factory.core.schema import ControllerConfig
+from virtual_factory.core.schema import ControllerConfig, SignalConfig
 
 
 @dataclass(slots=True)
@@ -32,6 +32,11 @@ class BaseController:
         """Controller output signal name."""
         return self.config.output_signal
 
-    def execute(self, state: RuntimeState) -> None:
+    def execute(
+        self,
+        state: RuntimeState,
+        timestamp_s: float = 0.0,
+        signal_config: SignalConfig | None = None,
+    ) -> None:
         """Execute one controller scan."""
         raise NotImplementedError

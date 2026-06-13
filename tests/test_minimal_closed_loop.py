@@ -15,10 +15,13 @@ def test_minimal_closed_loop_signal_flow() -> None:
 
     snapshot = engine.step()
 
-    assert snapshot["signals"]["LT102_LEVEL"] == pytest.approx(snapshot["truth"]["T102.level_true"])
+    assert engine.state.get_signal_numeric("LT102_LEVEL") == pytest.approx(
+        snapshot["truth"]["T102.level_true"],
+        abs=0.01,
+    )
     assert "LIC102_OUT" in snapshot["signals"]
     assert "V101_OPENING_FEEDBACK" in snapshot["signals"]
-    assert snapshot["truth"]["V101.opening_actual"] == snapshot["signals"]["V101_OPENING_FEEDBACK"]
+    assert snapshot["truth"]["V101.opening_actual"] == engine.state.get_signal_numeric("V101_OPENING_FEEDBACK")
     assert snapshot["truth"]["V101.opening_actual"] > 0.0
 
 

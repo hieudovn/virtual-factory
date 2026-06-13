@@ -18,9 +18,9 @@ def main() -> None:
         snapshot = engine.step()
 
     compact = {
-        "LT102_LEVEL": snapshot["signals"].get("LT102_LEVEL"),
-        "LIC102_OUT": snapshot["signals"].get("LIC102_OUT"),
-        "V101_OPENING_FEEDBACK": snapshot["signals"].get("V101_OPENING_FEEDBACK"),
+        "LT102_LEVEL": engine.state.get_signal_numeric("LT102_LEVEL"),
+        "LIC102_OUT": engine.state.get_signal_numeric("LIC102_OUT"),
+        "V101_OPENING_FEEDBACK": engine.state.get_signal_numeric("V101_OPENING_FEEDBACK"),
         "truth.V101.opening_actual": snapshot["truth"].get("V101.opening_actual"),
         "truth.T102.level_true": snapshot["truth"].get("T102.level_true"),
     }

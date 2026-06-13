@@ -18,6 +18,7 @@ from virtual_factory.instrumentation.flow_transmitter import FlowTransmitter
 from virtual_factory.instrumentation.level_transmitter import LevelTransmitter
 from virtual_factory.instrumentation.pressure_transmitter import PressureTransmitter
 from virtual_factory.telemetry.output_policy import OutputPolicy
+from virtual_factory.telemetry.ring_buffer import RingBufferTelemetryStore
 
 EQUIPMENT_TYPES: dict[str, type[BaseEquipment]] = {
     "tank_v1": Tank,
@@ -52,6 +53,7 @@ class RuntimeAssembly:
     controllers: dict[str, BaseController]
     actuators: dict[str, BaseActuator]
     output_policy: OutputPolicy
+    telemetry_store: RingBufferTelemetryStore
 
 
 def build_runtime(config: PlantConfig) -> RuntimeAssembly:
@@ -85,6 +87,7 @@ def build_runtime(config: PlantConfig) -> RuntimeAssembly:
         controllers=controllers,
         actuators=actuators,
         output_policy=OutputPolicy.from_config(config),
+        telemetry_store=RingBufferTelemetryStore(),
     )
 
 

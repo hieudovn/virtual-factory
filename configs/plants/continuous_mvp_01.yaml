@@ -66,16 +66,34 @@ sensors:
     display_name: T102 Level Transmitter
     measures: T102.level_true
     output_signal: LT102_LEVEL
+    parameters:
+      sample_time_s: 1.0
+      resolution: 0.01
+      noise_std: 0.0
+      delay_s: 0.0
+      quality: GOOD
   - id: FT101
     model_type: flow_transmitter_v1
     display_name: V101 Outlet Flow Transmitter
     measures: V101.outlet.flow_true
     output_signal: FT101_FLOW
+    parameters:
+      sample_time_s: 1.0
+      resolution: 0.0001
+      noise_std: 0.0
+      delay_s: 0.0
+      quality: GOOD
   - id: PT101
     model_type: pressure_transmitter_v1
     display_name: P101 Discharge Pressure Transmitter
     measures: P101.discharge_pressure_true
     output_signal: PT101_PRESSURE
+    parameters:
+      sample_time_s: 1.0
+      resolution: 0.01
+      noise_std: 0.0
+      delay_s: 0.0
+      quality: GOOD
 
 controllers:
   - id: LIC102
