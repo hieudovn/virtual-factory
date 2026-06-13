@@ -5,6 +5,8 @@ from typing import Any
 
 import yaml
 
+from virtual_factory.core.schema import PlantConfig
+
 
 def load_yaml(path: str | Path) -> dict[str, Any]:
     """Load a YAML file into a dictionary."""
@@ -16,9 +18,6 @@ def load_yaml(path: str | Path) -> dict[str, Any]:
     return data
 
 
-def load_plant_config(path: str | Path) -> dict[str, Any]:
-    """Load a plant configuration file.
-
-    Full schema validation will be added after the skeleton is in place.
-    """
-    return load_yaml(path)
+def load_plant_config(path: str | Path) -> PlantConfig:
+    """Load and validate a plant configuration file."""
+    return PlantConfig.model_validate(load_yaml(path))

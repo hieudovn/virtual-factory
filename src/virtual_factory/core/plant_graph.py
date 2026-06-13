@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from virtual_factory.core.schema import PlantConfig, endpoint_object_id
+
 
 @dataclass(frozen=True, slots=True)
 class GraphNode:
@@ -31,60 +33,56 @@ class PlantGraph:
     edges: list[GraphEdge] = field(default_factory=list)
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> "PlantGraph":
-        """Build a minimal graph from a plant configuration dictionary."""
+    def from_config(cls, config: PlantConfig) -> "PlantGraph":
+        """Build a minimal graph from a validated plant configuration."""
         graph = cls()
 
-        for category in ("equipment", "sensors", "controllers", "actuators", "gateways"):
-            items = config.get(category, [])
-            if isinstance(items, dict):
-                items = items.values()
+        for category in ("equipment", "sensors", "controllers", "actuators"):
+            items = getattr(config, category)
             for item in items:
-                node_id = item.get("id")
-                if node_id:
-                    graph.nodes[node_id] = GraphNode(id=node_id, category=category, config=item)
+                graph.nodes[item.id] = GraphNode(id=item.id, category=category, config=item.model_dump())
 
-        for connection in config.get("connections", []):
+        for connection in config.connections:
             graph.edges.append(
                 GraphEdge(
-                    source=connection["from"],
-                    target=connection["to"],
-                    category=connection.get("type", "physical"),
-                    config=connection,
+                    source=connection.from_endpoint,
+                    target=connection.to,
+                    category=connection.type,
+                    config=connection.model_dump(by_alias=True),
                 )
             )
 
-        for sensor in config.get("sensors", []):
-            if "measures" in sensor and "output_signal" in sensor:
-                graph.edges.append(
-                    GraphEdge(
-                        source=sensor["measures"],
-                        target=sensor["output_signal"],
-                        category="measurement",
-                        config=sensor,
-                    )
+        for sensor in config.sensors:
+            graph.edges.append(
+                GraphEdge(
+                    source=sensor.measures,
+                    target=sensor.output_signal,
+                    category="measurement",
+                    config=sensor.model_dump(),
                 )
+            )
 
-        for controller in config.get("controllers", []):
-            if "pv_signal" in controller and "output_signal" in controller:
-                graph.edges.append(
-                    GraphEdge(
-                        source=controller["pv_signal"],
-                        target=controller["output_signal"],
-                        category="control",
-                        config=controller,
-                    )
+        for controller in config.controllers:
+            graph.edges.append(
+                GraphEdge(
+                    source=controller.pv_signal,
+                    target=controller.output_signal,
+                    category="control",
+                    config=controller.model_dump(),
                 )
+            )
 
-        for actuator in config.get("actuators", []):
-            if "command_signal" in actuator and "actuates" in actuator:
-                graph.edges.append(
-                    GraphEdge(
-                        source=actuator["command_signal"],
-                        target=actuator["actuates"],
-                        category="actuation",
-                        config=actuator,
-                    )
+        for actuator in config.actuators:
+            graph.edges.append(
+                GraphEdge(
+                    source=actuator.command_signal,
+                    target=actuator.actuates,
+                    category="actuation",
+                    config=actuator.model_dump(),
                 )
+            )
 
         return graph
+
+
+__all__ = ["GraphEdge", "GraphNode", "PlantGraph", "endpoint_object_id"]

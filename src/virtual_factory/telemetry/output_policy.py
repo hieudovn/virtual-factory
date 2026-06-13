@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from virtual_factory.core.schema import OutputPolicyConfig, PlantConfig, SignalConfig
+
 
 @dataclass(frozen=True, slots=True)
 class OutputPolicy:
@@ -19,19 +21,30 @@ class OutputPolicy:
     )
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> "OutputPolicy":
+    def from_config(cls, config: PlantConfig | dict[str, Any]) -> "OutputPolicy":
         """Build a policy from plant configuration."""
-        policy_config = config.get("output_policy", {})
+        policy_config = config.output_policy if isinstance(config, PlantConfig) else config.get("output_policy", {})
+        if isinstance(policy_config, OutputPolicyConfig):
+            return cls(
+                mode=policy_config.mode,
+                allowed_categories=set(policy_config.publish_categories) or cls().allowed_categories,
+            )
         return cls(
             mode=policy_config.get("mode", "industrial"),
             allowed_categories=set(policy_config.get("publish_categories", [])) or cls().allowed_categories,
         )
 
-    def can_publish(self, signal_config: dict[str, Any]) -> bool:
+    def can_publish(self, signal_config: SignalConfig | dict[str, Any]) -> bool:
         """Return whether a signal may be published under this policy."""
-        if not signal_config.get("publish", False):
+        if isinstance(signal_config, SignalConfig):
+            publish = signal_config.publish
+            category = signal_config.category
+        else:
+            publish = signal_config.get("publish", False)
+            category = signal_config.get("category")
+
+        if not publish:
             return False
-        category = signal_config.get("category")
         if self.mode == "industrial" and category == "internal_truth":
             return False
         return category in self.allowed_categories
