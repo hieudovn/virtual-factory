@@ -19,6 +19,13 @@ DISPLAY_SIGNALS = [
     "FT101_FLOW",
     "PT101_PRESSURE",
 ]
+ALARM_DISPLAY_SIGNALS = [
+    "T102_LOW_LEVEL_ALARM",
+    "T102_HIGH_LEVEL_ALARM",
+    "P101_NO_FLOW_ALARM",
+    "V101_POSITION_DEVIATION_ALARM",
+    "LT102_BAD_QUALITY_ALARM",
+]
 
 
 def get_frame_value(frame: list[SignalValue], signal_name: str, default=None):
@@ -42,6 +49,7 @@ def run_simulation(
     mqtt_client_id: str | None = None,
     quiet: bool = False,
     debug_truth: bool = False,
+    show_alarms: bool = False,
 ) -> list[list[SignalValue]]:
     """Run a configured simulation and optionally export publishable telemetry."""
     config = load_plant_config(config_path)
@@ -60,7 +68,7 @@ def run_simulation(
     frames: list[list[SignalValue]] = []
 
     if not quiet:
-        print(_format_header(debug_truth))
+        print(_format_header(debug_truth, show_alarms))
 
     if mqtt_gateway:
         mqtt_gateway.connect()
@@ -77,7 +85,7 @@ def run_simulation(
             if mqtt_gateway:
                 mqtt_gateway.publish_frame(frame)
             if not quiet:
-                print(_format_row(frame, snapshot, debug_truth))
+                print(_format_row(frame, snapshot, debug_truth, show_alarms))
     finally:
         if mqtt_gateway:
             mqtt_gateway.disconnect()
@@ -105,6 +113,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="MQTT topic prefix for signal topics.",
     )
     run_parser.add_argument("--mqtt-client-id", default=None, help="Optional MQTT client id.")
+    run_parser.add_argument("--show-alarms", action="store_true", help="Show alarm/event columns.")
     run_parser.add_argument("--debug-truth", action="store_true", help="Print selected truth values.")
     run_parser.add_argument("--quiet", action="store_true", help="Suppress console rows.")
     return parser
@@ -129,23 +138,33 @@ def main(argv: Sequence[str] | None = None) -> None:
             mqtt_client_id=args.mqtt_client_id,
             quiet=args.quiet,
             debug_truth=args.debug_truth,
+            show_alarms=args.show_alarms,
         )
         return
 
     parser.print_help()
 
 
-def _format_header(debug_truth: bool) -> str:
+def _format_header(debug_truth: bool, show_alarms: bool) -> str:
     columns = ["time_s", *DISPLAY_SIGNALS]
+    if show_alarms:
+        columns.extend(ALARM_DISPLAY_SIGNALS)
     if debug_truth:
         columns.append("truth.T102.level_true")
     return " | ".join(columns)
 
 
-def _format_row(frame: list[SignalValue], snapshot: dict[str, object], debug_truth: bool) -> str:
+def _format_row(
+    frame: list[SignalValue],
+    snapshot: dict[str, object],
+    debug_truth: bool,
+    show_alarms: bool,
+) -> str:
     timestamp = frame[0].timestamp_s if frame else 0.0
     values = [_format_value(timestamp)]
     values.extend(_format_value(get_frame_value(frame, signal_name, "")) for signal_name in DISPLAY_SIGNALS)
+    if show_alarms:
+        values.extend(_format_value(get_frame_value(frame, signal_name, "")) for signal_name in ALARM_DISPLAY_SIGNALS)
     if debug_truth:
         truth = snapshot.get("truth", {})
         values.append(_format_value(truth.get("T102.level_true") if isinstance(truth, dict) else ""))

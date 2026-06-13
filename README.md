@@ -97,6 +97,16 @@ virtual-factory run --steps 60 --scenario configs/scenarios/pump_degradation.yam
 
 Scenarios affect internal plant state or configuration parameters through explicit actions. Output remains measured publishable telemetry only.
 
+## Alarm/Event MVP
+
+Alarms are generated from measured industrial signals, controller signals, and actuator feedback. Alarm outputs are `industrial_event` `SignalValue` objects, so they use the same publishable telemetry path as other industrial signals.
+
+Ground truth is not used directly for industrial alarm generation.
+
+```bash
+virtual-factory run --steps 60 --scenario configs/scenarios/valve_stuck.yaml --show-alarms
+```
+
 ## Current Development Status
 
 Current status:

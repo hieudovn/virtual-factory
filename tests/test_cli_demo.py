@@ -72,3 +72,17 @@ def test_run_simulation_can_publish_to_fake_mqtt(monkeypatch) -> None:
     assert gateways[0].disconnected is True
     assert len(gateways[0].frames) == 2
     assert gateways[0].kwargs["host"] == "localhost"
+
+
+def test_run_simulation_show_alarms_keeps_frames_publishable() -> None:
+    """The show_alarms option should not add internal truth to frames."""
+    frames = run_simulation(
+        config_path=Path("configs/plants/continuous_mvp_01.yaml"),
+        steps=2,
+        show_alarms=True,
+        quiet=True,
+    )
+    names = {signal.name for frame in frames for signal in frame}
+
+    assert "T102_LOW_LEVEL_ALARM" in names
+    assert "T102_LEVEL_TRUE" not in names

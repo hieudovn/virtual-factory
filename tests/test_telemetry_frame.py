@@ -20,6 +20,13 @@ def test_publishable_frame_contains_allowed_industrial_signals() -> None:
     names = {item.name for item in frame}
 
     assert {"LT102_LEVEL", "FT101_FLOW", "PT101_PRESSURE", "LIC102_OUT", "V101_OPENING_FEEDBACK"} <= names
+    assert {
+        "T102_LOW_LEVEL_ALARM",
+        "T102_HIGH_LEVEL_ALARM",
+        "P101_NO_FLOW_ALARM",
+        "V101_POSITION_DEVIATION_ALARM",
+        "LT102_BAD_QUALITY_ALARM",
+    } <= names
     assert "T102_LEVEL_TRUE" not in names
     assert all(item.category != "internal_truth" for item in frame)
     assert {item.name for item in snapshot["telemetry_latest"]} == names

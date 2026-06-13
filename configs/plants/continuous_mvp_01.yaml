@@ -149,6 +149,68 @@ signals:
     publish: false
     unit: m
     source: T102.level_true
+  T102_LOW_LEVEL_ALARM:
+    category: industrial_event
+    publish: true
+    unit: bool
+    source: alarm.T102_LOW_LEVEL
+  T102_HIGH_LEVEL_ALARM:
+    category: industrial_event
+    publish: true
+    unit: bool
+    source: alarm.T102_HIGH_LEVEL
+  P101_NO_FLOW_ALARM:
+    category: industrial_event
+    publish: true
+    unit: bool
+    source: alarm.P101_NO_FLOW
+  V101_POSITION_DEVIATION_ALARM:
+    category: industrial_event
+    publish: true
+    unit: bool
+    source: alarm.V101_POSITION_DEVIATION
+  LT102_BAD_QUALITY_ALARM:
+    category: industrial_event
+    publish: true
+    unit: bool
+    source: alarm.LT102_BAD_QUALITY
+
+alarms:
+  - id: T102_LOW_LEVEL
+    source_signal: LT102_LEVEL
+    type: low
+    threshold: 0.5
+    severity: warning
+    message: T102 level is low
+    output_signal: T102_LOW_LEVEL_ALARM
+  - id: T102_HIGH_LEVEL
+    source_signal: LT102_LEVEL
+    type: high
+    threshold: 4.5
+    severity: warning
+    message: T102 level is high
+    output_signal: T102_HIGH_LEVEL_ALARM
+  - id: P101_NO_FLOW
+    source_signal: FT101_FLOW
+    type: low
+    threshold: 0.0001
+    severity: alarm
+    message: P101 no flow condition
+    output_signal: P101_NO_FLOW_ALARM
+  - id: V101_POSITION_DEVIATION
+    source_signal: V101_OPENING_FEEDBACK
+    type: low
+    threshold: 1.0
+    severity: warning
+    message: V101 opening feedback is near closed
+    output_signal: V101_POSITION_DEVIATION_ALARM
+  - id: LT102_BAD_QUALITY
+    source_signal: LT102_LEVEL
+    type: bad_quality
+    threshold: GOOD
+    severity: warning
+    message: LT102 signal quality is not GOOD
+    output_signal: LT102_BAD_QUALITY_ALARM
 
 output_policy:
   mode: industrial

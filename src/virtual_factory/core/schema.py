@@ -118,6 +118,21 @@ class SignalConfig(BaseModel):
     source: str = Field(min_length=1)
 
 
+class AlarmConfig(BaseModel):
+    """Configured alarm generated from measured or industrial signal values."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str = Field(min_length=1)
+    source_signal: str = Field(min_length=1)
+    type: str = Field(min_length=1)
+    threshold: float | int | str | bool | None = None
+    deadband: float | int | None = None
+    severity: str = "warning"
+    message: str | None = None
+    output_signal: str = Field(min_length=1)
+
+
 class OutputPolicyConfig(BaseModel):
     """Configured output policy for protocol publication."""
 
@@ -163,6 +178,7 @@ class PlantConfig(BaseModel):
     sensors: list[SensorConfig] = Field(default_factory=list)
     controllers: list[ControllerConfig] = Field(default_factory=list)
     actuators: list[ActuatorConfig] = Field(default_factory=list)
+    alarms: list[AlarmConfig] = Field(default_factory=list)
     signals: dict[str, SignalConfig]
     output_policy: OutputPolicyConfig
 
@@ -177,6 +193,7 @@ class PlantConfig(BaseModel):
         self._validate_sensor_links(equipment_ids, signal_names)
         self._validate_controller_links(signal_names)
         self._validate_actuator_links(equipment_ids, signal_names)
+        self._validate_alarm_links()
         self._validate_output_policy()
 
         return self
@@ -236,6 +253,30 @@ class PlantConfig(BaseModel):
             actuated_object_id = endpoint_object_id(actuator.actuates)
             if actuated_object_id not in equipment_ids:
                 raise ValueError(f"Actuator {actuator.id} actuates unknown object: {actuator.actuates}")
+
+    def _validate_alarm_links(self) -> None:
+        for alarm in self.alarms:
+            if alarm.source_signal not in self.signals:
+                if _looks_like_true_state(alarm.source_signal):
+                    raise ValueError(
+                        f"Alarm {alarm.id} source_signal must be measured or industrial signal, "
+                        f"not true physical state: {alarm.source_signal}"
+                    )
+                raise ValueError(f"Alarm {alarm.id} references unknown source_signal: {alarm.source_signal}")
+            if alarm.output_signal not in self.signals:
+                raise ValueError(f"Alarm {alarm.id} references unknown output_signal: {alarm.output_signal}")
+
+            source = self.signals[alarm.source_signal]
+            output = self.signals[alarm.output_signal]
+            if source.category == "internal_truth":
+                raise ValueError(f"Alarm {alarm.id} source_signal cannot be internal_truth: {alarm.source_signal}")
+            if _looks_like_true_state(alarm.source_signal):
+                raise ValueError(
+                    f"Alarm {alarm.id} source_signal must be measured or industrial signal, "
+                    f"not true physical state: {alarm.source_signal}"
+                )
+            if output.category != "industrial_event":
+                raise ValueError(f"Alarm {alarm.id} output_signal must be industrial_event: {alarm.output_signal}")
 
     def _validate_output_policy(self) -> None:
         policy_categories = set(self.output_policy.publish_categories)

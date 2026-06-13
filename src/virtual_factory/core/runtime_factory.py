@@ -17,6 +17,7 @@ from virtual_factory.instrumentation.base_sensor import BaseSensor
 from virtual_factory.instrumentation.flow_transmitter import FlowTransmitter
 from virtual_factory.instrumentation.level_transmitter import LevelTransmitter
 from virtual_factory.instrumentation.pressure_transmitter import PressureTransmitter
+from virtual_factory.telemetry.alarm_manager import AlarmManager
 from virtual_factory.telemetry.output_policy import OutputPolicy
 from virtual_factory.telemetry.ring_buffer import RingBufferTelemetryStore
 
@@ -52,6 +53,7 @@ class RuntimeAssembly:
     sensors: dict[str, BaseSensor]
     controllers: dict[str, BaseController]
     actuators: dict[str, BaseActuator]
+    alarm_manager: AlarmManager
     output_policy: OutputPolicy
     telemetry_store: RingBufferTelemetryStore
 
@@ -86,6 +88,7 @@ def build_runtime(config: PlantConfig) -> RuntimeAssembly:
         sensors=sensors,
         controllers=controllers,
         actuators=actuators,
+        alarm_manager=AlarmManager(config.alarms),
         output_policy=OutputPolicy.from_config(config),
         telemetry_store=RingBufferTelemetryStore(),
     )

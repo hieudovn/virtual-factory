@@ -82,6 +82,7 @@ class SimulationEngine:
                 timestamp_s=timestamp_s,
                 signal_config=self.plant_config.signals.get(sensor.output_signal),
             )
+        self.assembly.alarm_manager.evaluate(self.state, self.plant_config, timestamp_s)
         telemetry_frame = build_publishable_frame(
             self.plant_config,
             self.state,
