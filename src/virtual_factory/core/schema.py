@@ -129,6 +129,28 @@ class OutputPolicyConfig(BaseModel):
     rule: str | None = None
 
 
+class ScenarioActionConfig(BaseModel):
+    """One time-based scenario action."""
+
+    model_config = ConfigDict(extra="allow")
+
+    at_s: float
+    type: str = Field(min_length=1)
+    target: str | None = None
+    value: float | int | str | bool | None = None
+    parameters: dict[str, Any] = Field(default_factory=dict)
+
+
+class ScenarioConfig(BaseModel):
+    """Standalone scenario configuration."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str = Field(min_length=1)
+    description: str | None = None
+    actions: list[ScenarioActionConfig] = Field(default_factory=list)
+
+
 class PlantConfig(BaseModel):
     """Validated plant configuration loaded from YAML/JSON."""
 

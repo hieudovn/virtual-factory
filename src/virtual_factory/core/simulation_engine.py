@@ -6,11 +6,12 @@ hard-code a specific plant, including the first continuous-process MVP.
 
 from dataclasses import dataclass, field
 
-from virtual_factory.core.time_manager import TimeManager
 from virtual_factory.core.runtime_factory import RuntimeAssembly, build_runtime
 from virtual_factory.core.runtime_state import RuntimeState
-from virtual_factory.core.schema import PlantConfig
+from virtual_factory.core.schema import PlantConfig, ScenarioConfig
+from virtual_factory.core.time_manager import TimeManager
 from virtual_factory.equipment.process_dynamics import update_continuous_process
+from virtual_factory.scenarios.scenario_manager import ScenarioManager
 from virtual_factory.telemetry.telemetry_frame import build_publishable_frame
 
 
@@ -20,13 +21,16 @@ class SimulationEngine:
 
     plant_config: PlantConfig
     dt_s: float = 1.0
+    scenario: ScenarioConfig | None = None
     assembly: RuntimeAssembly | None = None
     initialized: bool = False
     state: RuntimeState = field(default_factory=RuntimeState)
     time_manager: TimeManager = field(init=False)
+    scenario_manager: ScenarioManager = field(init=False)
 
     def __post_init__(self) -> None:
         self.time_manager = TimeManager(step_s=self.dt_s)
+        self.scenario_manager = ScenarioManager(self.scenario)
 
     def initialize(self) -> None:
         """Build runtime objects and initialize equipment truth state."""
@@ -48,6 +52,9 @@ class SimulationEngine:
             self.initialize()
         assert self.assembly is not None
         timestamp_s = self.time_manager.now()
+        fired_actions = self.scenario_manager.apply_due_actions(self.state, self.plant_config, timestamp_s)
+        if fired_actions:
+            self.state.diagnostics["scenario_actions_fired_last_step"] = len(fired_actions)
 
         for sensor in self.assembly.sensors.values():
             sensor.sample(

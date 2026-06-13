@@ -1,10 +1,7 @@
 id: pump_degradation
-display_name: Pump Degradation
-description: Scenario stub for gradual pump performance loss.
-plant_id: continuous_mvp_01
-events:
-  - time_s: 600
-    type: todo
-    description: Add pump degradation after degradation models exist.
-todo:
-  - Keep degradation truth internal unless reflected through measured signals.
+description: Reduce pump rated flow as a basic degradation disturbance.
+actions:
+  - at_s: 20.0
+    type: set_parameter
+    target: equipment.P101.rated_flow_m3_s
+    value: 0.007

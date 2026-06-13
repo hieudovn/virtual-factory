@@ -1,0 +1,7 @@
+id: pump_stop
+description: Stop the pump during the run.
+actions:
+  - at_s: 20.0
+    type: set_truth
+    target: P101.running
+    value: false

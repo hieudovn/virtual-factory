@@ -7,6 +7,7 @@ from typing import Sequence
 from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.simulation_engine import SimulationEngine
 from virtual_factory.protocols.mqtt_gateway import MqttGateway
+from virtual_factory.scenarios.scenario_loader import load_scenario
 from virtual_factory.telemetry.export import append_csv, append_jsonl, frame_to_records
 from virtual_factory.telemetry.signal_value import SignalValue
 
@@ -34,6 +35,7 @@ def run_simulation(
     dt_s: float = 1.0,
     csv_output: str | Path | None = None,
     jsonl_output: str | Path | None = None,
+    scenario_path: str | Path | None = None,
     mqtt_host: str | None = None,
     mqtt_port: int = 1883,
     mqtt_topic_prefix: str = "virtual-factory/demo/continuous_mvp_01",
@@ -43,7 +45,8 @@ def run_simulation(
 ) -> list[list[SignalValue]]:
     """Run a configured simulation and optionally export publishable telemetry."""
     config = load_plant_config(config_path)
-    engine = SimulationEngine(config, dt_s=dt_s)
+    scenario = load_scenario(scenario_path) if scenario_path else None
+    engine = SimulationEngine(config, dt_s=dt_s, scenario=scenario)
     mqtt_gateway = (
         MqttGateway(
             host=mqtt_host,
@@ -93,6 +96,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--dt", type=float, default=1.0, help="Step duration in seconds.")
     run_parser.add_argument("--csv-output", default=None, help="Optional CSV telemetry output path.")
     run_parser.add_argument("--jsonl-output", default=None, help="Optional JSONL telemetry output path.")
+    run_parser.add_argument("--scenario", default=None, help="Optional scenario YAML path.")
     run_parser.add_argument("--mqtt-host", default=None, help="Optional MQTT broker host.")
     run_parser.add_argument("--mqtt-port", type=int, default=1883, help="Optional MQTT broker port.")
     run_parser.add_argument(
@@ -118,6 +122,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             dt_s=args.dt,
             csv_output=args.csv_output,
             jsonl_output=args.jsonl_output,
+            scenario_path=args.scenario,
             mqtt_host=args.mqtt_host,
             mqtt_port=args.mqtt_port,
             mqtt_topic_prefix=args.mqtt_topic_prefix,

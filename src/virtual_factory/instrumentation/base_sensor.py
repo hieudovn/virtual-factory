@@ -43,14 +43,16 @@ class BaseSensor:
         # TODO: Add delay buffer and sensor fault behavior.
         value = state.get_truth(self.measures, 0.0)
         value = self._apply_noise(value)
+        value = self._apply_bias(value, state)
         value = self._apply_resolution(value)
+        quality = self._quality(state)
         state.set_signal_value(
             self.output_signal,
             value,
             timestamp_s=timestamp_s,
             unit=signal_config.unit if signal_config else None,
             category=signal_config.category if signal_config else "industrial_signal",
-            quality=str(self.parameters.get("quality", "GOOD")),
+            quality=quality,
             source=signal_config.source if signal_config else self.id,
         )
 
@@ -68,3 +70,18 @@ class BaseSensor:
         if resolution_value <= 0:
             return value
         return round(round(float(value) / resolution_value) * resolution_value, 12)
+
+    def _apply_bias(self, value: Any, state: RuntimeState) -> Any:
+        """Apply deterministic sensor bias before resolution quantization."""
+        if not isinstance(value, int | float):
+            return value
+        bias = float(state.diagnostics.get(f"sensor_bias.{self.id}", 0.0))
+        return float(value) + bias
+
+    def _quality(self, state: RuntimeState) -> str:
+        return str(
+            state.diagnostics.get(
+                f"sensor_quality.{self.id}",
+                state.diagnostics.get(f"sensor_quality.{self.output_signal}", self.parameters.get("quality", "GOOD")),
+            )
+        )

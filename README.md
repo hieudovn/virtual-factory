@@ -87,6 +87,16 @@ virtual-factory run --steps 60 --mqtt-host localhost --mqtt-port 1883
 
 MQTT publishes publishable industrial telemetry only. Ground truth is not published. The current topic format is simple JSON over `{topic_prefix}/{signal_name}` and will evolve later.
 
+## Run With Scenario
+
+```bash
+virtual-factory run --steps 60 --scenario configs/scenarios/demand_change.yaml
+virtual-factory run --steps 60 --scenario configs/scenarios/valve_stuck.yaml
+virtual-factory run --steps 60 --scenario configs/scenarios/pump_degradation.yaml
+```
+
+Scenarios affect internal plant state or configuration parameters through explicit actions. Output remains measured publishable telemetry only.
+
 ## Current Development Status
 
 Current status:

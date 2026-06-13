@@ -1,7 +1,3 @@
 id: normal_operation
-display_name: Normal Operation
-description: Baseline scenario for stable closed-loop operation.
-plant_id: continuous_mvp_01
-events: []
-todo:
-  - Define initial conditions and run duration after the runtime scheduler exists.
+description: Baseline scenario with no scheduled disturbances.
+actions: []

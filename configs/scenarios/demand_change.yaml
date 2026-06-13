@@ -1,10 +1,7 @@
 id: demand_change
-display_name: Demand Change
-description: Scenario stub for changing destination tank demand or outflow.
-plant_id: continuous_mvp_01
-events:
-  - time_s: 300
-    type: todo
-    description: Add demand or outlet change once scenario execution exists.
-todo:
-  - Define how process demand is represented in the graph model.
+description: Increase destination tank outlet demand during the run.
+actions:
+  - at_s: 20.0
+    type: set_parameter
+    target: equipment.T102.outlet_demand_m3_s
+    value: 0.010
