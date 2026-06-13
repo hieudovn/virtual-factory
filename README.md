@@ -71,6 +71,22 @@ virtual-factory run --steps 60 --csv-output out/telemetry.csv --jsonl-output out
 
 Exported telemetry includes publishable industrial signals only. Internal truth is not exported unless a future explicit benchmark/debug mode is added.
 
+## Publish To MQTT
+
+Install the optional MQTT dependency:
+
+```bash
+pip install -e .[dev,mqtt]
+```
+
+Start a broker separately, such as EMQX or Mosquitto, then run:
+
+```bash
+virtual-factory run --steps 60 --mqtt-host localhost --mqtt-port 1883
+```
+
+MQTT publishes publishable industrial telemetry only. Ground truth is not published. The current topic format is simple JSON over `{topic_prefix}/{signal_name}` and will evolve later.
+
 ## Current Development Status
 
 Current status:

@@ -6,6 +6,7 @@ from typing import Sequence
 
 from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.simulation_engine import SimulationEngine
+from virtual_factory.protocols.mqtt_gateway import MqttGateway
 from virtual_factory.telemetry.export import append_csv, append_jsonl, frame_to_records
 from virtual_factory.telemetry.signal_value import SignalValue
 
@@ -33,28 +34,50 @@ def run_simulation(
     dt_s: float = 1.0,
     csv_output: str | Path | None = None,
     jsonl_output: str | Path | None = None,
+    mqtt_host: str | None = None,
+    mqtt_port: int = 1883,
+    mqtt_topic_prefix: str = "virtual-factory/demo/continuous_mvp_01",
+    mqtt_client_id: str | None = None,
     quiet: bool = False,
     debug_truth: bool = False,
 ) -> list[list[SignalValue]]:
     """Run a configured simulation and optionally export publishable telemetry."""
     config = load_plant_config(config_path)
     engine = SimulationEngine(config, dt_s=dt_s)
+    mqtt_gateway = (
+        MqttGateway(
+            host=mqtt_host,
+            port=mqtt_port,
+            topic_prefix=mqtt_topic_prefix,
+            client_id=mqtt_client_id,
+        )
+        if mqtt_host
+        else None
+    )
     frames: list[list[SignalValue]] = []
 
     if not quiet:
         print(_format_header(debug_truth))
 
-    for _ in range(steps):
-        snapshot = engine.step()
-        frame = list(snapshot["telemetry_latest"])
-        frames.append(frame)
-        records = frame_to_records(frame)
-        if csv_output:
-            append_csv(csv_output, records)
-        if jsonl_output:
-            append_jsonl(jsonl_output, records)
-        if not quiet:
-            print(_format_row(frame, snapshot, debug_truth))
+    if mqtt_gateway:
+        mqtt_gateway.connect()
+    try:
+        for _ in range(steps):
+            snapshot = engine.step()
+            frame = list(snapshot["telemetry_latest"])
+            frames.append(frame)
+            records = frame_to_records(frame)
+            if csv_output:
+                append_csv(csv_output, records)
+            if jsonl_output:
+                append_jsonl(jsonl_output, records)
+            if mqtt_gateway:
+                mqtt_gateway.publish_frame(frame)
+            if not quiet:
+                print(_format_row(frame, snapshot, debug_truth))
+    finally:
+        if mqtt_gateway:
+            mqtt_gateway.disconnect()
 
     return frames
 
@@ -70,6 +93,14 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--dt", type=float, default=1.0, help="Step duration in seconds.")
     run_parser.add_argument("--csv-output", default=None, help="Optional CSV telemetry output path.")
     run_parser.add_argument("--jsonl-output", default=None, help="Optional JSONL telemetry output path.")
+    run_parser.add_argument("--mqtt-host", default=None, help="Optional MQTT broker host.")
+    run_parser.add_argument("--mqtt-port", type=int, default=1883, help="Optional MQTT broker port.")
+    run_parser.add_argument(
+        "--mqtt-topic-prefix",
+        default="virtual-factory/demo/continuous_mvp_01",
+        help="MQTT topic prefix for signal topics.",
+    )
+    run_parser.add_argument("--mqtt-client-id", default=None, help="Optional MQTT client id.")
     run_parser.add_argument("--debug-truth", action="store_true", help="Print selected truth values.")
     run_parser.add_argument("--quiet", action="store_true", help="Suppress console rows.")
     return parser
@@ -87,6 +118,10 @@ def main(argv: Sequence[str] | None = None) -> None:
             dt_s=args.dt,
             csv_output=args.csv_output,
             jsonl_output=args.jsonl_output,
+            mqtt_host=args.mqtt_host,
+            mqtt_port=args.mqtt_port,
+            mqtt_topic_prefix=args.mqtt_topic_prefix,
+            mqtt_client_id=args.mqtt_client_id,
             quiet=args.quiet,
             debug_truth=args.debug_truth,
         )

@@ -1,18 +1,71 @@
-"""MQTT gateway skeleton.
+"""MQTT gateway for publishable industrial telemetry frames.
 
-Network publishing is intentionally not implemented in this phase.
+This gateway publishes already-built telemetry frames only. It never reads
+runtime truth state directly. Sparkplug B and production-grade reconnect logic
+are future scope.
 """
 
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass, field
+from typing import Any
+
+from virtual_factory.telemetry.signal_value import SignalValue
 
 
 @dataclass(slots=True)
-class MQTTGateway:
-    """Future MQTT publisher for allowed industrial telemetry signals."""
+class MqttGateway:
+    """Simple MQTT JSON publisher for publishable SignalValue frames."""
 
-    broker_url: str
-    topic_prefix: str
+    host: str = "localhost"
+    port: int = 1883
+    topic_prefix: str = "virtual-factory"
+    client_id: str | None = None
+    enabled: bool = True
+    client: Any | None = field(default=None, repr=False)
 
-    def publish(self, topic: str, payload: dict) -> None:
-        """Publish a payload when MQTT support is implemented."""
-        raise NotImplementedError("MQTT network publishing is not implemented yet.")
+    def connect(self) -> None:
+        """Connect to the MQTT broker."""
+        if not self.enabled:
+            return
+        if self.client is None:
+            self.client = self._create_client()
+        self.client.connect(self.host, self.port)
+
+    def disconnect(self) -> None:
+        """Disconnect from the MQTT broker."""
+        if self.client is not None:
+            self.client.disconnect()
+
+    def publish_frame(self, frame: list[SignalValue]) -> None:
+        """Publish each SignalValue in a publishable telemetry frame."""
+        if not self.enabled:
+            return
+        if self.client is None:
+            self.client = self._create_client()
+        for signal in frame:
+            if not isinstance(signal, SignalValue):
+                raise TypeError("MqttGateway.publish_frame accepts SignalValue objects only.")
+            if signal.category == "internal_truth":
+                raise ValueError(f"Refusing to publish internal_truth signal: {signal.name}")
+            payload = json.dumps(self.build_payload(signal))
+            self.client.publish(self.build_topic(signal), payload)
+
+    def build_topic(self, signal: SignalValue) -> str:
+        """Build the MQTT topic for one signal."""
+        return f"{self.topic_prefix.rstrip('/')}/{signal.name}"
+
+    def build_payload(self, signal: SignalValue) -> dict:
+        """Build a simple JSON-serializable payload for one signal."""
+        if signal.category == "internal_truth":
+            raise ValueError(f"Refusing to build MQTT payload for internal_truth signal: {signal.name}")
+        return asdict(signal)
+
+    def _create_client(self):
+        try:
+            import paho.mqtt.client as mqtt
+        except ImportError as exc:
+            raise RuntimeError("MQTT support requires installing the mqtt extra: pip install -e .[mqtt]") from exc
+        return mqtt.Client(client_id=self.client_id)
+
+
+MQTTGateway = MqttGateway

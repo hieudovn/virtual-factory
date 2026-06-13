@@ -17,6 +17,9 @@ dependencies = [
 dev = [
   "pytest>=8.0",
 ]
+mqtt = [
+  "paho-mqtt>=2.0",
+]
 
 [project.scripts]
 virtual-factory = "virtual_factory.main:main"
