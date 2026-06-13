@@ -93,7 +93,7 @@ MQTT publishes publishable industrial telemetry only. Ground truth is not publis
 docker compose up --build
 ```
 
-This starts a local Mosquitto broker exposed at `localhost:1883` and runs the MVP simulation publisher. MQTT topics use this prefix:
+This starts a local Mosquitto broker exposed at `localhost:1883`, runs the MVP simulation publisher, and starts the monitoring API at `http://localhost:8000`. MQTT topics use this prefix:
 
 ```text
 virtual-factory/demo/continuous_mvp_01/{signal_name}
@@ -112,6 +112,42 @@ Run an alternate scenario:
 ```bash
 docker compose run --rm virtual-factory virtual-factory run --steps 60 --scenario configs/scenarios/demand_change.yaml --show-alarms
 ```
+
+## Run Monitoring API
+
+Install API support:
+
+```bash
+pip install -e .[dev,api]
+```
+
+Run locally:
+
+```bash
+virtual-factory serve --port 8000
+```
+
+Open:
+
+- `http://localhost:8000/docs`
+- `http://localhost:8000/health`
+- `http://localhost:8000/status`
+- `http://localhost:8000/telemetry/latest`
+- `http://localhost:8000/alarms`
+
+With Docker:
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+```text
+http://localhost:8000/docs
+```
+
+This is a JSON API and WebSocket service only. No full web UI exists yet. Internal truth is not exposed by default.
 
 ## Run With Scenario
 

@@ -10,6 +10,6 @@ COPY src ./src
 COPY configs ./configs
 COPY docs ./docs
 
-RUN pip install --no-cache-dir -e ".[mqtt]"
+RUN pip install --no-cache-dir -e ".[mqtt,api]"
 
 CMD ["virtual-factory", "run", "--steps", "60", "--quiet"]

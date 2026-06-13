@@ -36,3 +36,23 @@ services:
       - out/telemetry.jsonl
     volumes:
       - ./out:/app/out
+
+  virtual-factory-api:
+    build: .
+    depends_on:
+      - mqtt
+    command:
+      - virtual-factory
+      - serve
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --dt
+      - "1"
+      - --scenario
+      - configs/scenarios/valve_stuck.yaml
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./out:/app/out

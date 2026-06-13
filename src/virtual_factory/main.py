@@ -95,6 +95,25 @@ def run_simulation(
     return frames
 
 
+def serve_api(
+    config_path: str | Path = DEFAULT_CONFIG,
+    scenario_path: str | Path | None = None,
+    dt_s: float = 1.0,
+    host: str = "0.0.0.0",
+    port: int = 8000,
+) -> None:
+    """Run the optional FastAPI monitoring service."""
+    try:
+        import uvicorn
+    except ImportError as exc:
+        raise RuntimeError("API support requires installing the api extra: pip install -e .[api]") from exc
+
+    from virtual_factory.ui.api import create_app
+
+    app = create_app(config_path=config_path, scenario_path=scenario_path, dt_s=dt_s)
+    uvicorn.run(app, host=host, port=port)
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(prog="virtual-factory")
@@ -130,6 +149,13 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--show-alarms", action="store_true", help="Show alarm/event columns.")
     run_parser.add_argument("--debug-truth", action="store_true", help="Print selected truth values.")
     run_parser.add_argument("--quiet", action="store_true", help="Suppress console rows.")
+
+    serve_parser = subparsers.add_parser("serve", help="Run the monitoring API service.")
+    serve_parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Plant configuration YAML path.")
+    serve_parser.add_argument("--scenario", default=None, help="Optional scenario YAML path.")
+    serve_parser.add_argument("--dt", type=float, default=1.0, help="Step duration in seconds.")
+    serve_parser.add_argument("--host", default="0.0.0.0", help="API bind host.")
+    serve_parser.add_argument("--port", type=int, default=8000, help="API bind port.")
     return parser
 
 
@@ -155,6 +181,16 @@ def main(argv: Sequence[str] | None = None) -> None:
             quiet=args.quiet,
             debug_truth=args.debug_truth,
             show_alarms=args.show_alarms,
+        )
+        return
+
+    if args.command == "serve":
+        serve_api(
+            config_path=args.config,
+            scenario_path=args.scenario,
+            dt_s=args.dt,
+            host=args.host,
+            port=args.port,
         )
         return
 
