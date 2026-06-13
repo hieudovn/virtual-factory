@@ -87,6 +87,32 @@ virtual-factory run --steps 60 --mqtt-host localhost --mqtt-port 1883
 
 MQTT publishes publishable industrial telemetry only. Ground truth is not published. The current topic format is simple JSON over `{topic_prefix}/{signal_name}` and will evolve later.
 
+## Run With Docker
+
+```bash
+docker compose up --build
+```
+
+This starts a local Mosquitto broker exposed at `localhost:1883` and runs the MVP simulation publisher. MQTT topics use this prefix:
+
+```text
+virtual-factory/demo/continuous_mvp_01/{signal_name}
+```
+
+Use MQTT Explorer to subscribe to:
+
+```text
+virtual-factory/demo/continuous_mvp_01/#
+```
+
+CSV and JSONL outputs are written to `./out`.
+
+Run an alternate scenario:
+
+```bash
+docker compose run --rm virtual-factory virtual-factory run --steps 60 --scenario configs/scenarios/demand_change.yaml --show-alarms
+```
+
 ## Run With Scenario
 
 ```bash

@@ -1,0 +1,34 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./deploy/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  virtual-factory:
+    build: .
+    depends_on:
+      - mqtt
+    command:
+      - virtual-factory
+      - run
+      - --steps
+      - "300"
+      - --dt
+      - "1"
+      - --mqtt-host
+      - mqtt
+      - --mqtt-port
+      - "1883"
+      - --mqtt-topic-prefix
+      - virtual-factory/demo/continuous_mvp_01
+      - --scenario
+      - configs/scenarios/valve_stuck.yaml
+      - --show-alarms
+      - --csv-output
+      - out/telemetry.csv
+      - --jsonl-output
+      - out/telemetry.jsonl
+    volumes:
+      - ./out:/app/out
