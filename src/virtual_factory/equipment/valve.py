@@ -12,5 +12,6 @@ class Valve(BaseEquipment):
 
     def initialize_state(self, state: RuntimeState) -> None:
         """Create initial valve opening and outlet flow truth values."""
-        state.set_truth(f"{self.id}.opening_actual", 0.0)
+        opening = float(self.parameters.get("initial_opening_percent", 0.0))
+        state.set_truth(f"{self.id}.opening_actual", max(0.0, min(100.0, opening)))
         state.set_truth(f"{self.id}.outlet.flow_true", 0.0)

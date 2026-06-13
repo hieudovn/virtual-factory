@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.simulation_engine import SimulationEngine
 
@@ -13,8 +15,21 @@ def test_minimal_closed_loop_signal_flow() -> None:
 
     snapshot = engine.step()
 
-    assert snapshot["signals"]["LT102_LEVEL"] == 1.0
+    assert snapshot["signals"]["LT102_LEVEL"] == pytest.approx(snapshot["truth"]["T102.level_true"])
     assert "LIC102_OUT" in snapshot["signals"]
     assert "V101_OPENING_FEEDBACK" in snapshot["signals"]
     assert snapshot["truth"]["V101.opening_actual"] == snapshot["signals"]["V101_OPENING_FEEDBACK"]
     assert snapshot["truth"]["V101.opening_actual"] > 0.0
+
+
+def test_closed_loop_updates_tank_level_over_repeated_steps() -> None:
+    """Minimal process dynamics should make destination tank level move."""
+    config = load_plant_config(Path("configs/plants/continuous_mvp_01.yaml"))
+    engine = SimulationEngine(config, dt_s=1.0)
+    engine.initialize()
+    initial_level = float(engine.state.get_truth("T102.level_true"))
+
+    for _ in range(5):
+        snapshot = engine.step()
+
+    assert snapshot["truth"]["T102.level_true"] != initial_level

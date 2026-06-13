@@ -20,6 +20,7 @@ equipment:
     parameters:
       capacity_m3: 10.0
       initial_level_m: 4.0
+      max_level_m: 5.0
   - id: P101
     model_type: centrifugal_pump_v1
     display_name: Centrifugal Pump
@@ -32,12 +33,15 @@ equipment:
     parameters:
       cv: 1.0
       fail_position: closed
+      initial_opening_percent: 0.0
   - id: T102
     model_type: tank_v1
     display_name: Destination Tank
     parameters:
       capacity_m3: 8.0
       initial_level_m: 1.0
+      max_level_m: 5.0
+      outlet_demand_m3_s: 0.006
 
 connections:
   - id: C001
@@ -93,6 +97,8 @@ actuators:
     command_signal: LIC102_OUT
     feedback_signal: V101_OPENING_FEEDBACK
     actuates: V101.opening_actual
+    parameters:
+      max_rate: 20.0
 
 signals:
   LT102_LEVEL:
