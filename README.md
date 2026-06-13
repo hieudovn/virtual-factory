@@ -56,10 +56,26 @@ T102.level_true
 - `docs/balance-model.md`: mass, volume, and energy balance policy.
 - `docs/graph-model.md`: graph-based plant model.
 
+## Run The MVP Demo
+
+```bash
+pip install -e .[dev]
+virtual-factory run --steps 30
+```
+
+Optional local telemetry export:
+
+```bash
+virtual-factory run --steps 60 --csv-output out/telemetry.csv --jsonl-output out/telemetry.jsonl
+```
+
+Exported telemetry includes publishable industrial signals only. Internal truth is not exported unless a future explicit benchmark/debug mode is added.
+
 ## Current Development Status
 
 Current status:
 
 - Phase 0 documentation foundation initialized.
-- Project skeleton and initial configuration are being created.
-- Runtime implementation will start after config schema and graph loader are in place.
+- Python project skeleton, configuration schema, and graph loader are in place.
+- MVP-01 runtime, minimal process dynamics, instrumentation metadata, and telemetry frame collection are available.
+- Next step: expand protocol gateways, validation depth, and process model fidelity.
