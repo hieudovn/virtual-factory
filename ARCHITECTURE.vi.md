@@ -9,11 +9,24 @@ Virtual Factory là một hệ thống mô phỏng theo hướng model-driven. R
 - Lưu giữ ground truth nội bộ cho validation nhưng không publish như telemetry công nghiệp.
 - Hỗ trợ các bước phát triển sau: digital twin, cấu hình low-code, và sinh mô hình nhà máy có hỗ trợ AI.
 
+## Quy tắc kiến trúc cốt lõi
+
+1. Simulation engine không được hard-code nhà máy.
+2. Cấu hình plant phải được nạp từ YAML/JSON.
+3. Tương tác nội bộ giữa thiết bị dùng biến vật lý và port.
+4. Sensor chuyển physical truth thành measured industrial signal.
+5. Controller chỉ đọc measured signal, không đọc true physical state.
+6. Industrial protocol output chỉ publish measurable signal.
+7. Internal ground truth được ẩn khỏi IIoT Platform trong industrial mode.
+8. Ground truth có thể được lưu nội bộ cho debug, validation, và benchmarking.
+9. Plant model là graph-based.
+10. Low-code/no-code configuration và AI-assisted generation là hạng mục roadmap tương lai.
+
 ## Thành phần chính
 
 ### Cấu hình nhà máy
 
-Nhà máy được định nghĩa bằng YAML hoặc JSON. Cấu hình mô tả thiết bị, port, kết nối, tham số vật lý, sensor, actuator, controller, tag, và chính sách output.
+Nhà máy được định nghĩa bằng YAML/JSON. Cấu hình mô tả thiết bị, port, kết nối, tham số vật lý, sensor, actuator, controller, tag, và chính sách output.
 
 Simulation engine phải xem cấu hình là mô hình nhà máy. Engine không được hard-code MVP hoặc bất kỳ quy trình tương lai nào.
 
@@ -55,7 +68,7 @@ Nội bộ solver không phải telemetry công nghiệp. Các giá trị này c
 
 Protocol gateway expose tín hiệu công nghiệp ra hệ thống bên ngoài như MQTT, OPC UA, REST, WebSocket, hoặc file export.
 
-Trong industrial mode, gateway chỉ publish các tín hiệu công nghiệp có thể đo được. Internal truth và biến solver phải được giữ riêng.
+Trong industrial mode, gateway chỉ publish các tín hiệu công nghiệp có thể đo được. Internal truth và biến solver phải được giữ riêng và ẩn khỏi IIoT Platform.
 
 ## Luồng runtime MVP
 

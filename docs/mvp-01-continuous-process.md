@@ -24,14 +24,14 @@ T102.level_true
 
 ## Required Behaviors
 
-- The plant is loaded from YAML or JSON.
+- The plant is loaded from YAML/JSON.
 - The engine does not hard-code MVP equipment names.
 - Tanks maintain internal true level or volume.
 - Pump and valve affect process flow through physical ports.
 - `LT102` reads `T102.level_true` internally and emits `LT102_LEVEL`.
 - `LIC102` reads `LT102_LEVEL`, not `T102.level_true`.
 - `VA101` converts `LIC102_OUT` into `V101.opening_actual`.
-- Protocol gateways publish only allowed measured industrial signals in industrial mode.
+- Protocol gateways publish only allowed measured industrial signals in industrial mode, with internal ground truth hidden from the IIoT Platform.
 - Ground truth is retained internally for debug, validation, and benchmarking.
 
 ## Minimum Industrial Tags

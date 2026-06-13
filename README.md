@@ -35,12 +35,12 @@ T102.level_true
 ## Core Architecture Rules
 
 1. The simulation engine must not hard-code the plant.
-2. The plant must be loaded from YAML or JSON configuration.
+2. The plant must be loaded from YAML/JSON configuration.
 3. Equipment interacts internally through physical variables and ports.
 4. Sensors convert physical truth into measured industrial signals.
 5. Controllers must read measured signals, not true physical states.
 6. Protocol gateways must publish measurable industrial signals only.
-7. Internal truth, solver variables, degradation truth, and true mass or energy balance values must not be published in industrial mode.
+7. Internal truth, solver variables, degradation truth, and true mass or energy balance values must not be published to the IIoT Platform in industrial mode.
 8. Ground truth can be stored internally for debug, validation, and benchmarking.
 9. Plant configuration must be model-driven and graph-based.
 10. Low-code/no-code configuration and AI-assisted plant generation are planned for later phases.
@@ -56,6 +56,10 @@ T102.level_true
 - `docs/balance-model.md`: mass, volume, and energy balance policy.
 - `docs/graph-model.md`: graph-based plant model.
 
-## Current Status
+## Current Development Status
 
-This repository is being initialized with documentation and project structure only. The simulation engine implementation should start after the architecture and MVP boundaries are reviewed.
+Current status:
+
+- Phase 0 documentation foundation initialized.
+- Runtime implementation has not started yet.
+- Next step: create Python project skeleton and configuration schema.

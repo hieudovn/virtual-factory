@@ -2,7 +2,7 @@
 
 ## Model-Driven First
 
-The engine must execute plant models loaded from YAML or JSON. Plant topology, equipment instances, signal names, and controller loops belong in configuration.
+The engine must execute plant models loaded from YAML/JSON. Plant topology, equipment instances, signal names, and controller loops belong in configuration.
 
 The MVP must not become a special case in the engine.
 
@@ -32,7 +32,7 @@ Graph validation should detect missing ports, invalid connections, cycles where 
 
 ## Output Policy Is Part of the Architecture
 
-Industrial telemetry must expose only measurable industrial signals. Debug and benchmark modes may access ground truth, but those outputs must be explicitly separated from industrial-mode outputs.
+Industrial telemetry must expose only measurable industrial signals. Internal ground truth must be hidden from the IIoT Platform in industrial mode. Debug and benchmark modes may access ground truth, but those outputs must be explicitly separated from industrial-mode outputs.
 
 ## Small MVP, Correct Boundaries
 

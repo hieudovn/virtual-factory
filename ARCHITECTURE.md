@@ -9,11 +9,24 @@ Virtual Factory is a model-driven simulation system. The runtime engine executes
 - Preserve internal ground truth for validation without exposing it as industrial telemetry.
 - Support future digital twin, low-code configuration, and AI-assisted plant generation workflows.
 
+## Core Architecture Rules
+
+1. The simulation engine must not hard-code the plant.
+2. Plant configuration must be loaded from YAML/JSON.
+3. Internal equipment interaction uses physical variables and ports.
+4. Sensors convert physical truth into measured industrial signals.
+5. Controllers read measured signals only, not true physical states.
+6. Industrial protocol output publishes measurable signals only.
+7. Internal ground truth is hidden from the IIoT Platform in industrial mode.
+8. Ground truth may be stored internally for debug, validation, and benchmarking.
+9. The plant model is graph-based.
+10. Low-code/no-code configuration and AI-assisted generation are future roadmap items.
+
 ## Major Components
 
 ### Plant Configuration
 
-The plant is defined in YAML or JSON. Configuration describes equipment, ports, connections, physical parameters, sensors, actuators, controllers, tags, and output policies.
+The plant is defined in YAML/JSON. Configuration describes equipment, ports, connections, physical parameters, sensors, actuators, controllers, tags, and output policies.
 
 The simulation engine must treat the configuration as the plant model. It must not hard-code the MVP or any future process.
 
@@ -55,7 +68,7 @@ Solver internals are not industrial telemetry. They can be stored for debug, val
 
 Protocol gateways expose industrial signals to external systems such as MQTT, OPC UA, REST, WebSocket, or file export.
 
-In industrial mode, gateways publish measurable industrial signals only. Internal truth and solver variables must remain private.
+In industrial mode, gateways publish measurable industrial signals only. Internal truth and solver variables must remain private and hidden from the IIoT Platform.
 
 ## MVP Runtime Flow
 

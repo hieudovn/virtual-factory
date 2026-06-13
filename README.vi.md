@@ -35,12 +35,12 @@ T102.level_true
 ## Quy tắc kiến trúc cốt lõi
 
 1. Simulation engine không được hard-code nhà máy.
-2. Nhà máy phải được nạp từ cấu hình YAML hoặc JSON.
+2. Nhà máy phải được nạp từ cấu hình YAML/JSON.
 3. Thiết bị tương tác nội bộ qua biến vật lý và port.
 4. Sensor chuyển trạng thái vật lý thật thành tín hiệu đo công nghiệp.
 5. Controller phải đọc tín hiệu đo, không đọc trực tiếp trạng thái vật lý thật.
 6. Protocol gateway chỉ được publish các tín hiệu công nghiệp có thể đo được.
-7. Internal truth, biến solver, degradation truth, và giá trị cân bằng khối lượng/năng lượng thật không được publish trong industrial mode.
+7. Internal truth, biến solver, degradation truth, và giá trị cân bằng khối lượng/năng lượng thật không được publish tới IIoT Platform trong industrial mode.
 8. Ground truth có thể được lưu nội bộ để debug, validation, và benchmarking.
 9. Cấu hình nhà máy phải theo hướng model-driven và graph-based.
 10. Cấu hình low-code/no-code và sinh nhà máy có hỗ trợ AI được để cho các giai đoạn sau.
@@ -56,6 +56,10 @@ T102.level_true
 - `docs/balance-model.md`: chính sách cân bằng khối lượng, thể tích, và năng lượng.
 - `docs/graph-model.md`: mô hình nhà máy dạng graph.
 
-## Trạng thái hiện tại
+## Trạng thái phát triển hiện tại
 
-Repository đang được khởi tạo bằng tài liệu và cấu trúc dự án. Việc triển khai simulation engine nên bắt đầu sau khi kiến trúc và phạm vi MVP được rà soát.
+Trạng thái hiện tại:
+
+- Nền tảng tài liệu Phase 0 đã được khởi tạo.
+- Runtime implementation chưa bắt đầu.
+- Bước tiếp theo: tạo Python project skeleton và configuration schema.

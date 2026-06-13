@@ -11,12 +11,12 @@ Lộ trình này chia giai đoạn rõ ràng để simulation core luôn theo h�
 
 ## Giai đoạn 1: MVP quy trình liên tục
 
-- Nạp nhà máy từ YAML hoặc JSON.
+- Nạp nhà máy từ YAML/JSON.
 - Biểu diễn quy trình MVP dạng graph:
   `T101 -> P101 -> V101 -> T102`.
 - Triển khai model tái sử dụng cho source tank, pump, control valve, destination tank, level transmitter, PID controller, và valve actuator.
 - Mô phỏng vòng điều khiển mức kín bằng tín hiệu đo.
-- Publish output ở industrial mode mà không rò rỉ internal truth.
+- Publish output ở industrial mode mà không rò rỉ internal truth tới IIoT Platform.
 - Lưu ground truth nội bộ cho debug và validation.
 
 ## Giai đoạn 2: Giao diện telemetry công nghiệp

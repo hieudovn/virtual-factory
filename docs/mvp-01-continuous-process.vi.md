@@ -24,14 +24,14 @@ T102.level_true
 
 ## Hành vi bắt buộc
 
-- Plant được nạp từ YAML hoặc JSON.
+- Plant được nạp từ YAML/JSON.
 - Engine không hard-code tên thiết bị của MVP.
 - Tank duy trì level hoặc volume thật ở bên trong.
 - Pump và valve ảnh hưởng process flow qua physical port.
 - `LT102` đọc nội bộ `T102.level_true` và phát ra `LT102_LEVEL`.
 - `LIC102` đọc `LT102_LEVEL`, không đọc `T102.level_true`.
 - `VA101` chuyển `LIC102_OUT` thành `V101.opening_actual`.
-- Protocol gateway chỉ publish tín hiệu công nghiệp đo được và được phép trong industrial mode.
+- Protocol gateway chỉ publish tín hiệu công nghiệp đo được và được phép trong industrial mode, đồng thời ẩn internal ground truth khỏi IIoT Platform.
 - Ground truth được giữ nội bộ cho debug, validation, và benchmarking.
 
 ## Industrial tag tối thiểu

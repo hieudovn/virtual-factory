@@ -4,7 +4,7 @@ Output policy bảo vệ ranh giới giữa telemetry công nghiệp thực tế
 
 ## Industrial mode
 
-Industrial mode là chế độ mặc định cho hệ thống bên ngoài. Chế độ này chỉ được publish các tín hiệu công nghiệp có thể đo được.
+Industrial mode là chế độ mặc định cho IIoT Platform và hệ thống bên ngoài. Chế độ này chỉ được publish các tín hiệu công nghiệp có thể đo được.
 
 Ví dụ được phép:
 
@@ -23,6 +23,8 @@ Ví dụ bị cấm:
 - degradation truth
 - fault truth trước khi lỗi thể hiện qua triệu chứng đo được
 - balance residual ẩn
+
+Internal ground truth phải được ẩn khỏi IIoT Platform trong industrial mode.
 
 ## Debug mode
 

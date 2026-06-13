@@ -11,12 +11,12 @@ This roadmap keeps implementation staged so the simulation core remains model-dr
 
 ## Phase 1: MVP Continuous Process
 
-- Load the plant from YAML or JSON.
+- Load the plant from YAML/JSON.
 - Represent the MVP process as a graph:
   `T101 -> P101 -> V101 -> T102`.
 - Implement reusable equipment models for source tank, pump, control valve, destination tank, level transmitter, PID controller, and valve actuator.
 - Simulate closed-loop level control using measured signals.
-- Publish industrial-mode outputs with no internal truth leakage.
+- Publish industrial-mode outputs with no internal truth leakage to the IIoT Platform.
 - Store ground truth internally for debug and validation.
 
 ## Phase 2: Industrial Telemetry Interfaces

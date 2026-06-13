@@ -4,7 +4,7 @@ The output policy protects the boundary between realistic industrial telemetry a
 
 ## Industrial Mode
 
-Industrial mode is the default external-facing mode. It may publish only measurable industrial signals.
+Industrial mode is the default external-facing mode for the IIoT Platform. It may publish only measurable industrial signals.
 
 Allowed examples:
 
@@ -23,6 +23,8 @@ Forbidden examples:
 - degradation truth
 - fault truth before it is reflected through measured symptoms
 - hidden balance residuals
+
+Internal ground truth must remain hidden from the IIoT Platform in industrial mode.
 
 ## Debug Mode
 
