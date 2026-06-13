@@ -49,7 +49,8 @@ def test_run_simulation_can_publish_to_fake_mqtt(monkeypatch) -> None:
             self.disconnected = False
             gateways.append(self)
 
-        def connect(self) -> None:
+        def connect(self, **kwargs) -> None:
+            self.connect_kwargs = kwargs
             self.connected = True
 
         def publish_frame(self, frame) -> None:
@@ -72,6 +73,7 @@ def test_run_simulation_can_publish_to_fake_mqtt(monkeypatch) -> None:
     assert gateways[0].disconnected is True
     assert len(gateways[0].frames) == 2
     assert gateways[0].kwargs["host"] == "localhost"
+    assert gateways[0].connect_kwargs["retries"] == 20
 
 
 def test_run_simulation_show_alarms_keeps_frames_publishable() -> None:

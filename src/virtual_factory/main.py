@@ -47,6 +47,8 @@ def run_simulation(
     mqtt_port: int = 1883,
     mqtt_topic_prefix: str = "virtual-factory/demo/continuous_mvp_01",
     mqtt_client_id: str | None = None,
+    mqtt_connect_retries: int = 20,
+    mqtt_connect_delay: float = 1.0,
     quiet: bool = False,
     debug_truth: bool = False,
     show_alarms: bool = False,
@@ -71,7 +73,7 @@ def run_simulation(
         print(_format_header(debug_truth, show_alarms))
 
     if mqtt_gateway:
-        mqtt_gateway.connect()
+        mqtt_gateway.connect(retries=mqtt_connect_retries, delay_s=mqtt_connect_delay)
     try:
         for _ in range(steps):
             snapshot = engine.step()
@@ -113,6 +115,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="MQTT topic prefix for signal topics.",
     )
     run_parser.add_argument("--mqtt-client-id", default=None, help="Optional MQTT client id.")
+    run_parser.add_argument(
+        "--mqtt-connect-retries",
+        type=int,
+        default=20,
+        help="MQTT connection retry attempts.",
+    )
+    run_parser.add_argument(
+        "--mqtt-connect-delay",
+        type=float,
+        default=1.0,
+        help="Seconds between MQTT connection retry attempts.",
+    )
     run_parser.add_argument("--show-alarms", action="store_true", help="Show alarm/event columns.")
     run_parser.add_argument("--debug-truth", action="store_true", help="Print selected truth values.")
     run_parser.add_argument("--quiet", action="store_true", help="Suppress console rows.")
@@ -136,6 +150,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             mqtt_port=args.mqtt_port,
             mqtt_topic_prefix=args.mqtt_topic_prefix,
             mqtt_client_id=args.mqtt_client_id,
+            mqtt_connect_retries=args.mqtt_connect_retries,
+            mqtt_connect_delay=args.mqtt_connect_delay,
             quiet=args.quiet,
             debug_truth=args.debug_truth,
             show_alarms=args.show_alarms,

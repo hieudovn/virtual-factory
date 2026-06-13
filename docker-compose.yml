@@ -21,6 +21,10 @@ services:
       - mqtt
       - --mqtt-port
       - "1883"
+      - --mqtt-connect-retries
+      - "30"
+      - --mqtt-connect-delay
+      - "1"
       - --mqtt-topic-prefix
       - virtual-factory/demo/continuous_mvp_01
       - --scenario

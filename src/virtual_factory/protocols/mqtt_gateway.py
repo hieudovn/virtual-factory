@@ -6,6 +6,8 @@ are future scope.
 """
 
 import json
+import socket
+import time
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -23,13 +25,27 @@ class MqttGateway:
     enabled: bool = True
     client: Any | None = field(default=None, repr=False)
 
-    def connect(self) -> None:
+    def connect(self, retries: int = 20, delay_s: float = 1.0) -> None:
         """Connect to the MQTT broker."""
         if not self.enabled:
             return
         if self.client is None:
             self.client = self._create_client()
-        self.client.connect(self.host, self.port)
+
+        attempts = max(1, retries)
+        last_error: Exception | None = None
+        for attempt in range(1, attempts + 1):
+            try:
+                self.client.connect(self.host, self.port)
+                return
+            except (socket.gaierror, ConnectionRefusedError, TimeoutError, OSError) as exc:
+                last_error = exc
+                if attempt == attempts:
+                    break
+                time.sleep(delay_s)
+        raise RuntimeError(
+            f"Failed to connect to MQTT broker at {self.host}:{self.port} after {attempts} attempts"
+        ) from last_error
 
     def disconnect(self) -> None:
         """Disconnect from the MQTT broker."""

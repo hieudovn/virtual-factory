@@ -103,3 +103,31 @@ Use an MQTT input/subscriber node or connector:
 - Payload: JSON
 
 The subscriber should treat these as industrial telemetry samples. Ground truth values such as `T102.level_true` are not published.
+
+## Troubleshooting Docker DNS Startup
+
+If `virtual-factory` exits with:
+
+```text
+socket.gaierror: Temporary failure in name resolution
+```
+
+the simulator likely tried to connect before Docker Compose DNS or the MQTT broker was ready. The CLI retries MQTT startup by default, and the Compose deployment uses extra retries, but you can still inspect the network:
+
+```bash
+docker compose down --remove-orphans
+docker compose up -d mqtt
+docker compose run --rm virtual-factory python -c "import socket; print(socket.gethostbyname('mqtt'))"
+```
+
+Host names depend on where the client runs:
+
+- `mqtt` is the Docker Compose service DNS name from inside the Compose network.
+- `localhost` is for host tools such as MQTT Explorer connecting to the exposed broker port.
+- `host.docker.internal` lets a container connect to a broker running on the Windows host.
+
+If you run a broker on the Windows host instead of the Compose `mqtt` service, use:
+
+```bash
+virtual-factory run --steps 60 --mqtt-host host.docker.internal --mqtt-port 1883
+```

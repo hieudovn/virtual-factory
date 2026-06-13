@@ -22,6 +22,28 @@ class FakeClient:
         self.published.append((topic, payload))
 
 
+class FlakyConnectClient(FakeClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.connect_attempts = 0
+
+    def connect(self, host: str, port: int) -> None:
+        self.connect_attempts += 1
+        if self.connect_attempts == 1:
+            raise OSError("temporary failure")
+        super().connect(host, port)
+
+
+class AlwaysFailConnectClient(FakeClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.connect_attempts = 0
+
+    def connect(self, host: str, port: int) -> None:
+        self.connect_attempts += 1
+        raise OSError("still unavailable")
+
+
 def test_build_topic_returns_prefix_and_signal_name() -> None:
     signal = SignalValue("LT102_LEVEL", 1.23, "m", "industrial_signal", 12.0, source="LT102")
     gateway = MqttGateway(topic_prefix="virtual-factory/test")
@@ -79,3 +101,23 @@ def test_connect_and_disconnect_use_client_without_broker() -> None:
 
     assert fake_client.connected == ("mqtt.local", 1884)
     assert fake_client.disconnected is True
+
+
+def test_connect_retries_and_succeeds_after_transient_error() -> None:
+    fake_client = FlakyConnectClient()
+    gateway = MqttGateway(host="mqtt", port=1883, client=fake_client)
+
+    gateway.connect(retries=2, delay_s=0.0)
+
+    assert fake_client.connect_attempts == 2
+    assert fake_client.connected == ("mqtt", 1883)
+
+
+def test_connect_retries_then_raises_runtime_error() -> None:
+    fake_client = AlwaysFailConnectClient()
+    gateway = MqttGateway(host="mqtt", port=1883, client=fake_client)
+
+    with pytest.raises(RuntimeError, match="Failed to connect to MQTT broker at mqtt:1883 after 3 attempts"):
+        gateway.connect(retries=3, delay_s=0.0)
+
+    assert fake_client.connect_attempts == 3
