@@ -59,9 +59,23 @@ def test_status_returns_service_status_without_truth() -> None:
     payload = response.json()
 
     assert response.status_code == 200
-    assert payload["status"] == "running"
+    assert payload["status"] == "stopped"
+    assert payload["running"] is False
+    assert payload["mqtt_enabled"] is False
     assert payload["plant_id"] == "continuous_mvp_01"
     assert "truth" not in payload
+
+
+def test_start_and_stop_update_running_status() -> None:
+    client = _client()
+
+    start_response = client.post("/start")
+    stop_response = client.post("/stop")
+
+    assert start_response.status_code == 200
+    assert start_response.json()["running"] is True
+    assert stop_response.status_code == 200
+    assert stop_response.json()["running"] is False
 
 
 def test_step_returns_publishable_telemetry() -> None:

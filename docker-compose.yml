@@ -6,37 +6,6 @@ services:
     volumes:
       - ./deploy/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
 
-  virtual-factory:
-    build: .
-    depends_on:
-      - mqtt
-    command:
-      - virtual-factory
-      - run
-      - --steps
-      - "300"
-      - --dt
-      - "1"
-      - --mqtt-host
-      - mqtt
-      - --mqtt-port
-      - "1883"
-      - --mqtt-connect-retries
-      - "30"
-      - --mqtt-connect-delay
-      - "1"
-      - --mqtt-topic-prefix
-      - virtual-factory/demo/continuous_mvp_01
-      - --scenario
-      - configs/scenarios/valve_stuck.yaml
-      - --show-alarms
-      - --csv-output
-      - out/telemetry.csv
-      - --jsonl-output
-      - out/telemetry.jsonl
-    volumes:
-      - ./out:/app/out
-
   virtual-factory-api:
     build: .
     depends_on:
@@ -52,7 +21,18 @@ services:
       - "1"
       - --scenario
       - configs/scenarios/valve_stuck.yaml
+      - --auto-start
+      - --mqtt-host
+      - mqtt
+      - --mqtt-port
+      - "1883"
+      - --mqtt-connect-retries
+      - "30"
+      - --mqtt-connect-delay
+      - "1"
+      - --mqtt-topic-prefix
+      - virtual-factory/demo/continuous_mvp_01
     ports:
-      - "8001:8000"
+      - "8000:8000"
     volumes:
       - ./out:/app/out

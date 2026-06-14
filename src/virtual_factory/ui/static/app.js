@@ -22,6 +22,8 @@ const state = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("start-loop").addEventListener("click", () => postStatus("/start"));
+  document.getElementById("stop-loop").addEventListener("click", () => postStatus("/stop"));
   document.getElementById("step-once").addEventListener("click", () => postAndRender("/step"));
   document.getElementById("run-ten").addEventListener("click", () => postAndRender("/run-steps?n=10"));
   document.getElementById("refresh").addEventListener("click", refreshAll);
@@ -41,12 +43,21 @@ async function postAndRender(path) {
   await Promise.all([loadStatus(), loadAlarms()]);
 }
 
+async function postStatus(path) {
+  const response = await fetch(path, { method: "POST" });
+  renderStatus(await response.json());
+}
+
 async function loadStatus() {
   const response = await fetch("/status");
-  const payload = await response.json();
+  renderStatus(await response.json());
+}
+
+function renderStatus(payload) {
   document.getElementById("plant-name").textContent = payload.plant_name || payload.plant_id || "Unknown";
   document.getElementById("scenario-name").textContent = payload.scenario_id || "None";
   document.getElementById("simulation-time").textContent = formatSeconds(payload.time_s);
+  document.getElementById("runtime-state").textContent = payload.running ? "Running" : "Stopped";
 }
 
 async function loadLatestTelemetry() {

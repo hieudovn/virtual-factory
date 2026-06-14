@@ -101,6 +101,13 @@ def serve_api(
     dt_s: float = 1.0,
     host: str = "0.0.0.0",
     port: int = 8000,
+    auto_start: bool = False,
+    mqtt_host: str | None = None,
+    mqtt_port: int = 1883,
+    mqtt_topic_prefix: str = "virtual-factory/demo/continuous_mvp_01",
+    mqtt_client_id: str | None = None,
+    mqtt_connect_retries: int = 20,
+    mqtt_connect_delay: float = 1.0,
 ) -> None:
     """Run the optional FastAPI monitoring service."""
     try:
@@ -110,7 +117,18 @@ def serve_api(
 
     from virtual_factory.ui.api import create_app
 
-    app = create_app(config_path=config_path, scenario_path=scenario_path, dt_s=dt_s)
+    app = create_app(
+        config_path=config_path,
+        scenario_path=scenario_path,
+        dt_s=dt_s,
+        mqtt_host=mqtt_host,
+        mqtt_port=mqtt_port,
+        mqtt_topic_prefix=mqtt_topic_prefix,
+        mqtt_client_id=mqtt_client_id,
+        mqtt_connect_retries=mqtt_connect_retries,
+        mqtt_connect_delay=mqtt_connect_delay,
+        auto_start=auto_start,
+    )
     uvicorn.run(app, host=host, port=port)
 
 
@@ -156,6 +174,27 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--dt", type=float, default=1.0, help="Step duration in seconds.")
     serve_parser.add_argument("--host", default="0.0.0.0", help="API bind host.")
     serve_parser.add_argument("--port", type=int, default=8000, help="API bind port.")
+    serve_parser.add_argument("--auto-start", action="store_true", help="Start the simulation loop on API startup.")
+    serve_parser.add_argument("--mqtt-host", default=None, help="Optional MQTT broker host for API runtime publishing.")
+    serve_parser.add_argument("--mqtt-port", type=int, default=1883, help="Optional MQTT broker port.")
+    serve_parser.add_argument(
+        "--mqtt-topic-prefix",
+        default="virtual-factory/demo/continuous_mvp_01",
+        help="MQTT topic prefix for signal topics.",
+    )
+    serve_parser.add_argument("--mqtt-client-id", default=None, help="Optional MQTT client id.")
+    serve_parser.add_argument(
+        "--mqtt-connect-retries",
+        type=int,
+        default=20,
+        help="MQTT connection retry attempts.",
+    )
+    serve_parser.add_argument(
+        "--mqtt-connect-delay",
+        type=float,
+        default=1.0,
+        help="Seconds between MQTT connection retry attempts.",
+    )
     return parser
 
 
@@ -191,6 +230,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             dt_s=args.dt,
             host=args.host,
             port=args.port,
+            auto_start=args.auto_start,
+            mqtt_host=args.mqtt_host,
+            mqtt_port=args.mqtt_port,
+            mqtt_topic_prefix=args.mqtt_topic_prefix,
+            mqtt_client_id=args.mqtt_client_id,
+            mqtt_connect_retries=args.mqtt_connect_retries,
+            mqtt_connect_delay=args.mqtt_connect_delay,
         )
         return
 

@@ -13,7 +13,7 @@ docker compose up --build
 This starts:
 
 - `mqtt`: Mosquitto on `localhost:1883`
-- `virtual-factory`: the MVP simulation publishing telemetry to MQTT and exporting local files under `./out`
+- `virtual-factory-api`: the API/dashboard runtime at `http://localhost:8000`, auto-starting one simulation loop and publishing MQTT from the same plant state used by the dashboard and WebSocket stream
 
 ## Run Publisher Manually
 
@@ -27,6 +27,12 @@ Run the simulator against an existing broker:
 
 ```bash
 virtual-factory run --steps 60 --mqtt-host localhost --mqtt-port 1883 --mqtt-topic-prefix virtual-factory/demo/continuous_mvp_01
+```
+
+Or run the API service as the continuous MQTT publisher:
+
+```bash
+virtual-factory serve --port 8000 --auto-start --mqtt-host localhost --mqtt-port 1883 --mqtt-topic-prefix virtual-factory/demo/continuous_mvp_01
 ```
 
 ## Topic Format
@@ -106,18 +112,18 @@ The subscriber should treat these as industrial telemetry samples. Ground truth 
 
 ## Troubleshooting Docker DNS Startup
 
-If `virtual-factory` exits with:
+If `virtual-factory-api` exits with:
 
 ```text
 socket.gaierror: Temporary failure in name resolution
 ```
 
-the simulator likely tried to connect before Docker Compose DNS or the MQTT broker was ready. The CLI retries MQTT startup by default, and the Compose deployment uses extra retries, but you can still inspect the network:
+the simulator likely tried to connect before Docker Compose DNS or the MQTT broker was ready. The CLI and API MQTT paths retry MQTT startup by default, and the Compose deployment uses extra retries, but you can still inspect the network:
 
 ```bash
 docker compose down --remove-orphans
 docker compose up -d mqtt
-docker compose run --rm virtual-factory python -c "import socket; print(socket.gethostbyname('mqtt'))"
+docker compose run --rm virtual-factory-api python -c "import socket; print(socket.gethostbyname('mqtt'))"
 ```
 
 Host names depend on where the client runs:

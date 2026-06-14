@@ -93,7 +93,7 @@ MQTT publishes publishable industrial telemetry only. Ground truth is not publis
 docker compose up --build
 ```
 
-This starts a local Mosquitto broker exposed at `localhost:1883`, runs the MVP simulation publisher, and starts the monitoring API at `http://localhost:8001`. The API still binds to port `8000` inside the container. MQTT topics use this prefix:
+This starts a local Mosquitto broker exposed at `localhost:1883` and runs one API/dashboard simulation runtime at `http://localhost:8000`. The API runtime also publishes MQTT, so the dashboard, API, WebSocket stream, and MQTT topics share the same plant state. MQTT topics use this prefix:
 
 ```text
 virtual-factory/demo/continuous_mvp_01/{signal_name}
@@ -105,12 +105,12 @@ Use MQTT Explorer to subscribe to:
 virtual-factory/demo/continuous_mvp_01/#
 ```
 
-CSV and JSONL outputs are written to `./out`.
+CSV and JSONL export remain available through the standalone `virtual-factory run` command.
 
-Run an alternate scenario:
+Run an alternate scenario locally:
 
 ```bash
-docker compose run --rm virtual-factory virtual-factory run --steps 60 --scenario configs/scenarios/demand_change.yaml --show-alarms
+virtual-factory run --steps 60 --scenario configs/scenarios/demand_change.yaml --show-alarms
 ```
 
 ## Run Monitoring API
@@ -145,11 +145,17 @@ docker compose up --build
 Then open:
 
 ```text
-http://localhost:8001/
-http://localhost:8001/docs
+http://localhost:8000/
+http://localhost:8000/docs
 ```
 
 The root URL serves a minimal MVP monitoring dashboard. The dashboard uses the JSON API and WebSocket telemetry stream, displays publishable telemetry only, and does not show internal truth. There is no authentication yet.
+
+The API runtime can also auto-start and publish MQTT:
+
+```bash
+virtual-factory serve --port 8000 --auto-start --mqtt-host localhost --mqtt-port 1883
+```
 
 ## Run With Scenario
 

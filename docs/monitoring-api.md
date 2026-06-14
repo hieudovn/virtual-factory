@@ -36,12 +36,10 @@ docker compose up --build
 The API service is exposed at:
 
 ```text
-http://localhost:8001
+http://localhost:8000
 ```
 
-The container still binds the application to port `8000`; Docker Compose maps host port `8001` to container port `8000`.
-
-The API service runs its own simulation instance. The existing `virtual-factory` service continues publishing MQTT telemetry.
+The Docker API service owns the single continuous simulation runtime. Dashboard, HTTP API, WebSocket, and MQTT publishing all read from the same `RuntimeService` instance.
 
 ## Dashboard
 
@@ -51,13 +49,6 @@ Open the browser dashboard:
 http://localhost:8000/
 ```
 
-When running through Docker Compose, use:
-
-```text
-http://localhost:8001/
-http://localhost:8001/docs
-```
-
 The dashboard is a minimal MVP UI served by FastAPI from static HTML, CSS, and JavaScript. It shows:
 
 - Runtime status: plant name, scenario, and simulation time.
@@ -65,7 +56,7 @@ The dashboard is a minimal MVP UI served by FastAPI from static HTML, CSS, and J
 - KPI cards for `LT102_LEVEL`, `FT101_FLOW`, `PT101_PRESSURE`, `LIC102_OUT`, and `V101_OPENING_FEEDBACK`.
 - Alarm cards for MVP industrial events.
 
-The dashboard first loads `/status`, `/telemetry/latest`, and `/alarms`, then uses `/ws/telemetry` for live updates. If the WebSocket is unavailable, it polls `/telemetry/latest` every second. Manual controls call `/step` and `/run-steps?n=10`.
+The dashboard first loads `/status`, `/telemetry/latest`, and `/alarms`, then uses `/ws/telemetry` for live updates. If the WebSocket is unavailable, it polls `/telemetry/latest` every second. Manual controls call `/start`, `/stop`, `/step`, and `/run-steps?n=10`.
 
 Internal truth is filtered out and is not displayed by the dashboard. There is no authentication yet.
 
@@ -86,13 +77,16 @@ Returns service status without internal truth:
 ```json
 {
   "status": "running",
+  "running": true,
   "plant_id": "continuous_mvp_01",
   "plant_name": "Continuous Water Transfer and Tank Level Control",
   "scenario_id": "valve_stuck",
   "initialized": true,
   "time_s": 10.0,
   "dt_s": 1.0,
-  "telemetry_frames": 10
+  "telemetry_frames": 10,
+  "mqtt_enabled": true,
+  "mqtt_connected": true
 }
 ```
 
@@ -143,6 +137,14 @@ Runs one simulation step and returns the latest publishable telemetry.
 ### POST /run-steps?n=10
 
 Runs `n` simulation steps and returns the latest publishable telemetry.
+
+### POST /start
+
+Starts the background simulation loop. If MQTT is configured for the API runtime, the loop publishes each latest publishable telemetry frame.
+
+### POST /stop
+
+Stops the background simulation loop.
 
 ## WebSocket
 
