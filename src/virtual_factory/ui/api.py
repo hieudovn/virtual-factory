@@ -13,9 +13,18 @@ def create_app(
 ):
     """Create a FastAPI app backed by one RuntimeService instance."""
     from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
 
     app = FastAPI(title="Virtual Factory Monitoring API", version="0.1.0")
     service = RuntimeService(config_path=config_path, scenario_path=scenario_path, dt_s=dt_s)
+    static_dir = Path(__file__).resolve().parent / "static"
+
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    @app.get("/")
+    def dashboard() -> FileResponse:
+        return FileResponse(static_dir / "index.html")
 
     @app.get("/health")
     def health() -> dict:

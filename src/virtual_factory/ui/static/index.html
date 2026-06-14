@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Virtual Factory Monitoring Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Virtual Factory Monitoring Dashboard</h1>
+          <div class="status-grid" aria-label="Runtime status">
+            <span><strong>Plant</strong><b id="plant-name">Loading</b></span>
+            <span><strong>Scenario</strong><b id="scenario-name">None</b></span>
+            <span><strong>Simulation time</strong><b id="simulation-time">0.0 s</b></span>
+            <span><strong>Connection</strong><b id="connection-state">Connecting</b></span>
+          </div>
+        </div>
+        <div class="actions" aria-label="Simulation controls">
+          <button id="step-once" type="button">Step once</button>
+          <button id="run-ten" type="button">Run 10 steps</button>
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <section class="process" aria-label="MVP process flow">
+        <div class="node tank">
+          <span>T101</span>
+          <strong>Source Tank</strong>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+        <div class="node pump">
+          <span>P101</span>
+          <strong>Pump</strong>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+        <div class="node valve">
+          <span>V101</span>
+          <strong>Control Valve</strong>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+        <div class="node tank">
+          <span>T102</span>
+          <strong>Destination Tank</strong>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2>Telemetry</h2>
+          <span id="last-updated">Waiting for data</span>
+        </div>
+        <div id="kpi-grid" class="kpi-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2>Alarms</h2>
+          <span>Industrial events</span>
+        </div>
+        <div id="alarm-list" class="alarm-list" aria-live="polite"></div>
+      </section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

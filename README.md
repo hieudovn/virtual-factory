@@ -129,6 +129,7 @@ virtual-factory serve --port 8000
 
 Open:
 
+- `http://localhost:8000/`
 - `http://localhost:8000/docs`
 - `http://localhost:8000/health`
 - `http://localhost:8000/status`
@@ -144,10 +145,11 @@ docker compose up --build
 Then open:
 
 ```text
+http://localhost:8000/
 http://localhost:8000/docs
 ```
 
-This is a JSON API and WebSocket service only. No full web UI exists yet. Internal truth is not exposed by default.
+The root URL serves a minimal MVP monitoring dashboard. The dashboard uses the JSON API and WebSocket telemetry stream, displays publishable telemetry only, and does not show internal truth. There is no authentication yet.
 
 ## Run With Scenario
 

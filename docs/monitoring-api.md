@@ -20,6 +20,7 @@ virtual-factory serve --port 8000
 
 Open:
 
+- `http://localhost:8000/`
 - `http://localhost:8000/docs`
 - `http://localhost:8000/health`
 - `http://localhost:8000/status`
@@ -39,6 +40,25 @@ http://localhost:8000
 ```
 
 The API service runs its own simulation instance. The existing `virtual-factory` service continues publishing MQTT telemetry.
+
+## Dashboard
+
+Open the browser dashboard:
+
+```text
+http://localhost:8000/
+```
+
+The dashboard is a minimal MVP UI served by FastAPI from static HTML, CSS, and JavaScript. It shows:
+
+- Runtime status: plant name, scenario, and simulation time.
+- Process flow: `T101 Source Tank -> P101 Pump -> V101 Control Valve -> T102 Destination Tank`.
+- KPI cards for `LT102_LEVEL`, `FT101_FLOW`, `PT101_PRESSURE`, `LIC102_OUT`, and `V101_OPENING_FEEDBACK`.
+- Alarm cards for MVP industrial events.
+
+The dashboard first loads `/status`, `/telemetry/latest`, and `/alarms`, then uses `/ws/telemetry` for live updates. If the WebSocket is unavailable, it polls `/telemetry/latest` every second. Manual controls call `/step` and `/run-steps?n=10`.
+
+Internal truth is filtered out and is not displayed by the dashboard. There is no authentication yet.
 
 ## Endpoints
 

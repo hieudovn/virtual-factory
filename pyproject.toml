@@ -34,6 +34,9 @@ virtual-factory = "virtual_factory.main:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"virtual_factory.ui" = ["static/*.html", "static/*.js", "static/*.css"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]

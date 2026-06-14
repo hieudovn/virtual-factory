@@ -33,6 +33,25 @@ def test_health_returns_ok() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_dashboard_root_returns_html() -> None:
+    client = _client()
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "Virtual Factory Monitoring Dashboard" in response.text
+
+
+def test_static_app_js_is_accessible() -> None:
+    client = _client()
+
+    response = client.get("/static/app.js")
+
+    assert response.status_code == 200
+    assert "filterPublishable" in response.text
+
+
 def test_status_returns_service_status_without_truth() -> None:
     client = _client()
 
