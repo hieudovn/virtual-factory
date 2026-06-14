@@ -93,7 +93,7 @@ MQTT publishes publishable industrial telemetry only. Ground truth is not publis
 docker compose up --build
 ```
 
-This starts a local Mosquitto broker exposed at `localhost:1883`, runs the MVP simulation publisher, and starts the monitoring API at `http://localhost:8000`. MQTT topics use this prefix:
+This starts a local Mosquitto broker exposed at `localhost:1883`, runs the MVP simulation publisher, and starts the monitoring API at `http://localhost:8001`. The API still binds to port `8000` inside the container. MQTT topics use this prefix:
 
 ```text
 virtual-factory/demo/continuous_mvp_01/{signal_name}
@@ -145,8 +145,8 @@ docker compose up --build
 Then open:
 
 ```text
-http://localhost:8000/
-http://localhost:8000/docs
+http://localhost:8001/
+http://localhost:8001/docs
 ```
 
 The root URL serves a minimal MVP monitoring dashboard. The dashboard uses the JSON API and WebSocket telemetry stream, displays publishable telemetry only, and does not show internal truth. There is no authentication yet.

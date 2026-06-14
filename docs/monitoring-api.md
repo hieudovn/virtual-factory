@@ -36,8 +36,10 @@ docker compose up --build
 The API service is exposed at:
 
 ```text
-http://localhost:8000
+http://localhost:8001
 ```
+
+The container still binds the application to port `8000`; Docker Compose maps host port `8001` to container port `8000`.
 
 The API service runs its own simulation instance. The existing `virtual-factory` service continues publishing MQTT telemetry.
 
@@ -47,6 +49,13 @@ Open the browser dashboard:
 
 ```text
 http://localhost:8000/
+```
+
+When running through Docker Compose, use:
+
+```text
+http://localhost:8001/
+http://localhost:8001/docs
 ```
 
 The dashboard is a minimal MVP UI served by FastAPI from static HTML, CSS, and JavaScript. It shows:

@@ -53,6 +53,6 @@ services:
       - --scenario
       - configs/scenarios/valve_stuck.yaml
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./out:/app/out
