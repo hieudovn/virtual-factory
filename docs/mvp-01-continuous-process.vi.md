@@ -26,8 +26,15 @@ T102.level_true
 
 - Plant được nạp từ YAML/JSON.
 - Engine không hard-code tên thiết bị của MVP.
-- Tank duy trì level hoặc volume thật ở bên trong.
-- Pump và valve ảnh hưởng process flow qua physical port.
+- Tank duy trì level và volume thật với động học cấp/tháo (depletion và fill).
+- Source tank (T101) giảm level khi bơm chất lỏng ra ngoài.
+- Pump tuân theo đường đặc tính quadratic head-vs-flow với shutoff head bằng
+  1.25× rated head.
+- Valve flow được tính từ hệ số Cv và opening fraction (định nghĩa Cv US,
+  chuyển đổi sang SI).
+- Pipe resistance được mô hình hóa là tổn thất K·Q² giữa pump discharge và valve.
+- Lưu lượng vận hành hệ thống được giải bằng cách cân bằng pump head với tổng
+  system head (static + valve loss + pipe loss).
 - `LT102` đọc nội bộ `T102.level_true` và phát ra `LT102_LEVEL`.
 - `LIC102` đọc `LT102_LEVEL`, không đọc `T102.level_true`.
 - `VA101` chuyển `LIC102_OUT` thành `V101.opening_actual`.

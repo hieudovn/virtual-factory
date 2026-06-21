@@ -1,9 +1,14 @@
 """Runtime state container for truth values, signals, commands, and diagnostics."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from virtual_factory.telemetry.signal_value import SignalValue
+
+if TYPE_CHECKING:
+    from virtual_factory.balance.stream import Stream
 
 
 @dataclass(slots=True)
@@ -14,6 +19,7 @@ class RuntimeState:
     signals: dict[str, object] = field(default_factory=dict)
     commands: dict[str, object] = field(default_factory=dict)
     diagnostics: dict[str, object] = field(default_factory=dict)
+    streams: dict[str, Stream] = field(default_factory=dict)
 
     def get_truth(self, path: str, default: Any = None) -> Any:
         """Return an internal truth value by path."""
@@ -67,6 +73,17 @@ class RuntimeState:
         if isinstance(value, int | float):
             return float(value)
         return default
+
+    def set_stream(self, connection_id: str, stream) -> None:
+        """Store a material stream for a physical connection."""
+        from virtual_factory.balance.stream import Stream  # noqa: F811  # lazy import, breaks circular dep
+        if not isinstance(stream, Stream):
+            raise TypeError(f"Expected Stream, got {type(stream).__name__}")
+        self.streams[connection_id] = stream
+
+    def get_stream(self, connection_id: str):
+        """Return the material stream on a connection, or None."""
+        return self.streams.get(connection_id)
 
     def snapshot(self) -> dict[str, object]:
         """Return a shallow serializable snapshot of the current state."""

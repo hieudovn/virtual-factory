@@ -2,7 +2,8 @@ id: tank_v1
 display_name: Tank
 category: equipment
 version: 1
-description: Configurable tank model placeholder for future inventory and level dynamics.
+python_class: virtual_factory.equipment.tank.Tank
+description: Tank with volume-to-level conversion, fill/depletion dynamics, and capacity limits.
 parameters:
   capacity_m3:
     type: number

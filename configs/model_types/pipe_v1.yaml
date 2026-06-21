@@ -1,0 +1,33 @@
+id: pipe_v1
+display_name: Pipe
+category: equipment
+version: 1
+python_class: virtual_factory.equipment.pipe.Pipe
+description: Straight pipe segment with Darcy-Weisbach pressure drop based on length, diameter, and roughness.
+parameters:
+  length_m:
+    type: number
+    default: 10.0
+  diameter_m:
+    type: number
+    default: 0.05
+  roughness_mm:
+    type: number
+    default: 0.046
+ports:
+  inlet:
+    kind: physical
+    direction: in
+    medium: liquid
+  outlet:
+    kind: physical
+    direction: out
+    medium: liquid
+supported_variables:
+  - pressure_drop_kpa
+  - flow_true
+  - velocity_m_s
+ui:
+  icon: pipe
+  group: equipment
+  layout_hint: process_node

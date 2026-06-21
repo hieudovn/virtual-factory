@@ -31,7 +31,7 @@ equipment:
     model_type: control_valve_v1
     display_name: Control Valve
     parameters:
-      cv: 1.0
+      cv: 50.0
       fail_position: closed
       initial_opening_percent: 0.0
   - id: T102

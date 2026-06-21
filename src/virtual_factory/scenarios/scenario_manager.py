@@ -60,6 +60,10 @@ class ScenarioManager:
             _require_target(action)
             state.diagnostics[f"sensor_bias.{action.target}"] = float(action.value or 0.0)
             return
+        if action.type == "set_sensor_drift":
+            _require_target(action)
+            state.diagnostics[f"sensor_drift.{action.target}"] = float(action.value or 0.0)
+            return
         if action.type == "valve_stuck":
             _require_target(action)
             stuck_value = float(action.value or 0.0)

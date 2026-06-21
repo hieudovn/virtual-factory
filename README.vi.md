@@ -58,8 +58,26 @@ T102.level_true
 
 ## Trạng thái phát triển hiện tại
 
-Trạng thái hiện tại:
+**Giai đoạn 0 (Tài liệu):** ✅ Hoàn thành
+**Giai đoạn 1 (MVP Quy trình liên tục):** ✅ Hoàn thành — mô phỏng vòng kín chạy với
+cấu hình graph-based, pump curve, valve Cv, pipe resistance, và source-tank depletion.
+**Giai đoạn 2 (Telemetry công nghiệp):** ✅ Gần hoàn thành — MQTT gateway, FastAPI
+monitoring API, CSV/JSONL export, alarm manager, scenario manager, Docker deployment
+đều đã có.
+**Giai đoạn 3 (Mở rộng thư viện model):** 🔜 Tiếp theo — nền tảng đã sẵn sàng cho
+thêm loại thiết bị, balance check, và degradation model.
 
-- Nền tảng tài liệu Phase 0 đã được khởi tạo.
-- Runtime implementation chưa bắt đầu.
-- Bước tiếp theo: tạo Python project skeleton và configuration schema.
+Điểm nổi bật hiện tại:
+
+- Schema cấu hình Pydantic v2 với validation chéo (controller không được đọc truth;
+  internal truth không được publish trong industrial mode).
+- `PlantGraph` xây dựng hoàn toàn từ cấu hình — không hard-code equipment ID.
+- Process dynamics: quadratic pump curve, Cv-based valve flow, pipe resistance,
+  source-tank depletion, destination-tank fill với outlet demand.
+- PID (PI) controller, valve actuator với rate limit và stuck-fault.
+- Sensor với noise, bias, resolution, và quality propagation.
+- 5 loại scenario: normal operation, valve stuck, pump stop, pump degradation,
+  demand change, sensor bias.
+- 5 loại alarm: high, low, bad-quality, equals, not-equals.
+- MQTT JSON publisher với auto-reconnect; FastAPI dashboard với WebSocket stream.
+- Docker Compose với Mosquitto MQTT broker và API runtime.

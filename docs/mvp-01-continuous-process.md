@@ -26,12 +26,19 @@ T102.level_true
 
 - The plant is loaded from YAML/JSON.
 - The engine does not hard-code MVP equipment names.
-- Tanks maintain internal true level or volume.
-- Pump and valve affect process flow through physical ports.
+- Tanks maintain internal true level and volume with depletion and fill dynamics.
+- Source tank (T101) level decreases as fluid is pumped out.
+- Pump follows a quadratic head-vs-flow curve with shutoff head at 1.25× rated head.
+- Valve flow is calculated from Cv coefficient and opening fraction (US Cv definition,
+  converted to SI).
+- Pipe resistance is modeled as K·Q² loss between pump discharge and valve.
+- System operating flow is solved by equating pump head with total system head
+  (static + valve loss + pipe loss).
 - `LT102` reads `T102.level_true` internally and emits `LT102_LEVEL`.
 - `LIC102` reads `LT102_LEVEL`, not `T102.level_true`.
 - `VA101` converts `LIC102_OUT` into `V101.opening_actual`.
-- Protocol gateways publish only allowed measured industrial signals in industrial mode, with internal ground truth hidden from the IIoT Platform.
+- Protocol gateways publish only allowed measured industrial signals in industrial
+  mode, with internal ground truth hidden from the IIoT Platform.
 - Ground truth is retained internally for debug, validation, and benchmarking.
 
 ## Minimum Industrial Tags

@@ -7,6 +7,8 @@ from typing import Sequence
 from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.simulation_engine import SimulationEngine
 from virtual_factory.protocols.mqtt_gateway import MqttGateway
+from virtual_factory.protocols.opcua_gateway import OpcUaGateway
+from virtual_factory.protocols.sparkplug_gateway import SparkplugBGateway
 from virtual_factory.scenarios.scenario_loader import load_scenario
 from virtual_factory.telemetry.export import append_csv, append_jsonl, frame_to_records
 from virtual_factory.telemetry.signal_value import SignalValue
@@ -49,6 +51,8 @@ def run_simulation(
     mqtt_client_id: str | None = None,
     mqtt_connect_retries: int = 20,
     mqtt_connect_delay: float = 1.0,
+    opcua_endpoint: str | None = None,
+    sparkplug: bool = False,
     quiet: bool = False,
     debug_truth: bool = False,
     show_alarms: bool = False,
@@ -67,6 +71,14 @@ def run_simulation(
         if mqtt_host
         else None
     )
+    opcua_gateway = (
+        OpcUaGateway(endpoint=opcua_endpoint) if opcua_endpoint else None
+    )
+    spb_gateway = (
+        SparkplugBGateway(mqtt=mqtt_gateway, edge_node_id=config.plant.id)
+        if sparkplug and mqtt_gateway
+        else None
+    )
     frames: list[list[SignalValue]] = []
 
     if not quiet:
@@ -74,6 +86,8 @@ def run_simulation(
 
     if mqtt_gateway:
         mqtt_gateway.connect(retries=mqtt_connect_retries, delay_s=mqtt_connect_delay)
+    if opcua_gateway:
+        opcua_gateway.connect()
     try:
         for _ in range(steps):
             snapshot = engine.step()
@@ -86,11 +100,19 @@ def run_simulation(
                 append_jsonl(jsonl_output, records)
             if mqtt_gateway:
                 mqtt_gateway.publish_frame(frame)
+            if opcua_gateway:
+                opcua_gateway.publish_frame(frame)
+            if spb_gateway:
+                spb_gateway.publish_frame(frame)
             if not quiet:
                 print(_format_row(frame, snapshot, debug_truth, show_alarms))
     finally:
+        if spb_gateway:
+            spb_gateway.send_death()
         if mqtt_gateway:
             mqtt_gateway.disconnect()
+        if opcua_gateway:
+            opcua_gateway.disconnect()
 
     return frames
 
@@ -108,6 +130,7 @@ def serve_api(
     mqtt_client_id: str | None = None,
     mqtt_connect_retries: int = 20,
     mqtt_connect_delay: float = 1.0,
+    opcua_endpoint: str | None = None,
 ) -> None:
     """Run the optional FastAPI monitoring service."""
     try:
@@ -127,6 +150,7 @@ def serve_api(
         mqtt_client_id=mqtt_client_id,
         mqtt_connect_retries=mqtt_connect_retries,
         mqtt_connect_delay=mqtt_connect_delay,
+        opcua_endpoint=opcua_endpoint,
         auto_start=auto_start,
     )
     uvicorn.run(app, host=host, port=port)
@@ -167,6 +191,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--show-alarms", action="store_true", help="Show alarm/event columns.")
     run_parser.add_argument("--debug-truth", action="store_true", help="Print selected truth values.")
     run_parser.add_argument("--quiet", action="store_true", help="Suppress console rows.")
+    run_parser.add_argument("--opcua-endpoint", default=None, help="Optional OPC UA server endpoint (e.g. opc.tcp://0.0.0.0:4840).")
+    run_parser.add_argument("--sparkplug", action="store_true", help="Use Sparkplug B topic format for MQTT (requires --mqtt-host).")
 
     serve_parser = subparsers.add_parser("serve", help="Run the monitoring API service.")
     serve_parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Plant configuration YAML path.")
@@ -195,6 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Seconds between MQTT connection retry attempts.",
     )
+    serve_parser.add_argument("--opcua-endpoint", default=None, help="Optional OPC UA server endpoint.")
     return parser
 
 
@@ -220,6 +247,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             quiet=args.quiet,
             debug_truth=args.debug_truth,
             show_alarms=args.show_alarms,
+            opcua_endpoint=args.opcua_endpoint,
+            sparkplug=args.sparkplug,
         )
         return
 
@@ -237,6 +266,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             mqtt_client_id=args.mqtt_client_id,
             mqtt_connect_retries=args.mqtt_connect_retries,
             mqtt_connect_delay=args.mqtt_connect_delay,
+            opcua_endpoint=args.opcua_endpoint,
         )
         return
 

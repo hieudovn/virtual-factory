@@ -179,9 +179,26 @@ virtual-factory run --steps 60 --scenario configs/scenarios/valve_stuck.yaml --s
 
 ## Current Development Status
 
-Current status:
+**Phase 0 (Documentation):** ✅ Complete
+**Phase 1 (MVP Continuous Process):** ✅ Complete — closed-loop simulation runs with
+graph-based config, pump curve, valve Cv, pipe resistance, and source-tank depletion.
+**Phase 2 (Industrial Telemetry):** ✅ Mostly complete — MQTT gateway, FastAPI
+monitoring API, CSV/JSONL export, alarm manager, scenario manager, Docker deployment
+are all in place.
+**Phase 3 (Model Library Expansion):** 🔜 Next — the foundation is ready for
+additional equipment types, richer balance checks, and degradation models.
 
-- Phase 0 documentation foundation initialized.
-- Python project skeleton, configuration schema, and graph loader are in place.
-- MVP-01 runtime, minimal process dynamics, instrumentation metadata, and telemetry frame collection are available.
-- Next step: expand protocol gateways, validation depth, and process model fidelity.
+Current highlights:
+
+- Pydantic v2 plant config schema with cross-reference validation (controllers
+  cannot read truth; internal truth cannot be published in industrial mode).
+- `PlantGraph` built purely from configuration — no hard-coded equipment IDs.
+- Process dynamics: quadratic pump curve, Cv-based valve flow, pipe resistance,
+  source-tank depletion, destination-tank fill with outlet demand.
+- PID (PI) controller, valve actuator with rate limit and stuck-fault support.
+- Sensors with noise, bias, resolution, and quality propagation.
+- 5 scenario types: normal operation, valve stuck, pump stop, pump degradation,
+  demand change, sensor bias.
+- 5 alarm types: high, low, bad-quality, equals, not-equals.
+- MQTT JSON publisher with auto-reconnect; FastAPI dashboard with WebSocket stream.
+- Docker Compose with Mosquitto MQTT broker and API runtime.

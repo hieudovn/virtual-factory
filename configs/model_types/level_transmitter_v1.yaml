@@ -2,6 +2,7 @@ id: level_transmitter_v1
 display_name: Level Transmitter
 category: instrumentation
 version: 1
+python_class: virtual_factory.instrumentation.level_transmitter.LevelTransmitter
 description: Sensor placeholder that converts true level into a measured industrial signal.
 parameters:
   range_min_m:

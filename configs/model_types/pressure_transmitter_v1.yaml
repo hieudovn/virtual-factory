@@ -2,6 +2,7 @@ id: pressure_transmitter_v1
 display_name: Pressure Transmitter
 category: instrumentation
 version: 1
+python_class: virtual_factory.instrumentation.pressure_transmitter.PressureTransmitter
 description: Sensor placeholder that converts true pressure into a measured industrial signal.
 parameters:
   range_min_kpa:

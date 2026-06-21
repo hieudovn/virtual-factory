@@ -2,11 +2,12 @@ id: control_valve_v1
 display_name: Control Valve
 category: equipment
 version: 1
-description: Control valve placeholder for future opening, restriction, and flow behavior.
+python_class: virtual_factory.equipment.valve.Valve
+description: Control valve with Cv-based flow restriction and opening dynamics.
 parameters:
   cv:
     type: number
-    default: 1.0
+    default: 50.0
   fail_position:
     type: string
     default: closed

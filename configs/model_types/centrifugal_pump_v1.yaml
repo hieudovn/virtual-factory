@@ -2,7 +2,8 @@ id: centrifugal_pump_v1
 display_name: Centrifugal Pump
 category: equipment
 version: 1
-description: Pump model placeholder for future pressure and flow behavior.
+python_class: virtual_factory.equipment.pump.Pump
+description: Centrifugal pump with quadratic head-vs-flow curve and shutoff head.
 parameters:
   rated_flow_m3_s:
     type: number
@@ -10,6 +11,9 @@ parameters:
   rated_head_m:
     type: number
     default: 20.0
+  pipe_resistance:
+    type: number
+    default: 5.0e8
 ports:
   inlet:
     kind: physical

@@ -18,6 +18,36 @@ change in T102 inventory = inflow from V101 - outflow or loss
 
 Nếu MVP không cấu hình outflow từ `T102`, level sẽ tăng theo inflow và hình học tank.
 
+## Trạng thái triển khai
+
+✅ **Mass balance đã được implement và đang hoạt động.**
+
+`MassBalance.evaluate()` chạy mỗi bước simulation bên trong
+`SimulationEngine.step()`, ngay sau `update_continuous_process()`.
+Kết quả được ghi vào `RuntimeState.diagnostics["mass_balance"]`.
+
+### Các trường báo cáo
+
+| Field | Kiểu | Mô tả |
+|---|---|---|
+| `mass_in_kg` | float | Khối lượng vào destination tank trong step này |
+| `mass_out_kg` | float | Khối lượng ra khỏi destination tank trong step này |
+| `mass_stored_before_kg` | float | Tổng khối lượng lưu trữ trong hệ thống đầu step |
+| `mass_stored_after_kg` | float | Tổng khối lượng lưu trữ trong hệ thống cuối step |
+| `mass_stored_delta_kg` | float | Thay đổi khối lượng lưu trữ trong step này |
+| `residual_kg` | float | Mất cân bằng = mass_in - mass_out - delta_stored |
+| `residual_pct` | float | Mất cân bằng tương đối so với max throughput (%) |
+| `balanced` | bool | True khi \|residual_pct\| ≤ 0.1 % |
+| `message` | str | Tóm tắt bằng ngôn ngữ tự nhiên |
+
+### Truy cập kết quả
+
+```python
+engine.step()
+engine.state.diagnostics["mass_balance"]
+# {"mass_in_kg": ..., "balanced": True, "message": "Mass balanced", ...}
+```
+
 ## Internal truth
 
 Solver có thể tính:

@@ -2,6 +2,7 @@ id: flow_transmitter_v1
 display_name: Flow Transmitter
 category: instrumentation
 version: 1
+python_class: virtual_factory.instrumentation.flow_transmitter.FlowTransmitter
 description: Sensor placeholder that converts true flow into a measured industrial signal.
 parameters:
   range_min_m3_s:

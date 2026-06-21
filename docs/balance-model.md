@@ -18,7 +18,38 @@ change in T102 inventory = inflow from V101 - outflow or loss
 
 If the MVP has no configured outflow from `T102`, then level rises according to inflow and tank geometry.
 
-## Internal Truth
+## Implementation Status
+
+✅ **Mass balance is implemented and active.**
+
+`MassBalance.evaluate()` runs every simulation step inside
+`SimulationEngine.step()`, immediately after
+`update_continuous_process()`.  Results are written to
+`RuntimeState.diagnostics["mass_balance"]`.
+
+### Report fields
+
+| Field | Type | Description |
+|---|---|---|
+| `mass_in_kg` | float | Mass that entered the destination tank this step |
+| `mass_out_kg` | float | Mass that left the destination tank this step |
+| `mass_stored_before_kg` | float | Total system stored mass at step start |
+| `mass_stored_after_kg` | float | Total system stored mass at step end |
+| `mass_stored_delta_kg` | float | Change in stored mass this step |
+| `residual_kg` | float | Imbalance = mass_in - mass_out - delta_stored |
+| `residual_pct` | float | Imbalance relative to max throughput (%) |
+| `balanced` | bool | True when \|residual_pct\| ≤ 0.1 % |
+| `message` | str | Human-readable summary |
+
+### Accessing results
+
+```python
+engine.step()
+engine.state.diagnostics["mass_balance"]
+# {"mass_in_kg": ..., "balanced": True, "message": "Mass balanced", ...}
+```
+
+### Internal truth
 
 The solver may compute:
 

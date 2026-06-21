@@ -1,45 +1,26 @@
-"""Runtime object factory for validated plant configurations."""
+"""Runtime object factory for validated plant configurations.
+
+Uses ``ModelRegistry`` to instantiate equipment, sensors, controllers,
+and actuators from the model types declared in the plant config.
+"""
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from virtual_factory.actuation.base_actuator import BaseActuator
-from virtual_factory.actuation.valve_actuator import ValveActuator
 from virtual_factory.control.base_controller import BaseController
-from virtual_factory.control.pid_controller import PIDController
+from virtual_factory.core.model_registry import ModelRegistry
 from virtual_factory.core.plant_graph import PlantGraph
 from virtual_factory.core.runtime_state import RuntimeState
 from virtual_factory.core.schema import PlantConfig
 from virtual_factory.equipment.base_equipment import BaseEquipment
-from virtual_factory.equipment.pump import Pump
-from virtual_factory.equipment.tank import Tank
-from virtual_factory.equipment.valve import Valve
 from virtual_factory.instrumentation.base_sensor import BaseSensor
-from virtual_factory.instrumentation.flow_transmitter import FlowTransmitter
-from virtual_factory.instrumentation.level_transmitter import LevelTransmitter
-from virtual_factory.instrumentation.pressure_transmitter import PressureTransmitter
 from virtual_factory.telemetry.alarm_manager import AlarmManager
 from virtual_factory.telemetry.output_policy import OutputPolicy
 from virtual_factory.telemetry.ring_buffer import RingBufferTelemetryStore
 
-EQUIPMENT_TYPES: dict[str, type[BaseEquipment]] = {
-    "tank_v1": Tank,
-    "centrifugal_pump_v1": Pump,
-    "control_valve_v1": Valve,
-}
-
-SENSOR_TYPES: dict[str, type[BaseSensor]] = {
-    "level_transmitter_v1": LevelTransmitter,
-    "flow_transmitter_v1": FlowTransmitter,
-    "pressure_transmitter_v1": PressureTransmitter,
-}
-
-CONTROLLER_TYPES: dict[str, type[BaseController]] = {
-    "pid_controller_v1": PIDController,
-}
-
-ACTUATOR_TYPES: dict[str, type[BaseActuator]] = {
-    "valve_actuator_v1": ValveActuator,
-}
+# Default directory searched for model-type YAML files.
+_DEFAULT_MODEL_TYPES_DIR = Path("configs/model_types")
 
 
 @dataclass(slots=True)
@@ -58,25 +39,35 @@ class RuntimeAssembly:
     telemetry_store: RingBufferTelemetryStore
 
 
-def build_runtime(config: PlantConfig) -> RuntimeAssembly:
-    """Instantiate runtime objects from a validated plant configuration."""
+def build_runtime(
+    config: PlantConfig,
+    model_types_dir: str | Path = _DEFAULT_MODEL_TYPES_DIR,
+) -> RuntimeAssembly:
+    """Instantiate runtime objects from a validated plant configuration.
+
+    Model types are discovered in *model_types_dir* (``configs/model_types``
+    by default).  Each ``.yaml`` file declares a ``python_class`` that tells
+    the registry which Python class to create.
+    """
+    registry = ModelRegistry.from_directory(model_types_dir)
+
     graph = PlantGraph.from_config(config)
     state = RuntimeState()
 
     equipment = {
-        item.id: _build_object(EQUIPMENT_TYPES, item.model_type, item)
+        item.id: registry.build(item.model_type, item)
         for item in config.equipment
     }
     sensors = {
-        item.id: _build_object(SENSOR_TYPES, item.model_type, item)
+        item.id: registry.build(item.model_type, item)
         for item in config.sensors
     }
     controllers = {
-        item.id: _build_object(CONTROLLER_TYPES, item.model_type, item)
+        item.id: registry.build(item.model_type, item)
         for item in config.controllers
     }
     actuators = {
-        item.id: _build_object(ACTUATOR_TYPES, item.model_type, item)
+        item.id: registry.build(item.model_type, item)
         for item in config.actuators
     }
 
@@ -92,9 +83,3 @@ def build_runtime(config: PlantConfig) -> RuntimeAssembly:
         output_policy=OutputPolicy.from_config(config),
         telemetry_store=RingBufferTelemetryStore(),
     )
-
-
-def _build_object(registry: dict[str, type], model_type: str, config: object) -> object:
-    if model_type not in registry:
-        raise ValueError(f"Unsupported model_type: {model_type}")
-    return registry[model_type](config)

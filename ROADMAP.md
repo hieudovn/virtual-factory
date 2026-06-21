@@ -11,27 +11,45 @@ This roadmap keeps implementation staged so the simulation core remains model-dr
 
 ## Phase 1: MVP Continuous Process
 
-- Load the plant from YAML/JSON.
-- Represent the MVP process as a graph:
-  `T101 -> P101 -> V101 -> T102`.
-- Implement reusable equipment models for source tank, pump, control valve, destination tank, level transmitter, PID controller, and valve actuator.
-- Simulate closed-loop level control using measured signals.
-- Publish industrial-mode outputs with no internal truth leakage to the IIoT Platform.
-- Store ground truth internally for debug and validation.
+✅ Complete — core simulation loop runs with graph-based configuration.
+
+- ✅ Load the plant from YAML/JSON (Pydantic v2 schema with cross-reference validation).
+- ✅ Represent the MVP process as a graph (`PlantGraph` with nodes and typed edges).
+- ✅ Implement reusable equipment models for source tank, pump, control valve,
+  destination tank, level transmitter, PID controller, and valve actuator.
+- ✅ Simulate closed-loop level control using measured signals only.
+- ✅ Process dynamics with quadratic pump curve, valve Cv-based flow,
+  pipe resistance, and source-tank depletion.
+- ✅ Publish industrial-mode outputs with no internal truth leakage.
+- ✅ Store ground truth internally for debug and validation.
 
 ## Phase 2: Industrial Telemetry Interfaces
 
-- Add protocol gateway abstractions.
-- Add at least one real-time telemetry output path.
-- Add signal metadata, quality, engineering units, and timestamps.
-- Add output profiles for industrial mode, debug mode, and benchmark mode.
+✅ Mostly complete — protocol gateway, API, and export paths are available.
+
+- ✅ Protocol gateway abstraction (MQTT JSON publisher with reconnect logic).
+- ✅ Real-time telemetry output path (MQTT + WebSocket via FastAPI).
+- ✅ Signal metadata, quality, engineering units, and timestamps (`SignalValue`).
+- ✅ Output profiles for industrial mode, debug mode, and benchmark mode.
+- ✅ CSV and JSONL telemetry export.
+- ✅ FastAPI monitoring API with dashboard UI, REST endpoints, and WebSocket stream.
+- ✅ Docker / docker-compose deployment with Mosquitto MQTT broker.
+- ✅ Alarm manager (high, low, bad-quality, equals, not-equals).
+- ✅ Scenario manager (normal operation, valve stuck, pump stop, pump degradation,
+  demand change, sensor bias).
+- ⬜ OPC UA gateway (future scope).
+- ⬜ Sparkplug B / production-grade MQTT (future scope).
 
 ## Phase 3: Model Library Expansion
 
-- Add reusable models for additional equipment types.
-- Add common sensor and actuator behaviors.
-- Add degradation and fault models.
-- Add richer balance checks and validation reports.
+🔄 In progress — model registry and new types being added.
+
+- ✅ Model registry loads types from YAML (`python_class` field).
+- ✅ `runtime_factory.py` uses `ModelRegistry` — no hard-coded type dicts.
+- 🔜 Add reusable models for additional equipment types (pipe, heat exchanger).
+- 🔜 Add common sensor and actuator behaviors (done — delay, drift, stuck).
+- 🔜 Add degradation and fault models.
+- 🔜 Add richer balance checks and validation reports.
 
 ## Phase 4: Configuration Authoring
 

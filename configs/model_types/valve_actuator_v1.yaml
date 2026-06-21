@@ -2,6 +2,7 @@ id: valve_actuator_v1
 display_name: Valve Actuator
 category: actuation
 version: 1
+python_class: virtual_factory.actuation.valve_actuator.ValveActuator
 description: Actuator placeholder that maps controller output to valve opening.
 parameters:
   travel_time_s:

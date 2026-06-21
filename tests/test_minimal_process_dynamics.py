@@ -23,7 +23,7 @@ def test_minimal_process_dynamics_updates_flow_pressure_and_level() -> None:
 
 
 def test_valve_opening_controls_flow() -> None:
-    """A fully closed valve should produce lower flow than a fully open valve."""
+    """A fully closed valve should produce near-zero flow; a fully open valve should produce flow."""
     config = load_plant_config(Path("configs/plants/continuous_mvp_01.yaml"))
     engine = SimulationEngine(config, dt_s=1.0)
     engine.initialize()
@@ -36,7 +36,9 @@ def test_valve_opening_controls_flow() -> None:
     update_continuous_process(config, engine.state, dt_s=1.0)
     open_flow = float(engine.state.get_truth("V101.outlet.flow_true"))
 
-    assert closed_flow == pytest.approx(0.0)
+    # With Cv-based model, fully-closed valve has tiny residual leak
+    # due to MIN_OPENING_FRACTION (1e-6).
+    assert closed_flow == pytest.approx(0.0, abs=1e-6)
     assert open_flow > closed_flow
 
 

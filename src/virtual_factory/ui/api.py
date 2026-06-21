@@ -17,6 +17,7 @@ def create_app(
     mqtt_client_id: str | None = None,
     mqtt_connect_retries: int = 20,
     mqtt_connect_delay: float = 1.0,
+    opcua_endpoint: str | None = None,
     auto_start: bool = False,
 ):
     """Create a FastAPI app backed by one RuntimeService instance."""
@@ -34,6 +35,7 @@ def create_app(
         mqtt_client_id=mqtt_client_id,
         mqtt_connect_retries=mqtt_connect_retries,
         mqtt_connect_delay=mqtt_connect_delay,
+        opcua_endpoint=opcua_endpoint,
     )
 
     @asynccontextmanager

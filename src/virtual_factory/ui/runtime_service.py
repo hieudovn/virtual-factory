@@ -8,6 +8,7 @@ from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.schema import ScenarioConfig
 from virtual_factory.core.simulation_engine import SimulationEngine
 from virtual_factory.protocols.mqtt_gateway import MqttGateway
+from virtual_factory.protocols.opcua_gateway import OpcUaGateway
 from virtual_factory.scenarios.scenario_loader import load_scenario
 from virtual_factory.telemetry.signal_value import SignalValue
 
@@ -26,6 +27,7 @@ class RuntimeService:
         mqtt_client_id: str | None = None,
         mqtt_connect_retries: int = 20,
         mqtt_connect_delay: float = 1.0,
+        opcua_endpoint: str | None = None,
     ) -> None:
         self.config_path = Path(config_path)
         self.scenario_path = Path(scenario_path) if scenario_path else None
@@ -42,6 +44,9 @@ class RuntimeService:
             )
             if mqtt_host
             else None
+        )
+        self.opcua_gateway = (
+            OpcUaGateway(endpoint=opcua_endpoint) if opcua_endpoint else None
         )
         self.mqtt_connect_retries = mqtt_connect_retries
         self.mqtt_connect_delay = mqtt_connect_delay
@@ -64,14 +69,16 @@ class RuntimeService:
         self.mqtt_connected = False
 
     def publish_latest_frame(self) -> None:
-        """Publish the latest publishable telemetry frame through MQTT."""
-        if self.mqtt_gateway is None:
-            return
-        if not self.mqtt_connected:
-            self.connect_mqtt()
+        """Publish the latest publishable telemetry frame through MQTT and OPC UA."""
         frame = self._latest_frame_values()
-        if frame:
+        if not frame:
+            return
+        if self.mqtt_gateway is not None:
+            if not self.mqtt_connected:
+                self.connect_mqtt()
             self.mqtt_gateway.publish_frame(frame)
+        if self.opcua_gateway is not None:
+            self.opcua_gateway.publish_frame(frame)
 
     def step_once(self) -> list[dict]:
         """Run one simulation step, optionally publish it, and return telemetry."""
