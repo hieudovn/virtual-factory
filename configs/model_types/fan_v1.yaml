@@ -1,0 +1,28 @@
+id: fan_v1
+display_name: Fan / Blower
+category: equipment
+version: 1
+python_class: virtual_factory.equipment.fan.Fan
+description: Fan / blower with quadratic pressure-rise characteristic for gas flow.
+parameters:
+  rated_pressure_rise_pa:
+    type: number
+    default: 500.0
+  rated_flow_m3_s:
+    type: number
+    default: 1.0
+ports:
+  inlet:
+    kind: physical
+    direction: in
+    medium: gas
+  outlet:
+    kind: physical
+    direction: out
+    medium: gas
+supported_variables:
+  - pressure_rise_pa
+  - flow_true
+ui:
+  icon: fan
+  color: "#7c3aed"

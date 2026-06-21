@@ -49,16 +49,30 @@ Open the browser dashboard:
 http://localhost:8000/
 ```
 
-The dashboard is a minimal MVP UI served by FastAPI from static HTML, CSS, and JavaScript. It shows:
+The dashboard is a professional SCADA-style UI with:
 
-- Runtime status: plant name, scenario, and simulation time.
-- Process flow: `T101 Source Tank -> P101 Pump -> V101 Control Valve -> T102 Destination Tank`.
-- KPI cards for `LT102_LEVEL`, `FT101_FLOW`, `PT101_PRESSURE`, `LIC102_OUT`, and `V101_OPENING_FEEDBACK`.
-- Alarm cards for MVP industrial events.
+- **Left sidebar**: Navigation for Process Flow, Telemetry, Alarms, Trends,
+  Data Table, PID & Control, Fault Injection, OPC/IIoT Export, and Asset Builder.
+- **Top bar**: Plant name, scenario badge, simulation time, runtime status,
+  connection state, and simulation controls (Start/Stop/Step/10×).
+- **Process flow diagram**: Interactive SVG with equipment icons (tank, pump,
+  valve, pipe, sensor, controller, actuator), live telemetry overlay, alarm
+  indicator dots, and click-to-inspect property panel.
+- **Bottom panel**: Tabbed views — Telemetry (KPI cards), Alarms (event grid),
+  Trends (line chart), Data Table, and Settings (PID, Faults, OPC).
+- **Runtime configuration**: Adjust PID parameters (Kp, Ki, Kd, setpoint) via
+  sliders and number inputs; inject faults (valve stuck, pump degradation,
+  sensor bias) via toggles and spinners.
+- **OPC UA export settings**: Signal selector checkboxes and connection test.
+- **Asset Builder**: Drag-and-drop palette with equipment icons for future
+  custom plant configuration.
 
-The dashboard first loads `/status`, `/telemetry/latest`, and `/alarms`, then uses `/ws/telemetry` for live updates. If the WebSocket is unavailable, it polls `/telemetry/latest` every second. Manual controls call `/start`, `/stop`, `/step`, and `/run-steps?n=10`.
+The dashboard first loads `/status`, `/telemetry/latest`, and `/alarms`, then
+uses `/ws/telemetry` for live updates. If the WebSocket is unavailable, it
+polls `/telemetry/latest` every second.
 
-Internal truth is filtered out and is not displayed by the dashboard. There is no authentication yet.
+Internal truth is filtered out and is not displayed by the dashboard.
+There is no authentication yet.
 
 ## Endpoints
 
@@ -145,6 +159,46 @@ Starts the background simulation loop. If MQTT is configured for the API runtime
 ### POST /stop
 
 Stops the background simulation loop.
+
+### PATCH /api/pid/{controller_id}
+
+Updates PID controller parameters at runtime. Accepts JSON body with any of:
+`kp`, `ki`, `kd`, `setpoint`.
+
+```json
+{"kp": 1.5, "ki": 0.08, "setpoint": 3.0}
+```
+
+Returns updated parameters.
+
+### POST /api/fault
+
+Injects a fault into the running simulation. Accepts JSON body with `type` and `value`:
+
+```json
+{"type": "valve_stuck", "value": 30.0}
+```
+
+Set `value` to `null` to clear a fault. Supported fault types:
+- `valve_stuck` — freezes valve at given opening percentage
+- `pump_degradation` — reduces pump efficiency (percentage)
+- `sensor_bias` — adds constant bias to sensor reading
+
+### GET /api/opcua/status
+
+Returns OPC UA gateway status:
+
+```json
+{"enabled": true, "endpoint": "opc.tcp://0.0.0.0:4840", "started": true}
+```
+
+### GET /api/plant-graph
+
+Returns the plant graph structure for the SVG process flow editor.
+
+### GET /api/model-types
+
+Returns available model types for the asset builder palette.
 
 ## WebSocket
 

@@ -222,6 +222,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Seconds between MQTT connection retry attempts.",
     )
     serve_parser.add_argument("--opcua-endpoint", default=None, help="Optional OPC UA server endpoint.")
+
+    validate_parser = subparsers.add_parser("validate", help="Validate a plant configuration YAML.")
+    validate_parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Plant configuration YAML path.")
+    validate_parser.add_argument("--report", action="store_true", help="Print structured JSON report.")
+
     return parser
 
 
@@ -268,6 +273,34 @@ def main(argv: Sequence[str] | None = None) -> None:
             mqtt_connect_delay=args.mqtt_connect_delay,
             opcua_endpoint=args.opcua_endpoint,
         )
+        return
+
+    if args.command == "validate":
+        config_path = Path(args.config)
+        if not config_path.exists():
+            print(f"Error: config file not found: {config_path}")
+            return
+        config = load_plant_config(config_path)
+        from virtual_factory.core.validators import validate_with_report
+        report = validate_with_report(config)
+        if args.report:
+            import json
+            print(json.dumps(report, indent=2, default=str))
+        else:
+            print(f"Config: {config.plant.id} ({config.plant.name})")
+            print(f"Valid:  {'✅ YES' if report['valid'] else '❌ NO'}")
+            if report["errors"]:
+                for e in report["errors"]:
+                    print(f"  Error:   {e}")
+            if report["warnings"]:
+                for w in report["warnings"]:
+                    print(f"  Warning: {w}")
+            if report["graph_checks"]:
+                gc = report["graph_checks"]
+                print(f"  Equipment: {gc.get('equipment_connected', '?')}/{gc.get('equipment_total', '?')} connected")
+            if report["policy_checks"]:
+                pc = report["policy_checks"]
+                print(f"  Signals:  {pc.get('signals_publishable', '?')}/{pc.get('signals_total', '?')} publishable")
         return
 
     parser.print_help()

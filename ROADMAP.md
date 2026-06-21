@@ -37,26 +37,34 @@ This roadmap keeps implementation staged so the simulation core remains model-dr
 - ✅ Alarm manager (high, low, bad-quality, equals, not-equals).
 - ✅ Scenario manager (normal operation, valve stuck, pump stop, pump degradation,
   demand change, sensor bias).
-- ⬜ OPC UA gateway (future scope).
-- ⬜ Sparkplug B / production-grade MQTT (future scope).
+- ✅ OPC UA gateway (TCP server with namespace, variables, background thread).
+- ✅ Sparkplug B MQTT gateway (JSON payload, NBIRTH/NDEATH/NDATA lifecycle).
 
 ## Phase 3: Model Library Expansion
 
-🔄 In progress — model registry and new types being added.
+✅ Complete — all core equipment types implemented.
 
 - ✅ Model registry loads types from YAML (`python_class` field).
 - ✅ `runtime_factory.py` uses `ModelRegistry` — no hard-coded type dicts.
-- 🔜 Add reusable models for additional equipment types (pipe, heat exchanger).
-- 🔜 Add common sensor and actuator behaviors (done — delay, drift, stuck).
-- 🔜 Add degradation and fault models.
-- 🔜 Add richer balance checks and validation reports.
+- ✅ Pipe equipment with Darcy-Weisbach pressure drop (Swamee-Jain friction).
+- ✅ Common sensor and actuator behaviors (delay buffer, drift accumulator, stuck fault).
+- ✅ Heat exchanger model (shell-and-tube counter-flow, LMTD method).
+- ✅ Fan / blower equipment (quadratic pressure-rise curve).
+- ✅ Degradation models (pump wear, valve Cv loss, pipe fouling via fault.* keys).
+- ✅ Gas compressor (polytropic compression, power estimation).
+- ✅ Gas-liquid separator (level dynamics, overhead/bottoms split).
+- ✅ Energy balance evaluator (sensible heat, HEX transfer, outlet demand).
+- ✅ Combined mass + energy balance summary in step diagnostics.
 
 ## Phase 4: Configuration Authoring
 
-- Add schema validation for plant configuration.
-- Add examples and templates.
-- Add low-code/no-code configuration workflows.
-- Add guardrails that prevent output-policy violations.
+🔄 In progress — validation, templates, guardrails.
+
+- ✅ Schema validation for plant configuration (Pydantic v2).
+- ✅ `validate` CLI command with structured JSON report.
+- ✅ Config templates (single_tank_transfer, heat_exchanger_loop).
+- 🔜 Low-code/no-code configuration workflows.
+- 🔜 Guardrails that prevent output-policy violations.
 
 ## Phase 5: AI-Assisted Plant Generation
 
@@ -69,3 +77,24 @@ This roadmap keeps implementation staged so the simulation core remains model-dr
 - Support calibration against real plant data.
 - Support scenario replay and what-if analysis.
 - Support benchmarking between simulated and observed telemetry.
+
+## Phase 7: Professional Monitoring & Configuration UI
+
+✅ Complete — SCADA-quality dashboard with runtime control and settings.
+
+- ✅ Professional dashboard layout with sidebar, top bar, multi-panel design.
+- ✅ SVG icon library for all equipment types (tank, pump, valve, pipe, sensor,
+  controller, actuator, fan, heat exchanger, compressor, separator).
+- ✅ Interactive display widgets (tank level gauge, flow bar, pressure dial,
+  line chart, data table).
+- ✅ Runtime configuration panel (PID tuning, setpoint adjustment, fault
+  injection, equipment parameter modification).
+- ✅ OPC UA / IIoT export settings UI (signal selector, endpoint config,
+  namespace manager, connection test).
+- ✅ Drag-and-drop asset builder (canvas, palette, port connections, property
+  editor, YAML export in future).
+- ✅ Dark/light theme support (sidebar toggle button).
+- ✅ Mobile-responsive layout with hamburger sidebar toggle.
+- ✅ Historical trending (live Canvas line chart in Trends tab).
+- ✅ Data table (real-time telemetry log in Data Table tab).
+

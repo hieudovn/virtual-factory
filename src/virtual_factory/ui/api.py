@@ -53,13 +53,38 @@ def create_app(
 
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+    # Direct-serve app.js to bypass any StaticFiles caching
+    @app.get("/static/app.js", include_in_schema=False)
+    def app_js_direct() -> FileResponse:
+        return FileResponse(static_dir / "app.js", media_type="application/javascript")
+
+    @app.get("/static/editor.js", include_in_schema=False)
+    def editor_js_direct() -> FileResponse:
+        return FileResponse(static_dir / "editor.js", media_type="application/javascript")
+
+    @app.get("/static/icons.js", include_in_schema=False)
+    def icons_js_direct() -> FileResponse:
+        return FileResponse(static_dir / "icons.js", media_type="application/javascript")
+
+    @app.get("/static/widgets.js", include_in_schema=False)
+    def widgets_js_direct() -> FileResponse:
+        return FileResponse(static_dir / "widgets.js", media_type="application/javascript")
+
+    @app.get("/static/settings.js", include_in_schema=False)
+    def settings_js_direct() -> FileResponse:
+        return FileResponse(static_dir / "settings.js", media_type="application/javascript")
+
+    @app.get("/static/builder.js", include_in_schema=False)
+    def builder_js_direct() -> FileResponse:
+        return FileResponse(static_dir / "builder.js", media_type="application/javascript")
+
     @app.get("/")
     def dashboard() -> FileResponse:
         return FileResponse(static_dir / "index.html")
 
     @app.get("/health")
     def health() -> dict:
-        return {"status": "ok"}
+        return {"status": "ok", "static_dir": str(static_dir.resolve())}
 
     @app.get("/status")
     def status() -> dict:
@@ -68,7 +93,10 @@ def create_app(
     @app.get("/telemetry/latest")
     def telemetry_latest() -> list[dict]:
         telemetry = service.latest_telemetry()
-        return telemetry or service.step_once()
+        if telemetry:
+            return telemetry
+        # Step once to get initial state
+        return service.step_once()
 
     @app.get("/telemetry/history")
     def telemetry_history(limit: int = Query(default=100, ge=0, le=3600)) -> list[dict]:
@@ -98,18 +126,53 @@ def create_app(
         await service.stop_loop()
         return service.status()
 
+    @app.post("/reset")
+    async def reset() -> dict:
+        """Reinitialize the simulation to initial state at t=0."""
+        await service.stop_loop()
+        service.reset()
+        # Ensure time is at 0
+        service.engine.time_manager.current_time_s = 0.0
+        return service.status()
+
     @app.websocket("/ws/telemetry")
     async def websocket_telemetry(websocket: WebSocket) -> None:
         await websocket.accept()
         try:
             while True:
                 if service.is_running:
-                    telemetry = service.latest_telemetry() or service.step_once()
-                else:
                     telemetry = service.step_once()
+                else:
+                    # Don't auto-step when stopped — serve latest snapshot
+                    telemetry = service.latest_telemetry() or []
                 await websocket.send_json(telemetry)
                 await asyncio.sleep(1.0)
         except WebSocketDisconnect:
             return
+
+    @app.get("/api/plant-graph")
+    def plant_graph() -> dict:
+        return service.plant_graph()
+
+    @app.get("/api/model-types")
+    def model_types() -> list[dict]:
+        return service.model_types()
+
+    @app.patch("/api/pid/{controller_id}")
+    def update_pid(controller_id: str, body: dict) -> dict:
+        """Update PID controller parameters (kp, ki, kd, setpoint)."""
+        result = service.update_pid(controller_id, body)
+        return result
+
+    @app.post("/api/fault")
+    def inject_fault(body: dict) -> dict:
+        """Inject a fault into the running simulation."""
+        result = service.inject_fault(body.get("type"), body.get("value"))
+        return result
+
+    @app.get("/api/opcua/status")
+    def opcua_status() -> dict:
+        """Return OPC UA gateway status."""
+        return service.opcua_status()
 
     return app

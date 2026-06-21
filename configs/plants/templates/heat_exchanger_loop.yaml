@@ -1,0 +1,75 @@
+# Template: Heat Exchanger Loop
+# Tank → Pump → Heat Exchanger → Tank with temperature dynamics.
+plant:
+  id: heat_exchanger_loop
+  name: Heat Exchanger Loop
+  type: continuous_process
+  description: >
+    Water loop with a heat exchanger. The hot side receives fluid from
+    a heated source tank; the cold side rejects heat to a cooling circuit.
+    Demonstrates thermal energy balance with LMTD-based heat transfer.
+
+medium:
+  id: water
+  display_name: Water
+  density_kg_m3: 997.0
+  viscosity_pa_s: 0.00089
+  specific_heat_j_kg_k: 4182.0
+
+equipment:
+  - id: T101
+    model_type: tank_v1
+    display_name: Hot Source Tank
+    parameters:
+      capacity_m3: 10.0
+      initial_level_m: 4.0
+      max_level_m: 5.0
+  - id: P101
+    model_type: centrifugal_pump_v1
+    display_name: Circulation Pump
+    parameters:
+      rated_flow_m3_s: 0.008
+      rated_head_m: 15.0
+  - id: HEX01
+    model_type: heat_exchanger_v1
+    display_name: Shell & Tube Heat Exchanger
+    parameters:
+      area_m2: 5.0
+      u_w_m2k: 500.0
+      hot_inlet_temp_c: 80.0
+      cold_inlet_temp_c: 20.0
+  - id: T102
+    model_type: tank_v1
+    display_name: Cold Return Tank
+    parameters:
+      capacity_m3: 8.0
+      initial_level_m: 1.0
+      max_level_m: 5.0
+      outlet_demand_m3_s: 0.004
+
+connections:
+  - id: C001
+    type: physical
+    from: T101.outlet
+    to: P101.inlet
+    medium: water
+  - id: C002
+    type: physical
+    from: P101.outlet
+    to: HEX01.hot_inlet
+    medium: water
+  - id: C003
+    type: physical
+    from: HEX01.hot_outlet
+    to: T102.inlet
+    medium: water
+  - id: C004
+    type: physical
+    from: T102.outlet
+    to: HEX01.cold_inlet
+    medium: water
+  - id: C005
+    type: physical
+    from: HEX01.cold_outlet
+    to: T101.inlet
+    medium: water

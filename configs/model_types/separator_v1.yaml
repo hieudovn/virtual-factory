@@ -1,0 +1,40 @@
+id: separator_v1
+display_name: Gas-Liquid Separator
+category: equipment
+version: 1
+python_class: virtual_factory.equipment.separator.Separator
+description: Gas-liquid separation vessel with liquid level dynamics.
+parameters:
+  diameter_m:
+    type: number
+    default: 1.0
+  height_m:
+    type: number
+    default: 3.0
+  initial_level_m:
+    type: number
+    default: 0.5
+  max_level_m:
+    type: number
+    default: 2.5
+ports:
+  inlet:
+    kind: physical
+    direction: in
+    medium: mixed
+  gas_outlet:
+    kind: physical
+    direction: out
+    medium: gas
+  liquid_outlet:
+    kind: physical
+    direction: out
+    medium: liquid
+supported_variables:
+  - level_true
+  - pressure_kpa
+  - gas_outflow_true
+  - liquid_outflow_true
+ui:
+  icon: tank
+  color: "#2563eb"

@@ -1,0 +1,36 @@
+id: compressor_v1
+display_name: Gas Compressor
+category: equipment
+version: 1
+python_class: virtual_factory.equipment.compressor.Compressor
+description: Gas compressor with polytropic compression curve and power estimation.
+parameters:
+  rated_power_kw:
+    type: number
+    default: 50.0
+  rated_flow_m3_s:
+    type: number
+    default: 0.5
+  rated_pressure_ratio:
+    type: number
+    default: 2.0
+  max_pressure_kpa:
+    type: number
+    default: 1000.0
+ports:
+  inlet:
+    kind: physical
+    direction: in
+    medium: gas
+  outlet:
+    kind: physical
+    direction: out
+    medium: gas
+supported_variables:
+  - suction_pressure_kpa
+  - discharge_pressure_kpa
+  - flow_true
+  - power_consumed_kw
+ui:
+  icon: pump
+  color: "#ea580c"

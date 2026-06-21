@@ -11,6 +11,7 @@ from virtual_factory.protocols.mqtt_gateway import MqttGateway
 from virtual_factory.protocols.opcua_gateway import OpcUaGateway
 from virtual_factory.scenarios.scenario_loader import load_scenario
 from virtual_factory.telemetry.signal_value import SignalValue
+from virtual_factory.telemetry.telemetry_frame import build_publishable_frame
 
 
 class RuntimeService:
@@ -31,28 +32,80 @@ class RuntimeService:
     ) -> None:
         self.config_path = Path(config_path)
         self.scenario_path = Path(scenario_path) if scenario_path else None
+        self.dt_s = dt_s
+        self.mqtt_host = mqtt_host
+        self.mqtt_port = mqtt_port
+        self.mqtt_topic_prefix = mqtt_topic_prefix
+        self.mqtt_client_id = mqtt_client_id
+        self.mqtt_connect_retries = mqtt_connect_retries
+        self.mqtt_connect_delay = mqtt_connect_delay
+        self.opcua_endpoint = opcua_endpoint
+        self._init_engine()
+
+    def _init_engine(self) -> None:
         self.config = load_plant_config(self.config_path)
         self.scenario: ScenarioConfig | None = load_scenario(self.scenario_path) if self.scenario_path else None
-        self.engine = SimulationEngine(self.config, dt_s=dt_s, scenario=self.scenario)
-        self.latest_snapshot: dict[str, object] | None = None
+        self.engine = SimulationEngine(self.config, dt_s=self.dt_s, scenario=self.scenario)
+        self.latest_snapshot = None
+        self.is_running = False
+        self.loop_task = None
         self.mqtt_gateway = (
             MqttGateway(
-                host=mqtt_host,
-                port=mqtt_port,
-                topic_prefix=mqtt_topic_prefix,
-                client_id=mqtt_client_id,
+                host=self.mqtt_host,
+                port=self.mqtt_port,
+                topic_prefix=self.mqtt_topic_prefix,
+                client_id=self.mqtt_client_id,
             )
-            if mqtt_host
+            if self.mqtt_host
             else None
         )
         self.opcua_gateway = (
-            OpcUaGateway(endpoint=opcua_endpoint) if opcua_endpoint else None
+            OpcUaGateway(endpoint=self.opcua_endpoint) if self.opcua_endpoint else None
         )
-        self.mqtt_connect_retries = mqtt_connect_retries
-        self.mqtt_connect_delay = mqtt_connect_delay
         self.mqtt_connected = False
-        self.is_running = False
-        self.loop_task: asyncio.Task | None = None
+
+    def reset(self) -> None:
+        """Reinitialize the simulation engine to its initial state."""
+        if self.is_running:
+            self.is_running = False
+            if self.loop_task is not None and not self.loop_task.done():
+                self.loop_task.cancel()
+            self.loop_task = None
+        self._init_engine()
+        # Build initial telemetry frame at t=0 without stepping / process dynamics
+        self.engine.initialize()
+        assert self.engine.assembly is not None
+        state = self.engine.assembly.state
+        ts = 0.0
+        for sensor in self.engine.assembly.sensors.values():
+            sensor.sample(
+                state,
+                timestamp_s=ts,
+                signal_config=self.config.signals.get(sensor.output_signal),
+            )
+        for controller in self.engine.assembly.controllers.values():
+            controller.execute(
+                state,
+                timestamp_s=ts,
+                signal_config=self.config.signals.get(controller.output_signal),
+            )
+        for actuator in self.engine.assembly.actuators.values():
+            feedback_cfg = (
+                self.config.signals.get(actuator.feedback_signal)
+                if actuator.feedback_signal
+                else None
+            )
+            actuator.update(state, timestamp_s=ts, feedback_signal_config=feedback_cfg)
+        self.engine.assembly.alarm_manager.evaluate(state, self.config, ts)
+        telemetry_frame = build_publishable_frame(
+            self.config,
+            state,
+            self.engine.assembly.output_policy,
+            timestamp_s=ts,
+        )
+        self.engine.assembly.telemetry_store.append_frame(telemetry_frame)
+        self.latest_snapshot = {"telemetry_latest": telemetry_frame}
+        self.state = state
 
     def connect_mqtt(self) -> None:
         """Connect the optional MQTT gateway."""
@@ -142,6 +195,130 @@ class RuntimeService:
     def latest_alarms(self) -> list[dict]:
         """Return latest industrial event signals from publishable telemetry."""
         return [record for record in self.latest_telemetry() if record.get("category") == "industrial_event"]
+
+    def plant_graph(self) -> dict:
+        """Return the plant graph structure for the visual editor."""
+        # Ensure engine is initialised
+        if not self.engine.initialized:
+            self.engine.initialize()
+        if self.engine.assembly is None:
+            return {"nodes": [], "edges": []}
+        graph = self.engine.assembly.graph
+
+        # Equipment positions — simple auto-layout for MVP
+        positions: dict[str, dict] = {}
+        equipment_order = [n.id for n in graph.nodes.values() if n.category == "equipment"]
+        sensor_order = [n.id for n in graph.nodes.values() if n.category == "sensors"]
+        ctrl_order = [n.id for n in graph.nodes.values() if n.category == "controllers"]
+        act_order = [n.id for n in graph.nodes.values() if n.category == "actuators"]
+
+        # Assign positions in rows
+        for i, eid in enumerate(equipment_order):
+            positions[eid] = {"x": 80 + i * 160, "y": 120}
+        for i, sid in enumerate(sensor_order):
+            positions[sid] = {"x": 320 + i * 140, "y": 240}
+        for i, cid in enumerate(ctrl_order):
+            positions[cid] = {"x": 320 + i * 140, "y": 340}
+        for i, aid in enumerate(act_order):
+            positions[aid] = {"x": 460 + i * 140, "y": 420}
+
+        nodes = []
+        for node in graph.nodes.values():
+            cfg = node.config
+            nodes.append({
+                "id": node.id,
+                "category": node.category,
+                "display_name": cfg.get("display_name", node.id),
+                "model_type": cfg.get("model_type", ""),
+                "position": positions.get(node.id, {"x": 100, "y": 100}),
+            })
+
+        edges = []
+        for edge in graph.edges:
+            edges.append({
+                "source": edge.source,
+                "target": edge.target,
+                "category": edge.category,
+            })
+
+        return {"nodes": nodes, "edges": edges}
+
+    def model_types(self) -> list[dict]:
+        """Return available model types for the asset palette."""
+        from virtual_factory.core.model_registry import ModelRegistry
+        registry = ModelRegistry.from_directory()
+        result = []
+        for model_id, meta in registry.metadata.items():
+            result.append({
+                "id": model_id,
+                "category": meta.get("category", "unknown"),
+                "display_name": meta.get("display_name", model_id),
+                "description": meta.get("description", ""),
+                "icon": meta.get("ui", {}).get("icon", "circle"),
+            })
+        return result
+
+    def update_pid(self, controller_id: str, params: dict) -> dict:
+        """Update PID controller parameters at runtime."""
+        if self.engine.assembly is None:
+            self.engine.initialize()
+        if self.engine.assembly is None:
+            return {"status": "error", "message": "Engine not initialized"}
+        ctrl = self.engine.assembly.controllers.get(controller_id)
+        if ctrl is None:
+            return {"status": "error", "message": f"Controller {controller_id} not found"}
+        if "kp" in params:
+            ctrl.parameters["kp"] = float(params["kp"])
+        if "ki" in params:
+            ctrl.parameters["ki"] = float(params["ki"])
+        if "kd" in params:
+            ctrl.parameters["kd"] = float(params["kd"])
+        if "setpoint" in params:
+            ctrl.setpoint = float(params["setpoint"])
+        return {"status": "ok", "controller_id": controller_id, "parameters": {
+            "kp": ctrl.parameters.get("kp"),
+            "ki": ctrl.parameters.get("ki"),
+            "kd": ctrl.parameters.get("kd"),
+            "setpoint": getattr(ctrl, "setpoint", None),
+        }}
+
+    def inject_fault(self, fault_type: str | None, value: object) -> dict:
+        """Inject a fault into the running simulation."""
+        if self.engine.assembly is None:
+            self.engine.initialize()
+        if self.engine.assembly is None:
+            return {"status": "error", "message": "Engine not initialized"}
+        state = self.engine.assembly.state
+        if fault_type == "valve_stuck":
+            if value is not None:
+                state.diagnostics["fault.valve_stuck.VA101"] = float(value)
+                state.diagnostics["fault.valve_stuck.V101"] = float(value)
+            else:
+                state.diagnostics.pop("fault.valve_stuck.VA101", None)
+                state.diagnostics.pop("fault.valve_stuck.V101", None)
+        elif fault_type == "pump_degradation":
+            if value is not None:
+                state.diagnostics["fault.pump_degradation.P101"] = float(value)
+            else:
+                state.diagnostics.pop("fault.pump_degradation.P101", None)
+        elif fault_type == "sensor_bias":
+            if value is not None:
+                state.diagnostics["sensor_bias.LT102"] = float(value)
+            else:
+                state.diagnostics.pop("sensor_bias.LT102", None)
+        else:
+            return {"status": "error", "message": f"Unknown fault type: {fault_type}"}
+        return {"status": "ok", "fault_type": fault_type, "value": value}
+
+    def opcua_status(self) -> dict:
+        """Return OPC UA gateway status."""
+        if self.opcua_gateway is None:
+            return {"enabled": False, "endpoint": None}
+        return {
+            "enabled": self.opcua_gateway.enabled,
+            "endpoint": self.opcua_gateway.endpoint,
+            "started": self.opcua_gateway._started,
+        }
 
     def status(self) -> dict:
         """Return service and simulation status without exposing internal truth."""

@@ -149,7 +149,24 @@ http://localhost:8000/
 http://localhost:8000/docs
 ```
 
-The root URL serves a minimal MVP monitoring dashboard. The dashboard uses the JSON API and WebSocket telemetry stream, displays publishable telemetry only, and does not show internal truth. There is no authentication yet.
+The root URL serves a professional SCADA-style monitoring dashboard with:
+
+- **Sidebar navigation**: Process Flow, Telemetry, Alarms, Trends, Data Table,
+  PID & Control, Fault Injection, OPC/IIoT Export, Asset Builder.
+- **Process flow diagram**: Interactive SVG with equipment icons, live telemetry
+  overlay, alarm indicators, and click-to-inspect property panel.
+- **Bottom panel**: Tabbed views for Telemetry KPIs, Alarms, Trend Charts,
+  Data Table, and Settings.
+- **Equipment icons**: Tank, Pump, Valve, Pipe, Sensor, Controller, Actuator
+  with distinct visual styles.
+- **Runtime configuration**: PID tuning (Kp, Ki, Kd, setpoint), fault injection
+  (valve stuck, pump degradation, sensor bias) via sliders and toggles.
+- **OPC UA export settings**: Signal selector and connection test for IIoT
+  platform integration.
+- **Asset Builder**: Drag-and-drop palette for future custom plant configuration.
+
+The dashboard displays publishable telemetry only and does not show internal truth.
+There is no authentication yet.
 
 The API runtime can also auto-start and publish MQTT:
 
@@ -182,11 +199,14 @@ virtual-factory run --steps 60 --scenario configs/scenarios/valve_stuck.yaml --s
 **Phase 0 (Documentation):** ✅ Complete
 **Phase 1 (MVP Continuous Process):** ✅ Complete — closed-loop simulation runs with
 graph-based config, pump curve, valve Cv, pipe resistance, and source-tank depletion.
-**Phase 2 (Industrial Telemetry):** ✅ Mostly complete — MQTT gateway, FastAPI
-monitoring API, CSV/JSONL export, alarm manager, scenario manager, Docker deployment
-are all in place.
-**Phase 3 (Model Library Expansion):** 🔜 Next — the foundation is ready for
-additional equipment types, richer balance checks, and degradation models.
+**Phase 2 (Industrial Telemetry):** ✅ Complete — MQTT gateway, OPC UA gateway,
+Sparkplug B gateway, FastAPI monitoring API, CSV/JSONL export, alarm manager,
+scenario manager, Docker deployment are all in place.
+**Phase 3 (Model Library Expansion):** 🔄 In progress — model registry, pipe
+equipment, sensor delay/drift/stuck done. Heat exchanger and degradation models pending.
+**Phase 7 (Professional Monitoring UI):** 🔄 In progress — SCADA-quality dashboard
+with sidebar, icons, trend charts, PID controls, fault injection, OPC settings,
+and drag-drop asset builder foundation.
 
 Current highlights:
 

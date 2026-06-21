@@ -30,7 +30,7 @@ def test_health_returns_ok() -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json()["status"] == "ok"
 
 
 def test_dashboard_root_returns_html() -> None:
@@ -40,7 +40,8 @@ def test_dashboard_root_returns_html() -> None:
 
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
-    assert "Virtual Factory Monitoring Dashboard" in response.text
+    assert "Virtual Factory" in response.text
+    assert "SCADA" in response.text
 
 
 def test_static_app_js_is_accessible() -> None:
@@ -49,7 +50,7 @@ def test_static_app_js_is_accessible() -> None:
     response = client.get("/static/app.js")
 
     assert response.status_code == 200
-    assert "filterPublishable" in response.text
+    assert "filterPub" in response.text
 
 
 def test_status_returns_service_status_without_truth() -> None:

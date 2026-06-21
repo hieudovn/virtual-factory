@@ -3,69 +3,223 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Virtual Factory Monitoring Dashboard</title>
+    <title>Virtual Factory — SCADA Monitoring Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2314b8a6'/><text x='16' y='23' text-anchor='middle' fill='%230f172a' font-size='18' font-weight='800'>VF</text></svg>">
   </head>
   <body>
-    <main class="shell">
-      <header class="topbar">
-        <div>
-          <h1>Virtual Factory Monitoring Dashboard</h1>
-          <div class="status-grid" aria-label="Runtime status">
-            <span><strong>Plant</strong><b id="plant-name">Loading</b></span>
-            <span><strong>Scenario</strong><b id="scenario-name">None</b></span>
-            <span><strong>Simulation time</strong><b id="simulation-time">0.0 s</b></span>
-            <span><strong>Runtime</strong><b id="runtime-state">Stopped</b></span>
-            <span><strong>Connection</strong><b id="connection-state">Connecting</b></span>
+    <!-- ============================================================ -->
+    <!-- App Shell                                                    -->
+    <!-- ============================================================ -->
+    <div class="app-shell">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar" role="navigation">
+        <div class="sidebar-brand">
+          <div class="brand-icon">VF</div>
+          <div class="brand-text">
+            <h2>Virtual Factory</h2>
+            <span>SCADA Monitor</span>
           </div>
         </div>
-        <div class="actions" aria-label="Simulation controls">
-          <button id="start-loop" type="button">Start</button>
-          <button id="stop-loop" type="button">Stop</button>
-          <button id="step-once" type="button">Step once</button>
-          <button id="run-ten" type="button">Run 10 steps</button>
-          <button id="refresh" type="button">Refresh</button>
+        <nav class="sidebar-nav">
+          <div class="nav-section">
+            <div class="nav-section-title">Monitoring</div>
+            <button class="nav-item active" data-tab="process">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              <span>Process Flow</span>
+            </button>
+            <button class="nav-item" data-tab="telemetry">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span>Telemetry</span>
+            </button>
+            <button class="nav-item" data-tab="alarms">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span>Alarms</span>
+              <span class="nav-badge" id="alarm-count" style="display:none">0</span>
+            </button>
+            <button class="nav-item" data-tab="trends">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              <span>Trends</span>
+            </button>
+            <button class="nav-item" data-tab="table">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+              <span>Data Table</span>
+            </button>
+          </div>
+          <div class="nav-section">
+            <div class="nav-section-title">Configuration</div>
+            <button class="nav-item" data-tab="settings-control">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              <span>PID &amp; Control</span>
+            </button>
+            <button class="nav-item" data-tab="settings-faults">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Fault Injection</span>
+            </button>
+            <button class="nav-item" data-tab="settings-opc">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <span>OPC / IIoT Export</span>
+            </button>
+          </div>
+          <div class="nav-section">
+            <div class="nav-section-title">Builder</div>
+            <button class="nav-item" data-tab="builder">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <span>Asset Builder</span>
+            </button>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <span class="status-dot" id="sidebar-status-dot"></span>
+          <span id="sidebar-status-text">Connecting…</span>
+          <button class="theme-toggle" id="theme-toggle" title="Toggle dark/light theme">🌙</button>
+        </div>
+      </aside>
+
+      <!-- TOP BAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="topbar-btn ghost hamburger" id="sidebar-toggle" title="Toggle sidebar">☰</button>
+          <span class="topbar-plant" id="plant-name">Loading…</span>
+          <span class="topbar-scenario" id="scenario-name">None</span>
+        </div>
+        <div class="topbar-center">
+          <div class="topbar-metric">
+            <div class="metric-label">Sim Time</div>
+            <div class="metric-value" id="simulation-time">0.0 s</div>
+          </div>
+          <div class="topbar-metric">
+            <div class="metric-label">Runtime</div>
+            <div class="metric-value" id="runtime-state">Stopped</div>
+          </div>
+          <div class="topbar-metric">
+            <div class="metric-label">Connection</div>
+            <div class="metric-value" id="connection-state">Connecting</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-btn success" id="start-loop" title="Start continuous simulation">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
+            Start
+          </button>
+          <button class="topbar-btn danger" id="stop-loop" title="Stop simulation">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+            Stop
+          </button>
+          <button class="topbar-btn primary" id="step-once" title="Advance one step">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,6 18,12 6,18"/><rect x="19" y="6" width="3" height="12" rx="1"/></svg>
+            Step
+          </button>
+          <button class="topbar-btn ghost" id="run-ten" title="Run 10 steps">10×</button>
+          <button class="topbar-btn ghost" id="refresh" title="Refresh all">↻</button>
+          <button class="topbar-btn ghost" id="reset-engine" title="Reset simulation to initial state" style="color:var(--warning)">⟳ Reset</button>
         </div>
       </header>
 
-      <section class="process" aria-label="MVP process flow">
-        <div class="node tank">
-          <span>T101</span>
-          <strong>Source Tank</strong>
+      <!-- Resize handle: sidebar ↔ main -->
+      <div class="resize-handle resize-handle-v" id="resize-sidebar" data-target="sidebar"></div>
+
+      <!-- MAIN AREA: Process Diagram + Property Panel -->
+      <section class="main-area">
+        <div class="process-panel">
+          <div class="process-toolbar">
+            <div class="toolbar-group">
+              <button class="toolbar-btn active" id="tool-select" title="Select / Pan">🖱 Select</button>
+              <button class="toolbar-btn" id="tool-zoom-in" title="Zoom in">🔍+</button>
+              <button class="toolbar-btn" id="tool-zoom-out" title="Zoom out">🔍−</button>
+              <button class="toolbar-btn" id="tool-fit" title="Fit to view">⊞ Fit</button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+              <button class="toolbar-btn" id="tool-builder-toggle" title="Toggle asset builder">🧱 Builder</button>
+            </div>
+          </div>
+          <div class="process-canvas-wrap">
+            <svg id="process-svg" class="process-svg" viewBox="0 0 900 520" role="img" aria-label="Live process flow diagram">
+              <text x="450" y="260" text-anchor="middle" fill="#94a3b8" font-size="14" font-family="Inter, system-ui, sans-serif">Loading process diagram…</text>
+            </svg>
+            <!-- Asset palette (hidden by default) -->
+            <div class="palette-panel" id="builder-palette">
+              <div class="palette-header">Equipment Palette</div>
+              <div id="palette-items"><!-- populated by builder.js --></div>
+            </div>
+          </div>
         </div>
-        <div class="arrow" aria-hidden="true"></div>
-        <div class="node pump">
-          <span>P101</span>
-          <strong>Pump</strong>
+
+        <!-- Resize handle: process ↔ property -->
+        <div class="resize-handle resize-handle-v" id="resize-property" data-target="property"></div>
+
+        <!-- Property Inspector (right side) -->
+        <aside class="property-panel" id="property-panel">
+          <div class="property-panel-header">
+            <span>📋 Inspector</span>
+            <button class="toolbar-btn" id="close-inspector" title="Close">✕</button>
+          </div>
+          <div class="property-panel-body" id="property-body">
+            <div class="empty-state">
+              <p>Select an equipment node<br>to inspect its properties.</p>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- Resize handle: main ↔ bottom -->
+      <div class="resize-handle resize-handle-h" id="resize-bottom" data-target="bottom"></div>
+
+      <!-- BOTTOM PANEL: Tabbed content -->
+      <section class="bottom-panel">
+        <div class="bottom-tabs" id="bottom-tabs">
+          <button class="bottom-tab active" data-pane="pane-telemetry">📊 Telemetry</button>
+          <button class="bottom-tab" data-pane="pane-alarms">🔔 Alarms</button>
+          <button class="bottom-tab" data-pane="pane-trends">📈 Trends</button>
+          <button class="bottom-tab" data-pane="pane-table">📋 Data Table</button>
+          <button class="bottom-tab" data-pane="pane-settings">⚙️ Settings</button>
         </div>
-        <div class="arrow" aria-hidden="true"></div>
-        <div class="node valve">
-          <span>V101</span>
-          <strong>Control Valve</strong>
-        </div>
-        <div class="arrow" aria-hidden="true"></div>
-        <div class="node tank">
-          <span>T102</span>
-          <strong>Destination Tank</strong>
+        <div class="bottom-content" id="bottom-content">
+          <div class="tab-pane active" id="pane-telemetry">
+            <div id="kpi-grid" class="kpi-grid" aria-live="polite"></div>
+          </div>
+          <div class="tab-pane" id="pane-alarms">
+            <div id="alarm-grid" class="alarm-grid" aria-live="polite"></div>
+          </div>
+          <div class="tab-pane" id="pane-trends">
+            <div id="trend-chart-container"></div>
+          </div>
+          <div class="tab-pane" id="pane-table">
+            <div id="data-table-container"></div>
+          </div>
+          <div class="tab-pane" id="pane-settings">
+            <div class="settings-grid" id="settings-container">
+              <!-- PID Settings Card -->
+              <div class="settings-card" id="pid-settings-card">
+                <h3>🎛️ PID Controller — LIC102</h3>
+                <div id="pid-controls"><!-- populated by settings.js --></div>
+              </div>
+              <!-- Fault Injection Card -->
+              <div class="settings-card" id="fault-settings-card">
+                <h3>⚠️ Fault Injection</h3>
+                <div id="fault-controls"><!-- populated by settings.js --></div>
+              </div>
+              <!-- OPC Export Card -->
+              <div class="settings-card" id="opc-settings-card">
+                <h3>🔌 OPC UA / IIoT Export</h3>
+                <div id="opc-controls"><!-- populated by settings.js --></div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="section">
-        <div class="section-header">
-          <h2>Telemetry</h2>
-          <span id="last-updated">Waiting for data</span>
-        </div>
-        <div id="kpi-grid" class="kpi-grid" aria-live="polite"></div>
-      </section>
+    </div><!-- /.app-shell -->
 
-      <section class="section">
-        <div class="section-header">
-          <h2>Alarms</h2>
-          <span>Industrial events</span>
-        </div>
-        <div id="alarm-list" class="alarm-list" aria-live="polite"></div>
-      </section>
-    </main>
-    <script src="/static/app.js" defer></script>
+    <!-- Scripts -->
+    <script src="/static/icons.js?v=4" defer></script>
+    <script src="/static/widgets.js?v=4" defer></script>
+    <script src="/static/editor.js?v=4" defer></script>
+    <script src="/static/settings.js?v=4" defer></script>
+    <script src="/static/builder.js?v=4" defer></script>
+    <script src="/static/resizer.js?v=2" defer></script>
+    <script src="/static/app.js?v=4" defer></script>
   </body>
 </html>

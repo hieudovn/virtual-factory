@@ -13,6 +13,7 @@ from virtual_factory.core.time_manager import TimeManager
 from virtual_factory.equipment.process_dynamics import update_continuous_process
 from virtual_factory.scenarios.scenario_manager import ScenarioManager
 from virtual_factory.balance.basic_balance import MassBalance
+from virtual_factory.balance.energy_balance import EnergyBalance
 from virtual_factory.telemetry.telemetry_frame import build_publishable_frame
 
 
@@ -29,11 +30,13 @@ class SimulationEngine:
     time_manager: TimeManager = field(init=False)
     scenario_manager: ScenarioManager = field(init=False)
     mass_balance: MassBalance = field(init=False)
+    energy_balance: EnergyBalance = field(init=False)
 
     def __post_init__(self) -> None:
         self.time_manager = TimeManager(step_s=self.dt_s)
         self.scenario_manager = ScenarioManager(self.scenario)
         self.mass_balance = MassBalance(self.plant_config)
+        self.energy_balance = EnergyBalance(self.plant_config)
 
     def initialize(self) -> None:
         """Build runtime objects and initialize equipment truth state."""
@@ -80,6 +83,17 @@ class SimulationEngine:
             actuator.update(self.state, timestamp_s=timestamp_s, feedback_signal_config=feedback_config)
         update_continuous_process(self.plant_config, self.state, self.dt_s)
         self.state.diagnostics["mass_balance"] = self.mass_balance.evaluate(self.state, self.dt_s)
+        self.state.diagnostics["energy_balance"] = self.energy_balance.evaluate(self.state, self.dt_s)
+        # Combined balance summary
+        mb = self.state.diagnostics.get("mass_balance", {})
+        eb = self.state.diagnostics.get("energy_balance", {})
+        self.state.diagnostics["balance_summary"] = {
+            "mass_balanced": mb.get("balanced"),
+            "energy_balanced": eb.get("balanced"),
+            "mass_residual_pct": mb.get("residual_pct"),
+            "energy_residual_pct": eb.get("residual_pct"),
+            "step_time_s": timestamp_s,
+        }
         for sensor in self.assembly.sensors.values():
             sensor.sample(
                 self.state,

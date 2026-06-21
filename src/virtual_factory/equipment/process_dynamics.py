@@ -102,13 +102,21 @@ def update_continuous_process(config: PlantConfig, state: RuntimeState, dt_s: fl
     opening_percent = float(state.get_truth(f"{path.valve.id}.opening_actual", 0.0))
     opening_fraction = _clamp(opening_percent / 100.0, 0.0, 1.0)
 
-    # --- build component models ---
-    pump = _build_pump_curve(path.pump)
-    valve_cv = _ValveCv(
-        cv_full=float(path.valve.parameters.get("cv", 1.0)),
-        density_kg_m3=density,
-    )
+    # --- apply degradation / fault modifiers ---
+    pump_deg_pct = _fault_float(state, f"fault.pump_degradation.{path.pump.id}", None)
+    valve_cv_loss_pct = _fault_float(state, f"fault.valve_cv_loss.{path.valve.id}", None)
+    pipe_fouling_factor = _fault_float(state, f"fault.pipe_fouling.{path.pump.id}", None)
+    # Sensor drift is handled in base_sensor.py, not here
+
+    # --- build component models (with degradation applied) ---
+    pump = _build_pump_curve(path.pump, degradation_pct=pump_deg_pct)
+    cv_nominal = float(path.valve.parameters.get("cv", 1.0))
+    if valve_cv_loss_pct is not None:
+        cv_nominal *= _clamp(1.0 - valve_cv_loss_pct / 100.0, 0.0, 1.0)
+    valve_cv = _ValveCv(cv_full=cv_nominal, density_kg_m3=density)
     pipe_k = float(path.pump.parameters.get("pipe_resistance", _DEFAULT_PIPE_RESISTANCE))
+    if pipe_fouling_factor is not None:
+        pipe_k *= max(pipe_fouling_factor, 1.0)
 
     # --- source tank current state ---
     src_capacity = float(path.source_tank.parameters.get("capacity_m3", 0.0))
@@ -183,14 +191,19 @@ def update_continuous_process(config: PlantConfig, state: RuntimeState, dt_s: fl
 # ---------------------------------------------------------------------------
 
 
-def _build_pump_curve(pump: EquipmentConfig) -> _PumpCurve:
+def _build_pump_curve(pump: EquipmentConfig, degradation_pct: float | None = None) -> _PumpCurve:
     """Build quadratic pump curve from rated duty point.
+
+    If *degradation_pct* is provided, the rated head is reduced by that
+    percentage to simulate wear, cavitation damage, or speed reduction.
 
     Shutoff head is estimated at 1.25 × rated head, a typical value for
     end-suction centrifugal pumps.
     """
     q_rated = float(pump.parameters.get("rated_flow_m3_s", 0.01))
     h_rated = float(pump.parameters.get("rated_head_m", 20.0))
+    if degradation_pct is not None:
+        h_rated *= _clamp(1.0 - degradation_pct / 100.0, 0.0, 1.0)
     shutoff = 1.25 * h_rated
     beta = (shutoff - h_rated) / (q_rated**2) if q_rated > 0 else 0.0
     return _PumpCurve(shutoff_head_m=shutoff, beta_s2_m5=beta)
@@ -311,3 +324,17 @@ def _tank_level(tank: EquipmentConfig, volume_m3: float) -> float:
 
 def _clamp(value: float, minimum: float, maximum: float) -> float:
     return max(minimum, min(maximum, value))
+
+
+def _fault_float(state: RuntimeState, key: str, default: float | None = None) -> float | None:
+    """Read a numeric fault/diagnostic value from state.
+
+    Returns ``default`` if the key is absent or not convertible to float.
+    """
+    raw = state.diagnostics.get(key)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default

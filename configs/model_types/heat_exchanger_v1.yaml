@@ -1,0 +1,44 @@
+id: heat_exchanger_v1
+display_name: Heat Exchanger
+category: equipment
+version: 1
+python_class: virtual_factory.equipment.heat_exchanger.HeatExchanger
+description: Shell-and-tube counter-flow heat exchanger with LMTD-based heat transfer.
+parameters:
+  area_m2:
+    type: number
+    default: 5.0
+  u_w_m2k:
+    type: number
+    default: 500.0
+  hot_inlet_temp_c:
+    type: number
+    default: 80.0
+  cold_inlet_temp_c:
+    type: number
+    default: 20.0
+ports:
+  hot_inlet:
+    kind: physical
+    direction: in
+    medium: liquid
+  hot_outlet:
+    kind: physical
+    direction: out
+    medium: liquid
+  cold_inlet:
+    kind: physical
+    direction: in
+    medium: liquid
+  cold_outlet:
+    kind: physical
+    direction: out
+    medium: liquid
+supported_variables:
+  - hot_outlet_temp_c
+  - cold_outlet_temp_c
+  - heat_transfer_kw
+  - dt_log_mean_k
+ui:
+  icon: hex
+  color: "#16a34a"
