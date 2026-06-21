@@ -45,3 +45,28 @@ class Compressor(BaseEquipment):
         state.set_truth(f"{self.id}.flow_true", 0.0)
         state.set_truth(f"{self.id}.outlet.flow_true", 0.0)
         state.set_truth(f"{self.id}.power_consumed_kw", 0.0)
+
+    def process_step(self, state: RuntimeState, dt_s: float) -> None:
+        """Compute compressor discharge pressure and power."""
+        rated_power = float(self.parameters.get("rated_power_kw", 50.0))
+        rated_q = float(self.parameters.get("rated_flow_m3_s", 0.5))
+        rated_pr = float(self.parameters.get("rated_pressure_ratio", 2.0))
+        max_p_kpa = float(self.parameters.get("max_pressure_kpa", 1000.0))
+        running = bool(state.get_truth(f"{self.id}.running", True))
+        q = float(state.get_truth(f"{self.id}.flow_true", 0.0))
+        p_suction = float(state.get_truth(f"{self.id}.suction_pressure_kpa", 101.325))
+
+        if not running or rated_q <= 0:
+            p_discharge = p_suction
+            power = 0.0
+        else:
+            frac = min(abs(q) / rated_q, 1.0)
+            # Polytropic approx: PR decreases with flow
+            pr_actual = 1.0 + (1.0 - frac) * (rated_pr - 1.0)
+            p_discharge = p_suction * pr_actual
+            power = rated_power * frac
+
+        p_discharge = min(p_discharge, max_p_kpa)
+        state.set_truth(f"{self.id}.discharge_pressure_kpa", round(p_discharge, 2))
+        state.set_truth(f"{self.id}.power_consumed_kw", round(power, 2))
+        state.set_truth(f"{self.id}.outlet.flow_true", q)

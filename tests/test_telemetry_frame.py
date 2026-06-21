@@ -29,4 +29,11 @@ def test_publishable_frame_contains_allowed_industrial_signals() -> None:
     } <= names
     assert "T102_LEVEL_TRUE" not in names
     assert all(item.category != "internal_truth" for item in frame)
-    assert {item.name for item in snapshot["telemetry_latest"]} == names
+    # Snapshot telemetry includes publishable signals + equipment truth
+    snapshot_names = {item.name for item in snapshot["telemetry_latest"]}
+    assert names <= snapshot_names  # all publishable signals are present
+    # Equipment truth signals should also be present (added by engine)
+    assert any("T101.level_true" in n for n in snapshot_names)
+    assert any("T102.volume_true" in n for n in snapshot_names)
+    # No internal_truth category should leak
+    assert all(item.category != "internal_truth" for item in snapshot["telemetry_latest"])

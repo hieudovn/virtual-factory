@@ -26,3 +26,14 @@ class BaseEquipment:
 
     def initialize_state(self, state: RuntimeState) -> None:
         """Initialize equipment truth values in runtime state."""
+
+    def process_step(self, state: RuntimeState, dt_s: float) -> None:
+        """Advance equipment physics by one time step.
+
+        Override this in subclasses to implement equipment-specific
+        process dynamics.  The method receives the global runtime state
+        and can read/write truth values via ``state.get_truth()`` /
+        ``state.set_truth()``.
+
+        Default implementation is a no-op.
+        """

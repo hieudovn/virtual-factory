@@ -1,0 +1,102 @@
+plant:
+  id: ai_generated_plant
+  name: "2 water tanks with pump and PID level control"
+  type: continuous_process
+
+medium:
+  id: water
+  density_kg_m3: 997.0
+  viscosity_pa_s: 0.00089
+  specific_heat_j_kg_k: 4182.0
+
+equipment:
+  - id: T101
+    model_type: tank_v1
+    display_name: Source Tank
+    parameters:
+      capacity_m3: 10.0
+      initial_level_m: 4.0
+      max_level_m: 5.0
+  - id: P101
+    model_type: centrifugal_pump_v1
+    display_name: Centrifugal Pump
+    parameters:
+      rated_flow_m3_s: 0.012
+      rated_head_m: 18.0
+  - id: V101
+    model_type: control_valve_v1
+    display_name: Control Valve
+    parameters:
+      cv: 50.0
+      fail_position: closed
+      initial_opening_percent: 0.0
+  - id: T102
+    model_type: tank_v1
+    display_name: Destination Tank
+    parameters:
+      capacity_m3: 8.0
+      initial_level_m: 1.0
+      max_level_m: 5.0
+      outlet_demand_m3_s: 0.006
+
+connections:
+  - id: C001
+    type: physical
+    from: T101.outlet
+    to: P101.inlet
+    medium: water
+  - id: C002
+    type: physical
+    from: P101.outlet
+    to: V101.inlet
+    medium: water
+  - id: C003
+    type: physical
+    from: V101.outlet
+    to: T102.inlet
+    medium: water
+
+sensors:
+  - id: LT102
+    model_type: level_transmitter_v1
+    display_name: T102 Level Transmitter
+    measures: T102.level_true
+    output_signal: LT102_LEVEL
+    parameters:
+      sample_time_s: 1.0
+      resolution: 0.01
+      noise_std: 0.0
+      delay_s: 0.0
+      quality: GOOD
+  - id: FT101
+    model_type: flow_transmitter_v1
+    display_name: V101 Outlet Flow
+    measures: V101.outlet.flow_true
+    output_signal: FT101_FLOW
+    parameters:
+      sample_time_s: 1.0
+      resolution: 0.0001
+      quality: GOOD
+
+controllers:
+  - id: LIC102
+    model_type: pid_controller_v1
+    display_name: T102 Level Controller
+    pv_signal: LT102_LEVEL
+    setpoint: 2.5
+    output_signal: LIC102_OUT
+    scan_time_s: 0.5
+    parameters:
+      kp: 1.0
+      ki: 0.1
+      kd: 0.0
+
+actuators:
+  - id: VA101
+    model_type: valve_actuator_v1
+    display_name: V101 Valve Actuator
+    command_signal: LIC102_OUT
+    feedback_signal: V101_OPENING_FEEDBACK
+    actuates: V101.opening_actual
+    parameters:
+      max_rate: 20.0

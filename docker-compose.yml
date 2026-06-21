@@ -32,7 +32,10 @@ services:
       - "1"
       - --mqtt-topic-prefix
       - virtual-factory/demo/continuous_mvp_01
+      - --opcua-endpoint
+      - opc.tcp://0.0.0.0:4840
     ports:
       - "8000:8000"
+      - "4840:4840"
     volumes:
       - ./out:/app/out

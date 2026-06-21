@@ -1,9 +1,11 @@
-/* Virtual Factory — Panel Resizer
-   Drag handles to resize sidebar, bottom panel, and property panel.
+/* Virtual Factory — Panel Resizer (v2)
+   Drag handles to resize sidebar and right panel.
    Sizes persist in localStorage.
  */
 const RESIZER = (() => {
-  const LS_KEY = "vf-panel-sizes";
+  const LS_KEY = "vf-panel-sizes-v2";
+  const DEFAULT_SIDEBAR = 230;
+  const DEFAULT_RIGHT = 320;
   let activeHandle = null, startX = 0, startY = 0, startSize = 0;
 
   function loadSizes() {
@@ -14,14 +16,14 @@ const RESIZER = (() => {
   function applySizes() {
     const s = loadSizes();
     const root = document.documentElement;
-    if (s.sidebarW) root.style.setProperty("--sidebar-w", s.sidebarW + "px");
-    if (s.bottomH) root.style.setProperty("--bottombar-h", s.bottomH + "px");
-    if (s.propertyW) root.style.setProperty("--property-w", s.propertyW + "px");
+    root.style.setProperty("--sidebar-w", (s.sidebarW || DEFAULT_SIDEBAR) + "px");
+    root.style.setProperty("--property-w", (s.propertyW || DEFAULT_RIGHT) + "px");
   }
 
   function init() {
     applySizes();
-    document.querySelectorAll(".resize-handle").forEach(h => {
+    // All resize handles
+    document.querySelectorAll(".resize-handle, #resize-sidebar").forEach(h => {
       h.addEventListener("mousedown", onStart);
       h.addEventListener("touchstart", onStart, {passive:false});
     });
@@ -29,49 +31,32 @@ const RESIZER = (() => {
     document.addEventListener("touchmove", onMove, {passive:false});
     document.addEventListener("mouseup", onEnd);
     document.addEventListener("touchend", onEnd);
-
-    // Sidebar toggle
-    const toggle = document.getElementById("sidebar-toggle");
-    if (toggle) {
-      toggle.addEventListener("click", () => {
-        const root = document.documentElement;
-        const sidebar = document.querySelector(".sidebar");
-        const cur = root.style.getPropertyValue("--sidebar-w") || getComputedStyle(root).getPropertyValue("--sidebar-w");
-        const curPx = parseInt(cur) || 0;
-        if (curPx < 50) {
-          const saved = loadSizes().sidebarW || 260;
-          root.style.setProperty("--sidebar-w", saved + "px");
-          if (sidebar) sidebar.classList.remove("collapsed");
-          toggle.textContent = "☰";
-        } else {
-          root.style.setProperty("--sidebar-w", "0px");
-          if (sidebar) sidebar.classList.add("collapsed");
-          toggle.textContent = "▶";
-        }
-      });
-    }
   }
 
   function onStart(e) {
-    activeHandle = e.target.closest(".resize-handle");
+    activeHandle = e.target.closest(".resize-handle, #resize-sidebar");
     if (!activeHandle) return;
     e.preventDefault();
     const pt = e.touches ? e.touches[0] : e;
     startX = pt.clientX;
     startY = pt.clientY;
-    const target = activeHandle.dataset.target;
+    const target = activeHandle.dataset.target || activeHandle.id === "resize-sidebar" ? "sidebar" : null;
+    // Determine actual target
+    let actualTarget = target;
+    if (activeHandle.id === "resize-sidebar") actualTarget = "sidebar";
+    else if (activeHandle.dataset.target === "right") actualTarget = "right";
+    else actualTarget = target;
+
     const root = document.documentElement;
     const style = getComputedStyle(root);
 
-    if (target === "sidebar") {
-      startSize = parseInt(style.getPropertyValue("--sidebar-w")) || 260;
-    } else if (target === "bottom") {
-      startSize = parseInt(style.getPropertyValue("--bottombar-h")) || 320;
-    } else if (target === "property") {
-      startSize = parseInt(style.getPropertyValue("--property-w")) || 280;
+    if (actualTarget === "sidebar") {
+      startSize = parseInt(style.getPropertyValue("--sidebar-w")) || DEFAULT_SIDEBAR;
+    } else if (actualTarget === "right") {
+      startSize = parseInt(style.getPropertyValue("--property-w")) || DEFAULT_RIGHT;
     }
     activeHandle.classList.add("active");
-    document.body.style.cursor = activeHandle.classList.contains("resize-handle-h") ? "row-resize" : "col-resize";
+    document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
   }
 
@@ -79,21 +64,19 @@ const RESIZER = (() => {
     if (!activeHandle) return;
     const pt = e.touches ? e.touches[0] : e;
     const dx = pt.clientX - startX;
-    const dy = pt.clientY - startY;
-    const target = activeHandle.dataset.target;
     const root = document.documentElement;
     const sizes = loadSizes();
 
-    if (target === "sidebar") {
+    let actualTarget = activeHandle.dataset.target;
+    if (activeHandle.id === "resize-sidebar") actualTarget = "sidebar";
+    else if (activeHandle.dataset.target === "right") actualTarget = "right";
+
+    if (actualTarget === "sidebar") {
       const w = Math.max(0, Math.min(500, startSize + dx));
       root.style.setProperty("--sidebar-w", w + "px");
       sizes.sidebarW = w;
-    } else if (target === "bottom") {
-      const h = Math.max(120, Math.min(700, startSize - dy));
-      root.style.setProperty("--bottombar-h", h + "px");
-      sizes.bottomH = h;
-    } else if (target === "property") {
-      const w = Math.max(0, Math.min(500, startSize - dx));
+    } else if (actualTarget === "right") {
+      const w = Math.max(180, Math.min(600, startSize - dx));
       root.style.setProperty("--property-w", w + "px");
       sizes.propertyW = w;
     }

@@ -175,4 +175,32 @@ def create_app(
         """Return OPC UA gateway status."""
         return service.opcua_status()
 
+    @app.post("/api/ai/generate")
+    def ai_generate(body: dict) -> dict:
+        """Generate plant config YAML from natural language description."""
+        from virtual_factory.ai.generator import generate_config
+        description = body.get("description", "")
+        if not description:
+            return {"error": "No description provided"}
+        try:
+            yaml_str = generate_config(description, backend="template")
+            return {"yaml": yaml_str}
+        except Exception as e:
+            return {"error": str(e)}
+
+    @app.post("/api/ai/parse")
+    def ai_parse(body: dict) -> dict:
+        """Parse P&ID shorthand text into plant config YAML."""
+        from virtual_factory.ai.pid_parser import parse_pid_shorthand
+        import yaml
+        text = body.get("text", "")
+        if not text:
+            return {"error": "No text provided"}
+        try:
+            config = parse_pid_shorthand(text)
+            yaml_str = yaml.dump(config.model_dump(mode="json"), default_flow_style=False, allow_unicode=True)
+            return {"yaml": yaml_str}
+        except Exception as e:
+            return {"error": str(e)}
+
     return app

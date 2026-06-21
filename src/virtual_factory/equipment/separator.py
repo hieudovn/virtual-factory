@@ -42,3 +42,26 @@ class Separator(BaseEquipment):
         state.set_truth(f"{self.id}.pressure_kpa", 500.0)
         state.set_truth(f"{self.id}.gas_outflow_true", 0.0)
         state.set_truth(f"{self.id}.liquid_outflow_true", 0.0)
+
+    def process_step(self, state: RuntimeState, dt_s: float) -> None:
+        """Advance separator liquid level via mass balance."""
+        diameter = float(self.parameters.get("diameter_m", 1.0))
+        max_level = float(self.parameters.get("max_level_m", 2.5))
+
+        area = math.pi * (diameter / 2.0) ** 2
+        if area <= 0:
+            return
+
+        level = float(state.get_truth(f"{self.id}.level_true", 0.5))
+
+        # Estimate net inflow from connected equipment
+        # Use connected tank level difference as proxy for liquid flow
+        q_in = float(state.get_truth(f"{self.id}.inlet.flow_true", 0.0))
+        q_gas_out = float(state.get_truth(f"{self.id}.gas_outflow_true", 0.0))
+        q_liq_out = float(state.get_truth(f"{self.id}.liquid_outflow_true", 0.0))
+
+        q_net = q_in * 0.5 - q_liq_out  # assume 50% liquid fraction
+        new_level = level + (q_net * dt_s) / area
+        new_level = max(0.0, min(new_level, max_level))
+
+        state.set_truth(f"{self.id}.level_true", round(new_level, 4))

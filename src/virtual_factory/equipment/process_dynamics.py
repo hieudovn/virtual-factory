@@ -247,8 +247,21 @@ def _solve_flow(
 # Graph inference
 # ---------------------------------------------------------------------------
 
+# Known hydraulic model-type categories used by ``_infer_single_path``.
+# Extend these sets when new equipment model types are added so they
+# participate in the main hydraulic solve.
+_HYDRAULIC_PUMP_TYPES = {"centrifugal_pump_v1", "fan_v1", "compressor_v1"}
+_HYDRAULIC_VALVE_TYPES = {"control_valve_v1"}
+_HYDRAULIC_TANK_TYPES = {"tank_v1", "separator_v1"}
+
 
 def _infer_single_path(config: PlantConfig) -> ContinuousPath | None:
+    """Find the first tank→pump→valve→tank path in the plant graph.
+
+    Uses the model-type sets above to identify pumps, valves, and tanks
+    without hard-coding individual type strings.  Returns ``None`` when
+    no such path exists (e.g. batch or custom plants).
+    """
     equipment_by_id = {item.id: item for item in config.equipment}
     model_by_id = {item.id: item.model_type for item in config.equipment}
     physical_edges = [
@@ -257,8 +270,8 @@ def _infer_single_path(config: PlantConfig) -> ContinuousPath | None:
         if connection.type == "physical"
     ]
 
-    pumps = [item for item in config.equipment if item.model_type == "centrifugal_pump_v1"]
-    valves = [item for item in config.equipment if item.model_type == "control_valve_v1"]
+    pumps = [item for item in config.equipment if item.model_type in _HYDRAULIC_PUMP_TYPES]
+    valves = [item for item in config.equipment if item.model_type in _HYDRAULIC_VALVE_TYPES]
     if not pumps or not valves:
         return None
 
@@ -266,18 +279,18 @@ def _infer_single_path(config: PlantConfig) -> ContinuousPath | None:
         upstream_tanks = [
             equipment_by_id[source_id]
             for source_id, target_id in physical_edges
-            if target_id == pump.id and model_by_id.get(source_id) == "tank_v1"
+            if target_id == pump.id and model_by_id.get(source_id) in _HYDRAULIC_TANK_TYPES
         ]
         downstream_valves = [
             equipment_by_id[target_id]
             for source_id, target_id in physical_edges
-            if source_id == pump.id and model_by_id.get(target_id) == "control_valve_v1"
+            if source_id == pump.id and model_by_id.get(target_id) in _HYDRAULIC_VALVE_TYPES
         ]
         for valve in downstream_valves:
             destination_tanks = [
                 equipment_by_id[target_id]
                 for source_id, target_id in physical_edges
-                if source_id == valve.id and model_by_id.get(target_id) == "tank_v1"
+                if source_id == valve.id and model_by_id.get(target_id) in _HYDRAULIC_TANK_TYPES
             ]
             if upstream_tanks and destination_tanks:
                 return ContinuousPath(
@@ -288,7 +301,7 @@ def _infer_single_path(config: PlantConfig) -> ContinuousPath | None:
                 )
 
     if len(pumps) == 1 and len(valves) == 1:
-        tanks = [item for item in config.equipment if item.model_type == "tank_v1"]
+        tanks = [item for item in config.equipment if item.model_type in _HYDRAULIC_TANK_TYPES]
         if len(tanks) >= 2:
             return ContinuousPath(source_tank=tanks[0], pump=pumps[0], valve=valves[0], destination_tank=tanks[-1])
     return None

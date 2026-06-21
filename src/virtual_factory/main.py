@@ -227,6 +227,19 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Plant configuration YAML path.")
     validate_parser.add_argument("--report", action="store_true", help="Print structured JSON report.")
 
+    gen_parser = subparsers.add_parser("generate", help="Generate plant config from natural language.")
+    gen_parser.add_argument("--prompt", required=True, help="Natural language description.")
+    gen_parser.add_argument("--backend", default="template", choices=["template","openai","anthropic","print-prompt"])
+    gen_parser.add_argument("--api-key", default=None, help="API key for LLM backend.")
+    gen_parser.add_argument("--model", default="gpt-4", help="Model name.")
+    gen_parser.add_argument("--output", default=None, help="Save YAML to file.")
+    gen_parser.add_argument("--validate", action="store_true", help="Validate generated config.")
+
+    parse_parser = subparsers.add_parser("parse", help="Parse P&ID shorthand into config.")
+    parse_parser.add_argument("--text", required=True, help="P&ID text (e.g. 'T101->P101->V101->T102').")
+    parse_parser.add_argument("--output", default=None, help="Save config to file.")
+    parse_parser.add_argument("--validate", action="store_true", help="Validate parsed config.")
+
     return parser
 
 
@@ -301,6 +314,53 @@ def main(argv: Sequence[str] | None = None) -> None:
             if report["policy_checks"]:
                 pc = report["policy_checks"]
                 print(f"  Signals:  {pc.get('signals_publishable', '?')}/{pc.get('signals_total', '?')} publishable")
+        return
+
+    if args.command == "generate":
+        from virtual_factory.ai.generator import generate_config
+        from virtual_factory.core.config_loader import load_plant_config
+        print(f"Generating config for: \"{args.prompt}\" (backend: {args.backend})")
+        yaml_str = generate_config(
+            description=args.prompt,
+            backend=args.backend,
+            api_key=args.api_key,
+            model=args.model,
+            output_path=args.output,
+        )
+        if args.output:
+            print(f"Saved to: {args.output}")
+        print("\n--- Generated YAML ---")
+        print(yaml_str)
+        if args.validate and args.output:
+            try:
+                config = load_plant_config(args.output)
+                from virtual_factory.core.validators import validate_with_report
+                report = validate_with_report(config)
+                print(f"\nValidation: {'✅ PASS' if report['valid'] else '❌ FAIL'}")
+                if report['errors']:
+                    for e in report['errors']:
+                        print(f"  Error: {e}")
+            except Exception as ex:
+                print(f"  Validation error: {ex}")
+        return
+
+    if args.command == "parse":
+        from virtual_factory.ai.pid_parser import parse_pid_shorthand, parse_and_save
+        print(f"Parsing P&ID shorthand...")
+        if args.output:
+            path = parse_and_save(args.text, args.output)
+            print(f"Saved to: {path}")
+            if args.validate:
+                from virtual_factory.core.config_loader import load_plant_config
+                from virtual_factory.core.validators import validate_with_report
+                config = load_plant_config(path)
+                report = validate_with_report(config)
+                print(f"Validation: {'✅ PASS' if report['valid'] else '❌ FAIL'}")
+        else:
+            config = parse_pid_shorthand(args.text, plant_name="Parsed Plant")
+            import yaml
+            yaml_str = yaml.dump(config.model_dump(mode="json"), default_flow_style=False, allow_unicode=True)
+            print(yaml_str)
         return
 
     parser.print_help()

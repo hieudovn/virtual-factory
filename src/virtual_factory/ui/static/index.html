@@ -9,11 +9,13 @@
   </head>
   <body>
     <!-- ============================================================ -->
-    <!-- App Shell                                                    -->
+    <!-- App Shell  (sidebar | main+right)                             -->
     <!-- ============================================================ -->
     <div class="app-shell">
 
-      <!-- SIDEBAR -->
+      <!-- ========================================================= -->
+      <!-- SIDEBAR (left, 230px)                                      -->
+      <!-- ========================================================= -->
       <aside class="sidebar" role="navigation">
         <div class="sidebar-brand">
           <div class="brand-icon">VF</div>
@@ -25,120 +27,104 @@
         <nav class="sidebar-nav">
           <div class="nav-section">
             <div class="nav-section-title">Monitoring</div>
-            <button class="nav-item active" data-tab="process">
+            <button class="nav-item active" data-pane="pane-telemetry">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               <span>Process Flow</span>
             </button>
-            <button class="nav-item" data-tab="telemetry">
+            <button class="nav-item" data-pane="pane-telemetry">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
               <span>Telemetry</span>
             </button>
-            <button class="nav-item" data-tab="alarms">
+            <button class="nav-item" data-pane="pane-alarms">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               <span>Alarms</span>
               <span class="nav-badge" id="alarm-count" style="display:none">0</span>
             </button>
-            <button class="nav-item" data-tab="trends">
+            <button class="nav-item" data-pane="pane-trends">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
               <span>Trends</span>
-            </button>
-            <button class="nav-item" data-tab="table">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-              <span>Data Table</span>
             </button>
           </div>
           <div class="nav-section">
             <div class="nav-section-title">Configuration</div>
-            <button class="nav-item" data-tab="settings-control">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-              <span>PID &amp; Control</span>
-            </button>
-            <button class="nav-item" data-tab="settings-faults">
+            <button class="nav-item" data-pane="pane-faults">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <span>Fault Injection</span>
             </button>
-            <button class="nav-item" data-tab="settings-opc">
+            <button class="nav-item" data-pane="pane-opc">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
               <span>OPC / IIoT Export</span>
             </button>
           </div>
           <div class="nav-section">
             <div class="nav-section-title">Builder</div>
-            <button class="nav-item" data-tab="builder">
+            <button class="nav-item" data-pane="pane-builder">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
               <span>Asset Builder</span>
+            </button>
+            <button class="nav-item" data-pane="pane-ai">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2 7h7l-5.5 4 2 7-5.5-4-5.5 4 2-7L3 9h7z"/></svg>
+              <span>AI Generation</span>
             </button>
           </div>
         </nav>
         <div class="sidebar-footer">
-          <span class="status-dot" id="sidebar-status-dot"></span>
-          <span id="sidebar-status-text">Connecting…</span>
+          <div class="sidebar-status">
+            <span class="status-dot" id="sidebar-status-dot"></span>
+            <span id="sidebar-status-text">Connecting…</span>
+          </div>
+          <div class="sidebar-metrics">
+            <div class="sidebar-metric">
+              <span class="sidebar-metric-label">Plant</span>
+              <span class="sidebar-metric-value" id="plant-name">Loading…</span>
+            </div>
+            <div class="sidebar-metric">
+              <span class="sidebar-metric-label">Sim Time</span>
+              <span class="sidebar-metric-value" id="simulation-time">0.0 s</span>
+            </div>
+            <div class="sidebar-metric">
+              <span class="sidebar-metric-label">Runtime</span>
+              <span class="sidebar-metric-value" id="runtime-state">Stopped</span>
+            </div>
+          </div>
           <button class="theme-toggle" id="theme-toggle" title="Toggle dark/light theme">🌙</button>
         </div>
       </aside>
 
-      <!-- TOP BAR -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <button class="topbar-btn ghost hamburger" id="sidebar-toggle" title="Toggle sidebar">☰</button>
-          <span class="topbar-plant" id="plant-name">Loading…</span>
-          <span class="topbar-scenario" id="scenario-name">None</span>
-        </div>
-        <div class="topbar-center">
-          <div class="topbar-metric">
-            <div class="metric-label">Sim Time</div>
-            <div class="metric-value" id="simulation-time">0.0 s</div>
-          </div>
-          <div class="topbar-metric">
-            <div class="metric-label">Runtime</div>
-            <div class="metric-value" id="runtime-state">Stopped</div>
-          </div>
-          <div class="topbar-metric">
-            <div class="metric-label">Connection</div>
-            <div class="metric-value" id="connection-state">Connecting</div>
-          </div>
-        </div>
-        <div class="topbar-right">
-          <button class="topbar-btn success" id="start-loop" title="Start continuous simulation">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
-            Start
-          </button>
-          <button class="topbar-btn danger" id="stop-loop" title="Stop simulation">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
-            Stop
-          </button>
-          <button class="topbar-btn primary" id="step-once" title="Advance one step">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,6 18,12 6,18"/><rect x="19" y="6" width="3" height="12" rx="1"/></svg>
-            Step
-          </button>
-          <button class="topbar-btn ghost" id="run-ten" title="Run 10 steps">10×</button>
-          <button class="topbar-btn ghost" id="refresh" title="Refresh all">↻</button>
-          <button class="topbar-btn ghost" id="reset-engine" title="Reset simulation to initial state" style="color:var(--warning)">⟳ Reset</button>
-        </div>
-      </header>
-
       <!-- Resize handle: sidebar ↔ main -->
       <div class="resize-handle resize-handle-v" id="resize-sidebar" data-target="sidebar"></div>
 
-      <!-- MAIN AREA: Process Diagram + Property Panel -->
+      <!-- ========================================================= -->
+      <!-- MAIN AREA: Process Diagram + Right Panel                  -->
+      <!-- ========================================================= -->
       <section class="main-area">
+
+        <!-- Process Panel (center) -->
         <div class="process-panel">
           <div class="process-toolbar">
             <div class="toolbar-group">
-              <button class="toolbar-btn active" id="tool-select" title="Select / Pan">🖱 Select</button>
+              <button class="toolbar-btn active" id="tool-select" title="Select / Pan">🖱</button>
               <button class="toolbar-btn" id="tool-zoom-in" title="Zoom in">🔍+</button>
               <button class="toolbar-btn" id="tool-zoom-out" title="Zoom out">🔍−</button>
-              <button class="toolbar-btn" id="tool-fit" title="Fit to view">⊞ Fit</button>
+              <button class="toolbar-btn" id="tool-fit" title="Fit to view">⊞</button>
             </div>
             <div class="toolbar-divider"></div>
             <div class="toolbar-group">
-              <button class="toolbar-btn" id="tool-builder-toggle" title="Toggle asset builder">🧱 Builder</button>
+              <button class="toolbar-btn" id="tool-builder-toggle" title="Toggle asset builder">🧱</button>
             </div>
           </div>
           <div class="process-canvas-wrap">
             <svg id="process-svg" class="process-svg" viewBox="0 0 900 520" role="img" aria-label="Live process flow diagram">
               <text x="450" y="260" text-anchor="middle" fill="#94a3b8" font-size="14" font-family="Inter, system-ui, sans-serif">Loading process diagram…</text>
             </svg>
+            <!-- Floating simulation controls -->
+            <div class="floating-controls" id="floating-controls">
+              <button class="float-btn start" id="start-loop" title="Start simulation">▶</button>
+              <button class="float-btn stop" id="stop-loop" title="Stop simulation">■</button>
+              <button class="float-btn step" id="step-once" title="Step once">⏭</button>
+              <button class="float-btn ghost" id="run-ten" title="Run 10 steps">10×</button>
+              <button class="float-btn ghost" id="reset-engine" title="Reset simulation">⟳</button>
+            </div>
             <!-- Asset palette (hidden by default) -->
             <div class="palette-panel" id="builder-palette">
               <div class="palette-header">Equipment Palette</div>
@@ -147,79 +133,112 @@
           </div>
         </div>
 
-        <!-- Resize handle: process ↔ property -->
-        <div class="resize-handle resize-handle-v" id="resize-property" data-target="property"></div>
+        <!-- Resize handle: process ↔ right panel -->
+        <div class="resize-handle resize-handle-v" id="resize-right" data-target="right"></div>
 
-        <!-- Property Inspector (right side) -->
-        <aside class="property-panel" id="property-panel">
-          <div class="property-panel-header">
-            <span>📋 Inspector</span>
-            <button class="toolbar-btn" id="close-inspector" title="Close">✕</button>
+        <!-- Right Panel (split: Asset Details top + Monitoring bottom) -->
+        <aside class="right-panel" id="right-panel">
+          <!-- Asset Details (Inspector) — top section -->
+          <div class="right-section" id="asset-details-section">
+            <div class="right-section-header">
+              <span>📋 Asset Details</span>
+              <button class="icon-btn" id="close-inspector" title="Close">✕</button>
+            </div>
+            <div class="right-section-body" id="property-body">
+              <div class="empty-state">
+                <p>Click an asset in the diagram<br>to view its details.</p>
+              </div>
+            </div>
           </div>
-          <div class="property-panel-body" id="property-body">
-            <div class="empty-state">
-              <p>Select an equipment node<br>to inspect its properties.</p>
+          <!-- Monitoring / Settings — bottom section, tabbed -->
+          <div class="right-section right-section-grow" id="monitoring-section">
+            <div class="right-section-tabs" id="right-tabs">
+              <button class="right-tab active" data-pane="pane-telemetry">📊 Telemetry</button>
+              <button class="right-tab" data-pane="pane-alarms">🔔 Alarms</button>
+              <button class="right-tab" data-pane="pane-trends">📈 Trends</button>
+              <button class="right-tab" data-pane="pane-faults">⚠️ Faults</button>
+              <button class="right-tab" data-pane="pane-opc">🔌 OPC</button>
+              <button class="right-tab" data-pane="pane-ai">🤖 AI</button>
+            </div>
+            <div class="right-section-content" id="monitoring-content">
+              <div class="tab-pane active" id="pane-telemetry">
+                <div class="telemetry-table-wrap" id="telemetry-table-wrap">
+                  <table class="telemetry-table" id="telemetry-table">
+                    <thead><tr><th>Signal</th><th>Value</th><th>Unit</th><th>Quality</th><th>Time</th></tr></thead>
+                    <tbody id="telemetry-tbody"><tr><td colspan="5" class="telemetry-empty">Waiting for data…</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="tab-pane" id="pane-alarms">
+                <div class="telemetry-table-wrap">
+                  <table class="telemetry-table alarm-table" id="alarm-table">
+                    <thead><tr><th>Alarm</th><th>Status</th><th>Quality</th><th>Time</th></tr></thead>
+                    <tbody id="alarm-tbody"><tr><td colspan="4" class="telemetry-empty">No alarms</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="tab-pane" id="pane-trends">
+                <div class="trends-toolbar" id="trends-toolbar">
+                  <span style="font-size:10px;font-weight:700;color:var(--ink-muted)">Trend Charts</span>
+                  <button class="trend-add-btn" id="trend-add-btn" title="Add trend chart (max 3)">+ Add Trend</button>
+                </div>
+                <div class="trends-container" id="trends-container">
+                  <!-- Trend charts injected by JS -->
+                </div>
+              </div>
+
+              <div class="tab-pane" id="pane-faults">
+                <div class="settings-card" id="fault-settings-card">
+                  <h3>⚠️ Fault Injection</h3>
+                  <div id="fault-controls"><!-- populated by settings.js --></div>
+                </div>
+              </div>
+              <div class="tab-pane" id="pane-opc">
+                <div class="settings-card" id="opc-settings-card">
+                  <h3>🔌 OPC UA / IIoT Export</h3>
+                  <div id="opc-controls"><!-- populated by settings.js --></div>
+                </div>
+              </div>
+              <div class="tab-pane" id="pane-builder">
+                <div class="settings-card">
+                  <h3>🧱 Asset Builder</h3>
+                  <p style="font-size:11px;color:var(--ink-muted);margin-bottom:8px">
+                    Drag equipment from the palette (left side of diagram) onto the canvas,
+                    connect ports, then export as YAML.
+                  </p>
+                  <div id="builder-yaml-output" style="margin-top:8px"></div>
+                </div>
+              </div>
+              <div class="tab-pane" id="pane-ai">
+                <div class="settings-card">
+                  <h3>🤖 NL → YAML Generator</h3>
+                  <p style="font-size:11px;color:var(--ink-muted);margin-bottom:8px">Mô tả plant bằng tiếng Việt hoặc Anh, hệ thống sẽ sinh file cấu hình YAML.</p>
+                  <textarea id="ai-prompt" rows="3" style="width:100%;padding:8px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:12px;background:var(--bg-input);resize:vertical" placeholder="VD: 2 tanks 10m3 each, 1 centrifugal pump 15kW, PID level control at 2.5m"></textarea>
+                  <button class="topbar-btn primary" id="ai-generate-btn" style="margin-top:8px;width:100%">🚀 Generate</button>
+                  <pre id="ai-result" style="margin-top:8px;font-size:10px;max-height:200px;overflow:auto;background:var(--bg-root);padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-panel)"></pre>
+                </div>
+                <div class="settings-card" style="margin-top:8px">
+                  <h3>📐 P&amp;ID Shorthand Parser</h3>
+                  <p style="font-size:11px;color:var(--ink-muted);margin-bottom:8px">Nhập ký hiệu P&amp;ID dạng ngắn, không cần LLM.</p>
+                  <textarea id="pid-input" rows="3" style="width:100%;padding:8px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:12px;background:var(--bg-input);font-family:monospace;resize:vertical" placeholder="T101[10m3,4m] -> P101[0.012m3/s,18m] -> V101[cv=50] -> T102[8m3,1m,out=0.006]&#10;LT102: T102.level -> LIC102[PID,kp=1,ki=0.1,sp=2.5] -> VA101 -> V101"></textarea>
+                  <button class="topbar-btn primary" id="pid-parse-btn" style="margin-top:8px;width:100%">📐 Parse</button>
+                  <pre id="pid-result" style="margin-top:8px;font-size:10px;max-height:200px;overflow:auto;background:var(--bg-root);padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-panel)"></pre>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
+
       </section>
-
-      <!-- Resize handle: main ↔ bottom -->
-      <div class="resize-handle resize-handle-h" id="resize-bottom" data-target="bottom"></div>
-
-      <!-- BOTTOM PANEL: Tabbed content -->
-      <section class="bottom-panel">
-        <div class="bottom-tabs" id="bottom-tabs">
-          <button class="bottom-tab active" data-pane="pane-telemetry">📊 Telemetry</button>
-          <button class="bottom-tab" data-pane="pane-alarms">🔔 Alarms</button>
-          <button class="bottom-tab" data-pane="pane-trends">📈 Trends</button>
-          <button class="bottom-tab" data-pane="pane-table">📋 Data Table</button>
-          <button class="bottom-tab" data-pane="pane-settings">⚙️ Settings</button>
-        </div>
-        <div class="bottom-content" id="bottom-content">
-          <div class="tab-pane active" id="pane-telemetry">
-            <div id="kpi-grid" class="kpi-grid" aria-live="polite"></div>
-          </div>
-          <div class="tab-pane" id="pane-alarms">
-            <div id="alarm-grid" class="alarm-grid" aria-live="polite"></div>
-          </div>
-          <div class="tab-pane" id="pane-trends">
-            <div id="trend-chart-container"></div>
-          </div>
-          <div class="tab-pane" id="pane-table">
-            <div id="data-table-container"></div>
-          </div>
-          <div class="tab-pane" id="pane-settings">
-            <div class="settings-grid" id="settings-container">
-              <!-- PID Settings Card -->
-              <div class="settings-card" id="pid-settings-card">
-                <h3>🎛️ PID Controller — LIC102</h3>
-                <div id="pid-controls"><!-- populated by settings.js --></div>
-              </div>
-              <!-- Fault Injection Card -->
-              <div class="settings-card" id="fault-settings-card">
-                <h3>⚠️ Fault Injection</h3>
-                <div id="fault-controls"><!-- populated by settings.js --></div>
-              </div>
-              <!-- OPC Export Card -->
-              <div class="settings-card" id="opc-settings-card">
-                <h3>🔌 OPC UA / IIoT Export</h3>
-                <div id="opc-controls"><!-- populated by settings.js --></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
     </div><!-- /.app-shell -->
 
     <!-- Scripts -->
-    <script src="/static/icons.js?v=4" defer></script>
-    <script src="/static/widgets.js?v=4" defer></script>
-    <script src="/static/editor.js?v=4" defer></script>
-    <script src="/static/settings.js?v=4" defer></script>
-    <script src="/static/builder.js?v=4" defer></script>
-    <script src="/static/resizer.js?v=2" defer></script>
-    <script src="/static/app.js?v=4" defer></script>
+    <script src="/static/icons.js?v=5" defer></script>
+    <script src="/static/widgets.js?v=5" defer></script>
+    <script src="/static/editor.js?v=5" defer></script>
+    <script src="/static/settings.js?v=5" defer></script>
+    <script src="/static/builder.js?v=5" defer></script>
+    <script src="/static/resizer.js?v=5" defer></script>
+    <script src="/static/app.js?v=5" defer></script>
   </body>
 </html>

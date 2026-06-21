@@ -1,7 +1,13 @@
-/* Virtual Factory — SVG Process Flow Editor
+/* Virtual Factory — SVG Process Flow Editor (v2)
 
    Renders the plant graph as an interactive SVG diagram with live
    telemetry values overlaid on equipment nodes.
+
+   Interactions:
+   - Scroll-wheel zoom centred on cursor
+   - Drag empty space to pan
+   - Drag nodes to reposition (only when simulation stopped)
+   - Click nodes to inspect
  */
 
 const EDITOR = (() => {
@@ -22,17 +28,176 @@ const EDITOR = (() => {
     actuators:    { fill: "#fce4ec", stroke: "#c2185b", text: "#13201f" },
   };
 
-  // ---- State -------------------------------------------------------
+  // ---- Interaction state -------------------------------------------
   let svg = null;
   let graphData = null;
   let telemetry = new Map();
   let alarms = new Map();
 
+  // Viewport
+  let viewX = 0, viewY = 0, viewW = 900, viewH = 520;
+
+  // Pan state
+  let panning = false, panSX = 0, panSY = 0, panVX = 0, panVY = 0;
+
+  // Node drag state (only when stopped)
+  let draggingNode = null, dragDX = 0, dragDY = 0, dragHasMoved = false;
+  const DRAG_THRESH = 3;
+
   // ---- Public API --------------------------------------------------
 
   function init(svgEl) {
     svg = svgEl;
-    svg.setAttribute("viewBox", "0 0 900 520");
+    viewX = 0; viewY = 0; viewW = 900; viewH = 520;
+    _applyView();
+
+    // Scroll-wheel zoom
+    svg.addEventListener("wheel", _onWheel, { passive: false });
+
+    // Pan via mousedown on the wrapping container
+    const wrap = svg.closest(".process-canvas-wrap");
+    if (wrap) {
+      wrap.addEventListener("mousedown", _onPanStart);
+      window.addEventListener("mousemove", _onPanMove);
+      window.addEventListener("mouseup", _onPanEnd);
+    }
+
+    // Node drag (delegated on SVG, only when stopped)
+    svg.addEventListener("mousedown", _onNodeDragStart);
+    window.addEventListener("mousemove", _onNodeDragMove);
+    window.addEventListener("mouseup", _onNodeDragEnd);
+
+    // Prevent browser drag behaviour on the SVG
+    svg.addEventListener("dragstart", e => e.preventDefault());
+  }
+
+  function _applyView() {
+    if (!svg) return;
+    svg.setAttribute("viewBox", `${viewX} ${viewY} ${viewW} ${viewH}`);
+  }
+
+  function _isRunning() {
+    const el = document.getElementById("runtime-state");
+    return el && el.textContent.includes("▶");
+  }
+
+  // ---- Wheel zoom ---------------------------------------------------
+
+  function _onWheel(e) {
+    e.preventDefault();
+    if (!svg) return;
+    // Cursor position in SVG client coordinates
+    const rect = svg.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    // Map to viewBox coordinates
+    const svgX = viewX + (mx / rect.width) * viewW;
+    const svgY = viewY + (my / rect.height) * viewH;
+    // Zoom factor
+    const factor = e.deltaY < 0 ? 0.9 : 1.1;
+    const newW = viewW * factor;
+    const newH = viewH * factor;
+    // Clamp zoom
+    const clampedW = Math.max(120, Math.min(4000, newW));
+    const clampedH = Math.max(70, Math.min(2400, newH));
+    const actualFactor = clampedW / viewW;
+    // Zoom toward cursor
+    viewX = svgX - (svgX - viewX) * actualFactor;
+    viewY = svgY - (svgY - viewY) * actualFactor;
+    viewW = clampedW;
+    viewH = clampedH;
+    _applyView();
+  }
+
+  // ---- Pan (drag empty space) ---------------------------------------
+
+  function _onPanStart(e) {
+    // Only pan on left button, not on nodes
+    if (e.button !== 0) return;
+    const target = e.target.closest("[data-id]");
+    if (target) return; // let node drag/click handle it
+    panning = true;
+    panSX = e.clientX;
+    panSY = e.clientY;
+    panVX = viewX;
+    panVY = viewY;
+    svg.style.cursor = "grabbing";
+    e.preventDefault();
+  }
+
+  function _onPanMove(e) {
+    if (!panning) return;
+    const dx = e.clientX - panSX;
+    const dy = e.clientY - panSY;
+    const rect = svg.getBoundingClientRect();
+    const scaleX = viewW / rect.width;
+    const scaleY = viewH / rect.height;
+    viewX = panVX - dx * scaleX;
+    viewY = panVY - dy * scaleY;
+    _applyView();
+  }
+
+  function _onPanEnd(e) {
+    if (!panning) return;
+    panning = false;
+    svg.style.cursor = "";
+  }
+
+  // ---- Node drag (only when stopped) --------------------------------
+
+  function _onNodeDragStart(e) {
+    if (e.button !== 0) return;
+    const target = e.target.closest("[data-id]");
+    if (!target) return;
+
+    const nodeId = target.getAttribute("data-id");
+    const node = graphData && graphData.nodes.find(n => n.id === nodeId);
+    if (!node || !node.position) return;
+
+    draggingNode = node;
+    dragDX = 0;
+    dragDY = 0;
+    dragHasMoved = false;
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
+  function _onNodeDragMove(e) {
+    if (!draggingNode) return;
+    if (_isRunning()) return; // no reposition while running
+    const rect = svg.getBoundingClientRect();
+    const scaleX = viewW / rect.width;
+    const scaleY = viewH / rect.height;
+    dragDX += e.movementX * scaleX;
+    dragDY += e.movementY * scaleY;
+    if (Math.abs(dragDX) > DRAG_THRESH || Math.abs(dragDY) > DRAG_THRESH) {
+      dragHasMoved = true;
+    }
+    const g = svg.querySelector(`[data-id="${draggingNode.id}"]`);
+    if (g) {
+      g.setAttribute("transform", `translate(${dragDX},${dragDY})`);
+    }
+  }
+
+  function _onNodeDragEnd(e) {
+    if (!draggingNode) return;
+    const node = draggingNode;
+    // Commit position change to graphData
+    if (dragHasMoved) {
+      node.position.x += dragDX;
+      node.position.y += dragDY;
+      render(); // re-render with final position
+    } else {
+      // It was a click – show inspector
+      // Reset any tiny transform
+      const g = svg.querySelector(`[data-id="${node.id}"]`);
+      if (g) g.removeAttribute("transform");
+      showPropertyPanel(node);
+    }
+    draggingNode = null;
+    dragDX = 0;
+    dragDY = 0;
+    dragHasMoved = false;
   }
 
   async function loadGraph() {
@@ -175,10 +340,8 @@ const EDITOR = (() => {
     const colours = CATEGORY_COLOURS.equipment;
     const x = p.x, y = p.y;
 
-    const g = el("g", { "data-id": node.id, class: "eq-node", style: "cursor:pointer" });
-
-    // Click to select → show in property panel
-    g.addEventListener("click", (e) => { e.stopPropagation(); showPropertyPanel(node); });
+    const g = el("g", { "data-id": node.id, class: "eq-node", style: "cursor:" + (_isRunning()?"default":"grab") });
+    // Click handled by _onNodeDragEnd; no separate listener needed
 
     // Background rounded rect
     g.appendChild(el("rect", {
@@ -239,7 +402,7 @@ const EDITOR = (() => {
     const colours = CATEGORY_COLOURS.sensors;
     const cx = p.x + SENSOR_R, cy = p.y;
 
-    const g = el("g", { "data-id": node.id });
+    const g = el("g", { "data-id": node.id, class: "eq-node", style: "cursor:" + (_isRunning()?"default":"grab") });
 
     g.appendChild(el("circle", {
       cx, cy, r: SENSOR_R, fill: colours.fill, stroke: colours.stroke, "stroke-width": "2",
@@ -263,7 +426,7 @@ const EDITOR = (() => {
     const colours = CATEGORY_COLOURS.controllers;
     const x = p.x, y = p.y;
 
-    const g = el("g", { "data-id": node.id });
+    const g = el("g", { "data-id": node.id, class: "eq-node", style: "cursor:" + (_isRunning()?"default":"grab") });
 
     g.appendChild(el("rect", {
       x, y, width: INSTR_W, height: INSTR_H, rx: "6",
@@ -297,7 +460,7 @@ const EDITOR = (() => {
     const colours = CATEGORY_COLOURS.actuators;
     const x = p.x, y = p.y;
 
-    const g = el("g", { "data-id": node.id });
+    const g = el("g", { "data-id": node.id, class: "eq-node", style: "cursor:" + (_isRunning()?"default":"grab") });
 
     g.appendChild(el("rect", {
       x, y, width: INSTR_W, height: INSTR_H, rx: "6",
@@ -329,17 +492,26 @@ const EDITOR = (() => {
   // ---- Live data lookup ---------------------------------------------
 
   function findLiveValue(equipmentId) {
-    // Map equipment to its sensor signals
-    const map = {
+    // First try: look for a dedicated sensor signal
+    const sensorMap = {
       "T102": "LT102_LEVEL",
       "V101": "FT101_FLOW",
       "P101": "PT101_PRESSURE",
     };
-    const signalName = map[equipmentId];
-    if (!signalName) return null;
-    const s = telemetry.get(signalName);
-    if (!s) return null;
-    return { value: s.value, unit: s.unit };
+    const signalName = sensorMap[equipmentId];
+    if (signalName) {
+      const s = telemetry.get(signalName);
+      if (s) return { value: s.value, unit: s.unit };
+    }
+    // Fallback: look for equipment truth signals (e.g. T101.level_true)
+    const truthKeys = ["level_true", "volume_true", "outflow_true", "inflow_true",
+                       "discharge_pressure_kpa", "pressure_rise_pa",
+                       "heat_transfer_kw", "power_consumed_kw"];
+    for (const key of truthKeys) {
+      const s = telemetry.get(`${equipmentId}.${key}`);
+      if (s) return { value: s.value, unit: s.unit };
+    }
+    return null;
   }
 
   function findLiveSignal(name, defaultValue) {
@@ -401,32 +573,95 @@ const EDITOR = (() => {
     const category = node.category || "equipment";
     const liveVal = findLiveValue(node.id);
     const hasAlarm = hasActiveAlarm(node.id);
-
-    // Get live telemetry signals for this equipment
     const relatedSignals = findRelatedSignals(node.id);
 
-    let html = `<div style="margin-bottom:14px">
-      <h3 style="font-size:16px;font-weight:700">${node.id}</h3>
-      <p style="font-size:11px;color:var(--ink-muted)">${node.display_name||""} · ${modelType}</p>
+    let html = `<div style="margin-bottom:10px">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:2px">${node.id}</h3>
+      <p style="font-size:10px;color:var(--ink-muted)">${node.display_name||""} · ${modelType}</p>
       </div>
-      <div style="display:grid;gap:6px;font-size:12px;margin-bottom:10px">
+      <div style="display:grid;gap:4px;font-size:11px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between"><span style="color:var(--ink-muted)">Category</span><span style="font-weight:600">${category}</span></div>
-      <div style="display:flex;justify-content:space-between"><span style="color:var(--ink-muted)">Alarm</span><span style="font-weight:600;color:${hasAlarm?'var(--danger)':'var(--success)'}">${hasAlarm?'⚠ Active':'✓ Clear'}</span></div>`;
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--ink-muted)">Status</span><span style="font-weight:600;color:${hasAlarm?'var(--danger)':'var(--success)'}">${hasAlarm?'⚠ Active Alarm':'✓ Normal'}</span></div>`;
 
     if (liveVal) {
-      html += `<div style="display:flex;justify-content:space-between"><span style="color:var(--ink-muted)">Live Value</span><span style="font-weight:700;font-size:15px;color:var(--accent)">${formatVal(liveVal.value)} ${liveVal.unit||""}</span></div>`;
+      html += `<div style="display:flex;justify-content:space-between"><span style="color:var(--ink-muted)">Live Value</span><span style="font-weight:700;font-size:14px;color:var(--accent)">${formatVal(liveVal.value)} ${liveVal.unit||""}</span></div>`;
     }
     html += `</div>`;
 
+    // --- PID Controller specific controls ---
+    if (category === "controllers" || modelType.includes("pid")) {
+      html += `<hr style="border:none;border-top:1px solid var(--border-panel);margin:8px 0">
+        <h4 style="font-size:11px;font-weight:700;margin-bottom:8px;color:var(--accent)">🎛️ PID Tuning</h4>
+        <div class="pid-inline-controls" id="pid-inline-${node.id}">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-size:10px;color:var(--ink-muted);width:20px">SP</label>
+              <input type="range" min="0" max="5" step="0.1" value="2.5" style="flex:1;height:4px" oninput="document.getElementById('pid-sp-val-${node.id}').textContent=this.value">
+              <span style="font-size:11px;font-weight:700;min-width:36px;text-align:right" id="pid-sp-val-${node.id}">2.5</span><span style="font-size:9px;color:var(--ink-muted)">m</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-size:10px;color:var(--ink-muted);width:20px">Kp</label>
+              <input type="range" min="0" max="20" step="0.1" value="1.0" style="flex:1;height:4px" oninput="document.getElementById('pid-kp-val-${node.id}').textContent=this.value">
+              <span style="font-size:11px;font-weight:700;min-width:36px;text-align:right" id="pid-kp-val-${node.id}">1.0</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-size:10px;color:var(--ink-muted);width:20px">Ki</label>
+              <input type="range" min="0" max="5" step="0.01" value="0.1" style="flex:1;height:4px" oninput="document.getElementById('pid-ki-val-${node.id}').textContent=this.value">
+              <span style="font-size:11px;font-weight:700;min-width:36px;text-align:right" id="pid-ki-val-${node.id}">0.10</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-size:10px;color:var(--ink-muted);width:20px">Kd</label>
+              <input type="range" min="0" max="5" step="0.01" value="0.0" style="flex:1;height:4px" oninput="document.getElementById('pid-kd-val-${node.id}').textContent=this.value">
+              <span style="font-size:11px;font-weight:700;min-width:36px;text-align:right" id="pid-kd-val-${node.id}">0.00</span>
+            </div>
+          </div>
+          <button class="topbar-btn primary" style="margin-top:8px;width:100%;font-size:10px"
+            onclick="EDITOR.applyPidSettings('${node.id}')">💾 Apply PID Changes</button>
+        </div>`;
+    }
+
+    // --- Sensor specific info ---
+    if (category === "sensors") {
+      html += `<hr style="border:none;border-top:1px solid var(--border-panel);margin:8px 0">
+        <h4 style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--accent)">📡 Sensor Info</h4>
+        <div style="font-size:10px;color:var(--ink-muted)">
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>Measured Signal</span><span style="font-weight:600">${relatedSignals[0]?.name||"N/A"}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>Quality</span><span style="font-weight:600;color:${liveVal?.quality==='GOOD'?'var(--success)':'var(--warning)'}">${liveVal?.quality||"N/A"}</span></div>
+        </div>`;
+    }
+
     // Related signals
     if (relatedSignals.length) {
-      html += `<hr style="border:none;border-top:1px solid var(--border-panel);margin:8px 0"><h4 style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--ink-muted)">Related Signals</h4>`;
+      html += `<hr style="border:none;border-top:1px solid var(--border-panel);margin:8px 0"><h4 style="font-size:11px;font-weight:600;margin-bottom:4px;color:var(--ink-muted)">Related Signals</h4>`;
       for (const s of relatedSignals) {
-        html += `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:11px"><span>${s.name}</span><span style="font-weight:600">${typeof s.value==='number'?s.value.toFixed(2):s.value} ${s.unit||""}</span></div>`;
+        html += `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:10px"><span>${s.name}</span><span style="font-weight:600">${typeof s.value==='number'?s.value.toFixed(3):s.value} ${s.unit||""}</span></div>`;
       }
     }
 
     body.innerHTML = html;
+  }
+
+  // Called by inline PID Apply button
+  async function applyPidSettings(controllerId) {
+    const spEl = document.getElementById(`pid-sp-val-${controllerId}`);
+    const kpEl = document.getElementById(`pid-kp-val-${controllerId}`);
+    const kiEl = document.getElementById(`pid-ki-val-${controllerId}`);
+    const kdEl = document.getElementById(`pid-kd-val-${controllerId}`);
+    const params = {};
+    if (spEl) params.setpoint = parseFloat(spEl.textContent);
+    if (kpEl) params.kp = parseFloat(kpEl.textContent);
+    if (kiEl) params.ki = parseFloat(kiEl.textContent);
+    if (kdEl) params.kd = parseFloat(kdEl.textContent);
+    try {
+      await fetch(`/api/pid/${controllerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      // Flash feedback
+      const btn = document.querySelector(`#pid-inline-${controllerId} button`);
+      if (btn) { btn.textContent = "✅ Applied!"; btn.style.background = "var(--success)"; setTimeout(()=>{btn.textContent="💾 Apply PID Changes";btn.style.background=""},1500); }
+    } catch (e) { console.warn("PID apply failed:", e); }
   }
 
   function findRelatedSignals(equipmentId) {
@@ -447,5 +682,22 @@ const EDITOR = (() => {
     return signals;
   }
 
-  return { init, loadGraph, updateTelemetry, render, showPropertyPanel };
+  return { init, loadGraph, updateTelemetry, render, showPropertyPanel, applyPidSettings,
+    zoomIn: () => _zoomAtCenter(1/1.2),
+    zoomOut: () => _zoomAtCenter(1.2),
+    fit: () => { viewX=0; viewY=0; viewW=900; viewH=520; _applyView(); },
+    resetView: () => { viewX=0; viewY=0; viewW=900; viewH=520; _applyView(); },
+  };
+
+  function _zoomAtCenter(factor) {
+    const newW = viewW * factor;
+    const newH = viewH * factor;
+    if (newW < 120 || newW > 4000) return;
+    const cx = viewX + viewW/2, cy = viewY + viewH/2;
+    viewX = cx - newW/2;
+    viewY = cy - newH/2;
+    viewW = newW;
+    viewH = newH;
+    _applyView();
+  }
 })();

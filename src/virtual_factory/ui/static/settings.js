@@ -1,38 +1,18 @@
-/* Virtual Factory — Settings Panels
+/* Virtual Factory — Settings Panels (v2)
 
    Provides interactive controls for:
-   - PID controller tuning (Kp, Ki, Kd, setpoint)
    - Fault injection (valve stuck, pump degradation, sensor bias/drift)
    - OPC UA / IIoT export configuration
+
+   PID controller tuning moved to the Asset Details inspector
+   (click a PID controller in the process diagram to tune it).
  */
 
 const SETTINGS = (() => {
-  let pidKp = null, pidKi = null, pidKd = null, pidSp = null;
   let faultStuck = null, faultPumpDeg = null, faultBias = null;
 
   function init() {
     if (typeof WIDGETS === "undefined") { setTimeout(init, 200); return; }
-
-    // --- PID Controls ---
-    const pidCard = document.getElementById("pid-controls");
-    if (pidCard) {
-      pidSp = new WIDGETS.SliderControl(pidCard, {
-        label: "Setpoint (m)", min: 0, max: 5, step: 0.1, value: 2.5, unit: "m",
-        onChange: (v) => applyPidChange("setpoint", v),
-      });
-      pidKp = new WIDGETS.NumberSpinner(pidCard, {
-        label: "Kp (Proportional)", min: 0, max: 100, step: 0.1, value: 1.0, decimals: 2,
-        onChange: (v) => applyPidChange("kp", v),
-      });
-      pidKi = new WIDGETS.NumberSpinner(pidCard, {
-        label: "Ki (Integral)", min: 0, max: 100, step: 0.01, value: 0.1, decimals: 2,
-        onChange: (v) => applyPidChange("ki", v),
-      });
-      pidKd = new WIDGETS.NumberSpinner(pidCard, {
-        label: "Kd (Derivative)", min: 0, max: 100, step: 0.01, value: 0.0, decimals: 2,
-        onChange: (v) => applyPidChange("kd", v),
-      });
-    }
 
     // --- Fault Controls ---
     const faultCard = document.getElementById("fault-controls");
@@ -80,17 +60,6 @@ const SETTINGS = (() => {
         }
       });
     }
-  }
-
-  // ---- PID update via API ----
-  async function applyPidChange(param, value) {
-    try {
-      await fetch("/api/pid/LIC102", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [param]: value }),
-      });
-    } catch (e) { console.warn("PID update failed:", e); }
   }
 
   // ---- Fault injection via API ----

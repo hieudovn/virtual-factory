@@ -10,74 +10,112 @@ document.addEventListener("DOMContentLoaded",()=>{
   safeOn("run-ten","click",()=>postAndRender("/run-steps?n=10"));
   safeOn("refresh","click",()=>refreshAll());
   safeOn("reset-engine","click",()=>postReset());
+  safeOn("ai-generate-btn","click",()=>aiGenerate());
+  safeOn("pid-parse-btn","click",()=>pidParse());
 
-  // Sidebar nav
-  document.querySelectorAll(".nav-item[data-tab]").forEach(item=>{item.addEventListener("click",()=>{
-    document.querySelectorAll(".nav-item[data-tab]").forEach(i=>i.classList.remove("active"));
-    item.classList.add("active");const t=item.dataset.tab;
-    const pm={process:"pane-telemetry",telemetry:"pane-telemetry",alarms:"pane-alarms",trends:"pane-trends",table:"pane-table","settings-control":"pane-settings","settings-faults":"pane-settings","settings-opc":"pane-settings",builder:"pane-telemetry"};
-    if(pm[t])switchPane(pm[t]);if(t==="builder")toggleBuilder(true);else toggleBuilder(false);
-    if(t==="settings-control")showCard("pid-settings-card");
-    if(t==="settings-faults")showCard("fault-settings-card");
-    if(t==="settings-opc")showCard("opc-settings-card");
+  // Sidebar nav — drives right-panel bottom section content
+  document.querySelectorAll(".nav-item[data-pane]").forEach(item=>{item.addEventListener("click",()=>{
+    document.querySelectorAll(".nav-item[data-pane]").forEach(i=>i.classList.remove("active"));
+    item.classList.add("active");const t=item.dataset.pane;
+    switchRightPane(t);
+    if(t==="pane-builder")toggleBuilder(true);else toggleBuilder(false);
   })});
 
-  // Bottom tabs
-  document.querySelectorAll(".bottom-tab").forEach(t=>{t.addEventListener("click",()=>switchPane(t.dataset.pane))});
+  // Right panel tabs (mini-tabs at top of monitoring section)
+  document.querySelectorAll(".right-tab").forEach(t=>{t.addEventListener("click",()=>switchRightPane(t.dataset.pane))});
 
   // Inspector close
   safeOn("close-inspector","click",()=>{const b=document.getElementById("property-body");if(b)b.innerHTML='<div class="empty-state"><p>Select an equipment node<br>to inspect its properties.</p></div>';});
 
-  // Zoom controls
-  safeOn("tool-zoom-in","click",()=>zoomSVG(1.2));
-  safeOn("tool-zoom-out","click",()=>zoomSVG(1/1.2));
-  safeOn("tool-fit","click",()=>{APP.zoomLevel=1;const s=document.getElementById("process-svg");if(s)s.setAttribute("viewBox","0 0 900 520");});
+  // Zoom controls (toolbar buttons)
+  safeOn("tool-zoom-in","click",()=>{if(typeof EDITOR!=="undefined")EDITOR.zoomIn()});
+  safeOn("tool-zoom-out","click",()=>{if(typeof EDITOR!=="undefined")EDITOR.zoomOut()});
+  safeOn("tool-fit","click",()=>{if(typeof EDITOR!=="undefined")EDITOR.fit()});
   safeOn("tool-builder-toggle","click",()=>{document.getElementById("builder-palette")?.classList.toggle("visible");});
 
   initAll();refreshAll();connectSocket();
   safeOn("theme-toggle","click",()=>{document.body.classList.toggle("dark");const t=document.getElementById("theme-toggle");if(t)t.textContent=document.body.classList.contains("dark")?"☀️":"🌙"});
-  setTimeout(()=>{if(typeof SETTINGS!=="undefined")SETTINGS.init();if(typeof TRENDS!=="undefined")TRENDS.init();if(typeof WIDGETS!=="undefined"){const dc=document.getElementById("data-table-container");if(dc&&!dc.children.length)DATATABLE.init(dc);}},800);
+  setTimeout(()=>{if(typeof SETTINGS!=="undefined")SETTINGS.init();if(typeof TRENDS!=="undefined")TRENDS.init();},800);
 });
 
 // ---- Helpers ----
 function safeOn(id,ev,fn){const el=document.getElementById(id);if(el)el.addEventListener(ev,fn);}
-function switchPane(id){document.querySelectorAll(".bottom-tab,.tab-pane").forEach(e=>e.classList.remove("active"));const p=document.getElementById(id);if(p)p.classList.add("active");const t=document.querySelector(`.bottom-tab[data-pane="${id}"]`);if(t)t.classList.add("active");}
-function showCard(id){switchPane("pane-settings");setTimeout(()=>document.getElementById(id)?.scrollIntoView({behavior:"smooth"}),100);}
+function switchRightPane(id){
+  // Switch tab-pane visibility
+  const content=document.getElementById("monitoring-content");
+  if(content){content.querySelectorAll(".tab-pane").forEach(e=>e.classList.remove("active"));const p=document.getElementById(id);if(p)p.classList.add("active")}
+  // Sync right-tab active state
+  document.querySelectorAll(".right-tab").forEach(t=>{t.classList.toggle("active",t.dataset.pane===id)});
+  // Sync sidebar nav active state
+  document.querySelectorAll(".nav-item[data-pane]").forEach(n=>{n.classList.toggle("active",n.dataset.pane===id)});
+}
 function toggleBuilder(on){const b=document.getElementById("tool-builder-toggle");if(on){b?.classList.add("active");document.getElementById("builder-palette")?.classList.add("visible");if(typeof BUILDER!=="undefined")BUILDER.enable();}else{b?.classList.remove("active");document.getElementById("builder-palette")?.classList.remove("visible");if(typeof BUILDER!=="undefined")BUILDER.disable();}}
 
 function zoomSVG(factor){const svg=document.getElementById("process-svg");if(!svg)return;APP.zoomLevel*=factor;const vw=900/APP.zoomLevel,vh=520/APP.zoomLevel,cx=450,cy=260;svg.setAttribute("viewBox",`${cx-vw/2} ${cy-vh/2} ${vw} ${vh}`);}
 
 // ---- Init ----
-function initAll(){renderKpis();renderAlarms();initEditor();}
+function initAll(){renderTelemetryTable();renderAlarms();initEditor();}
 
 // ---- Data ----
 async function refreshAll(){await Promise.all([loadStatus(),loadTelemetry(),loadAlarms()]);if(typeof EDITOR!=="undefined"&&EDITOR.loadGraph)await EDITOR.loadGraph();}
 async function postAndRender(p){const f=await(await fetch(p,{method:"POST"})).json();updateTelemetry(f);await Promise.all([loadStatus(),loadAlarms()]);}
-async function postReset(){stopPoll();if(APP.socket){APP.socket.close();APP.socket=null}await fetch("/reset",{method:"POST"});APP.telemetry.clear();APP.alarms.clear();APP.zoomLevel=1;renderKpis();renderAlarms();const s=document.getElementById("process-svg");if(s)s.setAttribute("viewBox","0 0 900 520");await refreshAll();connectSocket();}
+async function postReset(){stopPoll();if(APP.socket){APP.socket.close();APP.socket=null}await fetch("/reset",{method:"POST"});APP.telemetry.clear();APP.alarms.clear();APP.zoomLevel=1;renderTelemetryTable();renderAlarms();if(typeof EDITOR!=="undefined")EDITOR.resetView();await refreshAll();connectSocket();}
 async function postStatus(p){renderStatus(await(await fetch(p,{method:"POST"})).json());}
 async function loadStatus(){try{renderStatus(await(await fetch("/status")).json())}catch(e){console.warn(e)}}
-function renderStatus(p){setText("plant-name",p.plant_name||p.plant_id||"Unknown");setText("scenario-name",p.scenario_id||"None");setText("simulation-time",fmtSec(p.time_s));setText("runtime-state",p.running?"Running":"Stopped");}
+function renderStatus(p){setText("plant-name",p.plant_name||p.plant_id||"Unknown");setText("simulation-time",fmtSec(p.time_s));setText("runtime-state",p.running?"▶ Running":"■ Stopped");}
 async function loadTelemetry(){try{const f=await(await fetch("/telemetry/latest")).json();updateTelemetry(f);updateAlarms(f)}catch(e){console.warn(e)}}
 async function loadAlarms(){try{updateAlarms(await(await fetch("/alarms")).json())}catch(e){console.warn(e)}}
 
 // ---- WebSocket ----
-function connectSocket(){const p=window.location.protocol==="https:"?"wss":"ws";if(APP.socket)APP.socket.close();const s=new WebSocket(`${p}://${window.location.host}/ws/telemetry`);APP.socket=s;s.addEventListener("open",()=>{setConn("Live");stopPoll()});s.addEventListener("message",(e)=>{try{const f=JSON.parse(e.data);updateTelemetry(f);updateAlarms(f);updateTime(f);if(typeof TRENDS!=="undefined")TRENDS.pushFrame(f);if(typeof DATATABLE!=="undefined")DATATABLE.push(f)}catch(ex){}});s.addEventListener("error",()=>{setConn("Polling");startPoll()});s.addEventListener("close",()=>{setConn("Polling");startPoll()})}
+function connectSocket(){const p=window.location.protocol==="https:"?"wss":"ws";if(APP.socket)APP.socket.close();const s=new WebSocket(`${p}://${window.location.host}/ws/telemetry`);APP.socket=s;s.addEventListener("open",()=>{setConn("Live");stopPoll()});s.addEventListener("message",(e)=>{try{const f=JSON.parse(e.data);updateTelemetry(f);updateAlarms(f);updateTime(f);if(typeof TRENDS!=="undefined")TRENDS.pushFrame(f)}catch(ex){}});s.addEventListener("error",()=>{setConn("Polling");startPoll()});s.addEventListener("close",()=>{setConn("Polling");startPoll()})}
 function startPoll(){if(!APP.pollingId)APP.pollingId=setInterval(loadTelemetry,1000)}
 function stopPoll(){if(APP.pollingId){clearInterval(APP.pollingId);APP.pollingId=null}}
-function setConn(v){setText("connection-state",v);const d=document.getElementById("sidebar-status-dot");if(d)d.className="status-dot"+(v==="Live"?"":" disconnected");const t=document.getElementById("sidebar-status-text");if(t)t.textContent=v==="Live"?"Connected · Live":v}
+function setConn(v){const d=document.getElementById("sidebar-status-dot");if(d)d.className="status-dot"+(v==="Live"?"":" disconnected");const t=document.getElementById("sidebar-status-text");if(t)t.textContent=v==="Live"?"Connected · Live":v;}
 
 // ---- Telemetry ----
-function updateTelemetry(frame){for(const s of filterPub(frame))APP.telemetry.set(s.name,s);renderKpis();updateTime(filterPub(frame));if(typeof EDITOR!=="undefined")EDITOR.updateTelemetry(frame)}
+function updateTelemetry(frame){for(const s of filterPub(frame))APP.telemetry.set(s.name,s);renderTelemetryTable();updateTime(filterPub(frame));if(typeof EDITOR!=="undefined")EDITOR.updateTelemetry(frame)}
 function updateAlarms(frame){for(const s of filterPub(frame).filter(s=>s.category==="industrial_event"))APP.alarms.set(s.name,s);renderAlarms();updateAlarmBadge()}
 function updateTime(frame){if(!frame.length)return;setText("simulation-time",fmtSec(frame.reduce((m,s)=>Math.max(m,Number(s.timestamp_s)||0),0)))}
 function filterPub(f){return Array.isArray(f)?f.filter(s=>s&&s.category!=="internal_truth"):[]}
 function updateAlarmBadge(){const b=document.getElementById("alarm-count");if(!b)return;let c=0;APP.alarms.forEach(a=>{if(a.value===true)c++});if(c>0){b.textContent=c;b.style.display=""}else b.style.display="none"}
 
 // ---- Render ----
-function renderKpis(){const g=document.getElementById("kpi-grid");if(!g)return;g.replaceChildren(...KPI_SIGNALS.map(n=>signalCard(n,APP.telemetry.get(n))))}
-function renderAlarms(){const g=document.getElementById("alarm-grid");if(!g)return;g.replaceChildren(...ALARM_SIGNALS.map(n=>alarmRow(n,APP.alarms.get(n))))}
-
-function signalCard(name,signal){const c=document.createElement("article");c.className="kpi-card";const v=signal?fmtVal(signal.value):"--",u=signal?.unit||"",q=signal?.quality||"UNKNOWN",ts=signal?fmtSec(signal.timestamp_s):"--";let bg="#e2e8f0",ih="";if(name.includes("LEVEL")){bg="#dbeafe";ih='<text x="16" y="17" text-anchor="middle" fill="#2563eb" font-size="10" font-weight="700">LT</text>'}else if(name.includes("FLOW")){bg="#d1fae5";ih='<text x="16" y="17" text-anchor="middle" fill="#059669" font-size="10" font-weight="700">FT</text>'}else if(name.includes("PRESSURE")){bg="#ffedd5";ih='<text x="16" y="17" text-anchor="middle" fill="#ea580c" font-size="10" font-weight="700">PT</text>'}else if(name.includes("OUT")){bg="#ede9fe";ih='<text x="16" y="17" text-anchor="middle" fill="#7c3aed" font-size="10" font-weight="700">CO</text>'}else if(name.includes("FEEDBACK")){bg="#fce7f3";ih='<text x="16" y="17" text-anchor="middle" fill="#db2777" font-size="10" font-weight="700">FB</text>'}c.innerHTML=`<div class="kpi-card-header"><div class="kpi-card-icon" style="background:${bg}"><svg width="20" height="20" viewBox="0 0 32 32">${ih}</svg></div><span class="kpi-card-name">${name}</span></div><div class="kpi-card-value">${v}<span class="unit">${u}</span></div><div class="kpi-card-meta"><span class="quality-${q}">● ${q}</span><span>⏱ ${ts}</span></div>`;return c}
+function renderTelemetryTable(){
+  const tbody=document.getElementById("telemetry-tbody");
+  if(!tbody)return;
+  const signals=[...APP.telemetry.values()].filter(s=>s&&s.category!=="industrial_event");
+  if(!signals.length){tbody.innerHTML='<tr><td colspan="5" class="telemetry-empty">Waiting for data…</td></tr>';return}
+  // Sort by category then name
+  const order={measured:1,controller_output:2,actuator_feedback:3,calculated:4};
+  signals.sort((a,b)=>(order[a.category]||9)-(order[b.category]||9)||(a.name||"").localeCompare(b.name||""));
+  tbody.innerHTML=signals.map(s=>{
+    const q=s.quality||"UNKNOWN";
+    return `<tr>
+      <td class="sig-name">${s.name||"--"}</td>
+      <td class="sig-value">${fmtVal(s.value)}</td>
+      <td style="color:var(--ink-muted);font-size:10px">${s.unit||""}</td>
+      <td class="quality-${q}">● ${q}</td>
+      <td style="color:var(--ink-muted);font-size:10px">${fmtSec(s.timestamp_s)}</td>
+    </tr>`;
+  }).join("");
+}
+function renderAlarms(){
+  const tbody=document.getElementById("alarm-tbody");
+  if(!tbody)return;
+  const alarms=[];
+  APP.alarms.forEach((s,name)=>{alarms.push({name,value:!!s.value,quality:s.quality||"UNKNOWN",ts:s.timestamp_s||0})});
+  if(!alarms.length){tbody.innerHTML='<tr><td colspan="4" class="telemetry-empty">No alarms</td></tr>';return}
+  alarms.sort((a,b)=>a.name.localeCompare(b.name));
+  tbody.innerHTML=alarms.map(a=>{
+    const active=a.value;
+    return `<tr class="${active?'alarm-active':''}">
+      <td class="sig-name">${a.name}</td>
+      <td class="alarm-status ${active?'active':'clear'}">${active?'● ACTIVE':'○ CLEAR'}</td>
+      <td class="quality-${a.quality}">${a.quality}</td>
+      <td style="color:var(--ink-muted);font-size:10px">${fmtSec(a.ts)}</td>
+    </tr>`;
+  }).join("");
+}
 
 function alarmRow(name,signal){const a=Boolean(signal?.value),r=document.createElement("article");r.className=`alarm-row${a?" active":""}`;r.innerHTML=`<span class="alarm-icon"></span><div class="alarm-info"><h3>${name}</h3><span class="alarm-detail">${signal?.quality||"UNKNOWN"} · ${signal?fmtSec(signal.timestamp_s):"--"}</span></div><span class="alarm-state">${a?"ACTIVE":"CLEAR"}</span>`;return r}
 
@@ -89,8 +127,128 @@ function setText(id,t){const e=document.getElementById(id);if(e)e.textContent=t}
 function initEditor(){const s=document.getElementById("process-svg");if(s&&typeof EDITOR!=="undefined"){EDITOR.init(s);EDITOR.loadGraph().catch(()=>setTimeout(()=>EDITOR.loadGraph(),1500))}}
 updateTelemetry=(function(orig){return function(f){orig(f);if(typeof EDITOR!=="undefined")EDITOR.updateTelemetry(f)}})(updateTelemetry);
 
-// ---- Data Table ----
-const DATATABLE=(()=>{let tbl=null,initDone=false;function init(c){if(initDone)return;if(typeof WIDGETS==="undefined")return;tbl=new WIDGETS.DataTable(c,{columns:["Time","Signal","Value","Unit","Quality","Source"]});initDone=true}function push(f){if(!tbl)return;for(const s of(Array.isArray(f)?f:[])){if(!s||!s.name)continue;tbl.addRow([fmtSec(s.timestamp_s),s.name,fmtVal(s.value),s.unit||"",s.quality||"",s.source||""])}}return{init,push}})();
+// ---- Trends (multi-chart, max 3, selectable signals) ----
+const TRENDS=(()=>{
+  const MAX_TRENDS=3;
+  const COLORS=["#2563eb","#059669","#ea580c","#7c3aed","#db2777","#d97706","#0891b2","#4f46e5"];
+  let charts=[], timeIdx=0, initDone=false;
 
-// ---- Trends ----
-const TRENDS=(()=>{let c=null,d=false,t=0;function i(){if(d)return;const x=document.getElementById("trend-chart-container");if(!x||typeof WIDGETS==="undefined")return;c=new WIDGETS.TrendChart(x,{width:1000,height:260});c.addSeries("LT102_LEVEL","#2563eb");c.addSeries("FT101_FLOW","#059669");c.addSeries("PT101_PRESSURE","#ea580c");c.addSeries("LIC102_OUT","#7c3aed");d=true}function p(f){if(!c)return;for(const s of(Array.isArray(f)?f:[])){if(!s)continue;if(s.name==="LT102_LEVEL")c.pushData(0,t,Number(s.value)||0);if(s.name==="FT101_FLOW")c.pushData(1,t,Number(s.value)||0);if(s.name==="PT101_PRESSURE")c.pushData(2,t,Number(s.value)||0);if(s.name==="LIC102_OUT")c.pushData(3,t,Number(s.value)||0)}t++}return{init:i,pushFrame:p}})();
+  function init(){
+    if(initDone)return;
+    const c=document.getElementById("trends-container");
+    if(!c)return;
+    // Add first default trend chart
+    addTrend();
+    // Wire Add Trend button
+    const addBtn=document.getElementById("trend-add-btn");
+    if(addBtn)addBtn.addEventListener("click",()=>addTrend());
+    initDone=true;
+  }
+
+  function addTrend(){
+    if(charts.length>=MAX_TRENDS)return;
+    const container=document.getElementById("trends-container");
+    const addBtn=document.getElementById("trend-add-btn");
+    if(!container)return;
+
+    const idx=charts.length;
+    const card=document.createElement("div");
+    card.className="trend-chart-card";
+    card.id="trend-card-"+idx;
+
+    // Build signal checkboxes from telemetry
+    const signals=getAvailableSignals();
+    const checkboxes=signals.map((s,i)=>{
+      const checked=i===0?"checked":"";
+      const color=COLORS[i%COLORS.length];
+      return `<label title="${s.name}"><span class="trend-color-dot" style="background:${color}"></span><input type="checkbox" value="${s.name}" ${checked} onchange="TRENDS.updateTrend(${idx})">${s.name.replace(/_/g," ")}</label>`;
+    }).join("");
+
+    card.innerHTML=`
+      <div class="trend-chart-header">
+        <div class="trend-signal-select" id="trend-select-${idx}">${checkboxes}</div>
+        <button class="trend-remove-btn" onclick="TRENDS.removeTrend(${idx})" title="Remove trend">✕</button>
+      </div>
+      <div class="trend-chart-body" id="trend-body-${idx}"></div>`;
+
+    container.appendChild(card);
+
+    // Create chart
+    const body=document.getElementById("trend-body-"+idx);
+    const ch=new WIDGETS.TrendChart(body,{width:600,height:140});
+    // Add checked series
+    updateTrendSeries(idx,ch);
+
+    charts.push({el:card,chart:ch,idx:idx});
+    updateAddButton();
+    // Replay existing data
+    replayData(ch,idx);
+  }
+
+  function removeTrend(idx){
+    if(charts.length<=0)return;
+    const found=charts.findIndex(c=>c.idx===idx);
+    if(found<0)return;
+    charts[found].el.remove();
+    charts.splice(found,1);
+    // Re-index remaining
+    charts.forEach((c,i)=>{c.idx=i;c.el.id="trend-card-"+i});
+    updateAddButton();
+  }
+
+  function updateTrend(idx){
+    const found=charts.find(c=>c.idx===idx);
+    if(!found)return;
+    updateTrendSeries(idx,found.chart);
+    replayData(found.chart,idx);
+  }
+
+  function updateTrendSeries(idx,chart){
+    const sel=document.getElementById("trend-select-"+idx);
+    if(!sel||!chart)return;
+    // Clear and rebuild series
+    chart.series=[];
+    const checks=sel.querySelectorAll("input[type=checkbox]:checked");
+    checks.forEach((cb,i)=>{
+      chart.addSeries(cb.value,COLORS[i%COLORS.length]);
+    });
+  }
+
+  function getAvailableSignals(){
+    const sigs=[];
+    APP.telemetry.forEach((s,name)=>{
+      if(s&&s.category!=="industrial_event")sigs.push({name,value:s.value});
+    });
+    sigs.sort((a,b)=>a.name.localeCompare(b.name));
+    return sigs;
+  }
+
+  function replayData(chart,idx){
+    // Chart is new, replay existing timeIdx data from APP.telemetry
+    if(!chart||!chart.series.length||timeIdx<2)return;
+    // We can't replay since we don't store history. Charts will fill as data arrives.
+  }
+
+  function pushFrame(f){
+    timeIdx++;
+    for(const c of charts){
+      if(!c.chart||!c.chart.series.length)continue;
+      for(let i=0;i<c.chart.series.length;i++){
+        const sn=c.chart.series[i].label;
+        const sig=APP.telemetry.get(sn);
+        if(sig)c.chart.pushData(i,timeIdx,Number(sig.value)||0);
+      }
+    }
+  }
+
+  function updateAddButton(){
+    const btn=document.getElementById("trend-add-btn");
+    if(btn){btn.disabled=charts.length>=MAX_TRENDS;btn.textContent=charts.length>=MAX_TRENDS?`Max ${MAX_TRENDS} Trends`:"+ Add Trend";}
+  }
+
+  return{init,addTrend,removeTrend,updateTrend,pushFrame};
+})();
+
+// ---- AI Generation ----
+async function aiGenerate(){const p=document.getElementById("ai-prompt"),r=document.getElementById("ai-result");if(!p||!r)return;const t=p.value.trim();if(!t){r.textContent="Please enter a description";return}r.textContent="Generating...";try{const resp=await fetch("/api/ai/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:t})});const d=await resp.json();r.textContent=d.yaml||d.error||"No output"}catch(e){r.textContent="Error: "+e.message}}
+async function pidParse(){const p=document.getElementById("pid-input"),r=document.getElementById("pid-result");if(!p||!r)return;const t=p.value.trim();if(!t){r.textContent="Please enter P&ID shorthand";return}r.textContent="Parsing...";try{const resp=await fetch("/api/ai/parse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t})});const d=await resp.json();r.textContent=d.yaml||d.error||"No output"}catch(e){r.textContent="Error: "+e.message}}
