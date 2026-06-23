@@ -25,14 +25,6 @@ parameters:
     type: number
     default: 3.0
     description: Design discharge/suction pressure ratio
-  suction_pressure_design_kpa:
-    type: number
-    default: 101.325
-    description: Design suction pressure in kPa
-  discharge_pressure_design_kpa:
-    type: number
-    default: 304.0
-    description: Design discharge pressure in kPa
   polytropic_efficiency:
     type: number
     default: 0.82
@@ -41,6 +33,19 @@ parameters:
     type: number
     default: 0.12
     description: Design surge margin (fraction)
+  source_equipment_id:
+    type: string
+    default: ""
+    description: >
+      ID of boundary source equipment providing inlet conditions.
+      Compressor reads pressure_kpa, temperature_c, molecular_weight_kg_kmol,
+      and specific_heat_ratio from this equipment.
+  sink_equipment_id:
+    type: string
+    default: ""
+    description: >
+      ID of boundary sink equipment receiving discharge flow.
+      Compressor reads backpressure_kpa and writes flow_m3_s to this equipment.
 
 ports:
   inlet:

@@ -1,0 +1,63 @@
+id: boundary_v1
+display_name: Boundary (Source / Sink)
+category: equipment
+version: 1
+python_class: virtual_factory.equipment.boundary.BoundaryEquipment
+description: >
+  Inlet or outlet boundary condition for gas/liquid process equipment.
+  Source: provides gas at controlled pressure, temperature, and composition.
+  Sink: receives gas flow, applies backpressure.
+
+  This model intentionally has no internal dynamics. All state changes
+  are driven by connected equipment (compressor, pump, etc.) or scenarios.
+
+parameters:
+  boundary_type:
+    type: string
+    default: source
+    description: 'boundary type: "source" or "sink"'
+  pressure_kpa:
+    type: number
+    default: 101.325
+    description: Source supply pressure or sink backpressure in kPa
+  temperature_c:
+    type: number
+    default: 25.0
+    description: Source gas temperature in °C
+  available_flow_m3_s:
+    type: number
+    default: 0.0
+    description: >
+      Maximum available flow from this source (m³/s). 0 = unlimited.
+      Ignored for sink boundaries.
+  composition:
+    type: object
+    default: {}
+    description: >
+      Gas composition as mole fractions (e.g. {"N2": 0.79, "O2": 0.21}).
+      Defaults to air if empty.
+
+ports:
+  outlet:
+    kind: physical
+    direction: out
+    medium: gas
+  inlet:
+    kind: physical
+    direction: in
+    medium: gas
+
+supported_variables:
+  - pressure_kpa
+  - temperature_c
+  - flow_m3_s
+  - available_flow_m3_s
+  - backpressure_kpa
+  - molecular_weight_kg_kmol
+  - specific_heat_ratio
+
+ui:
+  icon: tank
+  color: "#64748b"
+  group: boundary
+  layout_hint: small

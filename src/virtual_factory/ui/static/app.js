@@ -41,6 +41,13 @@ document.addEventListener("DOMContentLoaded",()=>{
 // ---- Helpers ----
 function safeOn(id,ev,fn){const el=document.getElementById(id);if(el)el.addEventListener(ev,fn);}
 function switchRightPane(id){
+  // Special: Process Flow just focuses the diagram, no right-panel tab
+  if (id === "pane-process-flow") {
+    document.querySelectorAll(".tab-pane").forEach(e => e.classList.remove("active"));
+    document.querySelectorAll(".right-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".nav-item[data-pane]").forEach(n => n.classList.toggle("active", n.dataset.pane === id));
+    return;
+  }
   // Switch tab-pane visibility
   const content=document.getElementById("monitoring-content");
   if(content){content.querySelectorAll(".tab-pane").forEach(e=>e.classList.remove("active"));const p=document.getElementById(id);if(p)p.classList.add("active")}

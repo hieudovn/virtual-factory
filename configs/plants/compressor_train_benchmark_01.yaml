@@ -35,6 +35,29 @@ medium:
 # Equipment
 # ------------------------------------------------------------------
 equipment:
+  # --- Boundary: Gas Source (inlet conditions) ---
+  - id: GAS_SOURCE
+    model_type: boundary_v1
+    display_name: Suction Gas Source
+    parameters:
+      boundary_type: source
+      pressure_kpa: 101.325
+      temperature_c: 25.0
+      available_flow_m3_s: 5.0
+      composition:
+        N2: 0.79
+        O2: 0.21
+
+  # --- Boundary: Gas Sink (discharge receiver) ---
+  - id: GAS_SINK
+    model_type: boundary_v1
+    display_name: Discharge Header
+    parameters:
+      boundary_type: sink
+      pressure_kpa: 280.0
+      temperature_c: 25.0
+
+  # --- Compressor Train ---
   - id: COMP01
     model_type: compressor_train_v1
     display_name: Compressor Train A
@@ -42,26 +65,25 @@ equipment:
       rated_power_kw: 500.0
       rated_flow_m3_s: 2.0
       rated_pressure_ratio: 3.0
-      suction_pressure_design_kpa: 101.325
-      discharge_pressure_design_kpa: 304.0
       polytropic_efficiency: 0.82
       surge_margin_design: 0.12
+      source_equipment_id: GAS_SOURCE
+      sink_equipment_id: GAS_SINK
 
-  - id: PIPE_IN
-    model_type: pipe_v1
-    display_name: Suction Pipe
-    parameters:
-      length_m: 20.0
-      diameter_m: 0.3
-      roughness_mm: 0.05
-
-  - id: PIPE_OUT
-    model_type: pipe_v1
-    display_name: Discharge Pipe
-    parameters:
-      length_m: 15.0
-      diameter_m: 0.2
-      roughness_mm: 0.05
+# ------------------------------------------------------------------
+# Connections (graph-based: boundary → compressor → boundary)
+# ------------------------------------------------------------------
+connections:
+  - id: suction_line
+    type: physical
+    from: GAS_SOURCE.outlet
+    to: COMP01.inlet
+    medium: natural_gas
+  - id: discharge_line
+    type: physical
+    from: COMP01.outlet
+    to: GAS_SINK.inlet
+    medium: natural_gas
 
 # ------------------------------------------------------------------
 # Sensors (Phase 1: 50+ industrial signals)
@@ -443,6 +465,42 @@ signals:
     publish: true
     unit: kW
     source: PT105
+  # Alarm signals (for dashboard notification)
+  ALM_COMP01_VIB_HIGH:
+    category: industrial_event
+    publish: true
+    unit: "-"
+    source: ALM_VIB_DE_HIGH
+  ALM_COMP01_VIB_NDE_HIGH:
+    category: industrial_event
+    publish: true
+    unit: "-"
+    source: ALM_VIB_NDE_HIGH
+  ALM_COMP01_BRG_TEMP_HIGH:
+    category: industrial_event
+    publish: true
+    unit: "-"
+    source: ALM_BRG_DE_TEMP_HIGH
+  ALM_COMP01_LO_PRESS_LOW:
+    category: industrial_event
+    publish: true
+    unit: "-"
+    source: ALM_LO_PRESS_LOW
+  ALM_COMP01_DISCH_TEMP_HIGH:
+    category: industrial_event
+    publish: true
+    unit: "-"
+    source: ALM_DISCH_TEMP_HIGH
+  ALM_COMP01_MOTOR_CURRENT_HIGH:
+    category: industrial_event
+    publish: true
+    unit: "-"
+    source: ALM_MOTOR_CURRENT_HIGH
+  ALM_COMP01_SEAL_FLOW_HIGH:
+    category: industrial_event
+    publish: true
+    unit: "-"
+    source: ALM_SEAL_FLOW_HIGH
 
 # ------------------------------------------------------------------
 # Alarms

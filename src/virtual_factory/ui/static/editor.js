@@ -415,8 +415,8 @@ const EDITOR = (() => {
 
     g.appendChild(el("text", {
       x: cx, y: cy + 14, "text-anchor": "middle",
-      fill: "#667474", "font-size": "9", "font-family": FONT,
-    }, "Tx"));
+      fill: colours.stroke, "font-size": "9", "font-family": "monospace",
+    }, _sensorValue(node)));
 
     svg.appendChild(g);
   }
@@ -443,8 +443,8 @@ const EDITOR = (() => {
       fill: "#667474", "font-size": "10", "font-family": FONT,
     }, node.display_name));
 
-    // Controller output value
-    const liveVal = findLiveSignal(node.id + "_OUT", null);
+    // Controller/actuator output value (find telemetry signal whose source matches this node)
+    const liveVal = _sensorNodeSignal(node);
     if (liveVal) {
       g.appendChild(el("text", {
         x: x + INSTR_W / 2, y: y + 52, "text-anchor": "middle",
@@ -478,7 +478,7 @@ const EDITOR = (() => {
     }, node.display_name));
 
     // Feedback value
-    const fbSignal = findLiveSignal("V101_OPENING_FEEDBACK", null);
+    const fbSignal = _sensorNodeSignal(node);
     if (fbSignal) {
       g.appendChild(el("text", {
         x: x + INSTR_W / 2, y: y + 52, "text-anchor": "middle",
@@ -492,25 +492,44 @@ const EDITOR = (() => {
   // ---- Live data lookup ---------------------------------------------
 
   function findLiveValue(equipmentId) {
-    // First try: look for a dedicated sensor signal
-    const sensorMap = {
-      "T102": "LT102_LEVEL",
-      "V101": "FT101_FLOW",
-      "P101": "PT101_PRESSURE",
-    };
-    const signalName = sensorMap[equipmentId];
-    if (signalName) {
-      const s = telemetry.get(signalName);
-      if (s) return { value: s.value, unit: s.unit };
+    // Generic: search all telemetry signals for a value to display on this equipment node.
+    // Priority order:
+    //   1. Signals named exactly like equipment (rare)
+    //   2. Industrial signals whose name starts with the equipment ID
+    //   3. Equipment truth signals (e.g. COMP01.power_consumed_kw)
+    //   4. Any signal containing the equipment ID
+
+    // Priority 2: industrial signals named after the equipment
+    for (const [name, s] of telemetry) {
+      if (s.category === "industrial_signal" && name.startsWith(equipmentId + "_")) {
+        return { value: s.value, unit: s.unit };
+      }
     }
-    // Fallback: look for equipment truth signals (e.g. T101.level_true)
-    const truthKeys = ["level_true", "volume_true", "outflow_true", "inflow_true",
-                       "discharge_pressure_kpa", "pressure_rise_pa",
-                       "heat_transfer_kw", "power_consumed_kw"];
-    for (const key of truthKeys) {
+
+    // Priority 3: equipment truth values (calculated category, prefixed with equipment ID)
+    const preferredTruth = ["power_consumed_kw", "discharge_pressure_kpa",
+      "pressure_kpa", "flow_m3_s", "level_true", "volume_true"];
+    for (const key of preferredTruth) {
       const s = telemetry.get(`${equipmentId}.${key}`);
-      if (s) return { value: s.value, unit: s.unit };
+      if (s && s.value !== null && s.value !== undefined) {
+        return { value: s.value, unit: s.unit };
+      }
     }
+
+    // Priority 4: any truth variable for this equipment
+    for (const [name, s] of telemetry) {
+      if (name.startsWith(equipmentId + ".")) {
+        return { value: s.value, unit: s.unit };
+      }
+    }
+
+    // Priority 5: any signal containing the equipment ID
+    for (const [name, s] of telemetry) {
+      if (name.includes(equipmentId)) {
+        return { value: s.value, unit: s.unit };
+      }
+    }
+
     return null;
   }
 
@@ -518,17 +537,28 @@ const EDITOR = (() => {
     return telemetry.get(name) || defaultValue;
   }
 
+  function _sensorNodeSignal(node) {
+    // Find telemetry signal whose source field matches this sensor node ID
+    for (const [name, s] of telemetry) {
+      if (s.source === node.id) return s;
+    }
+    return null;
+  }
+
+  function _sensorValue(node) {
+    const s = _sensorNodeSignal(node);
+    if (s && s.value !== null && s.value !== undefined) {
+      return formatVal(s.value) + (s.unit ? " " + s.unit : "");
+    }
+    return "Tx";
+  }
+
   function hasActiveAlarm(equipmentId) {
-    // Check if any alarm about this equipment is active
-    const alarmPrefixes = {
-      "T102": ["T102_LOW_LEVEL_ALARM", "T102_HIGH_LEVEL_ALARM"],
-      "P101": ["P101_NO_FLOW_ALARM"],
-      "V101": ["V101_POSITION_DEVIATION_ALARM"],
-    };
-    const names = alarmPrefixes[equipmentId] || [];
-    for (const name of names) {
-      const a = alarms.get(name);
-      if (a && a.value === true) return true;
+    // Generic: check all alarms for any that mention this equipment
+    for (const [name, a] of alarms) {
+      if (name.includes(equipmentId) && a.value === true) {
+        return true;
+      }
     }
     return false;
   }

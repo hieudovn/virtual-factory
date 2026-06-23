@@ -12,8 +12,13 @@ Models a complete compressor train assembly including:
 This is the primary analytics benchmark model supporting 50+ tags (Phase 1)
 and 150-300 tags (Phase 2).
 
-The compressor train uses the AssetHierarchy for structural modeling
-and integrates with the FaultEngine for fault lifecycle management.
+The compressor train reads inlet conditions from a connected boundary
+source equipment (via ``source_equipment_id`` parameter) and writes
+discharge flow to a connected boundary sink equipment (via
+``sink_equipment_id`` parameter). This preserves the graph-based
+architecture: every asset has inlet/outlet ports connected through
+the plant graph, and equipment does not self-generate boundary
+conditions independently.
 """
 
 from dataclasses import dataclass, field
@@ -38,14 +43,17 @@ class CompressorTrain(BaseEquipment):
         Rated suction flow.
     rated_pressure_ratio : float
         Design pressure ratio.
-    suction_pressure_design_kpa : float
-        Design suction pressure.
-    discharge_pressure_design_kpa : float
-        Design discharge pressure.
     polytropic_efficiency : float
         Polytropic efficiency (0.0-1.0).
     surge_margin_design : float
         Design surge margin (typically 0.10-0.15).
+    source_equipment_id : str
+        ID of boundary source equipment providing inlet conditions.
+        Reads ``{source}.pressure_kpa``, ``{source}.temperature_c``,
+        ``{source}.molecular_weight_kg_kmol``, ``{source}.specific_heat_ratio``.
+    sink_equipment_id : str
+        ID of boundary sink equipment receiving discharge.
+        Reads ``{sink}.backpressure_kpa``, writes ``{sink}.flow_m3_s``.
     """
 
     # Sub-system equipment refs (set during initialization)
@@ -137,35 +145,91 @@ class CompressorTrain(BaseEquipment):
     def process_step(self, state: RuntimeState, dt_s: float) -> None:
         """Advance compressor train physics for one time step.
 
-        Coordinates all sub-systems and computes aggregated metrics.
+        Reads inlet conditions from the connected boundary source equipment
+        (``source_equipment_id``) and writes discharge flow to the connected
+        boundary sink equipment (``sink_equipment_id``).
+
+        This preserves the graph-based architecture: boundary conditions
+        are NOT self-generated; they come from explicitly connected
+        equipment through the plant graph.
         """
         tid = self.id
         running = bool(state.get_truth(f"{tid}.running", False))
-        flow_m3_s = float(state.get_truth(f"{tid}.flow_m3_s", 0.0))
 
         rated_power = float(self.parameters.get("rated_power_kw", 500.0))
         rated_flow = float(self.parameters.get("rated_flow_m3_s", 2.0))
         rated_pr = float(self.parameters.get("rated_pressure_ratio", 3.0))
         poly_eff = float(self.parameters.get("polytropic_efficiency", 0.82))
-        p_suction = float(state.get_truth(f"{tid}.suction_pressure_kpa", 101.325))
-        t_suction = float(state.get_truth(f"{tid}.suction_temperature_c", 25.0))
+
+        # --- Read inlet conditions from boundary source equipment ---
+        source_id = str(self.parameters.get("source_equipment_id", ""))
+        if source_id:
+            p_suction = float(state.get_truth(f"{source_id}.pressure_kpa", 101.325))
+            t_suction = float(state.get_truth(f"{source_id}.temperature_c", 25.0))
+            mw = float(state.get_truth(f"{source_id}.molecular_weight_kg_kmol", 28.97))
+            k_gas = float(state.get_truth(f"{source_id}.specific_heat_ratio", 1.4))
+            # Flow: read from what was computed last step, or use source available flow
+            flow_m3_s = float(state.get_truth(f"{tid}.flow_m3_s", 0.0))
+            if flow_m3_s == 0.0 and running:
+                avail = float(state.get_truth(f"{source_id}.available_flow_m3_s", 0.0))
+                if avail > 0:
+                    flow_m3_s = min(rated_flow * 0.5, avail)  # initial ramp
+        else:
+            # Fallback: read from own state (standalone mode, no boundary)
+            p_suction = float(state.get_truth(f"{tid}.suction_pressure_kpa", 101.325))
+            t_suction = float(state.get_truth(f"{tid}.suction_temperature_c", 25.0))
+            mw = 28.97
+            k_gas = 1.4
+            flow_m3_s = float(state.get_truth(f"{tid}.flow_m3_s", 0.0))
+
+        # --- Read backpressure from boundary sink equipment ---
+        sink_id = str(self.parameters.get("sink_equipment_id", ""))
+        if sink_id:
+            p_sink = float(state.get_truth(f"{sink_id}.backpressure_kpa", 101.325))
+        else:
+            p_sink = 101.325
+
+        # Persist inlet conditions to own state (for sensor access)
+        state.set_truth(f"{tid}.suction_pressure_kpa", round(p_suction, 2))
+        state.set_truth(f"{tid}.suction_temperature_c", round(t_suction, 1))
 
         if running and rated_flow > 0:
-            # --- Compressor physics ---
+            # --- Compressor physics (using boundary gas properties) ---
             frac = min(abs(flow_m3_s) / rated_flow, 1.0)
             pr_actual = 1.0 + (1.0 - frac) * (rated_pr - 1.0)
             p_discharge = p_suction * pr_actual
-            t_ratio = pr_actual ** ((1.4 - 1.0) / (1.4 * poly_eff))  # k=1.4 for air
+            # Temperature ratio: T2/T1 = PR^((k-1)/(k*eta_poly))
+            t_ratio = pr_actual ** ((k_gas - 1.0) / (k_gas * poly_eff))
             t_discharge = (t_suction + 273.15) * t_ratio - 273.15
             power = rated_power * frac
 
-            # Surge margin
+            # Surge margin (simplified: decreases with low flow)
             surge_margin = max(0.0, 1.0 - (1.0 - frac) * 1.5)
 
-            # Polytropic head (kJ/kg)
-            n = 1.4  # cp/cv for air
-            r_gas = 0.287  # kJ/kg·K for air
-            head = (n / (n - 1)) * r_gas * (t_suction + 273.15) * (pr_actual ** ((n - 1) / n) - 1)
+            # Polytropic head (kJ/kg): H_poly = (n/(n-1)) * Z * R * T1 * (PR^((n-1)/n) - 1)
+            # R_universal = 8.314 kJ/(kmol·K), R_gas = R_universal / MW
+            r_gas = 8.314 / mw  # kJ/(kg·K)
+            head = (k_gas / (k_gas - 1.0)) * r_gas * (t_suction + 273.15) * (pr_actual ** ((k_gas - 1.0) / k_gas) - 1.0)
+
+            # Mass flow: m_dot = rho * Q = (P / (R_gas * T)) * Q  [kg/s]
+            # R_gas in J/(kg·K) = r_gas * 1000
+            rho_suction = (p_suction * 1000.0) / (r_gas * 1000.0 * (t_suction + 273.15))
+            mass_flow = rho_suction * flow_m3_s
+
+            # --- Write compressor core outputs ---
+            state.set_truth(f"{tid}.discharge_pressure_kpa", round(p_discharge, 2))
+            state.set_truth(f"{tid}.pressure_ratio", round(pr_actual, 3))
+            state.set_truth(f"{tid}.discharge_temperature_c", round(t_discharge, 1))
+            state.set_truth(f"{tid}.power_consumed_kw", round(power, 2))
+            state.set_truth(f"{tid}.polytropic_head_kj_kg", round(head, 3))
+            state.set_truth(f"{tid}.surge_margin", round(surge_margin, 4))
+            state.set_truth(f"{tid}.speed_rpm", 3560.0)
+            state.set_truth(f"{tid}.mass_flow_kg_s", round(mass_flow, 3))
+            state.set_truth(f"{tid}.flow_m3_s", round(flow_m3_s, 4))
+
+            # --- Write discharge flow to boundary sink equipment ---
+            if sink_id:
+                state.set_truth(f"{sink_id}.flow_m3_s", round(flow_m3_s, 4))
 
             state.set_truth(f"{tid}.discharge_pressure_kpa", round(p_discharge, 2))
             state.set_truth(f"{tid}.pressure_ratio", round(pr_actual, 3))

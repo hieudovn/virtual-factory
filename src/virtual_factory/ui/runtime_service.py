@@ -197,30 +197,123 @@ class RuntimeService:
         return [record for record in self.latest_telemetry() if record.get("category") == "industrial_event"]
 
     def plant_graph(self) -> dict:
-        """Return the plant graph structure for the visual editor."""
-        # Ensure engine is initialised
+        """Return the plant graph structure for the visual editor.
+
+        Layout rules:
+        - Equipment placed in flow order (left to right)
+        - Sensors grouped near the equipment they measure
+        - Measurement edges drawn between sensor and measured equipment
+        """
         if not self.engine.initialized:
             self.engine.initialize()
         if self.engine.assembly is None:
             return {"nodes": [], "edges": []}
         graph = self.engine.assembly.graph
 
-        # Equipment positions — simple auto-layout for MVP
         positions: dict[str, dict] = {}
-        equipment_order = [n.id for n in graph.nodes.values() if n.category == "equipment"]
-        sensor_order = [n.id for n in graph.nodes.values() if n.category == "sensors"]
-        ctrl_order = [n.id for n in graph.nodes.values() if n.category == "controllers"]
-        act_order = [n.id for n in graph.nodes.values() if n.category == "actuators"]
+        equipment_nodes = [n for n in graph.nodes.values() if n.category == "equipment"]
+        sensor_nodes = [n for n in graph.nodes.values() if n.category == "sensors"]
+        ctrl_nodes = [n for n in graph.nodes.values() if n.category == "controllers"]
+        act_nodes = [n for n in graph.nodes.values() if n.category == "actuators"]
 
-        # Assign positions in rows
-        for i, eid in enumerate(equipment_order):
-            positions[eid] = {"x": 80 + i * 160, "y": 120}
-        for i, sid in enumerate(sensor_order):
-            positions[sid] = {"x": 320 + i * 140, "y": 240}
-        for i, cid in enumerate(ctrl_order):
-            positions[cid] = {"x": 320 + i * 140, "y": 340}
-        for i, aid in enumerate(act_order):
-            positions[aid] = {"x": 460 + i * 140, "y": 420}
+        # --- Equipment: flow order (source -> main -> sink) ---
+        eq_by_id = {n.id: n for n in equipment_nodes}
+        eq_ids = list(eq_by_id.keys())
+        ordered_ids = []
+        remaining = set(eq_ids)
+
+        for eid in list(remaining):
+            node = eq_by_id[eid]
+            params = node.config.get("parameters", {})
+            if params.get("boundary_type") == "source":
+                ordered_ids.append(eid)
+                remaining.discard(eid)
+
+        for eid in list(remaining):
+            node = eq_by_id[eid]
+            params = node.config.get("parameters", {})
+            if params.get("source_equipment_id"):
+                ordered_ids.append(eid)
+                remaining.discard(eid)
+
+        for eid in list(remaining):
+            ordered_ids.append(eid)
+
+        num_eq = len(ordered_ids)
+        eq_spacing = max(250, 900 // max(num_eq, 1))
+        for i, eid in enumerate(ordered_ids):
+            positions[eid] = {"x": 60 + i * eq_spacing, "y": 60}
+
+        # --- Sensors: group by measured equipment ---
+        # Build a map: equipment_id -> list of sensor nodes
+        sensor_by_eq: dict[str, list] = {}
+        for sn in sensor_nodes:
+            measures = sn.config.get("measures", "")
+            eq_id = measures.split(".")[0] if "." in measures else ""
+            sensor_by_eq.setdefault(eq_id, []).append(sn)
+
+        # Place sensors in columns near their measured equipment
+        for eq_id, sensors in sensor_by_eq.items():
+            eq_pos = positions.get(eq_id, {"x": 300, "y": 120})
+            base_x = eq_pos["x"] - 40
+
+            # Categorize sensors by their measure suffix
+            pressure_sensors = []
+            temp_sensors = []
+            flow_sensors = []
+            vib_sensors = []
+            current_sensors = []
+            speed_sensors = []
+            other_sensors = []
+
+            for sn in sensors:
+                measures = sn.config.get("measures", "")
+                suffix = measures.split(".")[-1] if "." in measures else measures
+                if "pressure" in suffix or "filter_dp" in suffix:
+                    pressure_sensors.append(sn)
+                elif "temp" in suffix:
+                    temp_sensors.append(sn)
+                elif "flow" in suffix:
+                    flow_sensors.append(sn)
+                elif "vib" in suffix or "displacement" in suffix:
+                    vib_sensors.append(sn)
+                elif "current" in suffix:
+                    current_sensors.append(sn)
+                elif "speed" in suffix or "rpm" in suffix:
+                    speed_sensors.append(sn)
+                else:
+                    other_sensors.append(sn)
+
+            # Layout in rows by category
+            col_w = 140
+            row_h = 55
+
+            # Pressure sensors — left column
+            for j, sn in enumerate(pressure_sensors):
+                positions[sn.id] = {"x": base_x - col_w, "y": 40 + j * row_h}
+
+            # Temperature sensors — right column
+            for j, sn in enumerate(temp_sensors):
+                positions[sn.id] = {"x": base_x + col_w + 80, "y": 40 + j * row_h}
+
+            # Flow sensors — below equipment
+            for j, sn in enumerate(flow_sensors):
+                positions[sn.id] = {"x": base_x + j * col_w, "y": 180}
+
+            # Vibration sensors — below flow
+            for j, sn in enumerate(vib_sensors):
+                positions[sn.id] = {"x": base_x + j * col_w, "y": 250}
+
+            # Current/speed — below vibration
+            misc = current_sensors + speed_sensors + other_sensors
+            for j, sn in enumerate(misc):
+                positions[sn.id] = {"x": base_x + j * col_w, "y": 320}
+
+        # --- Controllers & actuators (if any) ---
+        for i, cid in enumerate([n.id for n in ctrl_nodes]):
+            positions[cid] = {"x": 320 + i * 140, "y": 420}
+        for i, aid in enumerate([n.id for n in act_nodes]):
+            positions[aid] = {"x": 460 + i * 140, "y": 490}
 
         nodes = []
         for node in graph.nodes.values():
