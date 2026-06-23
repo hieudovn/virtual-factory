@@ -1,0 +1,194 @@
+# Compressor Train — Analytics Benchmark Scenarios
+# ================================================
+#
+# Scenarios designed for analytics model validation:
+# - Normal operation (baseline)
+# - Single fault injection with progressive degradation
+# - Multiple fault co-occurrence
+# - Fault + recovery cycles
+# - Sensor quality degradation
+# - Operating state transitions
+
+scenarios:
+  # ------------------------------------------------------------------
+  # Normal Operation (baseline for analytics)
+  # ------------------------------------------------------------------
+  - id: normal_operation
+    description: >
+      Steady-state compressor train operation at design conditions.
+      Used as the healthy baseline for anomaly detection training.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      - at_s: 0.0
+        type: set_parameter
+        target: equipment.COMP01.rated_flow_m3_s
+        value: 2.0
+
+  # ------------------------------------------------------------------
+  # Bearing Wear — Progressive Degradation
+  # ------------------------------------------------------------------
+  - id: bearing_wear_scenario
+    description: >
+      Progressive bearing wear starting after 1 hour of normal
+      operation. Designed for predictive maintenance model training.
+      Fault grows over several hours with increasing vibration
+      and temperature.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      # Inject bearing wear fault at t=3600s (1 hour)
+      - at_s: 3600.0
+        type: inject_fault
+        target: COMP01
+        value:
+          fault_id: bearing_wear
+          initial_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Misalignment Scenario
+  # ------------------------------------------------------------------
+  - id: misalignment_scenario
+    description: >
+      Shaft misalignment developing after startup. Characteristic
+      1x and 2x vibration patterns for diagnostics validation.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      - at_s: 1800.0
+        type: inject_fault
+        target: COMP01
+        value:
+          fault_id: misalignment
+          initial_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Seal Leakage Scenario
+  # ------------------------------------------------------------------
+  - id: seal_leakage_scenario
+    description: >
+      Dry gas seal degradation causing increased seal gas consumption.
+      Tests leak detection algorithms and trend analysis.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      - at_s: 7200.0
+        type: inject_fault
+        target: COMP01
+        value:
+          fault_id: seal_leakage
+          initial_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Filter Fouling Scenario
+  # ------------------------------------------------------------------
+  - id: filter_fouling_scenario
+    description: >
+      Lube oil filter fouling causing rising DP and reduced oil flow.
+      Tests filter health monitoring and maintenance scheduling.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      - at_s: 5400.0
+        type: inject_fault
+        target: COMP01
+        value:
+          fault_id: filter_fouling
+          initial_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Combined Fault Scenario (for advanced diagnostics)
+  # ------------------------------------------------------------------
+  - id: combined_fault_scenario
+    description: >
+      Multiple co-occurring faults: bearing wear + cooling degradation.
+      Tests multi-fault diagnosis and fault isolation capabilities.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      - at_s: 3600.0
+        type: inject_fault
+        target: COMP01
+        value:
+          fault_id: bearing_wear
+          initial_severity: 0.0
+      - at_s: 7200.0
+        type: inject_fault
+        target: COMP01
+        value:
+          fault_id: cooling_degradation
+          initial_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Fault + Recovery Cycle
+  # ------------------------------------------------------------------
+  - id: fault_recovery_scenario
+    description: >
+      Bearing wear develops, then maintenance is applied. Tests
+      recovery profile modeling and health index rebound.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      - at_s: 3600.0
+        type: inject_fault
+        target: COMP01
+        value:
+          fault_id: filter_fouling
+          initial_severity: 0.0
+      # Apply maintenance at t=14400s (4 hours after fault)
+      - at_s: 14400.0
+        type: apply_maintenance
+        target: COMP01
+        value:
+          fault_id: filter_fouling
+          action_id: filter_replace
+
+  # ------------------------------------------------------------------
+  # Surge Risk Scenario
+  # ------------------------------------------------------------------
+  - id: surge_risk_scenario
+    description: >
+      Operating condition approaching surge line. Tests surge
+      detection and anti-surge control validation.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      - at_s: 1800.0
+        type: inject_fault
+        target: COMP01
+        value:
+          fault_id: surge_risk
+          initial_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Sensor Drift Scenario
+  # ------------------------------------------------------------------
+  - id: sensor_drift_scenario
+    description: >
+      Slow calibration drift of discharge pressure transmitter.
+      Tests sensor health monitoring and drift detection algorithms.
+    actions:
+      - at_s: 0.0
+        type: set_truth
+        target: COMP01.running
+        value: true
+      - at_s: 0.0
+        type: set_sensor_drift
+        target: PT102
+        value: 0.0001

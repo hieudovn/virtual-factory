@@ -98,3 +98,67 @@ This roadmap keeps implementation staged so the simulation core remains model-dr
 - ✅ Historical trending (live Canvas line chart in Trends tab).
 - ✅ Data table (real-time telemetry log in Data Table tab).
 
+## Phase 8: Analytics-First Data Generation Platform
+
+✅ Core infrastructure complete — analytics development and benchmarking.
+
+Virtual Factory's primary mission is now: **Generate realistic industrial
+telemetry, operational events, fault progression, and ground-truth labels
+for industrial analytics development, validation, and benchmarking.**
+
+- ✅ Fault Lifecycle Engine (`faults/`) — configurable growth rates, severity
+  curves (linear, exponential, sigmoid, step, logarithmic), symptom propagation,
+  alarm delays, maintenance actions, and recovery profiles (instant, linear,
+  exponential).
+- ✅ Operating State Model (`operating_states/`) — explicit state machine with
+  Stopped, Startup, Ramp-up, Steady Running, Low Load, High Load, Recycle Mode,
+  Near Surge, Shutdown, Trip, and Maintenance states. State transitions exported
+  as benchmark truth.
+- ✅ Asset Hierarchy System (`equipment/asset_hierarchy.py`) — tree-structured
+  asset model supporting parent-child relationships, tag aggregation, and
+  metadata export for compressor trains, pump systems, and other assemblies.
+- ✅ Compressor Train Flagship Model (`equipment/compressor_train.py`) — 50+
+  tags covering compressor core, driver motor, lube oil system, cooling system,
+  seal gas system, anti-surge/recycle, bearings, and vibration. Polytropic
+  compression physics with surge margin computation.
+- ✅ Benchmark & Ground Truth Layer (`benchmark/`) — hidden labels for operating
+  state, fault type/severity/start time, asset health index, remaining useful
+  life, failure probability, and expected diagnosis. Benchmark vs industrial
+  mode separation.
+- ✅ Maintenance & Event Generator (`maintenance/`) — alarm events, operator
+  logs, inspections, work orders, failure events, repair actions, downtime
+  events, and spare part replacements with structured export.
+- ✅ Enhanced Sensor Quality Model (`sensor_quality/`) — noise increase, bias
+  shift, drift, flatline, intermittent dropout, communication loss, calibration
+  offset, and sample rate mismatch degradation profiles.
+- ✅ Benchmark Package Export (`benchmark/export_utils.py`) — Parquet (via
+  pyarrow) and JSONL export of telemetry, asset metadata, operating states,
+  alarm events, maintenance events, fault timeline, and benchmark labels.
+- ✅ Fault Library Configuration — 10 compressor faults (bearing wear,
+  misalignment, seal leakage, filter fouling, aftercooler fouling, oil pressure
+  loss, cooling degradation, recycle valve stiction, surge risk, sensor drift)
+  and 5 pump faults (cavitation, bearing wear, impeller wear, seal leakage,
+  suction blockage, discharge blockage, misalignment, motor overload, sensor
+  fault) in YAML (`configs/faults/`).
+- ✅ Analytics Runtime (`analytics/`) — integration layer tying fault engine,
+  state machines, maintenance generator, and benchmark manager into cohesive
+  simulation runs.
+
+## Phase 9: Priority Asset Templates (Next)
+
+- 🔜 Heat Exchanger analytics template.
+- 🔜 Cooling System analytics template.
+- 🔜 Boiler analytics template.
+- 🔜 Transformer analytics template.
+- 🔜 Fan / Blower analytics template.
+- 🔜 Compressor Train Phase 2 (150-300 tags).
+
+## Phase 10: Analytics Model Integration
+
+- 🔜 AAKR model training pipeline using generated data.
+- 🔜 Anomaly detection model validation against injected faults.
+- 🔜 Health index model correlation with degradation truth.
+- 🔜 RCA algorithm validation against correct fault categories.
+- 🔜 Data Foundation ingestion and contextualization of generated telemetry.
+- 🔜 Complete demonstration environment (no customer data required).
+

@@ -1,0 +1,509 @@
+# Fault Library — Compressor Train Faults
+# ======================================
+# This file defines the initial failure library for compressor train
+# equipment. Each fault includes growth rate, severity curve, symptom
+# propagation, alarm delay, and recovery profiles.
+
+faults:
+
+  # ------------------------------------------------------------------
+  # Bearing Wear
+  # ------------------------------------------------------------------
+  - fault_id: bearing_wear
+    category: compressor
+    display_name: Bearing Wear (DE)
+    severity_curve: exponential
+    growth_rate: 0.0005
+    description: >
+      Progressive wear of the drive-end bearing causing increased
+      vibration, temperature rise, and eventual shaft displacement.
+    tags: [bearing, wear, vibration, mechanical]
+    alarm_delay_s: 7200  # 2 hours before vibration alarm triggers
+    symptoms:
+      - variable: "{id}.vibration_de_mm_s"
+        effect_type: additive
+        magnitude: 8.0
+        noise_std: 0.3
+        delay_s: 600
+      - variable: "{id}.vibration_nde_mm_s"
+        effect_type: additive
+        magnitude: 4.0
+        noise_std: 0.2
+        delay_s: 900
+      - variable: "{id}.bearing_de_temp_c"
+        effect_type: additive
+        magnitude: 25.0
+        noise_std: 0.5
+        delay_s: 1200
+      - variable: "{id}.shaft_displacement_de_um"
+        effect_type: additive
+        magnitude: 60.0
+        noise_std: 2.0
+        delay_s: 1800
+      - variable: "{id}.motor.current_a"
+        effect_type: multiplicative
+        magnitude: 0.05
+        delay_s: 3600
+    maintenance_actions:
+      - action_id: bearing_replace
+        action_type: replace
+        duration_s: 28800  # 8 hours
+        description: Replace DE bearing assembly
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Misalignment
+  # ------------------------------------------------------------------
+  - fault_id: misalignment
+    category: compressor
+    display_name: Shaft Misalignment
+    severity_curve: linear
+    growth_rate: 0.0003
+    description: >
+      Angular or parallel misalignment between compressor and motor
+      shafts causing elevated vibration at 1x and 2x running speed.
+    tags: [misalignment, vibration, mechanical]
+    symptoms:
+      - variable: "{id}.vibration_de_mm_s"
+        effect_type: additive
+        magnitude: 6.0
+        noise_std: 0.4
+      - variable: "{id}.vibration_nde_mm_s"
+        effect_type: additive
+        magnitude: 5.0
+        noise_std: 0.3
+      - variable: "{id}.vibration_axial_mm_s"
+        effect_type: additive
+        magnitude: 4.0
+        noise_std: 0.2
+      - variable: "{id}.motor.vibration_de_mm_s"
+        effect_type: additive
+        magnitude: 5.0
+        noise_std: 0.3
+      - variable: "{id}.motor.current_a"
+        effect_type: multiplicative
+        magnitude: 0.03
+        delay_s: 7200
+    maintenance_actions:
+      - action_id: realign_shaft
+        action_type: repair
+        duration_s: 14400  # 4 hours
+        description: Realign compressor-motor shaft coupling
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Seal Leakage
+  # ------------------------------------------------------------------
+  - fault_id: seal_leakage
+    category: compressor
+    display_name: Dry Gas Seal Leakage
+    severity_curve: exponential
+    growth_rate: 0.0008
+    description: >
+      Degradation of dry gas seal causing increased seal gas
+      consumption, higher vent pressure, and potential process
+      gas leakage.
+    tags: [seal, leakage, gas, safety]
+    symptoms:
+      - variable: "{id}.seal_gas.flow_nm3_h"
+        effect_type: multiplicative
+        magnitude: 2.0
+        noise_std: 0.1
+      - variable: "{id}.seal_gas.vent_pressure_kpa"
+        effect_type: additive
+        magnitude: 15.0
+        noise_std: 0.5
+      - variable: "{id}.seal_gas.delta_p_kpa"
+        effect_type: multiplicative
+        magnitude: -0.4
+    maintenance_actions:
+      - action_id: seal_replacement
+        action_type: replace
+        duration_s: 43200  # 12 hours
+        description: Replace dry gas seal cartridge
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Filter Fouling
+  # ------------------------------------------------------------------
+  - fault_id: filter_fouling
+    category: compressor
+    display_name: Lube Oil Filter Fouling
+    severity_curve: linear
+    growth_rate: 0.001
+    description: >
+      Progressive fouling of the lube oil filter causing increased
+      differential pressure and reduced oil flow.
+    tags: [fouling, filter, lubrication]
+    symptoms:
+      - variable: "{id}.lube_oil.filter_dp_kpa"
+        effect_type: additive
+        magnitude: 80.0
+        noise_std: 2.0
+      - variable: "{id}.lube_oil.flow_l_min"
+        effect_type: multiplicative
+        magnitude: -0.3
+        delay_s: 3600
+      - variable: "{id}.lube_oil.temperature_c"
+        effect_type: additive
+        magnitude: 10.0
+        noise_std: 0.5
+        delay_s: 1800
+      - variable: "{id}.bearing_de_temp_c"
+        effect_type: additive
+        magnitude: 8.0
+        noise_std: 0.3
+        delay_s: 3600
+    maintenance_actions:
+      - action_id: filter_replace
+        action_type: replace
+        duration_s: 7200  # 2 hours
+        description: Replace lube oil filter element
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Aftercooler Fouling
+  # ------------------------------------------------------------------
+  - fault_id: aftercooler_fouling
+    category: compressor
+    display_name: Aftercooler Fouling
+    severity_curve: linear
+    growth_rate: 0.0006
+    description: >
+      Fouling of the intercooler/aftercooler reducing heat transfer
+      efficiency and increasing discharge temperature.
+    tags: [fouling, cooling, thermal]
+    symptoms:
+      - variable: "{id}.cooling.delta_t_c"
+        effect_type: multiplicative
+        magnitude: -0.5
+        delay_s: 1800
+      - variable: "{id}.discharge_temperature_c"
+        effect_type: additive
+        magnitude: 30.0
+        noise_std: 1.0
+        delay_s: 3600
+      - variable: "{id}.cooling.return_temp_c"
+        effect_type: additive
+        magnitude: 5.0
+        noise_std: 0.3
+    maintenance_actions:
+      - action_id: cooler_clean
+        action_type: repair
+        duration_s: 21600  # 6 hours
+        description: Chemical clean aftercooler
+        recovery:
+          method: linear
+          duration_s: 3600
+          residual_severity: 0.05
+
+  # ------------------------------------------------------------------
+  # Oil Pressure Loss
+  # ------------------------------------------------------------------
+  - fault_id: oil_pressure_loss
+    category: compressor
+    display_name: Lube Oil Pressure Loss
+    severity_curve: sigmoid
+    growth_rate: 0.0004
+    description: >
+      Gradual loss of lube oil pressure due to pump wear, internal
+      leakage, or pressure regulator malfunction.
+    tags: [lubrication, pressure, pump]
+    symptoms:
+      - variable: "{id}.lube_oil.pressure_kpa"
+        effect_type: multiplicative
+        magnitude: -0.5
+        noise_std: 5.0
+      - variable: "{id}.lube_oil.flow_l_min"
+        effect_type: multiplicative
+        magnitude: -0.4
+        delay_s: 1800
+      - variable: "{id}.bearing_de_temp_c"
+        effect_type: additive
+        magnitude: 15.0
+        noise_std: 0.8
+        delay_s: 3600
+      - variable: "{id}.bearing_nde_temp_c"
+        effect_type: additive
+        magnitude: 12.0
+        noise_std: 0.6
+        delay_s: 3600
+    maintenance_actions:
+      - action_id: oil_pump_repair
+        action_type: repair
+        duration_s: 14400  # 4 hours
+        description: Repair lube oil pump
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Cooling Degradation
+  # ------------------------------------------------------------------
+  - fault_id: cooling_degradation
+    category: compressor
+    display_name: Cooling System Degradation
+    severity_curve: linear
+    growth_rate: 0.0005
+    description: >
+      Degradation of cooling water system (pump wear, scaling,
+      reduced flow) causing elevated temperatures throughout
+      the compressor train.
+    tags: [cooling, thermal, degradation]
+    symptoms:
+      - variable: "{id}.cooling.flow_l_min"
+        effect_type: multiplicative
+        magnitude: -0.4
+        delay_s: 600
+      - variable: "{id}.cooling.supply_temp_c"
+        effect_type: additive
+        magnitude: 8.0
+        noise_std: 0.5
+      - variable: "{id}.discharge_temperature_c"
+        effect_type: additive
+        magnitude: 15.0
+        noise_std: 1.0
+        delay_s: 3600
+      - variable: "{id}.lube_oil.temperature_c"
+        effect_type: additive
+        magnitude: 12.0
+        noise_std: 0.5
+        delay_s: 3600
+    maintenance_actions:
+      - action_id: cooling_repair
+        action_type: repair
+        duration_s: 18000  # 5 hours
+        description: Repair cooling water system
+        recovery:
+          method: linear
+          duration_s: 1800
+          residual_severity: 0.02
+
+  # ------------------------------------------------------------------
+  # Recycle Valve Stiction
+  # ------------------------------------------------------------------
+  - fault_id: recycle_valve_stiction
+    category: compressor
+    display_name: Recycle Valve Stiction
+    severity_curve: step
+    growth_rate: 0.001
+    description: >
+      Stiction in the anti-surge recycle valve causing poor response
+      to controller commands and potential surge events.
+    tags: [valve, stiction, control, surge]
+    symptoms:
+      - variable: "{id}.recycle_valve.position_pct"
+        effect_type: additive
+        magnitude: 15.0
+        noise_std: 5.0
+      - variable: "{id}.flow_m3_s"
+        effect_type: multiplicative
+        magnitude: -0.15
+        noise_std: 0.02
+        delay_s: 600
+      - variable: "{id}.surge_margin"
+        effect_type: multiplicative
+        magnitude: -0.3
+        noise_std: 0.05
+        delay_s: 1200
+    maintenance_actions:
+      - action_id: valve_repair
+        action_type: repair
+        duration_s: 14400  # 4 hours
+        description: Repair anti-surge recycle valve
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Surge Risk
+  # ------------------------------------------------------------------
+  - fault_id: surge_risk
+    category: compressor
+    display_name: Surge Risk / Near Surge
+    severity_curve: exponential
+    growth_rate: 0.002
+    description: >
+      Operating condition approaching surge line due to low flow,
+      high discharge pressure, or rapid process changes.
+    tags: [surge, safety, process]
+    symptoms:
+      - variable: "{id}.flow_m3_s"
+        effect_type: multiplicative
+        magnitude: -0.4
+        delay_s: 300
+      - variable: "{id}.surge_margin"
+        effect_type: multiplicative
+        magnitude: -0.7
+        delay_s: 300
+      - variable: "{id}.discharge_pressure_kpa"
+        effect_type: multiplicative
+        magnitude: 0.1
+      - variable: "{id}.vibration_axial_mm_s"
+        effect_type: additive
+        magnitude: 10.0
+        noise_std: 2.0
+        delay_s: 600
+    maintenance_actions:
+      - action_id: process_adjustment
+        action_type: repair
+        duration_s: 3600
+        description: Process adjustment to move away from surge
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  # ------------------------------------------------------------------
+  # Sensor Drift (Discharge Pressure)
+  # ------------------------------------------------------------------
+  - fault_id: sensor_drift
+    category: compressor
+    display_name: Sensor Drift — Discharge Pressure
+    severity_curve: linear
+    growth_rate: 0.0003
+    description: >
+      Slow calibration drift of the discharge pressure transmitter
+      causing biased readings that affect control loop performance.
+    tags: [sensor, drift, instrumentation]
+    alarm_delay_s: 86400  # 24 hours
+    symptoms:
+      - variable: "{id}.discharge_pressure_kpa"
+        effect_type: multiplicative
+        magnitude: 0.08
+        noise_std: 0.01
+    maintenance_actions:
+      - action_id: sensor_calibration
+        action_type: repair
+        duration_s: 3600
+        description: Recalibrate discharge pressure transmitter
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  # ==================================================================
+  # Pump Faults
+  # ==================================================================
+
+  - fault_id: cavitation
+    category: pump
+    display_name: Pump Cavitation
+    severity_curve: exponential
+    growth_rate: 0.001
+    description: >
+      Cavitation due to low NPSH causing vapor bubble formation,
+      noise, vibration, and impeller damage.
+    tags: [cavitation, vibration, hydraulic]
+    symptoms:
+      - variable: "{id}.vibration_rms_mm_s"
+        effect_type: additive
+        magnitude: 12.0
+        noise_std: 1.0
+      - variable: "{id}.flow_true"
+        effect_type: multiplicative
+        magnitude: -0.2
+        noise_std: 0.05
+      - variable: "{id}.discharge_pressure_kpa"
+        effect_type: multiplicative
+        magnitude: -0.3
+        noise_std: 5.0
+    maintenance_actions:
+      - action_id: fix_cavitation
+        action_type: repair
+        duration_s: 7200
+        description: Fix suction conditions / increase NPSH
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  - fault_id: impeller_wear
+    category: pump
+    display_name: Impeller Wear
+    severity_curve: linear
+    growth_rate: 0.0002
+    description: >
+      Progressive impeller wear reducing pump head and efficiency.
+    tags: [impeller, wear, hydraulic]
+    symptoms:
+      - variable: "{id}.discharge_pressure_kpa"
+        effect_type: multiplicative
+        magnitude: -0.25
+      - variable: "{id}.flow_true"
+        effect_type: multiplicative
+        magnitude: -0.15
+      - variable: "{id}.power_consumed_kw"
+        effect_type: multiplicative
+        magnitude: 0.05
+    maintenance_actions:
+      - action_id: impeller_replace
+        action_type: replace
+        duration_s: 28800
+        description: Replace impeller
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  - fault_id: suction_blockage
+    category: pump
+    display_name: Suction Strainer Blockage
+    severity_curve: linear
+    growth_rate: 0.0008
+    description: >
+      Progressive blockage of the suction strainer reducing flow
+      and potentially causing cavitation.
+    tags: [blockage, suction, hydraulic]
+    symptoms:
+      - variable: "{id}.flow_true"
+        effect_type: multiplicative
+        magnitude: -0.4
+      - variable: "{id}.suction_pressure_kpa"
+        effect_type: multiplicative
+        magnitude: -0.3
+      - variable: "{id}.discharge_pressure_kpa"
+        effect_type: multiplicative
+        magnitude: -0.25
+    maintenance_actions:
+      - action_id: strainer_clean
+        action_type: repair
+        duration_s: 7200
+        description: Clean suction strainer
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  - fault_id: motor_overload
+    category: pump
+    display_name: Motor Overload
+    severity_curve: sigmoid
+    growth_rate: 0.0005
+    description: >
+      Motor overload due to high process demand, binding, or
+      electrical issues causing elevated current and temperature.
+    tags: [motor, overload, electrical]
+    symptoms:
+      - variable: "{id}.motor.current_a"
+        effect_type: multiplicative
+        magnitude: 0.3
+        noise_std: 2.0
+      - variable: "{id}.motor.winding_temp_c"
+        effect_type: additive
+        magnitude: 40.0
+        noise_std: 2.0
+      - variable: "{id}.power_consumed_kw"
+        effect_type: multiplicative
+        magnitude: 0.25
+    maintenance_actions:
+      - action_id: motor_inspection
+        action_type: inspection
+        duration_s: 3600
+        description: Inspect motor and check load conditions
+        recovery:
+          method: instant
+          residual_severity: 0.0

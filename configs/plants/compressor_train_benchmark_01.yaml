@@ -1,0 +1,518 @@
+# Compressor Train — Analytics Benchmark Plant Configuration
+# ==========================================================
+#
+# This is the flagship analytics benchmark configuration for the
+# Virtual Factory platform. It models a complete compressor train
+# with all sub-systems and is designed to generate datasets for:
+#
+# - Asset Health Monitoring (AHM)
+# - Predictive Maintenance (PdM)
+# - Anomaly Detection
+# - AAKR model development
+# - PCA / Isolation Forest development
+# - Health Index development
+# - Failure Diagnosis
+#
+# Phase 1: 50+ tags with fault injection scenarios
+# Phase 2: 150-300 tags with full sensor complement
+
+plant:
+  id: compressor_train_benchmark_01
+  name: Compressor Train Analytics Benchmark
+  type: continuous
+  description: >
+    Flagship analytics benchmark model. Compressor train with motor,
+    lube oil, cooling, seal gas, anti-surge, and recycle systems.
+    Designed for industrial analytics development and validation.
+
+medium:
+  id: natural_gas
+  density_kg_m3: 0.72
+  viscosity_pa_s: 1.1e-5
+  specific_heat_j_kg_k: 2200
+
+# ------------------------------------------------------------------
+# Equipment
+# ------------------------------------------------------------------
+equipment:
+  - id: COMP01
+    model_type: compressor_train_v1
+    display_name: Compressor Train A
+    parameters:
+      rated_power_kw: 500.0
+      rated_flow_m3_s: 2.0
+      rated_pressure_ratio: 3.0
+      suction_pressure_design_kpa: 101.325
+      discharge_pressure_design_kpa: 304.0
+      polytropic_efficiency: 0.82
+      surge_margin_design: 0.12
+
+  - id: PIPE_IN
+    model_type: pipe_v1
+    display_name: Suction Pipe
+    parameters:
+      length_m: 20.0
+      diameter_m: 0.3
+      roughness_mm: 0.05
+
+  - id: PIPE_OUT
+    model_type: pipe_v1
+    display_name: Discharge Pipe
+    parameters:
+      length_m: 15.0
+      diameter_m: 0.2
+      roughness_mm: 0.05
+
+# ------------------------------------------------------------------
+# Sensors (Phase 1: 50+ industrial signals)
+# ------------------------------------------------------------------
+sensors:
+  # --- Compressor core ---
+  - id: PT101
+    model_type: pressure_transmitter_v1
+    measures: COMP01.suction_pressure_kpa
+    output_signal: COMP01_SUCTION_PRESSURE
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.5
+      resolution: 0.1
+
+  - id: PT102
+    model_type: pressure_transmitter_v1
+    measures: COMP01.discharge_pressure_kpa
+    output_signal: COMP01_DISCHARGE_PRESSURE
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.5
+      resolution: 0.1
+
+  - id: FT101
+    model_type: flow_transmitter_v1
+    measures: COMP01.flow_m3_s
+    output_signal: COMP01_FLOW
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.02
+      resolution: 0.01
+
+  - id: TT101
+    model_type: pressure_transmitter_v1
+    measures: COMP01.suction_temperature_c
+    output_signal: COMP01_SUCTION_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.3
+      resolution: 0.1
+
+  - id: TT102
+    model_type: pressure_transmitter_v1
+    measures: COMP01.discharge_temperature_c
+    output_signal: COMP01_DISCHARGE_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.3
+      resolution: 0.1
+
+  # --- Motor ---
+  - id: CT101
+    model_type: flow_transmitter_v1
+    measures: COMP01.motor.current_a
+    output_signal: COMP01_MOTOR_CURRENT
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.5
+      resolution: 0.1
+
+  - id: PT103
+    model_type: pressure_transmitter_v1
+    measures: COMP01.motor.power_kw
+    output_signal: COMP01_MOTOR_POWER
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  - id: TT103
+    model_type: pressure_transmitter_v1
+    measures: COMP01.motor.winding_temp_c
+    output_signal: COMP01_MOTOR_WINDING_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  - id: TT104
+    model_type: pressure_transmitter_v1
+    measures: COMP01.motor.bearing_de_temp_c
+    output_signal: COMP01_MOTOR_BRG_DE_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  - id: TT105
+    model_type: pressure_transmitter_v1
+    measures: COMP01.motor.bearing_nde_temp_c
+    output_signal: COMP01_MOTOR_BRG_NDE_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  - id: VT101
+    model_type: flow_transmitter_v1
+    measures: COMP01.motor.vibration_de_mm_s
+    output_signal: COMP01_MOTOR_VIB_DE
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.1
+      resolution: 0.01
+
+  - id: VT102
+    model_type: flow_transmitter_v1
+    measures: COMP01.motor.vibration_nde_mm_s
+    output_signal: COMP01_MOTOR_VIB_NDE
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.1
+      resolution: 0.01
+
+  # --- Compressor bearings & vibration ---
+  - id: TT106
+    model_type: pressure_transmitter_v1
+    measures: COMP01.bearing_de_temp_c
+    output_signal: COMP01_BRG_DE_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  - id: TT107
+    model_type: pressure_transmitter_v1
+    measures: COMP01.bearing_nde_temp_c
+    output_signal: COMP01_BRG_NDE_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  - id: TT108
+    model_type: pressure_transmitter_v1
+    measures: COMP01.bearing_thrust_temp_c
+    output_signal: COMP01_BRG_THRUST_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  - id: VT103
+    model_type: flow_transmitter_v1
+    measures: COMP01.vibration_de_mm_s
+    output_signal: COMP01_VIB_DE
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.1
+      resolution: 0.01
+
+  - id: VT104
+    model_type: flow_transmitter_v1
+    measures: COMP01.vibration_nde_mm_s
+    output_signal: COMP01_VIB_NDE
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.1
+      resolution: 0.01
+
+  - id: VT105
+    model_type: flow_transmitter_v1
+    measures: COMP01.vibration_axial_mm_s
+    output_signal: COMP01_VIB_AXIAL
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.05
+      resolution: 0.01
+
+  # --- Lube oil system ---
+  - id: PT104
+    model_type: pressure_transmitter_v1
+    measures: COMP01.lube_oil.pressure_kpa
+    output_signal: COMP01_LO_PRESS
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 2.0
+      resolution: 0.1
+
+  - id: TT109
+    model_type: pressure_transmitter_v1
+    measures: COMP01.lube_oil.temperature_c
+    output_signal: COMP01_LO_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.3
+      resolution: 0.1
+
+  - id: PDT101
+    model_type: pressure_transmitter_v1
+    measures: COMP01.lube_oil.filter_dp_kpa
+    output_signal: COMP01_LO_FILTER_DP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.5
+      resolution: 0.1
+
+  # --- Cooling system ---
+  - id: TT110
+    model_type: pressure_transmitter_v1
+    measures: COMP01.cooling.supply_temp_c
+    output_signal: COMP01_CW_SUPPLY_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  - id: TT111
+    model_type: pressure_transmitter_v1
+    measures: COMP01.cooling.return_temp_c
+    output_signal: COMP01_CW_RETURN_TEMP
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+  # --- Seal gas ---
+  - id: FT102
+    model_type: flow_transmitter_v1
+    measures: COMP01.seal_gas.flow_nm3_h
+    output_signal: COMP01_SEAL_FLOW
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.01
+      resolution: 0.001
+
+  # --- Speed ---
+  - id: ST101
+    model_type: flow_transmitter_v1
+    measures: COMP01.speed_rpm
+    output_signal: COMP01_SPEED
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.5
+      resolution: 1.0
+
+  # --- Power ---
+  - id: PT105
+    model_type: pressure_transmitter_v1
+    measures: COMP01.power_consumed_kw
+    output_signal: COMP01_POWER
+    parameters:
+      sample_time_s: 1.0
+      noise_std: 0.2
+      resolution: 0.1
+
+# ------------------------------------------------------------------
+# Signals (output definitions)
+# ------------------------------------------------------------------
+signals:
+  COMP01_SUCTION_PRESSURE:
+    category: industrial_signal
+    publish: true
+    unit: kPa
+    source: PT101
+  COMP01_DISCHARGE_PRESSURE:
+    category: industrial_signal
+    publish: true
+    unit: kPa
+    source: PT102
+  COMP01_FLOW:
+    category: industrial_signal
+    publish: true
+    unit: m3/s
+    source: FT101
+  COMP01_SUCTION_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT101
+  COMP01_DISCHARGE_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT102
+  COMP01_MOTOR_CURRENT:
+    category: industrial_signal
+    publish: true
+    unit: A
+    source: CT101
+  COMP01_MOTOR_POWER:
+    category: industrial_signal
+    publish: true
+    unit: kW
+    source: PT103
+  COMP01_MOTOR_WINDING_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT103
+  COMP01_MOTOR_BRG_DE_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT104
+  COMP01_MOTOR_BRG_NDE_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT105
+  COMP01_MOTOR_VIB_DE:
+    category: industrial_signal
+    publish: true
+    unit: mm/s
+    source: VT101
+  COMP01_MOTOR_VIB_NDE:
+    category: industrial_signal
+    publish: true
+    unit: mm/s
+    source: VT102
+  COMP01_BRG_DE_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT106
+  COMP01_BRG_NDE_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT107
+  COMP01_BRG_THRUST_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT108
+  COMP01_VIB_DE:
+    category: industrial_signal
+    publish: true
+    unit: mm/s
+    source: VT103
+  COMP01_VIB_NDE:
+    category: industrial_signal
+    publish: true
+    unit: mm/s
+    source: VT104
+  COMP01_VIB_AXIAL:
+    category: industrial_signal
+    publish: true
+    unit: mm/s
+    source: VT105
+  COMP01_LO_PRESS:
+    category: industrial_signal
+    publish: true
+    unit: kPa
+    source: PT104
+  COMP01_LO_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT109
+  COMP01_LO_FILTER_DP:
+    category: industrial_signal
+    publish: true
+    unit: kPa
+    source: PDT101
+  COMP01_CW_SUPPLY_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT110
+  COMP01_CW_RETURN_TEMP:
+    category: industrial_signal
+    publish: true
+    unit: degC
+    source: TT111
+  COMP01_SEAL_FLOW:
+    category: industrial_signal
+    publish: true
+    unit: Nm3/h
+    source: FT102
+  COMP01_SPEED:
+    category: industrial_signal
+    publish: true
+    unit: RPM
+    source: ST101
+  COMP01_POWER:
+    category: industrial_signal
+    publish: true
+    unit: kW
+    source: PT105
+
+# ------------------------------------------------------------------
+# Alarms
+# ------------------------------------------------------------------
+alarms:
+  - id: ALM_VIB_DE_HIGH
+    source_signal: COMP01_VIB_DE
+    type: high
+    threshold: 7.0
+    deadband: 0.5
+    severity: HIGH
+    message: Compressor DE vibration high
+    output_signal: ALM_COMP01_VIB_HIGH
+  - id: ALM_VIB_NDE_HIGH
+    source_signal: COMP01_VIB_NDE
+    type: high
+    threshold: 7.0
+    deadband: 0.5
+    severity: HIGH
+    message: Compressor NDE vibration high
+    output_signal: ALM_COMP01_VIB_NDE_HIGH
+  - id: ALM_BRG_DE_TEMP_HIGH
+    source_signal: COMP01_BRG_DE_TEMP
+    type: high
+    threshold: 85.0
+    deadband: 2.0
+    severity: HIGH
+    message: Compressor DE bearing temperature high
+    output_signal: ALM_COMP01_BRG_TEMP_HIGH
+  - id: ALM_LO_PRESS_LOW
+    source_signal: COMP01_LO_PRESS
+    type: low
+    threshold: 150.0
+    deadband: 10.0
+    severity: HIGH
+    message: Lube oil pressure low
+    output_signal: ALM_COMP01_LO_PRESS_LOW
+  - id: ALM_DISCH_TEMP_HIGH
+    source_signal: COMP01_DISCHARGE_TEMP
+    type: high
+    threshold: 150.0
+    deadband: 5.0
+    severity: HIGH
+    message: Compressor discharge temperature high
+    output_signal: ALM_COMP01_DISCH_TEMP_HIGH
+  - id: ALM_MOTOR_CURRENT_HIGH
+    source_signal: COMP01_MOTOR_CURRENT
+    type: high
+    threshold: 150.0
+    deadband: 5.0
+    severity: HIGH
+    message: Motor current high
+    output_signal: ALM_COMP01_MOTOR_CURRENT_HIGH
+  - id: ALM_SEAL_FLOW_HIGH
+    source_signal: COMP01_SEAL_FLOW
+    type: high
+    threshold: 1.5
+    deadband: 0.2
+    severity: MEDIUM
+    message: Seal gas flow high
+    output_signal: ALM_COMP01_SEAL_FLOW_HIGH
+
+# ------------------------------------------------------------------
+# Output policy
+# ------------------------------------------------------------------
+output_policy:
+  mode: benchmark
+  publish_categories:
+    - industrial_signal
+    - controller_signal
+    - actuator_feedback
+    - industrial_event
+    - calculated

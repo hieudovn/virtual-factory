@@ -1,0 +1,119 @@
+id: compressor_train_v1
+display_name: Compressor Train
+category: equipment
+version: 1
+python_class: virtual_factory.equipment.compressor_train.CompressorTrain
+description: >
+  Complete compressor train assembly suitable for analytics benchmark
+  generation. Includes compressor, driver motor, lube oil system,
+  cooling system, seal gas system, anti-surge system, recycle valve,
+  and suction/discharge headers.
+
+  Phase 1 target: 50+ tags
+  Phase 2 target: 150-300 tags
+
+parameters:
+  rated_power_kw:
+    type: number
+    default: 500.0
+    description: Total rated shaft power in kW
+  rated_flow_m3_s:
+    type: number
+    default: 2.0
+    description: Rated volumetric suction flow in m³/s
+  rated_pressure_ratio:
+    type: number
+    default: 3.0
+    description: Design discharge/suction pressure ratio
+  suction_pressure_design_kpa:
+    type: number
+    default: 101.325
+    description: Design suction pressure in kPa
+  discharge_pressure_design_kpa:
+    type: number
+    default: 304.0
+    description: Design discharge pressure in kPa
+  polytropic_efficiency:
+    type: number
+    default: 0.82
+    description: Polytropic efficiency (0.0-1.0)
+  surge_margin_design:
+    type: number
+    default: 0.12
+    description: Design surge margin (fraction)
+
+ports:
+  inlet:
+    kind: physical
+    direction: in
+    medium: gas
+  outlet:
+    kind: physical
+    direction: out
+    medium: gas
+
+supported_variables:
+  # Compressor core
+  - running
+  - speed_rpm
+  - suction_pressure_kpa
+  - discharge_pressure_kpa
+  - pressure_ratio
+  - flow_m3_s
+  - mass_flow_kg_s
+  - suction_temperature_c
+  - discharge_temperature_c
+  - polytropic_head_kj_kg
+  - isentropic_efficiency
+  - power_consumed_kw
+  - surge_margin
+  # Motor
+  - motor.current_a
+  - motor.power_kw
+  - motor.voltage_v
+  - motor.power_factor
+  - motor.speed_rpm
+  - motor.winding_temp_c
+  - motor.bearing_de_temp_c
+  - motor.bearing_nde_temp_c
+  - motor.vibration_de_mm_s
+  - motor.vibration_nde_mm_s
+  # Bearings & vibration
+  - bearing_de_temp_c
+  - bearing_nde_temp_c
+  - bearing_thrust_temp_c
+  - vibration_de_mm_s
+  - vibration_nde_mm_s
+  - vibration_axial_mm_s
+  - shaft_displacement_de_um
+  - shaft_displacement_nde_um
+  # Lube oil
+  - lube_oil.pressure_kpa
+  - lube_oil.temperature_c
+  - lube_oil.filter_dp_kpa
+  - lube_oil.level_pct
+  - lube_oil.flow_l_min
+  - lube_oil.pump_current_a
+  # Cooling
+  - cooling.supply_temp_c
+  - cooling.return_temp_c
+  - cooling.flow_l_min
+  - cooling.delta_t_c
+  # Seal gas
+  - seal_gas.supply_pressure_kpa
+  - seal_gas.flow_nm3_h
+  - seal_gas.delta_p_kpa
+  - seal_gas.vent_pressure_kpa
+  # Anti-surge
+  - recycle_valve.position_pct
+  - recycle_valve.command_pct
+  - anti_surge.controller_output_pct
+  # Health
+  - health_index
+  - operating_hours
+
+ui:
+  icon: compressor
+  color: "#ea580c"
+  group: rotating_equipment
+  layout_hint: large

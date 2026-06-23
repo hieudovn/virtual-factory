@@ -1,0 +1,112 @@
+# Pump Faults — Failure Library
+# ==============================
+# Failure modes for centrifugal pump systems.
+
+faults:
+
+  - fault_id: pump_bearing_wear
+    category: pump
+    display_name: Pump Bearing Wear
+    severity_curve: exponential
+    growth_rate: 0.0005
+    description: >
+      Progressive wear of pump bearings causing increased vibration,
+      temperature rise, and eventual seal damage.
+    tags: [bearing, wear, vibration, mechanical]
+    symptoms:
+      - variable: "{id}.vibration_rms_mm_s"
+        effect_type: additive
+        magnitude: 10.0
+        noise_std: 0.5
+      - variable: "{id}.bearing_temp_c"
+        effect_type: additive
+        magnitude: 20.0
+        noise_std: 0.5
+      - variable: "{id}.motor.current_a"
+        effect_type: multiplicative
+        magnitude: 0.04
+        delay_s: 3600
+    maintenance_actions:
+      - action_id: bearing_replace
+        action_type: replace
+        duration_s: 21600
+        description: Replace pump bearings
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  - fault_id: pump_seal_leakage
+    category: pump
+    display_name: Mechanical Seal Leakage
+    severity_curve: exponential
+    growth_rate: 0.0006
+    description: >
+      Mechanical seal degradation causing process fluid leakage
+      and potential environmental/safety issues.
+    tags: [seal, leakage, safety]
+    symptoms:
+      - variable: "{id}.seal_leak_rate_l_h"
+        effect_type: additive
+        magnitude: 5.0
+        noise_std: 0.3
+      - variable: "{id}.flow_true"
+        effect_type: multiplicative
+        magnitude: -0.05
+        delay_s: 3600
+    maintenance_actions:
+      - action_id: seal_replace
+        action_type: replace
+        duration_s: 28800
+        description: Replace mechanical seal
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  - fault_id: discharge_blockage
+    category: pump
+    display_name: Discharge Blockage
+    severity_curve: linear
+    growth_rate: 0.0007
+    description: >
+      Partial blockage in the discharge line (scale, debris) causing
+      elevated discharge pressure and reduced flow.
+    tags: [blockage, discharge, hydraulic]
+    symptoms:
+      - variable: "{id}.discharge_pressure_kpa"
+        effect_type: multiplicative
+        magnitude: 0.2
+      - variable: "{id}.flow_true"
+        effect_type: multiplicative
+        magnitude: -0.35
+      - variable: "{id}.motor.current_a"
+        effect_type: multiplicative
+        magnitude: 0.15
+    maintenance_actions:
+      - action_id: clear_blockage
+        action_type: repair
+        duration_s: 14400
+        description: Clear discharge line blockage
+        recovery:
+          method: instant
+          residual_severity: 0.0
+
+  - fault_id: pump_sensor_fault
+    category: pump
+    display_name: Discharge Pressure Sensor Fault
+    severity_curve: step
+    growth_rate: 0.002
+    description: >
+      Sudden sensor failure causing flatline or erratic readings.
+    tags: [sensor, instrumentation, fault]
+    symptoms:
+      - variable: "{id}.discharge_pressure_kpa"
+        effect_type: replacement
+        magnitude: 0.0
+    maintenance_actions:
+      - action_id: sensor_replace
+        action_type: replace
+        duration_s: 7200
+        description: Replace discharge pressure transmitter
+        recovery:
+          method: instant
+          residual_severity: 0.0
