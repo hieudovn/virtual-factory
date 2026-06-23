@@ -26,6 +26,13 @@ from typing import Any
 
 from virtual_factory.core.runtime_state import RuntimeState
 from virtual_factory.equipment.base_equipment import BaseEquipment
+from virtual_factory.operating_states.state_machine import (
+    OPERATING_STATES,
+    OperatingState,
+    OperatingStateMachine,
+    StateTransition,
+    VALID_TRAINING_STATES,
+)
 
 
 @dataclass(slots=True)
@@ -67,6 +74,156 @@ class CompressorTrain(BaseEquipment):
 
     # Runtime
     _sub_equipment: dict[str, BaseEquipment] = field(default_factory=dict, init=False)
+    _state_machine: OperatingStateMachine | None = field(default=None, init=False)
+    _state_initialized: bool = field(default=False, init=False)
+
+    # ---- Operating State Machine -------------------------------------------
+
+    def _init_state_machine(self) -> OperatingStateMachine:
+        """Build the compressor operating state machine with all transitions.
+
+        Safety-critical transitions (shutdown, trip) are registered BEFORE
+        normal state transitions so they take priority.
+        """
+        sm = OperatingStateMachine(self.id, initial=OperatingState.STOPPED)
+        tid = self.id
+
+        # ---- Safety transitions first (highest priority) ----
+        for run_state in [OperatingState.STARTUP, OperatingState.RAMP_UP,
+                          OperatingState.STEADY_RUNNING, OperatingState.LOW_LOAD,
+                          OperatingState.HIGH_LOAD, OperatingState.RECYCLE_MODE,
+                          OperatingState.NEAR_SURGE]:
+            sm.add_transition(StateTransition(
+                run_state, OperatingState.TRIP,
+                condition=lambda s, t: float(s.get(f"{tid}.surge_margin", 1)) < 0.02,
+                description="Emergency trip: surge margin < 2%",
+            ))
+        for run_state in [OperatingState.STARTUP, OperatingState.RAMP_UP,
+                          OperatingState.STEADY_RUNNING, OperatingState.LOW_LOAD,
+                          OperatingState.HIGH_LOAD, OperatingState.RECYCLE_MODE,
+                          OperatingState.NEAR_SURGE]:
+            sm.add_transition(StateTransition(
+                run_state, OperatingState.SHUTDOWN,
+                condition=lambda s, t: not bool(s.get(f"{tid}.running", True)),
+                description="Stop command",
+            ))
+
+        sm.add_transition(StateTransition(
+            OperatingState.STOPPED, OperatingState.STARTUP,
+            condition=lambda s, t: bool(s.get(f"{tid}.running", False)),
+            description="Start command received",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.STARTUP, OperatingState.RAMP_UP,
+            condition=lambda s, t: t > 5.0 and float(s.get(f"{tid}.flow_m3_s", 0)) > 0,
+            description="Flow established, ramping up",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.RAMP_UP, OperatingState.STEADY_RUNNING,
+            condition=lambda s, t: t > 30.0,
+            description="Reached steady running",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.STEADY_RUNNING, OperatingState.LOW_LOAD,
+            condition=lambda s, t: float(s.get(f"{tid}.flow_m3_s", 999)) < 0.5,
+            description="Flow below 50% rated",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.LOW_LOAD, OperatingState.STEADY_RUNNING,
+            condition=lambda s, t: float(s.get(f"{tid}.flow_m3_s", 0)) >= 0.5,
+            description="Flow recovered",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.STEADY_RUNNING, OperatingState.HIGH_LOAD,
+            condition=lambda s, t: float(s.get(f"{tid}.flow_m3_s", 0)) > 1.5,
+            description="Flow above 150% rated",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.HIGH_LOAD, OperatingState.STEADY_RUNNING,
+            condition=lambda s, t: float(s.get(f"{tid}.flow_m3_s", 999)) <= 1.5,
+            description="Flow returned to normal",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.STEADY_RUNNING, OperatingState.RECYCLE_MODE,
+            condition=lambda s, t: float(s.get(f"{tid}.recycle_valve.position_pct", 0)) > 20.0,
+            description="Recycle valve open > 20%",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.RECYCLE_MODE, OperatingState.STEADY_RUNNING,
+            condition=lambda s, t: float(s.get(f"{tid}.recycle_valve.position_pct", 999)) <= 5.0,
+            description="Recycle valve closed",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.STEADY_RUNNING, OperatingState.NEAR_SURGE,
+            condition=lambda s, t: float(s.get(f"{tid}.surge_margin", 1)) < 0.10,
+            description="Surge margin < 10%",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.HIGH_LOAD, OperatingState.NEAR_SURGE,
+            condition=lambda s, t: float(s.get(f"{tid}.surge_margin", 1)) < 0.10,
+            description="Surge margin < 10% (high load)",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.NEAR_SURGE, OperatingState.STEADY_RUNNING,
+            condition=lambda s, t: float(s.get(f"{tid}.surge_margin", 0)) >= 0.15,
+            description="Surge margin recovered",
+        ))
+
+        sm.add_transition(StateTransition(
+            OperatingState.SHUTDOWN, OperatingState.STOPPED,
+            condition=lambda s, t: t > 10.0,
+            description="Cooldown complete",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.TRIP, OperatingState.STOPPED,
+            condition=lambda s, t: t > 60.0,
+            description="Trip reset timeout",
+        ))
+        # Maintenance
+        sm.add_transition(StateTransition(
+            OperatingState.STOPPED, OperatingState.MAINTENANCE,
+            condition=lambda s, t: bool(s.get(f"{tid}.maintenance_active", False)),
+            description="Maintenance mode activated",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.MAINTENANCE, OperatingState.RECOVERY,
+            condition=lambda s, t: not bool(s.get(f"{tid}.maintenance_active", True)),
+            description="Maintenance complete, entering recovery",
+        ))
+        sm.add_transition(StateTransition(
+            OperatingState.RECOVERY, OperatingState.STARTUP,
+            condition=lambda s, t: bool(s.get(f"{tid}.running", False)) and t > 10.0,
+            description="Recovery complete, ready to start",
+        ))
+
+        # Callbacks: log state transitions
+        def on_state_change(truth, old_state, new_state):
+            state_obj = truth.get("_runtime_state")
+            if state_obj is not None:
+                state_obj.diagnostics.setdefault("state_transitions", []).append({
+                    "equipment_id": tid,
+                    "from": old_state.value,
+                    "to": new_state.value,
+                })
+
+        for st in OPERATING_STATES:
+            sm.on_enter(st, on_state_change)
+
+        return sm
+
+    def _get_state_machine(self) -> OperatingStateMachine:
+        if self._state_machine is None:
+            self._state_machine = self._init_state_machine()
+        return self._state_machine
+
+    @property
+    def operating_state(self) -> OperatingState:
+        return self._get_state_machine().current if self._state_machine else OperatingState.UNKNOWN
+
+    @property
+    def is_valid_training_data(self) -> bool:
+        """Whether current telemetry is suitable for analytics model training."""
+        return self.operating_state in VALID_TRAINING_STATES
 
     def initialize_state(self, state: RuntimeState) -> None:
         """Initialize all compressor train truth variables."""
@@ -141,6 +298,11 @@ class CompressorTrain(BaseEquipment):
         # --- Health / diagnostics ---
         state.set_truth(f"{tid}.health_index", 1.0)
         state.set_truth(f"{tid}.operating_hours", 0.0)
+        state.set_truth(f"{tid}.maintenance_active", False)
+
+        # Initialize state machine
+        self._state_machine = self._init_state_machine()
+        self._state_initialized = True
 
     def process_step(self, state: RuntimeState, dt_s: float) -> None:
         """Advance compressor train physics for one time step.
@@ -305,6 +467,23 @@ class CompressorTrain(BaseEquipment):
 
         # --- Health index (driven by fault engine) ---
         # Kept as-is; updated externally by FaultEngine
+
+        # --- Evaluate operating state machine ---
+        truth_dict = {
+            f"{tid}.running": state.get_truth(f"{tid}.running"),
+            f"{tid}.flow_m3_s": state.get_truth(f"{tid}.flow_m3_s"),
+            f"{tid}.surge_margin": state.get_truth(f"{tid}.surge_margin"),
+            f"{tid}.recycle_valve.position_pct": state.get_truth(f"{tid}.recycle_valve.position_pct"),
+            f"{tid}.maintenance_active": state.get_truth(f"{tid}.maintenance_active"),
+            "_runtime_state": state,
+        }
+        sm = self._get_state_machine()
+        sm.step(truth_dict, dt_s)
+
+        # Write operating state to diagnostics and truth
+        state.set_truth(f"{tid}.operating_state", sm.current.value)
+        state.diagnostics.setdefault("operating_states", {})[tid] = sm.snapshot()
+        state.set_truth(f"{tid}.valid_training_data", self.is_valid_training_data)
 
     def _zero_stopped_state(self, state: RuntimeState) -> None:
         """Zero out dynamic values when stopped."""

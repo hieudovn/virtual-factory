@@ -9,6 +9,7 @@ from virtual_factory.operating_states.state_machine import (
     OperatingStateMachine,
     StateTransition,
     OPERATING_STATES,
+    VALID_TRAINING_STATES,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "OperatingStateMachine",
     "StateTransition",
     "OPERATING_STATES",
+    "VALID_TRAINING_STATES",
 ]

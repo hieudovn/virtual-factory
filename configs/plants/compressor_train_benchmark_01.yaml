@@ -56,6 +56,15 @@ equipment:
       boundary_type: sink
       pressure_kpa: 280.0
       temperature_c: 25.0
+      demand_profile:
+        type: daily_shift
+        base_flow_m3_s: 1.5
+        fluctuation_pct: 10
+        schedule:
+          - { hour: 0, factor: 0.7 }
+          - { hour: 6, factor: 1.0 }
+          - { hour: 14, factor: 1.2 }
+          - { hour: 22, factor: 0.8 }
 
   # --- Compressor Train ---
   - id: COMP01

@@ -22,6 +22,7 @@ class OperatingState(str, Enum):
     SHUTDOWN = "shutdown"
     TRIP = "trip"
     MAINTENANCE = "maintenance"
+    RECOVERY = "recovery"
     UNKNOWN = "unknown"
 
 
@@ -38,7 +39,16 @@ OPERATING_STATES: list[OperatingState] = [
     OperatingState.SHUTDOWN,
     OperatingState.TRIP,
     OperatingState.MAINTENANCE,
+    OperatingState.RECOVERY,
 ]
+
+# States where telemetry data is valid for analytics model training
+VALID_TRAINING_STATES: set[OperatingState] = {
+    OperatingState.STEADY_RUNNING,
+    OperatingState.LOW_LOAD,
+    OperatingState.HIGH_LOAD,
+    OperatingState.RECYCLE_MODE,
+}
 
 
 @dataclass
