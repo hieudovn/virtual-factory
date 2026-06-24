@@ -6,6 +6,7 @@ from typing import Sequence
 
 from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.simulation_engine import SimulationEngine
+from virtual_factory.core.state_persistence import get_last_config, set_last_config
 from virtual_factory.protocols.mqtt_gateway import MqttGateway
 from virtual_factory.protocols.opcua_gateway import OpcUaGateway
 from virtual_factory.protocols.sparkplug_gateway import SparkplugBGateway
@@ -118,7 +119,7 @@ def run_simulation(
 
 
 def serve_api(
-    config_path: str | Path = DEFAULT_CONFIG,
+    config_path: str | Path | None = None,
     scenario_path: str | Path | None = None,
     dt_s: float = 1.0,
     host: str = "0.0.0.0",
@@ -132,7 +133,16 @@ def serve_api(
     mqtt_connect_delay: float = 1.0,
     opcua_endpoint: str | None = None,
 ) -> None:
-    """Run the optional FastAPI monitoring service."""
+    """Run the optional FastAPI monitoring service.
+
+    If config_path is None, the last-used config from ~/.virtual_factory/state.json
+    is used. The chosen config is persisted for next time.
+    """
+    if config_path is None:
+        config_path = get_last_config()
+    config_path = str(config_path)
+    set_last_config(config_path)
+
     try:
         import uvicorn
     except ImportError as exc:
@@ -195,7 +205,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--sparkplug", action="store_true", help="Use Sparkplug B topic format for MQTT (requires --mqtt-host).")
 
     serve_parser = subparsers.add_parser("serve", help="Run the monitoring API service.")
-    serve_parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Plant configuration YAML path.")
+    serve_parser.add_argument("--config", default=None, help="Plant configuration YAML path (default: last used, or continuous_mvp_01).")
     serve_parser.add_argument("--scenario", default=None, help="Optional scenario YAML path.")
     serve_parser.add_argument("--dt", type=float, default=1.0, help="Step duration in seconds.")
     serve_parser.add_argument("--host", default="0.0.0.0", help="API bind host.")

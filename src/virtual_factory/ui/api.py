@@ -203,4 +203,23 @@ def create_app(
         except Exception as e:
             return {"error": str(e)}
 
+    @app.get("/api/config/current")
+    def config_current() -> dict:
+        """Return the currently loaded plant config and available configs."""
+        return service.current_config_info()
+
+    @app.post("/api/config/switch")
+    async def config_switch(body: dict) -> dict:
+        """Switch to a different plant configuration at runtime and persist it."""
+        config_path = body.get("config_path", "")
+        if not config_path:
+            return {"status": "error", "message": "No config_path provided"}
+        from pathlib import Path
+        if not Path(config_path).exists():
+            return {"status": "error", "message": f"Config file not found: {config_path}"}
+        from virtual_factory.core.state_persistence import set_last_config
+        set_last_config(config_path)
+        result = await service.reload_config(config_path)
+        return {"status": "ok", "config": config_path, **result}
+
     return app

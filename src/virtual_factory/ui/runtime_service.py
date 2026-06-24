@@ -432,6 +432,32 @@ class RuntimeService:
             "mqtt_connected": self.mqtt_connected,
         }
 
+    async def reload_config(self, config_path: str) -> dict:
+        """Stop the loop, reload the simulation with a new plant config, and reset."""
+        await self.stop_loop()
+        self.config_path = Path(config_path)
+        self._init_engine()
+        self.reset()
+        return self.status()
+
+    def current_config_info(self) -> dict:
+        """Return info about the currently loaded config."""
+        import os
+        configs_dir = Path("configs/plants")
+        available = []
+        if configs_dir.exists():
+            for f in sorted(configs_dir.glob("*.yaml")):
+                available.append({
+                    "path": str(f),
+                    "name": f.stem,
+                })
+        return {
+            "current": str(self.config_path),
+            "plant_id": self.config.plant.id,
+            "plant_name": self.config.plant.name,
+            "available": available,
+        }
+
     def _latest_frame_values(self) -> list[SignalValue]:
         if self.latest_snapshot and "telemetry_latest" in self.latest_snapshot:
             frame = self.latest_snapshot["telemetry_latest"]
