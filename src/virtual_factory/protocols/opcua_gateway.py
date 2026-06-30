@@ -51,18 +51,27 @@ class OpcUaGateway:
     _loop: asyncio.AbstractEventLoop | None = field(default=None, repr=False)
     _thread: threading.Thread | None = field(default=None, repr=False)
     _started: bool = False
+    _ready: threading.Event = field(default_factory=threading.Event)
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
     def connect(self) -> None:
-        """Start the OPC UA server in a background thread."""
+        """Start the OPC UA server in a background thread.
+
+        Blocks until the server is fully initialized and the namespace
+        has been registered, preventing race-condition NodeId creation.
+        """
         if not self.enabled or self._started:
             return
+        self._ready.clear()
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._run_server, daemon=True)
         self._thread.start()
+        # Wait for server to register namespace (max 10 seconds)
+        if not self._ready.wait(timeout=10.0):
+            raise RuntimeError("OPC UA server failed to initialize within 10 seconds")
         self._started = True
 
     def disconnect(self) -> None:
@@ -73,6 +82,7 @@ class OpcUaGateway:
             self._thread.join(timeout=5.0)
         self._started = False
         self._nodes.clear()
+        self._ready.clear()
 
     def publish_frame(self, frame: list[SignalValue]) -> None:
         """Write each allowed ``SignalValue`` to its OPC UA variable.
@@ -85,7 +95,7 @@ class OpcUaGateway:
             return
         if not self._started:
             self.connect()
-        if self._loop is None or self.server is None:
+        if self._loop is None or self.server is None or self._idx == 0:
             return
         for signal in frame:
             if not isinstance(signal, SignalValue):
@@ -111,7 +121,7 @@ class OpcUaGateway:
     async def _serve(self) -> None:
         try:
             from asyncua import Server
-            from asyncua.server.users import UserRole
+            from asyncua.server.user_managers import UserRole
         except ImportError as exc:
             raise RuntimeError(
                 "OPC UA support requires installing the opcua extra: "
@@ -125,10 +135,11 @@ class OpcUaGateway:
 
         self._idx = await self.server.register_namespace(self.namespace_uri)
 
-        # Set anonymous access
-        self.server.user_manager.set_user_policy(
-            [], UserRole.Anonymous, can_read=True, can_write=True
-        )
+        # Signal that the server is fully initialized (namespace registered)
+        self._ready.set()
+
+        # Anonymous access is enabled by default via PermissiveUserManager
+        # (asyncua >= 2.x default).
 
         async with self.server:
             # Keep running until stop() is called
@@ -153,10 +164,10 @@ class OpcUaGateway:
         folder = await self._ensure_folder(signal.category)
 
         browse_name = f"{self._idx}:{signal.name}"
-        node = await self.server.nodes.objects.add_variable(
-            parent=folder,
+        node = await folder.add_variable(
             nodeid=self._next_node_id(signal.name),
-            browsename=browse_name,
+            bname=browse_name,
+            val=signal.value,
             datatype=self._ua_type(signal.value),
         )
         await node.set_writable(True)
