@@ -328,7 +328,6 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     if args.command == "generate":
         from virtual_factory.ai.generator import generate_config
-        from virtual_factory.core.config_loader import load_plant_config
         print(f"Generating config for: \"{args.prompt}\" (backend: {args.backend})")
         yaml_str = generate_config(
             description=args.prompt,
@@ -361,7 +360,6 @@ def main(argv: Sequence[str] | None = None) -> None:
             path = parse_and_save(args.text, args.output)
             print(f"Saved to: {path}")
             if args.validate:
-                from virtual_factory.core.config_loader import load_plant_config
                 from virtual_factory.core.validators import validate_with_report
                 config = load_plant_config(path)
                 report = validate_with_report(config)

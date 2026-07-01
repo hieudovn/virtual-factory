@@ -1,0 +1,24 @@
+[Unit]
+Description=Virtual Factory - Compressor Train Simulation with OPC UA
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=plantos
+Group=plantos
+WorkingDirectory=/opt/virtual-factory
+Environment="PATH=/home/plantos/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/home/plantos/.local/bin/virtual-factory serve \
+    --config /opt/virtual-factory/configs/plants/compressor_train_benchmark_01.yaml \
+    --host 0.0.0.0 \
+    --port 8002 \
+    --auto-start \
+    --opcua-endpoint "opc.tcp://0.0.0.0:4840"
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
