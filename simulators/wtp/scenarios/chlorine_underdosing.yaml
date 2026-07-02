@@ -1,0 +1,24 @@
+scenario_id: chlorine_underdosing
+name: "Chlorine Underdosing"
+description: "Chlorine dose drops. Free chlorine residual falls below 0.2 mg/L. Outlet compliance fails, disinfection compromised."
+mv_overrides:
+  CHLORINE-PUMP-101.flow_rate:
+    sp: 3.0
+dv_overrides:
+  DISINFECTION-QUALITY-STATION-101.free_chlorine:
+    baseline: 0.15
+    amplitude: 0.05
+    override: true
+  DISINFECTION-QUALITY-STATION-101.total_chlorine:
+    baseline: 0.3
+    amplitude: 0.05
+    override: true
+  DISINFECTION-QUALITY-STATION-101.orp:
+    baseline: 350.0
+    override: true
+expected_effects:
+  - outlet_free_chlorine: 0.05-0.15 mg/L (BELOW 0.2 threshold)
+  - outlet_compliance_status: false
+  - outlet_quality_risk_score: 8-10
+  - chlorine_dose_rate: -60%
+  - probable_root_cause_code: 501

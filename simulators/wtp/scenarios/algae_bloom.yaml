@@ -1,0 +1,24 @@
+scenario_id: algae_bloom
+name: "Algae Bloom Event"
+description: "Raw algae index and TOC increase. Chlorine demand rises, free chlorine residual drops, filter run times shorten."
+mv_overrides:
+  CHLORINE-PUMP-101.flow_rate:
+    sp: 12.0
+dv_overrides:
+  RAW-WATER-QUALITY-STATION-101.raw_algae_index:
+    baseline: 8.0
+    amplitude: 3.0
+    override: true
+  RAW-WATER-QUALITY-STATION-101.raw_ph:
+    baseline: 8.2
+    amplitude: 0.3
+    override: true
+  LAB-SAMPLING-STATION-101.toc:
+    baseline: 8.0
+    amplitude: 2.0
+    override: true
+expected_effects:
+  - free_chlorine: 0.3-0.5 mg/L (↓ from 0.65-0.95)
+  - FILTER-101.filter_dp: rises 2x faster
+  - outlet_quality_risk_score: 4-7
+  - chlorine_dose_rate: +40-60%

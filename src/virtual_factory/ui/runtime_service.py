@@ -3,6 +3,7 @@
 import asyncio
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.schema import ScenarioConfig
@@ -423,6 +424,7 @@ class RuntimeService:
             "running": self.is_running,
             "plant_id": self.config.plant.id,
             "plant_name": self.config.plant.name,
+            "wtp_available": True,
             "scenario_id": self.scenario.id if self.scenario else None,
             "initialized": self.engine.initialized,
             "time_s": self.engine.time_manager.now(),

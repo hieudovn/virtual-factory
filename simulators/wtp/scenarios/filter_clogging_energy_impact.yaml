@@ -1,0 +1,28 @@
+scenario_id: filter_clogging_energy_impact
+name: "Filter Clogging with Energy Impact"
+description: "Filter DP rises toward 80 kPa. Pumping energy increases, specific energy consumption rises, outlet turbidity risk grows."
+mv_overrides: {}
+dv_overrides:
+  FILTER-101.filter_dp:
+    baseline: 70.0
+    amplitude: 10.0
+    bounds_max: 90.0
+    override: true
+  FILTER-102.filter_dp:
+    baseline: 60.0
+    amplitude: 8.0
+    bounds_max: 80.0
+    override: true
+  HSP-101-MOTOR.power:
+    baseline: 135.0
+    amplitude: 12.0
+    override: true
+  HSP-101-MOTOR.motor_current:
+    baseline: 200.0
+    override: true
+expected_effects:
+  - FILTER-101.filter_dp: 60-90 kPa
+  - specific_energy_consumption: 0.45-0.55 kWh/m³ (↑ from 0.33-0.43)
+  - energy_cost_per_m3: +15-25%
+  - cost_per_m3: +10-20%
+  - energy_abnormality_score: 6-8

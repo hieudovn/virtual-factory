@@ -1,0 +1,10 @@
+scenario_id: normal_operation
+name: "Normal Operation"
+description: "Stable production, compliant outlet quality, normal cost. All signals use their default behavior parameters."
+mv_overrides: {}
+dv_overrides: {}
+expected_effects:
+  - outlet_turbidity: 0.15-0.35 NTU
+  - outlet_free_chlorine: 0.3-0.8 mg/L
+  - outlet_compliance_status: true
+  - cost_per_m3: 2500-4000 VND/m³

@@ -201,7 +201,8 @@ const EDITOR = (() => {
   }
 
   async function loadGraph() {
-    const resp = await fetch("/api/plant-graph");
+    const useWtp = typeof APP !== "undefined" && APP.wtpMode;
+    const resp = await fetch(useWtp ? "/api/wtp/plant-graph" : "/api/plant-graph");
     graphData = await resp.json();
     if (graphData) render();
   }
@@ -352,7 +353,15 @@ const EDITOR = (() => {
     // Equipment icon from ICONS library
     const iconSize = 36;
     const iconX = x + NODE_W/2 - iconSize/2;
-    const iconY = y + 4;
+    const isWtpMode = typeof APP !== "undefined" && APP.wtpMode;
+    const iconY = isWtpMode ? y + 16 : y + 4;
+
+    if (isWtpMode) {
+      g.appendChild(el("text", {
+        x: x + NODE_W/2, y: y + 13, "text-anchor": "middle",
+        fill: colours.text, "font-size": "10", "font-weight": "700", "font-family": FONT,
+      }, truncate(node.display_name || node.id, 18)));
+    }
 
     if (typeof ICONS !== "undefined" && node.model_type) {
       const iconSvg = el("svg", {

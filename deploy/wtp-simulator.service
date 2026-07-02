@@ -1,0 +1,22 @@
+[Unit]
+Description=Virtual Factory - WTP Water Treatment Plant Simulator
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=plantos
+Group=plantos
+WorkingDirectory=/opt/virtual-factory/simulators/wtp
+Environment="PATH=/home/plantos/.local/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/opt/virtual-factory"
+ExecStart=/usr/bin/python3.11 -m simulators.wtp.main \
+    --contract /opt/virtual-factory/simulators/wtp/wtp-demo-01.contract.yaml \
+    --config /opt/virtual-factory/simulators/wtp/wtp_config.yaml
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

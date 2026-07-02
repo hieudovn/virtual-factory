@@ -1,0 +1,22 @@
+scenario_id: chemical_overdosing
+name: "Chemical Overdosing"
+description: "Coagulant and chlorine dosing rates increase above normal. Outlet quality remains acceptable but chemical cost rises significantly."
+mv_overrides:
+  COAG-PUMP-101.flow_rate:
+    sp: 22.0
+  CHLORINE-PUMP-101.flow_rate:
+    sp: 15.0
+dv_overrides:
+  CHEMICAL-CONSUMPTION-STATION-101.coagulant_dose_rate:
+    baseline: 50.0
+    amplitude: 10.0
+    override: true
+  CHEMICAL-CONSUMPTION-STATION-101.chlorine_dose_rate:
+    baseline: 12.0
+    amplitude: 3.0
+    override: true
+expected_effects:
+  - outlet_quality: STILL GOOD (no turbidity/chlorine issues)
+  - chemical_cost_per_m3: +80-120%
+  - cost_per_m3: +30-50%
+  - chemical_dosing_abnormality_score: 7-9

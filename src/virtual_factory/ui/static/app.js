@@ -1,7 +1,7 @@
 /* Virtual Factory — Main Application Controller (v2) */
 const KPI_SIGNALS=["LT102_LEVEL","FT101_FLOW","PT101_PRESSURE","LIC102_OUT","V101_OPENING_FEEDBACK"];
 const ALARM_SIGNALS=["T102_LOW_LEVEL_ALARM","T102_HIGH_LEVEL_ALARM","P101_NO_FLOW_ALARM","V101_POSITION_DEVIATION_ALARM","LT102_BAD_QUALITY_ALARM"];
-const APP={telemetry:new Map(),alarms:new Map(),pollingId:null,socket:null,zoomLevel:1};
+const APP={telemetry:new Map(),alarms:new Map(),pollingId:null,socket:null,zoomLevel:1,sidebarCollapsed:false};
 
 document.addEventListener("DOMContentLoaded",()=>{
   safeOn("start-loop","click",()=>postStatus("/start"));
@@ -12,8 +12,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   safeOn("reset-engine","click",()=>postReset());
   safeOn("ai-generate-btn","click",()=>aiGenerate());
   safeOn("pid-parse-btn","click",()=>pidParse());
+  safeOn("sidebar-toggle","click",()=>toggleSidebar());
+  safeOn("nav-wtp","click",()=>{window.open("http://localhost:8100","_blank");});
 
-  // Sidebar nav — drives right-panel bottom section content
+  // Sidebar nav
   document.querySelectorAll(".nav-item[data-pane]").forEach(item=>{item.addEventListener("click",()=>{
     document.querySelectorAll(".nav-item[data-pane]").forEach(i=>i.classList.remove("active"));
     item.classList.add("active");const t=item.dataset.pane;
@@ -21,13 +23,13 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(t==="pane-builder")toggleBuilder(true);else toggleBuilder(false);
   })});
 
-  // Right panel tabs (mini-tabs at top of monitoring section)
+  // Right panel tabs
   document.querySelectorAll(".right-tab").forEach(t=>{t.addEventListener("click",()=>switchRightPane(t.dataset.pane))});
 
   // Inspector close
   safeOn("close-inspector","click",()=>{const b=document.getElementById("property-body");if(b)b.innerHTML='<div class="empty-state"><p>Select an equipment node<br>to inspect its properties.</p></div>';});
 
-  // Zoom controls (toolbar buttons)
+  // Zoom controls
   safeOn("tool-zoom-in","click",()=>{if(typeof EDITOR!=="undefined")EDITOR.zoomIn()});
   safeOn("tool-zoom-out","click",()=>{if(typeof EDITOR!=="undefined")EDITOR.zoomOut()});
   safeOn("tool-fit","click",()=>{if(typeof EDITOR!=="undefined")EDITOR.fit()});
@@ -38,22 +40,24 @@ document.addEventListener("DOMContentLoaded",()=>{
   setTimeout(()=>{if(typeof SETTINGS!=="undefined")SETTINGS.init();if(typeof TRENDS!=="undefined")TRENDS.init();},800);
 });
 
+function toggleSidebar(){
+  APP.sidebarCollapsed=!APP.sidebarCollapsed;
+  document.getElementById("sidebar")?.classList.toggle("collapsed",APP.sidebarCollapsed);
+  document.getElementById("main-content")?.classList.toggle("expanded",APP.sidebarCollapsed);
+}
+
 // ---- Helpers ----
 function safeOn(id,ev,fn){const el=document.getElementById(id);if(el)el.addEventListener(ev,fn);}
 function switchRightPane(id){
-  // Special: Process Flow just focuses the diagram, no right-panel tab
   if (id === "pane-process-flow") {
     document.querySelectorAll(".tab-pane").forEach(e => e.classList.remove("active"));
     document.querySelectorAll(".right-tab").forEach(t => t.classList.remove("active"));
     document.querySelectorAll(".nav-item[data-pane]").forEach(n => n.classList.toggle("active", n.dataset.pane === id));
     return;
   }
-  // Switch tab-pane visibility
   const content=document.getElementById("monitoring-content");
   if(content){content.querySelectorAll(".tab-pane").forEach(e=>e.classList.remove("active"));const p=document.getElementById(id);if(p)p.classList.add("active")}
-  // Sync right-tab active state
   document.querySelectorAll(".right-tab").forEach(t=>{t.classList.toggle("active",t.dataset.pane===id)});
-  // Sync sidebar nav active state
   document.querySelectorAll(".nav-item[data-pane]").forEach(n=>{n.classList.toggle("active",n.dataset.pane===id)});
 }
 function toggleBuilder(on){const b=document.getElementById("tool-builder-toggle");if(on){b?.classList.add("active");document.getElementById("builder-palette")?.classList.add("visible");if(typeof BUILDER!=="undefined")BUILDER.enable();}else{b?.classList.remove("active");document.getElementById("builder-palette")?.classList.remove("visible");if(typeof BUILDER!=="undefined")BUILDER.disable();}}
@@ -77,7 +81,7 @@ async function loadAlarms(){try{updateAlarms(await(await fetch("/alarms")).json(
 function connectSocket(){const p=window.location.protocol==="https:"?"wss":"ws";if(APP.socket)APP.socket.close();const s=new WebSocket(`${p}://${window.location.host}/ws/telemetry`);APP.socket=s;s.addEventListener("open",()=>{setConn("Live");stopPoll()});s.addEventListener("message",(e)=>{try{const f=JSON.parse(e.data);updateTelemetry(f);updateAlarms(f);updateTime(f);if(typeof TRENDS!=="undefined")TRENDS.pushFrame(f)}catch(ex){}});s.addEventListener("error",()=>{setConn("Polling");startPoll()});s.addEventListener("close",()=>{setConn("Polling");startPoll()})}
 function startPoll(){if(!APP.pollingId)APP.pollingId=setInterval(loadTelemetry,1000)}
 function stopPoll(){if(APP.pollingId){clearInterval(APP.pollingId);APP.pollingId=null}}
-function setConn(v){const d=document.getElementById("sidebar-status-dot");if(d)d.className="status-dot"+(v==="Live"?"":" disconnected");const t=document.getElementById("sidebar-status-text");if(t)t.textContent=v==="Live"?"Connected · Live":v;}
+function setConn(v){const d=document.getElementById("sidebar-status-dot");const connected=v==="Live"||v==="WTP Live";if(d)d.className="status-dot"+(connected?"":" disconnected");const t=document.getElementById("sidebar-status-text");if(t)t.textContent=v==="Live"?"Connected · Live":v;}
 
 // ---- Telemetry ----
 function updateTelemetry(frame){for(const s of filterPub(frame))APP.telemetry.set(s.name,s);renderTelemetryTable();updateTime(filterPub(frame));if(typeof EDITOR!=="undefined")EDITOR.updateTelemetry(frame)}
@@ -98,7 +102,7 @@ function renderTelemetryTable(){
   tbody.innerHTML=signals.map(s=>{
     const q=s.quality||"UNKNOWN";
     return `<tr>
-      <td class="sig-name">${s.name||"--"}</td>
+      <td class="sig-name">${s.role?`<span style="display:inline-block;min-width:26px;margin-right:6px;padding:1px 4px;border-radius:3px;background:var(--bg-hover);color:var(--accent);font-size:9px;font-weight:800;text-align:center">${s.role}</span>`:""}${s.name||"--"}</td>
       <td class="sig-value">${fmtVal(s.value)}</td>
       <td style="color:var(--ink-muted);font-size:10px">${s.unit||""}</td>
       <td class="quality-${q}">● ${q}</td>

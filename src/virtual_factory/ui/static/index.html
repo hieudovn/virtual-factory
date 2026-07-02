@@ -16,8 +16,9 @@
       <!-- ========================================================= -->
       <!-- SIDEBAR (left, 230px)                                      -->
       <!-- ========================================================= -->
-      <aside class="sidebar" role="navigation">
+      <aside class="sidebar" role="navigation" id="sidebar">
         <div class="sidebar-brand">
+          <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Toggle sidebar">☰</button>
           <div class="brand-icon">VF</div>
           <div class="brand-text">
             <h2>Virtual Factory</h2>
@@ -65,6 +66,12 @@
             <button class="nav-item" data-pane="pane-ai">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2 7h7l-5.5 4 2 7-5.5-4-5.5 4 2-7L3 9h7z"/></svg>
               <span>AI Generation</span>
+            </button>
+          <div class="nav-section">
+            <div class="nav-section-title">External</div>
+            <button class="nav-item" id="nav-wtp">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2 7h7l-5.5 4 2 7-5.5-4-5.5 4 2-7L3 9h7z"/></svg>
+              <span>🚰 WTP Simulator</span>
             </button>
           </div>
         </nav>
@@ -235,10 +242,10 @@
     <!-- Scripts -->
     <script src="/static/icons.js?v=5" defer></script>
     <script src="/static/widgets.js?v=5" defer></script>
-    <script src="/static/editor.js?v=8" defer></script>
+    <script src="/static/editor.js?v=10" defer></script>
     <script src="/static/settings.js?v=9" defer></script>
     <script src="/static/builder.js?v=5" defer></script>
     <script src="/static/resizer.js?v=5" defer></script>
-    <script src="/static/app.js?v=9" defer></script>
+    <script src="/static/app.js?v=11" defer></script>
   </body>
 </html>

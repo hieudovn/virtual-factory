@@ -1,0 +1,29 @@
+scenario_id: raw_water_contamination
+name: "Raw Water Contamination Event"
+description: "Raw turbidity, COD, and ammonia increase sharply. Impact propagates through treatment chain."
+mv_overrides:
+  COAG-PUMP-101.flow_rate:
+    sp: 18.0
+dv_overrides:
+  RAW-WATER-QUALITY-STATION-101.raw_turbidity:
+    baseline: 85.0
+    amplitude: 25.0
+    bounds_max: 150.0
+    override: true
+  RAW-WATER-QUALITY-STATION-101.raw_ammonia:
+    baseline: 1.5
+    amplitude: 0.5
+    override: true
+  RAW-WATER-QUALITY-STATION-101.raw_conductivity:
+    baseline: 550.0
+    override: true
+  LAB-SAMPLING-STATION-101.cod:
+    baseline: 45.0
+    amplitude: 10.0
+    override: true
+expected_effects:
+  - settled_turbidity: 12-18 NTU (↑ from 6-10)
+  - filtered_turbidity: 0.5-1.2 NTU (↑ from 0.2-0.5)
+  - outlet_turbidity: 0.4-0.9 NTU (↑ from 0.15-0.35)
+  - outlet_quality_risk_score: 5-8 (↑ from 1-3)
+  - chemical_cost_per_m3: +30-50%

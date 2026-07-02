@@ -1,0 +1,35 @@
+# WTP Demo-01 Contract — Minimal stub for simulator startup
+plant:
+  id: WTP-DEMO-01
+  name: WTP Demo Plant
+  type: water_treatment
+
+areas:
+  - id: AREA-INT
+    name: Intake
+  - id: AREA-CHEM
+    name: Chemical Dosing
+  - id: AREA-CLAR
+    name: Clarification
+  - id: AREA-FILT
+    name: Filtration
+  - id: AREA-DIS
+    name: Disinfection
+  - id: AREA-CW
+    name: Clear Water
+  - id: AREA-DIST
+    name: Distribution
+  - id: AREA-KPI
+    name: KPI & Traceability
+  - id: AREA-UTIL
+    name: Utilities
+
+assets: []
+signals: []
+
+simulation:
+  behaviors: {}
+
+extensions:
+  monitoring:
+    scenarios: []

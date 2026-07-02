@@ -1,0 +1,35 @@
+scenario_id: hsp_trip
+name: "High Service Pump Trip"
+description: "HSP-101 trips unexpectedly. Outlet manifold pressure drops, HSP-102 attempts to compensate but total flow decreases."
+mv_overrides:
+  HSP-101.flow_rate:
+    sp: 0.0
+  HSP-102.flow_rate:
+    sp: 480.0
+dv_overrides:
+  HSP-101-MOTOR.motor_current:
+    baseline: 0.0
+    bounds_min: 0.0
+    override: true
+  HSP-101-MOTOR.power:
+    baseline: 0.0
+    override: true
+  HSP-102-MOTOR.motor_current:
+    baseline: 200.0
+    bounds_max: 230.0
+    override: true
+  HIGH-SERVICE-PUMP-STATION-101.discharge_pressure:
+    baseline: 280.0
+    override: true
+  OUTLET-MANIFOLD-101.manifold_pressure:
+    baseline: 260.0
+    override: true
+  OUTLET-MANIFOLD-101.manifold_flow:
+    baseline: 500.0
+    override: true
+expected_effects:
+  - outlet manifold flow: -22%
+  - outlet manifold pressure: -32%
+  - water_production_today: reduced accumulation rate
+  - HSP-102 motor current: near overload zone
+  - energy_abnormality_score: 5-7

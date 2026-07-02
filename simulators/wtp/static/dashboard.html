@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WTP Simulator - Dashboard</title>
+<style>
+:root {
+  --bg: #101417;
+  --surface: #182024;
+  --surface2: #222c31;
+  --surface3: #2a373d;
+  --border: #34454d;
+  --accent: #20bfa3;
+  --accent2: #6fb7ff;
+  --text: #e4edf2;
+  --text-muted: #91a2ad;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #22c55e;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+header h1 { font-size: 18px; font-weight: 700; color: var(--accent); }
+header .status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  background: var(--success);
+}
+.dashboard {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+}
+.panel h2 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.flow-wrap { overflow-x: auto; }
+.flow-svg {
+  width: 100%;
+  min-width: 1180px;
+  height: 420px;
+}
+.stage-card rect {
+  fill: var(--surface2);
+  stroke: var(--border);
+  stroke-width: 1.5;
+  rx: 8;
+}
+.stage-card .stage-no {
+  fill: var(--accent2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.stage-card .stage-title {
+  fill: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+}
+.stage-card .stage-unit {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+.stage-card .stage-media {
+  fill: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+.flow-arrow {
+  stroke: var(--accent);
+  stroke-width: 2;
+  fill: none;
+  opacity: 0.75;
+}
+.flow-arrow-head { fill: var(--accent); opacity: 0.85; }
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tab-btn, .filter-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 700;
+}
+.tab-btn {
+  padding: 8px 16px;
+  font-size: 12px;
+}
+.tab-btn.active, .filter-btn.active {
+  background: #163f3a;
+  color: var(--text);
+  border-color: var(--accent);
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 5px 12px;
+  font-size: 11px;
+}
+.table-shell { max-height: 520px; overflow: auto; }
+.telemetry-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.telemetry-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  color: var(--text-muted);
+  text-align: left;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.telemetry-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(52, 69, 77, 0.45);
+}
+.telemetry-table tr:hover td { background: var(--surface2); }
+.sig-name { color: var(--text); white-space: nowrap; }
+.sig-value { font-family: Consolas, monospace; font-weight: 700; text-align: right; }
+.sig-unit { color: var(--text-muted); }
+.quality-GOOD { color: var(--success); }
+.quality-UNCERTAIN { color: var(--warning); }
+.quality-BAD { color: var(--danger); }
+.sig-type {
+  display: inline-block;
+  min-width: 34px;
+  text-align: center;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+.type-DV { background: #173658; color: #8cc8ff; }
+.type-MV { background: #3b2853; color: #d2a8ff; }
+.type-PV { background: #183d2a; color: #78e39a; }
+.type-KPI { background: #46351d; color: #ffd27a; }
+.mv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+}
+.mv-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 7px;
+}
+.mv-name { font-size: 12px; font-weight: 700; }
+.mv-meta { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.mv-value { color: var(--accent); font-size: 17px; font-weight: 800; }
+.mv-range, .mv-id { color: var(--text-muted); font-size: 10px; }
+.mv-card input[type=range] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+.mv-card input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  header .status { margin-left: 0; width: 100%; }
+  .dashboard { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>WTP Simulator</h1>
+  <span style="font-size:11px;color:var(--text-muted)" id="plant-name">WTP-DEMO-01</span>
+  <div class="status">
+    <span id="sim-status"><span class="dot"></span>Running</span>
+    <span id="sim-time">Time: 0s</span>
+    <span id="sim-scenario">Scenario: normal_operation</span>
+    <span id="opcua-status">OPC UA: starting</span>
+  </div>
+</header>
+
+<main class="dashboard">
+  <section class="panel">
+    <h2>WTP Process Overview</h2>
+    <div class="flow-wrap">
+      <svg class="flow-svg" id="flow-svg" viewBox="0 0 1180 400" aria-label="High-level WTP process flow"></svg>
+    </div>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('telemetry')" id="tab-telemetry">Telemetry (92)</button>
+    <button class="tab-btn" onclick="switchTab('control')" id="tab-control">Control (12 MV)</button>
+  </nav>
+
+  <section class="tab-content active" id="panel-telemetry">
+    <div class="panel">
+      <div class="filters">
+        <button class="filter-btn active" onclick="setFilter('all')" data-filter="all">All</button>
+        <button class="filter-btn" onclick="setFilter('DV')" data-filter="DV">DV</button>
+        <button class="filter-btn" onclick="setFilter('MV')" data-filter="MV">MV</button>
+        <button class="filter-btn" onclick="setFilter('PV')" data-filter="PV">PV</button>
+        <button class="filter-btn" onclick="setFilter('KPI')" data-filter="KPI">KPI</button>
+      </div>
+      <div class="table-shell">
+        <table class="telemetry-table">
+          <thead>
+            <tr><th>Type</th><th>Signal ID</th><th>Value</th><th>Unit</th><th>Quality</th></tr>
+          </thead>
+          <tbody id="telemetry-body">
+            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Waiting for data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-content" id="panel-control">
+    <div class="panel">
+      <h2>Manipulated Variables</h2>
+      <div class="mv-grid" id="mv-grid"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+let signalStore = new Map();
+let currentFilter = "all";
+
+const NS = "http://www.w3.org/2000/svg";
+
+const STAGES = [
+  {
+    no: "01",
+    title: "Raw Water Intake",
+    units: ["River intake", "Screening", "Raw water pumping"],
+    media: "Raw water"
+  },
+  {
+    no: "02",
+    title: "Chemical Dosing",
+    units: ["Coagulant dosing", "Chlorine dosing", "pH correction"],
+    media: "Conditioned water"
+  },
+  {
+    no: "03",
+    title: "Clarification",
+    units: ["Flash mixing", "Flocculation", "Sedimentation", "Sludge removal"],
+    media: "Settled water"
+  },
+  {
+    no: "04",
+    title: "Filtration",
+    units: ["Multimedia filters", "Backwash system"],
+    media: "Filtered water"
+  },
+  {
+    no: "05",
+    title: "Disinfection",
+    units: ["Contact tank", "Chlorine contact"],
+    media: "Disinfected water"
+  },
+  {
+    no: "06",
+    title: "Clear Water Storage",
+    units: ["Clear water tank", "Transfer pumping"],
+    media: "Treated water"
+  },
+  {
+    no: "07",
+    title: "Distribution",
+    units: ["High-service pumping", "Outlet manifold"],
+    media: "Distributed water"
+  },
+  {
+    no: "08",
+    title: "Plant Performance",
+    units: ["Energy", "Quality", "Compliance", "Production cost"],
+    media: "Operations summary"
+  }
+];
+
+const MV_LIST = [
+  { id:"COAG-PUMP-101.flow_rate", name:"Coagulant Pump", min:5, max:25, unit:"L/min" },
+  { id:"CHLORINE-PUMP-101.flow_rate", name:"Chlorine Pump", min:2, max:18, unit:"L/min" },
+  { id:"PH-PUMP-101.flow_rate", name:"pH Pump", min:1, max:12, unit:"L/min" },
+  { id:"RWP-101.flow_rate", name:"Raw Water Pump 1", min:200, max:550, unit:"m3/h" },
+  { id:"RWP-102.flow_rate", name:"Raw Water Pump 2", min:0, max:500, unit:"m3/h" },
+  { id:"HSP-101.flow_rate", name:"High Service Pump 1", min:100, max:400, unit:"m3/h" },
+  { id:"HSP-102.flow_rate", name:"High Service Pump 2", min:0, max:450, unit:"m3/h" },
+  { id:"FLASH-MIXER-101.mixer_speed", name:"Flash Mixer", min:150, max:500, unit:"RPM" },
+  { id:"FLOCCULATOR-101.flocculator_speed", name:"Flocculator", min:10, max:80, unit:"RPM" },
+  { id:"SCREEN-101.running_status", name:"Screen", min:0, max:1, unit:"ON/OFF" },
+  { id:"CLARIFIER-SCRAPER-101.running_status", name:"Scraper", min:0, max:1, unit:"ON/OFF" },
+  { id:"SLUDGE-PUMP-101.running_status", name:"Sludge Pump", min:0, max:1, unit:"ON/OFF" }
+];
+
+const KNOWN_MV = new Set(MV_LIST.map((item) => item.id));
+const KNOWN_DV = new Set([
+  "RAW-WATER-QUALITY-STATION-101.raw_turbidity",
+  "RAW-WATER-QUALITY-STATION-101.raw_ph",
+  "RAW-WATER-QUALITY-STATION-101.raw_conductivity",
+  "RAW-WATER-QUALITY-STATION-101.raw_temperature",
+  "RAW-WATER-QUALITY-STATION-101.raw_ammonia",
+  "RAW-WATER-QUALITY-STATION-101.raw_algae_index",
+  "INTAKE-STRUCTURE-101.raw_water_level"
+]);
+
+function svgEl(name, attrs = {}) {
+  const el = document.createElementNS(NS, name);
+  for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
+  return el;
+}
+
+function renderFlowDiagram() {
+  const svg = document.getElementById("flow-svg");
+  svg.replaceChildren();
+
+  const layout = [
+    { x: 24, y: 52 }, { x: 210, y: 52 }, { x: 396, y: 52 }, { x: 582, y: 52 },
+    { x: 768, y: 52 }, { x: 954, y: 52 }, { x: 954, y: 246 }, { x: 768, y: 246 }
+  ];
+  const w = 156;
+  const h = 132;
+
+  const arrowPairs = [
+    [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]
+  ];
+  for (const [from, to] of arrowPairs) {
+    const a = layout[from];
+    const b = layout[to];
+    const x1 = from === 5 ? a.x + w / 2 : a.x + w;
+    const y1 = from === 5 ? a.y + h : a.y + h / 2;
+    const x2 = to === 6 ? b.x + w / 2 : b.x;
+    const y2 = to === 6 ? b.y : b.y + h / 2;
+    const path = svgEl("path", {
+      d: `M${x1} ${y1} C${x1 + (x2 - x1) / 2} ${y1}, ${x1 + (x2 - x1) / 2} ${y2}, ${x2} ${y2}`,
+      class: "flow-arrow"
+    });
+    svg.appendChild(path);
+    const head = svgEl("polygon", {
+      points: `${x2-7},${y2-5} ${x2+3},${y2} ${x2-7},${y2+5}`,
+      class: "flow-arrow-head"
+    });
+    if (to === 6) head.setAttribute("points", `${x2-5},${y2-7} ${x2},${y2+3} ${x2+5},${y2-7}`);
+    svg.appendChild(head);
+  }
+
+  STAGES.forEach((stage, index) => {
+    const pos = layout[index];
+    const group = svgEl("g", { class: "stage-card" });
+    group.appendChild(svgEl("rect", { x: pos.x, y: pos.y, width: w, height: h }));
+
+    const no = svgEl("text", { x: pos.x + 12, y: pos.y + 22, class: "stage-no" });
+    no.textContent = `STAGE ${stage.no}`;
+    group.appendChild(no);
+
+    const title = svgEl("text", { x: pos.x + 12, y: pos.y + 44, class: "stage-title" });
+    title.textContent = stage.title;
+    group.appendChild(title);
+
+    stage.units.forEach((unit, i) => {
+      const row = svgEl("text", { x: pos.x + 14, y: pos.y + 70 + i * 15, class: "stage-unit" });
+      row.textContent = unit;
+      group.appendChild(row);
+    });
+
+    const media = svgEl("text", { x: pos.x + 12, y: pos.y + h - 14, class: "stage-media" });
+    media.textContent = stage.media;
+    group.appendChild(media);
+    svg.appendChild(group);
+  });
+}
+
+function classifySignal(signalId) {
+  if (KNOWN_MV.has(signalId)) return "MV";
+  if (KNOWN_DV.has(signalId)) return "DV";
+  if (
+    signalId.includes("CHEMICAL-CONSUMPTION") ||
+    signalId.includes("CLARIFIER-QUALITY") ||
+    signalId.includes("FILTER-QUALITY") ||
+    signalId.includes("CLEAR-WATER-TANK-101.quality") ||
+    signalId.includes("TRANSFER-OUTLET") ||
+    signalId.includes("ENERGY") ||
+    signalId.includes("MCC") ||
+    signalId.includes("LAB") ||
+    signalId.includes("QUALITY-TRACEABILITY") ||
+    signalId.includes("PLANT-KPI") ||
+    signalId.includes("TRANSFORMER")
+  ) return "KPI";
+  return "PV";
+}
+
+function formatValue(value) {
+  if (typeof value !== "number") return value;
+  if (Number.isInteger(value) && Math.abs(value) <= 1) return value.toFixed(0);
+  if (Math.abs(value) < 1) return value.toFixed(4);
+  if (Math.abs(value) < 100) return value.toFixed(2);
+  return value.toFixed(1);
+}
+
+function renderTelemetry() {
+  const tbody = document.getElementById("telemetry-body");
+  const entries = Array.from(signalStore.entries());
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Waiting for data...</td></tr>';
+    return;
+  }
+
+  const typeOrder = { DV: 1, MV: 2, PV: 3, KPI: 4 };
+  const filtered = currentFilter === "all"
+    ? entries
+    : entries.filter(([, signal]) => signal.type === currentFilter);
+
+  filtered.sort((a, b) =>
+    (typeOrder[a[1].type] || 9) - (typeOrder[b[1].type] || 9) ||
+    a[0].localeCompare(b[0])
+  );
+
+  tbody.innerHTML = filtered.map(([id, signal]) => `
+    <tr>
+      <td><span class="sig-type type-${signal.type}">${signal.type}</span></td>
+      <td class="sig-name">${id}</td>
+      <td class="sig-value">${formatValue(signal.value)}</td>
+      <td class="sig-unit">${signal.unit || ""}</td>
+      <td><span class="quality-${signal.quality || "GOOD"}">${signal.quality || "GOOD"}</span></td>
+    </tr>
+  `).join("");
+}
+
+function renderMVControls() {
+  const grid = document.getElementById("mv-grid");
+  grid.innerHTML = MV_LIST.map((mv) => {
+    const current = signalStore.get(mv.id);
+    const value = current ? current.value : mv.min;
+    const step = mv.unit === "ON/OFF" ? 1 : 0.5;
+    return `
+      <div class="mv-card">
+        <div class="mv-name">${mv.name}</div>
+        <div class="mv-meta">
+          <span class="mv-value" id="mv-val-${mv.id}">${formatValue(value)}</span>
+          <span class="mv-range">${mv.min}-${mv.max} ${mv.unit}</span>
+        </div>
+        <input type="range" min="${mv.min}" max="${mv.max}" step="${step}" value="${value}"
+          oninput="setMV('${mv.id}', this.value)">
+        <span class="mv-id">${mv.id}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+async function setMV(signalId, value) {
+  const numericValue = parseFloat(value);
+  const label = document.getElementById(`mv-val-${signalId}`);
+  if (label) label.textContent = formatValue(numericValue);
+  try {
+    await fetch(`/api/v1/control/${signalId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: numericValue })
+    });
+  } catch (error) {
+    console.warn("MV set failed:", error);
+  }
+}
+
+async function fetchStatus() {
+  try {
+    const response = await fetch("/status");
+    const data = await response.json();
+    document.getElementById("sim-time").textContent = `Time: ${Math.round(data.time_s || 0)}s`;
+    document.getElementById("sim-scenario").textContent = `Scenario: ${data.current_scenario || "normal_operation"}`;
+    const opcua = data.opcua || {};
+    const state = opcua.running ? `${opcua.node_count || 0}/92 nodes` : "disabled";
+    document.getElementById("opcua-status").textContent = `OPC UA: ${state}`;
+  } catch (error) {
+    document.getElementById("opcua-status").textContent = "OPC UA: unavailable";
+  }
+}
+
+async function fetchTelemetry() {
+  try {
+    const response = await fetch("/api/v1/telemetry/latest");
+    const data = await response.json();
+    if (!Array.isArray(data)) return;
+
+    for (const item of data) {
+      signalStore.set(item.signal_id, {
+        value: item.value,
+        unit: item.unit || "",
+        type: classifySignal(item.signal_id),
+        quality: item.quality || "GOOD"
+      });
+    }
+
+    document.getElementById("tab-telemetry").textContent = `Telemetry (${signalStore.size})`;
+    renderTelemetry();
+    renderMVControls();
+  } catch (error) {
+    console.warn("Telemetry fetch failed:", error);
+  }
+}
+
+function switchTab(name) {
+  document.querySelectorAll(".tab-btn").forEach((tab) => tab.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach((panel) => panel.classList.remove("active"));
+  document.getElementById(`tab-${name}`).classList.add("active");
+  document.getElementById(`panel-${name}`).classList.add("active");
+}
+
+function setFilter(type) {
+  currentFilter = type;
+  document.querySelectorAll(".filter-btn").forEach((button) => {
+    button.classList.toggle("active", button.dataset.filter === type);
+  });
+  renderTelemetry();
+}
+
+renderFlowDiagram();
+renderMVControls();
+fetchStatus();
+fetchTelemetry();
+setInterval(fetchStatus, 5000);
+setInterval(fetchTelemetry, 2000);
+</script>
+</body>
+</html>

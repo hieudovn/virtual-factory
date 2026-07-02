@@ -1,0 +1,21 @@
+scenario_id: filter_breakthrough
+name: "Filter Breakthrough"
+description: "Filtered turbidity rises above 1.0 NTU. Outlet turbidity risk increases, compliance status may fail."
+mv_overrides: {}
+dv_overrides:
+  FILTER-QUALITY-STATION-101.filtered_turbidity:
+    baseline: 1.2
+    amplitude: 0.4
+    override: true
+  FILTER-QUALITY-STATION-101.particle_count_proxy:
+    baseline: 150.0
+    amplitude: 50.0
+    override: true
+  FILTER-QUALITY-STATION-101.filter_run_quality_index:
+    baseline: 0.3
+    override: true
+expected_effects:
+  - outlet_turbidity: 0.8-1.5 NTU (↑ from 0.15-0.35)
+  - outlet_compliance_status: false (for turbidity > 1.0 NTU)
+  - outlet_quality_risk_score: 7-9
+  - probable_root_cause_code: 401
