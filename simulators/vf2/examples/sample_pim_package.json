@@ -1,0 +1,520 @@
+{
+  "package_id": "VF2-PKG-UNIT-REF-PUMP-STATION-01",
+  "package_type": "vf2_simulation_package",
+  "schema_version": "1.0",
+  "source_model": {
+    "system": "PIM",
+    "model_version": "PIM-PH04-v0.1",
+    "generated_at": "2026-07-10T01:59:48.782586Z",
+    "unit_id": "UNIT-REF-PUMP-STATION-01",
+    "unit_name": "Unit Pump Station 01"
+  },
+  "objects": [
+    {
+      "simulation_object_id": "VF2-REF-PMP-VLV-102A",
+      "canonical_id": "ASSET-REF-PMP-VLV-102A",
+      "object_type": "check_valve",
+      "name": "Discharge Check Valve A",
+      "unit_id": "UNIT-REF-PUMP-STATION-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-PMP-VLV-102A"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-PMP-MTR-101B",
+      "canonical_id": "ASSET-REF-PMP-MTR-101B",
+      "object_type": "electric_motor",
+      "name": "Pump B Drive Motor",
+      "unit_id": "UNIT-REF-PUMP-STATION-01",
+      "status": "standby",
+      "ports": [
+        {
+          "port_id": "shaft_output",
+          "direction": "output",
+          "connected_to_canonical_id": "ASSET-REF-PMP-101B",
+          "relation_type": "CONNECTED_TO",
+          "relationship_id": "REL-REF-000022",
+          "note": null
+        }
+      ],
+      "parameters": {
+        "rated_power_kw": 11.0
+      },
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-PMP-MTR-101B"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-PMP-MTR-101A",
+      "canonical_id": "ASSET-REF-PMP-MTR-101A",
+      "object_type": "electric_motor",
+      "name": "Pump A Drive Motor",
+      "unit_id": "UNIT-REF-PUMP-STATION-01",
+      "status": "active",
+      "ports": [
+        {
+          "port_id": "shaft_output",
+          "direction": "output",
+          "connected_to_canonical_id": "ASSET-REF-PMP-101A",
+          "relation_type": "CONNECTED_TO",
+          "relationship_id": "REL-REF-000021",
+          "note": null
+        }
+      ],
+      "parameters": {
+        "rated_power_kw": 11.0
+      },
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-PMP-MTR-101A"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-PMP-101A",
+      "canonical_id": "ASSET-REF-PMP-101A",
+      "object_type": "centrifugal_pump",
+      "name": "Main Pump A (duty)",
+      "unit_id": "UNIT-REF-PUMP-STATION-01",
+      "status": "active",
+      "ports": [
+        {
+          "port_id": "shaft_output",
+          "direction": "output",
+          "connected_to_canonical_id": "ASSET-REF-PMP-MTR-101A",
+          "relation_type": "CONNECTED_TO",
+          "relationship_id": "REL-REF-000021",
+          "note": null
+        }
+      ],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-PMP-101A"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-PMP-VLV-101A",
+      "canonical_id": "ASSET-REF-PMP-VLV-101A",
+      "object_type": "gate_valve",
+      "name": "Suction Isolation Valve A",
+      "unit_id": "UNIT-REF-PUMP-STATION-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-PMP-VLV-101A"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-PMP-VLV-101B",
+      "canonical_id": "ASSET-REF-PMP-VLV-101B",
+      "object_type": "gate_valve",
+      "name": "Suction Isolation Valve B",
+      "unit_id": "UNIT-REF-PUMP-STATION-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-PMP-VLV-101B"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-PMP-101B",
+      "canonical_id": "ASSET-REF-PMP-101B",
+      "object_type": "centrifugal_pump",
+      "name": "Main Pump B (standby)",
+      "unit_id": "UNIT-REF-PUMP-STATION-01",
+      "status": "standby",
+      "ports": [
+        {
+          "port_id": "shaft_output",
+          "direction": "output",
+          "connected_to_canonical_id": "ASSET-REF-PMP-MTR-101B",
+          "relation_type": "CONNECTED_TO",
+          "relationship_id": "REL-REF-000022",
+          "note": null
+        }
+      ],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-PMP-101B"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-PMP-VLV-102B",
+      "canonical_id": "ASSET-REF-PMP-VLV-102B",
+      "object_type": "check_valve",
+      "name": "Discharge Check Valve B",
+      "unit_id": "UNIT-REF-PUMP-STATION-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-PMP-VLV-102B"
+      }
+    }
+  ],
+  "signals": [
+    {
+      "simulation_signal_id": "VF2.PUMP_STATION_01.FT_101.DISCHARGE_FLOW_TRANSMITTER",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-FT-101",
+      "canonical_asset_id": "ASSET-REF-PMP-101A",
+      "name": "Discharge Flow Transmitter",
+      "data_type": "float64",
+      "engineering_unit": "m3/h",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    },
+    {
+      "simulation_signal_id": "VF2.PUMP_STATION_01.PT_101.DISCHARGE_PRESSURE_TRANSMITTER",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-PT-101",
+      "canonical_asset_id": "ASSET-REF-PMP-101A",
+      "name": "Discharge Pressure Transmitter",
+      "data_type": "float64",
+      "engineering_unit": "bar",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    },
+    {
+      "simulation_signal_id": "VF2.PUMP_STATION_01.LT_101.SUCTION_LEVEL_TRANSMITTER",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-LT-101",
+      "canonical_asset_id": "UNIT-REF-PUMP-STATION-01",
+      "name": "Suction Level Transmitter",
+      "data_type": "float64",
+      "engineering_unit": "m",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    },
+    {
+      "simulation_signal_id": "VF2.PUMP_STATION_01.VB_101.PUMP_A_VIBRATION_SENSOR",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-VB-101",
+      "canonical_asset_id": "ASSET-REF-PMP-101A",
+      "name": "Pump A Vibration Sensor",
+      "data_type": "float64",
+      "engineering_unit": "mm/s",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    }
+  ],
+  "topology": {
+    "process_edges": [
+      {
+        "from": "VF2-REF-PMP-101A",
+        "to": "VF2-REF-PMP-MTR-101A",
+        "relation_type": "CONNECTED_TO",
+        "relationship_id": "REL-REF-000021",
+        "projection_only": false,
+        "note": null
+      },
+      {
+        "from": "VF2-REF-PMP-101B",
+        "to": "VF2-REF-PMP-MTR-101B",
+        "relation_type": "CONNECTED_TO",
+        "relationship_id": "REL-REF-000022",
+        "projection_only": false,
+        "note": null
+      },
+      {
+        "from": "VF2-UNIT-REF-PUMP-STATION-01",
+        "to": "VF2-REF-PMP-DISCH-001",
+        "relation_type": "FLOWS_TO",
+        "relationship_id": "REL-REF-000020",
+        "projection_only": false,
+        "note": null
+      }
+    ],
+    "electrical_edges": []
+  },
+  "scenarios": [
+    {
+      "scenario_id": "SCN-PUMP-VLV-001",
+      "scenario_type": "valve_fault",
+      "description": "Discharge Check Valve A fails \u2014 flow path altered.",
+      "trigger_asset_id": "ASSET-REF-PMP-VLV-102A",
+      "trigger_simulation_object_id": "VF2-REF-PMP-VLV-102A",
+      "affected_assets": [
+        "ASSET-REF-PMP-VLV-102A"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-PMP-VLV-102A"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "flow blocked or restricted"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 1
+    },
+    {
+      "scenario_id": "SCN-PUMP-TRIP-002",
+      "scenario_type": "pump_trip",
+      "description": "Main Pump A (duty) trips \u2014 flow stops downstream.",
+      "trigger_asset_id": "ASSET-REF-PMP-101A",
+      "trigger_simulation_object_id": "VF2-REF-PMP-101A",
+      "affected_assets": [
+        "ASSET-REF-PMP-101A"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-PMP-101A"
+      ],
+      "affected_simulation_signal_ids": [
+        "VF2.PUMP_STATION_01.FT_101.DISCHARGE_FLOW_TRANSMITTER",
+        "VF2.PUMP_STATION_01.PT_101.DISCHARGE_PRESSURE_TRANSMITTER",
+        "VF2.PUMP_STATION_01.VB_101.PUMP_A_VIBRATION_SENSOR"
+      ],
+      "expected_effects": [
+        {
+          "signal_id": "VF2.PUMP_STATION_01.FT_101.DISCHARGE_FLOW_TRANSMITTER",
+          "expected_change": "flow_rate drops to 0"
+        },
+        {
+          "signal_id": "VF2.PUMP_STATION_01.PT_101.DISCHARGE_PRESSURE_TRANSMITTER",
+          "expected_change": "pressure drops (pump stopped)"
+        },
+        {
+          "signal_id": "VF2.PUMP_STATION_01.VB_101.PUMP_A_VIBRATION_SENSOR",
+          "expected_change": "vibration drops to 0"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 0
+    },
+    {
+      "scenario_id": "SCN-PUMP-VLV-003",
+      "scenario_type": "valve_fault",
+      "description": "Suction Isolation Valve A fails \u2014 flow path altered.",
+      "trigger_asset_id": "ASSET-REF-PMP-VLV-101A",
+      "trigger_simulation_object_id": "VF2-REF-PMP-VLV-101A",
+      "affected_assets": [
+        "ASSET-REF-PMP-VLV-101A"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-PMP-VLV-101A"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "flow blocked or restricted"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 1
+    },
+    {
+      "scenario_id": "SCN-PUMP-VLV-004",
+      "scenario_type": "valve_fault",
+      "description": "Suction Isolation Valve B fails \u2014 flow path altered.",
+      "trigger_asset_id": "ASSET-REF-PMP-VLV-101B",
+      "trigger_simulation_object_id": "VF2-REF-PMP-VLV-101B",
+      "affected_assets": [
+        "ASSET-REF-PMP-VLV-101B"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-PMP-VLV-101B"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "flow blocked or restricted"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 1
+    },
+    {
+      "scenario_id": "SCN-PUMP-TRIP-005",
+      "scenario_type": "pump_trip",
+      "description": "Main Pump B (standby) trips \u2014 flow stops downstream.",
+      "trigger_asset_id": "ASSET-REF-PMP-101B",
+      "trigger_simulation_object_id": "VF2-REF-PMP-101B",
+      "affected_assets": [
+        "ASSET-REF-PMP-101B"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-PMP-101B"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "pump stops; downstream flow interrupted"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 0
+    },
+    {
+      "scenario_id": "SCN-PUMP-VLV-006",
+      "scenario_type": "valve_fault",
+      "description": "Discharge Check Valve B fails \u2014 flow path altered.",
+      "trigger_asset_id": "ASSET-REF-PMP-VLV-102B",
+      "trigger_simulation_object_id": "VF2-REF-PMP-VLV-102B",
+      "affected_assets": [
+        "ASSET-REF-PMP-VLV-102B"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-PMP-VLV-102B"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "flow blocked or restricted"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 1
+    }
+  ],
+  "validation_rules": [
+    {
+      "rule_id": "V01",
+      "rule_name": "Object Identity",
+      "description": "Every VF-2 object must map to a canonical PIM entity ID.",
+      "severity": "error",
+      "applies_to": "objects"
+    },
+    {
+      "rule_id": "V02",
+      "rule_name": "Signal Identity",
+      "description": "Every VF-2 signal must map to a canonical PIM tag, instrument, or asset.",
+      "severity": "error",
+      "applies_to": "signals"
+    },
+    {
+      "rule_id": "V03",
+      "rule_name": "No Orphan Objects",
+      "description": "No simulation object without a canonical source entity in PIM/KG.",
+      "severity": "error",
+      "applies_to": "objects"
+    },
+    {
+      "rule_id": "V04",
+      "rule_name": "No Orphan Signals",
+      "description": "No signal without a source entity in PIM/KG.",
+      "severity": "error",
+      "applies_to": "signals"
+    },
+    {
+      "rule_id": "V05",
+      "rule_name": "Topology Edge Validity",
+      "description": "Every topology edge with projection_only=false must reference a valid PIM relationship_id.",
+      "severity": "error",
+      "applies_to": "topology"
+    },
+    {
+      "rule_id": "V06",
+      "rule_name": "Pump Trip Downstream",
+      "description": "Pump trip scenarios must affect downstream process paths.",
+      "severity": "warning",
+      "applies_to": "scenarios"
+    },
+    {
+      "rule_id": "V07",
+      "rule_name": "Feeder Trip Scope",
+      "description": "Feeder trip scenarios must affect only assets powered by that feeder or downstream thereof.",
+      "severity": "error",
+      "applies_to": "scenarios"
+    },
+    {
+      "rule_id": "V08",
+      "rule_name": "Provenance Presence",
+      "description": "Package must include source_model.system='PIM' and model_version.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V09",
+      "rule_name": "Package Projection Rule",
+      "description": "No entity/signal/edge in the package that is not derivable from PIM/KG.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V10",
+      "rule_name": "Schema Conformance",
+      "description": "Package must validate against the VF-2 package Pydantic schema.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V11",
+      "rule_name": "Model Version Consistency",
+      "description": "All objects and signals must reference the same model_version.",
+      "severity": "warning",
+      "applies_to": "package"
+    }
+  ]
+}

@@ -39,3 +39,25 @@ services:
       - "4840:4840"
     volumes:
       - ./out:/app/out
+
+  # ------------------------------------------------------------------
+  # VF-2: PIM-native Simulation Runtime (Local Dev)
+  # ------------------------------------------------------------------
+  vf2-simulator:
+    build:
+      context: .
+      dockerfile: deploy/vf2.Dockerfile
+    command:
+      - python
+      - -m
+      - simulators.vf2.main
+      - --package
+      - simulators/vf2/examples/sample_pim_package.json
+      - --config
+      - simulators/vf2/config.yaml
+      - --api-server
+    ports:
+      - "8102:8102"
+    volumes:
+      - ./simulators/vf2:/app/simulators/vf2
+      - ./out:/app/out

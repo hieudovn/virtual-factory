@@ -1,0 +1,24 @@
+# VF-2 PIM-native Simulation Runtime Configuration
+simulator:
+  name: "vf2-sim-01"
+  source: "vf2-sim-01"
+  interval_s: 1.0
+  max_frames_buffer: 3600
+  auto_start: true
+
+output:
+  default_mode: "memory"
+  csv:
+    path: "/app/out/vf2_output.csv"
+    append: false
+
+scenario:
+  default: ""
+  transition_s: 30.0
+
+api:
+  host: "0.0.0.0"
+  port: 8102
+
+logging:
+  level: "INFO"
