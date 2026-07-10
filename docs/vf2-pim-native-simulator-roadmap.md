@@ -1054,9 +1054,13 @@ VF-2 proposal: 8102
 |------|--------|
 | **Architecture direction** | PIM-native, package-driven, runtime-light |
 | **Location** | `simulators/vf2/` — isolated from VF-1 |
-| **Package format** | Coordinate with PIM PH04-ST00 |
-| **Reuse from VF-1** | Patterns only (data models, simulation loop, scenario manager, API endpoints) — no imports |
-| **New for VF-2** | Package loader/validator, dynamic registries, topology engine, transform evaluator, output adapters |
-| **MVP scope** | 5 behavior types, 2 scenario types, local output only |
-| **Implementation** | 10 tasks, ~5 days coder |
-| **Blockers** | PIM PH04 schema alignment (Q1), SA/Human PO review |
+| **Package format** | PIM PH04 v1.0 JSON, golden fixture frozen |
+| **Reuse from VF-1** | Patterns only — no imports |
+| **VF-2 modules** | 19 Python files, 13 test files |
+| **Tests** | 154 passed, 0 failed |
+| **VF-1 regression** | 0 files modified, 13/13 tests pass |
+| **XR001 (Fresh package)** | ✅ PASS — Pump Station |
+| **XR002 (Multi-package)** | ✅ PASS — Pump + Chemical + MCC |
+| **SA status** | APPROVED WITH NOTES |
+| **Next** | PH04.1 hardening + PH03.2 enrichment (PIM-side). No PlantOS/MQTT/OPC yet. |
+| **Implementation** | 10 tasks, 11 commits, completed 2026-07-10 |
