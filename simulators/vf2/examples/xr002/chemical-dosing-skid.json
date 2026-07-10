@@ -1,0 +1,319 @@
+{
+  "package_id": "VF2-PKG-UNIT-REF-CHEM-DOSING-01",
+  "package_type": "vf2_simulation_package",
+  "schema_version": "1.0",
+  "source_model": {
+    "system": "PIM",
+    "model_version": "PIM-PH04-v0.1",
+    "generated_at": "2026-07-10T04:36:33.475634Z",
+    "unit_id": "UNIT-REF-CHEM-DOSING-01",
+    "unit_name": "Unit Chem Dosing 01"
+  },
+  "objects": [
+    {
+      "simulation_object_id": "VF2-REF-DOS-VLV-101",
+      "canonical_id": "ASSET-REF-DOS-VLV-101",
+      "object_type": "gate_valve",
+      "name": "Tank Isolation Valve",
+      "unit_id": "UNIT-REF-CHEM-DOSING-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-DOS-VLV-101"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-DOS-MXR-101",
+      "canonical_id": "ASSET-REF-DOS-MXR-101",
+      "object_type": "mixer",
+      "name": "Static/Inline Mixer",
+      "unit_id": "UNIT-REF-CHEM-DOSING-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-DOS-MXR-101"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-DOS-P-101",
+      "canonical_id": "ASSET-REF-DOS-P-101",
+      "object_type": "centrifugal_pump",
+      "name": "Metering/Dosing Pump",
+      "unit_id": "UNIT-REF-CHEM-DOSING-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-DOS-P-101"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-DOS-VLV-102",
+      "canonical_id": "ASSET-REF-DOS-VLV-102",
+      "object_type": "control_valve",
+      "name": "Injection Control Valve",
+      "unit_id": "UNIT-REF-CHEM-DOSING-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-DOS-VLV-102"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-DOS-TK-101",
+      "canonical_id": "ASSET-REF-DOS-TK-101",
+      "object_type": "storage_tank",
+      "name": "Chemical Storage Tank",
+      "unit_id": "UNIT-REF-CHEM-DOSING-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ASSET-REF-DOS-TK-101"
+      }
+    }
+  ],
+  "signals": [
+    {
+      "simulation_signal_id": "VF2.CHEM_DOSING_01.DOS_FT_101.DOSING_FLOW_TRANSMITTER",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-DOS-FT-101",
+      "canonical_asset_id": "ASSET-REF-DOS-P-101",
+      "name": "Dosing Flow Transmitter",
+      "data_type": "float64",
+      "engineering_unit": "m3/h",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    },
+    {
+      "simulation_signal_id": "VF2.CHEM_DOSING_01.DOS_PH_101.INJECTION_POINT_PH_ANALYZER",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-DOS-pH-101",
+      "canonical_asset_id": "ASSET-REF-DOS-P-101",
+      "name": "Injection Point pH Analyzer",
+      "data_type": "float64",
+      "engineering_unit": "pH",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    },
+    {
+      "simulation_signal_id": "VF2.CHEM_DOSING_01.DOS_LT_101.TANK_LEVEL_TRANSMITTER",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-DOS-LT-101",
+      "canonical_asset_id": "ASSET-REF-DOS-TK-101",
+      "name": "Tank Level Transmitter",
+      "data_type": "float64",
+      "engineering_unit": "m",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    }
+  ],
+  "topology": {
+    "process_edges": [
+      {
+        "from": "VF2-UNIT-REF-CHEM-DOSING-01",
+        "to": "VF2-REF-DOS-INJ-001",
+        "relation_type": "FLOWS_TO",
+        "relationship_id": "REL-REF-000120",
+        "projection_only": false,
+        "note": null
+      }
+    ],
+    "electrical_edges": []
+  },
+  "scenarios": [
+    {
+      "scenario_id": "SCN-CHEM-VLV-001",
+      "scenario_type": "valve_fault",
+      "description": "Tank Isolation Valve fails \u2014 flow path altered.",
+      "trigger_asset_id": "ASSET-REF-DOS-VLV-101",
+      "trigger_simulation_object_id": "VF2-REF-DOS-VLV-101",
+      "affected_assets": [
+        "ASSET-REF-DOS-VLV-101"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-DOS-VLV-101"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "flow blocked or restricted"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 1
+    },
+    {
+      "scenario_id": "SCN-CHEM-TRIP-002",
+      "scenario_type": "pump_trip",
+      "description": "Metering/Dosing Pump trips \u2014 flow stops downstream.",
+      "trigger_asset_id": "ASSET-REF-DOS-P-101",
+      "trigger_simulation_object_id": "VF2-REF-DOS-P-101",
+      "affected_assets": [
+        "ASSET-REF-DOS-P-101"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-DOS-P-101"
+      ],
+      "affected_simulation_signal_ids": [
+        "VF2.CHEM_DOSING_01.DOS_FT_101.DOSING_FLOW_TRANSMITTER",
+        "VF2.CHEM_DOSING_01.DOS_PH_101.INJECTION_POINT_PH_ANALYZER"
+      ],
+      "expected_effects": [
+        {
+          "signal_id": "VF2.CHEM_DOSING_01.DOS_FT_101.DOSING_FLOW_TRANSMITTER",
+          "expected_change": "flow_rate drops to 0"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 0
+    },
+    {
+      "scenario_id": "SCN-CHEM-VLV-003",
+      "scenario_type": "valve_fault",
+      "description": "Injection Control Valve fails \u2014 flow path altered.",
+      "trigger_asset_id": "ASSET-REF-DOS-VLV-102",
+      "trigger_simulation_object_id": "VF2-REF-DOS-VLV-102",
+      "affected_assets": [
+        "ASSET-REF-DOS-VLV-102"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-REF-DOS-VLV-102"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "flow blocked or restricted"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 1
+    }
+  ],
+  "validation_rules": [
+    {
+      "rule_id": "V01",
+      "rule_name": "Object Identity",
+      "description": "Every VF-2 object must map to a canonical PIM entity ID.",
+      "severity": "error",
+      "applies_to": "objects"
+    },
+    {
+      "rule_id": "V02",
+      "rule_name": "Signal Identity",
+      "description": "Every VF-2 signal must map to a canonical PIM tag, instrument, or asset.",
+      "severity": "error",
+      "applies_to": "signals"
+    },
+    {
+      "rule_id": "V03",
+      "rule_name": "No Orphan Objects",
+      "description": "No simulation object without a canonical source entity in PIM/KG.",
+      "severity": "error",
+      "applies_to": "objects"
+    },
+    {
+      "rule_id": "V04",
+      "rule_name": "No Orphan Signals",
+      "description": "No signal without a source entity in PIM/KG.",
+      "severity": "error",
+      "applies_to": "signals"
+    },
+    {
+      "rule_id": "V05",
+      "rule_name": "Topology Edge Validity",
+      "description": "Every topology edge with projection_only=false must reference a valid PIM relationship_id.",
+      "severity": "error",
+      "applies_to": "topology"
+    },
+    {
+      "rule_id": "V06",
+      "rule_name": "Pump Trip Downstream",
+      "description": "Pump trip scenarios must affect downstream process paths.",
+      "severity": "warning",
+      "applies_to": "scenarios"
+    },
+    {
+      "rule_id": "V07",
+      "rule_name": "Feeder Trip Scope",
+      "description": "Feeder trip scenarios must affect only assets powered by that feeder or downstream thereof.",
+      "severity": "error",
+      "applies_to": "scenarios"
+    },
+    {
+      "rule_id": "V08",
+      "rule_name": "Provenance Presence",
+      "description": "Package must include source_model.system='PIM' and model_version.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V09",
+      "rule_name": "Package Projection Rule",
+      "description": "No entity/signal/edge in the package that is not derivable from PIM/KG.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V10",
+      "rule_name": "Schema Conformance",
+      "description": "Package must validate against the VF-2 package Pydantic schema.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V11",
+      "rule_name": "Model Version Consistency",
+      "description": "All objects and signals must reference the same model_version.",
+      "severity": "warning",
+      "applies_to": "package"
+    }
+  ]
+}

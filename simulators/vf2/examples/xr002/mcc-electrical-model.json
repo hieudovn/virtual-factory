@@ -1,0 +1,343 @@
+{
+  "package_id": "VF2-PKG-UNIT-REF-MCC-01",
+  "package_type": "vf2_simulation_package",
+  "schema_version": "1.0",
+  "source_model": {
+    "system": "PIM",
+    "model_version": "PIM-PH04-v0.1",
+    "generated_at": "2026-07-10T04:36:32.384507Z",
+    "unit_id": "UNIT-REF-MCC-01",
+    "unit_name": "Unit Mcc 01"
+  },
+  "objects": [
+    {
+      "simulation_object_id": "VF2-FEEDER-REF-MCC-01-FDR-04",
+      "canonical_id": "FEEDER-REF-MCC-01-FDR-04",
+      "object_type": "feeder_circuit",
+      "name": "Feeder 04",
+      "unit_id": "UNIT-REF-MCC-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "FEEDER-REF-MCC-01-FDR-04"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-FEEDER-REF-MCC-01-FDR-02",
+      "canonical_id": "FEEDER-REF-MCC-01-FDR-02",
+      "object_type": "feeder_circuit",
+      "name": "Feeder 02",
+      "unit_id": "UNIT-REF-MCC-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "FEEDER-REF-MCC-01-FDR-02"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-FEEDER-REF-MCC-01-FDR-03",
+      "canonical_id": "FEEDER-REF-MCC-01-FDR-03",
+      "object_type": "feeder_circuit",
+      "name": "Feeder 03",
+      "unit_id": "UNIT-REF-MCC-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "FEEDER-REF-MCC-01-FDR-03"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-TR-01",
+      "canonical_id": "ELEC-REF-TR-01",
+      "object_type": "transformer",
+      "name": "Main Step-Down Transformer",
+      "unit_id": "UNIT-REF-MCC-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ELEC-REF-TR-01"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-FEEDER-REF-MCC-01-FDR-01",
+      "canonical_id": "FEEDER-REF-MCC-01-FDR-01",
+      "object_type": "feeder_circuit",
+      "name": "Feeder 01",
+      "unit_id": "UNIT-REF-MCC-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "FEEDER-REF-MCC-01-FDR-01"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-MSB-01",
+      "canonical_id": "ELEC-REF-MSB-01",
+      "object_type": "mcc_board",
+      "name": "Main Switchboard 400V",
+      "unit_id": "UNIT-REF-MCC-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ELEC-REF-MSB-01"
+      }
+    },
+    {
+      "simulation_object_id": "VF2-REF-MCC-01",
+      "canonical_id": "ELEC-REF-MCC-01",
+      "object_type": "mcc_board",
+      "name": "Motor Control Center",
+      "unit_id": "UNIT-REF-MCC-01",
+      "status": "active",
+      "ports": [],
+      "parameters": {},
+      "tags": [],
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1",
+        "canonical_id": "ELEC-REF-MCC-01"
+      }
+    }
+  ],
+  "signals": [
+    {
+      "simulation_signal_id": "VF2.MCC_01.V_01.MAIN_BUS_VOLTAGE",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-ELEC-V-01",
+      "canonical_asset_id": "ELEC-REF-MSB-01",
+      "name": "Main Bus Voltage",
+      "data_type": "float64",
+      "engineering_unit": "V",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    },
+    {
+      "simulation_signal_id": "VF2.MCC_01.A_01.MAIN_BUS_CURRENT",
+      "canonical_tag_id": null,
+      "canonical_instrument_id": "INST-REF-ELEC-A-01",
+      "canonical_asset_id": "ELEC-REF-MSB-01",
+      "name": "Main Bus Current",
+      "data_type": "float64",
+      "engineering_unit": "A",
+      "direction": "VF2_INPUT",
+      "behavior": {
+        "signal_type": "measurement",
+        "update_rate_ms": 100,
+        "initial_value": 0.0
+      },
+      "source": {
+        "generated_from": "PIM_KG",
+        "model_version": "PIM-PH04-v0.1"
+      }
+    }
+  ],
+  "topology": {
+    "process_edges": [],
+    "electrical_edges": []
+  },
+  "scenarios": [
+    {
+      "scenario_id": "SCN-MCC--FDR-001",
+      "scenario_type": "feeder_trip",
+      "description": "Feeder 04 trips \u2014 all powered equipment stops.",
+      "trigger_asset_id": "FEEDER-REF-MCC-01-FDR-04",
+      "trigger_simulation_object_id": "VF2-FEEDER-REF-MCC-01-FDR-04",
+      "affected_assets": [
+        "FEEDER-REF-MCC-01-FDR-04"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-FEEDER-REF-MCC-01-FDR-04"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "All 0 powered equipment lose power"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 0
+    },
+    {
+      "scenario_id": "SCN-MCC--FDR-002",
+      "scenario_type": "feeder_trip",
+      "description": "Feeder 02 trips \u2014 all powered equipment stops.",
+      "trigger_asset_id": "FEEDER-REF-MCC-01-FDR-02",
+      "trigger_simulation_object_id": "VF2-FEEDER-REF-MCC-01-FDR-02",
+      "affected_assets": [
+        "FEEDER-REF-MCC-01-FDR-02"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-FEEDER-REF-MCC-01-FDR-02"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "All 0 powered equipment lose power"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 0
+    },
+    {
+      "scenario_id": "SCN-MCC--FDR-003",
+      "scenario_type": "feeder_trip",
+      "description": "Feeder 03 trips \u2014 all powered equipment stops.",
+      "trigger_asset_id": "FEEDER-REF-MCC-01-FDR-03",
+      "trigger_simulation_object_id": "VF2-FEEDER-REF-MCC-01-FDR-03",
+      "affected_assets": [
+        "FEEDER-REF-MCC-01-FDR-03"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-FEEDER-REF-MCC-01-FDR-03"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "All 0 powered equipment lose power"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 0
+    },
+    {
+      "scenario_id": "SCN-MCC--FDR-004",
+      "scenario_type": "feeder_trip",
+      "description": "Feeder 01 trips \u2014 all powered equipment stops.",
+      "trigger_asset_id": "FEEDER-REF-MCC-01-FDR-01",
+      "trigger_simulation_object_id": "VF2-FEEDER-REF-MCC-01-FDR-01",
+      "affected_assets": [
+        "FEEDER-REF-MCC-01-FDR-01"
+      ],
+      "affected_signals": [],
+      "affected_simulation_object_ids": [
+        "VF2-FEEDER-REF-MCC-01-FDR-01"
+      ],
+      "affected_simulation_signal_ids": [],
+      "expected_effects": [
+        {
+          "signal_id": "",
+          "expected_change": "All 0 powered equipment lose power"
+        }
+      ],
+      "impact_path_source": "PIM_KG",
+      "impact_path_length": 0
+    }
+  ],
+  "validation_rules": [
+    {
+      "rule_id": "V01",
+      "rule_name": "Object Identity",
+      "description": "Every VF-2 object must map to a canonical PIM entity ID.",
+      "severity": "error",
+      "applies_to": "objects"
+    },
+    {
+      "rule_id": "V02",
+      "rule_name": "Signal Identity",
+      "description": "Every VF-2 signal must map to a canonical PIM tag, instrument, or asset.",
+      "severity": "error",
+      "applies_to": "signals"
+    },
+    {
+      "rule_id": "V03",
+      "rule_name": "No Orphan Objects",
+      "description": "No simulation object without a canonical source entity in PIM/KG.",
+      "severity": "error",
+      "applies_to": "objects"
+    },
+    {
+      "rule_id": "V04",
+      "rule_name": "No Orphan Signals",
+      "description": "No signal without a source entity in PIM/KG.",
+      "severity": "error",
+      "applies_to": "signals"
+    },
+    {
+      "rule_id": "V05",
+      "rule_name": "Topology Edge Validity",
+      "description": "Every topology edge with projection_only=false must reference a valid PIM relationship_id.",
+      "severity": "error",
+      "applies_to": "topology"
+    },
+    {
+      "rule_id": "V06",
+      "rule_name": "Pump Trip Downstream",
+      "description": "Pump trip scenarios must affect downstream process paths.",
+      "severity": "warning",
+      "applies_to": "scenarios"
+    },
+    {
+      "rule_id": "V07",
+      "rule_name": "Feeder Trip Scope",
+      "description": "Feeder trip scenarios must affect only assets powered by that feeder or downstream thereof.",
+      "severity": "error",
+      "applies_to": "scenarios"
+    },
+    {
+      "rule_id": "V08",
+      "rule_name": "Provenance Presence",
+      "description": "Package must include source_model.system='PIM' and model_version.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V09",
+      "rule_name": "Package Projection Rule",
+      "description": "No entity/signal/edge in the package that is not derivable from PIM/KG.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V10",
+      "rule_name": "Schema Conformance",
+      "description": "Package must validate against the VF-2 package Pydantic schema.",
+      "severity": "error",
+      "applies_to": "package"
+    },
+    {
+      "rule_id": "V11",
+      "rule_name": "Model Version Consistency",
+      "description": "All objects and signals must reference the same model_version.",
+      "severity": "warning",
+      "applies_to": "package"
+    }
+  ]
+}
