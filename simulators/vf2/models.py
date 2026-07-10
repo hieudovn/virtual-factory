@@ -122,7 +122,7 @@ class VF2SignalBehavior(BaseModel):
 
 
 class VF2SimulationSignal(BaseModel):
-    simulation_signal_id: str = Field(..., pattern=r"^VF2\.[A-Z0-9_]+(\.[A-Z0-9_]+)+$")
+    simulation_signal_id: str = Field(..., pattern=r"^VF2(\.[A-Z0-9_]+){2,8}$")
     canonical_tag_id: Optional[str] = None
     canonical_instrument_id: Optional[str] = None
     canonical_asset_id: str
