@@ -5,6 +5,7 @@ import pytest
 from virtual_factory.discrete.dispatcher import (
     EventDispatcherProtocol,
     HandlerOutcome,
+    HandlerOutcomeError,
 )
 from virtual_factory.discrete.engine import (
     DiscreteSimulationEngine,
@@ -313,3 +314,153 @@ class TestEngineDeterminism:
         result1 = build_and_run()
         result2 = build_and_run()
         assert result1 == result2
+
+# --- M2-S01-C01: Failure-state + contract hardening tests ---
+
+class TestFailureStateConsistency:
+    """Failure transitions synchronize pending_events from scheduler."""
+
+    def test_dispatcher_exception_syncs_pending(self):
+        class ExplodingDispatcher:
+            def dispatch(self, event):
+                raise RuntimeError("boom")
+        engine = DiscreteSimulationEngine(_rc(), ExplodingDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        snap = engine.step_event()
+        assert snap.status == "failed"
+        assert snap.processed_events == 0
+        assert snap.pending_events == 0
+
+    def test_unsuccessful_outcome_with_remaining_events(self):
+        engine = DiscreteSimulationEngine(_rc(), FailingDispatcher("bad"))
+        engine.initialize(initial_events=[_evt("e1"), _evt("e2")])
+        snap = engine.step_event()
+        assert snap.status == "failed"
+        assert snap.processed_events == 0
+        assert snap.pending_events == 1
+
+    def test_follow_up_scheduling_partial_failure(self):
+        call_count = [0]
+        class PartialFailDispatcher:
+            def dispatch(self, event):
+                call_count[0] += 1
+                if call_count[0] == 1:
+                    return HandlerOutcome(
+                        event_id=event.event_id, success=True,
+                        follow_up_events=(
+                            _evt("ok", simulation_time_s=1.0),
+                            _evt("ok", simulation_time_s=1.0),  # duplicate!
+                        ),
+                        state_changes=(),
+                    )
+                return HandlerOutcome(
+                    event_id=event.event_id, success=True,
+                    follow_up_events=(), state_changes=(),
+                )
+        engine = DiscreteSimulationEngine(_rc(), PartialFailDispatcher())
+        engine.initialize(initial_events=[_evt("boot")])
+        snap = engine.step_event()
+        assert snap.status == "failed"
+        assert snap.failure_error == "schedule_error"
+        assert snap.processed_events == 0
+
+    def test_invalid_dispatcher_return_type_syncs(self):
+        class BadReturnDispatcher:
+            def dispatch(self, event):
+                return "not-an-outcome"
+        engine = DiscreteSimulationEngine(_rc(), BadReturnDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        snap = engine.step_event()
+        assert snap.status == "failed"
+        assert snap.failure_error == "invalid_outcome"
+        assert snap.pending_events == 0
+
+
+class TestAtomicInitializeState:
+    """After failed initialize, engine stays CREATED with zero counters."""
+
+    def test_sequence_rejected_atomically_preserves_state(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        with pytest.raises(DiscreteSimulationEngineError):
+            engine.initialize(initial_events=[_evt("e1", sequence=5)])
+        assert engine.status == RunStatus.CREATED
+        snap = engine.to_snapshot()
+        assert snap.snapshot_sequence == 0
+        assert snap.pending_events == 0
+        assert snap.processed_events == 0
+
+    def test_duplicate_ids_rejected_atomically_preserves_state(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        with pytest.raises(DiscreteSimulationEngineError):
+            engine.initialize(initial_events=[_evt("dup"), _evt("dup")])
+        snap = engine.to_snapshot()
+        assert snap.snapshot_sequence == 0
+        assert snap.pending_events == 0
+
+
+class TestFollowUpOrdering:
+    """Same-time follow-ups execute by time -> priority -> scheduler sequence."""
+
+    def test_recording_dispatcher_ordering(self):
+        dispatched = []
+        class RecordingDispatcher:
+            def dispatch(self, event):
+                dispatched.append(event.event_id)
+                return HandlerOutcome(
+                    event_id=event.event_id, success=True,
+                    follow_up_events=(), state_changes=(),
+                )
+        engine = DiscreteSimulationEngine(_rc(), RecordingDispatcher())
+        engine.initialize(initial_events=[
+            _evt("a", simulation_time_s=1.0, priority=3),
+            _evt("b", simulation_time_s=1.0, priority=1),
+            _evt("c", simulation_time_s=0.0),
+        ])
+        # pop all until complete
+        while True:
+            snap = engine.step_event()
+            if snap.status != "ready":
+                break
+        assert dispatched == ["c", "b", "a"]
+
+
+class TestHandlerOutcomeValidation:
+    """HandlerOutcome rejects invalid input."""
+
+    def test_blank_event_id_rejected(self):
+        with pytest.raises(HandlerOutcomeError, match="event_id"):
+            HandlerOutcome(event_id="", success=True, follow_up_events=(), state_changes=())
+
+    def test_non_bool_success_rejected(self):
+        with pytest.raises(HandlerOutcomeError, match="success"):
+            HandlerOutcome(event_id="e1", success="yes", follow_up_events=(), state_changes=())
+
+    def test_list_not_tuple_rejected(self):
+        with pytest.raises(HandlerOutcomeError, match="follow_up_events"):
+            HandlerOutcome(event_id="e1", success=True, follow_up_events=[], state_changes=())
+
+    def test_blank_error_code_on_failure_rejected(self):
+        with pytest.raises(HandlerOutcomeError, match="error_code"):
+            HandlerOutcome(event_id="e1", success=False, follow_up_events=(), state_changes=(), error_code="")
+
+    def test_non_string_error_detail_rejected(self):
+        with pytest.raises(HandlerOutcomeError, match="error_detail"):
+            HandlerOutcome(event_id="e1", success=False, follow_up_events=(), state_changes=(), error_code="fail", error_detail=42)
+
+    def test_non_string_state_change_rejected(self):
+        with pytest.raises(HandlerOutcomeError, match="state_changes"):
+            HandlerOutcome(event_id="e1", success=True, follow_up_events=(), state_changes=(1, 2))
+
+
+class TestStopReasonValidation:
+    """stop() rejects non-string and whitespace-only reasons."""
+
+    def test_non_string_reason_rejected(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        with pytest.raises(DiscreteSimulationEngineError, match="non-empty"):
+            engine.stop(123)
+
+    def test_whitespace_only_reason_rejected(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        with pytest.raises(DiscreteSimulationEngineError, match="non-empty"):
+            engine.stop("   ")

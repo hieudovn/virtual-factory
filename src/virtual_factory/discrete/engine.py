@@ -226,8 +226,10 @@ class DiscreteSimulationEngine:
                 f"stop valid only from CREATED or READY, "
                 f"current={self._state.status.value}"
             )
-        if not reason or not reason.strip():
-            raise DiscreteSimulationEngineError("stop reason must be non-empty")
+        if not isinstance(reason, str) or not reason.strip():
+            raise DiscreteSimulationEngineError(
+                "stop reason must be a non-empty string"
+            )
 
         self._state.status = RunStatus.STOPPED
         self._state.stop_reason = reason
@@ -256,6 +258,7 @@ class DiscreteSimulationEngine:
         *,
         snapshot: bool = False,
     ) -> RuntimeSnapshot:
+        self._sync_scheduler_state()
         self._state.status = RunStatus.FAILED
         self._state.failure_error = error_code
         if error_detail:
@@ -263,3 +266,8 @@ class DiscreteSimulationEngine:
         if snapshot:
             self._state.snapshot_sequence += 1
         return self.to_snapshot()
+
+    def _sync_scheduler_state(self) -> None:
+        """Sync pending_events from the scheduler when it exists."""
+        if self._scheduler is not None:
+            self._state.pending_events = self._scheduler.pending_count

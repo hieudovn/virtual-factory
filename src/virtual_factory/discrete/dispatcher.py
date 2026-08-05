@@ -41,17 +41,34 @@ class HandlerOutcome:
 
     def __post_init__(self) -> None:
         # --- event_id ---
-        if not self.event_id or not self.event_id.strip():
-            raise HandlerOutcomeError("event_id must be non-empty")
+        if not isinstance(self.event_id, str) or not self.event_id.strip():
+            raise HandlerOutcomeError("event_id must be a non-empty str")
+
+        # --- success ---
+        if not isinstance(self.success, bool):
+            raise HandlerOutcomeError(
+                f"success must be bool, got {type(self.success).__name__}"
+            )
 
         # --- success vs error ---
-        if self.success and (self.error_code or self.error_detail):
+        if self.success and self.error_code is not None:
             raise HandlerOutcomeError(
-                "successful outcome must not carry error_code or error_detail"
+                "successful outcome must not carry error_code"
             )
-        if not self.success and not self.error_code:
+        if self.success and self.error_detail is not None:
             raise HandlerOutcomeError(
-                "failed outcome must carry a non-empty error_code"
+                "successful outcome must not carry error_detail"
+            )
+        if not self.success:
+            if not isinstance(self.error_code, str) or not self.error_code.strip():
+                raise HandlerOutcomeError(
+                    "failed outcome must carry a non-empty str error_code"
+                )
+
+        # --- error_detail ---
+        if self.error_detail is not None and not isinstance(self.error_detail, str):
+            raise HandlerOutcomeError(
+                f"error_detail must be str or None, got {type(self.error_detail).__name__}"
             )
 
         # --- follow_up_events ---
@@ -75,3 +92,8 @@ class HandlerOutcome:
         # --- state_changes ---
         if not isinstance(self.state_changes, tuple):
             raise HandlerOutcomeError("state_changes must be a tuple")
+        for i, sc in enumerate(self.state_changes):
+            if not isinstance(sc, str):
+                raise HandlerOutcomeError(
+                    f"state_changes[{i}] must be str, got {type(sc).__name__}"
+                )
