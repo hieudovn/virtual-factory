@@ -363,6 +363,7 @@ class TestFailureStateConsistency:
         assert snap.status == "failed"
         assert snap.failure_error == "schedule_error"
         assert snap.processed_events == 0
+        assert snap.pending_events == 1
 
     def test_invalid_dispatcher_return_type_syncs(self):
         class BadReturnDispatcher:
