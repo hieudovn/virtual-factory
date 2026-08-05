@@ -12,3 +12,7 @@ build/
 .env
 .env.*
 !.env.example
+
+out/
+review-exports/
+slice-1-*
