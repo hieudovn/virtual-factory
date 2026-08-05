@@ -7,6 +7,7 @@ from typing import Any
 
 from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.schema import ScenarioConfig
+from virtual_factory.core.engine_factory import create_engine
 from virtual_factory.core.simulation_engine import SimulationEngine
 from virtual_factory.protocols.mqtt_gateway import MqttGateway
 from virtual_factory.protocols.opcua_gateway import OpcUaGateway
@@ -46,7 +47,7 @@ class RuntimeService:
     def _init_engine(self) -> None:
         self.config = load_plant_config(self.config_path)
         self.scenario: ScenarioConfig | None = load_scenario(self.scenario_path) if self.scenario_path else None
-        self.engine = SimulationEngine(self.config, dt_s=self.dt_s, scenario=self.scenario)
+        self.engine = create_engine(self.config, dt_s=self.dt_s, scenario=self.scenario)
         self.latest_snapshot = None
         self.is_running = False
         self.loop_task = None

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Sequence
 
 from virtual_factory.core.config_loader import load_plant_config
+from virtual_factory.core.engine_factory import create_engine
 from virtual_factory.core.simulation_engine import SimulationEngine
 from virtual_factory.core.state_persistence import get_last_config, set_last_config
 from virtual_factory.protocols.mqtt_gateway import MqttGateway
@@ -61,7 +62,7 @@ def run_simulation(
     """Run a configured simulation and optionally export publishable telemetry."""
     config = load_plant_config(config_path)
     scenario = load_scenario(scenario_path) if scenario_path else None
-    engine = SimulationEngine(config, dt_s=dt_s, scenario=scenario)
+    engine = create_engine(config, dt_s=dt_s, scenario=scenario)
     mqtt_gateway = (
         MqttGateway(
             host=mqtt_host,
