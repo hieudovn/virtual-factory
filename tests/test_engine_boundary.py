@@ -72,17 +72,29 @@ class TestCreateEngine:
         assert callable(getattr(engine, "step", None))
 
     def test_explicit_continuous_config_creates_engine(self):
-        """model_type='continuous_process' creates SimulationEngine."""
-        from virtual_factory.core.config_loader import load_plant_config
+        """model_type='continuous_process' on a real YAML config works end-to-end."""
+        import yaml
         from pathlib import Path
+        from virtual_factory.core.schema import PlantConfig
 
         config_path = Path("configs/plants/continuous_mvp_01.yaml")
         if not config_path.exists():
             pytest.skip("Legacy config not found")
-        config = load_plant_config(config_path)
+
+        # F-003: Load raw YAML, inject model_type, validate through PlantConfig
+        with open(config_path, "r") as f:
+            raw = yaml.safe_load(f)
+        raw["model_type"] = "continuous_process"
+        config = PlantConfig.model_validate(raw)
+
+        # Extra field preserved
+        assert getattr(config, "model_type", None) == "continuous_process"
+
+        # Resolver and factory choose continuous engine
+        kind = resolve_engine_kind(config)
+        assert kind == "continuous_process"
         engine = create_engine(config, dt_s=1.0)
-        assert engine is not None
-        assert isinstance(engine, SimulationEngine)
+        assert isinstance(engine, SimulationEngineProtocol)
 
     def test_unsupported_kind_raises_on_create(self):
         """create_engine raises for unsupported kinds."""
@@ -120,7 +132,12 @@ class TestFactoryVsDirectEquivalence:
     """Factory-created engine behaves identically to direct construction."""
 
     def test_same_behavior_factory_vs_direct(self):
-        """Factory and direct construction produce equivalent step results."""
+        """Factory and direct construction produce equivalent step results.
+
+        Compares stable normalized projection:
+        - signal name, category, unit, timestamp_s
+        - selected deterministic signal value (LT102_LEVEL)
+        """
         from pathlib import Path
         from virtual_factory.core.config_loader import load_plant_config
 
@@ -139,13 +156,54 @@ class TestFactoryVsDirectEquivalence:
             snap_direct = engine_direct.step()
             snap_factory = engine_factory.step()
 
-        # Both should produce telemetry_latest
-        assert "telemetry_latest" in snap_direct
-        assert "telemetry_latest" in snap_factory
-        # Same signal count
-        assert len(snap_direct["telemetry_latest"]) == len(
-            snap_factory["telemetry_latest"]
+        # --- Stable normalized projection (name, category, unit, timestamp_s) ---
+        direct_signals = {
+            s.name: (s.category, s.unit, s.timestamp_s)
+            for s in snap_direct["telemetry_latest"]
+        }
+        factory_signals = {
+            s.name: (s.category, s.unit, s.timestamp_s)
+            for s in snap_factory["telemetry_latest"]
+        }
+        assert direct_signals == factory_signals
+        assert len(direct_signals) == len(factory_signals)
+
+        # --- Selected deterministic value ---
+        direct_level = next(
+            (s for s in snap_direct["telemetry_latest"] if s.name == "LT102_LEVEL"),
+            None,
         )
+        factory_level = next(
+            (s for s in snap_factory["telemetry_latest"] if s.name == "LT102_LEVEL"),
+            None,
+        )
+        assert direct_level is not None
+        assert factory_level is not None
+        assert direct_level.value == factory_level.value, (
+            f"LT102_LEVEL mismatch: direct={direct_level.value}, "
+            f"factory={factory_level.value}"
+        )
+
+    def test_direct_import_normal_construction(self):
+        """SimulationEngine construction lifecycle: uninitialized → step → initialized."""
+        from pathlib import Path
+        from virtual_factory.core.config_loader import load_plant_config
+
+        config_path = Path("configs/plants/continuous_mvp_01.yaml")
+        if not config_path.exists():
+            pytest.skip("Legacy config not found")
+        config = load_plant_config(config_path)
+        engine = SimulationEngine(config, dt_s=1.0)
+
+        # Before step: not initialized
+        assert engine.initialized is False
+        assert engine.dt_s == 1.0
+
+        # Step auto-initializes and succeeds
+        snap = engine.step()
+        assert engine.initialized is True
+        assert "telemetry_latest" in snap
+        assert len(snap["telemetry_latest"]) > 0
 
 
 # ──────────────────────────────────────────────

@@ -6,7 +6,6 @@ from typing import Sequence
 
 from virtual_factory.core.config_loader import load_plant_config
 from virtual_factory.core.engine_factory import create_engine
-from virtual_factory.core.simulation_engine import SimulationEngine
 from virtual_factory.core.state_persistence import get_last_config, set_last_config
 from virtual_factory.protocols.mqtt_gateway import MqttGateway
 from virtual_factory.protocols.opcua_gateway import OpcUaGateway

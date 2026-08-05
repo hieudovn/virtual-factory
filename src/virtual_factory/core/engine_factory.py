@@ -11,7 +11,11 @@ Per SA-ADR-017:
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from virtual_factory.core.engine_contract import SimulationEngineProtocol
 
 
 class UnsupportedEngineError(ValueError):
@@ -55,7 +59,7 @@ def create_engine(
     *,
     dt_s: float = 1.0,
     scenario: Any | None = None,
-) -> Any:
+) -> SimulationEngineProtocol:
     """Create a simulation engine from a loaded configuration.
 
     Args:
@@ -91,11 +95,13 @@ _SUPPORTED_KINDS: set[str] = {"continuous_process"}
 
 
 def _safe_get_attr(obj: Any, name: str) -> Any | None:
-    """Safely get an attribute or key from an object, returning None on failure."""
-    try:
-        # Support dict-like configs (plain dict, Pydantic model dict access)
-        if isinstance(obj, dict):
-            return obj.get(name)
-        return getattr(obj, name, None)
-    except Exception:
-        return None
+    """Safely get a key or attribute from a config object.
+
+    Mapping-like objects (including dict) use ``.get(name)``.
+    Other objects use ``getattr(obj, name, None)``.
+
+    Does NOT catch all exceptions — genuine access errors propagate.
+    """
+    if isinstance(obj, Mapping):
+        return obj.get(name)
+    return getattr(obj, name, None)
