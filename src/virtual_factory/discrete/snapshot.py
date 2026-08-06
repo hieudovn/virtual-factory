@@ -35,9 +35,13 @@ class RuntimeSnapshot:
     pending_events: int
     last_event_id: str | None
     snapshot_sequence: int
+
+    # Preserve legacy positional location (field index 13)
+    schema_version: str = "1.1.0"
+
+    # M2-S03 fields appended after legacy contract
     recent_events: tuple[EventTraceEntry, ...] = ()
     diagnostics: RuntimeDiagnostics = field(default_factory=RuntimeDiagnostics)
-    schema_version: str = "1.1.0"
 
     def __post_init__(self) -> None:
         # run_id
@@ -89,3 +93,7 @@ class RuntimeSnapshot:
             raise RuntimeSnapshotError(
                 f"diagnostics must be RuntimeDiagnostics, got {type(self.diagnostics).__name__}"
             )
+
+        # schema_version
+        if not isinstance(self.schema_version, str) or not self.schema_version.strip():
+            raise RuntimeSnapshotError("schema_version must be non-empty str")
