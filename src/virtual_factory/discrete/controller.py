@@ -6,6 +6,10 @@ No async loop, no WebSocket, no REST, no domain logic, no wall-clock sleep.
 
 M2-S04-C01: SafePointOutcome, result outbox, exact allowed_actions order,
 correct manual step from PAUSED semantics.
+
+M2-S04-C02: result_outbox_capacity with explicit enforcement (no silent
+eviction), pending_command_count / pending_result_count / result_outbox_capacity
+read-only properties, capacity exhaustion rejection.
 """
 
 from __future__ import annotations
@@ -174,13 +178,6 @@ def _compute_allowed_actions(
 
 
 # ──────────────────────────────────────────────
-# Outbox capacity
-# ──────────────────────────────────────────────
-
-_OUTBOX_DEFAULT_CAPACITY = 1024
-
-
-# ──────────────────────────────────────────────
 # DiscreteRunController
 # ──────────────────────────────────────────────
 
@@ -199,6 +196,10 @@ class DiscreteRunController:
     - Hybrid mode: both manual stepping and automatic start/cycle.
     - Safe-point: queued commands applied before next event.
     - Outbox: every accepted command produces exactly one terminal result.
+
+    M2-S04-C02: result_outbox_capacity enforces explicit capacity on
+    total pending work (queued commands + terminal results).  Defaults to
+    command_queue_capacity when None.  No silent eviction.
     """
 
     def __init__(
@@ -207,6 +208,7 @@ class DiscreteRunController:
         *,
         mode: ExecutionMode = ExecutionMode.MANUAL,
         command_queue_capacity: int = 1024,
+        result_outbox_capacity: int | None = None,
         pacing_policy: ControllerPacingPolicy | None = None,
     ) -> None:
         if not isinstance(engine, DiscreteSimulationEngine):
@@ -219,13 +221,31 @@ class DiscreteRunController:
                 f"mode must be ExecutionMode, got {type(mode).__name__}"
             )
 
+        # --- result_outbox_capacity validation (C02) ---
+        if isinstance(result_outbox_capacity, bool):
+            raise DiscreteRunControllerError(
+                "result_outbox_capacity must be int or None, not bool"
+            )
+        if result_outbox_capacity is None:
+            result_outbox_capacity = command_queue_capacity
+        else:
+            if not isinstance(result_outbox_capacity, int) or result_outbox_capacity <= 0:
+                raise DiscreteRunControllerError(
+                    f"result_outbox_capacity must be int > 0, "
+                    f"got {result_outbox_capacity!r}"
+                )
+            if result_outbox_capacity < command_queue_capacity:
+                raise DiscreteRunControllerError(
+                    f"result_outbox_capacity ({result_outbox_capacity}) "
+                    f"must be >= command_queue_capacity ({command_queue_capacity})"
+                )
+
         self._engine = engine
         self._mode = mode
         self._queue = ControlCommandQueue(capacity=command_queue_capacity)
         self._pacing = pacing_policy
-        self._outbox: deque[ControlCommandResult] = deque(
-            maxlen=_OUTBOX_DEFAULT_CAPACITY,
-        )
+        self._result_outbox_capacity: int = result_outbox_capacity
+        self._outbox: deque[ControlCommandResult] = deque()
 
     # ----------------------------------------------------------------
     # Read-only properties
@@ -238,6 +258,21 @@ class DiscreteRunController:
     @property
     def allowed_actions(self) -> tuple[str, ...]:
         return _compute_allowed_actions(self._engine.status, self._mode)
+
+    @property
+    def pending_command_count(self) -> int:
+        """Number of accepted commands waiting in the queue (C02)."""
+        return self._queue.size
+
+    @property
+    def pending_result_count(self) -> int:
+        """Number of terminal command results in the outbox (C02)."""
+        return len(self._outbox)
+
+    @property
+    def result_outbox_capacity(self) -> int:
+        """Configured result outbox capacity (C02)."""
+        return self._result_outbox_capacity
 
     # ----------------------------------------------------------------
     # Snapshot
@@ -290,7 +325,26 @@ class DiscreteRunController:
 
         Acceptance does NOT mutate engine state or snapshot_sequence.
         Rejected commands are never queued and do not enter outbox.
+
+        C02: Also rejects with ``command_result_capacity_exhausted`` when
+        ``pending_command_count + pending_result_count >= result_outbox_capacity``.
         """
+        # --- C02: result-capacity check (before queuing) ---
+        current_pending = self._queue.size + len(self._outbox)
+        if current_pending >= self._result_outbox_capacity:
+            return ControlCommandResult(
+                command_id=command.command_id,
+                command_sequence=None,
+                command_type=command.command_type.value,
+                status="rejected",
+                snapshot_sequence=None,
+                rejection_code="command_result_capacity_exhausted",
+                rejection_detail=(
+                    f"Result outbox capacity {self._result_outbox_capacity} "
+                    f"exhausted ({current_pending} pending)"
+                ),
+            )
+
         return self._queue.try_accept(
             command,
             engine_status=self._engine.status.value,
