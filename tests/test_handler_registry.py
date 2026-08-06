@@ -6,6 +6,7 @@ from virtual_factory.discrete.handler_registry import (
     DuplicateHandlerError,
     HandlerRegistrationError,
     HandlerRegistry,
+    HandlerRegistryError,
 )
 from virtual_factory.discrete.dispatcher import (
     EventDispatcherProtocol,
@@ -353,3 +354,69 @@ class TestEngineIntegration:
 
         # high (t=1.0) before low (t=2.0)
         assert dispatched == ["high", "low"]
+
+# --- M2-S02-C01: Contract hardening tests ---
+
+class TestDispatchInputValidation:
+    """dispatch() rejects non-ScheduledEvent input."""
+
+    def test_dispatch_none_raises(self):
+        reg = HandlerRegistry()
+        with pytest.raises(HandlerRegistryError, match="ScheduledEvent"):
+            reg.dispatch(None)
+
+    def test_dispatch_object_raises(self):
+        reg = HandlerRegistry()
+        with pytest.raises(HandlerRegistryError, match="ScheduledEvent"):
+            reg.dispatch(object())
+
+
+class TestEventHandlerFnExport:
+    """EventHandlerFn is importable from the package."""
+
+    def test_event_handler_fn_importable(self):
+        from virtual_factory.discrete import EventHandlerFn as EHF
+        from virtual_factory.discrete.handler_registry import EventHandlerFn as EHF2
+        assert EHF is EHF2
+
+
+class TestExceptionDetailNormalization:
+    """Exception details are normalized: no newlines, bounded, no traceback."""
+
+    def test_multiline_exception_normalized_to_one_line(self):
+        def broken(_event):
+            raise ValueError("line1\nline2\r\nline3")
+
+        reg = HandlerRegistry()
+        reg.register("test", broken)
+        outcome = reg.dispatch(_evt("e1"))
+        assert "\n" not in outcome.error_detail
+        assert "\r" not in outcome.error_detail
+        assert "line1 line2 line3" in outcome.error_detail
+
+    def test_long_exception_detail_bounded(self):
+        def broken(_event):
+            raise RuntimeError("x" * 500)
+
+        reg = HandlerRegistry()
+        reg.register("test", broken)
+        outcome = reg.dispatch(_evt("e1"))
+        assert len(outcome.error_detail) <= 260  # 256 + "..."
+
+    def test_keyboard_interrupt_still_not_caught(self):
+        def interrupt(_event):
+            raise KeyboardInterrupt()
+
+        reg = HandlerRegistry()
+        reg.register("test", interrupt)
+        with pytest.raises(KeyboardInterrupt):
+            reg.dispatch(_evt("e1"))
+
+    def test_system_exit_still_not_caught(self):
+        def exit_handler(_event):
+            raise SystemExit(1)
+
+        reg = HandlerRegistry()
+        reg.register("test", exit_handler)
+        with pytest.raises(SystemExit):
+            reg.dispatch(_evt("e1"))

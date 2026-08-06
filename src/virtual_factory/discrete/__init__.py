@@ -18,6 +18,7 @@ from virtual_factory.discrete.engine import (
 )
 from virtual_factory.discrete.handler_registry import (
     DuplicateHandlerError,
+    EventHandlerFn,
     HandlerRegistrationError,
     HandlerRegistry,
     HandlerRegistryError,
@@ -36,4 +37,5 @@ __all__ = [
     "HandlerRegistryError",
     "HandlerRegistrationError",
     "DuplicateHandlerError",
+    "EventHandlerFn",
 ]

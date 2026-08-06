@@ -13,7 +13,6 @@ from typing import Callable
 from virtual_factory.discrete.dispatcher import (
     EventDispatcherProtocol,
     HandlerOutcome,
-    HandlerOutcomeError,
 )
 from virtual_factory.discrete.events import ScheduledEvent
 
@@ -38,6 +37,29 @@ class HandlerRegistrationError(HandlerRegistryError):
 
 class DuplicateHandlerError(HandlerRegistrationError):
     """Raised when registering an already-registered event_type."""
+
+
+# ──────────────────────────────────────────────
+# Helpers
+# ──────────────────────────────────────────────
+
+_MAX_ERROR_DETAIL = 256
+
+
+def _normalize_error_detail(exc: Exception) -> str:
+    """Normalize an exception into a safe, bounded error detail string.
+
+    - Includes exception class name and message.
+    - Replaces CR/LF and repeated whitespace with a single space.
+    - Truncates to ``_MAX_ERROR_DETAIL`` characters.
+    - Never includes traceback, repr, or event payload.
+    """
+    raw = f"{type(exc).__name__}: {exc}"
+    import re
+    collapsed = re.sub(r"\s+", " ", raw).strip()
+    if len(collapsed) > _MAX_ERROR_DETAIL:
+        collapsed = collapsed[:_MAX_ERROR_DETAIL - 3] + "..."
+    return collapsed
 
 
 # ──────────────────────────────────────────────
@@ -132,7 +154,15 @@ class HandlerRegistry:
 
         Does NOT schedule follow-up events — the engine owns scheduling.
         Does NOT mutate the input event.
+
+        Raises:
+            HandlerRegistryError: if *event* is not a ``ScheduledEvent``.
         """
+        if not isinstance(event, ScheduledEvent):
+            raise HandlerRegistryError(
+                f"event must be ScheduledEvent, got {type(event).__name__!r}"
+            )
+
         event_type = event.event_type
 
         # --- Unknown event ---
@@ -158,7 +188,7 @@ class HandlerRegistry:
                 follow_up_events=(),
                 state_changes=(),
                 error_code="handler_error",
-                error_detail=f"{type(exc).__name__}: {exc}",
+                error_detail=_normalize_error_detail(exc),
             )
 
         # --- Validate handler result ---
