@@ -179,7 +179,7 @@ class TestAllowedActions:
         assert _compute_allowed_actions(RunStatus.READY, ExecutionMode.AUTOMATIC) == ("auto_run", "stop")
 
     def test_ready_hybrid(self):
-        assert _compute_allowed_actions(RunStatus.READY, ExecutionMode.HYBRID) == ("auto_run", "step_event", "stop")
+        assert _compute_allowed_actions(RunStatus.READY, ExecutionMode.HYBRID) == ("step_event", "auto_run", "stop")
 
     def test_running(self):
         for mode in ExecutionMode:
@@ -192,7 +192,7 @@ class TestAllowedActions:
         assert _compute_allowed_actions(RunStatus.PAUSED, ExecutionMode.AUTOMATIC) == ("resume", "stop")
 
     def test_paused_hybrid(self):
-        assert _compute_allowed_actions(RunStatus.PAUSED, ExecutionMode.HYBRID) == ("resume", "step_event", "stop")
+        assert _compute_allowed_actions(RunStatus.PAUSED, ExecutionMode.HYBRID) == ("step_event", "resume", "stop")
 
     def test_terminal_empty(self):
         for status in (RunStatus.COMPLETED, RunStatus.STOPPED, RunStatus.FAILED):
@@ -202,8 +202,8 @@ class TestAllowedActions:
     def test_result_is_tuple(self):
         actions = _compute_allowed_actions(RunStatus.READY, ExecutionMode.HYBRID)
         assert isinstance(actions, tuple)
-        # Check sorted order
-        assert actions == tuple(sorted(actions))
+        # Verify exact documented order — NOT alphabetical
+        assert actions == ("step_event", "auto_run", "stop")
 
 
 # ──────────────────────────────────────────────

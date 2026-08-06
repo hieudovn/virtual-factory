@@ -72,6 +72,11 @@ class DiscreteSimulationEngine:
     # ------------------------------------------------------------------
 
     @property
+    def run_id(self) -> str:
+        """Return the run_id from the run context (read-only)."""
+        return self._run_context.run_id
+
+    @property
     def status(self) -> RunStatus:
         return self._state.status
 

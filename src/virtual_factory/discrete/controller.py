@@ -3,12 +3,16 @@
 M2-S04: manual/automatic/hybrid stepping, control command processing,
 allowed_actions projection, pacing policy storage.
 No async loop, no WebSocket, no REST, no domain logic, no wall-clock sleep.
+
+M2-S04-C01: SafePointOutcome, result outbox, exact allowed_actions order,
+correct manual step from PAUSED semantics.
 """
 
 from __future__ import annotations
 
 import enum
 import math
+from collections import deque
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -108,6 +112,27 @@ class ControllerPacingPolicy:
 
 
 # ──────────────────────────────────────────────
+# SafePointOutcome
+# ──────────────────────────────────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class SafePointOutcome:
+    """Immutable result of applying queued commands at a safe-point.
+
+    Attributes:
+        command_results: Results for all commands processed at this safe-point.
+        state_transition_applied: True if any command changed engine status.
+        execution_blocked: True if event processing should be skipped
+            (e.g. because a pause or stop command was applied).
+    """
+
+    command_results: tuple[ControlCommandResult, ...]
+    state_transition_applied: bool
+    execution_blocked: bool
+
+
+# ──────────────────────────────────────────────
 # Allowed actions projection
 # ──────────────────────────────────────────────
 
@@ -116,9 +141,9 @@ def _compute_allowed_actions(
     engine_status: RunStatus,
     mode: ExecutionMode,
 ) -> tuple[str, ...]:
-    """Compute immutable sorted allowed_actions from engine status + mode.
+    """Compute allowed_actions from engine status + mode.
 
-    Sorted in documented deterministic order.
+    Order is a published UI/API contract — NOT alphabetically sorted.
     """
     status_val = engine_status.value
 
@@ -131,7 +156,7 @@ def _compute_allowed_actions(
         elif mode == ExecutionMode.AUTOMATIC:
             return ("auto_run", "stop")
         else:  # HYBRID
-            return ("auto_run", "step_event", "stop")
+            return ("step_event", "auto_run", "stop")
 
     if status_val == "running":
         return ("pause", "stop")
@@ -142,10 +167,17 @@ def _compute_allowed_actions(
         elif mode == ExecutionMode.AUTOMATIC:
             return ("resume", "stop")
         else:  # HYBRID
-            return ("resume", "step_event", "stop")
+            return ("step_event", "resume", "stop")
 
     # Terminal: completed, stopped, failed
     return ()
+
+
+# ──────────────────────────────────────────────
+# Outbox capacity
+# ──────────────────────────────────────────────
+
+_OUTBOX_DEFAULT_CAPACITY = 1024
 
 
 # ──────────────────────────────────────────────
@@ -158,12 +190,15 @@ class DiscreteRunControllerError(RuntimeError):
 
 
 class DiscreteRunController:
-    """Owns mode, pacing policy, command queue.  Delegates lifecycle to engine.
+    """Owns mode, pacing policy, command queue, and result outbox.
+
+    Delegates lifecycle to engine.
 
     - Manual mode: step_once() allowed from READY/PAUSED.
     - Automatic mode: start_automatic() → RUNNING, then run_cycle().
     - Hybrid mode: both manual stepping and automatic start/cycle.
     - Safe-point: queued commands applied before next event.
+    - Outbox: every accepted command produces exactly one terminal result.
     """
 
     def __init__(
@@ -188,6 +223,9 @@ class DiscreteRunController:
         self._mode = mode
         self._queue = ControlCommandQueue(capacity=command_queue_capacity)
         self._pacing = pacing_policy
+        self._outbox: deque[ControlCommandResult] = deque(
+            maxlen=_OUTBOX_DEFAULT_CAPACITY,
+        )
 
     # ----------------------------------------------------------------
     # Read-only properties
@@ -251,25 +289,47 @@ class DiscreteRunController:
         """Validate, accept (or reject) a control command.
 
         Acceptance does NOT mutate engine state or snapshot_sequence.
-        Rejected commands are never queued.
+        Rejected commands are never queued and do not enter outbox.
         """
         return self._queue.try_accept(
             command,
             engine_status=self._engine.status.value,
-            engine_run_id=self._engine._run_context.run_id,
+            engine_run_id=self._engine.run_id,
         )
+
+    # ----------------------------------------------------------------
+    # Result outbox
+    # ----------------------------------------------------------------
+
+    def drain_command_results(
+        self,
+    ) -> tuple[ControlCommandResult, ...]:
+        """Return immutable tuple of all command results in FIFO order,
+        then clear the outbox.  Second call returns ().
+        """
+        results = tuple(self._outbox)
+        self._outbox.clear()
+        return results
+
+    def _store_results(self, results: tuple[ControlCommandResult, ...]) -> None:
+        """Append command results to the bounded outbox."""
+        for r in results:
+            self._outbox.append(r)
 
     # ----------------------------------------------------------------
     # Safe-point — apply queued commands
     # ----------------------------------------------------------------
 
-    def _apply_commands(self) -> tuple[ControlCommandResult, ...]:
+    def _apply_commands(self) -> SafePointOutcome:
         """Apply all queued commands in FIFO order, revalidating after each.
 
-        Returns results for all processed commands.
+        Returns a SafePointOutcome with results, transition flag, and block flag.
+        All results are stored in the outbox.
         """
         commands = self._queue.pop_all()
         results: list[ControlCommandResult] = []
+        state_transition_applied = False
+        execution_blocked = False
 
         for cmd in commands:
             engine_status = self._engine.status.value
@@ -277,7 +337,7 @@ class DiscreteRunController:
             # Revalidate — earlier commands may have changed state
             if cmd.command_type.value == "pause":
                 if engine_status != "running":
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -287,11 +347,12 @@ class DiscreteRunController:
                         rejection_detail=(
                             f"Cannot pause when status is {engine_status!r}"
                         ),
-                    ))
+                    )
+                    results.append(r)
                     continue
                 try:
                     self._engine.pause()
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -299,9 +360,12 @@ class DiscreteRunController:
                         snapshot_sequence=self._engine.to_snapshot().snapshot_sequence,
                         rejection_code=None,
                         rejection_detail=None,
-                    ))
+                    )
+                    results.append(r)
+                    state_transition_applied = True
+                    execution_blocked = True
                 except DiscreteSimulationEngineError as exc:
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -309,11 +373,12 @@ class DiscreteRunController:
                         snapshot_sequence=None,
                         rejection_code="engine_error",
                         rejection_detail=str(exc),
-                    ))
+                    )
+                    results.append(r)
 
             elif cmd.command_type.value == "resume":
                 if engine_status != "paused":
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -323,11 +388,12 @@ class DiscreteRunController:
                         rejection_detail=(
                             f"Cannot resume when status is {engine_status!r}"
                         ),
-                    ))
+                    )
+                    results.append(r)
                     continue
                 try:
                     self._engine.resume()
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -335,9 +401,11 @@ class DiscreteRunController:
                         snapshot_sequence=self._engine.to_snapshot().snapshot_sequence,
                         rejection_code=None,
                         rejection_detail=None,
-                    ))
+                    )
+                    results.append(r)
+                    state_transition_applied = True
                 except DiscreteSimulationEngineError as exc:
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -345,11 +413,12 @@ class DiscreteRunController:
                         snapshot_sequence=None,
                         rejection_code="engine_error",
                         rejection_detail=str(exc),
-                    ))
+                    )
+                    results.append(r)
 
             elif cmd.command_type.value == "stop":
                 if engine_status in ("completed", "stopped", "failed"):
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -359,11 +428,12 @@ class DiscreteRunController:
                         rejection_detail=(
                             f"Cannot stop from terminal status {engine_status!r}"
                         ),
-                    ))
+                    )
+                    results.append(r)
                     continue
                 try:
                     self._engine.stop(reason=cmd.reason or "stopped_by_command")
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -371,9 +441,12 @@ class DiscreteRunController:
                         snapshot_sequence=self._engine.to_snapshot().snapshot_sequence,
                         rejection_code=None,
                         rejection_detail=None,
-                    ))
+                    )
+                    results.append(r)
+                    state_transition_applied = True
+                    execution_blocked = True
                 except DiscreteSimulationEngineError as exc:
-                    results.append(ControlCommandResult(
+                    r = ControlCommandResult(
                         command_id=cmd.command_id,
                         command_sequence=cmd.command_sequence,
                         command_type=cmd.command_type.value,
@@ -381,9 +454,16 @@ class DiscreteRunController:
                         snapshot_sequence=None,
                         rejection_code="engine_error",
                         rejection_detail=str(exc),
-                    ))
+                    )
+                    results.append(r)
 
-        return tuple(results)
+        result_tuple = tuple(results)
+        self._store_results(result_tuple)
+        return SafePointOutcome(
+            command_results=result_tuple,
+            state_transition_applied=state_transition_applied,
+            execution_blocked=execution_blocked,
+        )
 
     # ----------------------------------------------------------------
     # Manual stepping
@@ -394,11 +474,15 @@ class DiscreteRunController:
 
         Valid from READY or PAUSED in MANUAL/HYBRID mode.
         Does NOT force status to RUNNING.
+
+        C01-01: If engine was already PAUSED before safe-point and no
+        blocking command was applied, process exactly one event.
+        If a pause/stop command was applied at this safe-point, skip event.
         """
         status = self._engine.status.value
         if self._mode == ExecutionMode.AUTOMATIC:
             raise DiscreteRunControllerError(
-                f"step_once not allowed in AUTOMATIC mode"
+                "step_once not allowed in AUTOMATIC mode"
             )
         if status not in ("ready", "running", "paused"):
             raise DiscreteRunControllerError(
@@ -406,14 +490,25 @@ class DiscreteRunController:
             )
 
         # 1. Safe-point: apply queued commands
-        self._apply_commands()
+        outcome = self._apply_commands()
 
-        # 2. If terminal or paused, do not pop event
-        current = self._engine.status.value
-        if current in ("completed", "stopped", "failed", "paused"):
+        # 2. If execution blocked by a command (pause/stop applied),
+        #    do not process any event
+        if outcome.execution_blocked:
             return self.to_snapshot()
 
-        # 3. Process exactly one event
+        # 3. If terminal, do not step
+        current = self._engine.status.value
+        if current in ("completed", "stopped", "failed"):
+            # Drain any remaining commands
+            drained = self._queue.drain_and_reject(
+                "engine_terminal",
+                f"Engine reached terminal status {current!r}",
+            )
+            self._store_results(drained)
+            return self.to_snapshot()
+
+        # 4. Process exactly one event (engine was PAUSED/READY/RUNNING)
         self._engine.step_event()
         return self.to_snapshot()
 
@@ -450,13 +545,17 @@ class DiscreteRunController:
         """
         if self._mode not in (ExecutionMode.AUTOMATIC, ExecutionMode.HYBRID):
             raise DiscreteRunControllerError(
-                f"run_cycle requires AUTOMATIC or HYBRID mode, got {self._mode.value}"
+                f"run_cycle requires AUTOMATIC or HYBRID mode, "
+                f"got {self._mode.value}"
             )
 
         # 1. Safe-point: apply queued commands
-        self._apply_commands()
+        outcome = self._apply_commands()
 
-        # 2. If no longer RUNNING, do not step
+        # 2. If execution blocked or no longer RUNNING, do not step
+        if outcome.execution_blocked:
+            return self.to_snapshot()
+
         current = self._engine.status.value
         if current != "running":
             # Drain any commands that arrived during dispatch
@@ -464,8 +563,7 @@ class DiscreteRunController:
                 "engine_not_running",
                 f"Engine status is {current!r}, cannot process events",
             )
-            # drained results are returned for audit — not attached to snapshot
-            _ = drained
+            self._store_results(drained)
             return self.to_snapshot()
 
         # 3. Call engine.step_event() once
@@ -478,6 +576,6 @@ class DiscreteRunController:
                 "engine_terminal",
                 f"Engine reached terminal status {current!r}",
             )
-            _ = drained
+            self._store_results(drained)
 
         return self.to_snapshot()

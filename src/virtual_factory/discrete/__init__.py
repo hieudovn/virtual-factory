@@ -48,6 +48,7 @@ from virtual_factory.discrete.controller import (
     DiscreteRunController,
     DiscreteRunControllerError,
     ExecutionMode,
+    SafePointOutcome,
 )
 
 __all__ = [
@@ -82,4 +83,5 @@ __all__ = [
     "ControllerPacingPolicyError",
     "DiscreteRunController",
     "DiscreteRunControllerError",
+    "SafePointOutcome",
 ]
