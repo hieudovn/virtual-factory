@@ -40,7 +40,7 @@ def _tr(**kw):
 
 
 class TestRuntimeSnapshotV11:
-    def test_schema_1_1_0(self): assert _snap().schema_version == "1.1.0"
+    def test_schema_1_2_0(self): assert _snap().schema_version == "1.2.0"
     def test_old_keyword_ok(self):
         s = RuntimeSnapshot(run_id="r1", model_id="m1", status="created", simulation_time_s=0.0,
                             processed_events=0, pending_events=0, snapshot_sequence=0,
@@ -49,7 +49,7 @@ class TestRuntimeSnapshotV11:
         assert s.status == "created"
     def test_old_positional_ok(self):
         s = RuntimeSnapshot("r1", "m1", None, None, None, "created", 0.0, None, None, 0, 0, None, 0)
-        assert s.schema_version == "1.1.0"
+        assert s.schema_version == "1.2.0"
     def test_new_fields_defaults(self):
         s = _snap()
         assert s.recent_events == ()

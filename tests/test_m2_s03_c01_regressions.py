@@ -90,12 +90,12 @@ class TestPositionalCompatibility:
         assert isinstance(s.diagnostics, RuntimeDiagnostics)
 
     def test_legacy_13_args_default_schema(self):
-        """Omit schema_version — defaults to 1.1.0."""
+        """Omit schema_version — defaults to 1.2.0."""
         s = RuntimeSnapshot(
             "r1", "m1", None, None, None,
             "created", 0.0, None, None, 0, 0, None, 0,
         )
-        assert s.schema_version == "1.1.0"
+        assert s.schema_version == "1.2.0"
 
     def test_schema_version_non_empty_rejected(self):
         with pytest.raises(RuntimeSnapshotError, match="schema_version"):

@@ -465,3 +465,221 @@ class TestStopReasonValidation:
         engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
         with pytest.raises(DiscreteSimulationEngineError, match="non-empty"):
             engine.stop("   ")
+
+
+# ──────────────────────────────────────────────
+# M2-S04: Engine transitions — RUNNING / PAUSED
+# ──────────────────────────────────────────────
+
+class TestEngineTransitions:
+    """READY → RUNNING, RUNNING → PAUSED, PAUSED → RUNNING."""
+
+    def test_start_running_from_ready(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize()
+        assert engine.status == RunStatus.READY
+        snap = engine.start_running()
+        assert engine.status == RunStatus.RUNNING
+        assert snap.status == "running"
+
+    def test_start_running_increments_snapshot_sequence(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize()
+        seq_before = engine.to_snapshot().snapshot_sequence
+        engine.start_running()
+        seq_after = engine.to_snapshot().snapshot_sequence
+        assert seq_after == seq_before + 1
+
+    def test_start_running_no_trace(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize()
+        engine.start_running()
+        snap = engine.to_snapshot()
+        # No trace entry created for transition
+        assert len(snap.recent_events) == 0
+
+    def test_start_running_preserves_time_and_counters(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1", simulation_time_s=5.0)])
+        snap_before = engine.to_snapshot()
+        engine.start_running()
+        snap_after = engine.to_snapshot()
+        assert snap_after.simulation_time_s == snap_before.simulation_time_s
+        assert snap_after.processed_events == snap_before.processed_events
+        assert snap_after.pending_events == snap_before.pending_events
+
+    def test_start_running_not_from_ready_rejected(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        with pytest.raises(DiscreteSimulationEngineError, match="READY"):
+            engine.start_running()
+
+    def test_pause_from_running(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        snap = engine.pause()
+        assert engine.status == RunStatus.PAUSED
+        assert snap.status == "paused"
+
+    def test_pause_increments_snapshot_sequence(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        seq_before = engine.to_snapshot().snapshot_sequence
+        engine.pause()
+        seq_after = engine.to_snapshot().snapshot_sequence
+        assert seq_after == seq_before + 1
+
+    def test_pause_no_trace(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        engine.pause()
+        snap = engine.to_snapshot()
+        assert len(snap.recent_events) == 0
+
+    def test_pause_not_from_running_rejected(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize()
+        with pytest.raises(DiscreteSimulationEngineError, match="RUNNING"):
+            engine.pause()
+
+    def test_resume_from_paused(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        engine.pause()
+        snap = engine.resume()
+        assert engine.status == RunStatus.RUNNING
+        assert snap.status == "running"
+
+    def test_resume_increments_snapshot_sequence(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        engine.pause()
+        seq_before = engine.to_snapshot().snapshot_sequence
+        engine.resume()
+        seq_after = engine.to_snapshot().snapshot_sequence
+        assert seq_after == seq_before + 1
+
+    def test_resume_no_trace(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        engine.pause()
+        engine.resume()
+        snap = engine.to_snapshot()
+        assert len(snap.recent_events) == 0
+
+    def test_resume_not_from_paused_rejected(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize()
+        with pytest.raises(DiscreteSimulationEngineError, match="PAUSED"):
+            engine.resume()
+
+    def test_invalid_transition_atomic(self):
+        """Invalid transition must not mutate state."""
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        snap_before = engine.to_snapshot()
+        with pytest.raises(DiscreteSimulationEngineError):
+            engine.pause()  # not RUNNING
+        snap_after = engine.to_snapshot()
+        assert snap_after.status == snap_before.status
+        assert snap_after.snapshot_sequence == snap_before.snapshot_sequence
+
+
+# ──────────────────────────────────────────────
+# M2-S04: Step from active states
+# ──────────────────────────────────────────────
+
+class TestStepFromActiveStates:
+    def test_step_from_running(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1"), _evt("e2")])
+        engine.start_running()
+        snap = engine.step_event()
+        assert snap.processed_events == 1
+        # Status preserved after non-terminal step
+        assert snap.status == "running"
+
+    def test_step_from_paused(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1"), _evt("e2")])
+        engine.start_running()
+        engine.pause()
+        snap = engine.step_event()
+        assert snap.processed_events == 1
+        # Status preserved after non-terminal step
+        assert snap.status == "paused"
+
+    def test_step_from_ready_preserves_ready(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1"), _evt("e2")])
+        snap = engine.step_event()
+        assert snap.processed_events == 1
+        assert snap.status == "ready"
+
+    def test_step_from_running_completes_when_empty(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        snap = engine.step_event()
+        assert snap.status == "completed"
+
+    def test_step_from_paused_completes_when_empty(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        engine.pause()
+        snap = engine.step_event()
+        assert snap.status == "completed"
+
+    def test_step_from_running_failure_to_failed(self):
+        engine = DiscreteSimulationEngine(_rc(), FailingDispatcher("bad"))
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        snap = engine.step_event()
+        assert snap.status == "failed"
+
+    def test_step_not_from_active_state_rejected(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        with pytest.raises(DiscreteSimulationEngineError, match="READY"):
+            engine.step_event()
+
+
+# ──────────────────────────────────────────────
+# M2-S04: Stop from RUNNING / PAUSED
+# ──────────────────────────────────────────────
+
+class TestStopFromActiveStates:
+    def test_stop_from_running(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        snap = engine.stop("user stopped")
+        assert snap.status == "stopped"
+        assert snap.stop_reason == "user stopped"
+
+    def test_stop_from_paused(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.start_running()
+        engine.pause()
+        snap = engine.stop("user stopped")
+        assert snap.status == "stopped"
+
+    def test_stop_from_terminal_rejected(self):
+        engine = DiscreteSimulationEngine(_rc(), StubDispatcher())
+        engine.initialize()
+        engine.step_event()  # completes
+        with pytest.raises(DiscreteSimulationEngineError, match="terminal"):
+            engine.stop("try")
+
+    def test_stop_from_failed_rejected(self):
+        engine = DiscreteSimulationEngine(_rc(), FailingDispatcher("bad"))
+        engine.initialize(initial_events=[_evt("e1")])
+        engine.step_event()  # fails
+        with pytest.raises(DiscreteSimulationEngineError, match="terminal"):
+            engine.stop("try")
