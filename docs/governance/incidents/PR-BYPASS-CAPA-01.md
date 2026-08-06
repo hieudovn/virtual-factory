@@ -3,7 +3,7 @@
 **Incident ID**: PR-BYPASS-CAPA-01
 **Date**: 2026-08-07
 **Severity**: HIGH
-**Status**: OPEN
+**Status**: MITIGATED — SERVER-SIDE CONTROL PENDING
 
 ## Incident Summary
 
@@ -27,9 +27,12 @@ The PM reported "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW" for M2-S04-C02
 2. ✅ Create pre-push git hook (`scripts/git-hooks/pre-push`)
 3. ✅ Create PR merge gate verification script (`scripts/verify-pr-merge-gate.py`)
 4. ✅ Update `M2-STATUS.md` with current state
-5. ⬜ Enable GitHub branch protection on `main`
-6. ⬜ Perform negative push test to verify protection
-7. ⬜ Merge this CAPA PR
+5. ❌ Enable GitHub branch protection on `main` — **BLOCKED**: GitHub API 403
+   ("Upgrade to GitHub Pro or make this repository public"). Private repo on
+   free plan does not support branch protection.
+6. ✅ Negative push test performed: `git push origin main` exit 0 (push accepted,
+   confirming no server-side protection).
+7. ✅ Governance PR #2 merged into `main`.
 
 ## Impact
 
@@ -39,16 +42,28 @@ The PM reported "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW" for M2-S04-C02
 
 ## Prevention
 
-- Branch protection on `main` prevents direct pushes
-- Pre-push hook prevents accidental bypass
+- **Policy**: All changes to `main` must go through PR
+- Pre-push hook warns on direct main pushes (compensating control, not enforced)
 - Status reporting MUST include concrete evidence fields
 - SA review gate catches false reports
 
+## Compensating Controls
+
+Because server-side branch protection is unavailable:
+- Version-controlled pre-push hook
+- Mandatory PR workflow
+- `verify-pr-merge-gate.py` automated checker
+- Explicit SA merge authorization
+- Expected-head-SHA merge
+- Post-merge verification
+
+**Residual risk**: Local hooks can be bypassed. GitHub still permits direct main
+updates.
+
 ## Verification
 
-After CAPA closure, verify:
-- [ ] `main` branch protection active
-- [ ] Direct push to `main` is rejected
-- [ ] PR required for all changes to `main`
-- [ ] CI must pass before merge
-- [ ] All future status reports include concrete evidence
+- [x] Governance documentation created with factual server-side state
+- [x] Pre-push hook and merge-gate script in place
+- [x] PR workflow documented as mandatory policy
+- [x] CAPA status: MITIGATED — SERVER-SIDE CONTROL PENDING
+- [ ] Server-side branch protection (requires plan upgrade or public repo)
