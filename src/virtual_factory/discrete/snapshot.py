@@ -1,7 +1,8 @@
 """Immutable domain-neutral runtime snapshot.
 
 M2-S03: schema v1.1 — added recent_events, diagnostics.
-Transport-free — no message_sequence, allowed_actions, nodes, entities.
+M2-S04: schema v1.2 — added allowed_actions projection.
+Transport-free — no message_sequence, nodes, entities.
 """
 
 from __future__ import annotations
@@ -37,11 +38,14 @@ class RuntimeSnapshot:
     snapshot_sequence: int
 
     # Preserve legacy positional location (field index 13)
-    schema_version: str = "1.1.0"
+    schema_version: str = "1.2.0"
 
     # M2-S03 fields appended after legacy contract
     recent_events: tuple[EventTraceEntry, ...] = ()
     diagnostics: RuntimeDiagnostics = field(default_factory=RuntimeDiagnostics)
+
+    # M2-S04: controller-projected allowed actions
+    allowed_actions: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         # run_id
@@ -97,3 +101,12 @@ class RuntimeSnapshot:
         # schema_version
         if not isinstance(self.schema_version, str) or not self.schema_version.strip():
             raise RuntimeSnapshotError("schema_version must be non-empty str")
+
+        # allowed_actions (M2-S04)
+        if not isinstance(self.allowed_actions, tuple):
+            raise RuntimeSnapshotError("allowed_actions must be tuple")
+        for i, action in enumerate(self.allowed_actions):
+            if not isinstance(action, str):
+                raise RuntimeSnapshotError(
+                    f"allowed_actions[{i}] must be str, got {type(action).__name__}"
+                )

@@ -1,6 +1,7 @@
 """Discrete simulation engine — deterministic, synchronous, domain-neutral.
 
 M2-S01: lifecycle only — no controller, service, transport, or domain.
+M2-S04: RUNNING/PAUSED transitions, step from active states, stop from RUNNING/PAUSED.
 """
 
 from __future__ import annotations
@@ -30,7 +31,8 @@ class DiscreteSimulationEngineError(RuntimeError):
     """Raised when an engine lifecycle invariant is violated."""
 
 
-_NON_TERMINAL = {RunStatus.CREATED, RunStatus.READY}
+_NON_TERMINAL = {RunStatus.CREATED, RunStatus.READY, RunStatus.RUNNING, RunStatus.PAUSED}
+_ACTIVE_STEP = {RunStatus.READY, RunStatus.RUNNING, RunStatus.PAUSED}
 _TERMINAL = {RunStatus.COMPLETED, RunStatus.STOPPED, RunStatus.FAILED}
 
 
@@ -68,6 +70,11 @@ class DiscreteSimulationEngine:
     # ------------------------------------------------------------------
     # Public read-only
     # ------------------------------------------------------------------
+
+    @property
+    def run_id(self) -> str:
+        """Return the run_id from the run context (read-only)."""
+        return self._run_context.run_id
 
     @property
     def status(self) -> RunStatus:
@@ -159,13 +166,18 @@ class DiscreteSimulationEngine:
     def step_event(self) -> RuntimeSnapshot:
         """Pop, dispatch, and commit one event.  Records trace entry.
 
-        Valid only from READY.
+        Valid from READY, RUNNING, or PAUSED.
+        Non-terminal step preserves the status before the step.
         """
-        if self._state.status is not RunStatus.READY:
+        if self._state.status not in _ACTIVE_STEP:
             raise DiscreteSimulationEngineError(
-                f"step_event valid only from READY, current={self._state.status.value}"
+                f"step_event valid from READY/RUNNING/PAUSED, "
+                f"current={self._state.status.value}"
             )
         assert self._scheduler is not None  # guaranteed by initialize
+
+        # Capture status before step
+        status_before = self._state.status
 
         # 1. Pop
         try:
@@ -282,6 +294,57 @@ class DiscreteSimulationEngine:
         if self._scheduler.is_empty:
             return self._complete("scheduler_empty")
 
+        # 10. Preserve status before step (READY/RUNNING/PAUSED)
+        self._state.status = status_before
+        return self.to_snapshot()
+
+    # ------------------------------------------------------------------
+    # Lifecycle — RUNNING / PAUSED transitions (M2-S04)
+    # ------------------------------------------------------------------
+
+    def start_running(self) -> RuntimeSnapshot:
+        """Transition READY → RUNNING.
+
+        Increments snapshot_sequence once. No trace entry.
+        Does not change simulation_time or counters.
+        """
+        if self._state.status is not RunStatus.READY:
+            raise DiscreteSimulationEngineError(
+                f"start_running valid only from READY, "
+                f"current={self._state.status.value}"
+            )
+        self._state.status = RunStatus.RUNNING
+        self._state.snapshot_sequence += 1
+        return self.to_snapshot()
+
+    def pause(self) -> RuntimeSnapshot:
+        """Transition RUNNING → PAUSED.
+
+        Increments snapshot_sequence once. No trace entry.
+        Does not change simulation_time or counters.
+        """
+        if self._state.status is not RunStatus.RUNNING:
+            raise DiscreteSimulationEngineError(
+                f"pause valid only from RUNNING, "
+                f"current={self._state.status.value}"
+            )
+        self._state.status = RunStatus.PAUSED
+        self._state.snapshot_sequence += 1
+        return self.to_snapshot()
+
+    def resume(self) -> RuntimeSnapshot:
+        """Transition PAUSED → RUNNING.
+
+        Increments snapshot_sequence once. No trace entry.
+        Does not change simulation_time or counters.
+        """
+        if self._state.status is not RunStatus.PAUSED:
+            raise DiscreteSimulationEngineError(
+                f"resume valid only from PAUSED, "
+                f"current={self._state.status.value}"
+            )
+        self._state.status = RunStatus.RUNNING
+        self._state.snapshot_sequence += 1
         return self.to_snapshot()
 
     # ------------------------------------------------------------------
@@ -289,14 +352,14 @@ class DiscreteSimulationEngine:
     # ------------------------------------------------------------------
 
     def stop(self, reason: str = "stopped") -> RuntimeSnapshot:
-        """Stop the engine. Valid from CREATED or READY."""
+        """Stop the engine. Valid from CREATED, READY, RUNNING, or PAUSED."""
         if self._state.status in _TERMINAL:
             raise DiscreteSimulationEngineError(
                 f"stop invalid from terminal state {self._state.status.value}"
             )
         if self._state.status not in _NON_TERMINAL:
             raise DiscreteSimulationEngineError(
-                f"stop valid only from CREATED or READY, "
+                f"stop valid only from CREATED/READY/RUNNING/PAUSED, "
                 f"current={self._state.status.value}"
             )
         if not isinstance(reason, str) or not reason.strip():

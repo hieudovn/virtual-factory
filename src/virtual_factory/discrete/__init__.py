@@ -3,6 +3,8 @@
 M2-S01: RunStatus, DiscreteRunState, RuntimeSnapshot,
          EventDispatcherProtocol, HandlerOutcome, DiscreteSimulationEngine
 M2-S02: HandlerRegistry, EventHandlerFn
+M2-S04: ExecutionMode, RunControlCommand, ControlCommandResult,
+         ControlCommandQueue, ControllerPacingPolicy, DiscreteRunController
 """
 
 from virtual_factory.discrete.state import DiscreteRunState, RunStatus
@@ -31,6 +33,23 @@ from virtual_factory.discrete.trace import (
     RuntimeDiagnostics,
     RuntimeDiagnosticsError,
 )
+from virtual_factory.discrete.commands import (
+    ControlCommandQueue,
+    ControlCommandQueueError,
+    ControlCommandResult,
+    ControlCommandResultError,
+    ControlCommandType,
+    RunControlCommand,
+    RunControlCommandError,
+)
+from virtual_factory.discrete.controller import (
+    ControllerPacingPolicy,
+    ControllerPacingPolicyError,
+    DiscreteRunController,
+    DiscreteRunControllerError,
+    ExecutionMode,
+    SafePointOutcome,
+)
 
 __all__ = [
     "DiscreteRunState",
@@ -52,4 +71,17 @@ __all__ = [
     "EventTraceBufferError",
     "RuntimeDiagnostics",
     "RuntimeDiagnosticsError",
+    "ExecutionMode",
+    "ControlCommandType",
+    "RunControlCommand",
+    "RunControlCommandError",
+    "ControlCommandResult",
+    "ControlCommandResultError",
+    "ControlCommandQueue",
+    "ControlCommandQueueError",
+    "ControllerPacingPolicy",
+    "ControllerPacingPolicyError",
+    "DiscreteRunController",
+    "DiscreteRunControllerError",
+    "SafePointOutcome",
 ]
