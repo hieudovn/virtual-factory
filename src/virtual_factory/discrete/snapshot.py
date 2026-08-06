@@ -1,18 +1,25 @@
 """Immutable domain-neutral runtime snapshot.
 
-M2-S01: transport-free — no message_sequence, allowed_actions, nodes, entities.
+M2-S03: schema v1.1 — added recent_events, diagnostics.
+Transport-free — no message_sequence, allowed_actions, nodes, entities.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from virtual_factory.discrete.trace import EventTraceEntry, RuntimeDiagnostics
+
+
+class RuntimeSnapshotError(ValueError):
+    """Raised when a RuntimeSnapshot invariant is violated."""
 
 
 @dataclass(frozen=True, slots=True)
 class RuntimeSnapshot:
     """Immutable projection of ``DiscreteRunState`` for inspection.
 
-    Fields are ordered so ``schema_version`` (defaulted) comes last.
+    Fields ordered so defaults come last.
     """
 
     run_id: str
@@ -28,4 +35,57 @@ class RuntimeSnapshot:
     pending_events: int
     last_event_id: str | None
     snapshot_sequence: int
-    schema_version: str = "1.0.0"
+    recent_events: tuple[EventTraceEntry, ...] = ()
+    diagnostics: RuntimeDiagnostics = field(default_factory=RuntimeDiagnostics)
+    schema_version: str = "1.1.0"
+
+    def __post_init__(self) -> None:
+        # run_id
+        if not isinstance(self.run_id, str) or not self.run_id.strip():
+            raise RuntimeSnapshotError("run_id must be non-empty str")
+
+        # model_id
+        if not isinstance(self.model_id, str) or not self.model_id.strip():
+            raise RuntimeSnapshotError("model_id must be non-empty str")
+
+        # status — must be a valid RunStatus value
+        from virtual_factory.discrete.state import RunStatus
+        valid_statuses = {s.value for s in RunStatus}
+        if self.status not in valid_statuses:
+            raise RuntimeSnapshotError(
+                f"status must be one of {sorted(valid_statuses)}, got {self.status!r}"
+            )
+
+        # simulation_time_s
+        import math
+        if isinstance(self.simulation_time_s, bool):
+            raise RuntimeSnapshotError("simulation_time_s must be numeric, not bool")
+        if not isinstance(self.simulation_time_s, (int, float)):
+            raise RuntimeSnapshotError("simulation_time_s must be numeric")
+        if math.isnan(self.simulation_time_s) or math.isinf(self.simulation_time_s):
+            raise RuntimeSnapshotError("simulation_time_s must be finite")
+        if self.simulation_time_s < 0.0:
+            raise RuntimeSnapshotError("simulation_time_s must be >= 0")
+
+        # counters
+        for name in ["processed_events", "pending_events", "snapshot_sequence"]:
+            val = getattr(self, name)
+            if isinstance(val, bool):
+                raise RuntimeSnapshotError(f"{name} must be int, not bool")
+            if not isinstance(val, int) or val < 0:
+                raise RuntimeSnapshotError(f"{name} must be int >= 0")
+
+        # recent_events
+        if not isinstance(self.recent_events, tuple):
+            raise RuntimeSnapshotError("recent_events must be tuple")
+        for i, e in enumerate(self.recent_events):
+            if not isinstance(e, EventTraceEntry):
+                raise RuntimeSnapshotError(
+                    f"recent_events[{i}] must be EventTraceEntry, got {type(e).__name__}"
+                )
+
+        # diagnostics
+        if not isinstance(self.diagnostics, RuntimeDiagnostics):
+            raise RuntimeSnapshotError(
+                f"diagnostics must be RuntimeDiagnostics, got {type(self.diagnostics).__name__}"
+            )

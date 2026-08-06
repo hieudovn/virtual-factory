@@ -23,6 +23,14 @@ from virtual_factory.discrete.handler_registry import (
     HandlerRegistry,
     HandlerRegistryError,
 )
+from virtual_factory.discrete.trace import (
+    EventTraceBuffer,
+    EventTraceBufferError,
+    EventTraceEntry,
+    EventTraceEntryError,
+    RuntimeDiagnostics,
+    RuntimeDiagnosticsError,
+)
 
 __all__ = [
     "DiscreteRunState",
@@ -38,4 +46,10 @@ __all__ = [
     "HandlerRegistrationError",
     "DuplicateHandlerError",
     "EventHandlerFn",
+    "EventTraceEntry",
+    "EventTraceEntryError",
+    "EventTraceBuffer",
+    "EventTraceBufferError",
+    "RuntimeDiagnostics",
+    "RuntimeDiagnosticsError",
 ]
