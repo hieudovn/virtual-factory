@@ -37,7 +37,14 @@ CI: `checkout@v7`, `setup-python@v7`
 
 ## Governance Notes
 
-- CAPA-01 (PR-BYPASS): False status report for M2-S04-C02. Corrected via `chore/pr-governance-capa`.
+- CAPA-01 (PR-BYPASS): False status report for M2-S04-C02. Corrected via
+  `chore/pr-governance-capa` and `chore/capa-01-factual-correction`.
+- Status: MITIGATED — SERVER-SIDE CONTROL PENDING.
 - All future status reports require concrete evidence fields.
-- `main` branch is now protected (PR required, CI required, force-push blocked).
+- **Server-side state**: `main` branch is NOT protected (GitHub plan limitation).
+- **Compensating controls**: pre-push hook, mandatory PR workflow,
+  `verify-pr-merge-gate.py`, explicit SA merge authorization,
+  expected-head-SHA merge, post-merge verification.
+- **Residual risk**: Local hooks can be bypassed; GitHub still permits direct
+  main updates.
 
