@@ -19,6 +19,11 @@ from virtual_factory.discrete.scheduler import (
 )
 from virtual_factory.discrete.snapshot import RuntimeSnapshot
 from virtual_factory.discrete.state import DiscreteRunState, RunStatus
+from virtual_factory.discrete.trace import (
+    EventTraceBuffer,
+    EventTraceEntry,
+    RuntimeDiagnostics,
+)
 
 
 class DiscreteSimulationEngineError(RuntimeError):
@@ -41,6 +46,8 @@ class DiscreteSimulationEngine:
         self,
         run_context: RunContext,
         dispatcher: EventDispatcherProtocol,
+        *,
+        trace_capacity: int = 128,
     ) -> None:
         if not isinstance(run_context, RunContext):
             raise DiscreteSimulationEngineError(
@@ -55,6 +62,8 @@ class DiscreteSimulationEngine:
         self._dispatcher = dispatcher
         self._scheduler: FutureEventScheduler | None = None
         self._state = DiscreteRunState(run_id=run_context.run_id)
+        self._trace = EventTraceBuffer(capacity=trace_capacity)
+        self._trace_seq: int = 0
 
     # ------------------------------------------------------------------
     # Public read-only
@@ -82,6 +91,14 @@ class DiscreteSimulationEngine:
             pending_events=st.pending_events,
             last_event_id=st.last_event_id,
             snapshot_sequence=st.snapshot_sequence,
+            recent_events=self._trace.entries,
+            diagnostics=RuntimeDiagnostics(
+                failure_detail=st.diagnostics.get("failure_detail"),
+                trace_capacity=self._trace.capacity,
+                trace_size=self._trace.size,
+                trace_total_entries=self._trace.total_entries,
+                trace_dropped_entries=self._trace.dropped_entries,
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -140,7 +157,7 @@ class DiscreteSimulationEngine:
     # ------------------------------------------------------------------
 
     def step_event(self) -> RuntimeSnapshot:
-        """Pop, dispatch, and commit one event.
+        """Pop, dispatch, and commit one event.  Records trace entry.
 
         Valid only from READY.
         """
@@ -155,10 +172,12 @@ class DiscreteSimulationEngine:
             event = self._scheduler.pop_next()
         except FutureEventSchedulerError as exc:
             return self._fail("scheduler_pop_error", str(exc), snapshot=True)
+        # No trace for scheduler-pop failure (no event received)
 
         # 2. Empty → COMPLETED
         if event is None:
             return self._complete("scheduler_empty")
+        # No trace for empty completion
 
         # 3. Sync time
         self._state.simulation_time_s = self._scheduler.current_time_s
@@ -167,43 +186,97 @@ class DiscreteSimulationEngine:
         try:
             outcome = self._dispatcher.dispatch(event)
         except Exception as exc:
-            return self._fail("dispatcher_exception", str(exc), snapshot=True)
+            return self._fail_with_trace(
+                event, "dispatcher_exception", str(exc),
+            )
 
         # 5. Validate outcome
         if not isinstance(outcome, HandlerOutcome):
-            return self._fail(
-                "invalid_outcome",
+            return self._fail_with_trace(
+                event, "invalid_outcome",
                 f"expected HandlerOutcome, got {type(outcome).__name__}",
-                snapshot=True,
             )
 
         if outcome.event_id != event.event_id:
-            return self._fail(
-                "outcome_event_id_mismatch",
+            return self._fail_with_trace(
+                event, "outcome_event_id_mismatch",
                 f"expected {event.event_id!r}, got {outcome.event_id!r}",
-                snapshot=True,
             )
 
         # 6. Unsuccessful → FAILED
         if not outcome.success:
-            return self._fail(
+            return self._fail_with_trace(
+                event,
                 outcome.error_code or "unknown_error",
                 outcome.error_detail,
-                snapshot=True,
+                state_changes=outcome.state_changes,
             )
 
         # 7. Schedule follow-ups
+        requested = len(outcome.follow_up_events)
+        scheduled_count = 0
         for follow_up in outcome.follow_up_events:
             try:
                 self._scheduler.schedule(follow_up)
+                scheduled_count += 1
             except FutureEventSchedulerError as exc:
-                return self._fail("schedule_error", str(exc), snapshot=True)
+                # Partial scheduling failure — trace and fail
+                self._sync_scheduler_state()
+                self._state.status = RunStatus.FAILED
+                self._state.failure_error = "schedule_error"
+                self._state.diagnostics["failure_detail"] = str(exc)
+                self._state.snapshot_sequence += 1
+
+                self._trace_seq += 1
+                self._trace.append(EventTraceEntry(
+                    trace_sequence=self._trace_seq,
+                    event_id=event.event_id,
+                    event_type=event.event_type,
+                    target_id=event.target_id,
+                    simulation_time_s=event.simulation_time_s,
+                    priority=event.priority,
+                    scheduler_sequence=event.sequence if event.sequence is not None else 0,
+                    correlation_id=event.correlation_id,
+                    causation_id=event.causation_id,
+                    result="failed",
+                    error_code="schedule_error",
+                    error_detail=str(exc),
+                    state_changes=outcome.state_changes,
+                    requested_follow_up_events=requested,
+                    scheduled_follow_up_events=scheduled_count,
+                    processed_events_after=self._state.processed_events,
+                    pending_events_after=self._state.pending_events,
+                ))
+                return self.to_snapshot()
 
         # 8. Commit successful event
         self._state.processed_events += 1
         self._state.pending_events = self._scheduler.pending_count
         self._state.last_event_id = event.event_id
         self._state.snapshot_sequence += 1
+
+        # Trace committed
+        self._trace_seq += 1
+        seq = event.sequence if event.sequence is not None else 0
+        self._trace.append(EventTraceEntry(
+            trace_sequence=self._trace_seq,
+            event_id=event.event_id,
+            event_type=event.event_type,
+            target_id=event.target_id,
+            simulation_time_s=event.simulation_time_s,
+            priority=event.priority,
+            scheduler_sequence=seq,
+            correlation_id=event.correlation_id,
+            causation_id=event.causation_id,
+            result="committed",
+            error_code=None,
+            error_detail=None,
+            state_changes=outcome.state_changes,
+            requested_follow_up_events=requested,
+            scheduled_follow_up_events=requested,
+            processed_events_after=self._state.processed_events,
+            pending_events_after=self._state.pending_events,
+        ))
 
         # 9. Check completion
         if self._scheduler.is_empty:
@@ -271,3 +344,42 @@ class DiscreteSimulationEngine:
         """Sync pending_events from the scheduler when it exists."""
         if self._scheduler is not None:
             self._state.pending_events = self._scheduler.pending_count
+
+    def _fail_with_trace(
+        self,
+        event: ScheduledEvent,
+        error_code: str,
+        error_detail: str | None = None,
+        *,
+        state_changes: tuple[str, ...] = (),
+    ) -> RuntimeSnapshot:
+        """Transition to FAILED and record a failed trace entry."""
+        self._sync_scheduler_state()
+        self._state.status = RunStatus.FAILED
+        self._state.failure_error = error_code
+        if error_detail:
+            self._state.diagnostics["failure_detail"] = error_detail
+        self._state.snapshot_sequence += 1
+
+        self._trace_seq += 1
+        seq = event.sequence if event.sequence is not None else 0
+        self._trace.append(EventTraceEntry(
+            trace_sequence=self._trace_seq,
+            event_id=event.event_id,
+            event_type=event.event_type,
+            target_id=event.target_id,
+            simulation_time_s=event.simulation_time_s,
+            priority=event.priority,
+            scheduler_sequence=seq,
+            correlation_id=event.correlation_id,
+            causation_id=event.causation_id,
+            result="failed",
+            error_code=error_code,
+            error_detail=error_detail,
+            state_changes=state_changes,
+            requested_follow_up_events=0,
+            scheduled_follow_up_events=0,
+            processed_events_after=self._state.processed_events,
+            pending_events_after=self._state.pending_events,
+        ))
+        return self.to_snapshot()
