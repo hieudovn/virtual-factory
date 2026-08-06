@@ -1,0 +1,50 @@
+#!/bin/bash
+# pre-push — Git hook to prevent direct pushes to main and enforce quality gates
+# Install via: bash scripts/install-git-hooks.sh
+
+set -euo pipefail
+
+# Read the remote name and URL from stdin
+while read -r local_ref local_sha remote_ref remote_sha; do
+    # Block direct pushes to main
+    if [[ "$remote_ref" == "refs/heads/main" ]]; then
+        echo "============================================"
+        echo "  ERROR: Direct push to 'main' is BLOCKED."
+        echo "  All changes must go through a Pull Request."
+        echo "============================================"
+        exit 1
+    fi
+
+    # Warn on force pushes
+    if [[ "$local_sha" == "0000000000000000000000000000000000000000" ]]; then
+        # Deleting a branch — allow
+        continue
+    fi
+
+    # Check if this is a force push (remote ref exists and is not an ancestor)
+    if git rev-parse -q --verify "$remote_ref" > /dev/null 2>&1; then
+        if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+            if [[ "$remote_sha" != "0000000000000000000000000000000000000000" ]]; then
+                echo "============================================"
+                echo "  WARNING: Force push detected to $remote_ref"
+                echo "  Proceeding, but please avoid force pushes."
+                echo "============================================"
+            fi
+        fi
+    fi
+done
+
+# Run tests before push
+echo ""
+echo "Running pre-push validation tests..."
+if python -m pytest -q --tb=short 2>&1; then
+    echo "All tests passed."
+else
+    echo "============================================"
+    echo "  ERROR: Tests failed. Push rejected."
+    echo "  Fix tests before pushing."
+    echo "============================================"
+    exit 1
+fi
+
+exit 0
