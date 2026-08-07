@@ -1,0 +1,48 @@
+model:
+  id: generic-demo
+  name: Generic 3-Station Demo
+
+primitives:
+  - id: source-1
+    type: source
+    label: Entry
+
+  - id: buffer-1
+    type: buffer
+    label: Input Queue
+    capacity: 10
+
+  - id: station-1
+    type: processor
+    label: Drill Station
+    processing_time_s: 1.0
+
+  - id: station-2
+    type: processor
+    label: Assembly Station
+    processing_time_s: 2.0
+
+  - id: quality-1
+    type: quality_gate
+    label: Final Inspection
+
+  - id: sink-1
+    type: sink
+    label: Finished Goods
+
+edges:
+  - from: source-1
+    to: buffer-1
+
+  - from: buffer-1
+    to: station-1
+
+  - from: station-1
+    to: station-2
+
+  - from: station-2
+    to: quality-1
+
+  - from: quality-1
+    to: sink-1
+    disposition: pass
