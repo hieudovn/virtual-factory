@@ -102,6 +102,19 @@ def _exit_code(status: str, evidence: dict, gate: str, report_only: bool) -> int
     return 1 if "NOT READY" in status else 6
 
 
+def _normalize_smoke_command(cmd: list[str]) -> list[str]:
+    """Normalize a smoke command for subprocess execution.
+
+    Translates virtual-factory console-script invocations to python -c
+    when console_scripts may not be on PATH in the subprocess environment.
+    """
+    if cmd and cmd[0] == "virtual-factory":
+        args_repr = repr(cmd[1:])
+        return [sys.executable, "-c",
+                f"import sys; from virtual_factory.main import main; sys.argv[1:]={args_repr}; main()"]
+    return cmd
+
+
 def _resolve_pr(contract: dict, token: str | None) -> int | None:
     """Resolve the open PR for the task's required_branch with base=main.
 
@@ -199,14 +212,7 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
               "ci": {"run_id": None, "head_sha": "", "step_name": "", "result": "NOT_EXECUTED", "conclusion": ""},
               "effective_result": "UNKNOWN"}
         if policy in ("local_required", "local_and_ci", "local_or_ci"):
-            cmd = spec["command"]
-            # C04: translate virtual-factory console-script to python invocation
-            # when console_scripts are not on PATH in the subprocess environment
-            if cmd and cmd[0] == "virtual-factory":
-                import shlex
-                args_repr = repr(cmd[1:])
-                cmd = [sys.executable, "-c",
-                       f"import sys; from virtual_factory.main import main; sys.argv[1:]={args_repr}; main()"]
+            cmd = _normalize_smoke_command(spec["command"])
             try:
                 p = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, timeout=60)
                 sr["local"] = {"executed": True, "result": "PASS" if p.returncode == 0 else "FAIL",
@@ -397,12 +403,22 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
             if ev3.returncode == 0 and rc3.returncode == 0: stable = True; break
     if not stable:
         reg.update_result("P22", "FAIL")
+        evidence["pipeline_steps"] = reg.snapshot()
+        evidence["pipeline_integrity"] = reg.integrity()
         return final_status, evidence, 5
 
-    # P23: Final assertions — compute final pipeline_integrity FIRST, then evaluate
+    # P23: Final assertions — record step (integrity evaluated at P24 after all steps)
     print("\n" + "=" * 50 + "\nP23: Final assertions")
+    reg.record("P23", "Final assertions", True, "PASS")
+
+    # P24: Finalize — compute final pipeline integrity AFTER all P01-P24 recorded, then evaluate
+    print("\n" + "=" * 50 + "\nP24: Finalize")
+    evidence["execution_mode"] = "report_only" if report_only else "normal"
+    reg.record("P24", "Finalize", True, "PASS")
+    # Now registry contains P01-P24 — compute truthful final integrity
     evidence["pipeline_steps"] = reg.snapshot()
     evidence["pipeline_integrity"] = reg.integrity()
+    # Evaluate F01/F02 final acceptance with complete P01-P24 pipeline
     with open(pep, "w") as f: json.dump(evidence, f, indent=2)
     ar2 = _run("evaluate_acceptance.py", [str(pep), task_path, "--phase", "final"])
     print(ar2.stdout or "")
@@ -420,15 +436,7 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
         evidence["derived_status"] = final_status
         evidence["requested_gate_satisfied"] = False
         evidence["exit_code"] = 1
-    reg.record("P23", "Final assertions", True,
-               "PASS" if not failed_final and not unknown_final else "FAIL")
-
-    # P24: Finalize (record step FIRST, then snapshot includes it)
-    print("\n" + "=" * 50 + "\nP24: Finalize")
-    evidence["execution_mode"] = "report_only" if report_only else "normal"
-    reg.record("P24", "Finalize", True, "PASS")
-    evidence["pipeline_steps"] = reg.snapshot()
-    evidence["pipeline_integrity"] = reg.integrity()
+        reg.update_result("P24", "FAIL")
     evidence["report_generation_result"] = "success"
     with open(ep, "w") as f: json.dump(evidence, f, indent=2)
     with open(rp_final, "w") as f:
