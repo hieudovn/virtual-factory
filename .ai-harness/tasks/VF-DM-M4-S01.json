@@ -1,0 +1,19 @@
+{
+  "task_id": "VF-DM-M4-S01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "M4-S01 Generic Assembly Snapshot Projection. Create a UI/transport-friendly detached read model projecting simulation state without exposing mutable runtime internals.",
+  "required_branch": "feature/dm-m4-s01",
+  "expected_base_sha": "38a5d46ffd17e2ed1445eb337f599b65f1c70d6f",
+  "allowed_paths": ["src/virtual_factory/assembly/projection.py", "tests/test_m4_s01_projection.py", ".ai-harness/tasks/VF-DM-M4-S01.json"],
+  "forbidden_paths": ["src/virtual_factory/discrete/"],
+  "required_deliverables": ["src/virtual_factory/assembly/projection.py", "tests/test_m4_s01_projection.py"],
+  "required_tests": ["Projection from live runtime", "Projection serializable", "Projection detached from runtime", "All primitives/topology/WIPs/buffers projected"],
+  "acceptance_criteria": [
+    {"id": "P01", "phase": "pre_status", "description": "Tests pass", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "P02", "phase": "pre_status", "description": "Zero failures", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "P03", "phase": "pre_status", "description": "CI success", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "F01", "phase": "final", "description": "Pipeline integrity", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": true, "may_merge": false}
+}
