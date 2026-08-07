@@ -1,0 +1,80 @@
+{
+  "task_id": "VF-DM-M3-S01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "M3-S01 Assembly Domain Primitives. Introduce the minimum domain model for a generic discrete assembly/material-flow system on top of M2 runtime. Source, Buffer, Processor, Router, Sink, QualityGate primitives with WIP identity, state, and quality disposition. No TIPA hardcoding.",
+  "explicit_non_objectives": [
+    "TIPA topology / AP01-AP06",
+    "YAML topology loader",
+    "Routing expression language",
+    "Event handlers for full production flow",
+    "Rework algorithm",
+    "MES / Odoo / PlantOS",
+    "Visualization / REST / WebSocket",
+    "Persistence / KPI engine",
+    "M2 engine/controller modifications",
+    "M3-S02 implementation"
+  ],
+  "required_branch": "feature/dm-m3-s01",
+  "expected_base_sha": "9aa8244f57dc2102fdd82e21121f852ffa0ff4f1",
+  "allowed_paths": [
+    "src/virtual_factory/assembly/",
+    "tests/test_m3_s01_assembly.py",
+    ".ai-harness/tasks/VF-DM-M3-S01.json"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/discrete/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/assembly/ — package with primitives, WIP, quality",
+    "tests/test_m3_s01_assembly.py — M3-S01 focused tests",
+    ".ai-harness/tasks/VF-DM-M3-S01.json — this contract"
+  ],
+  "required_tests": [
+    "M3-S01-A: Primitive construction validation",
+    "M3-S01-B: Domain identity — stable deterministic IDs",
+    "M3-S01-C: WIP state representation",
+    "M3-S01-D: Buffer capacity declaration and invariants",
+    "M3-S01-E: Quality disposition pass/fail/rework",
+    "M3-S01-F: Domain neutrality — no TIPA coupling",
+    "M3-S01-G: M2 regression preserved"
+  ],
+  "required_smoke_checks": [
+    "virtual-factory validate --config configs/plants/compressor_train_benchmark_01.yaml"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists",
+    "pr_exists",
+    "pr_open",
+    "pr_not_draft",
+    "pr_base_is_main",
+    "exact_head_ci",
+    "ci_conclusion_success"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_modify_m2_runtime",
+    "do_not_start_m3_s02",
+    "do_not_self_certify_complete"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "regression_failure",
+    "m2_architectural_gap"
+  ],
+  "acceptance_criteria": [
+    {"id": "M01", "phase": "pre_status", "description": "Baseline is 9aa8244", "rule": {"field": "preflight.expected_base_sha", "operator": "equals", "expected": "9aa8244f57dc2102fdd82e21121f852ffa0ff4f1"}},
+    {"id": "M02", "phase": "pre_status", "description": "No M2 runtime changes", "rule": {"field": "implementation.changed_files", "operator": "not_contains", "expected": "src/virtual_factory/discrete/"}},
+    {"id": "M03", "phase": "pre_status", "description": "Tests pass", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "M04", "phase": "pre_status", "description": "Full regression zero failures", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "M05", "phase": "pre_status", "description": "CI success", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "F01", "phase": "final", "description": "Pipeline all steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
+    {"id": "F02", "phase": "final", "description": "Pipeline all steps pass", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
