@@ -237,6 +237,21 @@ class DiscreteSimulationEngine:
                     f"max_processed_events={self._max_processed_events} reached",
                 )
 
+        # --- M2-S05: no-progress guard (BEFORE pop — peek, don't consume) ---
+        next_evt = self._scheduler.peek_next()
+        if next_evt is not None:
+            current_time = next_evt.simulation_time_s
+            if self._last_event_time_s is not None and current_time == self._last_event_time_s:
+                self._same_time_count += 1
+                if self._same_time_count >= self._max_same_time_events:
+                    return self._stop_guarded(
+                        f"no_progress: {self._same_time_count} consecutive events "
+                        f"at simulation_time_s={current_time}",
+                    )
+            else:
+                self._same_time_count = 0
+            self._last_event_time_s = current_time
+
         # 1. Pop
         try:
             event = self._scheduler.pop_next()
@@ -251,19 +266,6 @@ class DiscreteSimulationEngine:
 
         # 3. Sync time
         self._state.simulation_time_s = self._scheduler.current_time_s
-
-        # --- M2-S05: no-progress detection ---
-        current_time = event.simulation_time_s
-        if self._last_event_time_s is not None and current_time == self._last_event_time_s:
-            self._same_time_count += 1
-            if self._same_time_count >= self._max_same_time_events:
-                return self._stop_guarded(
-                    f"no_progress: {self._same_time_count} consecutive events "
-                    f"at simulation_time_s={current_time}",
-                )
-        else:
-            self._same_time_count = 0
-        self._last_event_time_s = current_time
 
         # 4. Dispatch (catch unexpected exceptions)
         try:

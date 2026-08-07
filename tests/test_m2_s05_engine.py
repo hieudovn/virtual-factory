@@ -148,6 +148,52 @@ class TestNoProgress:
         assert e.to_snapshot().diagnostics.same_time_event_limit == 50
 
 
+class TestNoProgressBoundary:
+    """M2-S05-C01: No-progress guard must not silently consume events."""
+
+    def test_no_event_lost_at_boundary(self):
+        """When no-progress guard triggers, the triggering event is NOT consumed."""
+        e = DiscreteSimulationEngine(_rc(), StubDispatcher(), max_same_time_events=2)
+        events = [_evt(f"e{i}", 0.0) for i in range(5)]
+        e.initialize(events)
+        initial_pending = e.to_snapshot().pending_events
+        assert initial_pending == 5
+
+        snap = None
+        for _ in range(10):
+            if e.status.value in ("stopped", "completed", "failed"):
+                break
+            snap = e.step_event()
+
+        # Guard triggered — event NOT consumed
+        assert snap is not None
+        assert snap.status == "stopped"
+        assert "no_progress" in snap.stop_reason
+        # Processed count: 2 events dispatched, 3rd triggers guard before pop
+        # So 2 processed, pending should be 3 (not consumed by guard)
+        assert snap.processed_events == 2
+        assert snap.pending_events == 3
+        # Trace should have 2 entries (the dispatched events), not the stopped one
+        assert len(snap.recent_events) == 2
+
+    def test_no_event_silently_dropped(self):
+        """Verify pending count decreases only for dispatched events."""
+        e = DiscreteSimulationEngine(_rc(), StubDispatcher(), max_same_time_events=3)
+        all_events = [_evt(f"e{i}", 0.0) for i in range(6)]
+        e.initialize(all_events)
+
+        processed = 0
+        for _ in range(10):
+            if e.status.value in ("stopped", "completed", "failed"):
+                break
+            e.step_event()
+            processed += 1
+
+        snap = e.to_snapshot()
+        # Total events = dispatched + still pending (none lost)
+        assert snap.processed_events + snap.pending_events == 6
+
+
 class TestReplayMetadata:
     """M2-S05-D: Replay metadata in snapshot diagnostics."""
 
