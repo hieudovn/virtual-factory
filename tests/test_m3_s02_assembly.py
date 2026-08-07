@@ -87,14 +87,14 @@ def _build_rework_topology() -> tuple[AssemblyTopology, AssemblyRuntimeState, li
     return topo, state, [0]
 
 
-def _build_registry(topo, state, wip_counter, dispositions=None):
+def _build_registry(topo, state, wip_counter, quality_plan=None):
     """Build HandlerRegistry for the vertical flow."""
     reg = HandlerRegistry()
     reg.register("WIP_CREATED", make_source_handler(state, topo, wip_counter))
     reg.register("WIP_QUEUED", make_buffer_handler(state, topo))
     reg.register("PROCESS_START", make_processor_handler(state, topo))
     reg.register("PROCESS_COMPLETE", make_process_complete_handler(state, topo))
-    reg.register("QUALITY_CHECK", make_quality_gate_handler(state, topo, dispositions))
+    reg.register("QUALITY_CHECK", make_quality_gate_handler(state, topo, quality_plan))
     reg.register("WIP_COMPLETED", make_sink_handler(state))
     return reg
 
@@ -118,7 +118,7 @@ class TestScenarioANormalFlow:
 
     def test_completes_with_correct_location(self):
         topo, state, wc = _build_normal_flow_topology()
-        reg = _build_registry(topo, state, wc, {"wip-0001": QualityDisposition.PASS})
+        reg = _build_registry(topo, state, wc, {"wip-0001": [QualityDisposition.PASS]})
 
         svc = DiscreteRunService()
         svc.create_run(_rc(), reg, initial_events=[
@@ -136,7 +136,7 @@ class TestScenarioANormalFlow:
 
     def test_simulation_time_reflects_processing(self):
         topo, state, wc = _build_normal_flow_topology()
-        reg = _build_registry(topo, state, wc, {"wip-0001": QualityDisposition.PASS})
+        reg = _build_registry(topo, state, wc, {"wip-0001": [QualityDisposition.PASS]})
 
         svc = DiscreteRunService()
         svc.create_run(_rc(), reg, initial_events=[
@@ -150,7 +150,7 @@ class TestScenarioANormalFlow:
 
     def test_pending_events_zero_at_completion(self):
         topo, state, wc = _build_normal_flow_topology()
-        reg = _build_registry(topo, state, wc, {"wip-0001": QualityDisposition.PASS})
+        reg = _build_registry(topo, state, wc, {"wip-0001": [QualityDisposition.PASS]})
 
         svc = DiscreteRunService()
         svc.create_run(_rc(), reg, initial_events=[
@@ -163,7 +163,7 @@ class TestScenarioANormalFlow:
 
     def test_trace_has_correct_event_types(self):
         topo, state, wc = _build_normal_flow_topology()
-        reg = _build_registry(topo, state, wc, {"wip-0001": QualityDisposition.PASS})
+        reg = _build_registry(topo, state, wc, {"wip-0001": [QualityDisposition.PASS]})
 
         svc = DiscreteRunService()
         svc.create_run(_rc(), reg, initial_events=[
@@ -182,7 +182,7 @@ class TestScenarioANormalFlow:
 
     def test_buffer_empty_at_end(self):
         topo, state, wc = _build_normal_flow_topology()
-        reg = _build_registry(topo, state, wc, {"wip-0001": QualityDisposition.PASS})
+        reg = _build_registry(topo, state, wc, {"wip-0001": [QualityDisposition.PASS]})
 
         svc = DiscreteRunService()
         svc.create_run(_rc(), reg, initial_events=[
@@ -204,7 +204,7 @@ class TestScenarioBRework:
     def test_rework_eventually_completes(self):
         topo, state, wc = _build_rework_topology()
         # First quality check: REWORK, second: PASS
-        dispositions = {"wip-0001": QualityDisposition.REWORK}
+        dispositions = {"wip-0001": [QualityDisposition.REWORK, QualityDisposition.PASS]}
         reg = _build_registry(topo, state, wc, dispositions)
 
         svc = DiscreteRunService()
@@ -215,7 +215,7 @@ class TestScenarioBRework:
 
         # First pass through quality gate fails with REWORK
         # The handler routes back to processor-1
-        # On the second pass, disposition_map no longer has wip-0001 → defaults to PASS
+        # On the second pass, quality plan is consumed → defaults to PASS
         final = _run_to_completion(svc)
         assert final.status == "completed"
 
@@ -226,7 +226,7 @@ class TestScenarioBRework:
 
     def test_same_wip_id_retained(self):
         topo, state, wc = _build_rework_topology()
-        dispositions = {"wip-0001": QualityDisposition.REWORK}
+        dispositions = {"wip-0001": [QualityDisposition.REWORK, QualityDisposition.PASS]}
         reg = _build_registry(topo, state, wc, dispositions)
 
         svc = DiscreteRunService()
@@ -241,7 +241,7 @@ class TestScenarioBRework:
 
     def test_rework_observable_in_trace(self):
         topo, state, wc = _build_rework_topology()
-        dispositions = {"wip-0001": QualityDisposition.REWORK}
+        dispositions = {"wip-0001": [QualityDisposition.REWORK, QualityDisposition.PASS]}
         reg = _build_registry(topo, state, wc, dispositions)
 
         svc = DiscreteRunService()
@@ -261,7 +261,7 @@ class TestScenarioBRework:
     def test_rework_doubles_processor_events(self):
         """Processor is visited twice: initial + after rework."""
         topo, state, wc = _build_rework_topology()
-        dispositions = {"wip-0001": QualityDisposition.REWORK}
+        dispositions = {"wip-0001": [QualityDisposition.REWORK, QualityDisposition.PASS]}
         reg = _build_registry(topo, state, wc, dispositions)
 
         svc = DiscreteRunService()

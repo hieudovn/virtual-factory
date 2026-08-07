@@ -12,7 +12,7 @@ from virtual_factory.assembly.primitives import (
     QualityGate,
 )
 from virtual_factory.assembly.quality import QualityDisposition
-from virtual_factory.assembly.runtime import AssemblyRuntimeState
+from virtual_factory.assembly.runtime import AssemblyRuntimeState, RuntimeStateError
 from virtual_factory.assembly.topology import AssemblyTopology
 from virtual_factory.assembly.wip import WipId, WipState, WipStatus
 from virtual_factory.discrete.dispatcher import HandlerOutcome
@@ -82,6 +82,14 @@ def make_buffer_handler(
 
     def handler(event: ScheduledEvent) -> HandlerOutcome:
         buffer_id = event.target_id or "unknown-buffer"
+        buf_prim = topology.get_primitive(buffer_id)
+        if buf_prim is None or not isinstance(buf_prim, Buffer):
+            return HandlerOutcome(
+                event_id=event.event_id, success=False,
+                error_code="invalid_buffer", state_changes=(), follow_up_events=())
+        buf: Buffer = buf_prim
+        state.ensure_buffer(buf)
+
         wip_id_str = event.event_id.replace("-arrive", "")
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
@@ -90,18 +98,35 @@ def make_buffer_handler(
                 event_id=event.event_id, success=False,
                 error_code="unknown_wip", state_changes=(), follow_up_events=())
 
+        # Enqueue (capacity check)
+        try:
+            state.buffer_enqueue(buffer_id, wip_id, buf.capacity)
+        except RuntimeStateError:
+            return HandlerOutcome(
+                event_id=event.event_id, success=False,
+                error_code="buffer_full",
+                state_changes=(f"{wip_id}:buffer_full@{buffer_id}",),
+                follow_up_events=())
+
+        ws.advance(buffer_id, WipStatus.QUEUED)
         next_id = topology.next_primitive(buffer_id)
         if next_id is None:
             return HandlerOutcome(
                 event_id=event.event_id, success=False,
                 error_code="no_route", state_changes=(), follow_up_events=())
 
-        ws.advance(buffer_id, WipStatus.QUEUED)
+        # FIFO dequeue — single WIP, immediate forward
+        dequeued = state.buffer_dequeue(buffer_id)
+        assert dequeued.id == wip_id.id, f"FIFO mismatch: {dequeued.id} != {wip_id.id}"
         ws.advance(next_id, WipStatus.PROCESSING)
 
         return HandlerOutcome(
             event_id=event.event_id, success=True,
-            state_changes=(f"{wip_id}:queued→processing@{next_id}",),
+            state_changes=(
+                f"{wip_id}:enqueued@{buffer_id}",
+                f"{wip_id}:dequeued→processing@{next_id}",
+                f"buffer:{buffer_id}:size={state.buffer_size(buffer_id)}",
+            ),
             follow_up_events=(
                 _evt(f"{wip_id}-process-start", simulation_time_s=event.simulation_time_s,
                      event_type="PROCESS_START", target_id=next_id,
@@ -134,7 +159,10 @@ def make_processor_handler(
             )
         proc: Processor = proc_prim
 
-        wip_id_str = event.event_id.replace("-process-start", "")
+        # Extract WIP ID: strip known suffixes (-rewrk-process-start, -process-start)
+        eid = event.event_id
+        is_rewrk = "-rewrk-process-start" in eid
+        wip_id_str = eid.replace("-rewrk-process-start", "").replace("-process-start", "")
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
@@ -147,12 +175,13 @@ def make_processor_handler(
 
         ws.advance(proc_id, WipStatus.PROCESSING)
         completion_time = event.simulation_time_s + proc.processing_time_s
+        suffix = "-rewrk-process-complete" if is_rewrk else "-process-complete"
 
         return HandlerOutcome(
             event_id=event.event_id, success=True,
             state_changes=(f"{wip_id}:processing@{proc_id}",),
             follow_up_events=(
-                _evt(f"{wip_id}-process-complete",
+                _evt(f"{wip_id}{suffix}",
                      simulation_time_s=completion_time,
                      event_type="PROCESS_COMPLETE", target_id=proc_id,
                      causation_id=event.event_id),
@@ -183,7 +212,10 @@ def make_process_complete_handler(
                 follow_up_events=(),
             )
 
-        wip_id_str = event.event_id.replace("-process-complete", "")
+        # Extract WIP ID: strip known suffixes
+        eid = event.event_id
+        is_rewrk = "-rewrk-process-complete" in eid
+        wip_id_str = eid.replace("-rewrk-process-complete", "").replace("-process-complete", "")
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
@@ -195,12 +227,13 @@ def make_process_complete_handler(
             )
 
         ws.advance(next_id, WipStatus.INSPECTING)
+        suffix = "-rewrk-quality-check" if is_rewrk else "-quality-check"
 
         return HandlerOutcome(
             event_id=event.event_id, success=True,
             state_changes=(f"{wip_id}:processing→inspecting@{next_id}",),
             follow_up_events=(
-                _evt(f"{wip_id}-quality-check",
+                _evt(f"{wip_id}{suffix}",
                      simulation_time_s=event.simulation_time_s,
                      event_type="QUALITY_CHECK", target_id=next_id,
                      causation_id=event.event_id),
@@ -217,18 +250,18 @@ def make_process_complete_handler(
 def make_quality_gate_handler(
     state: AssemblyRuntimeState,
     topology: AssemblyTopology,
-    disposition_map: dict[str, QualityDisposition] | None = None,
+    quality_plan: dict[str, list[QualityDisposition]] | None = None,
 ):
-    """Handler for QualityGate.  Uses pre-configured disposition per WIP.
+    """Handler for QualityGate.  Consumes next disposition from per-WIP plan.
 
-    ``disposition_map`` maps WipId.id to the expected QualityDisposition.
-    If not provided or no entry, defaults to PASS.
+    ``quality_plan`` maps WipId.id to a list of QualityDisposition values
+    consumed in order.  If empty or no entry, defaults to PASS.
     """
 
     def handler(event: ScheduledEvent) -> HandlerOutcome:
         qg_id = event.target_id or "unknown-qg"
 
-        wip_id_str = event.event_id.replace("-quality-check", "")
+        wip_id_str = event.event_id.replace("-rewrk-quality-check", "").replace("-quality-check", "")
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
@@ -239,9 +272,12 @@ def make_quality_gate_handler(
                 follow_up_events=(),
             )
 
+        # Consume next disposition from plan
         disposition = QualityDisposition.PASS
-        if disposition_map and wip_id.id in disposition_map:
-            disposition = disposition_map[wip_id.id]
+        if quality_plan and wip_id.id in quality_plan:
+            plan = quality_plan[wip_id.id]
+            if plan:
+                disposition = plan.pop(0)
 
         ws.advance(qg_id, WipStatus.INSPECTING)
 
@@ -256,10 +292,11 @@ def make_quality_gate_handler(
             )
 
         if disposition == QualityDisposition.PASS:
-            ws.advance(next_id, WipStatus.COMPLETED)
+            # Route toward Sink — Sink owns the final COMPLETED transition
+            ws.advance(next_id, WipStatus.INSPECTING)
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
-                state_changes=(f"{wip_id}:pass→completed@{next_id}",),
+                state_changes=(f"{wip_id}:pass→sink@{next_id}",),
                 follow_up_events=(
                     _evt(f"{wip_id}-sink", simulation_time_s=event.simulation_time_s,
                          event_type="WIP_COMPLETED", target_id=next_id,
@@ -272,7 +309,7 @@ def make_quality_gate_handler(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:rework→processing@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}-process-start",
+                    _evt(f"{wip_id}-rewrk-process-start",
                          simulation_time_s=event.simulation_time_s,
                          event_type="PROCESS_START", target_id=next_id,
                          causation_id=event.event_id),
