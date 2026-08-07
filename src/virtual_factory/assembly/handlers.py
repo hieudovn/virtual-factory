@@ -159,10 +159,13 @@ def make_processor_handler(
             )
         proc: Processor = proc_prim
 
-        # Extract WIP ID: strip known suffixes (-rewrk-process-start, -process-start)
+        # Extract WIP ID: strip known suffixes
         eid = event.event_id
-        is_rewrk = "-rewrk-process-start" in eid
-        wip_id_str = eid.replace("-rewrk-process-start", "").replace("-process-start", "")
+        is_rewrk = "-rewrk-process-start" in eid or "-rewrk-process-complete" in eid
+        # Strip rework prefix first, then target-ID-prefixed suffix, then plain suffix
+        wip_id_str = eid.replace("-rewrk-process-start", "").replace("-rewrk-process-complete", "")
+        import re as _re
+        wip_id_str = _re.sub(r'-(AP\d{2}|[a-z]+-\d+)?-?process-start$', '', wip_id_str)
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
@@ -175,13 +178,14 @@ def make_processor_handler(
 
         ws.advance(proc_id, WipStatus.PROCESSING)
         completion_time = event.simulation_time_s + proc.processing_time_s
-        suffix = "-rewrk-process-complete" if is_rewrk else "-process-complete"
+        # Derive follow-up event_id from incoming event
+        complete_eid = event.event_id.replace("-process-start", "-process-complete")
 
         return HandlerOutcome(
             event_id=event.event_id, success=True,
             state_changes=(f"{wip_id}:processing@{proc_id}",),
             follow_up_events=(
-                _evt(f"{wip_id}{suffix}",
+                _evt(complete_eid,
                      simulation_time_s=completion_time,
                      event_type="PROCESS_COMPLETE", target_id=proc_id,
                      causation_id=event.event_id),
@@ -199,7 +203,7 @@ def make_process_complete_handler(
     state: AssemblyRuntimeState,
     topology: AssemblyTopology,
 ):
-    """Handler for PROCESS_COMPLETE — routes to next primitive (QualityGate)."""
+    """Handler for PROCESS_COMPLETE — routes to next primitive based on its type."""
 
     def handler(event: ScheduledEvent) -> HandlerOutcome:
         proc_id = event.target_id or "unknown-processor"
@@ -214,31 +218,53 @@ def make_process_complete_handler(
 
         # Extract WIP ID: strip known suffixes
         eid = event.event_id
+        import re as _re2
+        wip_id_str = _re2.sub(r'-(AP\d{2}|[a-z]+-\d+)?-?process-complete$', '', eid)
+        wip_id_str = wip_id_str.replace("-rewrk-process-complete", "")
         is_rewrk = "-rewrk-process-complete" in eid
-        wip_id_str = eid.replace("-rewrk-process-complete", "").replace("-process-complete", "")
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
             return HandlerOutcome(
                 event_id=event.event_id, success=False,
                 error_code="unknown_wip",
-                state_changes=(),
-                follow_up_events=(),
+                state_changes=(), follow_up_events=())
+
+        next_prim = topology.get_primitive(next_id)
+        if next_prim is None:
+            return HandlerOutcome(
+                event_id=event.event_id, success=False,
+                error_code="unknown_next", state_changes=(), follow_up_events=())
+
+        if isinstance(next_prim, Processor):
+            # Chain to next processor
+            ws.advance(next_id, WipStatus.PROCESSING)
+            if is_rewrk:
+                suffix = "-rewrk-process-start"
+            else:
+                suffix = f"-{next_id}-process-start"
+            return HandlerOutcome(
+                event_id=event.event_id, success=True,
+                state_changes=(f"{wip_id}:processing→next@{next_id}",),
+                follow_up_events=(
+                    _evt(f"{wip_id}{suffix}", simulation_time_s=event.simulation_time_s,
+                         event_type="PROCESS_START", target_id=next_id,
+                         causation_id=event.event_id),
+                ),
             )
-
-        ws.advance(next_id, WipStatus.INSPECTING)
-        suffix = "-rewrk-quality-check" if is_rewrk else "-quality-check"
-
-        return HandlerOutcome(
-            event_id=event.event_id, success=True,
-            state_changes=(f"{wip_id}:processing→inspecting@{next_id}",),
-            follow_up_events=(
-                _evt(f"{wip_id}{suffix}",
-                     simulation_time_s=event.simulation_time_s,
-                     event_type="QUALITY_CHECK", target_id=next_id,
-                     causation_id=event.event_id),
-            ),
-        )
+        else:
+            # QualityGate or other — route with QUALITY_CHECK
+            ws.advance(next_id, WipStatus.INSPECTING)
+            suffix = "-rewrk-quality-check" if is_rewrk else "-quality-check"
+            return HandlerOutcome(
+                event_id=event.event_id, success=True,
+                state_changes=(f"{wip_id}:processing→inspecting@{next_id}",),
+                follow_up_events=(
+                    _evt(f"{wip_id}{suffix}", simulation_time_s=event.simulation_time_s,
+                         event_type="QUALITY_CHECK", target_id=next_id,
+                         causation_id=event.event_id),
+                ),
+            )
 
     return handler
 
