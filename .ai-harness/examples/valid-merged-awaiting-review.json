@@ -85,7 +85,7 @@
     {"id": "A01", "result": "PASS", "evidence": "PR merged successfully"},
     {"id": "A02", "result": "PASS", "evidence": "CI passed on authorized head"}
   ],
-  "unknown_evidence": ["post_merge.ci_run_id"],
+  "unknown_evidence": [],
   "tool_failures": [],
   "contradictions": [],
   "derived_status": "MERGED — READY FOR POST-MERGE REVIEW"

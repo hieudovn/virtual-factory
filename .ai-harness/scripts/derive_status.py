@@ -219,8 +219,65 @@ def derive_status(evidence: dict) -> str:
             # Platform limitation with compensating controls → may proceed
             # but should be documented, not blocking READY
 
+    # --- Blocking issues ---
+    blocking = evidence.get("blocking_issues", [])
+    if blocking:
+        return "NOT READY — INSUFFICIENT EVIDENCE"
+
     # --- All checks passed → READY ---
     return "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW"
+
+
+# ------------------------------------------------------------------
+# Exit code derivation (separate from status derivation)
+# ------------------------------------------------------------------
+
+def derive_exit_code(status: str, evidence: dict) -> int:
+    """Derive exit code based on status, requested gate, and blocking issues."""
+    requested_gate = evidence.get("requested_gate", "")
+    blocking = evidence.get("blocking_issues", [])
+    contradictions = evidence.get("contradictions", [])
+    tool_failures = evidence.get("tool_failures", [])
+
+    # EXIT 4: Baseline/repository mismatch
+    if "BASELINE" in status:
+        return 4
+
+    # EXIT 3: Required tool or remote evidence unavailable
+    if any(isinstance(tf, dict) and tf.get("execution_stopped") for tf in tool_failures):
+        return 3
+
+    # EXIT 2: Contract/schema/invocation error (not preflight, but malformed)
+    if "PRECHECK" in status:
+        return 2
+
+    # EXIT 5: Harness internal error
+    if evidence.get("execution_mode") == "ci" and not evidence.get("pipeline_steps"):
+        # Internal issue — but this is a soft case; use 1 for now
+        pass
+
+    # EXIT 1: Validly evaluated but not ready (or blocking issues exist)
+    if blocking or contradictions or tool_failures:
+        return 1
+
+    # Gate-specific exit determination
+    if requested_gate == "preflight_only":
+        return 0  # preflight-only passes if no baseline issues
+    elif requested_gate == "implemented_remote":
+        return 0 if "IMPLEMENTED" in status and "NOT PUSHED" not in status and "LOCALLY" not in status else 1
+    elif requested_gate == "ready_for_sa_review":
+        return 0 if status == "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW" else 1
+    elif requested_gate == "merged":
+        return 0 if "MERGED" in status else 1
+    elif requested_gate == "post_merge_verified":
+        return 0 if "POST-MERGE VERIFIED" in status else 1
+    elif requested_gate == "report_only":
+        return 0  # Report generated successfully
+    else:
+        # No explicit gate — use status-based logic
+        if "NOT READY" in status or "STOPPED" in status or "PRECHECK" in status:
+            return 1
+        return 0
 
 
 def main() -> None:
@@ -237,41 +294,48 @@ def main() -> None:
         "--reported-status",
         help="Optional: compare derived status against a reported status",
     )
+    parser.add_argument(
+        "--requested-gate",
+        help="Override evidence requested_gate for exit code determination",
+    )
     args = parser.parse_args()
 
     evidence = load_evidence(args.evidence_file)
-    derived = derive_status(evidence)
+    status = derive_status(evidence)
 
-    print(f"Derived status: {derived}")
+    # Set requested gate from args or evidence
+    if args.requested_gate:
+        evidence["requested_gate"] = args.requested_gate
 
-    # Validate that derived status is in the allowed set
-    if derived in _FORBIDDEN_DERIVED:
-        print(f"ERROR: '{derived}' must not be machine-derived!")
+    exit_code = derive_exit_code(status, evidence)
+    requested = evidence.get("requested_gate", "")
+    gate_satisfied = exit_code == 0
+    blocking = evidence.get("blocking_issues", [])
+
+    print(f"Derived status: {status}")
+    print(f"Requested gate: {requested}")
+    print(f"Gate satisfied: {gate_satisfied}")
+    print(f"Exit code: {exit_code}")
+    if blocking:
+        print(f"Blocking issues: {len(blocking)}")
+
+    # Validate non-machine-derived statuses
+    if status in _FORBIDDEN_DERIVED:
+        print(f"ERROR: '{status}' must not be machine-derived!")
         sys.exit(2)
 
-    if derived not in _VALID_DERIVED_STATUSES:
-        print(f"ERROR: '{derived}' is not a recognized status!")
+    if status not in _VALID_DERIVED_STATUSES:
+        print(f"ERROR: '{status}' is not a recognized status!")
         sys.exit(2)
 
     # Compare if requested
     if args.reported_status:
-        reported = args.reported_status
-        if reported != derived:
-            print(f"MISMATCH: reported '{reported}' ≠ derived '{derived}'")
+        if args.reported_status != status:
+            print(f"MISMATCH: reported '{args.reported_status}' ≠ derived '{status}'")
             sys.exit(1)
-        else:
-            print("Status matches reported status.")
-            sys.exit(0)
+        print("Status matches reported status.")
 
-    # Exit 0 for READY, non-zero for not-ready statuses
-    if "NOT READY" in derived or "STOPPED" in derived or "PRECHECK" in derived:
-        sys.exit(1)
-    elif "READY" in derived or "VERIFIED" in derived or "MERGED" in derived:
-        sys.exit(0)
-    elif "BLOCKED" in derived:
-        sys.exit(1)
-    else:
-        sys.exit(1)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

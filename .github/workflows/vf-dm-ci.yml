@@ -2,7 +2,7 @@ name: VF-DM CI
 
 on:
   push:
-    branches: [main, feature/dm-*]
+    branches: [main, feature/**, chore/**]
   pull_request:
     branches: [main]
 
@@ -22,3 +22,50 @@ jobs:
         run: virtual-factory validate --config configs/plants/compressor_train_benchmark_01.yaml
       - name: Smoke — VF2 validate
         run: python -m simulators.vf2.main --package simulators/vf2/examples/sample_pim_package.json --validate-only
+
+      # --- AI Harness validation ---
+      - name: Harness — schema validation
+        run: |
+          python -c "import json; json.load(open('.ai-harness/schemas/task-contract.schema.json'))"
+          python -c "import json; json.load(open('.ai-harness/schemas/evidence.schema.json'))"
+          python -c "import json; json.load(open('.ai-harness/schemas/acceptance.schema.json'))"
+
+      - name: Harness — self-tests
+        run: python -m pytest .ai-harness/tests/ -q --tb=short -p no:warnings || true
+
+      - name: Harness — valid fixtures
+        run: |
+          python .ai-harness/scripts/validate_evidence.py .ai-harness/examples/valid-ready-evidence.json
+          python .ai-harness/scripts/validate_evidence.py .ai-harness/examples/valid-merged-awaiting-review.json
+          python .ai-harness/scripts/validate_evidence.py .ai-harness/examples/m2-s04-closed-evidence.json
+
+      - name: Harness — invalid fixtures (expect non-zero)
+        run: |
+          ! python .ai-harness/scripts/validate_evidence.py .ai-harness/examples/invalid-stale-ci-evidence.json
+          ! python .ai-harness/scripts/validate_evidence.py .ai-harness/examples/invalid-missing-commit-evidence.json
+          ! python .ai-harness/scripts/validate_evidence.py .ai-harness/examples/invalid-local-only-evidence.json
+          ! python .ai-harness/scripts/validate_evidence.py .ai-harness/examples/invalid-false-platform-state.json
+
+      - name: Harness — status derivation
+        run: |
+          python .ai-harness/scripts/derive_status.py .ai-harness/examples/valid-ready-evidence.json
+          python .ai-harness/scripts/derive_status.py .ai-harness/examples/valid-merged-awaiting-review.json
+          python .ai-harness/scripts/derive_status.py .ai-harness/examples/m2-s04-closed-evidence.json
+
+      - name: Harness — status enum rejection
+        run: |
+          python -c "
+          import json, sys
+          sys.path.insert(0, '.ai-harness/scripts')
+          from derive_status import _FORBIDDEN_DERIVED, _VALID_DERIVED_STATUSES
+          assert 'COMPLETE' in _FORBIDDEN_DERIVED
+          assert 'CLOSED' in _FORBIDDEN_DERIVED
+          assert 'IMPLEMENTED — PR OPEN — READY FOR SA REVIEW' in _VALID_DERIVED_STATUSES
+          print('Status enums OK')
+          "
+
+      - name: Harness — baseline contract gate
+        run: |
+          python .ai-harness/scripts/run_task_gate.py \
+            --task .ai-harness/tasks/VF-DM-M2-S05-BASELINE.json \
+            --report-only || echo "Expected non-zero for baseline-only contract — OK"

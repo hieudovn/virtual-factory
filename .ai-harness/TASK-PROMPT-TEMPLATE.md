@@ -2,16 +2,21 @@
 
 > **This task is governed by**: `.ai-harness/PM-EXECUTION-CONTRACT.md`
 >
+> **Task contract**: `.ai-harness/tasks/<TASK-ID>.json`
+>
+> Before modifying files: run task-contract validation and preflight.
+>
+> Before final reporting: run the full task gate.
+>
+> Use only the machine-derived status.
+>
+> Do not merge or start the next slice unless explicitly authorized for the exact current head SHA.
+>
 > The contract is mandatory.
 >
-> Convenience, speed, inferred intent and similarity to previous tasks do not override the contract.
->
-> Planning is not implementation.
-> Implementation is not readiness.
-> Local state is not remote completion.
-> UNKNOWN is not PASS.
-> Tool failure is not PASS.
-> Stale CI is not valid CI.
+> Planning is not implementation. Implementation is not readiness.
+> Local state is not remote completion. UNKNOWN is not PASS.
+> Tool failure is not PASS. Stale CI is not valid CI.
 > Desired policy is not actual platform state.
 > Deterministic tests are not live verification.
 > The PM may not self-certify COMPLETE or CLOSED.
