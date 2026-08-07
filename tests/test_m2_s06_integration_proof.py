@@ -184,6 +184,40 @@ class TestTraceAndSnapshot:
         assert d.max_processed_events_limit == 100
         assert d.same_time_event_limit == 50
 
+    def test_state_changes_preserved_in_trace(self):
+        """M2-S06-C01: HandlerOutcome.state_changes preserved in trace entries."""
+        reg, _ = _build_job_registry()
+        engine = DiscreteSimulationEngine(_rc(), reg, trace_capacity=10)
+        engine.initialize([_evt("start", simulation_time_s=0.0, event_type="JOB_START")])
+
+        for _ in range(10):
+            if engine.status.value in ("completed", "stopped", "failed"):
+                break
+            engine.step_event()
+
+        trace = engine.to_snapshot().recent_events
+        assert len(trace) == 3
+
+        # JOB_START → job-001:created→started
+        assert trace[0].event_type == "JOB_START"
+        assert "job-001:created→started" in trace[0].state_changes
+
+        # JOB_PROCESS → job-001:started→processed
+        assert trace[1].event_type == "JOB_PROCESS"
+        assert "job-001:started→processed" in trace[1].state_changes
+
+        # JOB_CHECK → job-001:processed→completed
+        assert trace[2].event_type == "JOB_CHECK"
+        assert "job-001:processed→completed" in trace[2].state_changes
+
+        # Full chain verification
+        all_changes = [sc for t in trace for sc in t.state_changes]
+        assert all_changes == [
+            "job-001:created→started",
+            "job-001:started→processed",
+            "job-001:processed→completed",
+        ]
+
 
 class TestDeterminism:
     """M2-S06-F: Deterministic replay equivalence."""
