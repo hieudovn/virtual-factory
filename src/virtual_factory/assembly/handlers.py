@@ -300,6 +300,8 @@ def make_quality_gate_handler(
     consumed in order.  If empty or no entry, defaults to PASS.
     """
 
+    rework_counts: dict[str, int] = {}
+
     def handler(event: ScheduledEvent) -> HandlerOutcome:
         qg_id = event.target_id or "unknown-qg"
 
