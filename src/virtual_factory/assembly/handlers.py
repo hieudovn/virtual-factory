@@ -19,11 +19,23 @@ from virtual_factory.discrete.dispatcher import HandlerOutcome
 from virtual_factory.discrete.events import ScheduledEvent
 
 
+def _get_wip_id(event: ScheduledEvent) -> str | None:
+    """Extract WIP identity from event payload.  Returns None if absent."""
+    if event.payload and isinstance(event.payload, dict):
+        return event.payload.get("wip_id")
+    return None
+
+
 def _evt(event_id: str, simulation_time_s: float = 0.0, event_type: str = "",
-        target_id: str = "", causation_id: str | None = None) -> ScheduledEvent:
+        target_id: str = "", causation_id: str | None = None,
+        wip_id: str | None = None) -> ScheduledEvent:
+    """Create a ScheduledEvent, optionally carrying WIP identity in payload."""
+    payload = {"wip_id": wip_id} if wip_id else None
     return ScheduledEvent(
         event_id=event_id, simulation_time_s=simulation_time_s, event_type=event_type,
         target_id=target_id, causation_id=causation_id,
+        correlation_id=wip_id,
+        payload=payload,
     )
 
 
@@ -63,7 +75,8 @@ def make_source_handler(
             state_changes=(f"{wip_id}:created→queued@{next_id}",),
             follow_up_events=(
                 _evt(f"{wip_id}-arrive", simulation_time_s=event.simulation_time_s,
-                     event_type="WIP_QUEUED", target_id=next_id, causation_id=event.event_id),
+                     event_type="WIP_QUEUED", target_id=next_id,
+                     causation_id=event.event_id, wip_id=str(wip_id)),
             ),
         )
 
@@ -90,7 +103,11 @@ def make_buffer_handler(
         buf: Buffer = buf_prim
         state.ensure_buffer(buf)
 
-        wip_id_str = event.event_id.replace("-arrive", "")
+        wip_id_str = _get_wip_id(event)
+        if wip_id_str is None:
+            return HandlerOutcome(
+                event_id=event.event_id, success=False,
+                error_code="missing_wip_id", state_changes=(), follow_up_events=())
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
@@ -130,7 +147,7 @@ def make_buffer_handler(
             follow_up_events=(
                 _evt(f"{wip_id}-process-start", simulation_time_s=event.simulation_time_s,
                      event_type="PROCESS_START", target_id=next_id,
-                     causation_id=event.event_id),
+                     causation_id=event.event_id, wip_id=str(wip_id)),
             ),
         )
 
@@ -153,19 +170,14 @@ def make_processor_handler(
         if proc_prim is None or not isinstance(proc_prim, Processor):
             return HandlerOutcome(
                 event_id=event.event_id, success=False,
-                error_code="invalid_processor",
-                state_changes=(),
-                follow_up_events=(),
-            )
+                error_code="invalid_processor", state_changes=(), follow_up_events=())
         proc: Processor = proc_prim
 
-        # Extract WIP ID: strip known suffixes
-        eid = event.event_id
-        is_rewrk = "-rewrk-process-start" in eid or "-rewrk-process-complete" in eid
-        # Strip rework prefix first, then target-ID-prefixed suffix, then plain suffix
-        wip_id_str = eid.replace("-rewrk-process-start", "").replace("-rewrk-process-complete", "")
-        import re as _re
-        wip_id_str = _re.sub(r'-(AP\d{2}|[a-z]+-\d+)?-?process-start$', '', wip_id_str)
+        wip_id_str = _get_wip_id(event)
+        if wip_id_str is None:
+            return HandlerOutcome(
+                event_id=event.event_id, success=False,
+                error_code="missing_wip_id", state_changes=(), follow_up_events=())
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
@@ -178,8 +190,8 @@ def make_processor_handler(
 
         ws.advance(proc_id, WipStatus.PROCESSING)
         completion_time = event.simulation_time_s + proc.processing_time_s
-        # Derive follow-up event_id from incoming event
-        complete_eid = event.event_id.replace("-process-start", "-process-complete")
+        # Unique event ID using target_id
+        complete_eid = f"{wip_id}-{proc_id}-process-complete"
 
         return HandlerOutcome(
             event_id=event.event_id, success=True,
@@ -188,7 +200,7 @@ def make_processor_handler(
                 _evt(complete_eid,
                      simulation_time_s=completion_time,
                      event_type="PROCESS_COMPLETE", target_id=proc_id,
-                     causation_id=event.event_id),
+                     causation_id=event.event_id, wip_id=str(wip_id)),
             ),
         )
 
@@ -216,12 +228,11 @@ def make_process_complete_handler(
                 follow_up_events=(),
             )
 
-        # Extract WIP ID: strip known suffixes
-        eid = event.event_id
-        import re as _re2
-        wip_id_str = _re2.sub(r'-(AP\d{2}|[a-z]+-\d+)?-?process-complete$', '', eid)
-        wip_id_str = wip_id_str.replace("-rewrk-process-complete", "")
-        is_rewrk = "-rewrk-process-complete" in eid
+        wip_id_str = _get_wip_id(event)
+        if wip_id_str is None:
+            return HandlerOutcome(
+                event_id=event.event_id, success=False,
+                error_code="missing_wip_id", state_changes=(), follow_up_events=())
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
@@ -237,32 +248,27 @@ def make_process_complete_handler(
                 error_code="unknown_next", state_changes=(), follow_up_events=())
 
         if isinstance(next_prim, Processor):
-            # Chain to next processor
             ws.advance(next_id, WipStatus.PROCESSING)
-            if is_rewrk:
-                suffix = "-rewrk-process-start"
-            else:
-                suffix = f"-{next_id}-process-start"
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:processing→next@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}{suffix}", simulation_time_s=event.simulation_time_s,
+                    _evt(f"{wip_id}-{next_id}-process-start",
+                         simulation_time_s=event.simulation_time_s,
                          event_type="PROCESS_START", target_id=next_id,
-                         causation_id=event.event_id),
+                         causation_id=event.event_id, wip_id=str(wip_id)),
                 ),
             )
         else:
-            # QualityGate or other — route with QUALITY_CHECK
             ws.advance(next_id, WipStatus.INSPECTING)
-            suffix = "-rewrk-quality-check" if is_rewrk else "-quality-check"
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:processing→inspecting@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}{suffix}", simulation_time_s=event.simulation_time_s,
+                    _evt(f"{wip_id}-quality-check",
+                         simulation_time_s=event.simulation_time_s,
                          event_type="QUALITY_CHECK", target_id=next_id,
-                         causation_id=event.event_id),
+                         causation_id=event.event_id, wip_id=str(wip_id)),
                 ),
             )
 
@@ -287,7 +293,11 @@ def make_quality_gate_handler(
     def handler(event: ScheduledEvent) -> HandlerOutcome:
         qg_id = event.target_id or "unknown-qg"
 
-        wip_id_str = event.event_id.replace("-rewrk-quality-check", "").replace("-quality-check", "")
+        wip_id_str = _get_wip_id(event)
+        if wip_id_str is None:
+            return HandlerOutcome(
+                event_id=event.event_id, success=False,
+                error_code="missing_wip_id", state_changes=(), follow_up_events=())
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
@@ -318,7 +328,6 @@ def make_quality_gate_handler(
             )
 
         if disposition == QualityDisposition.PASS:
-            # Route toward Sink — Sink owns the final COMPLETED transition
             ws.advance(next_id, WipStatus.INSPECTING)
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
@@ -326,7 +335,7 @@ def make_quality_gate_handler(
                 follow_up_events=(
                     _evt(f"{wip_id}-sink", simulation_time_s=event.simulation_time_s,
                          event_type="WIP_COMPLETED", target_id=next_id,
-                         causation_id=event.event_id),
+                         causation_id=event.event_id, wip_id=str(wip_id)),
                 ),
             )
         else:  # REWORK
@@ -335,10 +344,10 @@ def make_quality_gate_handler(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:rework→processing@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}-rewrk-process-start",
+                    _evt(f"{wip_id}-{next_id}-process-start",
                          simulation_time_s=event.simulation_time_s,
                          event_type="PROCESS_START", target_id=next_id,
-                         causation_id=event.event_id),
+                         causation_id=event.event_id, wip_id=str(wip_id)),
                 ),
             )
 
@@ -355,7 +364,11 @@ def make_sink_handler(
     """Handler for Sink.  Terminal — marks WIP as COMPLETED."""
 
     def handler(event: ScheduledEvent) -> HandlerOutcome:
-        wip_id_str = event.event_id.replace("-sink", "")
+        wip_id_str = _get_wip_id(event)
+        if wip_id_str is None:
+            return HandlerOutcome(
+                event_id=event.event_id, success=False,
+                error_code="missing_wip_id", state_changes=(), follow_up_events=())
         wip_id = WipId(wip_id_str)
         ws = state.get_wip(wip_id)
         if ws is None:
