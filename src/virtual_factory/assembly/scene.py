@@ -13,7 +13,6 @@ from typing import Any
 from virtual_factory.assembly.projection import (
     AssemblyProjection,
 )
-from virtual_factory.assembly.topology import AssemblyTopology
 
 
 # ═══════════════════════════════════════
@@ -115,13 +114,15 @@ class SimulationScene:
 
 def build_scene(
     projection: AssemblyProjection,
-    topology: AssemblyTopology,
     layout: LayoutDefinition,
 ) -> SimulationScene:
-    """Build a SimulationScene from projection + topology + layout."""
+    """Build a SimulationScene from projection + layout.
+
+    Uses projection.edges (not AssemblyTopology) for the edge list.
+    """
 
     nodes = _build_nodes(projection, layout)
-    edges = _build_edges(topology, layout, projection)
+    edges = _build_edges(projection, layout)
     wips = _build_wips(projection, layout)
     markers = _build_markers(projection)
 
@@ -165,15 +166,15 @@ def _build_nodes(proj: AssemblyProjection, layout: LayoutDefinition) -> list[Nod
     return nodes
 
 
-def _build_edges(topology: AssemblyTopology, layout: LayoutDefinition,
-                 proj: AssemblyProjection) -> list[EdgeView]:
+def _build_edges(proj: AssemblyProjection,
+                 layout: LayoutDefinition) -> list[EdgeView]:
     edges: list[EdgeView] = []
     active_wip_locations = {w.location for w in proj.wips}
-    for (from_id, disp), to_id in topology.edges.items():
-        edge_id = f"{from_id}->{to_id}"
-        if disp:
-            edge_id += f":{disp}"
-        highlight = from_id in active_wip_locations
+    for ev in proj.edges:
+        edge_id = f"{ev.from_id}->{ev.to_id}"
+        if ev.disposition:
+            edge_id += f":{ev.disposition}"
+        highlight = ev.from_id in active_wip_locations
         route = layout.edges
         path: list[tuple[float, float]] = []
         for er in route:
@@ -182,9 +183,9 @@ def _build_edges(topology: AssemblyTopology, layout: LayoutDefinition,
                 break
         edges.append(EdgeView(
             edge_id=edge_id,
-            from_node=from_id,
-            to_node=to_id,
-            disposition=disp,
+            from_node=ev.from_id,
+            to_node=ev.to_id,
+            disposition=ev.disposition,
             highlight=highlight,
             path=path,
         ))

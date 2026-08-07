@@ -143,15 +143,14 @@ def project_assembly(
     ]
 
     # --- WIPs ---
-    # Derive flow_id from trace entries: parse wip_id from event_id convention
-    # (e.g. "wip-0001-create" → "wip-0001"). Default flow_id = "base".
-    # Rework events (event_type containing "REWORK") tag rework-N.
+    # identity: EventTraceEntry.correlation_id (authoritative)
+    # flow: derived from event_id naming convention {wip_id}-{flow}-{suffix}
     wip_flows: dict[str, str] = {}
     for e in snap.recent_events:
-        wip_id = _parse_wip_id_from_event_id(e.event_id)
-        if wip_id is None:
+        if not e.correlation_id:
             continue
-        flow_id = "rework-1" if "REWORK" in e.event_type.upper() else "base"
+        wip_id = e.correlation_id
+        flow_id = _derive_flow_id(e.event_id, wip_id)
         wip_flows[wip_id] = flow_id
 
     wips = [
@@ -194,15 +193,28 @@ def project_assembly(
 # Internal helpers
 # ═══════════════════════════════════════════════════
 
-def _parse_wip_id_from_event_id(event_id: str) -> str | None:
-    """Parse wip_id from event_id convention: '<wip_id>-<suffix>'."""
-    if not event_id or "-" not in event_id:
-        return None
-    # wip_id is everything before the last "-<suffix>"
-    parts = event_id.rsplit("-", 1)
-    if len(parts) == 2 and parts[1]:
-        return parts[0]
-    return None
+def _derive_flow_id(event_id: str, wip_id: str) -> str:
+    """Derive flow_id from event_id naming convention.
+
+    Pattern: {wip_id}-{flow_id}-{suffix...}
+
+    Examples:
+        wip-0001-base-AP04-process-start      → base
+        wip-0001-rework-1-AP04-process-start  → rework-1
+        wip-0001-rework-2-AP05-process-complete → rework-2
+    """
+    prefix = wip_id + "-"
+    if not event_id.startswith(prefix):
+        return "base"
+    remainder = event_id[len(prefix):]
+    parts = remainder.split("-")
+    if not parts:
+        return "base"
+    if parts[0] == "base":
+        return "base"
+    if parts[0] == "rework" and len(parts) >= 2:
+        return f"rework-{parts[1]}"
+    return "base"
 
 
 def _project_primitive(p: AssemblyPrimitive) -> PrimitiveView:
