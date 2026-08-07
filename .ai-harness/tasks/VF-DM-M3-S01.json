@@ -34,7 +34,7 @@
     "M3-S01-A: Primitive construction validation",
     "M3-S01-B: Domain identity — stable deterministic IDs",
     "M3-S01-C: WIP state representation",
-    "M3-S01-D: Buffer enqueue/dequeue/capacity",
+    "M3-S01-D: Buffer capacity declaration and invariants",
     "M3-S01-E: Quality disposition pass/fail/rework",
     "M3-S01-F: Domain neutrality — no TIPA coupling",
     "M3-S01-G: M2 regression preserved"

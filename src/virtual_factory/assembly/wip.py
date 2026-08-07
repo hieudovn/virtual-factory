@@ -54,6 +54,10 @@ class WipState:
     location: str = ""           # current primitive/station ID
     status: WipStatus = WipStatus.CREATED
     step_count: int = 0          # number of processing steps completed
+    # M3-S01 note: step_count increments for every advance() and must
+    # not yet be interpreted as count of completed production operations.
+    # M3-S02 should either treat it as generic progression count or
+    # introduce clearer operation semantics if required by runtime handlers.
 
     def __post_init__(self) -> None:
         if not isinstance(self.wip_id, WipId):
