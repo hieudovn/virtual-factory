@@ -15,7 +15,7 @@ SCRIPTS = HARNESS / "scripts"
 TRACES = HARNESS / "traces"
 ROOT = HARNESS.parent
 
-CANONICAL_IDS = [f"P{i:02d}" for i in range(1, 24)]  # P01-P23 canonical; P24 post-pipeline
+CANONICAL_IDS = [f"P{i:02d}" for i in range(1, 25)]  # P01-P24 canonical
 
 
 def _git(args: list[str]) -> str:
@@ -102,6 +102,44 @@ def _exit_code(status: str, evidence: dict, gate: str, report_only: bool) -> int
     return 1 if "NOT READY" in status else 6
 
 
+def _resolve_pr(contract: dict, token: str | None) -> int | None:
+    """Resolve the open PR for the task's required_branch with base=main.
+
+    Returns PR number or None if zero or multiple qualifying PRs found.
+    """
+    import urllib.request, urllib.error
+    branch = contract.get("required_branch", "")
+    repo = contract.get("repository", "hieudovn/virtual-factory")
+    if not branch or not token:
+        return None
+    url = (f"https://api.github.com/repos/{repo}/pulls"
+           f"?head={repo.split('/')[0]}:{branch}&base=main&state=open&per_page=5")
+    req = urllib.request.Request(url)
+    req.add_header("Authorization", f"Bearer {token}")
+    req.add_header("Accept", "application/vnd.github+json")
+    req.add_header("User-Agent", "ai-harness/2.0")
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            prs = json.loads(r.read().decode())
+    except Exception as e:
+        print(f"  PR resolution API error: {e}")
+        return None
+    if isinstance(prs, dict) and "message" in prs:
+        print(f"  PR resolution API error: {prs['message']}")
+        return None
+    qualifying = [p for p in prs if isinstance(p, dict) and p.get("head", {}).get("ref") == branch]
+    if len(qualifying) == 1:
+        pr_num = qualifying[0]["number"]
+        print(f"  Resolved PR #{pr_num} for branch '{branch}'")
+        return pr_num
+    elif len(qualifying) == 0:
+        print(f"  No open PR found for branch '{branch}' with base=main")
+        return None
+    else:
+        print(f"  Ambiguous: {len(qualifying)} open PRs for branch '{branch}'")
+        return None
+
+
 def run_task_gate(task_path: str, report_only: bool = False, token: str | None = None) -> tuple[str, dict, int]:
     t0 = time.time()
     reg = PipelineRegistry()
@@ -161,8 +199,16 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
               "ci": {"run_id": None, "head_sha": "", "step_name": "", "result": "NOT_EXECUTED", "conclusion": ""},
               "effective_result": "UNKNOWN"}
         if policy in ("local_required", "local_and_ci", "local_or_ci"):
+            cmd = spec["command"]
+            # C04: translate virtual-factory console-script to python invocation
+            # when console_scripts are not on PATH in the subprocess environment
+            if cmd and cmd[0] == "virtual-factory":
+                import shlex
+                args_repr = repr(cmd[1:])
+                cmd = [sys.executable, "-c",
+                       f"import sys; from virtual_factory.main import main; sys.argv[1:]={args_repr}; main()"]
             try:
-                p = subprocess.run(spec["command"], capture_output=True, text=True, cwd=ROOT, timeout=60)
+                p = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, timeout=60)
                 sr["local"] = {"executed": True, "result": "PASS" if p.returncode == 0 else "FAIL",
                                 "exit_code": p.returncode, "reason": p.stderr[:200] if p.returncode != 0 else ""}
             except Exception as e:
@@ -179,8 +225,11 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     print("\n" + "=" * 50 + "\nP08-P09: Remote + PR")
     sha = evidence["implementation"]["commit_sha"]
     branch = evidence["preflight"]["current_branch"]
+    resolved_pr = _resolve_pr(contract, token)
     with open(ep, "w") as f: json.dump(evidence, f)
-    rmt = _run("verify_remote_state.py", [str(ep), "--commit-sha", sha, "--branch", branch, "--pr", "4"] +
+    pr_arg = [str(resolved_pr)] if resolved_pr is not None else []
+    rmt = _run("verify_remote_state.py", [str(ep), "--commit-sha", sha, "--branch", branch] +
+               (["--pr"] + pr_arg if pr_arg else []) +
                (["--token", token] if token else []))
     print(rmt.stdout or ""); reg.record("P08", "Remote state", True, "PASS" if rmt.returncode == 0 else "FAIL")
     with open(ep) as f: evidence = json.load(f)
@@ -347,7 +396,7 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
             rc3 = _run("validate_report_consistency.py", [str(pep), str(rp_prov)])
             if ev3.returncode == 0 and rc3.returncode == 0: stable = True; break
     if not stable:
-        reg.record("P22", "Validate provisional", True, "FAIL")
+        reg.update_result("P22", "FAIL")
         return final_status, evidence, 5
 
     # P23: Final assertions — compute final pipeline_integrity FIRST, then evaluate

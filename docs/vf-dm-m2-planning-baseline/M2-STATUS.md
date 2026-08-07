@@ -1,7 +1,7 @@
 # M2 — Discrete Runtime Core Status
 
 **Date:** 2026-08-07
-**Last Updated:** CAPA-01 governance PR
+**Last Updated:** M2-S06 merge + harness C06 start
 
 | Slice | Status | Branch | Main Commit | Tests |
 |-------|--------|--------|-------------|-------|
@@ -14,8 +14,8 @@
 | M2-S04-C02 | COMPLETE | — | `7d34022` | 668 |
 | M2-S05 | **CLOSED** | `feature/dm-m2-s05` (merged #5) | `a1a4f34` | 688 |
 | M2-S05-C01 | COMPLETE | — | `8b794a3` | 688 |
-| M2-S06 | **IN PROGRESS** | `feature/dm-m2-s06` | `a1a4f34` | 701 |
-| M2-S06-C01 | IN PROGRESS | — | `f743bc6` | 701 |
+| M2-S06 | **CLOSED** | `feature/dm-m2-s06` (merged #6) | `f8870af` | 701 |
+| M2-S06-C01 | COMPLETE | — | `0a37ffe` | 701 |
 | M2-S07 | PENDING | — | — | — |
 
 ---
