@@ -6,7 +6,7 @@
   "explicit_non_objectives": ["M2-S05", "M2-S06", "PR merge", "Harness redesign"],
   "required_branch": "chore/ai-pm-execution-harness",
   "expected_base_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
-  "allowed_paths": [".ai-harness/tasks/", ".ai-harness/tests/", ".ai-harness/scripts/", ".github/workflows/"],
+  "allowed_paths": [".ai-harness/", ".github/workflows/", ".cursor/", "AGENTS.md", ".gitignore", "docs/"],
   "forbidden_paths": ["src/virtual_factory/discrete/"],
   "required_deliverables": ["C03 contract with executable rules", "Phase-aware acceptance evaluator", "Contract completeness tests"],
   "required_tests": ["All harness tests pass", "All 668 regression tests pass"],
