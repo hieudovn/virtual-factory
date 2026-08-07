@@ -12,7 +12,12 @@
   "expected_base_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
   "allowed_paths": [
     ".ai-harness/",
-    ".github/workflows/vf-dm-ci.yml"
+    ".github/workflows/",
+    ".cursor/",
+    "AGENTS.md",
+    ".gitignore",
+    "docs/vf-dm-m2-planning-baseline/M2-STATUS.md",
+    "docs/governance/"
   ],
   "forbidden_paths": [
     "src/virtual_factory/discrete/",
