@@ -214,7 +214,9 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
         if policy in ("local_required", "local_and_ci", "local_or_ci"):
             cmd = _normalize_smoke_command(spec["command"])
             try:
-                p = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, timeout=60)
+                # C07: normalize subprocess env for Unicode output on Windows
+                smoke_env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+                p = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, timeout=60, env=smoke_env)
                 sr["local"] = {"executed": True, "result": "PASS" if p.returncode == 0 else "FAIL",
                                 "exit_code": p.returncode, "reason": p.stderr[:200] if p.returncode != 0 else ""}
             except Exception as e:
