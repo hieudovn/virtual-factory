@@ -1,0 +1,77 @@
+{
+  "task_id": "VF-DM-M2-S05-BASELINE",
+  "repository": "hieudovn/virtual-factory",
+  "objective": "Establish a governed execution baseline for M2-S05 discrete simulation work. This contract authorizes preparation only — it does not define M2-S05 technical design and does not implement any M2-S05 feature scope.",
+  "explicit_non_objectives": [
+    "M2-S05 feature implementation",
+    "M2-S05 technical design definition",
+    "Engine behavior changes",
+    "Controller behavior changes",
+    "Domain logic changes",
+    "M2-S06 authorization"
+  ],
+  "required_branch": "feature/dm-m2-s05",
+  "expected_base_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
+  "allowed_paths": [
+    "src/virtual_factory/discrete/",
+    "tests/",
+    "configs/",
+    ".ai-harness/tasks/"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/__init__.py",
+    "src/virtual_factory/discrete/__init__.py"
+  ],
+  "required_deliverables": [
+    "M2-S05 implementation committed and pushed",
+    "M2-S05 tests (new + existing regression)",
+    "M2-S05 PR opened against main"
+  ],
+  "required_tests": [
+    "All existing 668 regression tests must pass",
+    "New M2-S05 tests must be added"
+  ],
+  "required_smoke_checks": [
+    "virtual-factory validate --config configs/plants/compressor_train_benchmark_01.yaml"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists",
+    "pr_exists",
+    "pr_open",
+    "pr_not_draft",
+    "pr_base_is_main",
+    "exact_head_ci",
+    "ci_conclusion_success"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_start_m2_s06",
+    "do_not_self_certify_complete",
+    "do_not_delete_tests"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "baseline_advanced",
+    "regression_failure",
+    "tool_failure_for_required_evidence"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "description": "M2-S04 regression baseline (668 tests) preserved or legitimately increased"},
+    {"id": "A02", "description": "New M2-S05 tests pass"},
+    {"id": "A03", "description": "M2-S05 code committed to feature/dm-m2-s05 and pushed"},
+    {"id": "A04", "description": "PR opened against main, not draft, base correct"},
+    {"id": "A05", "description": "CI passes on exact PR head SHA"},
+    {"id": "A06", "description": "Smoke validation passes"},
+    {"id": "A07", "description": "PR remains unmerged (SA authorization required)"},
+    {"id": "A08", "description": "No forbidden actions performed"},
+    {"id": "A09", "description": "M2-S06 not started or authorized"},
+    {"id": "A10", "description": "Status derived by harness, not manually chosen"}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  },
+  "_note": "This file authorizes preparation and governed execution of M2-S05 tasks. It does not define the technical design of M2-S05. It does not authorize arbitrary scope. It does not authorize merge. It does not authorize M2-S06."
+}

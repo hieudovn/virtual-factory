@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtual-factory.ai-harness/schemas/evidence.schema.json",
+  "title": "Evidence Record",
+  "description": "Structured evidence record for a governed task execution.",
+  "type": "object",
+  "required": ["task_id", "repository"],
+  "properties": {
+    "task_id": { "type": "string" },
+    "repository": { "type": "string" },
+    "interpretation": {
+      "type": "object",
+      "properties": {
+        "objective": { "type": "string" },
+        "deliverables": { "type": "array", "items": { "type": "string" } },
+        "non_deliverables": { "type": "array", "items": { "type": "string" } },
+        "forbidden_actions": { "type": "array", "items": { "type": "string" } },
+        "stop_conditions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "preflight": {
+      "type": "object",
+      "properties": {
+        "current_branch": { "type": "string" },
+        "working_tree_clean": { "type": "boolean" },
+        "local_head": { "type": "string" },
+        "remote_branch_head": { "type": "string" },
+        "remote_main_head": { "type": "string" },
+        "expected_base_sha": { "type": "string" },
+        "baseline_match": { "type": "boolean" }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "properties": {
+        "post_execution_local_head": { "type": "string" },
+        "commit_sha": { "type": "string" },
+        "commit_exists_locally": { "type": "boolean" },
+        "commit_exists_remotely": { "type": "boolean" },
+        "changed_files": { "type": "array", "items": { "type": "string" } },
+        "remote_branch_head": { "type": "string" }
+      }
+    },
+    "pull_request": {
+      "type": "object",
+      "properties": {
+        "number": { "type": ["integer", "null"] },
+        "state": { "type": "string" },
+        "base_branch": { "type": "string" },
+        "base_sha": { "type": "string" },
+        "head_branch": { "type": "string" },
+        "head_sha": { "type": "string" },
+        "draft": { "type": ["boolean", "null"] },
+        "merged": { "type": ["boolean", "null"] },
+        "merged_at": { "type": ["string", "null"] },
+        "merge_commit_sha": { "type": "string" }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "properties": {
+        "collected": { "type": ["integer", "null"] },
+        "passed": { "type": ["integer", "null"] },
+        "failed": { "type": ["integer", "null"] },
+        "warnings": { "type": ["integer", "null"] },
+        "commands": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ci": {
+      "type": "object",
+      "properties": {
+        "run_id": { "type": ["integer", "null"] },
+        "event": { "type": "string" },
+        "workflow": { "type": "string" },
+        "branch": { "type": "string" },
+        "head_sha": { "type": "string" },
+        "conclusion": { "type": "string" },
+        "annotations": { "type": ["integer", "null"] },
+        "required_steps": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "post_merge": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "boolean" },
+        "new_main_sha": { "type": "string" },
+        "main_contains_change": { "type": ["boolean", "null"] },
+        "ci_run_id": { "type": ["integer", "null"] },
+        "ci_head_sha": { "type": "string" },
+        "ci_conclusion": { "type": "string" },
+        "regression_passed": { "type": ["boolean", "null"] }
+      }
+    },
+    "platform_controls": {
+      "type": "object",
+      "properties": {
+        "required_policy": { "type": "array", "items": { "type": "string" } },
+        "actual_state": { "type": "array", "items": { "type": "string" } },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "residual_gaps": { "type": "array", "items": { "type": "string" } },
+        "compensating_controls": { "type": "array", "items": { "type": "string" } },
+        "revisit_triggers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "properties": {
+        "sa_review_present": { "type": "boolean" },
+        "merge_authorized": { "type": "boolean" },
+        "authorized_head_sha": { "type": "string" },
+        "next_task_authorized": { "type": "boolean" }
+      }
+    },
+    "forbidden_actions": {
+      "type": "object",
+      "properties": {
+        "performed": { "type": "boolean" },
+        "details": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "result": { "type": "string", "enum": ["PASS", "FAIL", "UNKNOWN"] },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "unknown_evidence": { "type": "array", "items": { "type": "string" } },
+    "tool_failures": { "type": "array", "items": { "type": "object" } },
+    "contradictions": { "type": "array", "items": { "type": "string" } },
+    "derived_status": { "type": "string" }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "task_id": "VF-DM-EXAMPLE-FALSE-PLATFORM",
+  "repository": "hieudovn/virtual-factory",
+  "interpretation": {
+    "objective": "Example: INVALID — branch protection claimed but actual state says unavailable",
+    "deliverables": ["governance_feature.py"],
+    "non_deliverables": [],
+    "forbidden_actions": [],
+    "stop_conditions": []
+  },
+  "preflight": {
+    "current_branch": "feature/false-platform",
+    "working_tree_clean": true,
+    "local_head": "111aaa222bbb333ccc444ddd555eee666777888",
+    "remote_branch_head": "111aaa222bbb333ccc444ddd555eee666777888",
+    "remote_main_head": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "expected_base_sha": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "baseline_match": true
+  },
+  "implementation": {
+    "post_execution_local_head": "111aaa222bbb333ccc444ddd555eee666777888",
+    "commit_sha": "111aaa222bbb333ccc444ddd555eee666777888",
+    "commit_exists_locally": true,
+    "commit_exists_remotely": true,
+    "changed_files": ["docs/governance/policy.md"],
+    "remote_branch_head": "111aaa222bbb333ccc444ddd555eee666777888"
+  },
+  "pull_request": {
+    "number": 102,
+    "state": "OPEN",
+    "base_branch": "main",
+    "base_sha": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "head_branch": "feature/false-platform",
+    "head_sha": "111aaa222bbb333ccc444ddd555eee666777888",
+    "draft": false,
+    "merged": false,
+    "merged_at": null,
+    "merge_commit_sha": ""
+  },
+  "tests": {
+    "collected": 670,
+    "passed": 670,
+    "failed": 0,
+    "warnings": 1,
+    "commands": ["python -m pytest -q --tb=short"]
+  },
+  "ci": {
+    "run_id": 66666666,
+    "event": "pull_request",
+    "workflow": "VF-DM CI",
+    "branch": "feature/false-platform",
+    "head_sha": "111aaa222bbb333ccc444ddd555eee666777888",
+    "conclusion": "success",
+    "annotations": 0,
+    "required_steps": ["Test"]
+  },
+  "post_merge": {
+    "required": false,
+    "new_main_sha": "",
+    "main_contains_change": null,
+    "ci_run_id": null,
+    "ci_head_sha": "",
+    "ci_conclusion": "",
+    "regression_passed": null
+  },
+  "platform_controls": {
+    "required_policy": ["main branch protection: PR required, CI required, force-push blocked"],
+    "actual_state": ["main IS protected — force push blocked, PR required"],
+    "evidence": ["GitHub branch protection is enabled and active"],
+    "residual_gaps": [],
+    "compensating_controls": [],
+    "revisit_triggers": []
+  },
+  "authorization": {
+    "sa_review_present": false,
+    "merge_authorized": false,
+    "authorized_head_sha": "",
+    "next_task_authorized": false
+  },
+  "forbidden_actions": {
+    "performed": false,
+    "details": []
+  },
+  "acceptance": [
+    {"id": "A01", "result": "PASS", "evidence": "CI passed"},
+    {"id": "A02", "result": "PASS", "evidence": "Branch protection active"}
+  ],
+  "unknown_evidence": [],
+  "tool_failures": [],
+  "contradictions": [],
+  "derived_status": "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW"
+}

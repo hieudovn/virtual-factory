@@ -1,0 +1,116 @@
+{
+  "task_id": "VF-DM-M2-S04",
+  "repository": "hieudovn/virtual-factory",
+  "interpretation": {
+    "objective": "M2-S04: Discrete Run Controller — historical closure fixture",
+    "deliverables": [
+      "src/virtual_factory/discrete/controller.py",
+      "src/virtual_factory/discrete/commands.py",
+      "tests/test_discrete_run_controller.py",
+      "tests/test_m2_s04_c01_regressions.py",
+      "tests/test_m2_s04_c02_result_capacity.py",
+      "tests/test_m2_s04_safe_point.py"
+    ],
+    "non_deliverables": ["M2-S05"],
+    "forbidden_actions": [],
+    "stop_conditions": []
+  },
+  "preflight": {
+    "current_branch": "feature/dm-m2-s04",
+    "working_tree_clean": true,
+    "local_head": "8c9c926d222413c1d86cf6962aee862cf90ae480",
+    "remote_branch_head": "8c9c926d222413c1d86cf6962aee862cf90ae480",
+    "remote_main_head": "fd29c70e84556cc9bb6f6c7ccbdcbc5b5b948475",
+    "expected_base_sha": "fd29c70e84556cc9bb6f6c7ccbdcbc5b5b948475",
+    "baseline_match": true
+  },
+  "implementation": {
+    "post_execution_local_head": "8c9c926d222413c1d86cf6962aee862cf90ae480",
+    "commit_sha": "8c9c926d222413c1d86cf6962aee862cf90ae480",
+    "commit_exists_locally": true,
+    "commit_exists_remotely": true,
+    "changed_files": [
+      "src/virtual_factory/discrete/controller.py",
+      "src/virtual_factory/discrete/commands.py",
+      "tests/test_discrete_run_controller.py",
+      "tests/test_m2_s04_c01_regressions.py",
+      "tests/test_m2_s04_c02_result_capacity.py",
+      "tests/test_m2_s04_safe_point.py"
+    ],
+    "remote_branch_head": "8c9c926d222413c1d86cf6962aee862cf90ae480"
+  },
+  "pull_request": {
+    "number": 1,
+    "state": "CLOSED",
+    "base_branch": "main",
+    "base_sha": "fd29c70e84556cc9bb6f6c7ccbdcbc5b5b948475",
+    "head_branch": "feature/dm-m2-s04",
+    "head_sha": "8c9c926d222413c1d86cf6962aee862cf90ae480",
+    "draft": false,
+    "merged": true,
+    "merged_at": "2026-08-06T23:39:45Z",
+    "merge_commit_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8"
+  },
+  "tests": {
+    "collected": 668,
+    "passed": 668,
+    "failed": 0,
+    "warnings": 1,
+    "commands": ["python -m pytest -q --tb=short"]
+  },
+  "ci": {
+    "run_id": 31131399368,
+    "event": "push",
+    "workflow": "VF-DM CI",
+    "branch": "feature/dm-m2-s04",
+    "head_sha": "8c9c926d222413c1d86cf6962aee862cf90ae480",
+    "conclusion": "success",
+    "annotations": 0,
+    "required_steps": ["Test", "Smoke — virtual-factory validate", "Smoke — VF2 validate"]
+  },
+  "post_merge": {
+    "required": true,
+    "new_main_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
+    "main_contains_change": true,
+    "ci_run_id": 31131937358,
+    "ci_head_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
+    "ci_conclusion": "success",
+    "regression_passed": true
+  },
+  "platform_controls": {
+    "required_policy": ["All changes to main must go through PR"],
+    "actual_state": ["main is NOT protected (GitHub plan limitation)"],
+    "evidence": ["GitHub API 403: Upgrade to GitHub Pro or make repository public"],
+    "residual_gaps": ["Direct main pushes technically possible"],
+    "compensating_controls": [
+      "pre-push hook",
+      "mandatory PR workflow",
+      "verify-pr-merge-gate.py",
+      "explicit SA merge authorization",
+      "expected-head-SHA merge",
+      "post-merge verification"
+    ],
+    "revisit_triggers": ["Repository plan upgraded or made public"]
+  },
+  "authorization": {
+    "sa_review_present": true,
+    "merge_authorized": true,
+    "authorized_head_sha": "8c9c926d222413c1d86cf6962aee862cf90ae480",
+    "next_task_authorized": true
+  },
+  "forbidden_actions": {
+    "performed": false,
+    "details": []
+  },
+  "acceptance": [
+    {"id": "H01", "result": "PASS", "evidence": "Baseline verified: 0ffd1a2d"},
+    {"id": "H02", "result": "PASS", "evidence": "CI run 31131399368 success on exact head"},
+    {"id": "H03", "result": "PASS", "evidence": "668 tests passed, 0 failed"},
+    {"id": "H04", "result": "PASS", "evidence": "PR #1 merged at 2026-08-06T23:39:45Z"},
+    {"id": "H05", "result": "PASS", "evidence": "Post-merge CI 31131937358 success"}
+  ],
+  "unknown_evidence": [],
+  "tool_failures": [],
+  "contradictions": [],
+  "derived_status": "CLOSED"
+}

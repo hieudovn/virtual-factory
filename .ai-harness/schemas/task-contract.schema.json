@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtual-factory.ai-harness/schemas/task-contract.schema.json",
+  "title": "Task Contract",
+  "description": "Defines the execution contract for a governed PM/coding-agent task.",
+  "type": "object",
+  "required": [
+    "task_id",
+    "repository",
+    "objective",
+    "required_branch",
+    "expected_base_sha",
+    "acceptance_criteria"
+  ],
+  "properties": {
+    "task_id": { "type": "string", "minLength": 1 },
+    "repository": { "type": "string", "minLength": 1 },
+    "objective": { "type": "string", "minLength": 1 },
+    "explicit_non_objectives": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "required_branch": { "type": "string", "minLength": 1 },
+    "expected_base_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "allowed_paths": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "forbidden_paths": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "required_deliverables": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "required_tests": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "required_smoke_checks": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "required_remote_evidence": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "forbidden_actions": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "stop_conditions": {
+      "type": "array", "items": { "type": "string" }
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "description"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "properties": {
+        "may_open_pr": { "type": "boolean" },
+        "may_merge": { "type": "boolean" },
+        "may_start_next_task": { "type": "boolean" }
+      }
+    }
+  }
+}
