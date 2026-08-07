@@ -1,0 +1,27 @@
+{
+  "task_id": "VF-DM-M3-S02",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "M3-S02 Vertical Assembly Runtime. First executable Assembly-domain vertical slice on M2 runtime. Source→Buffer→Processor→QualityGate→Sink plus rework loop. Real M2 events, handlers, WIP state transitions, processing delay.",
+  "explicit_non_objectives": ["TIPA/AP01-AP06", "YAML authoring", "Routing DSL", "Production scheduling", "MES/visualization/KPI", "M3-S03"],
+  "required_branch": "feature/dm-m3-s02",
+  "expected_base_sha": "0273bbf1f538aa84bb93ec4b7f920d2b82a9aa07",
+  "allowed_paths": ["src/virtual_factory/assembly/", "tests/test_m3_s02_assembly.py", ".ai-harness/tasks/VF-DM-M3-S02.json"],
+  "forbidden_paths": ["src/virtual_factory/discrete/"],
+  "required_deliverables": ["src/virtual_factory/assembly/runtime.py", "src/virtual_factory/assembly/topology.py", "src/virtual_factory/assembly/handlers.py", "tests/test_m3_s02_assembly.py", ".ai-harness/tasks/VF-DM-M3-S02.json"],
+  "required_tests": ["Scenario A: normal flow Source→Buffer→Processor→QualityGate(PASS)→Sink", "Scenario B: rework flow with PASS after retry", "Processing time proof", "Buffer occupancy tracking", "Deterministic event ordering", "Full regression preserved"],
+  "required_smoke_checks": ["virtual-factory validate --config configs/plants/compressor_train_benchmark_01.yaml"],
+  "required_remote_evidence": ["remote_commit_exists", "pr_exists", "pr_open", "pr_not_draft", "pr_base_is_main", "exact_head_ci", "ci_conclusion_success"],
+  "forbidden_actions": ["do_not_merge", "do_not_push_to_main", "do_not_modify_m2_runtime", "do_not_start_m3_s03", "do_not_self_certify_complete"],
+  "stop_conditions": ["baseline_mismatch", "regression_failure"],
+  "acceptance_criteria": [
+    {"id": "S01", "phase": "pre_status", "description": "Baseline is 0273bbf", "rule": {"field": "preflight.expected_base_sha", "operator": "equals", "expected": "0273bbf1f538aa84bb93ec4b7f920d2b82a9aa07"}},
+    {"id": "S02", "phase": "pre_status", "description": "No M2 changes", "rule": {"field": "implementation.changed_files", "operator": "not_contains", "expected": "src/virtual_factory/discrete/"}},
+    {"id": "S03", "phase": "pre_status", "description": "Tests pass", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "S04", "phase": "pre_status", "description": "Zero failures", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "S05", "phase": "pre_status", "description": "CI success", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "F01", "phase": "final", "description": "Pipeline all steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
+    {"id": "F02", "phase": "final", "description": "Pipeline all steps pass", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": true, "may_merge": false, "may_start_next_task": false}
+}
