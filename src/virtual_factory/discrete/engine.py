@@ -2,10 +2,12 @@
 
 M2-S01: lifecycle only — no controller, service, transport, or domain.
 M2-S04: RUNNING/PAUSED transitions, step from active states, stop from RUNNING/PAUSED.
+M2-S05: deterministic RNG, max-events safety, no-progress detection, replay metadata.
 """
 
 from __future__ import annotations
 
+import random
 from typing import Iterable
 
 from virtual_factory.discrete.dispatcher import (
@@ -42,6 +44,9 @@ class DiscreteSimulationEngine:
     Owns a ``FutureEventScheduler`` and ``DiscreteRunState``.
     Depends on an injected ``EventDispatcherProtocol``.
     Does NOT contain asyncio, I/O, domain logic, or transport.
+
+    M2-S05: owns deterministic RNG, enforces max-events safety limit,
+    detects no-progress (same-time event churn), and exposes replay metadata.
     """
 
     def __init__(
@@ -50,6 +55,8 @@ class DiscreteSimulationEngine:
         dispatcher: EventDispatcherProtocol,
         *,
         trace_capacity: int = 128,
+        max_processed_events: int | None = None,
+        max_same_time_events: int = 100,
     ) -> None:
         if not isinstance(run_context, RunContext):
             raise DiscreteSimulationEngineError(
@@ -59,6 +66,20 @@ class DiscreteSimulationEngine:
             raise DiscreteSimulationEngineError(
                 "dispatcher must satisfy EventDispatcherProtocol"
             )
+        # M2-S05 safety limits
+        if max_processed_events is not None:
+            if isinstance(max_processed_events, bool):
+                raise DiscreteSimulationEngineError("max_processed_events must be int or None, not bool")
+            if not isinstance(max_processed_events, int) or max_processed_events <= 0:
+                raise DiscreteSimulationEngineError(
+                    f"max_processed_events must be int > 0 or None, got {max_processed_events!r}"
+                )
+        if isinstance(max_same_time_events, bool):
+            raise DiscreteSimulationEngineError("max_same_time_events must be int, not bool")
+        if not isinstance(max_same_time_events, int) or max_same_time_events <= 0:
+            raise DiscreteSimulationEngineError(
+                f"max_same_time_events must be int > 0, got {max_same_time_events!r}"
+            )
 
         self._run_context = run_context
         self._dispatcher = dispatcher
@@ -66,6 +87,12 @@ class DiscreteSimulationEngine:
         self._state = DiscreteRunState(run_id=run_context.run_id)
         self._trace = EventTraceBuffer(capacity=trace_capacity)
         self._trace_seq: int = 0
+        # M2-S05: deterministic RNG and safety/progress tracking
+        self._rng = random.Random(run_context.random_seed)
+        self._max_processed_events = max_processed_events
+        self._max_same_time_events = max_same_time_events
+        self._same_time_count: int = 0
+        self._last_event_time_s: float | None = None
 
     # ------------------------------------------------------------------
     # Public read-only
@@ -75,6 +102,26 @@ class DiscreteSimulationEngine:
     def run_id(self) -> str:
         """Return the run_id from the run context (read-only)."""
         return self._run_context.run_id
+
+    @property
+    def run_random(self) -> random.Random:
+        """M2-S05: Deterministic RNG owned by this run."""
+        return self._rng
+
+    @property
+    def random_seed(self) -> int:
+        """M2-S05: Run-level random seed."""
+        return self._run_context.random_seed
+
+    @property
+    def max_processed_events_limit(self) -> int | None:
+        """M2-S05: Configured max-events safety limit (None = unlimited)."""
+        return self._max_processed_events
+
+    @property
+    def max_same_time_events_limit(self) -> int:
+        """M2-S05: Configured no-progress same-time event threshold."""
+        return self._max_same_time_events
 
     @property
     def status(self) -> RunStatus:
@@ -105,6 +152,10 @@ class DiscreteSimulationEngine:
                 trace_size=self._trace.size,
                 trace_total_entries=self._trace.total_entries,
                 trace_dropped_entries=self._trace.dropped_entries,
+                # M2-S05 replay metadata
+                random_seed=self._run_context.random_seed,
+                max_processed_events_limit=self._max_processed_events,
+                same_time_event_limit=self._max_same_time_events,
             ),
         )
 
@@ -178,6 +229,28 @@ class DiscreteSimulationEngine:
 
         # Capture status before step
         status_before = self._state.status
+
+        # --- M2-S05: max-events safety guard ---
+        if self._max_processed_events is not None:
+            if self._state.processed_events >= self._max_processed_events:
+                return self._stop_guarded(
+                    f"max_processed_events={self._max_processed_events} reached",
+                )
+
+        # --- M2-S05: no-progress guard (BEFORE pop — peek, don't consume) ---
+        next_evt = self._scheduler.peek_next()
+        if next_evt is not None:
+            current_time = next_evt.simulation_time_s
+            if self._last_event_time_s is not None and current_time == self._last_event_time_s:
+                self._same_time_count += 1
+                if self._same_time_count >= self._max_same_time_events:
+                    return self._stop_guarded(
+                        f"no_progress: {self._same_time_count} consecutive events "
+                        f"at simulation_time_s={current_time}",
+                    )
+            else:
+                self._same_time_count = 0
+            self._last_event_time_s = current_time
 
         # 1. Pop
         try:
@@ -407,6 +480,18 @@ class DiscreteSimulationEngine:
         """Sync pending_events from the scheduler when it exists."""
         if self._scheduler is not None:
             self._state.pending_events = self._scheduler.pending_count
+
+    def _stop_guarded(self, reason: str) -> RuntimeSnapshot:
+        """M2-S05: Controlled stop from a safety guard (max-events or no-progress).
+
+        Preserves diagnostics and trace evidence.
+        """
+        self._sync_scheduler_state()
+        self._state.status = RunStatus.STOPPED
+        self._state.stop_reason = reason
+        self._state.diagnostics["failure_detail"] = reason
+        self._state.snapshot_sequence += 1
+        return self.to_snapshot()
 
     def _fail_with_trace(
         self,
