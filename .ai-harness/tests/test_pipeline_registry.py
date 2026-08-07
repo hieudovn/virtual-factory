@@ -69,7 +69,7 @@ class TestPipelineRegistry:
         pi = reg.integrity()
         assert not pi["all_required_steps_pass"]
 
-    def test_canonical_ids_contains_23_steps(self):
-        assert len(CANONICAL_IDS) == 23
+    def test_canonical_ids_contains_24_steps(self):
+        assert len(CANONICAL_IDS) == 24
         assert CANONICAL_IDS[0] == "P01"
-        assert CANONICAL_IDS[-1] == "P23"
+        assert CANONICAL_IDS[-1] == "P24"
