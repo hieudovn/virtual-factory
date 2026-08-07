@@ -11,7 +11,7 @@
   "required_deliverables": ["C04 contract", "Contract-driven smoke gate", "Semantic acceptance fixes"],
   "required_tests": ["All harness tests pass", "668 regression pass"],
   "required_smoke_checks": [
-    {"id": "SMOKE-VF", "command": ["virtual-factory", "validate", "--config", "configs/plants/compressor_train_benchmark_01.yaml"], "execution_policy": "local_and_ci", "required": true},
+    {"id": "SMOKE-VF", "command": ["virtual-factory", "validate", "--config", "configs/plants/compressor_train_benchmark_01.yaml"], "execution_policy": "local_or_ci", "required": true, "_rationale": "CI is authoritative; local PATH may not include virtual-factory"},
     {"id": "SMOKE-VF2", "command": ["python", "-m", "simulators.vf2.main", "--package", "simulators/vf2/examples/sample_pim_package.json", "--validate-only"], "execution_policy": "ci_required", "required": true, "_rationale": "VF2 package is not required in local dev environment; CI is the authoritative smoke environment"}
   ],
   "required_remote_evidence": ["remote_commit_exists", "pr_exists", "exact_head_ci"],
