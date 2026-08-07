@@ -15,7 +15,7 @@ SCRIPTS = HARNESS / "scripts"
 TRACES = HARNESS / "traces"
 ROOT = HARNESS.parent
 
-CANONICAL_IDS = [f"P{i:02d}" for i in range(1, 25)]
+CANONICAL_IDS = [f"P{i:02d}" for i in range(1, 24)]  # P01-P23 canonical; P24 post-pipeline
 
 
 def _git(args: list[str]) -> str:
@@ -236,13 +236,12 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     print(f"  Smoke: VF={[s['effective_result'] for s in smoke_results if s['id']=='SMOKE-VF']} VF2={[s['effective_result'] for s in smoke_results if s['id']=='SMOKE-VF2']}")
     reg.record("P11", "Merge CI smoke", True, "PASS")
 
-    # P12: Invariants
-    print("\n" + "=" * 50 + "\nP12: Invariants")
+    # P12: Invariants + pipeline integrity (computed BEFORE P13 acceptance)
+    print("\n" + "=" * 50 + "\nP12: Invariants + pipeline integrity")
     impl_sha = evidence["implementation"]["commit_sha"]
     pr_head = evidence.get("pull_request", {}).get("head_sha", "")
     remote_head = evidence["implementation"].get("remote_branch_head", "")
     ci_head = ci_data.get("head_sha", "")
-    piv = evidence.get("pipeline_integrity", {})
     invariants = {
         "remote_branch_equals_pr_head": bool(remote_head and pr_head and remote_head == pr_head),
         "pr_head_equals_implementation_sha": bool(pr_head and impl_sha and pr_head == impl_sha),
@@ -251,7 +250,9 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
         "smoke_vf2_effective_pass": any(s.get("id") == "SMOKE-VF2" and s.get("effective_result") == "PASS" for s in smoke_results),
     }
     evidence["invariants"] = invariants
-    reg.record("P12", "Invariants", True, "PASS")
+    evidence["pipeline_steps"] = reg.snapshot()
+    evidence["pipeline_integrity"] = reg.integrity()
+    reg.record("P12", "Invariants + pipeline integrity", True, "PASS")
 
     # P13: Pre-status acceptance
     print("\n" + "=" * 50 + "\nP13: Pre-status acceptance")
@@ -371,9 +372,10 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     reg.record("P23", "Final assertions", True,
                "PASS" if not failed_final and not unknown_final else "FAIL")
 
-    # P24: Stable final evidence + report
-    print("\n" + "=" * 50 + "\nP24: Stable final")
+    # P24: Finalize (record step FIRST, then snapshot includes it)
+    print("\n" + "=" * 50 + "\nP24: Finalize")
     evidence["execution_mode"] = "report_only" if report_only else "normal"
+    reg.record("P24", "Finalize", True, "PASS")
     evidence["pipeline_steps"] = reg.snapshot()
     evidence["pipeline_integrity"] = reg.integrity()
     evidence["report_generation_result"] = "success"
@@ -382,10 +384,9 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
         f.write(f"# Gate Report — {tid}\n\n**Status**: {final_status}\n")
         f.write(f"**Gate**: {requested_gate} | **Satisfied**: {evidence.get('requested_gate_satisfied',False)} | **Exit**: {evidence.get('exit_code')}\n")
         pi = evidence.get("pipeline_integrity", {})
-        f.write(f"**Pipeline**: {pi.get('actual_ids',[])} missing={pi.get('missing_ids',[])} dups={pi.get('duplicate_ids',[])}\n\n")
+        f.write(f"**Pipeline**: expected={CANONICAL_IDS} actual={pi.get('actual_ids',[])} missing={pi.get('missing_ids',[])} dups={pi.get('duplicate_ids',[])}\n\n")
         f.write("## Pipeline\n")
         for s in reg.steps: f.write(f"- [{s['result']}] {s['id']} {s['name']}\n")
-    reg.record("P24", "Stable final", True, "PASS")
 
     duration = time.time() - t0
     print(f"\n{'='*50}\nGATE COMPLETE ({duration:.1f}s)")
