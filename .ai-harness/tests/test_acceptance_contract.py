@@ -6,7 +6,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from evaluate_acceptance import evaluate_acceptance
 
 
-class TestContractCompleteness:
+class TestC04ContractCompleteness:
+    def test_c04_has_executable_rules(self):
+        with open(Path(__file__).parent.parent / "tasks" / "VF-AI-HARNESS-01-C04.json") as f:
+            contract = json.load(f)
+        for c in contract["acceptance_criteria"]:
+            assert "rule" in c, f"{c['id']} missing rule"
+
+    def test_c04_no_duplicate_in_classifications(self):
+        with open(Path(__file__).parent.parent / "tasks" / "VF-AI-HARNESS-01-C04.json") as f:
+            contract = json.load(f)
+        rule_ids = {c["id"] for c in contract["acceptance_criteria"]}
+        classified = set(contract.get("_classifications", {}).keys())
+        overlap = rule_ids & classified
+        assert not overlap, f"IDs in both rules and classifications: {overlap}"
     def test_c03_has_executable_rules(self):
         with open(Path(__file__).parent.parent / "tasks" / "VF-AI-HARNESS-01-C03.json") as f:
             contract = json.load(f)
@@ -36,15 +49,19 @@ class TestContractCompleteness:
         for c in contract["acceptance_criteria"]:
             assert c["phase"] in ("pre_status", "final"), f"{c['id']}: invalid phase '{c['phase']}'"
 
-    def test_c03_all_f01_f80_accounted(self):
-        with open(Path(__file__).parent.parent / "tasks" / "VF-AI-HARNESS-01-C03.json") as f:
+    def test_c04_all_f01_f80_accounted_once(self):
+        with open(Path(__file__).parent.parent / "tasks" / "VF-AI-HARNESS-01-C04.json") as f:
             contract = json.load(f)
         rule_ids = {c["id"] for c in contract["acceptance_criteria"]}
         classified = set(contract.get("_classifications", {}).keys())
+        # No ID in both
+        overlap = rule_ids & classified
+        assert not overlap, f"IDs in both rules and classifications: {overlap}"
+        # All F01-F80 accounted
         all_ids = rule_ids | classified
         for i in range(1, 81):
             fid = f"F{i:02d}"
-            assert fid in all_ids, f"{fid} not accounted for (neither rule nor classification)"
+            assert fid in all_ids, f"{fid} not accounted for"
 
 
 class TestPhaseAwareEvaluation:

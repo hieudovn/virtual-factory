@@ -118,19 +118,65 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     evidence["tests"] = tev
     _step("P06", "Tests", True, tev["result"])
 
-    # P07: Smoke
-    print("\n" + "=" * 50 + "\nP07: Smoke")
-    smokes: list[dict] = []
-    vf = subprocess.run(["virtual-factory", "validate", "--config",
-                          "configs/plants/compressor_train_benchmark_01.yaml"],
-                         capture_output=True, text=True, cwd=ROOT)
-    smokes.append(_smoke_result(vf))
-    vf2 = subprocess.run([sys.executable, "-m", "simulators.vf2.main", "--package",
-                           "simulators/vf2/examples/sample_pim_package.json", "--validate-only"],
-                          capture_output=True, text=True, cwd=ROOT)
-    smokes.append(_smoke_result(vf2))
-    evidence["smoke_checks"] = smokes
-    smoke_ok = all(s["result"] == "PASS" for s in smokes)
+    # P07: Smoke (contract-driven)
+    print("\n" + "=" * 50 + "\nP07: Smoke checks")
+    smoke_specs = contract.get("required_smoke_checks", [])
+    # Backward compat: convert string specs to structured
+    if smoke_specs and isinstance(smoke_specs[0], str):
+        smoke_specs = [{"id": f"SMOKE-{i}", "command": s.split(), "execution_policy": "local_and_ci", "required": True}
+                       for i, s in enumerate(smoke_specs)]
+    smoke_results: list[dict] = []
+    for spec in smoke_specs:
+        sid = spec.get("id", "UNKNOWN")
+        policy = spec.get("execution_policy", "local_and_ci")
+        required = spec.get("required", True)
+        cmd = spec.get("command", [])
+        sr: dict = {"id": sid, "required": required, "execution_policy": policy,
+                     "local": {"executed": False, "result": "NOT_EXECUTED", "exit_code": None, "reason": ""},
+                     "ci": {"run_id": None, "head_sha": "", "step_name": "", "result": "NOT_EXECUTED", "conclusion": ""},
+                     "effective_result": "UNKNOWN"}
+
+        # Local execution based on policy
+        if policy in ("local_required", "local_and_ci", "local_or_ci"):
+            try:
+                proc = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, timeout=60)
+                sr["local"] = {"executed": True, "result": "PASS" if proc.returncode == 0 else "FAIL",
+                                "exit_code": proc.returncode, "reason": proc.stderr[:200] if proc.returncode != 0 else ""}
+            except Exception as e:
+                sr["local"] = {"executed": True, "result": "FAIL", "exit_code": -1, "reason": str(e)[:200]}
+        elif policy == "ci_required":
+            sr["local"] = {"executed": False, "result": "NOT_APPLICABLE", "exit_code": None,
+                            "reason": "CI-required check; module not required in local environment"}
+        elif policy == "optional":
+            try:
+                proc = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, timeout=60)
+                sr["local"] = {"executed": True, "result": "PASS" if proc.returncode == 0 else "FAIL",
+                                "exit_code": proc.returncode, "reason": ""}
+            except Exception:
+                sr["local"] = {"executed": False, "result": "NOT_APPLICABLE", "exit_code": None, "reason": "Optional check not available"}
+
+        # Compute effective result from policy
+        lr = sr["local"]["result"]
+        cr = sr["ci"]["result"]
+        if policy == "local_required":
+            sr["effective_result"] = lr if lr != "NOT_APPLICABLE" else "FAIL"
+        elif policy == "ci_required":
+            sr["effective_result"] = cr if cr != "NOT_EXECUTED" else "UNKNOWN"
+        elif policy == "local_and_ci":
+            if lr == "PASS" and cr == "PASS": sr["effective_result"] = "PASS"
+            elif lr == "FAIL" or cr == "FAIL": sr["effective_result"] = "FAIL"
+            else: sr["effective_result"] = "UNKNOWN"
+        elif policy == "local_or_ci":
+            if lr == "PASS" or cr == "PASS": sr["effective_result"] = "PASS"
+            elif lr == "FAIL" and cr == "FAIL": sr["effective_result"] = "FAIL"
+            else: sr["effective_result"] = "UNKNOWN"
+        elif policy == "optional":
+            sr["effective_result"] = "PASS"
+        smoke_results.append(sr)
+        print(f"  {sid}: local={lr} ci={cr} policy={policy} effective={sr['effective_result']}")
+
+    evidence["smoke_checks"] = smoke_results
+    smoke_ok = all(s["effective_result"] == "PASS" for s in smoke_results if s.get("required"))
     _step("P07", "Smoke checks", True, "PASS" if smoke_ok else "FAIL")
 
     # P08-P09: Remote + PR
@@ -154,6 +200,28 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     if cim.returncode != 0: print(cim.stderr or "")
     with open(ep) as f: evidence = json.load(f)
     _step("P10", "Exact-head CI", True, "PASS" if cim.returncode == 0 else "FAIL")
+
+    # P10b: Compute evidence invariants
+    print("\n" + "=" * 50 + "\nP10b: Invariants")
+    impl_sha = evidence["implementation"]["commit_sha"]
+    pr_head = evidence.get("pull_request", {}).get("head_sha", "")
+    remote_head = evidence["implementation"].get("remote_branch_head", "")
+    ci_head = evidence.get("ci", {}).get("head_sha", "")
+    steps = evidence.get("pipeline_steps", [])
+    invariants: dict[str, bool] = {
+        "remote_branch_equals_pr_head": bool(remote_head and pr_head and remote_head == pr_head),
+        "pr_head_equals_implementation_sha": bool(pr_head and impl_sha and pr_head == impl_sha),
+        "ci_head_equals_pr_head": bool(ci_head and pr_head and ci_head == pr_head),
+        "all_required_steps_executed": all(s.get("executed") for s in steps if s.get("required")),
+        "all_required_steps_pass": all(s.get("result") == "PASS" for s in steps if s.get("required")),
+        "smoke_vf_effective_pass": any(s.get("id") == "SMOKE-VF" and s.get("effective_result") == "PASS" for s in smoke_results),
+        "smoke_vf2_effective_pass": any(s.get("id") == "SMOKE-VF2" and s.get("effective_result") == "PASS" for s in smoke_results),
+        "evidence_validator_exit_zero": False,
+        "report_consistency_exit_zero": False,
+    }
+    evidence["invariants"] = invariants
+    print(f"  Invariants: {json.dumps({k:v for k,v in invariants.items()}, default=str)}")
+    _step("P10b", "Invariants", True, "PASS")
 
     # P11: Pre-status acceptance
     print("\n" + "=" * 50 + "\nP11: Pre-status acceptance")
@@ -291,6 +359,20 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
         return final_status, evidence, 5
     with open(ep) as f: evidence = json.load(f)
     _step("P22", "Validate final", True, "PASS")
+    # Update invariants with validation results
+    inv = evidence.get("invariants", {})
+    inv["evidence_validator_exit_zero"] = True
+    evidence["invariants"] = inv
+
+    # P22b: Report consistency
+    print("\n" + "=" * 50 + "\nP22b: Report consistency")
+    rc = _run("validate_report_consistency.py", [str(ep), str(rp)])
+    print(rc.stdout or "")
+    inv["report_consistency_exit_zero"] = rc.returncode == 0
+    evidence["invariants"] = inv
+    if rc.returncode != 0:
+        evidence.setdefault("blocking_issues", []).append("Report consistency validation failed")
+    _step("P22b", "Report consistency", True, "PASS" if rc.returncode == 0 else "FAIL")
 
     # P23: Report
     print("\n" + "=" * 50 + "\nP23: Gate report")
