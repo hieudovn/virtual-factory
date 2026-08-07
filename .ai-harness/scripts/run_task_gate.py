@@ -350,8 +350,10 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
         reg.record("P22", "Validate provisional", True, "FAIL")
         return final_status, evidence, 5
 
-    # P23: Final assertions (evaluated AFTER validators)
+    # P23: Final assertions — compute final pipeline_integrity FIRST, then evaluate
     print("\n" + "=" * 50 + "\nP23: Final assertions")
+    evidence["pipeline_steps"] = reg.snapshot()
+    evidence["pipeline_integrity"] = reg.integrity()
     with open(pep, "w") as f: json.dump(evidence, f, indent=2)
     ar2 = _run("evaluate_acceptance.py", [str(pep), task_path, "--phase", "final"])
     print(ar2.stdout or "")
