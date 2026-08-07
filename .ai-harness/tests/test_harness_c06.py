@@ -202,6 +202,21 @@ class TestRealLifecycle:
                     ev["implementation"]["remote_branch_head"] = "f8870afd9c630bb00ce9e158c6dff58d58864721"
                     with open(ev_path, "w") as f: json.dump(ev, f)
                 except Exception: pass
+            # For final acceptance evaluation, inject a FAIL into the evidence
+            if "evaluate_acceptance" in script and "--phase" in str(args) and "final" in str(args):
+                ev_path = args[0]
+                try:
+                    with open(ev_path) as f: ev = json.load(f)
+                    ev["acceptance"] = [
+                        {"id": "F01", "phase": "final", "result": "PASS",
+                         "description": "Pipeline all steps executed"},
+                        {"id": "F02", "phase": "final", "result": "FAIL",
+                         "description": "CI conclusion is success",
+                         "evidence": "field=ci.conclusion operator=equals expected=success actual= -> FAIL"},
+                    ]
+                    with open(ev_path, "w") as f: json.dump(ev, f)
+                except Exception: pass
+                return MagicMock(returncode=0, stdout="Acceptance: 1 PASS, 1 FAIL, 0 UNKNOWN\n  [PASS] F01\n  [FAIL] F02", stderr="")
             return m
         mock_run.side_effect = _run_side_effect
 

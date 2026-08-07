@@ -313,7 +313,7 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     print("\n" + "=" * 50 + "\nP13: Pre-status acceptance")
     tmp = td / "_acc.json"
     with open(tmp, "w") as f: json.dump(evidence, f)
-    ar = _run("evaluate_acceptance.py", [str(tmp), task_path, "--phase", "pre_status"])
+    ar = _run("evaluate_acceptance.py", [str(tmp), task_path, "--phase", "pre_status", "--output", str(tmp)])
     print(ar.stdout or "")
     try:
         with open(tmp) as f: evidence = json.load(f)
@@ -420,7 +420,7 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     evidence["pipeline_integrity"] = reg.integrity()
     # Evaluate F01/F02 final acceptance with complete P01-P24 pipeline
     with open(pep, "w") as f: json.dump(evidence, f, indent=2)
-    ar2 = _run("evaluate_acceptance.py", [str(pep), task_path, "--phase", "final"])
+    ar2 = _run("evaluate_acceptance.py", [str(pep), task_path, "--phase", "final", "--output", str(pep)])
     print(ar2.stdout or "")
     try:
         with open(pep) as f: evidence = json.load(f)
