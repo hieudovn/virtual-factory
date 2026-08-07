@@ -145,6 +145,113 @@ class TestRealLifecycle:
         assert pi["all_required_steps_executed"] is True
         assert pi["all_required_steps_pass"] is True
 
+        # P23 = Final assertions PASS, P24 = Finalize PASS
+        p23 = [s for s in evidence["pipeline_steps"] if s["id"] == "P23"][0]
+        p24 = [s for s in evidence["pipeline_steps"] if s["id"] == "P24"][0]
+        assert p23["result"] == "PASS"
+        assert p24["result"] == "PASS"
+
+    @patch("run_task_gate._git")
+    @patch("run_task_gate._run")
+    @patch("run_task_gate._resolve_pr")
+    @patch("subprocess.run")
+    def test_final_acceptance_failure_p23_fail_p24_pass(
+        self, mock_subprocess_run, mock_resolve_pr, mock_run, mock_git
+    ):
+        """C06-C02: Failed final acceptance -> P23=FAIL, P24=PASS, integrity truthful."""
+        mock_git.side_effect = lambda args: {
+            "rev-parse --abbrev-ref HEAD": "feature/test-c06",
+            "rev-parse HEAD": "f8870afd9c630bb00ce9e158c6dff58d58864721",
+            "rev-parse origin/main": "f8870afd9c630bb00ce9e158c6dff58d58864721",
+            "status --short": "",
+            "diff --name-only origin/main HEAD": ".ai-harness/scripts/run_task_gate.py",
+        }.get(" ".join(args), "")
+        mock_resolve_pr.return_value = 7
+        mock_subprocess_run.return_value = MagicMock(returncode=0, stdout="701 passed", stderr="")
+
+        # Contract with a final criterion that will FAIL: ci.conclusion == "success"
+        # but verify_exact_head_ci is mocked and ci.conclusion stays empty
+        fail_contract = dict(_MINIMAL_CONTRACT)
+        fail_contract["task_id"] = "VF-TEST-C06-FAIL"
+        fail_contract["acceptance_criteria"] = [
+            {"id": "A01", "phase": "pre_status",
+             "description": "Tests pass", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+            {"id": "F01", "phase": "final",
+             "description": "Pipeline all steps executed",
+             "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": None}},
+            {"id": "F02", "phase": "final",
+             "description": "CI conclusion is success",
+             "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+        ]
+
+        def _run_side_effect(script, args):
+            m = MagicMock(returncode=0,
+                stdout="PASS\nDerived status: IMPLEMENTED \u2014 PR OPEN \u2014 READY FOR SA REVIEW",
+                stderr="")
+            if "verify_remote_state" in script:
+                ev_path = args[0]
+                try:
+                    with open(ev_path) as f: ev = json.load(f)
+                    ev["pull_request"] = {
+                        "number": 7, "state": "open", "base_branch": "main",
+                        "base_sha": "f8870afd", "head_branch": "feature/test-c06",
+                        "head_sha": "f8870afd9c630bb00ce9e158c6dff58d58864721",
+                        "draft": False, "merged": False, "merged_at": None, "merge_commit_sha": "",
+                    }
+                    ev["implementation"]["commit_exists_remotely"] = True
+                    ev["implementation"]["remote_branch_head"] = "f8870afd9c630bb00ce9e158c6dff58d58864721"
+                    with open(ev_path, "w") as f: json.dump(ev, f)
+                except Exception: pass
+            return m
+        mock_run.side_effect = _run_side_effect
+
+        traces_dir = Path(".ai-harness/traces/VF-TEST-C06-FAIL")
+        traces_dir.mkdir(parents=True, exist_ok=True)
+        junit_xml = traces_dir / "regression.xml"
+        junit_xml.write_text(
+            '<?xml version="1.0"?><testsuite tests="701" failures="0" skipped="0"></testsuite>'
+        )
+
+        contract_path = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tf:
+                json.dump(fail_contract, tf)
+                contract_path = tf.name
+            status, evidence, exit_code = run_task_gate(contract_path, report_only=True)
+        finally:
+            if contract_path and os.path.exists(contract_path):
+                try: os.unlink(contract_path)
+                except OSError: pass
+            try: junit_xml.unlink()
+            except OSError: pass
+
+        # Pipeline contains P01-P24 exactly once
+        step_ids = [s["id"] for s in evidence.get("pipeline_steps", [])]
+        assert step_ids == CANONICAL_IDS, f"step_ids={step_ids}"
+
+        # P23 = FAIL, P24 = PASS
+        p23 = [s for s in evidence["pipeline_steps"] if s["id"] == "P23"][0]
+        p24 = [s for s in evidence["pipeline_steps"] if s["id"] == "P24"][0]
+        assert p23["result"] == "FAIL", f"P23={p23['result']}"
+        assert p24["result"] == "PASS", f"P24={p24['result']}"
+
+        # Integrity: all executed, but not all pass (P23 is FAIL)
+        pi = evidence.get("pipeline_integrity", {})
+        assert pi["all_required_steps_executed"] is True
+        assert pi["all_required_steps_pass"] is False
+        assert pi["missing_ids"] == []
+        assert pi["duplicate_ids"] == []
+
+        # Final status is not successful
+        assert evidence["requested_gate_satisfied"] is False
+        assert "GOVERNANCE FAILURE" in evidence.get("derived_status", "")
+
+        # Integrity agrees with pipeline_steps (no contradiction)
+        step_results = {s["id"]: s["result"] for s in evidence["pipeline_steps"]}
+        assert step_results["P23"] == "FAIL"
+        assert step_results["P24"] == "PASS"
+        assert pi["all_required_steps_pass"] is False  # consistent with P23=FAIL
+
 
 # ──────────────────────────────────────────────
 # B. P22 failure path

@@ -430,13 +430,17 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     failed_final = [a for a in final_acc if a.get("result") == "FAIL"]
     unknown_final = [a for a in final_acc if a.get("result") == "UNKNOWN"]
     if failed_final or unknown_final:
+        # P23 = Final assertions FAIL, P24 = Finalize remains PASS
+        reg.update_result("P23", "FAIL")
+        # Recompute integrity after step result change
+        evidence["pipeline_steps"] = reg.snapshot()
+        evidence["pipeline_integrity"] = reg.integrity()
         evidence.setdefault("blocking_issues", []).append(
             f"Final assertions FAIL/UNKNOWN: {[a['id'] for a in failed_final+unknown_final]}")
         final_status = "NOT READY — GOVERNANCE FAILURE"
         evidence["derived_status"] = final_status
         evidence["requested_gate_satisfied"] = False
         evidence["exit_code"] = 1
-        reg.update_result("P24", "FAIL")
     evidence["report_generation_result"] = "success"
     with open(ep, "w") as f: json.dump(evidence, f, indent=2)
     with open(rp_final, "w") as f:
