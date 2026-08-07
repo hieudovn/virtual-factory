@@ -21,7 +21,7 @@ from virtual_factory.discrete.events import ScheduledEvent
 
 def _get_wip_id(event: ScheduledEvent) -> str | None:
     """Extract WIP identity from event payload.  Returns None if absent."""
-    if event.payload and isinstance(event.payload, dict):
+    if event.payload and hasattr(event.payload, "get"):
         return event.payload.get("wip_id")
     return None
 
@@ -190,8 +190,7 @@ def make_processor_handler(
 
         ws.advance(proc_id, WipStatus.PROCESSING)
         completion_time = event.simulation_time_s + proc.processing_time_s
-        # Unique event ID using target_id
-        complete_eid = f"{wip_id}-{proc_id}-process-complete"
+        complete_eid = event.event_id.replace("-process-start", "-process-complete")
 
         return HandlerOutcome(
             event_id=event.event_id, success=True,
@@ -261,11 +260,14 @@ def make_process_complete_handler(
             )
         else:
             ws.advance(next_id, WipStatus.INSPECTING)
+            # Rework events need unique quality-check IDs to avoid scheduler collision
+            is_rewrk = "rework" in event.event_id
+            qc_eid = f"{wip_id}-rewrk-quality-check" if is_rewrk else f"{wip_id}-quality-check"
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:processing→inspecting@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}-quality-check",
+                    _evt(qc_eid,
                          simulation_time_s=event.simulation_time_s,
                          event_type="QUALITY_CHECK", target_id=next_id,
                          causation_id=event.event_id, wip_id=str(wip_id)),
@@ -340,11 +342,13 @@ def make_quality_gate_handler(
             )
         else:  # REWORK
             ws.advance(next_id, WipStatus.REWORK)
+            rc = rework_counts.get(wip_id_str, 0) + 1
+            rework_counts[wip_id_str] = rc
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:rework→processing@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}-{next_id}-process-start",
+                    _evt(f"{wip_id}-{next_id}-rework{rc}-process-start",
                          simulation_time_s=event.simulation_time_s,
                          event_type="PROCESS_START", target_id=next_id,
                          causation_id=event.event_id, wip_id=str(wip_id)),
