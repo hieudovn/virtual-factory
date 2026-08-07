@@ -1,157 +1,201 @@
 #!/usr/bin/env python3
-"""verify_exact_head_ci.py — Verify CI ran on the exact expected head SHA.
+"""verify_exact_head_ci.py — Collect CI workflow evidence for exact head SHA.
 
-Usage:
-    python .ai-harness/scripts/verify_exact_head_ci.py <evidence.json> [--token TOKEN]
-
-Verifies the CI head SHA matches the expected head and required steps are present.
+Uses: GitHub API (token) → gh CLI (authenticated) → fail closed.
+Outputs structured JSON evidence block.
 """
 
 from __future__ import annotations
+import json, os, subprocess, sys
 
-import json
-import os
-import sys
-from typing import Any
+REPO = "hieudovn/virtual-factory"
 
 
-def _gh_api(token: str, endpoint: str) -> dict | None:
-    """Call GitHub API."""
-    import urllib.request
-    import urllib.error
-
-    url = f"https://api.github.com/repos/hieudovn/virtual-factory{endpoint}"
+def _api(token: str, endpoint: str) -> dict | list | None:
+    import urllib.request, urllib.error
+    url = f"https://api.github.com/repos/{REPO}{endpoint}"
     req = urllib.request.Request(url)
     req.add_header("Authorization", f"Bearer {token}")
     req.add_header("Accept", "application/vnd.github+json")
-    req.add_header("User-Agent", "ai-harness/1.0")
-
+    req.add_header("User-Agent", "ai-harness/2.0")
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read().decode())
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return json.loads(r.read().decode())
     except Exception as e:
-        print(f"GitHub API error: {e}")
+        print(f"API error: {e}", file=sys.stderr)
         return None
 
 
-def verify_exact_head_ci(
-    evidence: dict,
-    token: str | None = None,
-) -> tuple[bool, list[str]]:
-    """Verify CI. Returns (passed, issues)."""
-    issues: list[str] = []
+def _gh_json(*args: str) -> dict | list | None:
+    try:
+        r = subprocess.run(["gh"] + list(args), capture_output=True, text=True, timeout=30)
+        if r.returncode == 0 and r.stdout.strip():
+            return json.loads(r.stdout)
+    except Exception:
+        pass
+    return None
 
+
+def _find_run(sha: str, token: str | None = None) -> dict | None:
+    """Find the most recent completed workflow run for exact SHA."""
+    # Try API
+    if token:
+        data = _api(token, f"/actions/runs?head_sha={sha}&per_page=5")
+        if isinstance(data, dict):
+            runs = data.get("workflow_runs", [])
+            for run in runs:
+                if run.get("status") == "completed":
+                    return run
+            if runs:
+                return runs[0]
+    # Try gh CLI
+    try:
+        r = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=10)
+        if r.returncode == 0:
+            data = _gh_json("run", "list", "--repo", REPO, "--commit", sha,
+                            "--json", "databaseId,event,headBranch,headSha,status,conclusion,workflowName",
+                            "--limit", "5")
+            if isinstance(data, list) and data:
+                for run in data:
+                    if run.get("status") == "completed":
+                        return {"id": run.get("databaseId"), "event": run.get("event"),
+                                "head_branch": run.get("headBranch"), "head_sha": run.get("headSha"),
+                                "status": run.get("status"), "conclusion": run.get("conclusion"),
+                                "workflow_name": run.get("workflowName")}
+                first = data[0]
+                return {"id": first.get("databaseId"), "event": first.get("event"),
+                        "head_branch": first.get("headBranch"), "head_sha": first.get("headSha"),
+                        "status": first.get("status"), "conclusion": first.get("conclusion"),
+                        "workflow_name": first.get("workflowName")}
+    except Exception:
+        pass
+    return None
+
+
+def _get_jobs(run_id: int, token: str | None = None) -> list[dict]:
+    """Get jobs and steps for a run."""
+    jobs: list[dict] = []
+    if token:
+        data = _api(token, f"/actions/runs/{run_id}/jobs")
+        if isinstance(data, dict):
+            for j in data.get("jobs", []):
+                steps = []
+                for s in j.get("steps", []):
+                    name = s.get("name", "")
+                    if name and "Set up" not in name and "Post" not in name and "Complete" not in name and "Run actions" not in name:
+                        steps.append({"name": name, "conclusion": s.get("conclusion", "")})
+                jobs.append({"id": j.get("id"), "name": j.get("name", ""), "conclusion": j.get("conclusion", ""), "steps": steps})
+    else:
+        data = _gh_json("run", "view", str(run_id), "--repo", REPO, "--json", "jobs")
+        if isinstance(data, dict):
+            for j in data.get("jobs", []):
+                steps = []
+                for s in j.get("steps", []):
+                    name = s.get("name", "")
+                    if name and "Set up" not in name and "Post" not in name and "Complete" not in name:
+                        steps.append({"name": name, "conclusion": s.get("conclusion", "")})
+                jobs.append({"id": j.get("databaseId"), "name": j.get("name", ""), "conclusion": j.get("conclusion", ""), "steps": steps})
+    return jobs
+
+
+def collect_ci_evidence(sha: str, branch: str, required_steps: list[str] | None, token: str | None = None) -> dict:
+    """Collect CI evidence for exact head SHA."""
     if not token:
         token = os.environ.get("GITHUB_TOKEN", "")
-    if not token:
-        issues.append("No GitHub token — cannot verify CI")
-        return False, issues
 
-    ci = evidence.get("ci", {})
-    pr = evidence.get("pull_request", {})
-    post = evidence.get("post_merge", {})
+    result: dict = {
+        "evidence_source": "none",
+        "run_id": None, "event": "", "workflow": "", "branch": branch,
+        "head_sha": sha, "status": "", "conclusion": "",
+        "jobs": [], "required_steps": required_steps or [],
+        "missing_required_steps": [], "failed_required_steps": [],
+        "annotations": 0, "tool_failures": [], "unknown_evidence": [],
+    }
 
-    ci_run_id = ci.get("run_id")
-    ci_head = ci.get("head_sha", "")
-    pr_head = pr.get("head_sha", "")
-    expected_head = ci_head or pr_head
+    run = _find_run(sha, token)
+    if not run:
+        result["tool_failures"].append({"tool": "ci_finder", "detail": f"No workflow run found for {sha[:12]}", "execution_stopped": False})
+        result["unknown_evidence"].append("ci_run")
+        return result
 
-    # --- Verify CI run ---
-    if ci_run_id:
-        run_data = _gh_api(token, f"/actions/runs/{ci_run_id}")
-        if run_data is None:
-            issues.append(f"CI run #{ci_run_id} not found")
-        else:
-            actual_event = run_data.get("event", "")
-            actual_head = run_data.get("head_sha", "")
-            actual_conclusion = run_data.get("conclusion", "")
-            actual_branch = run_data.get("head_branch", "")
+    result["evidence_source"] = "github_api_authenticated" if token else "gh_cli_authenticated"
+    result["run_id"] = run.get("id", run.get("databaseId"))
+    result["event"] = run.get("event", "")
+    result["workflow"] = run.get("workflow_name", run.get("name", ""))
+    result["branch"] = run.get("head_branch", branch)
+    result["head_sha"] = run.get("head_sha", sha)
+    result["status"] = run.get("status", "")
+    result["conclusion"] = run.get("conclusion", "")
 
-            print(f"CI run #{ci_run_id}: event={actual_event}, "
-                  f"head={actual_head[:12]}…, conclusion={actual_conclusion}")
+    print(f"CI run #{result['run_id']}: event={result['event']} conclusion={result['conclusion']}")
 
-            # Check event — push is acceptable but must be factual
-            if ci.get("event") and ci["event"] != actual_event:
-                issues.append(
-                    f"CI event mismatch: evidence={ci['event']}, "
-                    f"actual={actual_event}"
-                )
+    # Get jobs
+    if result["run_id"]:
+        result["jobs"] = _get_jobs(int(result["run_id"]), token)
+        all_step_names: list[str] = []
+        for j in result["jobs"]:
+            for s in j.get("steps", []):
+                all_step_names.append(s["name"])
+        print(f"  Steps: {all_step_names}")
 
-            # Exact head SHA
-            if expected_head and actual_head != expected_head:
-                issues.append(
-                    f"CI head SHA mismatch: expected {expected_head[:12]}…, "
-                    f"actual {actual_head[:12]}…"
-                )
+        # Check required steps
+        for rs in (required_steps or []):
+            found = any(rs in sn for jj in result["jobs"] for sn in [s["name"] for s in jj.get("steps", [])])
+            passed = any(rs in sn and s.get("conclusion") == "success"
+                        for jj in result["jobs"] for s in jj.get("steps", [])
+                        for sn in [s.get("name", "")])
+            if not found:
+                result["missing_required_steps"].append(rs)
+            elif not passed:
+                result["failed_required_steps"].append(rs)
 
-            # Conclusion
-            if actual_conclusion != "success":
-                issues.append(f"CI conclusion is '{actual_conclusion}', not 'success'")
-
-            # Check jobs/steps
-            jobs_data = _gh_api(token, f"/actions/runs/{ci_run_id}/jobs")
-            if jobs_data:
-                step_names: list[str] = []
-                for job in jobs_data.get("jobs", []):
-                    for step in job.get("steps", []):
-                        name = step.get("name", "")
-                        if name and "Set up" not in name and "Post" not in name and "Complete" not in name:
-                            step_names.append(name)
-                print(f"CI steps: {step_names}")
-
-                required_steps = ci.get("required_steps", [])
-                for req_step in required_steps:
-                    if not any(req_step in s for s in step_names):
-                        issues.append(f"Required CI step missing: '{req_step}'")
-    else:
-        # Check post-merge CI
-        post_ci_run = post.get("ci_run_id")
-        if post_ci_run:
-            run_data = _gh_api(token, f"/actions/runs/{post_ci_run}")
-            if run_data is None:
-                issues.append(f"Post-merge CI run #{post_ci_run} not found")
-            else:
-                actual_head = run_data.get("head_sha", "")
-                actual_conclusion = run_data.get("conclusion", "")
-                new_main = post.get("new_main_sha", "")
-                print(f"Post-merge CI #{post_ci_run}: head={actual_head[:12]}…, "
-                      f"conclusion={actual_conclusion}")
-                if new_main and actual_head != new_main:
-                    issues.append(
-                        f"Post-merge CI head {actual_head[:12]}… ≠ "
-                        f"new main {new_main[:12]}…"
-                    )
-                if actual_conclusion != "success":
-                    issues.append(
-                        f"Post-merge CI conclusion '{actual_conclusion}' ≠ 'success'"
-                    )
-
-    passed = len(issues) == 0
-    if not passed:
-        print("CI VERIFICATION ISSUES:")
-        for i in issues:
-            print(f"  - {i}")
-    else:
-        print("Exact-head CI verified ✓")
-
-    return passed, issues
+    return result
 
 
-def main() -> None:
+def _merge_into(evidence: dict, ci: dict) -> dict:
+    ec = evidence.setdefault("ci", {})
+    for k in ["run_id", "event", "workflow", "branch", "head_sha", "status", "conclusion", "required_steps"]:
+        if ci.get(k) is not None:
+            ec[k] = ci[k]
+    ec["jobs"] = ci.get("jobs", [])
+    ec["annotations"] = ci.get("annotations", 0)
+    evidence.setdefault("tool_failures", []).extend(ci.get("tool_failures", []))
+    evidence.setdefault("unknown_evidence", []).extend(ci.get("unknown_evidence", []))
+    if ci.get("missing_required_steps"):
+        evidence.setdefault("blocking_issues", []).append(f"Missing CI steps: {ci['missing_required_steps']}")
+    if ci.get("failed_required_steps"):
+        evidence.setdefault("blocking_issues", []).append(f"Failed CI steps: {ci['failed_required_steps']}")
+    return evidence
+
+
+def main():
     import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("evidence_file", help="Path to evidence JSON")
+    p.add_argument("--token")
+    p.add_argument("--sha")
+    p.add_argument("--branch")
+    p.add_argument("--json-output")
+    args = p.parse_args()
 
-    parser = argparse.ArgumentParser(
-        description="Verify CI ran on exact head SHA"
-    )
-    parser.add_argument("evidence_file", help="Path to evidence JSON")
-    parser.add_argument("--token", help="GitHub personal access token")
-    args = parser.parse_args()
-
-    with open(args.evidence_file, "r", encoding="utf-8") as f:
+    with open(args.evidence_file) as f:
         evidence = json.load(f)
 
-    passed, _ = verify_exact_head_ci(evidence, args.token)
-    sys.exit(0 if passed else 1)
+    sha = args.sha or evidence.get("pull_request", {}).get("head_sha", "") or evidence.get("implementation", {}).get("commit_sha", "")
+    branch = args.branch or evidence.get("pull_request", {}).get("head_branch", "")
+    required = evidence.get("ci", {}).get("required_steps", [])
+
+    ci = collect_ci_evidence(sha, branch, required, args.token)
+    evidence = _merge_into(evidence, ci)
+
+    with open(args.evidence_file, "w") as f:
+        json.dump(evidence, f, indent=2)
+
+    if args.json_output:
+        with open(args.json_output, "w") as f:
+            json.dump(ci, f, indent=2)
+
+    sys.exit(0 if ci.get("conclusion") == "success" and not ci.get("missing_required_steps") else 1)
 
 
 if __name__ == "__main__":

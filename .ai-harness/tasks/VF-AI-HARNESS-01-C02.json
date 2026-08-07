@@ -1,0 +1,78 @@
+{
+  "task_id": "VF-AI-HARNESS-01-C02",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "Finalize unified live verification, evidence integrity and non-contradictory reporting. Complete the AI execution harness with full P01-P23 pipeline, real gh CLI fallback, structured test/smoke evidence, two-phase evidence with stabilization, report consistency validation, and direct verifier tests.",
+  "explicit_non_objectives": [
+    "M2-S05 feature implementation",
+    "M2-S06 work",
+    "PR merge"
+  ],
+  "required_branch": "chore/ai-pm-execution-harness",
+  "expected_base_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
+  "allowed_paths": [
+    ".ai-harness/",
+    ".github/workflows/vf-dm-ci.yml"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/__init__.py"
+  ],
+  "required_deliverables": [
+    "P01-P23 unified pipeline in run_task_gate.py",
+    "Enhanced verify_remote_state.py with structured JSON",
+    "Enhanced verify_exact_head_ci.py with structured JSON",
+    "Real gh CLI fallback",
+    "Structured test/smoke evidence with JUnit XML",
+    "Two-phase evidence with stabilization",
+    "validate_report_consistency.py",
+    "Direct verifier tests (5 new modules)",
+    "Updated CI workflow"
+  ],
+  "required_tests": [
+    "All 668 regression tests pass",
+    "All harness tests pass"
+  ],
+  "required_smoke_checks": [
+    "virtual-factory validate --config configs/plants/compressor_train_benchmark_01.yaml"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists",
+    "pr_exists",
+    "pr_open",
+    "pr_not_draft",
+    "pr_base_is_main",
+    "exact_head_ci",
+    "ci_conclusion_success"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_implement_m2_s05",
+    "do_not_start_m2_s06",
+    "do_not_self_certify_complete"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "baseline_advanced",
+    "regression_failure"
+  ],
+  "acceptance_criteria": [
+    {"id": "F01", "description": "Correct repository verified"},
+    {"id": "F11", "description": "Unified gate calls verify_remote_state.py"},
+    {"id": "F12", "description": "Unified gate calls verify_exact_head_ci.py"},
+    {"id": "F21", "description": "Authenticated API path implemented"},
+    {"id": "F22", "description": "Authenticated gh CLI path implemented"},
+    {"id": "F31", "description": "Preliminary evidence persisted and validated"},
+    {"id": "F34", "description": "Final status derived after validation"},
+    {"id": "F41", "description": "Pipeline contains P01-P23"},
+    {"id": "F51", "description": "Direct verifier tests added"},
+    {"id": "F56", "description": "All harness tests pass"},
+    {"id": "F57", "description": "Full regression passes"}
+  ],
+  "authorization": {
+    "may_open_pr": false,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
