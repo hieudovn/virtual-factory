@@ -26,11 +26,18 @@ def _get_wip_id(event: ScheduledEvent) -> str | None:
     return None
 
 
+def _get_flow_id(event: ScheduledEvent) -> str:
+    """Extract flow identity from event payload.  Defaults to 'base'."""
+    if event.payload and hasattr(event.payload, "get"):
+        return event.payload.get("flow_id", "base")
+    return "base"
+
+
 def _evt(event_id: str, simulation_time_s: float = 0.0, event_type: str = "",
         target_id: str = "", causation_id: str | None = None,
-        wip_id: str | None = None) -> ScheduledEvent:
-    """Create a ScheduledEvent, optionally carrying WIP identity in payload."""
-    payload = {"wip_id": wip_id} if wip_id else None
+        wip_id: str | None = None, flow_id: str = "base") -> ScheduledEvent:
+    """Create a ScheduledEvent carrying WIP and flow identity in payload."""
+    payload = {"wip_id": wip_id, "flow_id": flow_id} if wip_id else {"flow_id": flow_id}
     return ScheduledEvent(
         event_id=event_id, simulation_time_s=simulation_time_s, event_type=event_type,
         target_id=target_id, causation_id=causation_id,
@@ -74,9 +81,9 @@ def make_source_handler(
             event_id=event.event_id, success=True,
             state_changes=(f"{wip_id}:created→queued@{next_id}",),
             follow_up_events=(
-                _evt(f"{wip_id}-arrive", simulation_time_s=event.simulation_time_s,
+                _evt(f"{wip_id}-base-arrive", simulation_time_s=event.simulation_time_s,
                      event_type="WIP_QUEUED", target_id=next_id,
-                     causation_id=event.event_id, wip_id=str(wip_id)),
+                     causation_id=event.event_id, wip_id=str(wip_id), flow_id="base"),
             ),
         )
 
@@ -136,6 +143,7 @@ def make_buffer_handler(
         dequeued = state.buffer_dequeue(buffer_id)
         assert dequeued.id == wip_id.id, f"FIFO mismatch: {dequeued.id} != {wip_id.id}"
         ws.advance(next_id, WipStatus.PROCESSING)
+        flow = _get_flow_id(event)
 
         return HandlerOutcome(
             event_id=event.event_id, success=True,
@@ -145,9 +153,9 @@ def make_buffer_handler(
                 f"buffer:{buffer_id}:size={state.buffer_size(buffer_id)}",
             ),
             follow_up_events=(
-                _evt(f"{wip_id}-process-start", simulation_time_s=event.simulation_time_s,
+                _evt(f"{wip_id}-{flow}-process-start", simulation_time_s=event.simulation_time_s,
                      event_type="PROCESS_START", target_id=next_id,
-                     causation_id=event.event_id, wip_id=str(wip_id)),
+                     causation_id=event.event_id, wip_id=str(wip_id), flow_id=flow),
             ),
         )
 
@@ -190,7 +198,8 @@ def make_processor_handler(
 
         ws.advance(proc_id, WipStatus.PROCESSING)
         completion_time = event.simulation_time_s + proc.processing_time_s
-        complete_eid = event.event_id.replace("-process-start", "-process-complete")
+        flow = _get_flow_id(event)
+        complete_eid = f"{wip_id}-{flow}-{proc_id}-process-complete"
 
         return HandlerOutcome(
             event_id=event.event_id, success=True,
@@ -199,7 +208,7 @@ def make_processor_handler(
                 _evt(complete_eid,
                      simulation_time_s=completion_time,
                      event_type="PROCESS_COMPLETE", target_id=proc_id,
-                     causation_id=event.event_id, wip_id=str(wip_id)),
+                     causation_id=event.event_id, wip_id=str(wip_id), flow_id=flow),
             ),
         )
 
@@ -248,29 +257,28 @@ def make_process_complete_handler(
 
         if isinstance(next_prim, Processor):
             ws.advance(next_id, WipStatus.PROCESSING)
+            flow = _get_flow_id(event)
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:processing→next@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}-{next_id}-process-start",
+                    _evt(f"{wip_id}-{flow}-{next_id}-process-start",
                          simulation_time_s=event.simulation_time_s,
                          event_type="PROCESS_START", target_id=next_id,
-                         causation_id=event.event_id, wip_id=str(wip_id)),
+                         causation_id=event.event_id, wip_id=str(wip_id), flow_id=flow),
                 ),
             )
         else:
             ws.advance(next_id, WipStatus.INSPECTING)
-            # Rework events need unique quality-check IDs to avoid scheduler collision
-            is_rewrk = "rework" in event.event_id
-            qc_eid = f"{wip_id}-rewrk-quality-check" if is_rewrk else f"{wip_id}-quality-check"
+            flow = _get_flow_id(event)
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:processing→inspecting@{next_id}",),
                 follow_up_events=(
-                    _evt(qc_eid,
+                    _evt(f"{wip_id}-{flow}-quality-check",
                          simulation_time_s=event.simulation_time_s,
                          event_type="QUALITY_CHECK", target_id=next_id,
-                         causation_id=event.event_id, wip_id=str(wip_id)),
+                         causation_id=event.event_id, wip_id=str(wip_id), flow_id=flow),
                 ),
             )
 
@@ -331,27 +339,29 @@ def make_quality_gate_handler(
 
         if disposition == QualityDisposition.PASS:
             ws.advance(next_id, WipStatus.INSPECTING)
+            flow = _get_flow_id(event)
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:pass→sink@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}-sink", simulation_time_s=event.simulation_time_s,
+                    _evt(f"{wip_id}-{flow}-sink", simulation_time_s=event.simulation_time_s,
                          event_type="WIP_COMPLETED", target_id=next_id,
-                         causation_id=event.event_id, wip_id=str(wip_id)),
+                         causation_id=event.event_id, wip_id=str(wip_id), flow_id=flow),
                 ),
             )
         else:  # REWORK
             ws.advance(next_id, WipStatus.REWORK)
             rc = rework_counts.get(wip_id_str, 0) + 1
             rework_counts[wip_id_str] = rc
+            new_flow = f"rework-{rc}"
             return HandlerOutcome(
                 event_id=event.event_id, success=True,
                 state_changes=(f"{wip_id}:rework→processing@{next_id}",),
                 follow_up_events=(
-                    _evt(f"{wip_id}-{next_id}-rework{rc}-process-start",
+                    _evt(f"{wip_id}-{new_flow}-{next_id}-process-start",
                          simulation_time_s=event.simulation_time_s,
                          event_type="PROCESS_START", target_id=next_id,
-                         causation_id=event.event_id, wip_id=str(wip_id)),
+                         causation_id=event.event_id, wip_id=str(wip_id), flow_id=new_flow),
                 ),
             )
 
