@@ -245,6 +245,10 @@ class RuntimeDiagnostics:
     trace_size: int = 0
     trace_total_entries: int = 0
     trace_dropped_entries: int = 0
+    # M2-S05 replay metadata
+    random_seed: int = 0
+    max_processed_events_limit: int | None = None
+    same_time_event_limit: int = 0
 
     def __post_init__(self) -> None:
         # counters
@@ -276,3 +280,22 @@ class RuntimeDiagnostics:
             if not isinstance(self.failure_detail, str):
                 raise RuntimeDiagnosticsError("failure_detail must be str or None")
             object.__setattr__(self, "failure_detail", _normalize_detail(self.failure_detail))
+
+        # M2-S05: replay metadata validation
+        if isinstance(self.random_seed, bool):
+            raise RuntimeDiagnosticsError("random_seed must be int, not bool")
+        if not isinstance(self.random_seed, int) or self.random_seed < 0:
+            raise RuntimeDiagnosticsError(f"random_seed must be int >= 0, got {self.random_seed!r}")
+        if self.max_processed_events_limit is not None:
+            if isinstance(self.max_processed_events_limit, bool):
+                raise RuntimeDiagnosticsError("max_processed_events_limit must be int or None, not bool")
+            if not isinstance(self.max_processed_events_limit, int) or self.max_processed_events_limit <= 0:
+                raise RuntimeDiagnosticsError(
+                    f"max_processed_events_limit must be int > 0 or None, got {self.max_processed_events_limit!r}"
+                )
+        if isinstance(self.same_time_event_limit, bool):
+            raise RuntimeDiagnosticsError("same_time_event_limit must be int, not bool")
+        if not isinstance(self.same_time_event_limit, int) or self.same_time_event_limit < 0:
+            raise RuntimeDiagnosticsError(
+                f"same_time_event_limit must be int >= 0, got {self.same_time_event_limit!r}"
+            )
