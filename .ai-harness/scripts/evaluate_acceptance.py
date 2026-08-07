@@ -46,12 +46,23 @@ def _resolve_field(data: dict, field_path: str) -> Any:
     return current
 
 
-def evaluate_acceptance(evidence: dict, contract: dict) -> list[dict]:
-    """Evaluate acceptance criteria against evidence."""
+def evaluate_acceptance(evidence: dict, contract: dict, phase: str | None = None) -> list[dict]:
+    """Evaluate acceptance criteria against evidence.
+
+    If phase is specified, only evaluates criteria with that phase.
+    Otherwise evaluates all criteria regardless of phase.
+    """
     results: list[dict] = []
     criteria = contract.get("acceptance_criteria", [])
 
     for item in criteria:
+        # Phase filter
+        item_phase = item.get("phase", "")
+        if phase and item_phase != phase:
+            continue
+        if not phase and item_phase == "final":
+            # Skip final-phase items when evaluating all (pre_status default)
+            continue
         rule = item.get("rule")
         if not rule:
             results.append({
@@ -113,6 +124,7 @@ def main() -> None:
     parser.add_argument("evidence_file", help="Path to evidence JSON")
     parser.add_argument("contract_file", help="Path to task contract JSON")
     parser.add_argument("--output", help="Path to write updated evidence JSON")
+    parser.add_argument("--phase", help="Only evaluate criteria with this phase (pre_status or final)")
     args = parser.parse_args()
 
     with open(args.evidence_file, "r", encoding="utf-8") as f:
@@ -120,12 +132,22 @@ def main() -> None:
     with open(args.contract_file, "r", encoding="utf-8") as f:
         contract = json.load(f)
 
-    results = evaluate_acceptance(evidence, contract)
-    evidence["acceptance"] = results
+    results = evaluate_acceptance(evidence, contract, phase=args.phase)
 
-    passes = sum(1 for r in results if r["result"] == "PASS")
-    fails = sum(1 for r in results if r["result"] == "FAIL")
-    unknowns = sum(1 for r in results if r["result"] == "UNKNOWN")
+    # Merge: keep existing non-evaluated items, add/update evaluated ones
+    existing = evidence.get("acceptance", [])
+    existing_ids = {e.get("id"): i for i, e in enumerate(existing)}
+    for r in results:
+        rid = r["id"]
+        if rid in existing_ids:
+            existing[existing_ids[rid]] = r
+        else:
+            existing.append(r)
+    evidence["acceptance"] = existing
+
+    passes = sum(1 for r in existing if r.get("result") == "PASS")
+    fails = sum(1 for r in existing if r.get("result") == "FAIL")
+    unknowns = sum(1 for r in existing if r.get("result") == "UNKNOWN")
 
     print(f"Acceptance: {passes} PASS, {fails} FAIL, {unknowns} UNKNOWN")
     for r in results:

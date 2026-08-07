@@ -155,18 +155,21 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     with open(ep) as f: evidence = json.load(f)
     _step("P10", "Exact-head CI", True, "PASS" if cim.returncode == 0 else "FAIL")
 
-    # P11: Acceptance
-    print("\n" + "=" * 50 + "\nP11: Acceptance")
+    # P11: Pre-status acceptance
+    print("\n" + "=" * 50 + "\nP11: Pre-status acceptance")
     tmp = td / "_acc.json"
     with open(tmp, "w") as f: json.dump(evidence, f)
-    ar = _run("evaluate_acceptance.py", [str(tmp), task_path])
+    ar = _run("evaluate_acceptance.py", [str(tmp), task_path, "--phase", "pre_status"])
     print(ar.stdout or "")
     try:
         with open(tmp) as f: evidence = json.load(f)
     except: pass
     try: tmp.unlink()
     except: pass
-    _step("P11", "Acceptance", True, "PASS" if ar.returncode == 0 else "FAIL")
+    acc_pre = evidence.get("acceptance", [])
+    _step("P11", "Pre-status acceptance", True,
+          "PASS" if all(a.get("result") == "PASS" for a in acc_pre) and acc_pre else
+          "FAIL" if any(a.get("result") == "FAIL" for a in acc_pre) else "FAIL")
 
     # P12: Tool failures
     print("\n" + "=" * 50 + "\nP12: Tool failures")
@@ -235,6 +238,23 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     gate_sat = ec == 0 and final_status == "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW"
     evidence["requested_gate_satisfied"] = gate_sat
     _step("P20", "Exit code", True, "PASS")
+
+    # P20b: Final assertions (evaluated after exit code exists)
+    print("\n" + "=" * 50 + "\nP20b: Final assertions")
+    tmp2 = td / "_acc_final.json"
+    with open(tmp2, "w") as f: json.dump(evidence, f)
+    ar2 = _run("evaluate_acceptance.py", [str(tmp2), task_path, "--phase", "final"])
+    print(ar2.stdout or "")
+    try:
+        with open(tmp2) as f: evidence = json.load(f)
+    except: pass
+    try: tmp2.unlink()
+    except: pass
+    all_acc = evidence.get("acceptance", [])
+    final_assertions = [a for a in all_acc if a.get("phase") == "final"]
+    _step("P20b", "Final assertions", True,
+          "PASS" if all(a.get("result") == "PASS" for a in final_assertions) and final_assertions else
+          "FAIL" if any(a.get("result") == "FAIL" for a in final_assertions) else "FAIL")
 
     # P21: Persist final
     print("\n" + "=" * 50 + "\nP21: Persist final evidence")
