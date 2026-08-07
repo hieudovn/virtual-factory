@@ -1,0 +1,82 @@
+{
+  "task_id": "VF-AI-HARNESS-01-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "Complete and enforce the PM Execution, Evidence and Status Governance Harness. Correct all SA-identified blockers: B01-B10.",
+  "explicit_non_objectives": [
+    "M2-S05 feature implementation",
+    "M2-S06 work",
+    "PR merge"
+  ],
+  "required_branch": "chore/ai-pm-execution-harness",
+  "expected_base_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
+  "allowed_paths": [
+    ".ai-harness/",
+    ".github/workflows/",
+    "AGENTS.md",
+    ".cursor/",
+    ".gitignore"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/__init__.py"
+  ],
+  "required_deliverables": [
+    "Harness unit tests (.ai-harness/tests/)",
+    "CI workflow integration",
+    "Remote verification fail-closed",
+    "Acceptance evaluator",
+    "Pipeline ordering corrected",
+    "Exit code semantics corrected",
+    "Report-only semantics defined",
+    "Baseline/slice contract split",
+    "AGENTS.md + Cursor rule",
+    "README paths corrected",
+    "Evidence schema extended"
+  ],
+  "required_tests": [
+    "All 668 regression tests pass",
+    "All harness tests in .ai-harness/tests/ pass"
+  ],
+  "required_smoke_checks": [
+    "virtual-factory validate --config configs/plants/compressor_train_benchmark_01.yaml"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists",
+    "pr_exists",
+    "pr_open",
+    "pr_not_draft",
+    "pr_base_is_main",
+    "exact_head_ci",
+    "ci_conclusion_success"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_implement_m2_s05",
+    "do_not_start_m2_s06",
+    "do_not_self_certify_complete"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "baseline_advanced",
+    "regression_failure"
+  ],
+  "acceptance_criteria": [
+    {"id": "C01", "description": "Harness tests exist and pass"},
+    {"id": "C02", "description": "CI workflow integrated"},
+    {"id": "C03", "description": "Remote verification fails closed"},
+    {"id": "C04", "description": "Acceptance evaluator implemented"},
+    {"id": "C05", "description": "Pipeline ordering corrected"},
+    {"id": "C06", "description": "Exit code semantics corrected"},
+    {"id": "C07", "description": "Report-only semantics defined"},
+    {"id": "C08", "description": "Contracts split (baseline + slice template)"},
+    {"id": "C09", "description": "AGENTS.md + Cursor rule created"},
+    {"id": "C10", "description": "668 regression + all harness tests pass"}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

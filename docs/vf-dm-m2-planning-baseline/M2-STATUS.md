@@ -9,10 +9,10 @@
 | M2-S01 | **COMPLETE** | `feature/dm-m2-s01` (merged) | `16408fd` | 356 |
 | M2-S02 | **COMPLETE** | `feature/dm-m2-s02` (merged) | `f4d3a8f` | 384 |
 | M2-S03 | **COMPLETE** | `feature/dm-m2-s03` (merged) | `a01ad35` | ~550 |
-| M2-S04 | **IN PROGRESS** | `feature/dm-m2-s04` | `7d34022` (C02) | 668 |
+| M2-S04 | **CLOSED** | `feature/dm-m2-s04` (merged #1) | `0ffd1a2` | 668 |
 | M2-S04-C01 | COMPLETE | — | `ef5ff97` | 642 |
 | M2-S04-C02 | COMPLETE | — | `7d34022` | 668 |
-| M2-S05 | PENDING | — | — | — |
+| M2-S05 | **AUTHORIZED TO START** | — | — | — |
 | M2-S06 | PENDING | — | — | — |
 | M2-S07 | PENDING | — | — | — |
 

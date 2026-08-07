@@ -1,0 +1,89 @@
+{
+  "task_id": "TEMPLATE",
+  "repository": "hieudovn/virtual-factory",
+  "interpretation": {
+    "objective": "",
+    "deliverables": [],
+    "non_deliverables": [],
+    "forbidden_actions": [],
+    "stop_conditions": []
+  },
+  "preflight": {
+    "current_branch": "",
+    "working_tree_clean": true,
+    "local_head": "",
+    "remote_branch_head": "",
+    "remote_main_head": "",
+    "expected_base_sha": "",
+    "baseline_match": true
+  },
+  "implementation": {
+    "post_execution_local_head": "",
+    "commit_sha": "",
+    "commit_exists_locally": true,
+    "commit_exists_remotely": true,
+    "changed_files": [],
+    "remote_branch_head": ""
+  },
+  "pull_request": {
+    "number": null,
+    "state": "OPEN",
+    "base_branch": "main",
+    "base_sha": "",
+    "head_branch": "",
+    "head_sha": "",
+    "draft": false,
+    "merged": false,
+    "merged_at": null,
+    "merge_commit_sha": ""
+  },
+  "tests": {
+    "collected": 0,
+    "passed": 0,
+    "failed": 0,
+    "warnings": 0,
+    "commands": []
+  },
+  "ci": {
+    "run_id": null,
+    "event": "",
+    "workflow": "VF-DM CI",
+    "branch": "",
+    "head_sha": "",
+    "conclusion": "success",
+    "annotations": 0,
+    "required_steps": []
+  },
+  "post_merge": {
+    "required": false,
+    "new_main_sha": "",
+    "main_contains_change": null,
+    "ci_run_id": null,
+    "ci_head_sha": "",
+    "ci_conclusion": "",
+    "regression_passed": null
+  },
+  "platform_controls": {
+    "required_policy": [],
+    "actual_state": [],
+    "evidence": [],
+    "residual_gaps": [],
+    "compensating_controls": [],
+    "revisit_triggers": []
+  },
+  "authorization": {
+    "sa_review_present": false,
+    "merge_authorized": false,
+    "authorized_head_sha": "",
+    "next_task_authorized": false
+  },
+  "forbidden_actions": {
+    "performed": false,
+    "details": []
+  },
+  "acceptance": [],
+  "unknown_evidence": [],
+  "tool_failures": [],
+  "contradictions": [],
+  "derived_status": "NOT STARTED"
+}

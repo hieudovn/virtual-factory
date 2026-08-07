@@ -1,0 +1,94 @@
+{
+  "task_id": "VF-DM-EXAMPLE-READY",
+  "repository": "hieudovn/virtual-factory",
+  "interpretation": {
+    "objective": "Example: valid READY FOR SA REVIEW evidence record",
+    "deliverables": ["example_feature.py", "test_example_feature.py"],
+    "non_deliverables": ["next_slice_implementation"],
+    "forbidden_actions": [],
+    "stop_conditions": []
+  },
+  "preflight": {
+    "current_branch": "feature/example",
+    "working_tree_clean": true,
+    "local_head": "aaa111bbb222ccc333ddd444eee555fff666777",
+    "remote_branch_head": "aaa111bbb222ccc333ddd444eee555fff666777",
+    "remote_main_head": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "expected_base_sha": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "baseline_match": true
+  },
+  "implementation": {
+    "post_execution_local_head": "aaa111bbb222ccc333ddd444eee555fff666777",
+    "commit_sha": "aaa111bbb222ccc333ddd444eee555fff666777",
+    "commit_exists_locally": true,
+    "commit_exists_remotely": true,
+    "changed_files": ["src/example_feature.py", "tests/test_example_feature.py"],
+    "remote_branch_head": "aaa111bbb222ccc333ddd444eee555fff666777"
+  },
+  "pull_request": {
+    "number": 99,
+    "state": "OPEN",
+    "base_branch": "main",
+    "base_sha": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "head_branch": "feature/example",
+    "head_sha": "aaa111bbb222ccc333ddd444eee555fff666777",
+    "draft": false,
+    "merged": false,
+    "merged_at": null,
+    "merge_commit_sha": ""
+  },
+  "tests": {
+    "collected": 680,
+    "passed": 680,
+    "failed": 0,
+    "warnings": 1,
+    "commands": ["python -m pytest -q --tb=short"]
+  },
+  "ci": {
+    "run_id": 99999999,
+    "event": "pull_request",
+    "workflow": "VF-DM CI",
+    "branch": "feature/example",
+    "head_sha": "aaa111bbb222ccc333ddd444eee555fff666777",
+    "conclusion": "success",
+    "annotations": 0,
+    "required_steps": ["Test", "Smoke — virtual-factory validate", "Smoke — VF2 validate"]
+  },
+  "post_merge": {
+    "required": false,
+    "new_main_sha": "",
+    "main_contains_change": null,
+    "ci_run_id": null,
+    "ci_head_sha": "",
+    "ci_conclusion": "",
+    "regression_passed": null
+  },
+  "platform_controls": {
+    "required_policy": ["All changes to main must go through PR"],
+    "actual_state": ["main is not protected via GitHub branch protection"],
+    "evidence": ["GitHub API 403: plan limitation"],
+    "residual_gaps": ["Direct main pushes technically possible"],
+    "compensating_controls": ["pre-push hook", "mandatory PR workflow", "verify-pr-merge-gate.py"],
+    "revisit_triggers": ["Repository plan upgraded or made public"]
+  },
+  "authorization": {
+    "sa_review_present": false,
+    "merge_authorized": false,
+    "authorized_head_sha": "",
+    "next_task_authorized": false
+  },
+  "forbidden_actions": {
+    "performed": false,
+    "details": []
+  },
+  "acceptance": [
+    {"id": "A01", "result": "PASS", "evidence": "680 tests passed"},
+    {"id": "A02", "result": "PASS", "evidence": "CI run 99999999 success"},
+    {"id": "A03", "result": "PASS", "evidence": "Commit aaa111bbb exists remotely"},
+    {"id": "A04", "result": "PASS", "evidence": "PR #99 open, not draft, base main"}
+  ],
+  "unknown_evidence": [],
+  "tool_failures": [],
+  "contradictions": [],
+  "derived_status": "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW"
+}

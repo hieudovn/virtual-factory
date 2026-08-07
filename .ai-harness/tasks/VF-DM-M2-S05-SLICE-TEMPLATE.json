@@ -1,0 +1,63 @@
+{
+  "task_id": "VF-DM-M2-S05-SLICE-TEMPLATE",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "[TO BE FILLED: Specific M2-S05 implementation slice objective]",
+  "explicit_non_objectives": [
+    "M2-S05 slices not described in this contract",
+    "M2-S06 work",
+    "PR merge (requires SA authorization)"
+  ],
+  "required_branch": "feature/dm-m2-s05",
+  "expected_base_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
+  "allowed_paths": [
+    "src/virtual_factory/discrete/",
+    "tests/"
+  ],
+  "forbidden_paths": [],
+  "required_deliverables": [
+    "[TO BE FILLED]"
+  ],
+  "required_tests": [
+    "All existing 668 regression tests must pass",
+    "[TO BE FILLED: New slice-specific tests]"
+  ],
+  "required_smoke_checks": [
+    "virtual-factory validate --config configs/plants/compressor_train_benchmark_01.yaml"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists",
+    "pr_exists",
+    "pr_open",
+    "pr_not_draft",
+    "pr_base_is_main",
+    "exact_head_ci",
+    "ci_conclusion_success"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_start_m2_s06",
+    "do_not_self_certify_complete",
+    "do_not_delete_tests"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "baseline_advanced",
+    "regression_failure"
+  ],
+  "acceptance_criteria": [
+    {"id": "S01", "description": "[TO BE FILLED]"},
+    {"id": "S02", "description": "All existing regression tests pass"},
+    {"id": "S03", "description": "Code committed and pushed"},
+    {"id": "S04", "description": "PR open, not draft, base correct"},
+    {"id": "S05", "description": "Exact-head CI passes"},
+    {"id": "S06", "description": "PR remains unmerged"}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  },
+  "_note": "This is a TEMPLATE for M2-S05 implementation slice contracts. The baseline contract (VF-DM-M2-S05-BASELINE.json) authorizes governed preparation. A slice contract authorizes only the explicitly described implementation slice. Neither authorizes merge unless explicit SA authorization evidence exists."
+}

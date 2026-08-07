@@ -8,6 +8,8 @@ __pycache__/
 .coverage
 htmlcov/
 dist/
+# AI harness runtime traces (fixtures and examples are committed)
+.ai-harness/traces/
 build/
 .env
 .env.*

@@ -1,0 +1,18 @@
+---
+description: Mandatory AI execution harness for all repository tasks
+alwaysApply: true
+---
+# AI Execution Harness
+
+Before executing any task in this repository:
+
+1. Read `AGENTS.md` at repository root.
+2. Read `.ai-harness/PM-EXECUTION-CONTRACT.md`.
+3. Identify the task contract under `.ai-harness/tasks/`.
+4. Run `python .ai-harness/scripts/preflight.py --task <contract>` before modifying files.
+5. Stop on preflight failure, baseline mismatch, task ambiguity or required tool failure.
+6. Run `python .ai-harness/scripts/run_task_gate.py --task <contract>` before final reporting.
+7. Use only the machine-derived status from `derive_status.py`.
+8. Fail closed: missing evidence, tool failure, and UNKNOWN are not PASS.
+9. Do not merge or start the next slice unless explicitly authorized for the exact current head SHA.
+10. Do not self-certify COMPLETE, CLOSED, SA APPROVED or NEXT SLICE AUTHORIZED.

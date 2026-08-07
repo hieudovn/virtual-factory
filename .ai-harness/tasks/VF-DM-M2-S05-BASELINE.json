@@ -1,0 +1,59 @@
+{
+  "task_id": "VF-DM-M2-S05-BASELINE",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "preflight_only",
+  "objective": "Verify repository and baseline readiness for M2-S05. Confirm M2-S04 closure, M2-S05 authorization, and governance prerequisites. This is a BASELINE-ONLY contract — it does NOT require M2-S05 feature implementation, commits, tests, or PRs.",
+  "explicit_non_objectives": [
+    "M2-S05 feature implementation",
+    "M2-S05 technical design definition",
+    "M2-S05 feature commits or tests",
+    "M2-S05 feature PR",
+    "Engine or controller behavior changes",
+    "M2-S06 authorization",
+    "PR merge"
+  ],
+  "required_branch": "feature/dm-m2-s05",
+  "expected_base_sha": "0ffd1a2d5370545bbd165579bd4d3162290e64b8",
+  "allowed_paths": [
+    "src/virtual_factory/discrete/",
+    "tests/",
+    "configs/",
+    ".ai-harness/tasks/"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/__init__.py",
+    "src/virtual_factory/discrete/__init__.py"
+  ],
+  "required_deliverables": [
+    "This baseline contract itself"
+  ],
+  "required_tests": [
+    "Existing 668 regression tests must pass (pre-existing, not M2-S05)"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_claim_m2_s05_implemented",
+    "do_not_start_m2_s06"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "baseline_advanced"
+  ],
+  "acceptance_criteria": [
+    {"id": "B01", "description": "M2-S04 is CLOSED (merge commit 0ffd1a2d)"},
+    {"id": "B02", "description": "M2-S05 is AUTHORIZED TO START"},
+    {"id": "B03", "description": "Main baseline is 0ffd1a2d"},
+    {"id": "B04", "description": "Existing 668 regression tests pass on baseline"},
+    {"id": "B05", "description": "Harness is present and functional"},
+    {"id": "B06", "description": "No M2-S05 implementation claim is made"}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  },
+  "_note": "This file authorizes preparation and governed execution of M2-S05 tasks. It does not define the technical design of M2-S05. It does not authorize arbitrary scope. It does not authorize merge. It does not authorize M2-S06."
+}

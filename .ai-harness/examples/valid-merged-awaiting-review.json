@@ -1,0 +1,92 @@
+{
+  "task_id": "VF-DM-EXAMPLE-MERGED",
+  "repository": "hieudovn/virtual-factory",
+  "interpretation": {
+    "objective": "Example: valid MERGED — READY FOR POST-MERGE REVIEW evidence",
+    "deliverables": ["merged_feature.py"],
+    "non_deliverables": [],
+    "forbidden_actions": [],
+    "stop_conditions": []
+  },
+  "preflight": {
+    "current_branch": "feature/merged-example",
+    "working_tree_clean": true,
+    "local_head": "bbb222ccc333ddd444eee555fff666777888999",
+    "remote_branch_head": "bbb222ccc333ddd444eee555fff666777888999",
+    "remote_main_head": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "expected_base_sha": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "baseline_match": true
+  },
+  "implementation": {
+    "post_execution_local_head": "bbb222ccc333ddd444eee555fff666777888999",
+    "commit_sha": "bbb222ccc333ddd444eee555fff666777888999",
+    "commit_exists_locally": true,
+    "commit_exists_remotely": true,
+    "changed_files": ["src/merged_feature.py"],
+    "remote_branch_head": "bbb222ccc333ddd444eee555fff666777888999"
+  },
+  "pull_request": {
+    "number": 100,
+    "state": "CLOSED",
+    "base_branch": "main",
+    "base_sha": "000fff111aaa222bbb333ccc444ddd555eee666",
+    "head_branch": "feature/merged-example",
+    "head_sha": "bbb222ccc333ddd444eee555fff666777888999",
+    "draft": false,
+    "merged": true,
+    "merged_at": "2026-08-07T12:00:00Z",
+    "merge_commit_sha": "ccc333ddd444eee555fff666777888999000111"
+  },
+  "tests": {
+    "collected": 685,
+    "passed": 685,
+    "failed": 0,
+    "warnings": 1,
+    "commands": ["python -m pytest -q --tb=short"]
+  },
+  "ci": {
+    "run_id": 88888888,
+    "event": "pull_request",
+    "workflow": "VF-DM CI",
+    "branch": "feature/merged-example",
+    "head_sha": "bbb222ccc333ddd444eee555fff666777888999",
+    "conclusion": "success",
+    "annotations": 0,
+    "required_steps": ["Test", "Smoke — virtual-factory validate"]
+  },
+  "post_merge": {
+    "required": true,
+    "new_main_sha": "ccc333ddd444eee555fff666777888999000111",
+    "main_contains_change": true,
+    "ci_run_id": null,
+    "ci_head_sha": "",
+    "ci_conclusion": "",
+    "regression_passed": null
+  },
+  "platform_controls": {
+    "required_policy": ["All changes to main must go through PR"],
+    "actual_state": ["main is not protected via GitHub branch protection"],
+    "evidence": ["GitHub API 403"],
+    "residual_gaps": ["Direct main pushes technically possible"],
+    "compensating_controls": ["pre-push hook", "mandatory PR workflow"],
+    "revisit_triggers": ["Plan upgrade"]
+  },
+  "authorization": {
+    "sa_review_present": true,
+    "merge_authorized": true,
+    "authorized_head_sha": "bbb222ccc333ddd444eee555fff666777888999",
+    "next_task_authorized": false
+  },
+  "forbidden_actions": {
+    "performed": false,
+    "details": []
+  },
+  "acceptance": [
+    {"id": "A01", "result": "PASS", "evidence": "PR merged successfully"},
+    {"id": "A02", "result": "PASS", "evidence": "CI passed on authorized head"}
+  ],
+  "unknown_evidence": [],
+  "tool_failures": [],
+  "contradictions": [],
+  "derived_status": "MERGED — READY FOR POST-MERGE REVIEW"
+}
