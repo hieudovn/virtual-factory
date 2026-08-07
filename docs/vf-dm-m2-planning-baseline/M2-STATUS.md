@@ -1,7 +1,7 @@
 # M2 — Discrete Runtime Core Status
 
 **Date:** 2026-08-07
-**Last Updated:** M2-S06 merge + harness C06 start
+**Last Updated:** M2-S07 — Discrete Run Service
 
 | Slice | Status | Branch | Main Commit | Tests |
 |-------|--------|--------|-------------|-------|
@@ -16,7 +16,7 @@
 | M2-S05-C01 | COMPLETE | — | `8b794a3` | 688 |
 | M2-S06 | **CLOSED** | `feature/dm-m2-s06` (merged #6) | `f8870af` | 701 |
 | M2-S06-C01 | COMPLETE | — | `0a37ffe` | 701 |
-| M2-S07 | PENDING | — | — | — |
+| M2-S07 | **IN PROGRESS** | `feature/dm-m2-s07` | `48ac53e` | — |
 
 ---
 

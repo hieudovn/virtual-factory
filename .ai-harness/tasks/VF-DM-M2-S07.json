@@ -1,0 +1,87 @@
+{
+  "task_id": "VF-DM-M2-S07",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "M2-S07 Discrete Run Service. Provide a domain-neutral one-run service façade around DiscreteRunController → DiscreteSimulationEngine. Owns at most one run, coordinates lifecycle, exposes snapshot and allowed actions, forwards commands through controller. No multi-run, no persistence, no transport.",
+  "explicit_non_objectives": [
+    "FastAPI / REST / WebSocket",
+    "Persistence / database",
+    "Multi-run registry",
+    "Concurrent runs",
+    "MES / Odoo / PlantOS / TIPA",
+    "Assembly domain concepts",
+    "Engine or controller logic duplication",
+    "Harness modification",
+    "M3 implementation"
+  ],
+  "required_branch": "feature/dm-m2-s07",
+  "expected_base_sha": "48ac53efa51d4e5bfd857b2dcfd2510387d2b2ef",
+  "allowed_paths": [
+    "src/virtual_factory/discrete/run_service.py",
+    "tests/test_run_service.py",
+    "docs/vf-dm-m2-planning-baseline/M2-STATUS.md",
+    ".ai-harness/tasks/VF-DM-M2-S07.json"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/discrete/engine.py",
+    "src/virtual_factory/discrete/controller.py",
+    "src/virtual_factory/discrete/scheduler.py",
+    "src/virtual_factory/discrete/handler_registry.py",
+    "src/virtual_factory/discrete/dispatcher.py"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/discrete/run_service.py — DiscreteRunService",
+    "tests/test_run_service.py — S07 tests",
+    "docs/vf-dm-m2-planning-baseline/M2-STATUS.md — updated",
+    ".ai-harness/tasks/VF-DM-M2-S07.json — this contract"
+  ],
+  "required_tests": [
+    "S07-A: Service initialization",
+    "S07-B: Snapshot access",
+    "S07-C: Command path through controller",
+    "S07-D: Lifecycle progression",
+    "S07-E: Invalid lifecycle rejection",
+    "S07-F: Terminal behavior",
+    "S07-G: Existing regression preserved"
+  ],
+  "required_smoke_checks": [
+    "virtual-factory validate --config configs/plants/compressor_train_benchmark_01.yaml"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists",
+    "pr_exists",
+    "pr_open",
+    "pr_not_draft",
+    "pr_base_is_main",
+    "exact_head_ci",
+    "ci_conclusion_success"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_modify_engine",
+    "do_not_modify_controller",
+    "do_not_start_m3",
+    "do_not_self_certify_complete"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "baseline_advanced",
+    "regression_failure",
+    "controller_engine_redesign_required"
+  ],
+  "acceptance_criteria": [
+    {"id": "S01", "phase": "pre_status", "description": "Baseline is 48ac53e", "rule": {"field": "preflight.expected_base_sha", "operator": "equals", "expected": "48ac53efa51d4e5bfd857b2dcfd2510387d2b2ef"}},
+    {"id": "S02", "phase": "pre_status", "description": "No engine/controller changed", "rule": {"field": "implementation.changed_files", "operator": "not_contains", "expected": "engine.py"}},
+    {"id": "S03", "phase": "pre_status", "description": "Tests pass", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "S04", "phase": "pre_status", "description": "Full regression zero failures", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "S05", "phase": "pre_status", "description": "CI success", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "F01", "phase": "final", "description": "Pipeline all steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
+    {"id": "F02", "phase": "final", "description": "Pipeline all steps pass", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
