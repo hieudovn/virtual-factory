@@ -250,7 +250,7 @@ Key properties:
 | **ObservationEnvelope** | `observation/` | Carry observation identity (including `idempotency_key`), type, time, source, subject, payload in consumer-neutral form | Know about MQTT/HTTP, serialize to wire format, hold consumer semantics |
 | **ObservationService** | `observation/` | Collect envelopes from configured points; apply trigger policy | Dispatch to networks, manage connections, store history, know about consumers |
 | **ObservationRouter** | `observation/` | **NEW** — Route envelopes to projection(s) via subscription rules. One envelope → zero/one/multiple projections. | Transform payloads, perform I/O |
-| **ObservationPolicy** | `observation/` | Generalize `OutputPolicy`: control what is observable, by whom, under what mode | Encode business rules, know about MES |
+| **ObservationPolicy** | `observation/` | Generalize `OutputPolicy`: control what is observable, under what mode. Does NOT decide who consumes — that is the Router's job. | Encode business rules, know about MES |
 | **TriggerPolicy** | `observation/` | Define when an observation point fires: event-triggered, periodic, on-change, manual | Schedule wall-clock timers, manage external triggers |
 | **MESProjection** | `observation/projections/` | Transform `ObservationEnvelope[]` → `MESOutput` (typed, business-semantic) | Perform I/O, talk to Odoo |
 | **IIoTProjection** | `observation/projections/` | Transform `ObservationEnvelope[]` → generic industrial payload (SignalValue-like) | Perform I/O, enforce Sparkplug |
@@ -609,7 +609,7 @@ The `ControlBoundary` provides production context (order, lot, etc.) at run star
 | `simulation_time_s` | `float` | `RuntimeSnapshot.simulation_time_s` | Simulation-clock coordinate — the "now" inside the simulated plant. Always present. |
 | `occurred_at` | `str \| None` (ISO 8601) | Derived from `simulation_time_s` + run epoch | Simulated calendar timestamp. Populated when the run has a reference epoch (e.g., `"2026-08-08T00:00:00Z"`). Example: `"2026-08-08T00:05:30.0Z"`. `None` if no epoch is configured. |
 | `emitted_at` | `str` (ISO 8601) | `datetime.utcnow().isoformat()` | UTC wall-clock timestamp when the envelope was actually created. Never simulation time. Example: `"2026-08-08T14:30:01.234Z"`. |
-| Wall-clock (gateway only) | `float` (Unix) | `time.time()` | Real-world time — only in gateway layer for timeout/retry/logging. Never in envelopes. |
+| Wall-clock (gateway internal) | `float` (Unix) | `time.time()` / `time.monotonic()` | Gateway-layer only — used for connection timeout, retry backoff, logging. Distinct from `emitted_at` (which IS in the envelope but as an audit timestamp, not for protocol logic). |
 
 ### Key Principle
 
@@ -1057,9 +1057,9 @@ ObservationEnvelope(
   - ON_EVENT trigger ignores non-matching events
   - PERIODIC trigger fires at correct intervals
   - ON_CHANGE trigger fires on threshold crossing
-  - FieldPolicy hides internal_truth fields
+  - FieldPolicy default-deny: new fields not in extract[] are invisible
+  - FieldPolicy defense-in-depth: deny[] strips even if extract is misconfigured
   - ObservationPolicy blocks internal_truth in industrial mode
-  - Multiple projections per point
 
 **Acceptance:**
 - All existing tests green
@@ -1252,7 +1252,7 @@ One envelope, two subscriptions, two consumer-specific outputs. The `Observation
 - **`simulation_time_s`** (float): simulation-clock coordinate. Always present.
 - **`occurred_at`** (ISO 8601 str, optional): simulated calendar timestamp. Populated when run has an epoch.
 - **`emitted_at`** (ISO 8601 str): UTC wall-clock timestamp of envelope creation. Never simulation time.
-- **Wall-clock time** (Unix float): gateway layer only — for timeout, retry, logging. Never in envelopes.
+- **Wall-clock time** (Unix float): gateway layer only — for timeout, retry, logging. Distinct from `emitted_at` which IS an envelope field but serves as an audit/emission timestamp, not a protocol-level clock.
 
 No single field serves dual purpose. Consumers always know whether they're looking at sim time or real time by the field name and type.
 
