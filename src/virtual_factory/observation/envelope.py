@@ -3,16 +3,44 @@
 M5-S01: ObservationType enum + ObservationEnvelope frozen dataclass
 + deterministic idempotency key helper.
 
-Immutable. No MES/Odoo/protocol/runtime dependencies.
+Effectively immutable. No MES/Odoo/protocol/runtime dependencies.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
+from types import MappingProxyType
+from typing import Any, Mapping
 from uuid import uuid4
+
+
+# ═══════════════════════════════════════════════════
+# ISO 8601 validation
+# ═══════════════════════════════════════════════════
+
+_ISO8601_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}"          # date
+    r"[T ]\d{2}:\d{2}:\d{2}"       # time
+    r"(?:\.\d+)?"                   # optional fractional seconds
+    r"(?:Z|[+-]\d{2}:\d{2})$"       # timezone: Z or ±HH:MM
+)
+
+_UTC_TZ_RE = re.compile(r"(?:Z|[+]\d{2}:\d{2})$")
+
+
+def _is_valid_iso8601(value: str) -> bool:
+    """Return True if *value* matches ISO 8601 date-time with timezone."""
+    return bool(_ISO8601_RE.match(value))
+
+
+def _is_utc_iso8601(value: str) -> bool:
+    """Return True if *value* is ISO 8601 with UTC timezone (Z or +00:00)."""
+    if not _is_valid_iso8601(value):
+        return False
+    return value.endswith("Z") or value.endswith("+00:00")
 
 
 # ═══════════════════════════════════════════════════
@@ -67,11 +95,12 @@ def make_idempotency_key(
 class ObservationEnvelope:
     """Consumer-neutral observation carrier.
 
-    Immutable (frozen dataclass).  Nested dicts (context, payload) are
-    shallow-copied on construction via __post_init__ to prevent external
-    mutation of the envelope's internal state.
+    Effectively immutable: ``frozen=True`` prevents field reassignment;
+    ``context`` and ``payload`` are stored as ``MappingProxyType``
+    (read-only views) to prevent mutation after construction.
 
-    Fields are ordered by importance.  Optional context remains optional.
+    Nested mutable objects *inside* ``context`` or ``payload`` values
+    are not recursively frozen — immutability is top-level only.
     """
 
     # ── Identity ──
@@ -96,9 +125,9 @@ class ObservationEnvelope:
     subject_type: str | None = None
     subject_id: str | None = None
 
-    # ── Context / payload ──
-    context: dict[str, Any] = field(default_factory=dict)
-    payload: dict[str, Any] = field(default_factory=dict)
+    # ── Context / payload (read-only via MappingProxyType) ──
+    context: Mapping[str, Any] = field(default_factory=dict)
+    payload: Mapping[str, Any] = field(default_factory=dict)
 
     # ── Quality / correlation ──
     quality: str = "GOOD"
@@ -139,9 +168,83 @@ class ObservationEnvelope:
         if not self.schema_version or not isinstance(self.schema_version, str):
             raise ValueError("schema_version must be a non-empty str")
 
-        # ── Immutability: shallow-copy mutable fields ──
-        object.__setattr__(self, "context", dict(self.context))
-        object.__setattr__(self, "payload", dict(self.payload))
+        # ── Idempotency key format validation ──
+        _validate_idempotency_key_format(
+            self.idempotency_key, self.run_id, self.schema_version
+        )
+
+        # ── Time validation ──
+        if self.occurred_at is not None:
+            if not _is_valid_iso8601(self.occurred_at):
+                raise ValueError(
+                    f"occurred_at must be valid ISO 8601 with timezone, "
+                    f"got {self.occurred_at!r}"
+                )
+        if not _is_valid_iso8601(self.emitted_at):
+            raise ValueError(
+                f"emitted_at must be valid ISO 8601 with timezone, "
+                f"got {self.emitted_at!r}"
+            )
+        if not _is_utc_iso8601(self.emitted_at):
+            raise ValueError(
+                f"emitted_at must be UTC (Z or +00:00), "
+                f"got {self.emitted_at!r}"
+            )
+
+        # ── Immutability: wrap mutable fields in read-only proxy ──
+        object.__setattr__(self, "context", MappingProxyType(dict(self.context)))
+        object.__setattr__(self, "payload", MappingProxyType(dict(self.payload)))
+
+    # ── Serialization ──
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a plain serializable dict suitable for JSON/JSONL/projections.
+
+        Preserves all fields.  Dates serialize as ISO 8601 strings.
+        ``context`` and ``payload`` are returned as plain dict copies.
+        """
+        return {
+            "observation_id": self.observation_id,
+            "idempotency_key": self.idempotency_key,
+            "observation_type": self.observation_type.value,
+            "run_id": self.run_id,
+            "model_id": self.model_id,
+            "simulation_time_s": self.simulation_time_s,
+            "occurred_at": self.occurred_at,
+            "emitted_at": self.emitted_at,
+            "source_domain": self.source_domain,
+            "source_path": self.source_path,
+            "subject_type": self.subject_type,
+            "subject_id": self.subject_id,
+            "context": dict(self.context),
+            "payload": dict(self.payload),
+            "quality": self.quality,
+            "correlation_id": self.correlation_id,
+            "causation_id": self.causation_id,
+            "schema_version": self.schema_version,
+        }
+
+
+def _validate_idempotency_key_format(
+    key: str, run_id: str, schema_version: str
+) -> None:
+    """Validate idempotency_key format: run_id|*|*|schema_version."""
+    parts = key.split("|")
+    if len(parts) != 4:
+        raise ValueError(
+            f"idempotency_key must have 4 pipe-separated parts, "
+            f"got {len(parts)}: {key!r}"
+        )
+    if parts[0] != run_id:
+        raise ValueError(
+            f"idempotency_key first part must match run_id={run_id!r}, "
+            f"got {parts[0]!r}"
+        )
+    if parts[3] != schema_version:
+        raise ValueError(
+            f"idempotency_key last part must match schema_version="
+            f"{schema_version!r}, got {parts[3]!r}"
+        )
 
     # ── Serialization ──
 

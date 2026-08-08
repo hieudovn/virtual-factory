@@ -247,7 +247,86 @@ class TestSerialization:
 
 
 # ═══════════════════════════════════════════════════
-# Immutability
+# ═══════════════════════════════════════════════════
+# Idempotency key validation (in-envelope format check)
+# ═══════════════════════════════════════════════════
+
+class TestIdempotencyKeyValidation:
+    """idempotency_key must match run_id|*|*|schema_version format."""
+
+    def test_valid_key_accepted(self):
+        env = _make_envelope(
+            run_id="run-1",
+            schema_version="1.0",
+            idempotency_key="run-1|evt-001|ap04|1.0",
+        )
+        assert env.idempotency_key == "run-1|evt-001|ap04|1.0"
+
+    def test_wrong_number_of_parts_raises(self):
+        with pytest.raises(ValueError, match="4 pipe-separated"):
+            _make_envelope(idempotency_key="run-1|evt-001|ap04")
+
+    def test_first_part_mismatches_run_id_raises(self):
+        with pytest.raises(ValueError, match="first part must match run_id"):
+            _make_envelope(
+                run_id="run-2",
+                idempotency_key="run-1|evt-001|ap04|1.0",
+            )
+
+    def test_last_part_mismatches_schema_version_raises(self):
+        with pytest.raises(ValueError, match="last part must match schema_version"):
+            _make_envelope(
+                schema_version="2.0",
+                idempotency_key="run-1|evt-001|ap04|1.0",
+            )
+
+
+# ═══════════════════════════════════════════════════
+# Time validation
+# ═══════════════════════════════════════════════════
+
+class TestTimeValidation:
+    """occurred_at and emitted_at must be valid ISO 8601; emitted_at must be UTC."""
+
+    def test_valid_occurred_at_accepted(self):
+        env = _make_envelope(occurred_at="2026-08-09T00:00:12.5Z")
+        assert env.occurred_at == "2026-08-09T00:00:12.5Z"
+
+    def test_occurred_at_none_accepted(self):
+        env = _make_envelope(occurred_at=None)
+        assert env.occurred_at is None
+
+    def test_invalid_occurred_at_raises(self):
+        with pytest.raises(ValueError, match="occurred_at"):
+            _make_envelope(occurred_at="not-a-date")
+
+    def test_occurred_at_no_timezone_raises(self):
+        with pytest.raises(ValueError, match="occurred_at"):
+            _make_envelope(occurred_at="2026-08-09T00:00:12.5")
+
+    def test_default_emitted_at_is_valid_utc(self):
+        env = _make_envelope()
+        assert env.emitted_at.endswith("Z") or env.emitted_at.endswith("+00:00")
+
+    def test_custom_utc_emitted_at_accepted(self):
+        env = _make_envelope(emitted_at="2026-08-09T00:00:00Z")
+        assert env.emitted_at == "2026-08-09T00:00:00Z"
+
+    def test_custom_plus_zero_emitted_at_accepted(self):
+        env = _make_envelope(emitted_at="2026-08-09T00:00:00+00:00")
+        assert env.emitted_at == "2026-08-09T00:00:00+00:00"
+
+    def test_non_utc_emitted_at_raises(self):
+        with pytest.raises(ValueError, match="emitted_at must be UTC"):
+            _make_envelope(emitted_at="2026-08-09T00:00:00+07:00")
+
+    def test_invalid_emitted_at_raises(self):
+        with pytest.raises(ValueError, match="emitted_at"):
+            _make_envelope(emitted_at="garbage")
+
+
+# ═══════════════════════════════════════════════════
+# Immutability (MappingProxyType)
 # ═══════════════════════════════════════════════════
 
 class TestImmutability:
@@ -256,20 +335,23 @@ class TestImmutability:
         with pytest.raises(Exception):
             env.observation_id = "mutated"  # type: ignore[misc]
 
-    def test_context_shallow_copy_prevents_external_mutation(self):
+    def test_context_is_read_only(self):
+        env = _make_envelope(context={"key": "value"})
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            env.context["key"] = "mutated"  # type: ignore[index]
+
+    def test_payload_is_read_only(self):
+        env = _make_envelope(payload={"val": 1})
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            env.payload["val"] = 999  # type: ignore[index]
+
+    def test_constructor_arg_mutation_does_not_affect_envelope(self):
         mutable_context = {"key": "original"}
         env = _make_envelope(context=mutable_context)
         mutable_context["key"] = "mutated"
-        # Envelope's internal copy is unchanged
         assert env.context["key"] == "original"
 
-    def test_payload_shallow_copy_prevents_external_mutation(self):
-        mutable_payload = {"value": 1}
-        env = _make_envelope(payload=mutable_payload)
-        mutable_payload["value"] = 999
-        assert env.payload["value"] == 1
-
-    def test_to_dict_returns_copy(self):
+    def test_to_dict_returns_mutable_copy(self):
         env = _make_envelope(context={"k": "v"})
         d = env.to_dict()
         d["context"]["k"] = "mutated"
