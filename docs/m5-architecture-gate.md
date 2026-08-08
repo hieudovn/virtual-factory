@@ -180,6 +180,13 @@ Key properties:
 │                 │                                            │
 │                 ▼                                            │
 │  ┌──────────────────────────────────────┐                    │
+│  │       ROUTING / SUBSCRIPTION         │  ← NEW             │
+│  │  route(envelope) → projection[]      │                    │
+│  └──────────────┬───────────────────────┘                    │
+│                 │                                            │
+│        ┌────────┼────────┐                                   │
+│        ▼        ▼        ▼                                   │
+│  ┌──────────────────────────────────────┐                    │
 │  │       PROJECTIONS (per consumer)     │                    │
 │  │  MESProjection, IIoTProjection, ...  │                    │
 │  └──────────────┬───────────────────────┘                    │
@@ -239,9 +246,10 @@ Key properties:
 
 | Component | Package | Responsibilities | Non-Responsibilities |
 |-----------|---------|-----------------|---------------------|
-| **ObservationPoint** | `observation/` | Declare what reality source to observe, trigger policy, exposed/hidden fields, target projection | Perform I/O, know about consumers, hold runtime state |
-| **ObservationEnvelope** | `observation/` | Carry observation identity, type, time, source, subject, payload in consumer-neutral form | Know about MQTT/HTTP, serialize to wire format, hold consumer semantics |
-| **ObservationService** | `observation/` | Collect envelopes from configured points; apply trigger policy; route to projections | Dispatch to networks, manage connections, store history |
+| **ObservationPoint** | `observation/` | Declare **what** reality source to observe, **when** (trigger), **how** (field extractor). Does NOT declare who consumes. | Perform I/O, know about consumers, hold runtime state, declare target projection |
+| **ObservationEnvelope** | `observation/` | Carry observation identity (including `idempotency_key`), type, time, source, subject, payload in consumer-neutral form | Know about MQTT/HTTP, serialize to wire format, hold consumer semantics |
+| **ObservationService** | `observation/` | Collect envelopes from configured points; apply trigger policy | Dispatch to networks, manage connections, store history, know about consumers |
+| **ObservationRouter** | `observation/` | **NEW** — Route envelopes to projection(s) via subscription rules. One envelope → zero/one/multiple projections. | Transform payloads, perform I/O |
 | **ObservationPolicy** | `observation/` | Generalize `OutputPolicy`: control what is observable, by whom, under what mode | Encode business rules, know about MES |
 | **TriggerPolicy** | `observation/` | Define when an observation point fires: event-triggered, periodic, on-change, manual | Schedule wall-clock timers, manage external triggers |
 | **MESProjection** | `observation/projections/` | Transform `ObservationEnvelope[]` → `MESOutput` (typed, business-semantic) | Perform I/O, talk to Odoo |
@@ -338,8 +346,9 @@ src/virtual_factory/
 │   ├── envelope.py                 # ObservationEnvelope dataclass
 │   ├── point.py                    # ObservationPoint, ObservationType, TriggerPolicy
 │   ├── policy.py                   # ObservationPolicy (generalizes OutputPolicy)
-│   ├── service.py                  # ObservationService (collect, route)
-│   ├── identity.py                 # Identity strategy, idempotency helpers
+│   ├── service.py                  # ObservationService (collect, evaluate triggers)
+│   ├── router.py                   # ObservationRouter (route envelopes → projections)
+│   ├── identity.py                 # Identity strategy, idempotency_key derivation
 │   ├── projections/
 │   │   ├── __init__.py
 │   │   ├── mes_projection.py       # MESProjection (envelope → MESOutput)
@@ -407,9 +416,15 @@ class TriggerPolicy:
 
 @dataclass
 class FieldPolicy:
-    """What fields are exposed vs hidden for this observation point."""
-    exposed: tuple[str, ...] = ()    # Empty = all non-hidden
-    hidden: tuple[str, ...] = ()     # Explicitly hidden (e.g., internal_truth fields)
+    """Controls what fields enter the observation envelope.
+
+    PRIMARY DEFENSE: default-deny with explicit allow-list.
+    Only fields named in `extract` are observable.
+    `deny` is defense-in-depth — it provides an additional safety
+    net for fields that must never appear even if `extract` is misconfigured.
+    """
+    extract: tuple[str, ...] = ()      # Explicit allow-list — ONLY these fields are extracted
+    deny: tuple[str, ...] = ()         # Defense-in-depth deny-list (internal_truth, solver_state, ...)
 
 @dataclass
 class ObservationPoint:
@@ -421,29 +436,34 @@ class ObservationPoint:
     source_filter: dict[str, Any]     # e.g., {"event_type": "PROCESS_COMPLETE", "target_id": "AP04"}
     # Trigger
     trigger: TriggerPolicy
-    # Exposure control
+    # Exposure control — default deny, explicit allow
     fields: FieldPolicy
-    # Target projection(s)
-    projections: tuple[str, ...]      # e.g., ("mes", "iiot")
     # Optional business context mapping
     context_map: dict[str, str] = field(default_factory=dict)
     # Disabled
     enabled: bool = True
+
+    # NOTE: ObservationPoint does NOT declare projections or consumers.
+    # Routing to projections is handled by ObservationRouter via subscription rules.
 ```
 
-**Example — AP04 completion for MES:**
+**Example — AP04 completion observation point:**
 
 ```python
 ObservationPoint(
-    point_id="ap04-completion-mes",
+    point_id="ap04-completion",
     observation_type=ObservationType.EVENT,
-    label="AP04 Process Complete → MES",
+    label="AP04 Process Complete",
     source_type="assembly.event",
     source_filter={"event_type": "PROCESS_COMPLETE", "target_id": "AP04"},
     trigger=TriggerPolicy(kind=TriggerKind.ON_EVENT, event_types=("PROCESS_COMPLETE",), target_ids=("AP04",)),
-    fields=FieldPolicy(hidden=("internal_truth", "solver_state")),
-    projections=("mes",),
+    fields=FieldPolicy(
+        extract=("event_type", "result", "state_changes", "target_id"),
+        deny=("internal_truth", "solver_state", "degradation_truth"),
+    ),
 )
+# NOTE: This point does NOT declare where the envelope goes.
+# ObservationRouter decides: MESProjection, IIoTProjection, or both.
 ```
 
 ---
@@ -463,7 +483,11 @@ class ObservationEnvelope:
     """
 
     # ── Identity ──
-    observation_id: str                              # UUID, unique per observation
+    observation_id: str                              # UUID, unique per envelope instance
+    idempotency_key: str                             # Deterministic logical identity
+                                                     # Derived from: run_id + source_event_id/causation_id
+                                                     #              + point_id + schema_version
+                                                     # Enables reliable dedup/replay for consumers.
     observation_type: str                            # "event", "measurement", "state", "human_entry"
 
     # ── Run context ──
@@ -471,9 +495,13 @@ class ObservationEnvelope:
     model_id: str                                    # which plant/model
 
     # ── Time ──
-    simulation_time_s: float                         # simulation clock
-    occurrence_time_s: float                         # when the reality event occurred
-    emission_time_s: float                           # when this envelope was created (may differ)
+    simulation_time_s: float                         # Simulation-clock coordinate (float seconds)
+    occurred_at: str | None = None                   # Simulated calendar timestamp (ISO 8601)
+                                                     # Populated when run has an epoch/reference datetime.
+                                                     # Example: "2026-08-08T00:05:30.0Z"
+    emitted_at: str                                  # UTC wall-clock timestamp (ISO 8601)
+                                                     # When this envelope was actually created.
+                                                     # Example: "2026-08-08T14:30:01.234Z"
 
     # ── Source ──
     source_domain: str                               # "continuous", "assembly"
@@ -515,13 +543,16 @@ class ObservationEnvelope:
 
 **Key design decisions:**
 
-1. **`observation_id`** is a UUID — enables idempotent delivery, deduplication, and audit trails.
-2. **`occurrence_time_s` vs `emission_time_s`** — supports delayed/periodic observations where emission lags occurrence.
-3. **`context`** is a dict — carries optional business/production context without coupling to MES schemas.
-4. **`payload`** is a dict — shape depends on `observation_type`; projections interpret it.
-5. **`correlation_id`** maps to `EventTraceEntry.correlation_id` for discrete events.
-6. **`causation_id`** maps to `EventTraceEntry.causation_id` for event lineage.
-7. **No MES/Odoo fields** — business semantics live in `context`, interpreted by projections only.
+1. **`observation_id`** is a UUID — unique per envelope instance. Does NOT provide idempotency.
+2. **`idempotency_key`** is a deterministic logical identity — derived from `run_id + source_event_id + point_id + schema_version`. Enables reliable consumer-side dedup and replay.
+3. **`simulation_time_s`** (float) — simulation-clock coordinate. Always present.
+4. **`occurred_at`** (ISO 8601 str, optional) — simulated calendar timestamp when the run has an epoch.
+5. **`emitted_at`** (ISO 8601 str) — UTC wall-clock when the envelope was created. Never simulation time.
+6. **`context`** is a dict — carries optional business/production context without coupling to MES schemas.
+7. **`payload`** is a dict — shape depends on `observation_type`; projections interpret it.
+8. **`correlation_id`** maps to `EventTraceEntry.correlation_id` for discrete events.
+9. **`causation_id`** maps to `EventTraceEntry.causation_id` for event lineage.
+10. **No MES/Odoo fields** — business semantics live in `context`, interpreted by projections only.
 
 ---
 
@@ -533,7 +564,8 @@ class ObservationEnvelope:
 |-------|----------|---------|-------|
 | Simulation entity | `primitive_id` | `AP04`, `source-1` | `AssemblyPrimitive`, topology |
 | WIP identity | `WipId` | `wip-0001` | `WipState.wip_id`, `EventTraceEntry.correlation_id` |
-| Observation identity | `observation_id` (UUID) | `obs-a1b2c3d4` | `ObservationEnvelope.observation_id` |
+| Observation instance ID | `observation_id` (UUID) | `obs-a1b2c3d4` | `ObservationEnvelope.observation_id` |
+| Observation idempotency key | `idempotency_key` (deterministic) | `run-1\|evt-0041\|ap04-completion\|1.0` | `ObservationEnvelope.idempotency_key` |
 | Business serial/lot | `context.serial_id` | (future) | `ObservationEnvelope.context` |
 | Order reference | `context.order_id` | `MO-001` | `ObservationEnvelope.context` |
 | External system ref | `context.external_ref` | (future, Odoo DB ID) | `ObservationEnvelope.context` |
@@ -542,9 +574,15 @@ class ObservationEnvelope:
 
 ### 10.2 Idempotency
 
-- `observation_id` UUID guarantees unique identification.
-- Consumers can use `(run_id, observation_id)` for deduplication.
-- Replay of the same simulation run with the same seed produces identical `observation_id` values (deterministic UUID from seed).
+- **`observation_id`** (UUID): Unique per envelope *instance*. Two retries of the same logical observation will have different `observation_id` values. Useful for tracing and audit, but NOT for dedup.
+- **`idempotency_key`** (deterministic string): Same logical observation always produces the same key. Derived from:
+  ```
+  run_id + "|" + source_event_id + "|" + point_id + "|" + schema_version
+  ```
+  Example: `"tipa-run-1|evt-ap04-0040|ap04-completion|1.0"`
+- Consumers use `idempotency_key` for reliable deduplication.
+- Replay of the same simulation run with the same seed produces identical `idempotency_key` values.
+- `observation_id` remains useful for tracing a specific delivery attempt through the gateway layer.
 
 ### 10.3 Context Mapping
 
@@ -566,30 +604,37 @@ The `ControlBoundary` provides production context (order, lot, etc.) at run star
 
 ## 11. Time Semantics
 
-| Time | Source | Semantics |
-|------|--------|-----------|
-| `simulation_time_s` | `RuntimeSnapshot.simulation_time_s` | Simulation clock — the "now" inside the simulated plant |
-| `occurrence_time_s` | `EventTraceEntry.simulation_time_s` | When the reality event actually occurred (may equal simulation_time_s for synchronous observation) |
-| `emission_time_s` | `time.monotonic()` or wall clock | When the observation was actually created (may lag for periodic/on-change triggers) |
-| Wall-clock time | `time.time()` | Real-world time — only relevant in gateway layer for timeout/retry; never in envelopes |
+| Field | Type | Source | Semantics |
+|-------|------|--------|-----------|
+| `simulation_time_s` | `float` | `RuntimeSnapshot.simulation_time_s` | Simulation-clock coordinate — the "now" inside the simulated plant. Always present. |
+| `occurred_at` | `str \| None` (ISO 8601) | Derived from `simulation_time_s` + run epoch | Simulated calendar timestamp. Populated when the run has a reference epoch (e.g., `"2026-08-08T00:00:00Z"`). Example: `"2026-08-08T00:05:30.0Z"`. `None` if no epoch is configured. |
+| `emitted_at` | `str` (ISO 8601) | `datetime.utcnow().isoformat()` | UTC wall-clock timestamp when the envelope was actually created. Never simulation time. Example: `"2026-08-08T14:30:01.234Z"`. |
+| Wall-clock (gateway only) | `float` (Unix) | `time.time()` | Real-world time — only in gateway layer for timeout/retry/logging. Never in envelopes. |
+
+### Key Principle
+
+**No single field serves dual purpose.** `simulation_time_s` is always a float simulation coordinate. `occurred_at` is always an ISO 8601 calendar string. `emitted_at` is always a UTC wall-clock ISO 8601 string. They never conflate.
 
 ### Time Scenarios
 
 **Real-time simulation:**
 - `simulation_time_s` ≈ wall-clock elapsed
-- `emission_time_s ≈ occurrence_time_s`
+- `emitted_at` ≈ wall-clock time of emission
 
-**Accelerated simulation:**
-- `simulation_time_s` advances faster than wall clock
-- `emission_time_s` wall clock may cluster while `occurrence_time_s` spreads across hours/days
+**Accelerated simulation (e.g., 1 hour sim = 1 second real):**
+- `simulation_time_s` advances rapidly (0, 3600, 7200, ...)
+- `occurred_at` shows simulated calendar time (e.g., `"2026-08-08T01:00:00Z"`, `"2026-08-08T02:00:00Z"`)
+- `emitted_at` shows actual wall-clock time (all within a few seconds of each other)
 
 **Periodic observation:**
-- `occurrence_time_s` = last sample time
-- `emission_time_s` = when the periodic trigger fired
+- `simulation_time_s` = last sample time in simulation
+- `occurred_at` = corresponding calendar time
+- `emitted_at` = when the periodic trigger actually fired (wall clock)
 
 **On-change observation:**
-- `occurrence_time_s` = time of the change
-- `emission_time_s` ≈ `occurrence_time_s` (synchronous)
+- `simulation_time_s` = time of the change in simulation
+- `occurred_at` ≈ `simulation_time_s` mapped to calendar
+- `emitted_at` ≈ wall clock (near-synchronous)
 
 ---
 
@@ -787,28 +832,52 @@ class MqttObsGateway:
 
 ## 16. Hidden-Truth Leakage Prevention
 
-### 16.1 Multi-Layer Defense
+### 16.1 Multi-Layer Defense (default-deny architecture)
 
 ```
-Layer 1: ObservationPoint.fields.hidden
-    → Field-level: explicitly deny "internal_truth", "solver_state", "degradation_truth"
+Layer 1 (PRIMARY): ObservationPoint.fields.extract — EXPLICIT ALLOW-LIST
+    → FieldExtractor only copies fields named in `extract`.
+    → If reality model adds a new internal field tomorrow, it is
+      INVISIBLE to observation by default — no configuration change needed.
+    → This is the primary defense. Deny-list is defense-in-depth only.
 
-Layer 2: ObservationPolicy
+Layer 2 (DEFENSE-IN-DEPTH): ObservationPoint.fields.deny
+    → Explicit deny-list: "internal_truth", "solver_state", "degradation_truth"
+    → Even if `extract` is misconfigured, these fields are stripped.
+    → Last line of defense within the observation layer.
+
+Layer 3: ObservationPolicy
     → Category-level: generalization of OutputPolicy; industrial mode blocks internal_truth
 
-Layer 3: Projection
+Layer 4: Projection
     → Consumer-level: MESProjection drops non-MES fields; IIoTProjection applies OutputPolicy
 
-Layer 4: Gateway
+Layer 5: Gateway
     → Protocol-level: existing MqttGateway already rejects internal_truth category (line 72)
 ```
 
 ### 16.2 Test Enforcement (per slice)
 
 ```python
+def test_default_deny_new_field_not_leaked():
+    """A new internal field added to reality must NOT appear in any observation."""
+    # Simulate reality model adding a new field "secret_debug_value"
+    # Without updating any ObservationPoint config
+    envelope = service.collect_for_point("ap04-completion")
+    assert "secret_debug_value" not in envelope.payload
+    assert "secret_debug_value" not in envelope.context
+
+def test_allow_list_only_extracts_declared_fields():
+    """Only fields in extract[] appear in the envelope payload."""
+    point = ObservationPoint(
+        fields=FieldPolicy(extract=("event_type", "result"))
+    )
+    envelope = service.collect_for_point(point.point_id)
+    assert set(envelope.payload.keys()) == {"event_type", "result"}
+
 def test_hidden_truth_not_in_mes_envelope():
     """MES observation must not contain solver state or true physical values."""
-    envelope = service.collect_for_point("ap04-completion-mes")
+    envelope = service.collect_for_point("ap04-completion")
     assert "solver_state" not in envelope.payload
     assert "true_flow" not in envelope.payload
 
@@ -893,11 +962,12 @@ class MESAdapter:
 ```python
 ObservationEnvelope(
     observation_id="obs-ap04-001",
+    idempotency_key="tipa-run-1|evt-ap04-0040|ap04-completion|1.0",
     observation_type="event",
     run_id="tipa-run-1",
     simulation_time_s=45.0,
-    occurrence_time_s=45.0,
-    emission_time_s=45.0,
+    occurred_at="2026-08-08T00:00:45.0Z",
+    emitted_at="2026-08-08T14:30:01.234Z",
     source_domain="assembly",
     source_path="processor.AP04",
     subject_type="wip",
@@ -1028,15 +1098,16 @@ ObservationEnvelope(
 
 ---
 
-### M5-S04: Projections + ControlBoundary
+### M5-S04: Projections + Router + ControlBoundary
 
-**Scope**: Consumer-specific projections and reverse control boundary.
+**Scope**: Consumer-specific projections, envelope routing, and reverse control boundary.
 
 **Files to create:**
 - `src/virtual_factory/observation/projections/__init__.py`
 - `src/virtual_factory/observation/projections/base.py` — `ProjectionProtocol`
 - `src/virtual_factory/observation/projections/mes_projection.py` — `MESProjection`
 - `src/virtual_factory/observation/projections/iiot_projection.py` — `IIoTProjection`
+- `src/virtual_factory/observation/router.py` — `ObservationRouter` (subscription-based routing)
 - `src/virtual_factory/observation/control_boundary.py` — `ControlBoundary`, `SimulationRunRequest`
 
 **Tests:**
@@ -1047,16 +1118,20 @@ ObservationEnvelope(
   - IIoTProjection: MEASUREMENT envelope → SignalValue-like dict
   - IIoTProjection: industrial mode blocks internal_truth
   - IIoTProjection: Sparkplug category mapping
+  - ObservationRouter: one envelope → MESProjection only (subscription match)
+  - ObservationRouter: one envelope → both MES + IIoT (two subscriptions)
+  - ObservationRouter: one envelope → zero projections (no subscription match)
+  - ObservationRouter: subscription by event_type, by source_path, by point_id
   - ControlBoundary: MESInput validated against SimulationDefinition
   - ControlBoundary: unknown source_id rejected
   - ControlBoundary: SimulationRunRequest preserves order/material info
-  - TIPA AP04 proof: full path reality → envelope → MES projection
+  - TIPA AP04 proof: full path reality → envelope → router → MES projection
   - TIPA AP06 proof: selected fields only
-  - TIPA AP08 proof: MES vs IIoT different projections
+  - TIPA AP08 proof: MES vs IIoT different projections via router
 
 **Acceptance:**
 - All existing tests green
-- ~18 new tests green
+- ~22 new tests green
 - M4 MESAdapter tests still pass (no breaking changes)
 
 ---
@@ -1095,11 +1170,11 @@ ObservationEnvelope(
 
 | Slice | New Tests (est.) | Cumulative | Key Gate |
 |-------|-----------------|------------|----------|
-| M5-S01 | 8 | 831 | Envelope construction, serialization |
-| M5-S02 | 12 | 843 | Trigger matching, policy enforcement |
-| M5-S03 | 15 | 858 | Service wiring, hidden truth prevention |
-| M5-S04 | 18 | 876 | Projection correctness, control boundary |
-| M5-S05 | 12 | 888 | Gateway isolation, full integration |
+| M5-S01 | 9 | 832 | Envelope construction (with idempotency_key), serialization |
+| M5-S02 | 14 | 846 | Trigger matching, default-deny allow-list, policy enforcement |
+| M5-S03 | 16 | 862 | Service wiring, hidden truth prevention, identity derivation |
+| M5-S04 | 22 | 884 | Projection correctness, router subscriptions, control boundary |
+| M5-S05 | 12 | 896 | Gateway isolation, full integration |
 
 Each slice gate:
 - [ ] All new tests pass
@@ -1150,21 +1225,23 @@ Each slice gate:
 
 ### Q3: How is hidden truth prevented from leaking?
 
-**Four-layer defense:**
-1. `ObservationPoint.fields.hidden` — field-level deny list
-2. `ObservationPolicy` — category-level (generalized `OutputPolicy`)
-3. `Projection` — consumer-level strip
-4. `Gateway` — protocol-level reject (existing `MqttGateway` check)
+**Five-layer defense with default-deny architecture:**
+1. `ObservationPoint.fields.extract` — **PRIMARY**: explicit allow-list. New internal fields are invisible by default.
+2. `ObservationPoint.fields.deny` — defense-in-depth deny-list
+3. `ObservationPolicy` — category-level (generalized `OutputPolicy`)
+4. `Projection` — consumer-level strip
+5. `Gateway` — protocol-level reject (existing `MqttGateway` check)
 
-Tests at each layer verify no leakage.
+Key principle: if reality model adds a field tomorrow, it does NOT appear in any observation unless explicitly added to `extract[]`.
 
 ### Q4: How can one reality event feed different consumer projections?
 
-`ObservationService` evaluates all `ObservationPoint` configurations against each reality event. A `PROCESS_COMPLETE` at AP04 may match:
-- Point "ap04-completion-mes" → MESProjection → MES/CDM
-- Point "ap04-completion-iiot" → IIoTProjection → Sparkplug
+`ObservationService` evaluates all `ObservationPoint` configurations against each reality event and produces `ObservationEnvelope[]`. The `ObservationRouter` then routes each envelope to one or more projections based on subscription rules:
 
-Different points, different field policies, different projections.
+- Subscription `event_type=PROCESS_COMPLETE` → MESProjection
+- Subscription `source_path=AP04` → IIoTProjection
+
+One envelope, two subscriptions, two consumer-specific outputs. The `ObservationPoint` never declares consumers — that's the router's job.
 
 ### Q5: How are gateway failures isolated?
 
@@ -1172,9 +1249,12 @@ Different points, different field policies, different projections.
 
 ### Q6: How do simulation time and wall time coexist?
 
-- **Envelope layer**: `simulation_time_s`, `occurrence_time_s`, `emission_time_s` — all in simulation frame
-- **Gateway layer**: wall-clock time only for connection timeout, retry, logging
-- **No mixing**: envelopes never carry wall-clock time; gateways never interpret simulation time
+- **`simulation_time_s`** (float): simulation-clock coordinate. Always present.
+- **`occurred_at`** (ISO 8601 str, optional): simulated calendar timestamp. Populated when run has an epoch.
+- **`emitted_at`** (ISO 8601 str): UTC wall-clock timestamp of envelope creation. Never simulation time.
+- **Wall-clock time** (Unix float): gateway layer only — for timeout, retry, logging. Never in envelopes.
+
+No single field serves dual purpose. Consumers always know whether they're looking at sim time or real time by the field name and type.
 
 ### Q7: How are WIP/serial/business identities decoupled?
 
@@ -1256,12 +1336,27 @@ This seam is minimal, testable, and does not penetrate the simulation domain.
 | MES Project Follow-up Backlog | ✅ Complete — section 23 |
 
 **Files changed:**
-- Created: `docs/m5-architecture-gate.md`
+- Updated: `docs/m5-architecture-gate.md` (SA correction round 1)
 
 **No M5 production implementation was performed.**
 
 ---
 
-## VF-DM-M5-ARCHITECTURE-GATE = COMPLETE
+## VF-DM-M5-ARCHITECTURE-GATE — SA Correction Round 1
 
-**Awaiting SA review and M5-S01 authorization.**
+### Changes Applied
+
+| # | Correction | Sections Affected |
+|---|-----------|------------------|
+| 1 | **ObservationPoint no longer declares consumer** — removed `projections` field; added `ObservationRouter` as new layer between Envelope and Projections | 3, 4, 5, 7, 8, 13, 19, 20, Q4 |
+| 2 | **Default-deny + explicit allow-list** — `FieldPolicy.extract` (primary) replaces `hidden` deny-list; `FieldPolicy.deny` is defense-in-depth only | 8, 16, Q3 |
+| 3 | **Time semantics fixed** — `simulation_time_s` (float), `occurred_at` (ISO 8601 str, optional), `emitted_at` (ISO 8601 str, wall-clock). No field serves dual purpose. | 5, 9, 11, 18, Q6 |
+| 4 | **Separate `idempotency_key`** — deterministic key (`run_id\|source_event_id\|point_id\|schema_version`) distinct from `observation_id` UUID | 9, 10 |
+
+### Awaiting SA Review Round 2
+
+```
+M5 Architecture Gate
+Status: CORRECTION APPLIED — awaiting re-review
+M5-S01 authorization: NOT YET
+```
