@@ -268,19 +268,23 @@ REALITY EVENT occurs (e.g., PROCESS_COMPLETE at AP04)
         ▼
 ObservationService.check_points(event, runtime_state)
         │
-        ├─→ ObservationPoint "ap04-completion" matches? (trigger=event, event_type=PROCESS_COMPLETE)
-        │       │
+        ├─→ ObservationPoint "ap04-completion" matches?
+        │       │  (trigger=event, event_type=PROCESS_COMPLETE)
+        │       │  Point only declares WHAT/WHEN/HOW — not who consumes.
         │       ▼
         │   ObservationEnvelope(
         │       observation_id="obs-00042",
+        │       idempotency_key="tipa-run-1|evt-ap04-0040|ap04-completion|1.0",
         │       observation_type=EVENT,
         │       run_id="run-1",
         │       simulation_time_s=12.5,
-        │       occurrence_time_s=12.5,
-        │       emission_time_s=12.5,
-        │       source="assembly.processor.AP04",
-        │       subject="wip-0001",
-        │       context={"station": "AP04", "flow": "base"},
+        │       occurred_at="2026-08-08T00:00:12.5Z",
+        │       emitted_at="2026-08-08T14:30:01.234Z",
+        │       source_domain="assembly",
+        │       source_path="processor.AP04",
+        │       subject_type="wip",
+        │       subject_id="wip-0001",
+        │       context={"station_id": "AP04", "flow_id": "base"},
         │       payload={"event_type": "PROCESS_COMPLETE", "result": "committed"},
         │       quality="GOOD",
         │       correlation_id="wip-0001",
@@ -289,21 +293,22 @@ ObservationService.check_points(event, runtime_state)
         │   )
         │       │
         │       ▼
-        │   MESProjection.project([envelope])
+        │   ObservationRouter.route(envelope)
         │       │
-        │       ▼
-        │   MESOutput → MqttGateway → MES/CDM
+        │       ├─→ Subscription: event_type=PROCESS_COMPLETE → MESProjection
+        │       │       │
+        │       │       ▼
+        │       │   MESOutput → MqttObsGateway → MES/CDM
+        │       │
+        │       └─→ Subscription: source_path=AP04 → IIoTProjection
+        │               │
+        │               ▼
+        │           IIoT payload → SparkplugBGateway → IIoT Platform
         │
-        └─→ ObservationPoint "ap04-iiot" matches? (different projection)
-                │
-                ▼
-            IIoTProjection.project([envelope])
-                │
-                ▼
-            SparkplugBGateway → IIoT Platform
+        └─→ (other points not matching — no envelope created)
 ```
 
-**Key**: One PROCESS_COMPLETE reality event → two different observations → two different projections → two different consumers.
+**Key**: One reality event → one ObservationPoint → one envelope → ObservationRouter → two projections → two consumers. The ObservationPoint never knows about consumers — the Router handles fan-out via subscription rules.
 
 ---
 
