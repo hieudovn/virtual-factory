@@ -16,11 +16,12 @@ from virtual_factory.observation.point import (
     TriggerKind,
     TriggerPolicy,
 )
-from virtual_factory.observation.policy import ObservationPolicy
+from virtual_factory.observation.policy import ObservationMode, ObservationPolicy
 
 __all__ = [
     "FieldPolicy",
     "ObservationEnvelope",
+    "ObservationMode",
     "ObservationPoint",
     "ObservationPolicy",
     "ObservationType",

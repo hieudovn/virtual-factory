@@ -8,6 +8,18 @@ Does NOT decide who consumes or which projection receives data.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
+
+
+# ═══════════════════════════════════════════════════
+# ObservationMode
+# ═══════════════════════════════════════════════════
+
+class ObservationMode(str, Enum):
+    """Supported observation policy modes."""
+    INDUSTRIAL = "industrial"
+    DEBUG = "debug"
+    BENCHMARK = "benchmark"
 
 
 # Categories compatible with existing OutputPolicy
@@ -34,20 +46,27 @@ class ObservationPolicy:
     industrial mode → internal_truth denied.
     """
 
-    mode: str = "industrial"
+    mode: ObservationMode = ObservationMode.INDUSTRIAL
     allowed_categories: frozenset[str] = field(default_factory=lambda: _INDUSTRIAL_ALLOWED)
     denied_categories: frozenset[str] = field(default_factory=lambda: _ALWAYS_DENIED)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.mode, ObservationMode):
+            raise ValueError(
+                f"mode must be ObservationMode, "
+                f"got {type(self.mode).__name__}"
+            )
 
     @classmethod
     def industrial(cls) -> "ObservationPolicy":
         """Factory: standard industrial mode policy."""
-        return cls(mode="industrial")
+        return cls(mode=ObservationMode.INDUSTRIAL)
 
     @classmethod
     def debug(cls) -> "ObservationPolicy":
         """Factory: debug mode — allows internal_truth."""
         return cls(
-            mode="debug",
+            mode=ObservationMode.DEBUG,
             allowed_categories=frozenset({
                 "industrial_signal",
                 "controller_signal",
@@ -62,7 +81,7 @@ class ObservationPolicy:
     def benchmark(cls) -> "ObservationPolicy":
         """Factory: benchmark mode — allows all including internal_truth."""
         return cls(
-            mode="benchmark",
+            mode=ObservationMode.BENCHMARK,
             allowed_categories=frozenset({
                 "industrial_signal",
                 "controller_signal",
@@ -80,6 +99,6 @@ class ObservationPolicy:
         """
         if category in self.denied_categories:
             return False
-        if self.mode == "industrial" and category == "internal_truth":
+        if self.mode == ObservationMode.INDUSTRIAL and category == "internal_truth":
             return False
         return category in self.allowed_categories

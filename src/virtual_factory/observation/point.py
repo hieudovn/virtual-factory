@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from types import MappingProxyType
+from typing import Any, Mapping
 
 from virtual_factory.observation.envelope import ObservationType
 
@@ -55,6 +56,11 @@ class TriggerPolicy:
     change_threshold: float = 0.0
 
     def __post_init__(self) -> None:
+        if not isinstance(self.kind, TriggerKind):
+            raise ValueError(
+                f"kind must be TriggerKind, "
+                f"got {type(self.kind).__name__}"
+            )
         if self.kind == TriggerKind.PERIODIC:
             if self.interval_s <= 0:
                 raise ValueError(
@@ -183,6 +189,9 @@ class ObservationPoint:
     Defines WHAT reality source to observe, WHEN via trigger,
     and HOW fields are selected via FieldPolicy.
 
+    Effectively immutable: ``source_filter`` and ``context_map`` are
+    stored as ``MappingProxyType`` (read-only views).
+
     Does NOT declare:
     - consumer / target projection
     - gateway / protocol / destination
@@ -193,12 +202,12 @@ class ObservationPoint:
     observation_type: ObservationType
     label: str
     source_type: str
-    source_filter: dict[str, Any] = field(default_factory=dict)
+    source_filter: Mapping[str, Any] = field(default_factory=dict)
     trigger: TriggerPolicy = field(
         default_factory=lambda: TriggerPolicy(kind=TriggerKind.ON_EVENT)
     )
     fields: FieldPolicy = field(default_factory=FieldPolicy)
-    context_map: dict[str, str] = field(default_factory=dict)
+    context_map: Mapping[str, str] = field(default_factory=dict)
     enabled: bool = True
 
     def __post_init__(self) -> None:
@@ -215,3 +224,25 @@ class ObservationPoint:
             raise ValueError("trigger must be a TriggerPolicy")
         if not isinstance(self.fields, FieldPolicy):
             raise ValueError("fields must be a FieldPolicy")
+        if not isinstance(self.enabled, bool):
+            raise ValueError(
+                f"enabled must be bool, got {type(self.enabled).__name__}"
+            )
+        if not isinstance(self.source_filter, dict):
+            raise ValueError("source_filter must be a dict")
+        if not isinstance(self.context_map, dict):
+            raise ValueError("context_map must be a dict")
+        for k, v in self.context_map.items():
+            if not isinstance(k, str) or not isinstance(v, str):
+                raise ValueError(
+                    f"context_map keys and values must be str, "
+                    f"got {type(k).__name__}: {type(v).__name__}"
+                )
+
+        # ── Immutability: wrap mutable fields in read-only proxy ──
+        object.__setattr__(
+            self, "source_filter", MappingProxyType(dict(self.source_filter))
+        )
+        object.__setattr__(
+            self, "context_map", MappingProxyType(dict(self.context_map))
+        )

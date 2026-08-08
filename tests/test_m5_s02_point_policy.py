@@ -8,7 +8,7 @@ from virtual_factory.observation.point import (
     TriggerKind,
     TriggerPolicy,
 )
-from virtual_factory.observation.policy import ObservationPolicy
+from virtual_factory.observation.policy import ObservationMode, ObservationPolicy
 from virtual_factory.observation.envelope import ObservationType
 
 
@@ -38,6 +38,10 @@ class TestTriggerKind:
 # ═══════════════════════════════════════════════════
 
 class TestTriggerPolicyOnEvent:
+    def test_kind_must_be_trigger_kind(self):
+        with pytest.raises(ValueError, match="kind must be TriggerKind"):
+            TriggerPolicy(kind="on_event")  # type: ignore[arg-type]
+
     def test_matching_event_qualifies(self):
         tp = TriggerPolicy(
             kind=TriggerKind.ON_EVENT,
@@ -294,12 +298,54 @@ class TestObservationPoint:
         with pytest.raises(ValueError, match="fields"):
             _make_point(fields="not_fields")  # type: ignore[arg-type]
 
+    # ── Immutability (MappingProxyType) ──
+
+    def test_source_filter_is_read_only(self):
+        p = _make_point(source_filter={"event_type": "PROCESS_COMPLETE"})
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            p.source_filter["event_type"] = "mutated"  # type: ignore[index]
+
+    def test_context_map_is_read_only(self):
+        p = _make_point(context_map={"station_id": "source_filter.target_id"})
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            p.context_map["station_id"] = "mutated"  # type: ignore[index]
+
+    def test_constructor_arg_mutation_does_not_affect_point(self):
+        mutable = {"event_type": "original"}
+        p = _make_point(source_filter=mutable)
+        mutable["event_type"] = "mutated"
+        assert p.source_filter["event_type"] == "original"
+
+    # ── Validation gaps ──
+
+    def test_enabled_must_be_bool(self):
+        with pytest.raises(ValueError, match="enabled must be bool"):
+            _make_point(enabled="yes")  # type: ignore[arg-type]
+
+    def test_context_map_values_must_be_str_str(self):
+        with pytest.raises(ValueError, match="context_map keys and values"):
+            _make_point(context_map={1: "v"})  # type: ignore[arg-type]
+
+    def test_trigger_must_be_trigger_policy(self):
+        with pytest.raises(ValueError, match="trigger must be a TriggerPolicy"):
+            _make_point(trigger="bad")  # type: ignore[arg-type]
+
 
 # ═══════════════════════════════════════════════════
 # ObservationPolicy
 # ═══════════════════════════════════════════════════
 
 class TestObservationPolicy:
+    def test_mode_must_be_observation_mode(self):
+        with pytest.raises(ValueError, match="mode must be ObservationMode"):
+            ObservationPolicy(mode="invalid")  # type: ignore[arg-type]
+
+    def test_observation_mode_enum_values(self):
+        assert ObservationMode.INDUSTRIAL.value == "industrial"
+        assert ObservationMode.DEBUG.value == "debug"
+        assert ObservationMode.BENCHMARK.value == "benchmark"
+        assert len(ObservationMode) == 3
+
     def test_industrial_mode_rejects_internal_truth(self):
         policy = ObservationPolicy.industrial()
         assert policy.is_allowed("industrial_signal") is True
@@ -325,7 +371,7 @@ class TestObservationPolicy:
 
     def test_denied_wins_over_allowed(self):
         policy = ObservationPolicy(
-            mode="industrial",
+            mode=ObservationMode.INDUSTRIAL,
             allowed_categories=frozenset({"internal_truth", "industrial_signal"}),
             denied_categories=frozenset({"internal_truth"}),
         )
