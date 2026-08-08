@@ -8,7 +8,6 @@ Effectively immutable. No MES/Odoo/protocol/runtime dependencies.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -18,28 +17,27 @@ from uuid import uuid4
 
 
 # ═══════════════════════════════════════════════════
-# ISO 8601 validation
+# ISO 8601 validation (real datetime parsing)
 # ═══════════════════════════════════════════════════
 
-_ISO8601_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}"          # date
-    r"[T ]\d{2}:\d{2}:\d{2}"       # time
-    r"(?:\.\d+)?"                   # optional fractional seconds
-    r"(?:Z|[+-]\d{2}:\d{2})$"       # timezone: Z or ±HH:MM
-)
+def _parse_iso8601(value: str) -> datetime:
+    """Parse an ISO 8601 datetime string.  Raises ValueError on failure.
 
-_UTC_TZ_RE = re.compile(r"(?:Z|[+]\d{2}:\d{2})$")
+    Handles ``Z`` suffix by replacing with ``+00:00`` for
+    ``datetime.fromisoformat`` compatibility (Python < 3.11).
+
+    Also raises ValueError if the parsed datetime has no timezone
+    (naive datetime), since all envelope timestamps must be timezone-aware.
+    """
+    normalized = value.replace("Z", "+00:00")
+    dt = datetime.fromisoformat(normalized)
+    if dt.tzinfo is None:
+        raise ValueError(f"datetime must have timezone, got naive: {value!r}")
+    return dt
 
 
-def _is_valid_iso8601(value: str) -> bool:
-    """Return True if *value* matches ISO 8601 date-time with timezone."""
-    return bool(_ISO8601_RE.match(value))
-
-
-def _is_utc_iso8601(value: str) -> bool:
-    """Return True if *value* is ISO 8601 with UTC timezone (Z or +00:00)."""
-    if not _is_valid_iso8601(value):
-        return False
+def _is_utc(value: str) -> bool:
+    """Return True if *value* represents UTC (Z or +00:00)."""
     return value.endswith("Z") or value.endswith("+00:00")
 
 
@@ -173,19 +171,23 @@ class ObservationEnvelope:
             self.idempotency_key, self.run_id, self.schema_version
         )
 
-        # ── Time validation ──
+        # ── Time validation (real datetime parsing) ──
         if self.occurred_at is not None:
-            if not _is_valid_iso8601(self.occurred_at):
+            try:
+                _parse_iso8601(self.occurred_at)
+            except ValueError as exc:
                 raise ValueError(
                     f"occurred_at must be valid ISO 8601 with timezone, "
                     f"got {self.occurred_at!r}"
-                )
-        if not _is_valid_iso8601(self.emitted_at):
+                ) from exc
+        try:
+            _parse_iso8601(self.emitted_at)
+        except ValueError as exc:
             raise ValueError(
                 f"emitted_at must be valid ISO 8601 with timezone, "
                 f"got {self.emitted_at!r}"
-            )
-        if not _is_utc_iso8601(self.emitted_at):
+            ) from exc
+        if not _is_utc(self.emitted_at):
             raise ValueError(
                 f"emitted_at must be UTC (Z or +00:00), "
                 f"got {self.emitted_at!r}"
@@ -228,13 +230,23 @@ class ObservationEnvelope:
 def _validate_idempotency_key_format(
     key: str, run_id: str, schema_version: str
 ) -> None:
-    """Validate idempotency_key format: run_id|*|*|schema_version."""
+    """Validate idempotency_key format: run_id|source_event_id|point_id|schema_version.
+
+    All 4 parts must be non-empty.  First must equal *run_id*.
+    Last must equal *schema_version*.
+    """
     parts = key.split("|")
     if len(parts) != 4:
         raise ValueError(
             f"idempotency_key must have 4 pipe-separated parts, "
             f"got {len(parts)}: {key!r}"
         )
+    for i, part in enumerate(parts):
+        if not part:
+            raise ValueError(
+                f"idempotency_key part {i} must be non-empty, "
+                f"got {key!r}"
+            )
     if parts[0] != run_id:
         raise ValueError(
             f"idempotency_key first part must match run_id={run_id!r}, "
@@ -245,31 +257,3 @@ def _validate_idempotency_key_format(
             f"idempotency_key last part must match schema_version="
             f"{schema_version!r}, got {parts[3]!r}"
         )
-
-    # ── Serialization ──
-
-    def to_dict(self) -> dict[str, Any]:
-        """Return a plain serializable dict suitable for JSON/JSONL/projections.
-
-        Preserves all fields.  Dates serialize as ISO 8601 strings.
-        """
-        return {
-            "observation_id": self.observation_id,
-            "idempotency_key": self.idempotency_key,
-            "observation_type": self.observation_type.value,
-            "run_id": self.run_id,
-            "model_id": self.model_id,
-            "simulation_time_s": self.simulation_time_s,
-            "occurred_at": self.occurred_at,
-            "emitted_at": self.emitted_at,
-            "source_domain": self.source_domain,
-            "source_path": self.source_path,
-            "subject_type": self.subject_type,
-            "subject_id": self.subject_id,
-            "context": dict(self.context),
-            "payload": dict(self.payload),
-            "quality": self.quality,
-            "correlation_id": self.correlation_id,
-            "causation_id": self.causation_id,
-            "schema_version": self.schema_version,
-        }

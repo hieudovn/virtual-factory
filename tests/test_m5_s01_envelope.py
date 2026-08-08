@@ -252,7 +252,8 @@ class TestSerialization:
 # ═══════════════════════════════════════════════════
 
 class TestIdempotencyKeyValidation:
-    """idempotency_key must match run_id|*|*|schema_version format."""
+    """idempotency_key must match run_id|source_event_id|point_id|schema_version.
+    All 4 parts must be non-empty."""
 
     def test_valid_key_accepted(self):
         env = _make_envelope(
@@ -262,18 +263,38 @@ class TestIdempotencyKeyValidation:
         )
         assert env.idempotency_key == "run-1|evt-001|ap04|1.0"
 
-    def test_wrong_number_of_parts_raises(self):
+    def test_too_few_parts_raises(self):
         with pytest.raises(ValueError, match="4 pipe-separated"):
             _make_envelope(idempotency_key="run-1|evt-001|ap04")
 
-    def test_first_part_mismatches_run_id_raises(self):
+    def test_too_many_parts_raises(self):
+        with pytest.raises(ValueError, match="4 pipe-separated"):
+            _make_envelope(idempotency_key="run-1|evt-001|ap04|1.0|extra")
+
+    def test_empty_source_event_id_raises(self):
+        with pytest.raises(ValueError, match="part 1 must be non-empty"):
+            _make_envelope(idempotency_key="run-1||ap04|1.0")
+
+    def test_empty_point_id_raises(self):
+        with pytest.raises(ValueError, match="part 2 must be non-empty"):
+            _make_envelope(idempotency_key="run-1|evt-001||1.0")
+
+    def test_empty_schema_version_raises(self):
+        with pytest.raises(ValueError, match="part 3 must be non-empty"):
+            _make_envelope(idempotency_key="run-1|evt-001|ap04|")
+
+    def test_empty_run_id_raises(self):
+        with pytest.raises(ValueError, match="part 0 must be non-empty"):
+            _make_envelope(idempotency_key="|evt-001|ap04|1.0")
+
+    def test_wrong_run_id_raises(self):
         with pytest.raises(ValueError, match="first part must match run_id"):
             _make_envelope(
                 run_id="run-2",
                 idempotency_key="run-1|evt-001|ap04|1.0",
             )
 
-    def test_last_part_mismatches_schema_version_raises(self):
+    def test_wrong_schema_version_raises(self):
         with pytest.raises(ValueError, match="last part must match schema_version"):
             _make_envelope(
                 schema_version="2.0",
@@ -286,43 +307,63 @@ class TestIdempotencyKeyValidation:
 # ═══════════════════════════════════════════════════
 
 class TestTimeValidation:
-    """occurred_at and emitted_at must be valid ISO 8601; emitted_at must be UTC."""
+    """occurred_at and emitted_at must be valid ISO 8601 via real datetime parsing."""
 
-    def test_valid_occurred_at_accepted(self):
+    # ── occurred_at ──
+
+    def test_valid_occurred_at_z_accepted(self):
         env = _make_envelope(occurred_at="2026-08-09T00:00:12.5Z")
         assert env.occurred_at == "2026-08-09T00:00:12.5Z"
+
+    def test_valid_occurred_at_offset_accepted(self):
+        env = _make_envelope(occurred_at="2026-08-09T00:00:12.5+07:00")
+        assert env.occurred_at == "2026-08-09T00:00:12.5+07:00"
 
     def test_occurred_at_none_accepted(self):
         env = _make_envelope(occurred_at=None)
         assert env.occurred_at is None
 
-    def test_invalid_occurred_at_raises(self):
+    def test_occurred_at_invalid_date_fails(self):
         with pytest.raises(ValueError, match="occurred_at"):
-            _make_envelope(occurred_at="not-a-date")
+            _make_envelope(occurred_at="2026-02-30T12:00:00Z")
 
-    def test_occurred_at_no_timezone_raises(self):
+    def test_occurred_at_invalid_month_fails(self):
+        with pytest.raises(ValueError, match="occurred_at"):
+            _make_envelope(occurred_at="2026-99-99T12:00:00Z")
+
+    def test_occurred_at_invalid_hour_fails(self):
+        with pytest.raises(ValueError, match="occurred_at"):
+            _make_envelope(occurred_at="2026-08-09T25:00:00Z")
+
+    def test_occurred_at_no_timezone_fails(self):
         with pytest.raises(ValueError, match="occurred_at"):
             _make_envelope(occurred_at="2026-08-09T00:00:12.5")
+
+    # ── emitted_at ──
 
     def test_default_emitted_at_is_valid_utc(self):
         env = _make_envelope()
         assert env.emitted_at.endswith("Z") or env.emitted_at.endswith("+00:00")
 
-    def test_custom_utc_emitted_at_accepted(self):
+    def test_custom_utc_emitted_at_z_accepted(self):
         env = _make_envelope(emitted_at="2026-08-09T00:00:00Z")
         assert env.emitted_at == "2026-08-09T00:00:00Z"
 
-    def test_custom_plus_zero_emitted_at_accepted(self):
+    def test_custom_utc_emitted_at_plus_zero_accepted(self):
         env = _make_envelope(emitted_at="2026-08-09T00:00:00+00:00")
         assert env.emitted_at == "2026-08-09T00:00:00+00:00"
 
-    def test_non_utc_emitted_at_raises(self):
+    def test_emitted_at_non_utc_offset_fails(self):
         with pytest.raises(ValueError, match="emitted_at must be UTC"):
             _make_envelope(emitted_at="2026-08-09T00:00:00+07:00")
 
-    def test_invalid_emitted_at_raises(self):
+    def test_emitted_at_no_timezone_fails(self):
         with pytest.raises(ValueError, match="emitted_at"):
-            _make_envelope(emitted_at="garbage")
+            _make_envelope(emitted_at="2026-08-09T00:00:00")
+
+    def test_emitted_at_invalid_calendar_fails(self):
+        with pytest.raises(ValueError, match="emitted_at"):
+            _make_envelope(emitted_at="2026-02-30T12:00:00Z")
 
 
 # ═══════════════════════════════════════════════════
