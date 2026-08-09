@@ -78,7 +78,7 @@ class ObservationService:
     policy: ObservationPolicy = field(default_factory=ObservationPolicy.industrial)
 
     # ── Trigger runtime state ──
-    _periodic_last_s: dict[str, float] = field(default_factory=dict)
+    _periodic_last_s: dict[str, float | None] = field(default_factory=dict)
     _onchange_prev: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     # ── Configuration ──
@@ -139,6 +139,8 @@ class ObservationService:
                     return []
                 if not self.policy.is_allowed(reality.category):
                     return []
+                if not self._source_matches(point, reality):
+                    return []
                 return [self._build_envelope(point, reality)]
         return []
 
@@ -168,14 +170,15 @@ class ObservationService:
             return tp.matches_event(event_type, target_id)
 
         if tp.kind == TriggerKind.PERIODIC:
-            last_s = self._periodic_last_s.get(point.point_id, -1.0)
+            last_s = self._periodic_last_s.get(point.point_id)
+            if last_s is None:
+                return True  # first-fire: no prior state → eligible
             elapsed = reality.simulation_time_s - last_s
-            if elapsed < tp.interval_s:
-                return False
-            return True
+            return elapsed >= tp.interval_s
 
         if tp.kind == TriggerKind.ON_CHANGE:
-            prev = self._onchange_prev.get(point.point_id)
+            key = _onchange_key(point.point_id, reality)
+            prev = self._onchange_prev.get(key)
             current = reality.source_data
             changed = tp.has_changed(prev, current)
             return changed
@@ -239,4 +242,16 @@ class ObservationService:
         if tp.kind == TriggerKind.PERIODIC:
             self._periodic_last_s[point.point_id] = reality.simulation_time_s
         elif tp.kind == TriggerKind.ON_CHANGE:
-            self._onchange_prev[point.point_id] = dict(reality.source_data)
+            key = _onchange_key(point.point_id, reality)
+            self._onchange_prev[key] = dict(reality.source_data)
+
+
+def _onchange_key(point_id: str, reality: RealityInput) -> str:
+    """Build a stable ON_CHANGE state key from point + subject.
+
+    Subject-less input uses a sentinel to avoid cross-contamination
+    between different realities going through the same point.
+    """
+    st = reality.subject_type or "_nosubject"
+    si = reality.subject_id or "_nosubject"
+    return f"{point_id}|{st}|{si}"

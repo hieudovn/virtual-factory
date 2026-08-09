@@ -238,6 +238,17 @@ class TestTriggerPeriodic:
                            source_data={"value": 15}, source_event_id="e2")
         assert len(svc.collect(r2)) == 1
 
+    def test_first_fire_at_sim_time_zero_emits(self):
+        """First call at simulation_time_s=0 must emit (Fix #1)."""
+        svc = ObservationService()
+        svc.add_point(self._make_periodic_point())
+        reality = _make_reality(
+            source_type="continuous.signal", simulation_time_s=0,
+            source_data={"value": 1}, source_event_id="e0",
+        )
+        envelopes = svc.collect(reality)
+        assert len(envelopes) == 1
+
     def test_uses_simulation_time_not_wall_clock(self):
         svc = ObservationService()
         svc.add_point(self._make_periodic_point())
@@ -309,7 +320,28 @@ class TestTriggerOnChange:
             source_data={"temperature": 20.6, "pressure": 101.5},
             source_event_id="e2"))
         # Both points should emit (temperature changed, pressure changed)
-        assert len(envelopes) == 2
+    def test_different_subjects_isolated(self):
+        """Two WIPs through same ON_CHANGE point must not interfere (Fix #2)."""
+        svc = ObservationService()
+        svc.add_point(self._make_onchange_point())
+        # Subject A: temperature 20.0
+        svc.collect(_make_reality(source_type="continuous.signal",
+            source_data={"temperature": 20.0}, source_event_id="e1",
+            subject_type="wip", subject_id="MOTOR-A"))
+        # Subject B: temperature 20.0 (same baseline, different subject)
+        svc.collect(_make_reality(source_type="continuous.signal",
+            source_data={"temperature": 20.0}, source_event_id="e2",
+            subject_type="wip", subject_id="MOTOR-B"))
+        # Subject A: 20.6 → should emit (crossed threshold for A)
+        envelopes_a = svc.collect(_make_reality(source_type="continuous.signal",
+            source_data={"temperature": 20.6}, source_event_id="e3",
+            subject_type="wip", subject_id="MOTOR-A"))
+        # Subject B: 20.3 → should NOT emit (below threshold for B)
+        envelopes_b = svc.collect(_make_reality(source_type="continuous.signal",
+            source_data={"temperature": 20.3}, source_event_id="e4",
+            subject_type="wip", subject_id="MOTOR-B"))
+        assert len(envelopes_a) == 1, "Subject A should emit (20.0→20.6)"
+        assert len(envelopes_b) == 0, "Subject B should NOT emit (20.0→20.3)"
 
 
 # ═══════════════════════════════════════════════════
@@ -338,6 +370,29 @@ class TestTriggerManual:
         svc = ObservationService()
         svc.add_point(self._make_manual_point())
         assert svc.collect_manual(_make_reality(), "nonexistent") == []
+
+    def test_manual_respects_source_match(self):
+        """MANUAL must not bypass source applicability (Fix #3)."""
+        svc = ObservationService()
+        svc.add_point(_make_point(
+            point_id="manual-ap04",
+            trigger=TriggerPolicy(kind=TriggerKind.MANUAL),
+            source_type="assembly.event",
+            source_filter={"event_type": "PROCESS_COMPLETE", "target_id": "AP04"},
+        ))
+        # Wrong source_type
+        r_wrong_type = _make_reality(source_type="continuous.signal")
+        assert svc.collect_manual(r_wrong_type, "manual-ap04") == []
+
+        # Wrong source_filter
+        r_wrong_filter = _make_reality(source_data={
+            "event_type": "WIP_CREATED", "target_id": "AP04",
+        })
+        assert svc.collect_manual(r_wrong_filter, "manual-ap04") == []
+
+        # Correct source
+        r_correct = _make_reality()
+        assert len(svc.collect_manual(r_correct, "manual-ap04")) == 1
 
 
 # ═══════════════════════════════════════════════════
