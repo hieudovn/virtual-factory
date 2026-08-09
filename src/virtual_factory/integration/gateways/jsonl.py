@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Sequence
 
 from virtual_factory.integration.gateway import DeliveryResult, DeliveryStatus
 from virtual_factory.observation.projection import ProjectedMessage
@@ -62,5 +63,5 @@ class JsonlObsGateway:
                 error_message=str(exc),
             )
 
-    def send_many(self, messages: list[ProjectedMessage]) -> list[DeliveryResult]:
+    def send_many(self, messages: Sequence[ProjectedMessage]) -> list[DeliveryResult]:
         return [self.send(m) for m in messages]

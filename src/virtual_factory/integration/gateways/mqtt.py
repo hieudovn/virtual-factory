@@ -7,6 +7,7 @@ Topic mapping + ProjectedMessage serialization owned here.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -119,7 +120,7 @@ class MqttObsGateway:
             transport_metadata={"topic": topic, "qos": str(self.qos)},
         )
 
-    def send_many(self, messages: list[ProjectedMessage]) -> list[DeliveryResult]:
+    def send_many(self, messages: Sequence[ProjectedMessage]) -> list[DeliveryResult]:
         return [self.send(m) for m in messages]
 
     def _resolve_topic(self, message_type: str) -> str | None:

@@ -5,6 +5,7 @@ M5-S05: Stores ProjectedMessages in memory.  Optional failure injection.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from virtual_factory.integration.gateway import DeliveryResult, DeliveryStatus
@@ -40,7 +41,7 @@ class InMemoryObsGateway:
             status=DeliveryStatus.DELIVERED,
         )
 
-    def send_many(self, messages: list[ProjectedMessage]) -> list[DeliveryResult]:
+    def send_many(self, messages: Sequence[ProjectedMessage]) -> list[DeliveryResult]:
         return [self.send(m) for m in messages]
 
     @property
