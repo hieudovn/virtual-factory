@@ -76,6 +76,18 @@ class MqttGateway:
             raise ValueError(f"Refusing to build MQTT payload for internal_truth signal: {signal.name}")
         return asdict(signal)
 
+    def publish_raw(self, topic: str, payload: str,
+                    qos: int = 0, retain: bool = False) -> int:
+        """Publish a raw payload string to *topic*.  Returns paho rc.
+
+        Backward-compatible addition for M5 ObservationGateway reuse.
+        Existing ``publish_frame`` is unchanged.
+        """
+        if self.client is None:
+            self.client = self._create_client()
+        result = self.client.publish(topic, payload, qos=qos, retain=retain)
+        return result.rc if hasattr(result, "rc") else 0
+
     def _create_client(self):
         try:
             import paho.mqtt.client as mqtt
