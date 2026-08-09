@@ -202,7 +202,7 @@ RSO2 simplified upstream
 
 ### 09 AUG — Foundation Closed / Demo Planning
 
-**Status**: COMPLETE
+**Status**: IN_PROGRESS (evening — inventory complete, freeze prep ready)
 
 - [x] M2 closed
 - [x] M3 closed
@@ -210,8 +210,8 @@ RSO2 simplified upstream
 - [x] M5 closed (PR #19 merged, 1067 passed)
 - [x] Integration foundation ready
 - [x] Demo timeline created (this document)
-- [ ] Inventory remaining TIPA gaps
-- [ ] Prepare ASSY design freeze
+- [x] Inventory remaining TIPA gaps (section 13)
+- [x] Prepare ASSY design freeze (DF-01–DF-12 framework)
 
 ### 10 AUG — ASSY Design Freeze
 
@@ -293,7 +293,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 
 | ID | Phase | Task | Priority | Status | Owner | Notes |
 |----|-------|------|----------|--------|-------|-------|
-| T-01 | 09-Aug | Create demo timeline | P0 | IN_PROGRESS | PM | This document |
+| T-01 | 09-Aug | Create demo timeline | P0 | CLOSED | PM | This document |
 | T-02 | 09-Aug | Inventory TIPA gaps | P0 | NOT_STARTED | PM | |
 | T-03 | 10-Aug | DF-01 topology freeze | P0 | NOT_STARTED | PM/SA | |
 | T-04 | 10-Aug | DF-02–DF-12 freeze | P0 | NOT_STARTED | PM/SA | |
@@ -391,6 +391,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | Date | Author | Change |
 |------|--------|--------|
 | 09-Aug-2026 | PM | Initial timeline created. M5 CLOSED. Demo planning begins. |
+| 09-Aug-2026 | PM | SA correction: TBD-BLOCKER count fixed (5), 09-Aug→IN_PROGRESS, T-01→CLOSED. |
 
 ---
 
@@ -406,7 +407,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | **Days to Official Demo** | 12 |
 | **Overall Demo Readiness** | ~25% |
 | **Current Critical Path** | 10-Aug design freeze → TIPA runtime implementation |
-| **Current Blockers** | Design freeze decisions not yet made |
+| **Current Blockers** | 5 TBD-BLOCKER items (see section 13) |
 | **Next 24h Objective** | Complete TIPA gap inventory; prepare DF-01–DF-12 |
 | **Feature Freeze Status** | NOT YET (freeze target: 10-Aug) |
 | **Latest validated regression** | 1067 passed |
