@@ -49,6 +49,10 @@ class ProductionContext:
             raise ValueError("production_order_ref must be non-empty")
         if not self.product_ref:
             raise ValueError("product_ref must be non-empty")
+        if self.quantity <= 0:
+            raise ValueError(
+                f"quantity must be > 0, got {self.quantity}"
+            )
         object.__setattr__(self, "attributes", MappingProxyType(dict(self.attributes)))
 
 
@@ -65,6 +69,11 @@ class ControlCommand:
     def __post_init__(self) -> None:
         if not self.command_id:
             raise ValueError("command_id must be non-empty")
+        if not isinstance(self.command_type, ControlCommandKind):
+            raise ValueError(
+                f"command_type must be ControlCommandKind, "
+                f"got {type(self.command_type).__name__}"
+            )
         if not self.target_ref:
             raise ValueError("target_ref must be non-empty")
         object.__setattr__(self, "parameters", MappingProxyType(dict(self.parameters)))
@@ -85,6 +94,10 @@ class MaterialContext:
             raise ValueError("release_id must be non-empty")
         if not self.material_ref:
             raise ValueError("material_ref must be non-empty")
+        if self.quantity <= 0:
+            raise ValueError(
+                f"quantity must be > 0, got {self.quantity}"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +139,8 @@ class SimulationControlBatch:
     def __post_init__(self) -> None:
         if not self.run_id:
             raise ValueError("run_id must be non-empty")
+        if not self.model_id:
+            raise ValueError("model_id must be non-empty")
         object.__setattr__(self, "attributes", MappingProxyType(dict(self.attributes)))
 
 

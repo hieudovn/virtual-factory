@@ -189,8 +189,11 @@ class TestMESProjection:
 
     def test_schema_name_matches_type(self):
         proj = MESProjection()
-        msg = proj.project(_make_envelope(observation_type=ObservationType.STATE))
-        assert msg.schema_name == "vf.mes.state"
+        msg = proj.project(_make_envelope(
+            observation_type=ObservationType.STATE,
+            payload={},  # no event_type → falls through to STATE generic
+        ))
+        assert msg.schema_name == "vf.mes.state_snapshot"
 
     def test_no_odoo_ids(self):
         proj = MESProjection()
@@ -198,6 +201,53 @@ class TestMESProjection:
         for v in msg.payload.values():
             if isinstance(v, str):
                 assert "odoo" not in v.lower()
+
+    def test_quality_check_produces_quality_result(self):
+        proj = MESProjection()
+        msg = proj.project(_make_envelope(
+            observation_type=ObservationType.EVENT,
+            payload={"event_type": "QUALITY_CHECK", "result": "PASS", "disposition": "pass"},
+        ))
+        assert msg is not None
+        assert msg.message_type == "mes.quality_result"
+        assert msg.schema_name == "vf.mes.quality_result"
+
+    def test_checklist_complete_produces_checklist_result(self):
+        proj = MESProjection()
+        msg = proj.project(_make_envelope(
+            observation_type=ObservationType.EVENT,
+            payload={"event_type": "CHECKLIST_COMPLETE", "result": "OK"},
+        ))
+        assert msg is not None
+        assert msg.message_type == "mes.checklist_result"
+
+    def test_explicit_semantic_type_overrides(self):
+        proj = MESProjection()
+        msg = proj.project(_make_envelope(
+            observation_type=ObservationType.EVENT,
+            context={"semantic_type": "genealogy_relationship"},
+            payload={"event_type": "PROCESS_COMPLETE"},
+        ))
+        assert msg is not None
+        assert msg.message_type == "mes.genealogy_relationship"
+
+    def test_irrelevant_envelope_returns_none(self):
+        """HUMAN_ENTRY without semantic_type → None (irrelevant)."""
+        proj = MESProjection()
+        msg = proj.project(_make_envelope(
+            observation_type=ObservationType.HUMAN_ENTRY,
+            payload={"event_type": "OPERATOR_NOTE"},
+        ))
+        assert msg is None
+
+    def test_unknown_event_type_returns_none(self):
+        """EVENT with unknown event_type → None (insufficient semantics)."""
+        proj = MESProjection()
+        msg = proj.project(_make_envelope(
+            observation_type=ObservationType.EVENT,
+            payload={"event_type": "MYSTERY_EVENT"},
+        ))
+        assert msg is None
 
 
 # ═══════════════════════════════════════════════════
@@ -334,6 +384,28 @@ class TestControlBoundary:
         source = inspect.getsource(mod)
         assert "import odoo" not in source
         assert "from odoo" not in source
+
+    def test_production_quantity_must_be_positive(self):
+        with pytest.raises(ValueError, match="quantity"):
+            ProductionContext(
+                production_order_ref="MO-001", product_ref="SSO2", quantity=0,
+            )
+
+    def test_material_quantity_must_be_positive(self):
+        with pytest.raises(ValueError, match="quantity"):
+            MaterialContext(
+                release_id="R1", material_ref="SSO2", quantity=-1,
+            )
+
+    def test_command_type_must_be_enum(self):
+        with pytest.raises(ValueError, match="command_type"):
+            ControlCommand(
+                command_id="c1", command_type="start", target_ref="t1",  # type: ignore[arg-type]
+            )
+
+    def test_simulation_control_batch_model_id_required(self):
+        with pytest.raises(ValueError, match="model_id"):
+            SimulationControlBatch(run_id="r1", model_id="")
 
 
 # ═══════════════════════════════════════════════════
