@@ -36,13 +36,22 @@ class JsonlObsGateway:
                 "headers": dict(message.headers),
                 "payload": dict(message.payload),
             }
-            line = json.dumps(record, default=str, ensure_ascii=False)
+            # Strict JSON: no default=str — fail on unsupported types
+            line = json.dumps(record, ensure_ascii=False)
             with open(self._filepath, "a", encoding="utf-8") as f:
                 f.write(line + "\n")
             return DeliveryResult(
                 gateway_id=self.gateway_id,
                 message_key=message.key,
                 status=DeliveryStatus.DELIVERED,
+            )
+        except (TypeError, ValueError) as exc:
+            return DeliveryResult(
+                gateway_id=self.gateway_id,
+                message_key=message.key,
+                status=DeliveryStatus.FAILED,
+                error_code="serialization_error",
+                error_message=str(exc),
             )
         except Exception as exc:
             return DeliveryResult(

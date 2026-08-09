@@ -10,7 +10,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Mapping, Protocol, runtime_checkable
+from typing import Any, Mapping, Protocol, Sequence, runtime_checkable
+
+from virtual_factory.observation.projection import ProjectedMessage
 
 
 # ═══════════════════════════════════════════════════
@@ -70,8 +72,8 @@ class ObservationGatewayProtocol(Protocol):
 
     gateway_id: str
 
-    def send(self, message: Any) -> DeliveryResult:
+    def send(self, message: ProjectedMessage) -> DeliveryResult:
         ...
 
-    def send_many(self, messages: list[Any]) -> list[DeliveryResult]:
+    def send_many(self, messages: Sequence[ProjectedMessage]) -> list[DeliveryResult]:
         ...
