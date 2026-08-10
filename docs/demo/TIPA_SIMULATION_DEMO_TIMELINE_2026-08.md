@@ -405,12 +405,15 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | 10-Aug-2026 | PM | M6-S03-C01 Terminal Quality Hold & Semantic Alignment. |
 | 10-Aug-2026 | PM | M6-S03-C01.1 Terminal Idempotency & Deterministic Hold. |
 | 10-Aug-2026 | SA | M6-S03 CLOSED. M6-S04 authorized. |
+| 10-Aug-2026 | PM | M6-S04 Visualization + Demo Controls (head 2a731b7). |
+| 10-Aug-2026 | PM | M6-S04-C01 Projection Boundary & Demo Semantics Alignment. |
+| 10-Aug-2026 | SA | M6-S04 CLOSED. |
 
 ---
 
 ## 15. Current Status Summary
 
-**As of**: 2026-08-10 (M6-S03 CLOSED, M6-S04 authorized)
+**As of**: 2026-08-10 (M6-S04 CLOSED)
 
 | Metric | Value |
 |--------|-------|
@@ -418,11 +421,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | **Internal Demo** | 17-Aug-2026 |
 | **Days to Internal Demo** | 7 |
 | **Days to Official Demo** | 11 |
-| **Overall Demo Readiness** | ~55% (+15% from M6-S03 quality) |
-| **Current Critical Path** | M6-S04: Visualization + Demo Controls |
-| **Current Blockers** | None |
-| **Next 24h Objective** | Begin M6-S04: visualization consumer of M6-S02/S03 reality |
-| **Feature Freeze Status** | V0.9 BASELINE FROZEN (SA APPROVED) |
+| **Overall Demo Readiness** | ~70% (+15% from M6-S04 visualization) |
+| **Current Critical Path** | M6-S05: MES Observation Integration |
 | **Latest validated regression** | 1067 passed |
-| **Latest approved/merged milestone** | M6-S03 (head 58bd958) |
-| **Current main** | a21478c |
+| **Latest approved/merged milestone** | M6-S04 (head bceeba9) |
