@@ -236,6 +236,11 @@ class AssyLineRuntime:
     def motor_count(self) -> int:
         return self._motor_seq
 
+    @property
+    def rso2_buffer_size(self) -> int:
+        """Public: number of RSO2 WIPs available for AP04 join."""
+        return len(self._rso2_wips)
+
     # -- WIP registry --
 
     def get_wip(self, wip_id: str) -> Optional[AssyWipState]:

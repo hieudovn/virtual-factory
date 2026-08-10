@@ -1,29 +1,45 @@
-"""M6-S02-C01 — TIPA ASSY Demo Fixture (public runtime).
+"""M6-S02-C02 — TIPA ASSY Demo Fixture (YAML-driven, public API only).
 
+Loads authoritative config from configs/plants/tipa_assy_demo.yaml.
 Demonstrates: simulated time progression, multi-WIP concurrent dwell,
 AP04 join with genealogy, overrun behavior, happy path to RELEASED.
-Uses only public API: produce_*, introduce_to_assy, run_dwell_cycle.
+Uses only public API.
 """
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from virtual_factory.assembly.line_runtime import (
     AssyLineConfig, AssyLineRuntime, ConveyorState, WipLifecycle,
+    load_assy_config_from_yaml,
+)
+
+# Path to authoritative TIPA ASSY demo config
+_TIPA_CONFIG_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "configs", "plants", "tipa_assy_demo.yaml"
 )
 
 
-def run_tipa_demo(num_motors: int = 2, verbose: bool = True) -> AssyLineRuntime:
-    """Run TIPA ASSY demo with public runtime API."""
+def run_tipa_demo(
+    num_motors: int = 2,
+    verbose: bool = True,
+    config_path: str | None = None,
+) -> AssyLineRuntime:
+    """Run TIPA ASSY demo.
 
-    config = AssyLineConfig()
-    config.conveyor.nominal_line_dwell_time_s = 120.0
-    config.conveyor.index_movement_duration_s = 0.0
-
+    Loads config from configs/plants/tipa_assy_demo.yaml by default.
+    All runtime behavior is driven by the YAML — no manual overrides.
+    """
+    path = config_path or _TIPA_CONFIG_PATH
+    config = load_assy_config_from_yaml(path)
     line = AssyLineRuntime(config=config)
 
     if verbose:
         print("=" * 60)
-        print("TIPA ASSY Demo — M6-S02-C01 Runtime Verification")
+        print("TIPA ASSY Demo — M6-S02-C02 (YAML-driven)")
+        print(f"Config: {path}")
         print(f"Target: {num_motors} motor(s)")
         print(f"Nominal dwell: {config.conveyor.nominal_line_dwell_time_s:.0f}s")
         print("=" * 60)
@@ -67,10 +83,9 @@ def run_tipa_demo(num_motors: int = 2, verbose: bool = True) -> AssyLineRuntime:
             print(f"CYCLE {cycle:03d} | {' | '.join(parts) if parts else '(empty)'}")
             print(f"  state={line.conveyor.state.value} t={line.simulation_time_s:.0f}s")
 
-        # Execute dwell (with on-demand RSO2 for AP04)
-        # Ensure RSO2 buffer is sufficient before dwell
+        # Ensure RSO2 buffer sufficient (public API)
         ap04_wip = line.conveyor.wip_at("AP04")
-        if ap04_wip and not line._rso2_wips:
+        if ap04_wip and line.rso2_buffer_size == 0:
             line.produce_rso2_wip()
             if verbose:
                 print(f"  [UPSTREAM] RSO2 (on-demand)")

@@ -579,6 +579,35 @@ identity:
         finally:
             os.unlink(fpath)
 
+    def test_load_actual_tipa_yaml(self):
+        """Load the authoritative configs/plants/tipa_assy_demo.yaml."""
+        import os
+        repo_root = os.path.dirname(os.path.dirname(__file__))
+        yaml_path = os.path.join(repo_root, "configs", "plants", "tipa_assy_demo.yaml")
+        config = load_assy_config_from_yaml(yaml_path)
+
+        # Positions
+        assert config.conveyor.positions[:3] == ("PRE-ASSY", "AP01", "AP02")
+        assert config.conveyor.positions[-1] == "AP11"
+        assert len(config.conveyor.positions) == 12
+
+        # Dwell
+        assert config.conveyor.nominal_line_dwell_time_s == 120.0
+        assert config.conveyor.index_movement_duration_s == 0.0
+
+        # Station durations
+        assert config.station_durations["PRE-ASSY"] == 30.0
+        assert config.station_durations["AP04"] == 60.0
+        assert config.station_durations["AP05"] == 90.0
+        assert config.station_durations["AP11"] == 30.0
+
+        # AP04
+        assert config.ap04_component_list == ()
+        assert config.ap04_required_parent_sources == ("SSO2", "RSO2")
+
+        # Identity
+        assert config.motor_wip_prefix == "MTR"
+
 
 # ═══════════════════════════════════════════════════════════
 # Happy Path Acceptance
