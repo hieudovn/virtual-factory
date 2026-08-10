@@ -296,12 +296,17 @@ class TestPackageIntegrity:
 
     def test_package_exports_all_symbols(self):
         from virtual_factory.assembly import __all__
-        expected = {
+        # M3 symbols
+        expected_m3 = {
             "AssemblyPrimitive", "Source", "Buffer", "Processor",
             "Router", "Sink", "QualityGate", "PrimitiveType",
             "WipId", "WipState", "WipStatus", "QualityDisposition",
         }
-        assert set(__all__) == expected
+        # Verify all M3 symbols are present
+        assert expected_m3 <= set(__all__), \
+            f"Missing M3 symbols: {expected_m3 - set(__all__)}"
+        assert "AssyLineRuntime" in __all__, "M6-S02 AssyLineRuntime missing"
+        assert "ConveyorLine" in __all__, "M6-S02 ConveyorLine missing"
 
     def test_assembly_does_not_import_discrete(self):
         """Assembly package must not import from discrete runtime."""

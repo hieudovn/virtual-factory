@@ -1,0 +1,81 @@
+# TIPA ASSY Demo Configuration — M6-S02
+#
+# Authoritative configuration for the TIPA Assembly Line Simulation Demo.
+# Based on CLOSED M6-S01 baseline v0.9.
+#
+# All values are configuration-driven per M6-S01 requirement.
+# No hard-coded values in runtime code.
+
+plant:
+  id: tipa_assy_demo
+  name: "TIPA ASSY Demo"
+  type: discrete_assembly
+
+# --- Conveyor ---
+conveyor:
+  nominal_line_dwell_time_s: 120.0
+  index_movement_duration_s: 0.0   # demo: instantaneous index
+  positions:
+    - PRE-ASSY
+    - AP01
+    - AP02
+    - AP03
+    - AP04
+    - AP05
+    - AP06
+    - AP07
+    - AP08
+    - AP09
+    - AP10
+    - AP11
+
+# --- Upstream ---
+upstream:
+  sso2_wip_prefix: SSO2
+  rso2_wip_prefix: RSO2
+  sso2_production_interval_s: 120.0
+  rso2_production_interval_s: 120.0
+  sso2_operation_type: shrink_fit      # PTC-01: configurable
+  rso2_operation_type: rotor_assembly  # PTC-03
+
+# --- Station Operation Durations (seconds) ---
+# Separate from line dwell (INV-CONV-05).
+station_durations:
+  PRE-ASSY: 30.0
+  AP01: 60.0
+  AP02: 75.0
+  AP03: 45.0
+  AP04: 60.0
+  AP05: 90.0
+  AP06: 60.0
+  AP07: 30.0
+  AP08: 30.0
+  AP09: 45.0
+  AP10: 45.0
+  AP11: 30.0
+
+# --- AP04 Join ---
+ap04:
+  required_parent_sources:
+    - SSO2
+    - RSO2
+  component_list: []   # PTC-05: empty placeholder; TBD by TIPA
+
+# --- Identity ---
+identity:
+  motor_wip_prefix: MTR
+
+# --- Simulation ---
+simulation:
+  time_multiplier: 1.0
+
+# --- Quality (M6-S03: default PASS for now) ---
+quality:
+  ap03:
+    default_disposition: PASS
+  ap06:
+    default_disposition: PASS
+  ap08:
+    default_disposition: PASS
+  ap11:
+    default_disposition: PASS
