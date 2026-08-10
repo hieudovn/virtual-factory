@@ -199,7 +199,7 @@ RSO2 simplified upstream
 |----------|-------|--------|
 | Carrier type | Wooden pallet | CONFIRMED_FROM_PRODUCT_OWNER |
 | Carrier per WIP | One pallet carries one WIP / motor assembly | CONFIRMED_FROM_PRODUCT_OWNER |
-| Carrier lifetime | Same carrier follows WIP through entire ASSY line | CONFIRMED_FROM_PRODUCT_OWNER |
+| Carrier association for demo | Same carrier remains associated with the WIP through ASSY | PROVISIONAL_FOR_DEMO |
 | Carrier reuse | Carrier reusable after product release | PROVISIONAL_FOR_DEMO |
 
 ### Buffers & Blocking
@@ -240,8 +240,8 @@ The following are separate concepts and must NOT be conflated in implementation:
 ### Configurability
 
 - `nominal_line_dwell_time_s` must be configurable (NOT hard-coded)
-- Expected valid range: 90s, 100s, 110s, 120s, etc.
 - May vary by product type, model, routing version, line-balancing state
+- Future actual dwell values: TBD according to product/model/process optimization; no fixed range is currently claimed
 - Station operation durations are independent of line dwell
 - This separation enables future: takt analysis, bottleneck detection, line balancing, what-if simulation
 
@@ -307,3 +307,4 @@ They must hold for all ASSY conveyor code.
 | INV-CONV-06 | Incomplete required work prevents WIP from advancing to next index |
 | INV-CONV-07 | WIP identity and pallet/carrier identity remain separate |
 | INV-CONV-08 | No conveyor physics is required for the August demo |
+| INV-CONV-09 | During each STOP/dwell window, all eligible occupied ASSY station positions may process their respective WIPs concurrently. The conveyor index is a LINE-LEVEL synchronization boundary, not a per-WIP sequential execution trigger. "Concurrent" describes manufacturing semantics only — it does NOT require threads, async execution, or parallel CPU execution. The deterministic synchronous simulation engine may evaluate stations sequentially within one simulation step/window provided the resulting semantics represent the same shared dwell period before the next line index. |
