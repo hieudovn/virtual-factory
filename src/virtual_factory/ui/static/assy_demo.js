@@ -54,6 +54,7 @@ const ctrl = {
   setScenario(val) {
     this._scenario = val;
     document.getElementById('scenario-display').textContent = val;
+    this.reset();  // immediately reset with new scenario
   },
 
   async call(action, body) {
@@ -71,7 +72,6 @@ const ctrl = {
     ls.textContent = snap.line_state.toUpperCase();
     ls.className = 'state ' + snap.line_state;
     document.getElementById('dwell').textContent = `Dwell ${snap.dwell_number}`;
-    document.getElementById('cycle').textContent = `Cycle ${snap.dwell_number}`;
 
     // Positions
     const container = document.getElementById('positions-container');
@@ -102,7 +102,7 @@ const ctrl = {
 
     // Production
     const prod = snap.production || {};
-    document.getElementById('motors-completed').textContent = prod.motors_completed || 0;
+    document.getElementById('motors-completed').textContent = prod.motors_created || 0;
     document.getElementById('motors-released').textContent = prod.motors_released || 0;
     document.getElementById('wips-on-line').textContent = prod.wips_on_line || 0;
     document.getElementById('active-holds').textContent = prod.active_quality_holds || 0;

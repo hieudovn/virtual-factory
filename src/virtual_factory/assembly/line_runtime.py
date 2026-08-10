@@ -269,6 +269,11 @@ class AssyLineRuntime:
         """Public: number of RSO2 WIPs available for AP04 join."""
         return len(self._rso2_wips)
 
+    @property
+    def wip_ids(self) -> tuple[str, ...]:
+        """Public: all registered WIP IDs (for snapshot/projection)."""
+        return tuple(self._wips.keys())
+
     def get_quality_history(self, wip_id: str) -> Optional[QualityHistory]:
         """Public: quality history for a WIP."""
         return self._quality_histories.get(wip_id)

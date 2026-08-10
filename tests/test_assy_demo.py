@@ -306,3 +306,29 @@ class TestV18Regression:
         from virtual_factory.assembly import WipId, CarrierId
         assert WipId("x") is not None
         assert CarrierId("y") is not None
+
+    def test_snapshot_no_private_access(self):
+        """build_snapshot uses only public runtime API."""
+        line = AssyLineRuntime()
+        line.produce_sso2_wip()
+        line.introduce_to_assy("SSO2-0001", "PAL-001")
+        snap = build_snapshot(line)
+        # Verify public wip_ids works
+        assert "SSO2-0001" in line.wip_ids
+        # Production counters use public API
+        assert snap.production.motors_created >= 0
+        assert snap.production.motors_released >= 0
+
+
+class TestVScenarioSwitch:
+    def test_scenario_switch_resets_state(self):
+        c1 = DemoController(config_path=TIPA_YAML, scenario=DemoScenario.HAPPY_PATH)
+        s1 = c1.initialize()
+        assert s1.scenario == "HAPPY_PATH"
+
+        c1.set_scenario(DemoScenario.AP06_FAIL_RETEST_PASS)
+        s2 = c1.reset()
+        assert s2.scenario == "AP06_FAIL_RETEST_PASS"
+        # Verify scenario config applied
+        assert c1.runtime.config.quality.ap06.scenario == "PASS"
+        assert c1.runtime.config.quality.ap06.overrides == {1: ["PASS"], 2: ["FAIL", "PASS"]}

@@ -74,8 +74,8 @@ class QualityEventView:
 @dataclass
 class ProductionSummary:
     """Production counters."""
-    motors_completed: int = 0
-    motors_released: int = 0
+    motors_created: int = 0     # AP04 joins completed
+    motors_released: int = 0    # AP11 RELEASED
     wips_on_line: int = 0
     active_quality_holds: int = 0
     sso2_buffer: int = 0
@@ -145,7 +145,7 @@ class AssyDemoSnapshot:
                 for e in self.recent_quality_events[-20:]
             ],
             "production": {
-                "motors_completed": self.production.motors_completed,
+                "motors_created": self.production.motors_created,
                 "motors_released": self.production.motors_released,
                 "wips_on_line": self.production.wips_on_line,
                 "active_quality_holds": self.production.active_quality_holds,
@@ -223,7 +223,7 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
     # Production summary
     holds = 0
     released = 0
-    for wip_id in runtime._wips:
+    for wip_id in runtime.wip_ids:
         ws = runtime.get_wip(wip_id)
         if ws and ws.lifecycle == WipLifecycle.RELEASED:
             released += 1
@@ -233,7 +233,7 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
             holds += 1
 
     prod = ProductionSummary(
-        motors_completed=runtime.motor_count,
+        motors_created=runtime.motor_count,
         motors_released=released,
         wips_on_line=len(runtime.conveyor.occupied_positions()),
         active_quality_holds=holds,
