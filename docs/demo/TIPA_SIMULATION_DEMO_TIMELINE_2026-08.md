@@ -297,7 +297,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 |----|-------|------|----------|--------|-------|-------|
 | T-01 | 09-Aug | Create demo timeline | P0 | CLOSED | PM | This document |
 | T-02 | 09-Aug | Inventory TIPA gaps | P0 | CLOSED | PM | 12 PTC items; 9 CONFIG_ONLY, 2 SMALL_LOGIC, 1 STRUCTURAL |
-| T-03 | 10-Aug | M6-S01 Baseline Freeze v0.9 | P0 | IN_PROGRESS | PM | 5 docs created; awaiting SA |
+| T-03 | 10-Aug | M6-S01 Baseline Freeze v0.9 | P0 | CLOSED | SA | 5 docs + 3 corrections; SA approved |
 | T-05 | 11-Aug | SSO2 simplified upstream | P1 | NOT_STARTED | | |
 | T-06 | 11-Aug | RSO2 simplified upstream | P1 | NOT_STARTED | | |
 | T-07 | 11-Aug | ASSY AP01–AP11 flow | P0 | NOT_STARTED | | |
@@ -397,12 +397,16 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | 10-Aug-2026 | PM | M6-S01-C02 Conveyor Behavior Clarification (PO confirmed: single lane, stop-and-go, wooden pallets). |
 | 10-Aug-2026 | PM | M6-S01-C02.1 Runtime Semantics Micro-Correction (INV-CONV-09, dwell wording, carrier confidence). |
 | 10-Aug-2026 | SA | M6-S01 CLOSED. Baseline v0.9 frozen. M6-S02 authorized. |
+| 10-Aug-2026 | PM | M6-S02 TIPA Runtime + WIP + AP04 Join/Genealogy (head 0bb7a18). |
+| 10-Aug-2026 | PM | M6-S02-C01 Runtime Semantics & Acceptance Fix (sim time, overrun, lifecycle, dwell, trace). |
+| 10-Aug-2026 | PM | M6-S02-C02 Demo Config & Evidence Alignment (YAML-driven, public API, actual YAML test). |
+| 10-Aug-2026 | SA | M6-S02 CLOSED. M6-S03 authorized. |
 
 ---
 
 ## 15. Current Status Summary
 
-**As of**: 2026-08-10 (M6-S01 CLOSED)
+**As of**: 2026-08-10 (M6-S02 CLOSED, M6-S03 authorized)
 
 | Metric | Value |
 |--------|-------|
@@ -410,11 +414,11 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | **Internal Demo** | 17-Aug-2026 |
 | **Days to Internal Demo** | 7 |
 | **Days to Official Demo** | 11 |
-| **Overall Demo Readiness** | ~30% |
-| **Current Critical Path** | M6-S02: TIPA ASSY runtime implementation |
-| **Current Blockers** | None (baseline frozen; all PTC items have provisional values) |
-| **Next 24h Objective** | Begin M6-S02: synchronized indexed ASSY line runtime |
+| **Overall Demo Readiness** | ~40% (+10% from M6-S02 runtime) |
+| **Current Critical Path** | M6-S03: Quality / Test / Rework |
+| **Current Blockers** | None |
+| **Next 24h Objective** | Begin M6-S03: AP03/06/08/11 quality on M6-S02 runtime |
 | **Feature Freeze Status** | V0.9 BASELINE FROZEN (SA APPROVED) |
 | **Latest validated regression** | 1067 passed |
-| **Latest approved/merged milestone** | M6-S01 (head fe30268) |
+| **Latest approved/merged milestone** | M6-S02 (head e0ba672) |
 | **Current main** | a21478c |
