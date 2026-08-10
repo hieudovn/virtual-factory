@@ -202,7 +202,7 @@ RSO2 simplified upstream
 
 ### 09 AUG — Foundation Closed / Demo Planning
 
-**Status**: IN_PROGRESS (evening — inventory complete, freeze prep ready)
+**Status**: CLOSED
 
 - [x] M2 closed
 - [x] M3 closed
@@ -213,11 +213,13 @@ RSO2 simplified upstream
 - [x] Inventory remaining TIPA gaps (section 13)
 - [x] Prepare ASSY design freeze (DF-01–DF-12 framework)
 
-### 10 AUG — ASSY Design Freeze
+### 10 AUG — ASSY Design Freeze ✅ CLOSED
 
 **Objective**: Freeze all DF-01 through DF-12 decisions.
 
-Exit: No implementation-critical ambiguity remains.
+**Exit**: All DF decisions documented. Baseline v0.9 frozen (SA approved).
+Conveyor facts confirmed (single lane, stop-and-go, wooden pallets).
+13 PTC items registered with provisional values. 9 INV-CONV invariants authoritative for M6-S02.
 
 ### 11–12 AUG — TIPA Runtime
 
@@ -340,7 +342,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | R1 | ASSY detail not frozen by 10-Aug | Low | High | M6-S01 baseline v0.9 documented | MITIGATED |
 | R2 | TIPA process gaps force late changes | Medium | High | Provisional markers, defer non-blockers | OPEN |
 | R3 | AP04 join/genealogy incorrect | Medium | Critical | Explicit freeze DF-05, early test | OPEN |
-| R4 | Conveyor/pallet too complex | Medium | Medium | Simplify to essential demo behavior | OPEN |
+| R4 | Conveyor/pallet too complex | Low | Medium | Confirmed: single lane, stop-and-go, wooden pallets | MITIGATED |
 | R5 | Visualization lags runtime | Medium | Medium | Reuse existing; minimal custom UI | OPEN |
 | R6 | MES semantic contract mismatch | Low | Medium | Use M5 projection; align with SA | OPEN |
 | R7 | MES ingestion not available | Low | Medium | InMemory/JSONL fallback for internal demo | OPEN |
@@ -375,7 +377,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | TBD-02 | AP04 component list and join sequence | TBD-BLOCKER | PM/SA |
 | TBD-03 | AP06 test parameters (resistance values etc.) | TBD-NONBLOCKER | PM/SA |
 | TBD-04 | AP08 defect classification detail | TBD-NONBLOCKER | PM/SA |
-| TBD-05 | Conveyor model (single vs dual) | TBD-BLOCKER | PM/SA |
+| TBD-05 | Conveyor model (single vs dual) | RESOLVED | PM/SA |
 | TBD-06 | Pallet/carrier ID convention | PROVISIONAL | PM |
 | TBD-07 | MES canonical event vocabulary subset | TBD-BLOCKER | SA |
 | TBD-08 | Demo script narrative | PROVISIONAL | PM |
@@ -391,24 +393,28 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | 09-Aug-2026 | PM | Initial timeline created. M5 CLOSED. Demo planning begins. |
 | 09-Aug-2026 | PM | SA correction: TBD-BLOCKER count fixed (5), 09-Aug→IN_PROGRESS, T-01→CLOSED. |
 | 10-Aug-2026 | PM | M6-S01 baseline freeze v0.9. 5 docs created. DF-01–DF-12 documented. Readiness ~30%. |
+| 10-Aug-2026 | PM | M6-S01-C01 Source Alignment Correction (SA review: 8 issues fixed). |
+| 10-Aug-2026 | PM | M6-S01-C02 Conveyor Behavior Clarification (PO confirmed: single lane, stop-and-go, wooden pallets). |
+| 10-Aug-2026 | PM | M6-S01-C02.1 Runtime Semantics Micro-Correction (INV-CONV-09, dwell wording, carrier confidence). |
+| 10-Aug-2026 | SA | M6-S01 CLOSED. Baseline v0.9 frozen. M6-S02 authorized. |
 
 ---
 
 ## 15. Current Status Summary
 
-**As of**: 2026-08-09 16:00 ICT
+**As of**: 2026-08-10 (M6-S01 CLOSED)
 
 | Metric | Value |
 |--------|-------|
 | **Official Demo** | 21-Aug-2026 |
 | **Internal Demo** | 17-Aug-2026 |
-| **Days to Internal Demo** | 8 |
-| **Days to Official Demo** | 12 |
-| **Overall Demo Readiness** | ~30% (+5% from M6-S01) |
-| **Current Critical Path** | M6-S02: TIPA runtime implementation |
-| **Current Blockers** | None (all PTC items have provisional values) |
-| **Next 24h Objective** | SA approval of M6-S01 → begin M6-S02 |
-| **Feature Freeze Status** | V0.9 BASELINE DOCUMENTED (awaiting SA approval) |
+| **Days to Internal Demo** | 7 |
+| **Days to Official Demo** | 11 |
+| **Overall Demo Readiness** | ~30% |
+| **Current Critical Path** | M6-S02: TIPA ASSY runtime implementation |
+| **Current Blockers** | None (baseline frozen; all PTC items have provisional values) |
+| **Next 24h Objective** | Begin M6-S02: synchronized indexed ASSY line runtime |
+| **Feature Freeze Status** | V0.9 BASELINE FROZEN (SA APPROVED) |
 | **Latest validated regression** | 1067 passed |
-| **Latest approved/merged milestone** | M5-S05 (PR #19, head a21478c) |
+| **Latest approved/merged milestone** | M6-S01 (head fe30268) |
 | **Current main** | a21478c |
