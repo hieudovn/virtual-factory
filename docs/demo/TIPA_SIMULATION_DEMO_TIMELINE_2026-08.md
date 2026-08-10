@@ -401,12 +401,16 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | 10-Aug-2026 | PM | M6-S02-C01 Runtime Semantics & Acceptance Fix (sim time, overrun, lifecycle, dwell, trace). |
 | 10-Aug-2026 | PM | M6-S02-C02 Demo Config & Evidence Alignment (YAML-driven, public API, actual YAML test). |
 | 10-Aug-2026 | SA | M6-S02 CLOSED. M6-S03 authorized. |
+| 10-Aug-2026 | PM | M6-S03 Quality / Test / Rework (head dc4af9b). |
+| 10-Aug-2026 | PM | M6-S03-C01 Terminal Quality Hold & Semantic Alignment. |
+| 10-Aug-2026 | PM | M6-S03-C01.1 Terminal Idempotency & Deterministic Hold. |
+| 10-Aug-2026 | SA | M6-S03 CLOSED. M6-S04 authorized. |
 
 ---
 
 ## 15. Current Status Summary
 
-**As of**: 2026-08-10 (M6-S02 CLOSED, M6-S03 authorized)
+**As of**: 2026-08-10 (M6-S03 CLOSED, M6-S04 authorized)
 
 | Metric | Value |
 |--------|-------|
@@ -414,11 +418,11 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | **Internal Demo** | 17-Aug-2026 |
 | **Days to Internal Demo** | 7 |
 | **Days to Official Demo** | 11 |
-| **Overall Demo Readiness** | ~40% (+10% from M6-S02 runtime) |
-| **Current Critical Path** | M6-S03: Quality / Test / Rework |
+| **Overall Demo Readiness** | ~55% (+15% from M6-S03 quality) |
+| **Current Critical Path** | M6-S04: Visualization + Demo Controls |
 | **Current Blockers** | None |
-| **Next 24h Objective** | Begin M6-S03: AP03/06/08/11 quality on M6-S02 runtime |
+| **Next 24h Objective** | Begin M6-S04: visualization consumer of M6-S02/S03 reality |
 | **Feature Freeze Status** | V0.9 BASELINE FROZEN (SA APPROVED) |
 | **Latest validated regression** | 1067 passed |
-| **Latest approved/merged milestone** | M6-S02 (head e0ba672) |
+| **Latest approved/merged milestone** | M6-S03 (head 58bd958) |
 | **Current main** | a21478c |
