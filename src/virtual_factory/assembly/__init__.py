@@ -45,6 +45,7 @@ from virtual_factory.assembly.line_runtime import (
     WipLifecycle,
     LineEvent,
     AssyLineError,
+    load_assy_config_from_yaml,
 )
 
 __all__ = [

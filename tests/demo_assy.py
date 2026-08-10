@@ -1,206 +1,134 @@
-"""M6-S02 — TIPA ASSY Demo Fixture.
+"""M6-S02-C01 — TIPA ASSY Demo Fixture (public runtime).
 
-Demonstrates the synchronized indexed ASSY line with:
-- SSO2/RSO2 upstream production
-- Multi-WIP concurrent dwell processing
-- AP04 join with genealogy
-- Deterministic happy path to RELEASED_FINISHED_GOOD
-
-No UI, no MES wiring, no conveyor physics. Runtime verification only.
+Demonstrates: simulated time progression, multi-WIP concurrent dwell,
+AP04 join with genealogy, overrun behavior, happy path to RELEASED.
+Uses only public API: produce_*, introduce_to_assy, run_dwell_cycle.
 """
 
 from __future__ import annotations
 
 from virtual_factory.assembly.line_runtime import (
-    AssyLineConfig,
-    AssyLineRuntime,
-    ConveyorState,
+    AssyLineConfig, AssyLineRuntime, ConveyorState, WipLifecycle,
 )
 
 
-def run_tipa_demo(
-    num_motors: int = 2,
-    dwell_time_s: float = 120.0,
-    verbose: bool = True,
-) -> AssyLineRuntime:
-    """Run the TIPA ASSY demo.
+def run_tipa_demo(num_motors: int = 2, verbose: bool = True) -> AssyLineRuntime:
+    """Run TIPA ASSY demo with public runtime API."""
 
-    Args:
-        num_motors: Number of complete motors to produce.
-        dwell_time_s: Nominal line dwell time (120s confirmed).
-        verbose: Print trace to stdout.
-
-    Returns:
-        The runtime after completion, with trace and genealogy populated.
-    """
-    # Configure with demo-appropriate timings
     config = AssyLineConfig()
-    config.conveyor.nominal_line_dwell_time_s = dwell_time_s
-    config.conveyor.index_movement_duration_s = 0.0  # instantaneous
+    config.conveyor.nominal_line_dwell_time_s = 120.0
+    config.conveyor.index_movement_duration_s = 0.0
 
-    # Create runtime
     line = AssyLineRuntime(config=config)
 
     if verbose:
         print("=" * 60)
-        print("TIPA ASSY Demo — M6-S02 Runtime Verification")
+        print("TIPA ASSY Demo — M6-S02-C01 Runtime Verification")
         print(f"Target: {num_motors} motor(s)")
-        print(f"Nominal dwell: {dwell_time_s}s")
+        print(f"Nominal dwell: {config.conveyor.nominal_line_dwell_time_s:.0f}s")
         print("=" * 60)
         print()
 
-    # Produce initial upstream WIPs
-    sso2_ids: list[str] = []
-    rso2_ids: list[str] = []
-
-    # We need SSO2 WIPs and RSO2 WIPs
-    # For each motor: 1 SSO2 + 1 RSO2
-    # Plus initial line fill
-
-    total_sso2_needed = num_motors + 3  # line fill + motors
-    total_rso2_needed = num_motors + 1  # buffer + motors
-
-    for i in range(total_sso2_needed):
-        wid = line.produce_sso2_wip()
-        sso2_ids.append(wid)
-        if verbose:
-            print(f"  [UPSTREAM] SSO2: {wid}")
-
-    for i in range(total_rso2_needed):
-        rid = line.produce_rso2_wip()
-        rso2_ids.append(rid)
-        if verbose:
-            print(f"  [UPSTREAM] RSO2: {rid}")
-
+    # Produce upstream WIPs
+    total_sso2 = num_motors + 4
+    total_rso2 = num_motors + 4  # one RSO2 per SSO2 that reaches AP04
+    sso2_ids = [line.produce_sso2_wip() for _ in range(total_sso2)]
+    rso2_ids = [line.produce_rso2_wip() for _ in range(total_rso2)]
     if verbose:
+        for wid in sso2_ids:
+            print(f"  [UPSTREAM] SSO2: {wid}")
+        for rid in rso2_ids:
+            print(f"  [UPSTREAM] RSO2: {rid}")
         print()
 
-    # Introduce first WIP to ASSY
     carrier_seq = 1
     sso2_idx = 0
+    completed = 0
+    max_cycles = 200
+    cycle = 0
 
-    def next_carrier() -> str:
-        nonlocal carrier_seq
-        cid = f"PAL-{carrier_seq:03d}"
-        carrier_seq += 1
-        return cid
-
-    # Introduce first SSO2 WIP
-    first_wip = sso2_ids[sso2_idx]
-    sso2_idx += 1
-    line.introduce_to_assy(first_wip, next_carrier())
+    # Introduce first WIP
+    first = sso2_ids[sso2_idx]; sso2_idx += 1
+    line.introduce_to_assy(first, f"PAL-{carrier_seq:03d}")
+    carrier_seq += 1
     if verbose:
-        print(f"[LINE] Introduced {first_wip} at PRE-ASSY")
+        print(f"[LINE] Introduced {first} at PRE-ASSY")
 
-    completed_motors = 0
-    dwell = 0
-    max_dwells = 100  # safety limit
+    while completed < num_motors and cycle < max_cycles:
+        cycle += 1
 
-    while completed_motors < num_motors and dwell < max_dwells:
-        dwell += 1
-
-        # --- DWELL BEGIN ---
-        line.conveyor.begin_dwell(dwell_time_s)
-        line.conveyor.begin_operating()
-
+        # Show current state
         if verbose:
-            occupied = line.conveyor.occupied_positions()
-            status_line = f"DWELL {dwell:02d} | "
             parts = []
             for pos in line.conveyor.positions:
-                wip = line.conveyor.wip_at(pos)
-                if wip:
-                    parts.append(f"{pos}:{wip}")
-            status_line += " | ".join(parts) if parts else "(empty)"
-            print(status_line)
+                w = line.conveyor.wip_at(pos)
+                if w:
+                    parts.append(f"{pos}:{w}")
+            print(f"CYCLE {cycle:03d} | {' | '.join(parts) if parts else '(empty)'}")
+            print(f"  state={line.conveyor.state.value} t={line.simulation_time_s:.0f}s")
 
-        # --- PROCESS EACH OCCUPIED POSITION ---
+        # Execute dwell (with on-demand RSO2 for AP04)
+        # Ensure RSO2 buffer is sufficient before dwell
+        ap04_wip = line.conveyor.wip_at("AP04")
+        if ap04_wip and not line._rso2_wips:
+            line.produce_rso2_wip()
+            if verbose:
+                print(f"  [UPSTREAM] RSO2 (on-demand)")
+
+        dwell_events = line.execute_dwell()
+
+        if verbose:
+            for e in dwell_events:
+                if e.event_type in ("AP04_JOIN", "STATION_COMPLETE", "STATION_PROGRESS"):
+                    print(f"  [{e.position}] {e.event_type} {e.wip_id} ({e.detail})")
+                elif e.event_type == "DWELL_META":
+                    print(f"  → {e.detail}")
+
+        # Check for released WIPs at AP11
         for pos in line.conveyor.occupied_positions():
             wip = line.conveyor.wip_at(pos)
-            if wip is None:
-                continue
-
-            if pos == "PRE-ASSY":
-                if verbose:
-                    print(f"  [{pos}] processing {wip}")
-
-            elif pos == "AP04":
-                # JOIN: require RSO2
-                if not line._rso2_wips:
-                    rid = line.produce_rso2_wip()
-                    rso2_ids.append(rid)
+            if wip and pos == "AP11":
+                ws = line.get_wip(wip)
+                if ws and ws.lifecycle == WipLifecycle.RELEASED and ws.is_child_of_join:
+                    completed += 1
                     if verbose:
-                        print(f"  [UPSTREAM] RSO2 (on-demand): {rid}")
+                        print(f"  *** RELEASED {wip} (motor #{completed}) ***")
 
-                join_events = line._execute_ap04_join(wip)
-                for evt in join_events:
-                    if verbose and evt.event_type == "AP04_JOIN":
-                        print(f"  [{pos}] JOIN → {evt.wip_id} | parents={evt.detail}")
+        # Index if ready
+        if line.conveyor.state == ConveyorState.READY_TO_INDEX:
+            line.index_line()
 
-            elif pos == "AP11":
-                # Final QC
-                child_id = wip
-                ws = line.get_wip(child_id)
-                if ws:
-                    from virtual_factory.assembly.line_runtime import WipLifecycle
-                    ws.lifecycle = WipLifecycle.RELEASED
-                completed_motors += 1
-                if verbose:
-                    print(f"  [{pos}] RELEASED {wip} ✓ (motor #{completed_motors})")
-
-            else:
-                if verbose:
-                    duration = line.config.station_durations.get(pos, 60)
-                    print(f"  [{pos}] processing {wip} (duration={duration}s)")
-
-            line.conveyor.mark_position_complete(pos)
-
-        # --- CHECK READY ---
-        ready = line.conveyor.check_ready()
-
-        if ready:
-            if verbose:
-                print(f"  → READY TO INDEX")
-            # Introduce next SSO2 WIP before indexing (if available)
+            # Introduce next SSO2 if available and PRE-ASSY empty
             if sso2_idx < len(sso2_ids) and line.conveyor.wip_at("PRE-ASSY") is None:
-                next_wip = sso2_ids[sso2_idx]
-                sso2_idx += 1
-                line.introduce_to_assy(next_wip, next_carrier())
+                next_wip = sso2_ids[sso2_idx]; sso2_idx += 1
+                line.introduce_to_assy(next_wip, f"PAL-{carrier_seq:03d}")
+                carrier_seq += 1
                 if verbose:
-                    print(f"  [LINE] Introduced {next_wip} at PRE-ASSY")
-
-            if verbose:
-                print(f"  INDEX {dwell:02d}")
-            line.conveyor.index()
-        else:
-            if verbose:
-                print(f"  → DWELL EXTENDED (overrun — PROVISIONAL)")
+                    print(f"  [LINE] Introduced {next_wip}")
 
         if verbose:
             print()
 
-    # --- SUMMARY ---
+    # Summary
     if verbose:
         print("=" * 60)
         print("DEMO COMPLETE")
-        print(f"Completed motors: {completed_motors}")
-        print(f"Total dwells: {dwell}")
-        print(f"Total trace events: {len(line.trace)}")
+        print(f"Completed motors: {completed}")
+        print(f"Total cycles: {cycle}")
+        print(f"Simulation time: {line.simulation_time_s:.0f}s")
+        print(f"Trace events: {len(line.trace)}")
         print(f"Genealogy records: {len(line.genealogy)}")
         print()
 
         for rec in line.genealogy.all_records():
-            print(f"  Genealogy: {rec.child_wip_id}")
-            print(f"    Parents: {list(rec.parent_wip_ids)}")
-            print(f"    Components: {list(rec.component_ids)}")
-            print(f"    Station: {rec.join_station} @ t={rec.join_time_s:.0f}s")
+            child_ws = line.get_wip(rec.child_wip_id)
+            lc = child_ws.lifecycle.value if child_ws else "?"
+            print(f"  {rec.child_wip_id} [{lc}]")
+            print(f"    parents={list(rec.parent_wip_ids)}")
+            print(f"    join_time={rec.join_time_s:.0f}s")
 
     return line
 
 
-# ═══════════════════════════════════════════════════════════
-# Main entry point
-# ═══════════════════════════════════════════════════════════
-
 if __name__ == "__main__":
-    run_tipa_demo(num_motors=2, dwell_time_s=120.0, verbose=True)
+    run_tipa_demo(num_motors=2, verbose=True)

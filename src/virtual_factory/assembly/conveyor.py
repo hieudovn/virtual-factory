@@ -208,14 +208,11 @@ class ConveyorLine:
     def index(self) -> dict[str, Optional[str]]:
         """Transition: READY_TO_INDEX → INDEXING → STOPPED.
 
-        Performs ONE synchronized line-level index:
-        All carriers advance one position downstream.
+        Performs ONE synchronized line-level index.
+        Returns position → wip_id snapshot AFTER index.
 
-        Returns a mapping of position → wip_id snapshot AFTER index,
-        for trace purposes.
-
-        INV-CONV-09: This is a LINE-LEVEL synchronization boundary.
-        All carriers move together.
+        M6-S02-C01: Ends in STOPPED (ready for next execute_dwell).
+        Does NOT increment dwell_number — that's the runtime's job.
         """
         if self.state != ConveyorState.READY_TO_INDEX:
             raise ConveyorError(
@@ -228,19 +225,16 @@ class ConveyorLine:
         new_occupancy: dict[str, Optional[CarrierState]] = {}
         for i, pos in enumerate(pos_list):
             if i == 0:
-                # First position (PRE-ASSY): clear after carrier advances
                 new_occupancy[pos] = None
             else:
-                # Position i gets the carrier from position i-1
-                prev_carrier = self._occupancy[pos_list[i - 1]]
-                new_occupancy[pos] = prev_carrier
-
-        # Last position: carrier exits (for finished goods)
-        # No need to track it; it's released
+                new_occupancy[pos] = self._occupancy[pos_list[i - 1]]
 
         self._occupancy = new_occupancy
         for pos in pos_list:
             self._position_complete[pos] = False
+
+        # C01-04: transition to STOPPED (dwell_number unchanged)
+        self.state = ConveyorState.STOPPED
 
         # Return post-index snapshot
         snapshot: dict[str, Optional[str]] = {}
