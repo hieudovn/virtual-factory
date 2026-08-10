@@ -78,6 +78,14 @@ def create_app(
     def builder_js_direct() -> FileResponse:
         return FileResponse(static_dir / "builder.js", media_type="application/javascript")
 
+    @app.get("/static/assy_demo.js", include_in_schema=False)
+    def assy_js_direct() -> FileResponse:
+        return FileResponse(static_dir / "assy_demo.js", media_type="application/javascript")
+
+    @app.get("/static/assy_demo.css", include_in_schema=False)
+    def assy_css_direct() -> FileResponse:
+        return FileResponse(static_dir / "assy_demo.css", media_type="text/css")
+
     @app.get("/")
     def dashboard() -> FileResponse:
         return FileResponse(static_dir / "index.html")
@@ -221,5 +229,52 @@ def create_app(
         set_last_config(config_path)
         result = await service.reload_config(config_path)
         return {"status": "ok", "config": config_path, **result}
+
+    # ═══════════════════════════════════════════════════
+    # M6-S04 — TIPA ASSY Demo Endpoints
+    # ═══════════════════════════════════════════════════
+
+    _assy_controller: dict = {"instance": None}
+
+    def _get_assy_controller():
+        if _assy_controller["instance"] is None:
+            import os
+            from virtual_factory.assembly.demo_controller import DemoController
+            assy_config = os.environ.get(
+                "TIPA_ASSY_CONFIG",
+                str(Path(__file__).resolve().parent.parent.parent.parent / "configs" / "plants" / "tipa_assy_demo.yaml")
+            )
+            ctrl = DemoController(config_path=assy_config)
+            ctrl.initialize()
+            _assy_controller["instance"] = ctrl
+        return _assy_controller["instance"]
+
+    @app.get("/assy-demo")
+    def assy_demo_page() -> FileResponse:
+        return FileResponse(static_dir / "assy_demo.html")
+
+    @app.get("/assy-demo/static/{filename}")
+    def assy_demo_static(filename: str) -> FileResponse:
+        return FileResponse(static_dir / filename)
+
+    @app.post("/assy-demo/reset")
+    def assy_demo_reset(body: dict | None = None) -> dict:
+        ctrl = _get_assy_controller()
+        scenario = (body or {}).get("scenario", "HAPPY_PATH")
+        from virtual_factory.assembly.demo_controller import DemoScenario
+        ctrl.set_scenario(DemoScenario(scenario))
+        snap = ctrl.reset()
+        return snap.to_dict()
+
+    @app.post("/assy-demo/step")
+    def assy_demo_step() -> dict:
+        ctrl = _get_assy_controller()
+        snap = ctrl.step()
+        return snap.to_dict()
+
+    @app.post("/assy-demo/snapshot")
+    def assy_demo_snapshot() -> dict:
+        ctrl = _get_assy_controller()
+        return ctrl.snapshot().to_dict()
 
     return app

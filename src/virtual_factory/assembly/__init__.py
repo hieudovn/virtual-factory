@@ -60,6 +60,21 @@ from virtual_factory.assembly.quality_records import (
     resolve_quality_disposition,
 )
 
+# M6-S04
+from virtual_factory.assembly.demo_snapshot import (
+    AssyDemoSnapshot,
+    StationPositionView,
+    GenealogySummary,
+    QualityEventView,
+    ProductionSummary,
+    build_snapshot,
+)
+from virtual_factory.assembly.demo_controller import (
+    DemoController,
+    DemoScenario,
+    SCENARIO_QUALITY_OVERRIDES,
+)
+
 __all__ = [
     # M3
     "AssemblyPrimitive",
@@ -104,4 +119,14 @@ __all__ = [
     "CheckType",
     "MeasurementValue",
     "resolve_quality_disposition",
+    # M6-S04
+    "AssyDemoSnapshot",
+    "StationPositionView",
+    "GenealogySummary",
+    "QualityEventView",
+    "ProductionSummary",
+    "build_snapshot",
+    "DemoController",
+    "DemoScenario",
+    "SCENARIO_QUALITY_OVERRIDES",
 ]
