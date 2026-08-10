@@ -171,31 +171,94 @@ RSO2 simplified upstream
 
 ---
 
-## 5. Conveyor / Pallet Model
+## 5. Conveyor / Pallet Model (CONFIRMED: single-lane stop-and-go)
+
+### Physical Layout
+
+| Fact | Value | Status |
+|------|-------|--------|
+| Conveyor lanes | ONE lane only | CONFIRMED_FROM_PRODUCT_OWNER |
+| Conveyor span | Full ASSY line (PRE-ASSY through AP11) | CONFIRMED_FROM_PRODUCT_OWNER |
+| Carrier type | Wooden pallets | CONFIRMED_FROM_PRODUCT_OWNER |
+| Workers / QC | Positioned on both sides of conveyor | CONFIRMED_FROM_PRODUCT_OWNER |
+| Operations | Sequential along the line; one station per position | CONFIRMED_FROM_PRODUCT_OWNER |
+
+### Movement Model
 
 | Decision | Value | Status |
 |----------|-------|--------|
-| Model | Logical indexed conveyor (no physics) | PROVISIONAL_FOR_DEMO |
-| Carrier | One pallet per WIP; identity `PALLET-NNN` | PROVISIONAL_FOR_DEMO |
-| Movement | Indexed station-to-station with configurable dwell | PROVISIONAL_FOR_DEMO |
-| Buffers | Logical buffers at PRE-ASSY, SSO2, RSO2 inputs | PROVISIONAL_FOR_DEMO |
-| Blocking | Downstream station full → upstream waits | PROVISIONAL_FOR_DEMO |
-| Lane allocation | Single ASSY lane | PROVISIONAL_FOR_DEMO |
-| Pallet reuse | Pallet returns after product release | PROVISIONAL_FOR_DEMO |
+| Model | Logical indexed conveyor (no physics) | DESIGN |
+| Mode | STOP-AND-GO / INDEXED | CONFIRMED_FROM_PRODUCT_OWNER |
+| Cycle | INDEX → STOP → OPERATE → RELEASE → INDEX → ... | CONFIRMED_FROM_PRODUCT_OWNER |
+| Work constraint | All assembly/QC/test/inspection occurs during STOP only | CONFIRMED_FROM_PRODUCT_OWNER |
+| Movement constraint | No station work is performed while pallet is moving | CONFIRMED_FROM_PRODUCT_OWNER |
 
-**Unresolved**: exact lane count, blocking rules, buffer layout → PENDING_TIPA_CONFIRMATION.
+### Carrier / Pallet Identity
+
+| Decision | Value | Status |
+|----------|-------|--------|
+| Carrier type | Wooden pallet | CONFIRMED_FROM_PRODUCT_OWNER |
+| Carrier per WIP | One pallet carries one WIP / motor assembly | CONFIRMED_FROM_PRODUCT_OWNER |
+| Carrier lifetime | Same carrier follows WIP through entire ASSY line | CONFIRMED_FROM_PRODUCT_OWNER |
+| Carrier reuse | Carrier reusable after product release | PROVISIONAL_FOR_DEMO |
+
+### Buffers & Blocking
+
+| Decision | Value | Status |
+|----------|-------|--------|
+| Buffers | Logical buffers at PRE-ASSY, SSO2, RSO2 inputs | PROVISIONAL_FOR_DEMO |
+| Blocking (normal) | Downstream station full → upstream waits | PROVISIONAL_FOR_DEMO |
+| Overrun policy | If work incomplete at nominal dwell expiry: conveyor stays stopped; cycle extended; WIP does not advance; next index only after work completes | PROVISIONAL_FOR_DEMO |
+
+**Resolved**: single lane, stop-and-go, wooden pallets, work-during-stop.
+**Unresolved**: exact overrun/blocking rule, index/movement duration, carrier reuse timing → PENDING_TIPA_CONFIRMATION.
 
 ---
 
-## 6. Timing Assumptions
+## 6. Timing Model
+
+### Conceptual Distinction
+
+The following are separate concepts and must NOT be conflated in implementation:
+
+| Concept | Meaning | Key |
+|---------|---------|-----|
+| **Line dwell time** | Duration conveyor remains stopped at each index position | `nominal_line_dwell_time_s` |
+| **Station operation duration** | Time a specific station needs to complete required work | Per-station, may be ≤ or > dwell |
+| **Index movement duration** | Time for conveyor to physically move pallets to next position | `index_movement_duration_s` |
+
+### Demo Baseline Values
 
 | Parameter | Value | Status |
 |-----------|-------|--------|
-| Model | `demo_cycle_time_s` per station (configurable) | PROVISIONAL_FOR_DEMO |
-| Base cycle | 2–5s demo time per station (accelerated) | PROVISIONAL_FOR_DEMO |
-| End-to-end target | ~60–120s for one motor through ASSY | PROVISIONAL_FOR_DEMO |
-| Acceleration | Supported via `simulation_time_s` multiplier | DESIGN |
+| `nominal_line_dwell_time_s` | 120s | CONFIRMED_FROM_PRODUCT_OWNER |
+| `index_movement_duration_s` | Configurable; demo default TBD | PROVISIONAL_FOR_DEMO |
+| `station_operation_duration_s` | Configurable per station | PROVISIONAL_FOR_DEMO |
+| `simulation_time_multiplier` | Supported for accelerated demo runs | DESIGN |
 | Real cycle times | NOT known; NOT claimed | PENDING_TIPA_CONFIRMATION |
+
+### Configurability
+
+- `nominal_line_dwell_time_s` must be configurable (NOT hard-coded)
+- Expected valid range: 90s, 100s, 110s, 120s, etc.
+- May vary by product type, model, routing version, line-balancing state
+- Station operation durations are independent of line dwell
+- This separation enables future: takt analysis, bottleneck detection, line balancing, what-if simulation
+
+### Provisional: Overrun Behavior
+
+If station work exceeds nominal dwell:
+
+| Decision | Value | Status |
+|----------|-------|--------|
+| Conveyor | Remains stopped | PROVISIONAL_FOR_DEMO |
+| Line cycle | Extended until work completes | PROVISIONAL_FOR_DEMO |
+| WIP | Does not advance | PROVISIONAL_FOR_DEMO |
+| Next index | Only after required work completes | PROVISIONAL_FOR_DEMO |
+| Isolation | Behavior behind configurable line policy | DESIGN |
+
+**⚠️ PROVISIONAL_FOR_DEMO**: Actual TIPA overrun behavior is not confirmed.
+Do not claim as confirmed TIPA behavior.
 
 ---
 
@@ -206,7 +269,8 @@ The following must be configurable (not hard-coded):
 | Category | Items |
 |----------|-------|
 | Topology | Station list, routing edges |
-| Timing | Per-station `demo_cycle_time_s` |
+| Conveyor | `nominal_line_dwell_time_s`, `index_movement_duration_s`, overrun policy |
+| Timing | Per-station `station_operation_duration_s`, `simulation_time_multiplier` |
 | Join | AP04 component list, genealogy rules |
 | Quality | Thresholds, PASS/FAIL routes, rework target |
 | Buffer | Capacities |
@@ -222,6 +286,24 @@ The following must be configurable (not hard-coded):
 |------|----------|------------|
 | AP04 component list unknown | HIGH | Configurable list; empty placeholder until TIPA confirms |
 | AP06 test parameters unknown | MEDIUM | Configurable test spec; demo values |
-| Conveyor detail unknown | LOW | Logical model sufficient for demo |
+| Conveyor overrun rule unconfirmed | LOW | Provisional policy; configurable; isolated |
 | SSO2/RSO2 process detail unknown | LOW | Simplified generic operations |
 | TIPA terminology mismatch | LOW | Simulation semantic names; map to TIPA terms later |
+
+---
+
+## 9. M6-S02 Conveyor Implementation Invariants
+
+These invariants are authoritative for the upcoming M6-S02 runtime implementation.
+They must hold for all ASSY conveyor code.
+
+| ID | Invariant |
+|----|-----------|
+| INV-CONV-01 | ASSY uses ONE conveyor lane |
+| INV-CONV-02 | Conveyor is stop-and-go / indexed |
+| INV-CONV-03 | Conveyor-bound processing occurs ONLY while conveyor is stopped |
+| INV-CONV-04 | Nominal dwell is configuration-driven; current baseline `nominal_line_dwell_time_s = 120` |
+| INV-CONV-05 | Line dwell and station operation duration are separate concepts |
+| INV-CONV-06 | Incomplete required work prevents WIP from advancing to next index |
+| INV-CONV-07 | WIP identity and pallet/carrier identity remain separate |
+| INV-CONV-08 | No conveyor physics is required for the August demo |

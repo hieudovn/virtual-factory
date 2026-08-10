@@ -16,9 +16,10 @@
 | PTC-07 | AP06 FAIL / repair / retest routing | HOLD → RETEST (max 2) → PASS or HOLD | Medium | CONFIG_ONLY |
 | PTC-08 | AP08 NG / reinspection routing | HOLD → REINSPECT (max 1) | Low | CONFIG_ONLY |
 | PTC-09 | AP11 sampling + failed-lot/unit disposition | 100% inspection for demo | Low | CONFIG_ONLY |
-| PTC-10 | Conveyor lane allocation / blocking / index | Single lane, indexed movement, downstream blocking | Medium | SMALL_LOGIC_CHANGE |
-| PTC-11 | Actual station cycle times | Configurable `demo_cycle_time_s` per station; default 3s | Low | CONFIG_ONLY |
+| PTC-10 | Conveyor overrun / blocking rule when station work exceeds nominal dwell | Conveyor stays stopped; line cycle extended; WIP waits; next index after work completes | Medium | SMALL_LOGIC_CHANGE |
+| PTC-11 | Exact index movement duration per station step | Configurable `index_movement_duration_s`; demo default TBD | Low | CONFIG_ONLY |
 | PTC-12 | Product/model routing variants | Single motor model for demo | High | POTENTIAL_STRUCTURAL_CHANGE |
+| PTC-13 | Conveyor carrier reuse timing / pallet return logistics | Pallet reusable after product release; return mechanism TBD | Low | CONFIG_ONLY |
 
 ---
 
@@ -26,16 +27,16 @@
 
 | Impact Type | Count | Items |
 |-------------|-------|-------|
-| CONFIG_ONLY | 9 | PTC-01,02,03,04,05,07,08,09,11 |
+| CONFIG_ONLY | 10 | PTC-01,02,03,04,05,07,08,09,11,13 |
 | SMALL_LOGIC_CHANGE | 2 | PTC-06,10 |
 | POTENTIAL_STRUCTURAL_CHANGE | 1 | PTC-12 |
 
-**Assessment**: 11/12 pending items can be resolved without structural code change.
+**Assessment**: 12/13 pending items can be resolved without structural code change.
 Multiple product variants (PTC-12) would require broader routing changes; deferred post-demo.
 
 ---
 
 ## Items NOT Blocking Development
 
-All 12 items have provisional demo values. No PTC item blocks M6-S02 implementation.
+All 13 items have provisional demo values. No PTC item blocks M6-S02 implementation.
 Development proceeds with configurable defaults for all pending items.
