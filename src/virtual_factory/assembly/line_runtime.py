@@ -391,7 +391,8 @@ class AssyLineRuntime:
 
                 # M6-S03: quality HOLD prevents completion
                 qstatus = self.get_current_quality_status(wip_id)
-                if qstatus in (QualityStatus.RETEST_PENDING, QualityStatus.REINSPECT_PENDING):
+                if qstatus in (QualityStatus.RETEST_PENDING, QualityStatus.REINSPECT_PENDING,
+                               QualityStatus.FAILED_FINAL):
                     # Keep station incomplete — line stays, retry next dwell
                     self._station_elapsed[pos] = 0.0  # restart timer for retest
                 else:
@@ -497,7 +498,8 @@ class AssyLineRuntime:
             except (ValueError, IndexError):
                 pass
 
-        disposition = resolve_quality_disposition(station_key, motor_seq, attempt, qcfg)
+        disposition = resolve_quality_disposition(
+            station_key, motor_seq, attempt, qcfg, check_type)
 
         events.append(self._make_event(
             "QUALITY_START", position, wip_id,
@@ -536,7 +538,7 @@ class AssyLineRuntime:
             check_type=check_type,
             disposition=disposition,
             attempt_number=attempt,
-            simulation_time_s=self._simulation_time_s,
+            simulation_time_s=self._simulation_time_s + self._station_elapsed.get(position, 0.0),
             measurements=tuple(measurements),
             checklist_items=tuple(checklist),
         )
@@ -561,9 +563,8 @@ class AssyLineRuntime:
                 events.append(self._make_event(
                     "QUALITY_FAILED_FINAL", position, wip_id,
                     f"max_attempts={qcfg.max_attempts} exhausted"))
-                # Even on FAILED_FINAL, station is now "done" (no more retries)
-                # For demo: mark complete so line can proceed
-                self.conveyor.mark_position_complete(position)
+                # FAILED_FINAL: station NOT marked complete (C01: blocks progression)
+                # Conveyor stays stopped; WIP remains at this station
 
             # Station NOT marked complete — line stays, quality HOLD
         else:

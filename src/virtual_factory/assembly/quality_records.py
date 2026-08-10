@@ -187,25 +187,25 @@ class QualityConfig:
 
 def resolve_quality_disposition(
     station_id: str,
-    wip_motor_seq: int,  # 1-based motor sequence number
+    wip_motor_seq: int,
     attempt: int,
     config: StationQualityConfig,
+    check_type: "CheckType | None" = None,
 ) -> str:
     """Determine the quality disposition for this attempt.
 
     Checks overrides first (by motor sequence), then falls back to scenario.
-    Returns "PASS", "FAIL", or "NG".
+    Returns "PASS", "FAIL", or "NG" (for visual inspection only).
     """
-    # Check per-motor overrides
     overrides = config.overrides.get(wip_motor_seq)
     if overrides and attempt <= len(overrides):
         return overrides[attempt - 1]
 
-    # Scenario-based
     if config.scenario == "PASS":
         return "PASS"
-    elif config.scenario == "FAIL_FIRST_THEN_PASS":
-        return "FAIL" if attempt == 1 else "PASS"
-    elif config.scenario == "ALWAYS_FAIL":
-        return "FAIL"
+    elif config.scenario in ("FAIL_FIRST_THEN_PASS", "ALWAYS_FAIL"):
+        failure_label = "NG" if (check_type and check_type.value == "VISUAL_INSPECTION") else "FAIL"
+        if config.scenario == "ALWAYS_FAIL":
+            return failure_label
+        return failure_label if attempt == 1 else "PASS"
     return "PASS"
