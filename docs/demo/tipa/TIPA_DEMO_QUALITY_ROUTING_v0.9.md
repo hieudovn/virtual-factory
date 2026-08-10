@@ -6,11 +6,11 @@
 
 ---
 
-## 1. AP03 — Manual QC / Checklist
+## 1. AP03 — Mechanical Preparation + QC/Check Activities
 
 | Field | Value | Status |
 |-------|-------|--------|
-| Type | Manual checklist inspection | CONFIRMED_FROM_TIPA_DOCUMENT |
+| Type | Mechanical preparation + manual QC/check | PROVISIONAL_FOR_DEMO |
 | Checks | Configurable checklist items | PROVISIONAL_FOR_DEMO |
 | Measurements | Selected dimensional/visual checks | PROVISIONAL_FOR_DEMO |
 | PASS route | → AP04 | PROVISIONAL_FOR_DEMO |

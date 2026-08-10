@@ -49,7 +49,7 @@ RSO2 simplified upstream
 | Purpose | Assembly station — task block 1 | CONFIRMED_FROM_TIPA_DOCUMENT |
 | Input | ASSY_STATOR_SIDE_WIP | PROVISIONAL_FOR_DEMO |
 | Output | ASSY_STATOR_SIDE_WIP (advanced) | PROVISIONAL_FOR_DEMO |
-| Operation | Component fitting / winding prep | PROVISIONAL_FOR_DEMO |
+| Operation | Stator-side fitting + preparation (TB1) | PROVISIONAL_FOR_DEMO |
 | Next | AP02 | CONFIRMED_FROM_TIPA_DOCUMENT |
 
 ### AP02 / ASSY-TB2
@@ -58,16 +58,16 @@ RSO2 simplified upstream
 | Purpose | Assembly station — task block 2 | CONFIRMED_FROM_TIPA_DOCUMENT |
 | Input | ASSY_STATOR_SIDE_WIP (from AP01) | PROVISIONAL_FOR_DEMO |
 | Output | ASSY_STATOR_SIDE_WIP (advanced) | PROVISIONAL_FOR_DEMO |
-| Operation | Coil insertion / winding | PROVISIONAL_FOR_DEMO |
+| Operation | Terminal box wiring / connection (TB2) | PROVISIONAL_FOR_DEMO |
 | Next | AP03 | CONFIRMED_FROM_TIPA_DOCUMENT |
 
 ### AP03 / ASSY-QC1
 | Field | Value | Status |
 |-------|-------|--------|
-| Purpose | Quality check 1 — manual QC / checklist | CONFIRMED_FROM_TIPA_DOCUMENT |
+| Purpose | Mechanical preparation + QC/check activities | PROVISIONAL_FOR_DEMO |
 | Input | ASSY_STATOR_SIDE_WIP (from AP02) | PROVISIONAL_FOR_DEMO |
-| Output | ASSY_STATOR_SIDE_WIP (checked) or HOLD | PROVISIONAL_FOR_DEMO |
-| Operation | Checklist inspection, visual check, measurement subset | PROVISIONAL_FOR_DEMO |
+| Output | ASSY_STATOR_SIDE_WIP (prepared/checked) or HOLD | PROVISIONAL_FOR_DEMO |
+| Operation | Mechanical prep, visual check, measurement subset | PROVISIONAL_FOR_DEMO |
 | Quality | PASS → AP04; HOLD → operator review | PROVISIONAL_FOR_DEMO |
 | Next (normal) | AP04 | CONFIRMED_FROM_TIPA_DOCUMENT |
 
@@ -75,9 +75,9 @@ RSO2 simplified upstream
 | Field | Value | Status |
 |-------|-------|--------|
 | Purpose | Join station — motor core assembly | CONFIRMED_FROM_TIPA_DOCUMENT |
-| Input A | ASSY_STATOR_SIDE_WIP (from AP03) | CONFIRMED_FROM_TIPA_DOCUMENT |
-| Input B | RSO2 semi-finished WIP | CONFIRMED_FROM_TIPA_DOCUMENT |
-| Input C | Configurable components (bearings, rotor, etc.) | PROVISIONAL_FOR_DEMO |
+| Input A | ASSY_STATOR_SIDE_WIP (from AP03) | MIXED |
+| Input B | RSO2 semi-finished WIP | MIXED |
+| Input C | Configurable components (empty placeholder; TBD by TIPA) | PROVISIONAL_FOR_DEMO |
 | Output | MOTOR_CORE_ASSEMBLY_WIP | PROVISIONAL_FOR_DEMO |
 | Genealogy | Parent SSO2 WIP + Parent RSO2 WIP → Child MOTOR WIP | PROVISIONAL_FOR_DEMO |
 | Next | AP05 | CONFIRMED_FROM_TIPA_DOCUMENT |
@@ -88,7 +88,7 @@ RSO2 simplified upstream
 | Purpose | Assembly station — task block post-join | CONFIRMED_FROM_TIPA_DOCUMENT |
 | Input | MOTOR_CORE_ASSEMBLY_WIP | PROVISIONAL_FOR_DEMO |
 | Output | MECHANICALLY_ASSEMBLED_MOTOR | PROVISIONAL_FOR_DEMO |
-| Operation | Housing assembly, bolt-down, mechanical completion | PROVISIONAL_FOR_DEMO |
+| Operation | Assembly + painting + measurements/runout | PROVISIONAL_FOR_DEMO |
 | Next | AP06 | CONFIRMED_FROM_TIPA_DOCUMENT |
 
 ### AP06 / ASSY-TEST1
@@ -104,9 +104,9 @@ RSO2 simplified upstream
 ### AP07 / ASSY-TEST2
 | Field | Value | Status |
 |-------|-------|--------|
-| Purpose | Additional test / measurement station | CONFIRMED_FROM_TIPA_DOCUMENT |
+| Purpose | Finishing / nameplate station | PROVISIONAL_FOR_DEMO |
 | Input | ELECTRICALLY_TESTED_MOTOR | PROVISIONAL_FOR_DEMO |
-| Output | ELECTRICALLY_TESTED_MOTOR (verified) | PROVISIONAL_FOR_DEMO |
+| Output | FINISHED_MOTOR (with nameplate) | PROVISIONAL_FOR_DEMO |
 | Next | AP08 | CONFIRMED_FROM_TIPA_DOCUMENT |
 
 ### AP08 / ASSY-TEST3
@@ -220,7 +220,7 @@ The following must be configurable (not hard-coded):
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| AP04 component list unknown | HIGH | Configurable list; default to 2–3 generic items |
+| AP04 component list unknown | HIGH | Configurable list; empty placeholder until TIPA confirms |
 | AP06 test parameters unknown | MEDIUM | Configurable test spec; demo values |
 | Conveyor detail unknown | LOW | Logical model sufficient for demo |
 | SSO2/RSO2 process detail unknown | LOW | Simplified generic operations |

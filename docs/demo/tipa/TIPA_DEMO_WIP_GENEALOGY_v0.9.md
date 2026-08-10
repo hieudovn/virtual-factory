@@ -40,7 +40,7 @@ RELEASED_FINISHED_GOOD     (after AP11)
 | WIP ID prefix (RSO2) | `RSO2-{seq:04d}` |
 | WIP ID prefix (MOTOR) | `MTR-{seq:04d}` (after AP04) |
 | Pallet/Carrier ID | `PAL-{seq:03d}` |
-| ID immutability | WIP ID never changes after creation |
+| ID immutability | Immutable during entity lifetime; AP04 creates a new child WIP identity and preserves parent identities in genealogy |
 | ID uniqueness | Sequential, per-run scope |
 
 ---
@@ -52,7 +52,7 @@ RELEASED_FINISHED_GOOD     (after AP11)
 ```
 Parent A: SSO2-derived ASSY WIP (e.g., SSO2-0001)
 Parent B: RSO2 semi-finished WIP (e.g., RSO2-0001)
-Components: [bearing_set, rotor_core, ...]
+Components: []  (empty placeholder; TBD by TIPA)
 
         ↓ JOIN at AP04
 
@@ -66,7 +66,7 @@ Child: MOTOR_CORE_ASSEMBLY_WIP (e.g., MTR-0001)
 | Child WIP ID | `MTR-{seq:04d}` |
 | Parent A (SSO2) | `SSO2-{seq:04d}` |
 | Parent B (RSO2) | `RSO2-{seq:04d}` |
-| Components | List of component IDs (configurable) |
+| Components | List of component IDs (configurable; empty by default) |
 | Join timestamp | `simulation_time_s` |
 | Join station | `AP04` |
 | Relationship type | `assembly_join` |
@@ -96,9 +96,9 @@ Carrier may be reused after product release.
 | Observation | Subject (WIP) | Context (Carrier) |
 |-------------|---------------|-------------------|
 | AP01 completion | `SSO2-0001` | `PAL-001` |
-| AP04 join | `MTR-0001` (new) | `PAL-004` |
-| AP06 test | `MTR-0001` | `PAL-006` |
-| AP11 release | `MTR-0001` | `PAL-011` |
+| AP04 join | `MTR-0001` (new) | `PAL-001` |
+| AP06 test | `MTR-0001` | `PAL-001` |
+| AP11 release | `MTR-0001` | `PAL-001` |
 
 ---
 

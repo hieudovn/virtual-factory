@@ -11,7 +11,7 @@
 | PTC-02 | SSO2 output WIP name + serial convention | `SSO2-{seq:04d}`; internal naming only | Medium | CONFIG_ONLY |
 | PTC-03 | RSO2 detailed operations + release criteria | Generic "rotor_assembly" operation; release after cycle time | Low | CONFIG_ONLY |
 | PTC-04 | RSO2 output WIP name + identity convention | `RSO2-{seq:04d}`; internal naming only | Medium | CONFIG_ONLY |
-| PTC-05 | Exact AP04 component list | Configurable list: `[bearing_set, rotor_core]` | Low | CONFIG_ONLY |
+| PTC-05 | Exact AP04 component list | Configurable list: `[]` (empty placeholder; all items TBD by TIPA) | Low | CONFIG_ONLY |
 | PTC-06 | AP04 join sequence + production identity semantics | Generic join: parent_A + parent_B + components → child; genealogy via `assembly_join` | Medium | SMALL_LOGIC_CHANGE |
 | PTC-07 | AP06 FAIL / repair / retest routing | HOLD → RETEST (max 2) → PASS or HOLD | Medium | CONFIG_ONLY |
 | PTC-08 | AP08 NG / reinspection routing | HOLD → REINSPECT (max 1) | Low | CONFIG_ONLY |
