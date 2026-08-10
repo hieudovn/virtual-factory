@@ -153,36 +153,48 @@ class TestQ07:
         cfg.quality.ap06.max_attempts = 2
         line = setup_line(cfg)
         advance_to_before(line, "AP06")
-        line.execute_dwell()  # FAIL, attempt 1
+        line.execute_dwell()
         assert line.get_current_quality_status(CHILD) == QualityStatus.RETEST_PENDING
-        line.execute_dwell()  # FAIL, attempt 2 → FAILED_FINAL
+        line.execute_dwell()
         assert line.get_current_quality_status(CHILD) == QualityStatus.FAILED_FINAL
 
     def test_failed_final_blocks_progression(self):
-        """FAILED_FINAL: station NOT complete, conveyor stays, WIP stays."""
         cfg = make_cfg(ap06="ALWAYS_FAIL")
         cfg.quality.ap06.max_attempts = 2
         line = setup_line(cfg)
         advance_to_before(line, "AP06")
-
-        # Attempt 1: FAIL
-        line.execute_dwell()
-        assert line.conveyor.state == ConveyorState.OPERATING
-        assert line.conveyor.wip_at("AP06") == CHILD
-
-        # Attempt 2: FAIL → FAILED_FINAL
-        line.execute_dwell()
+        line.execute_dwell()  # attempt 1
+        line.execute_dwell()  # attempt 2 → FAILED_FINAL
         assert line.get_current_quality_status(CHILD) == QualityStatus.FAILED_FINAL
-        # Conveyor must remain OPERATING (not READY, not STOPPED)
         assert line.conveyor.state == ConveyorState.OPERATING
-        # WIP remains at AP06
         assert line.conveyor.wip_at("AP06") == CHILD
-        # Cannot index
+        assert line.conveyor.wip_at("AP07") is None
         with pytest.raises(Exception):
             line.conveyor.index()
-        # Cannot execute dwell (conveyor still OPERATING from HOLD)
-        # AP07 should be empty (no movement)
-        assert line.conveyor.wip_at("AP07") is None
+
+    def test_failed_final_idempotent(self):
+        """FAILED_FINAL: extra dwell calls do NOT create more records/attempts."""
+        cfg = make_cfg(ap06="ALWAYS_FAIL")
+        cfg.quality.ap06.max_attempts = 2
+        line = setup_line(cfg)
+        advance_to_before(line, "AP06")
+        line.execute_dwell()  # FAIL
+        line.execute_dwell()  # FAIL → FAILED_FINAL
+
+        h = line.get_quality_history(CHILD)
+        assert len(h.records_for("AP06")) == 2
+        assert h.attempt_count("AP06") == 2
+        assert h.current_status == QualityStatus.FAILED_FINAL
+
+        # Extra dwell calls — must be idempotent
+        line.execute_dwell()
+        line.execute_dwell()
+
+        assert len(h.records_for("AP06")) == 2  # no new records
+        assert h.attempt_count("AP06") == 2      # attempt count unchanged
+        assert h.current_status == QualityStatus.FAILED_FINAL
+        assert line.conveyor.wip_at("AP06") == CHILD
+        assert line.conveyor.state == ConveyorState.OPERATING  # still blocked
 
 
 # ═══════════════════════════════════════════════
@@ -280,67 +292,60 @@ class TestQ14:
 # ═══════════════════════════════════════════════
 
 class TestQ15:
-    def test_quality_hold_blocks_line(self):
-        """Multi-WIP: AP06 FAIL holds entire line, retest PASS releases all."""
-        cfg = make_cfg(ap06="FAIL_FIRST_THEN_PASS")
-        cfg.station_durations["AP05"] = 4.0
-        cfg.station_durations["AP06"] = 4.0
-        cfg.station_durations["AP07"] = 4.0
-        cfg.station_durations["AP08"] = 4.0
+    def test_deterministic_multi_wip_hold(self):
+        """Motor 1 PASSes AP06, motor 2 reaches AP06 → FAIL → HOLD."""
+        cfg = make_cfg(ap06="PASS")
+        cfg.quality.ap06.overrides = {1: ["PASS"], 2: ["FAIL", "PASS"]}
+        for k in cfg.station_durations:
+            cfg.station_durations[k] = 4.0
+        cfg.conveyor.nominal_line_dwell_time_s = 10.0
         line = AssyLineRuntime(config=cfg)
 
-        # Produce 2 WIPs + 2 RSO2
         for _ in range(2):
             line.produce_sso2_wip()
             line.produce_rso2_wip()
 
-        # WIP-1 through AP04 → MTR-0001 at AP05
+        # Motor 1 through AP04 → MTR-0001 at AP05
         line.introduce_to_assy("SSO2-0001", "PAL-001")
         for _ in range(5):
             line.execute_dwell()
-            if line.conveyor.state == ConveyorState.READY_TO_INDEX:
-                line.index_line()
+            assert line.conveyor.state == ConveyorState.READY_TO_INDEX
+            line.index_line()
 
-        # WIP-2 behind: advance 2 cycles → now at AP01
+        # Motor 2: introduce, advance together until MTR-0002 reaches AP06
         line.introduce_to_assy("SSO2-0002", "PAL-002")
-        for _ in range(2):
+        # Need 6 dwell+index to get MTR-0002 to AP06:
+        # d5:PRE+AP05→idx, d6:AP01+AP06(PASS)→idx, d7:AP02+AP07→idx,
+        # d8:AP03+AP08→idx, d9:AP04(JOIN)+AP09→idx, d10:AP05+AP10→idx
+        # After d10: MTR-0002 at AP06
+        for _ in range(6):
             line.execute_dwell()
-            if line.conveyor.state == ConveyorState.READY_TO_INDEX:
-                line.index_line()
+            assert line.conveyor.state == ConveyorState.READY_TO_INDEX
+            line.index_line()
 
-        # MTR-0001 should be at AP06 or AP07, SSO2-0002 at AP01 or AP02
-        # Execute dwell: AP06 fires on whatever WIP is there
+        assert line.conveyor.wip_at("AP06") == "MTR-0002", \
+            f"Expected MTR-0002 at AP06, got {line.conveyor.wip_at('AP06')}"
+
+        positions_before = {p: line.conveyor.wip_at(p)
+                            for p in line.conveyor.occupied_positions()}
+        assert len(positions_before) >= 2, "Need multiple WIPs on line"
+
+        # AP06 fires on MTR-0002 → FAIL (override motor 2 attempt 1)
         line.execute_dwell()
+        assert line.get_current_quality_status("MTR-0002") == QualityStatus.RETEST_PENDING
+        assert line.conveyor.state == ConveyorState.OPERATING
+        for p, w in positions_before.items():
+            assert line.conveyor.wip_at(p) == w, f"{p} changed during HOLD"
 
-        # Find which WIP is at AP06 and its quality status
-        ap06_wip = line.conveyor.wip_at("AP06")
-        if ap06_wip:
-            status = line.get_current_quality_status(ap06_wip)
-            # If MTR-0001 is at AP06, it should have FAILed (FAIL_FIRST_THEN_PASS)
-            if status == QualityStatus.RETEST_PENDING:
-                # Line blocked
-                assert line.conveyor.state == ConveyorState.OPERATING
+        # RETEST → PASS
+        line.execute_dwell()
+        assert line.get_current_quality_status("MTR-0002") == QualityStatus.CLEAR
+        recs = line.get_quality_history("MTR-0002").records_for("AP06")
+        assert [r.disposition for r in recs] == ["FAIL", "PASS"]
+        assert line.conveyor.state == ConveyorState.READY_TO_INDEX
 
-                # Record positions before retest
-                positions_before = {
-                    p: line.conveyor.wip_at(p)
-                    for p in line.conveyor.occupied_positions()
-                }
-
-                # Retest → PASS → READY
-                line.execute_dwell()
-                assert line.get_current_quality_status(ap06_wip) == QualityStatus.CLEAR
-                assert line.conveyor.state == ConveyorState.READY_TO_INDEX
-
-                # One synchronized index
-                line.index_line()
-                assert line.conveyor.state == ConveyorState.STOPPED
-                # Verify carriers moved: what was at AP06 moved to AP07
-                # (or was released if AP11)
-            else:
-                # Already passed AP06 — test still valid for the structure
-                pass
-        # If no WIP at AP06 (all passed), the line is fine
+        line.index_line()
+        assert line.conveyor.wip_at("AP07") == "MTR-0002"
 
 
 # ═══════════════════════════════════════════════

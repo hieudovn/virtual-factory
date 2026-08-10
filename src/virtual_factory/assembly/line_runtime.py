@@ -475,16 +475,19 @@ class AssyLineRuntime:
     ) -> list[LineEvent]:
         """Execute a quality station (AP03, AP06, AP08, AP11).
 
-        Deterministic result from scenario config.
-        Returns events — caller owns trace append.
-
-        FAIL/NG → quality HOLD → station NOT marked complete → line stays.
-        PASS → station complete → line eligible to index.
+        FAILED_FINAL is terminal: no further attempts, no new records.
         """
         events: list[LineEvent] = []
 
-        qcfg = self.config.quality.get(station_key)
+        # M6-S03-C01.1: FAILED_FINAL is idempotent — no further processing
         history = self._ensure_quality_history(wip_id)
+        if history.current_status == QualityStatus.FAILED_FINAL:
+            events.append(self._make_event(
+                "QUALITY_WAITING_DISPOSITION", position, wip_id,
+                "FAILED_FINAL — awaiting disposition"))
+            return events
+
+        qcfg = self.config.quality.get(station_key)
         attempt = history.attempt_count(station_key) + 1
 
         # Resolve disposition
