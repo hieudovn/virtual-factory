@@ -42,6 +42,16 @@ from virtual_factory.assembly.upstream import (
     UpstreamProducer,
     UpstreamWip,
 )
+from virtual_factory.assembly.quality_records import (
+    QualityConfig,
+    StationQualityConfig,
+    QualityRecord,
+    QualityHistory,
+    QualityStatus,
+    CheckType,
+    MeasurementValue,
+    resolve_quality_disposition,
+)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -87,6 +97,7 @@ class AssyLineConfig:
     ap04_component_list: tuple[str, ...] = ()
     motor_wip_prefix: str = "MTR"
     simulation_time_multiplier: float = 1.0
+    quality: QualityConfig = field(default_factory=QualityConfig)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -173,6 +184,21 @@ def load_assy_config_from_yaml(path: str) -> AssyLineConfig:
     if sim:
         config.simulation_time_multiplier = float(sim.get("time_multiplier", 1.0))
 
+    # Quality (M6-S03)
+    quality_data = data.get("quality", {})
+    if quality_data:
+        for station_key in ("ap03", "ap06", "ap08", "ap11"):
+            sq = quality_data.get(station_key.upper() if station_key.upper() in quality_data else station_key, {})
+            if sq:
+                sqc = StationQualityConfig(
+                    max_attempts=int(sq.get("max_attempts", 1)),
+                    scenario=sq.get("scenario", "PASS"),
+                )
+                overrides = sq.get("overrides", {})
+                if overrides:
+                    sqc.overrides = {int(k): list(v) for k, v in overrides.items()}
+                setattr(config.quality, station_key, sqc)
+
     return config
 
 
@@ -211,6 +237,8 @@ class AssyLineRuntime:
     _motor_seq: int = 0
     _simulation_time_s: float = 0.0
     _station_elapsed: dict[str, float] = field(default_factory=dict)
+    _quality_histories: dict[str, QualityHistory] = field(default_factory=dict)
+    _quality_seq: int = 0
 
     def __post_init__(self) -> None:
         self.conveyor = ConveyorLine(config=self.config.conveyor)
@@ -240,6 +268,24 @@ class AssyLineRuntime:
     def rso2_buffer_size(self) -> int:
         """Public: number of RSO2 WIPs available for AP04 join."""
         return len(self._rso2_wips)
+
+    def get_quality_history(self, wip_id: str) -> Optional[QualityHistory]:
+        """Public: quality history for a WIP."""
+        return self._quality_histories.get(wip_id)
+
+    def get_current_quality_status(self, wip_id: str) -> QualityStatus:
+        """Public: current quality status for a WIP."""
+        h = self._quality_histories.get(wip_id)
+        return h.current_status if h else QualityStatus.CLEAR
+
+    def _ensure_quality_history(self, wip_id: str) -> QualityHistory:
+        if wip_id not in self._quality_histories:
+            self._quality_histories[wip_id] = QualityHistory()
+        return self._quality_histories[wip_id]
+
+    def _next_quality_id(self) -> str:
+        self._quality_seq += 1
+        return f"QR-{self._quality_seq:04d}"
 
     # -- WIP registry --
 
@@ -296,15 +342,19 @@ class AssyLineRuntime:
         """
         all_events: list[LineEvent] = []
 
-        if self.conveyor.state != ConveyorState.STOPPED:
+        if self.conveyor.state not in (ConveyorState.STOPPED, ConveyorState.OPERATING):
             raise AssyLineError(
                 f"Cannot execute dwell: conveyor is {self.conveyor.state.value}"
             )
 
         # C01-04: SINGLE dwell start — dwell_number increments here
-        self.conveyor._dwell_number += 1
+        # Only increment on first entry (STOPPED → OPERATING), not on retry
+        if self.conveyor.state == ConveyorState.STOPPED:
+            self.conveyor._dwell_number += 1
+            all_events.append(self._dwell_event("DWELL_BEGIN"))
+        else:
+            all_events.append(self._dwell_event("DWELL_CONTINUE (retest/reinspect)"))
         self.conveyor.state = ConveyorState.OPERATING
-        all_events.append(self._dwell_event("DWELL_BEGIN"))
 
         nominal = self.config.conveyor.nominal_line_dwell_time_s
 
@@ -335,11 +385,18 @@ class AssyLineRuntime:
             ws.current_position = pos
 
             if self._station_elapsed[pos] >= required:
-                # Station completes
+                # Station timer completed
                 station_events = self._execute_station(pos, wip_id)
                 all_events.extend(station_events)
-                self.conveyor.mark_position_complete(pos)
-                self._station_elapsed[pos] = 0.0
+
+                # M6-S03: quality HOLD prevents completion
+                qstatus = self.get_current_quality_status(wip_id)
+                if qstatus in (QualityStatus.RETEST_PENDING, QualityStatus.REINSPECT_PENDING):
+                    # Keep station incomplete — line stays, retry next dwell
+                    self._station_elapsed[pos] = 0.0  # restart timer for retest
+                else:
+                    self.conveyor.mark_position_complete(pos)
+                    self._station_elapsed[pos] = 0.0
             else:
                 all_events.append(self._make_event(
                     "STATION_PROGRESS", pos, wip_id,
@@ -366,7 +423,11 @@ class AssyLineRuntime:
     # ═══════════════════════════════════════════════════════
 
     def _execute_station(self, position: str, wip_id: str) -> list[LineEvent]:
-        """Execute station logic. Returns events; caller owns trace append."""
+        """Execute station logic. Returns events; caller owns trace append.
+
+        M6-S03: Quality stations (AP03, AP06, AP08, AP11) generate
+        quality records and may set HOLD preventing completion.
+        """
         events: list[LineEvent] = []
 
         if position == "PRE-ASSY":
@@ -380,13 +441,17 @@ class AssyLineRuntime:
         elif position == "AP04":
             events.extend(self._execute_ap04_join(wip_id))
 
+        elif position == "AP03":
+            events.extend(self._execute_quality_station(position, wip_id, "ap03", CheckType.CHECKLIST))
+
+        elif position == "AP06":
+            events.extend(self._execute_quality_station(position, wip_id, "ap06", CheckType.TEST))
+
+        elif position == "AP08":
+            events.extend(self._execute_quality_station(position, wip_id, "ap08", CheckType.VISUAL_INSPECTION))
+
         elif position == "AP11":
-            events.append(self._make_event("STATION_START", position, wip_id, "final QC"))
-            ws = self._wips.get(wip_id)
-            if ws:
-                ws.lifecycle = WipLifecycle.RELEASED  # C01-03: authoritative
-                ws.station_count += 1
-            events.append(self._make_event("STATION_COMPLETE", position, wip_id, "RELEASED"))
+            events.extend(self._execute_quality_station(position, wip_id, "ap11", CheckType.FINAL_QC))
 
         else:
             dur = self.config.station_durations.get(position, 60.0)
@@ -397,6 +462,127 @@ class AssyLineRuntime:
                 ws.station_count += 1
                 ws.lifecycle = WipLifecycle.COMPLETED_STATION
             events.append(self._make_event("STATION_COMPLETE", position, wip_id, "done"))
+
+        return events
+
+    # ═══════════════════════════════════════════════════════
+    # QUALITY STATION (M6-S03)
+    # ═══════════════════════════════════════════════════════
+
+    def _execute_quality_station(
+        self, position: str, wip_id: str, station_key: str, check_type: CheckType,
+    ) -> list[LineEvent]:
+        """Execute a quality station (AP03, AP06, AP08, AP11).
+
+        Deterministic result from scenario config.
+        Returns events — caller owns trace append.
+
+        FAIL/NG → quality HOLD → station NOT marked complete → line stays.
+        PASS → station complete → line eligible to index.
+        """
+        events: list[LineEvent] = []
+
+        qcfg = self.config.quality.get(station_key)
+        history = self._ensure_quality_history(wip_id)
+        attempt = history.attempt_count(station_key) + 1
+
+        # Resolve disposition
+        ws = self._wips.get(wip_id)
+        motor_seq = self._motor_seq  # approximate: use current motor sequence
+        # For child WIPs, use their motor number
+        if ws and ws.is_child_of_join:
+            # Extract motor number from ID like MTR-0003
+            try:
+                motor_seq = int(wip_id.split("-")[-1])
+            except (ValueError, IndexError):
+                pass
+
+        disposition = resolve_quality_disposition(station_key, motor_seq, attempt, qcfg)
+
+        events.append(self._make_event(
+            "QUALITY_START", position, wip_id,
+            f"type={check_type.value} attempt={attempt}"))
+
+        # Build quality record
+        measurements: list[MeasurementValue] = []
+        checklist: list[str] = []
+
+        if check_type == CheckType.TEST:
+            # AP06: synthetic electrical measurements (DEMO_SYNTHETIC)
+            measurements = [
+                MeasurementValue("R_U-V", 0.45 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
+                MeasurementValue("R_V-W", 0.47 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
+                MeasurementValue("R_W-U", 0.44 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
+            ]
+        elif check_type == CheckType.CHECKLIST:
+            checklist = ["mechanical_prep_ok", "visual_check_ok", "measurement_subset_ok"]
+        elif check_type == CheckType.VISUAL_INSPECTION:
+            checklist = ["surface_quality", "label_presence", "assembly_alignment"]
+        elif check_type == CheckType.FINAL_QC:
+            checklist = ["packaging_integrity", "label_correct", "documentation_complete"]
+
+        # For FAIL/NG: measurement out of spec
+        if disposition in ("FAIL", "NG") and measurements:
+            # Make first measurement out of range (DEMO_SYNTHETIC)
+            measurements = [MeasurementValue(
+                m.name, m.expected_min - 0.1 if m.expected_min else 0.01,
+                m.unit, m.expected_min, m.expected_max
+            ) for m in measurements]
+
+        record = QualityRecord(
+            record_id=self._next_quality_id(),
+            wip_id=wip_id,
+            station_id=position,
+            check_type=check_type,
+            disposition=disposition,
+            attempt_number=attempt,
+            simulation_time_s=self._simulation_time_s,
+            measurements=tuple(measurements),
+            checklist_items=tuple(checklist),
+        )
+        history.add_record(record)
+
+        events.append(self._make_event(
+            "QUALITY_RESULT", position, wip_id,
+            f"disposition={disposition} attempt={attempt}"))
+
+        if disposition in ("FAIL", "NG"):
+            # Quality HOLD — station NOT complete
+            history.set_status(
+                QualityStatus.RETEST_PENDING if check_type == CheckType.TEST
+                else QualityStatus.REINSPECT_PENDING)
+            events.append(self._make_event(
+                "QUALITY_HOLD", position, wip_id,
+                f"status={history.current_status.value}"))
+
+            # Check max attempts
+            if attempt >= qcfg.max_attempts:
+                history.set_status(QualityStatus.FAILED_FINAL)
+                events.append(self._make_event(
+                    "QUALITY_FAILED_FINAL", position, wip_id,
+                    f"max_attempts={qcfg.max_attempts} exhausted"))
+                # Even on FAILED_FINAL, station is now "done" (no more retries)
+                # For demo: mark complete so line can proceed
+                self.conveyor.mark_position_complete(position)
+
+            # Station NOT marked complete — line stays, quality HOLD
+        else:
+            # PASS
+            history.set_status(QualityStatus.CLEAR)
+            if position == "AP11":
+                ws = self._wips.get(wip_id)
+                if ws:
+                    ws.lifecycle = WipLifecycle.RELEASED
+                    ws.station_count += 1
+                events.append(self._make_event(
+                    "STATION_COMPLETE", position, wip_id, "RELEASED"))
+            else:
+                ws = self._wips.get(wip_id)
+                if ws:
+                    ws.station_count += 1
+                    ws.lifecycle = WipLifecycle.COMPLETED_STATION
+                events.append(self._make_event(
+                    "STATION_COMPLETE", position, wip_id, "PASS"))
 
         return events
 
@@ -527,6 +713,8 @@ class AssyLineRuntime:
         self._motor_seq = 0
         self._simulation_time_s = 0.0
         self._station_elapsed = {p: 0.0 for p in self.conveyor.positions}
+        self._quality_histories.clear()
+        self._quality_seq = 0
 
 
 class AssyLineError(RuntimeError):

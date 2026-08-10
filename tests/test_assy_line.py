@@ -608,6 +608,11 @@ identity:
         # Identity
         assert config.motor_wip_prefix == "MTR"
 
+        # Quality (M6-S03)
+        assert config.quality.ap06.max_attempts == 2
+        assert config.quality.ap08.max_attempts == 2
+        assert config.quality.ap11.scenario == "PASS"
+
 
 # ═══════════════════════════════════════════════════════════
 # Happy Path Acceptance

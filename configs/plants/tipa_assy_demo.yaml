@@ -69,13 +69,24 @@ identity:
 simulation:
   time_multiplier: 1.0
 
-# --- Quality (M6-S03: default PASS for now) ---
+# --- Quality (M6-S03) ---
+# All numeric limits are DEMO_SYNTHETIC — not TIPA-confirmed.
 quality:
-  ap03:
-    default_disposition: PASS
-  ap06:
-    default_disposition: PASS
-  ap08:
-    default_disposition: PASS
-  ap11:
-    default_disposition: PASS
+  AP03:
+    max_attempts: 1
+    scenario: PASS   # checklist always PASS for demo
+  AP06:
+    max_attempts: 2
+    scenario: FAIL_FIRST_THEN_PASS   # demo exception path
+    # Override per motor sequence: motor N → [attempt1, attempt2, ...]
+    overrides:
+      1: [PASS]                       # motor 1: PASS first attempt
+      2: [FAIL, PASS]                 # motor 2: FAIL then PASS
+  AP08:
+    max_attempts: 2
+    scenario: PASS
+    overrides:
+      2: [NG, PASS]                   # motor 2: NG then PASS
+  AP11:
+    max_attempts: 1
+    scenario: PASS   # final QC always PASS for demo

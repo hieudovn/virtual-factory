@@ -48,6 +48,18 @@ from virtual_factory.assembly.line_runtime import (
     load_assy_config_from_yaml,
 )
 
+# M6-S03 quality
+from virtual_factory.assembly.quality_records import (
+    QualityConfig,
+    StationQualityConfig,
+    QualityRecord,
+    QualityHistory,
+    QualityStatus,
+    CheckType,
+    MeasurementValue,
+    resolve_quality_disposition,
+)
+
 __all__ = [
     # M3
     "AssemblyPrimitive",
@@ -82,4 +94,14 @@ __all__ = [
     "WipLifecycle",
     "LineEvent",
     "AssyLineError",
+    "load_assy_config_from_yaml",
+    # M6-S03
+    "QualityConfig",
+    "StationQualityConfig",
+    "QualityRecord",
+    "QualityHistory",
+    "QualityStatus",
+    "CheckType",
+    "MeasurementValue",
+    "resolve_quality_disposition",
 ]
