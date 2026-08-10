@@ -22,7 +22,7 @@ Demo program ending with the official demo on 21-Aug-2026.
 | Date | Milestone |
 |------|-----------|
 | **09-Aug-2026** | Foundation closed, demo planning begins |
-| **10-Aug-2026** | ASSY design freeze |
+| **10-Aug-2026** | ASSY design freeze (M6-S01 baseline v0.9) |
 | **17-Aug-2026** | Internal integrated demo |
 | **18–20-Aug-2026** | Correction / stabilization window |
 | **21-Aug-2026** | Official TIPA demo |
@@ -183,18 +183,18 @@ RSO2 simplified upstream
 
 | ID | Decision | Status |
 |----|----------|--------|
-| DF-01 | Station topology AP01–AP11 | TBD |
-| DF-02 | SSO2 simplified upstream boundary | TBD |
-| DF-03 | RSO2 simplified upstream boundary | TBD |
-| DF-04 | WIP state transitions per station | TBD |
-| DF-05 | AP04 JOIN and genealogy semantics | TBD |
-| DF-06 | Quality/test/NG/rework/retest behavior | TBD |
-| DF-07 | Conveyor, pallet, buffer, carrier assumptions | TBD |
-| DF-08 | Cycle-time / timing assumptions | TBD |
-| DF-09 | MES observation points for demo | TBD |
-| DF-10 | MES payload / semantic subset | TBD |
-| DF-11 | Demo scenarios (happy path, NG, rework) | TBD |
-| DF-12 | What is REAL vs SIMULATED vs ASSUMED | TBD |
+| DF-01 | Station topology AP01–AP11 | DOCUMENTED (baseline v0.9) |
+| DF-02 | SSO2 simplified upstream boundary | DOCUMENTED |
+| DF-03 | RSO2 simplified upstream boundary | DOCUMENTED |
+| DF-04 | WIP state transitions per station | DOCUMENTED |
+| DF-05 | AP04 JOIN and genealogy semantics | DOCUMENTED |
+| DF-06 | Quality/test/NG/rework/retest behavior | DOCUMENTED |
+| DF-07 | Conveyor, pallet, buffer, carrier assumptions | DOCUMENTED |
+| DF-08 | Cycle-time / timing assumptions | DOCUMENTED |
+| DF-09 | MES observation points for demo | DOCUMENTED |
+| DF-10 | MES payload / semantic subset | DOCUMENTED |
+| DF-11 | Demo scenarios (happy path, NG, rework) | DOCUMENTED |
+| DF-12 | What is REAL vs SIMULATED vs ASSUMED | DOCUMENTED |
 
 ---
 
@@ -294,9 +294,8 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | ID | Phase | Task | Priority | Status | Owner | Notes |
 |----|-------|------|----------|--------|-------|-------|
 | T-01 | 09-Aug | Create demo timeline | P0 | CLOSED | PM | This document |
-| T-02 | 09-Aug | Inventory TIPA gaps | P0 | NOT_STARTED | PM | |
-| T-03 | 10-Aug | DF-01 topology freeze | P0 | NOT_STARTED | PM/SA | |
-| T-04 | 10-Aug | DF-02–DF-12 freeze | P0 | NOT_STARTED | PM/SA | |
+| T-02 | 09-Aug | Inventory TIPA gaps | P0 | CLOSED | PM | 12 PTC items; 9 CONFIG_ONLY, 2 SMALL_LOGIC, 1 STRUCTURAL |
+| T-03 | 10-Aug | M6-S01 Baseline Freeze v0.9 | P0 | IN_PROGRESS | PM | 5 docs created; awaiting SA |
 | T-05 | 11-Aug | SSO2 simplified upstream | P1 | NOT_STARTED | | |
 | T-06 | 11-Aug | RSO2 simplified upstream | P1 | NOT_STARTED | | |
 | T-07 | 11-Aug | ASSY AP01–AP11 flow | P0 | NOT_STARTED | | |
@@ -320,18 +319,17 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 
 | Dimension | Weight | Rating | Notes |
 |-----------|--------|--------|-------|
-| Process model / runtime | 25% | 🟡 AMBER | M5 foundation done; TIPA runtime not yet built |
-| WIP + genealogy | 15% | 🟡 AMBER | M3 WIP exists; AP04 genealogy TBD |
-| Quality / test / rework | 15% | 🔴 RED | Not implemented |
-| Visualization | 15% | 🟡 AMBER | M4 scene exists; demo-specific not built |
-| MES integration | 15% | 🟡 AMBER | M5 gateway done; demo integration not wired |
+| Process model / runtime | 25% | 🟡 AMBER | Baseline v0.9 documented; not yet coded |
+| WIP + genealogy | 15% | 🟡 AMBER | Model defined; AP04 genealogy specified |
+| Quality / test / rework | 15% | 🟡 AMBER | Routing documented; provisional behavior clear |
+| Visualization | 15% | 🔴 RED | Not started |
+| MES integration | 15% | 🟡 AMBER | Observation matrix defined; not wired |
 | Stability / regression | 10% | 🟢 GREEN | 1067 passed |
 | Demo script / readiness | 5% | 🔴 RED | Not started |
 
-**Overall Demo Readiness**: ~25%
+**Overall Demo Readiness**: ~30% (+5% from M6-S01 baseline freeze)
 
-> Low readiness is expected and normal for Day 0 of demo planning.
-> Foundation maturity does not equal demo readiness.
+> M6-S01 baseline freeze complete. All DF-01–DF-12 documented with provisional values.
 
 ---
 
@@ -339,7 +337,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 
 | ID | Risk | Prob | Impact | Mitigation | Status |
 |----|------|------|--------|------------|--------|
-| R1 | ASSY detail not frozen by 10-Aug | Medium | High | SA gate on 10-Aug | OPEN |
+| R1 | ASSY detail not frozen by 10-Aug | Low | High | M6-S01 baseline v0.9 documented | MITIGATED |
 | R2 | TIPA process gaps force late changes | Medium | High | Provisional markers, defer non-blockers | OPEN |
 | R3 | AP04 join/genealogy incorrect | Medium | Critical | Explicit freeze DF-05, early test | OPEN |
 | R4 | Conveyor/pallet too complex | Medium | Medium | Simplify to essential demo behavior | OPEN |
@@ -392,6 +390,7 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 |------|--------|--------|
 | 09-Aug-2026 | PM | Initial timeline created. M5 CLOSED. Demo planning begins. |
 | 09-Aug-2026 | PM | SA correction: TBD-BLOCKER count fixed (5), 09-Aug→IN_PROGRESS, T-01→CLOSED. |
+| 10-Aug-2026 | PM | M6-S01 baseline freeze v0.9. 5 docs created. DF-01–DF-12 documented. Readiness ~30%. |
 
 ---
 
@@ -405,11 +404,11 @@ Main: ASSY line. Supporting: simplified SSO2, RSO2.
 | **Internal Demo** | 17-Aug-2026 |
 | **Days to Internal Demo** | 8 |
 | **Days to Official Demo** | 12 |
-| **Overall Demo Readiness** | ~25% |
-| **Current Critical Path** | 10-Aug design freeze → TIPA runtime implementation |
-| **Current Blockers** | 5 TBD-BLOCKER items (see section 13) |
-| **Next 24h Objective** | Complete TIPA gap inventory; prepare DF-01–DF-12 |
-| **Feature Freeze Status** | NOT YET (freeze target: 10-Aug) |
+| **Overall Demo Readiness** | ~30% (+5% from M6-S01) |
+| **Current Critical Path** | M6-S02: TIPA runtime implementation |
+| **Current Blockers** | None (all PTC items have provisional values) |
+| **Next 24h Objective** | SA approval of M6-S01 → begin M6-S02 |
+| **Feature Freeze Status** | V0.9 BASELINE DOCUMENTED (awaiting SA approval) |
 | **Latest validated regression** | 1067 passed |
 | **Latest approved/merged milestone** | M5-S05 (PR #19, head a21478c) |
 | **Current main** | a21478c |
