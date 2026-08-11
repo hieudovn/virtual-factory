@@ -11,7 +11,109 @@ h2:first-child{margin-top:0}
 </style></head>
 <body>
 
-<!-- ====== ARTBOARD 1: AP06 HOLD ====== -->
+<!-- ====== ARTBOARD 1: NORMAL SHARED DWELL (STOP/WORK) ====== -->
+<div class="artboard">
+<div class="artboard-label">Frame B — ASSY-SL01 Detail: NORMAL Shared Dwell (STOP/WORK — Concurrent Station Processing)</div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 800" width="1920">
+<defs><linearGradient id="hdrN" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1a2332"/><stop offset="100%" stop-color="#0f1a2e"/></linearGradient></defs>
+<rect width="1920" height="800" fill="#0d1117"/>
+<rect x="0" y="0" width="1920" height="48" fill="url(#hdrN)"/>
+<line x1="0" y1="48" x2="1920" y2="48" stroke="#1e3a5f" stroke-width="2"/>
+<text x="20" y="32" fill="#e0e0e0" font-size="18" font-weight="600">ASSY LINE / ASSY-SL01 — HYDRAULIC — NORMAL DWELL</text>
+<rect x="500" y="16" width="110" height="22" rx="3" fill="#1b4332" stroke="#4ecca3"/>
+<text x="555" y="33" fill="#4ecca3" font-size="12" text-anchor="middle" font-weight="600">STOP / WORK</text>
+<text x="650" y="33" fill="#4ecca3" font-size="11">NO QUALITY HOLD — CONCURRENT STATION PROCESSING</text>
+<text x="1050" y="33" fill="#888" font-size="11" font-family="monospace">t=320s</text>
+<text x="1180" y="33" fill="#888" font-size="11">DWELL 6</text>
+
+<!-- Conveyor (stationary — no motion indicators) -->
+<rect x="40" y="350" width="1840" height="10" rx="5" fill="#1a2740"/>
+<!-- STOP indicator on conveyor -->
+<text x="960" y="338" fill="#4ecca3" font-size="10" text-anchor="middle">⏹ CONVEYOR STATIONARY — MULTIPLE STATIONS ACTIVE CONCURRENTLY</text>
+
+<!-- 12 Stations — multiple active simultaneously -->
+<g font-size="10" text-anchor="middle">
+  <!-- PRE-ASSY: idled (already passed) -->
+  <g transform="translate(40,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#4ecca3" font-weight="600">PRE-ASSY</text><text y="32" fill="#666" font-size="9">Stator prep</text><rect x="-32" y="42" width="64" height="14" rx="2" fill="#1b4332"/><text y="53" fill="#4ecca3" font-size="9">COMPLETE</text></g>
+
+  <!-- AP01: ACTIVE — occupied, concurrent work -->
+  <g transform="translate(170,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP01</text><text y="32" fill="#888" font-size="9">Fitting</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">PAL-001</text><text y="96" fill="#4ecca3" font-size="9">✓ WORK</text></g>
+
+  <!-- AP02: ACTIVE — occupied, concurrent work -->
+  <g transform="translate(300,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP02</text><text y="32" fill="#888" font-size="9">Terminal box</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">PAL-002</text><text y="96" fill="#4ecca3" font-size="9">✓ WORK</text></g>
+
+  <!-- AP03: ACTIVE — checklist in progress -->
+  <g transform="translate(430,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP03</text><text y="32" fill="#888" font-size="9">Mech+QC</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">PAL-003</text><text y="96" fill="#ffc107" font-size="9">📋 CHECKLIST</text></g>
+
+  <!-- AP04 JOIN: ACTIVE — concurrent work, parents visible -->
+  <g transform="translate(560,225)"><rect x="-52" y="0" width="104" height="120" rx="5" fill="#1a2330" stroke="#ffc107" stroke-width="2"/><text y="18" fill="#ffc107" font-weight="600">AP04 JOIN</text><text y="34" fill="#888" font-size="9">Main assembly</text><rect x="-42" y="44" width="84" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-42" y="64" width="84" height="12" rx="2" fill="#3d2e00"/><text y="73" fill="#ffc107" font-size="8">MTR-0008</text><line x1="0" y1="80" x2="0" y2="96" stroke="#ffc107" stroke-dasharray="3"/><text y="108" fill="#ffc107" font-size="8">← SSO2+RSO2</text></g>
+
+  <!-- AP05: ACTIVE — concurrent work -->
+  <g transform="translate(700,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP05</text><text y="32" fill="#888" font-size="9">Assy+paint</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">MTR-0005</text><text y="96" fill="#4ecca3" font-size="9">✓ WORK</text></g>
+
+  <!-- AP06: ACTIVE — concurrent work, no quality issue -->
+  <g transform="translate(830,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP06</text><text y="32" fill="#888" font-size="9">Electrical</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">MTR-0002</text><text y="96" fill="#4ecca3" font-size="9">⏳ TESTING</text></g>
+
+  <!-- AP07: IDLE — not occupied -->
+  <g transform="translate(970,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP07</text><text y="32" fill="#555" font-size="9">Finishing</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+
+  <!-- AP08: IDLE — not occupied -->
+  <g transform="translate(1100,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP08</text><text y="32" fill="#555" font-size="9">Visual</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+
+  <!-- AP09: IDLE -->
+  <g transform="translate(1220,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP09</text><text y="32" fill="#555" font-size="9">Boxing</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+
+  <!-- AP10: IDLE -->
+  <g transform="translate(1340,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP10</text><text y="32" fill="#555" font-size="9">Label</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+
+  <!-- AP11: IDLE — no release yet -->
+  <g transform="translate(1460,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP11</text><text y="32" fill="#555" font-size="9">Final QC</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+</g>
+
+<!-- Right Inspector — normal WIP detail -->
+<g transform="translate(1580,70)">
+  <rect x="0" y="0" width="310" height="680" rx="5" fill="#0f1a2e" stroke="#1e3a5f"/>
+  <text x="14" y="24" fill="#4ecca3" font-size="13" font-weight="600">WIP: MTR-0008</text>
+  <text x="14" y="50" fill="#888" font-size="10">Station: AP04 JOIN | Carrier: PAL-004</text>
+  <text x="14" y="68" fill="#4ecca3" font-size="10">Quality: CLEAR</text>
+  <line x1="14" y1="80" x2="296" y2="80" stroke="#1e3a5f"/>
+  <text x="14" y="100" fill="#8899bb" font-size="11" font-weight="600">Genealogy</text>
+  <text x="14" y="118" fill="#4ecca3" font-size="10">SSO2-0008 + RSO2-0008 → MTR-0008</text>
+  <text x="14" y="134" fill="#555" font-size="9">JOIN @ AP04 | t=310s</text>
+  <text x="14" y="158" fill="#8899bb" font-size="11" font-weight="600">Active Stations (this dwell)</text>
+  <text x="14" y="176" fill="#4ecca3" font-size="10">AP01 PAL-001 Fitting</text>
+  <text x="14" y="194" fill="#4ecca3" font-size="10">AP02 PAL-002 Terminal box</text>
+  <text x="14" y="212" fill="#4ecca3" font-size="10">AP03 PAL-003 Checklist</text>
+  <text x="14" y="230" fill="#4ecca3" font-size="10">AP04 MTR-0008 JOIN</text>
+  <text x="14" y="248" fill="#4ecca3" font-size="10">AP05 MTR-0005 Assy+paint</text>
+  <text x="14" y="266" fill="#4ecca3" font-size="10">AP06 MTR-0002 Testing</text>
+  <text x="14" y="290" fill="#8899bb" font-size="11" font-weight="600">Conveyor</text>
+  <text x="14" y="308" fill="#4ecca3" font-size="10">State: STOPPED</text>
+  <text x="14" y="326" fill="#888" font-size="9">6 stations occupied, 6 idle</text>
+  <text x="14" y="348" fill="#888" font-size="9">No quality hold active</text>
+  <text x="14" y="372" fill="#555" font-size="8">DEMO / SYNTHETIC DATA</text>
+  <text x="14" y="396" fill="#8899bb" font-size="11" font-weight="600">Events</text>
+  <text x="14" y="414" fill="#4ecca3" font-size="9">12:03 DWELL 6 STARTED</text>
+  <text x="14" y="430" fill="#4ecca3" font-size="9">12:03 CONVEYOR STOPPED</text>
+  <text x="14" y="446" fill="#4ecca3" font-size="9">12:03 STATIONS ACTIVE (×6)</text>
+  <text x="14" y="462" fill="#555" font-size="9">12:04 AP04 MTR-0008 CREATED</text>
+</g>
+
+<!-- Controls -->
+<g transform="translate(40,480)">
+  <rect x="0" y="0" width="1520" height="32" rx="4" fill="#0f1a2e" stroke="#1e3a5f"/>
+  <rect x="8" y="6" width="60" height="20" rx="3" fill="#e94560"/><text x="38" y="20" fill="#fff" font-size="9" text-anchor="middle">RESET</text>
+  <rect x="76" y="6" width="60" height="20" rx="3" fill="#4ecca3"/><text x="106" y="20" fill="#0d1117" font-size="9" text-anchor="middle">STEP</text>
+  <rect x="144" y="6" width="60" height="20" rx="3" fill="#17a2b8"/><text x="174" y="20" fill="#fff" font-size="9" text-anchor="middle">AUTO</text>
+  <text x="260" y="20" fill="#888" font-size="10">1x | HAPPY_PATH</text>
+</g>
+
+<!-- Semantic rule -->
+<text x="40" y="550" fill="#555" font-size="10">STOP → multiple eligible occupied stations process concurrently → READY → INDEX. No sequential execution implied. No HOLD active.</text>
+</svg>
+</div>
+
+<!-- ====== ARTBOARD 2: AP06 HOLD ====== -->
 <div class="artboard">
 <div class="artboard-label">Frame B — ASSY-SL03 Detail: AP06 QUALITY HOLD</div>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 800" width="1920">
@@ -78,7 +180,7 @@ h2:first-child{margin-top:0}
 </svg>
 </div>
 
-<!-- ====== ARTBOARD 2: INDEX_SHIFT ====== -->
+<!-- ====== ARTBOARD 3: INDEX_SHIFT ====== -->
 <div class="artboard">
 <div class="artboard-label">Frame C — INDEX_SHIFT: Before → Transition → After</div>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 360" width="1920">
@@ -142,7 +244,7 @@ h2:first-child{margin-top:0}
 </svg>
 </div>
 
-<!-- ====== ARTBOARD 3: 1366×768 ====== -->
+<!-- ====== ARTBOARD 4: 1366×768 ====== -->
 <div class="artboard">
 <div class="artboard-label">Frame L — 1366×768 Readability Check</div>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1366 768" width="1366">
