@@ -323,7 +323,14 @@ const ctrlB = {
     if (this._autoTimer) { this.stopAuto(); this.startAuto(); }
   },
 
-  setScenario(val) { this._scenario = val; this.reset(); },
+  setScenario(val) {
+    this._scenario = val;
+    // Cross-frame sync: keep Frame A global scenario in agreement
+    ctrl._scenario = val;
+    const selA = document.getElementById('scenario-select');
+    if (selA) selA.value = val;
+    this.reset();
+  },
 
   async call(action, body) {
     const opts = body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : { method:'POST' };
@@ -339,12 +346,9 @@ const ctrlB = {
       const snap = await resp.json();
       this._lastSnapshot = snap;
       this._liveStatus = 'LIVE';
-      // Sync scenario dropdown from live snapshot
-      if (snap.scenario) {
-        this._scenario = snap.scenario;
-        const sel = document.getElementById('fb-scenario-select');
-        if (sel) sel.value = snap.scenario;
-      }
+      // NOTE: snap.scenario is the effective sub-line scenario,
+      // NOT the global requested demo scenario.  Do not overwrite
+      // ctrlB._scenario or the scenario dropdown from snap.scenario.
       this.render(snap);
     } catch (_) {
       this._liveStatus = this._lastSnapshot ? 'STALE' : 'UNAVAILABLE';
