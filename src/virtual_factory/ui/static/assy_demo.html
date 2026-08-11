@@ -20,6 +20,7 @@
       </div>
       <div class="header-center">
         <span id="demo-step" class="step-badge">DEMO STEP 000</span>
+        <span id="live-status" style="font-size:10px;margin-left:10px;"></span>
       </div>
       <div class="header-right">
         <span id="global-scenario" class="scenario-badge">HAPPY_PATH</span>
@@ -92,10 +93,10 @@
       <div class="panel-box"><h3>Recent Quality Events</h3><div id="quality-events"></div></div>
     </aside></main>
     <footer id="controls-s04">
-      <button onclick="ctrlS04.reset()">&#x27F3; RESET</button>
-      <button onclick="ctrlS04.step()">&#x25B6; STEP</button>
-      <button onclick="ctrlS04.toggleAuto()">&#x25B6;&#x25B6; AUTO</button>
-      <button onclick="ctrlS04.pause()" disabled>&#x23F8; PAUSE</button>
+      <button id="btn-reset-s04" onclick="ctrlS04.reset()">&#x27F3; RESET</button>
+      <button id="btn-step-s04" onclick="ctrlS04.step()">&#x25B6; STEP</button>
+      <button id="btn-auto-s04" onclick="ctrlS04.toggleAuto()">&#x25B6;&#x25B6; AUTO</button>
+      <button id="btn-pause-s04" onclick="ctrlS04.pause()" disabled>&#x23F8; PAUSE</button>
       <label>Speed:<select id="speed-select-s04" onchange="ctrlS04.setSpeed(this.value)">
         <option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="5">5x</option><option value="10">10x</option></select></label>
       <label>Scenario:<select id="scenario-select-s04" onchange="ctrlS04.setScenario(this.value)">
