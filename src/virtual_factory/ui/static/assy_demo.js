@@ -452,8 +452,9 @@ const ctrlB = {
       }
 
       if (isOcc) {
-        // Carrier
+        // Carrier + WIP token group — clickable independently
         const carrierY = sy + (isLandmark ? 42 : 40);
+        html += `<g class="fb-wip-token" data-wip="${p.wip_id}" style="cursor:pointer">`;
         html += `<rect x="${sx-38}" y="${carrierY}" width="76" height="28" rx="3" fill="none" stroke="#1e3a5f" stroke-width="1"/>`;
         if (p.carrier_id) {
           html += `<text x="${sx}" y="${carrierY+12}" fill="#8899bb" font-size="11" font-weight="400" text-anchor="middle">${p.carrier_id}</text>`;
@@ -462,6 +463,7 @@ const ctrlB = {
         const wipY = carrierY + 23;
         const wipColor = wipType === 'SSO2' ? '#4ecca3' : '#ffc107';
         html += `<text x="${sx}" y="${wipY}" fill="${wipColor}" font-size="14" font-weight="600" text-anchor="middle">${p.wip_id}</text>`;
+        html += `</g>`;  // close fb-wip-token
 
         // Quality badge
         const badgeY = wipY + 14;
@@ -510,6 +512,9 @@ const ctrlB = {
     // Bind station clicks
     this._bindStationClicks();
 
+    // Bind WIP token clicks (independent, no double-trigger)
+    this._bindWipTokenClicks();
+
     // Render event strip
     this._renderEventStrip(snap);
 
@@ -541,9 +546,20 @@ const ctrlB = {
 
   _bindStationClicks() {
     document.querySelectorAll('#fb-stations .fb-station').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.fb-wip-token')) return;
         const stId = el.getAttribute('data-station');
         this.selectStation(stId);
+      });
+    });
+  },
+
+  _bindWipTokenClicks() {
+    document.querySelectorAll('#fb-stations .fb-wip-token').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wipId = el.getAttribute('data-wip');
+        if (wipId) this.selectWip(wipId);
       });
     });
   },
@@ -578,10 +594,17 @@ const ctrlB = {
   },
 
   selectEvent(stationId, wipId) {
-    this._selectedStation = stationId || null;
     this._selectedWipId = wipId || null;
     this._inspectorOpen = true;
     const snap = this._lastSnapshot;
+    if (snap && wipId) {
+      const pos = (snap.positions||[]).find(p => p.wip_id === wipId);
+      this._selectedStation = pos ? pos.position_id : null;
+    } else if (snap && stationId && !wipId) {
+      this._selectedStation = stationId;
+    } else {
+      this._selectedStation = null;
+    }
     if (snap) { this._applyHighlights(); this._renderInspector(snap); }
   },
 

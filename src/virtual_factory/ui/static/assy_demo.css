@@ -113,8 +113,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e
 
 /* Inspector — Frame C */
 #fb-inspector{display:flex;flex-direction:column;overflow:hidden;transition:all .2s}
-.fb-inspector-collapsed #fb-inspector{flex:0 0 auto;min-height:40px}
-.fb-inspector-open #fb-inspector{flex:1;overflow-y:auto}
+#fb-inspector.fb-inspector-collapsed{flex:0 0 auto;min-height:40px}
+#fb-inspector.fb-inspector-open{flex:1;overflow-y:auto}
 #fb-insp-header{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#141a24;border-bottom:1px solid #1e3a5f;flex-shrink:0}
 #fb-insp-title{font-size:14px;font-weight:600;color:#17a2b8}
 #fb-insp-close{background:none;border:none;color:#666;font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
@@ -162,11 +162,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e
 @media(max-width:1400px){
   #fb-right-panel{width:200px}
   #fb-event-strip h4{font-size:11px}
-  .fb-qe-item{font-size:10px}
-  #fb-insp-title{font-size:12px}
-  .fb-insp-section h5{font-size:10px}
+  .fb-qe-item{font-size:11px}
+  #fb-insp-title{font-size:13px}
+  .fb-insp-section h5{font-size:11px}
   .fb-insp-row{font-size:11px}
   .fb-insp-qr-head{font-size:11px}
-  .fb-insp-meas-row{font-size:10px}
-  .fb-insp-cl-item{font-size:10px}
+  .fb-insp-meas-row{font-size:11px}
+  .fb-insp-cl-item{font-size:11px}
 }
