@@ -1,29 +1,61 @@
-# M6-S04B-I04-C02 — Frame A Visual Evidence
+# M6-S04B-I04-C03 — Frame A Visual Evidence
 
-## A1 — 1920×1080 HAPPY_PATH
+All screenshots captured from live running application at head `50cf8d2`.
 
-- **Scenario**: HAPPY_PATH
-- **Demo Step**: 5
-- **Target Sub-line**: (none — all HAPPY_PATH)
-- **Total Motors Created**: 6
-- **Total Holds**: 0
-- **Notes**: All 6 lanes STOPPED/OPERATING. LIVE indicator green. Topology-only station dots with JOIN/TEST/VISION/FINAL landmarks.
+## Files
 
-## A2 — 1920×1080 AP06 HOLD
+| File | Viewport | Scenario |
+|------|----------|----------|
+| `A1_1920x1080_happy.png` | 1920x1080 | HAPPY_PATH |
+| `A2_1920x1080_ap06_hold.png` | 1920x1080 | AP06_FAIL_RETEST_PASS |
+| `A3_1366x768_overview.png` | 1366x768 | AP06_FAIL_RETEST_PASS |
 
-- **Scenario**: AP06_FAIL_RETEST_PASS
-- **Demo Step**: 8
-- **Target Sub-line**: ASSY-SL03
-- **Held Station**: AP06
-- **Held WIP**: MTR-0002
-- **Total Holds**: 1
-- **Total Motors Created**: 24
-- **Notes**: SL03 shows QUALITY HOLD in red, AP06 landmark highlighted red, ⏸ AP06 / MTR-0002 held info visible. Other 5 lanes remain normal STOPPED.
+---
 
-## A3 — 1366×768 AP06 (post-resolution)
+## A1 — 1920x1080 HAPPY_PATH
 
-- **Scenario**: AP06_FAIL_RETEST_PASS (post-HOLD resolution)
-- **Demo Step**: 9
-- **Selected Sub-line**: ASSY-SL04 (cyan outline, ↗ Detail affordance)
-- **Selection Persistence**: Confirmed — SL04 remains selected after STEP refresh
-- **Notes**: All 6 lanes visible and readable at 1366×768. Station labels compressed but still meaningful SVG viewBox scaling.
+| Field | Value |
+|-------|-------|
+| Viewport | 1920 x 1080 |
+| Scenario | HAPPY_PATH |
+| Demo Step | 5 |
+| Target Sub-line | (none) |
+| Selected Sub-line | ASSY-SL01 |
+| Held Station | (none) |
+| Total Holds | 0 |
+| Motors Created | 6 |
+
+Visual: 6 lanes STOPPED. JOIN/TEST/VISION/FINAL landmarks. LIVE indicator.
+
+---
+
+## A2 — 1920x1080 AP06 HOLD
+
+| Field | Value |
+|-------|-------|
+| Viewport | 1920 x 1080 |
+| Scenario | AP06_FAIL_RETEST_PASS |
+| Demo Step | 8 |
+| Target Sub-line | ASSY-SL03 |
+| Held Station | AP06 |
+| Held WIP | MTR-0002 |
+| Total Holds | 1 |
+| Motors Created | 24 |
+
+Visual: SL03 QUALITY HOLD, AP06/TEST highlighted red, AP06 / MTR-0002.
+
+---
+
+## A3 — 1366x768 Selection Persistence
+
+| Field | Value |
+|-------|-------|
+| Viewport | 1366 x 768 |
+| Scenario | AP06_FAIL_RETEST_PASS |
+| Demo Step | 9 |
+| Selected Sub-line | ASSY-SL04 (persists after STEP) |
+| Total Holds | 0 |
+| Motors Created | 30 |
+
+Visual: SL04 cyan outline with cursor:pointer Detail affordance.
+Selection persists after STEP refresh. 6 lanes readable.
