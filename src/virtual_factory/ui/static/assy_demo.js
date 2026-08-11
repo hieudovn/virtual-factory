@@ -264,6 +264,8 @@ const ctrlB = {
   _lastSnapshot: null,
   _liveStatus: 'INIT',
   _selectedStation: null,
+  _selectedWipId: null,
+  _inspectorOpen: false,
 
   // Zoom/Pan state
   _zoomLevel: 1,
@@ -272,9 +274,10 @@ const ctrlB = {
 
   async init(subLineId) {
     // Observational only — does NOT reset runtime.
-    // Runtime state, scenario, counters, WIP positions preserved.
     this._subLineId = subLineId;
     this._selectedStation = null;
+    this._selectedWipId = null;
+    this._inspectorOpen = false;
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     // Sync UI controls from carried-over values
     document.getElementById('fb-scenario-select').value = this._scenario || 'HAPPY_PATH';
@@ -287,6 +290,8 @@ const ctrlB = {
     this.stopAuto();
     this._scenario = document.getElementById('fb-scenario-select').value;
     this._selectedStation = null;
+    this._selectedWipId = null;
+    this._inspectorOpen = false;
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     await this.call('reset', { scenario: this._scenario });
     await this.refresh();
@@ -392,6 +397,17 @@ const ctrlB = {
     document.getElementById('fb-prod-text').textContent =
       `Created: ${prod.motors_created||0}  Released: ${prod.motors_released||0}  On Line: ${prod.wips_on_line||0}  Holds: ${prod.active_quality_holds||0}`;
 
+    // Refresh persistence: if WIP selected, update its current position
+    if (this._inspectorOpen && this._selectedWipId) {
+      const pos = (snap.positions||[]).find(p => p.wip_id === this._selectedWipId);
+      if (pos) {
+        this._selectedStation = pos.position_id;
+      } else {
+        // WIP exited — keep _selectedWipId, clear station
+        this._selectedStation = null;
+      }
+    }
+
     // Build position lookup
     const posMap = {};
     for (const p of (snap.positions||[])) posMap[p.position_id] = p;
@@ -488,8 +504,11 @@ const ctrlB = {
 
     stationsG.innerHTML = html;
 
+    // Physical highlights
+    this._applyHighlights();
+
     // Bind station clicks
-    this._bindStationClicks(snap);
+    this._bindStationClicks();
 
     // Render event strip
     this._renderEventStrip(snap);
@@ -497,46 +516,260 @@ const ctrlB = {
     // Render genealogy context in right panel
     this._renderGenealogyContext(snap);
 
+    // Render Inspector
+    this._renderInspector(snap);
+
     // Apply zoom
     this.applyViewBox();
   },
 
-  _bindStationClicks(snap) {
-    const posMap = {};
-    for (const p of (snap.positions||[])) posMap[p.position_id] = p;
+  _applyHighlights() {
+    // Remove old highlights
+    document.querySelectorAll('#fb-stations .fb-station').forEach(el => {
+      const rect = el.querySelector('rect');
+      if (rect) rect.style.filter = '';
+    });
+    // Apply selection highlight
+    if (this._selectedStation) {
+      const el = document.querySelector(`#fb-stations .fb-station[data-station="${this._selectedStation}"]`);
+      if (el) {
+        const rect = el.querySelector('rect');
+        if (rect) rect.style.filter = 'drop-shadow(0 0 4px #17a2b8)';
+      }
+    }
+  },
 
+  _bindStationClicks() {
     document.querySelectorAll('#fb-stations .fb-station').forEach(el => {
       el.addEventListener('click', () => {
         const stId = el.getAttribute('data-station');
-        this._selectedStation = (this._selectedStation === stId) ? null : stId;
-        this.render(snap);
-        this._updateInspector(posMap[stId] || null);
+        this.selectStation(stId);
       });
     });
   },
 
-  _updateInspector(pos) {
-    const label = document.getElementById('fb-inspector-label');
-    const hint = document.getElementById('fb-inspector-hint');
-    const placeholder = document.getElementById('fb-inspector-placeholder');
-    if (!pos) {
-      label.textContent = 'Inspector';
-      hint.textContent = 'Select a station';
-      placeholder.className = 'fb-inspector-collapsed';
+  /* ---------- Selection Model ---------- */
+  selectStation(stId) {
+    if (this._selectedStation === stId) { this.closeInspector(); return; }
+    this._selectedStation = stId;
+    this._selectedWipId = null;
+
+    // Derive WIP from current snapshot
+    const snap = this._lastSnapshot;
+    if (snap) {
+      const pos = (snap.positions||[]).find(p => p.position_id === stId);
+      if (pos && pos.wip_id) this._selectedWipId = pos.wip_id;
+    }
+    this._inspectorOpen = true;
+    if (snap) { this._applyHighlights(); this._renderInspector(snap); }
+  },
+
+  selectWip(wipId) {
+    this._selectedWipId = wipId;
+    this._selectedStation = null;
+    // Find current station from snapshot
+    const snap = this._lastSnapshot;
+    if (snap) {
+      const pos = (snap.positions||[]).find(p => p.wip_id === wipId);
+      if (pos) this._selectedStation = pos.position_id;
+    }
+    this._inspectorOpen = true;
+    if (snap) { this._applyHighlights(); this._renderInspector(snap); }
+  },
+
+  selectEvent(stationId, wipId) {
+    this._selectedStation = stationId || null;
+    this._selectedWipId = wipId || null;
+    this._inspectorOpen = true;
+    const snap = this._lastSnapshot;
+    if (snap) { this._applyHighlights(); this._renderInspector(snap); }
+  },
+
+  closeInspector() {
+    this._inspectorOpen = false;
+    this._selectedStation = null;
+    this._selectedWipId = null;
+    this._applyHighlights();
+    this._renderInspector(this._lastSnapshot);
+  },
+
+  /* ---------- Inspector Render ---------- */
+  _renderInspector(snap) {
+    const insp = document.getElementById('fb-inspector');
+    if (!insp) return;
+
+    if (!this._inspectorOpen || !snap) {
+      insp.className = 'fb-inspector-collapsed';
+      document.getElementById('fb-insp-title').textContent = 'Inspector';
+      document.getElementById('fb-insp-summary-content').innerHTML = '<span class="fb-insp-empty">Select a station, WIP, or event</span>';
+      this._clearInspectorSections();
       return;
     }
-    placeholder.className = 'fb-inspector-open';
-    label.textContent = `${pos.position_id}: ${pos.station_label || pos.position_id}`;
-    if (pos.wip_id) {
-      hint.innerHTML = `<b>WIP:</b> ${pos.wip_id} &nbsp; <b>Carrier:</b> ${pos.carrier_id||'\u2014'} &nbsp; <b>Status:</b> ${pos.manufacturing_status||'active'}`;
-      if (pos.latest_quality_result) {
-        hint.innerHTML += ` &nbsp; <b>Quality:</b> <span style="color:${pos.latest_quality_result==='PASS'?'#4ecca3':'#e94560'}">${pos.latest_quality_result}${pos.attempt_number>1?' #'+pos.attempt_number:''}</span>`;
-      }
-      if (pos.is_quality_hold) hint.innerHTML += ` &nbsp; <b style="color:#e94560">HOLD</b>`;
-      if (pos.held_reason) hint.innerHTML += ` &nbsp; <small>(${pos.held_reason})</small>`;
+    insp.className = 'fb-inspector-open';
+
+    const stId = this._selectedStation;
+    const wipId = this._selectedWipId;
+    const posMap = {};
+    for (const p of (snap.positions||[])) posMap[p.position_id] = p;
+
+    const pos = stId ? (posMap[stId] || null) : null;
+    const title = stId ? `${stId}${pos&&pos.station_label?': '+pos.station_label:''}` : (wipId||'Inspector');
+    document.getElementById('fb-insp-title').textContent = title;
+
+    // --- Summary ---
+    this._renderSummary(pos, wipId, snap);
+
+    // --- Quality History ---
+    this._renderQualityHistory(wipId, snap);
+
+    // --- Measurements ---
+    this._renderMeasurements(wipId, snap);
+
+    // --- Checklist ---
+    this._renderChecklist(wipId, snap);
+
+    // --- Genealogy ---
+    this._renderInspGenealogy(wipId, snap);
+  },
+
+  _clearInspectorSections() {
+    ['fb-insp-quality-content','fb-insp-measurements-content','fb-insp-checklist-content','fb-insp-genealogy-content'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.innerHTML = '';
+    });
+    ['fb-insp-measurements','fb-insp-checklist','fb-insp-genealogy'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+  },
+
+  _renderSummary(pos, wipId, snap) {
+    const el = document.getElementById('fb-insp-summary-content');
+    if (!el) return;
+
+    if (pos && pos.is_occupied && pos.wip_id) {
+      const qColor = pos.latest_quality_result === 'PASS' ? '#4ecca3' : pos.latest_quality_result ? '#e94560' : '#8899bb';
+      let html = `<div class="fb-insp-row"><span class="fb-insp-k">Station</span><span class="fb-insp-v">${pos.position_id} — ${pos.station_label||pos.position_id}</span></div>`;
+      html += `<div class="fb-insp-row"><span class="fb-insp-k">WIP</span><span class="fb-insp-v" style="color:${pos.wip_type==='SSO2'?'#4ecca3':'#ffc107'};font-weight:600">${pos.wip_id}</span></div>`;
+      html += `<div class="fb-insp-row"><span class="fb-insp-k">Type</span><span class="fb-insp-v">${pos.wip_type||'—'}</span></div>`;
+      if (pos.carrier_id) html += `<div class="fb-insp-row"><span class="fb-insp-k">Carrier</span><span class="fb-insp-v">${pos.carrier_id}</span></div>`;
+      html += `<div class="fb-insp-row"><span class="fb-insp-k">Mfg Status</span><span class="fb-insp-v">${pos.manufacturing_status||'active'}</span></div>`;
+      html += `<div class="fb-insp-row"><span class="fb-insp-k">Quality</span><span class="fb-insp-v" style="color:${qColor}">${pos.latest_quality_result||'clear'}${pos.attempt_number>1?' #'+pos.attempt_number:''}</span></div>`;
+      if (pos.is_quality_hold) html += `<div class="fb-insp-row"><span class="fb-insp-k">HOLD</span><span class="fb-insp-v" style="color:#e94560;font-weight:600">${pos.held_reason||'Active'}</span></div>`;
+      el.innerHTML = html;
+    } else if (pos && !pos.is_occupied) {
+      el.innerHTML = `<div class="fb-insp-row"><span class="fb-insp-k">Station</span><span class="fb-insp-v">${pos.position_id} — ${pos.station_label||pos.position_id}</span></div><div class="fb-insp-empty">EMPTY — no WIP at this station</div>`;
+    } else if (wipId) {
+      // WIP selected but may be historical/exited
+      const histRecs = (snap.quality_records||[]).filter(qr => qr.wip_id === wipId);
+      const onLine = (snap.positions||[]).some(p => p.wip_id === wipId);
+      let html = `<div class="fb-insp-row"><span class="fb-insp-k">WIP</span><span class="fb-insp-v" style="font-weight:600">${wipId}</span></div>`;
+      if (!onLine) html += `<div class="fb-insp-historical">HISTORICAL — NOT CURRENTLY ON LINE</div>`;
+      html += `<div class="fb-insp-row"><span class="fb-insp-k">Records</span><span class="fb-insp-v">${histRecs.length} quality records available</span></div>`;
+      el.innerHTML = html;
     } else {
-      hint.textContent = 'Station empty';
+      el.innerHTML = '<span class="fb-insp-empty">Select a station or WIP</span>';
     }
+  },
+
+  _renderQualityHistory(wipId, snap) {
+    const el = document.getElementById('fb-insp-quality-content');
+    if (!el) return;
+    if (!wipId) { el.innerHTML = '<span class="fb-insp-empty">Select a WIP to see quality history</span>'; return; }
+
+    const recs = (snap.quality_records||[]).filter(qr => qr.wip_id === wipId).sort((a,b) => a.simulation_time_s - b.simulation_time_s);
+    if (!recs.length) { el.innerHTML = '<span class="fb-insp-empty">No quality records for this WIP</span>'; return; }
+
+    let html = '';
+    for (const r of recs) {
+      const dColor = r.disposition === 'PASS' ? '#4ecca3' : '#e94560';
+      html += `<div class="fb-insp-qr">
+        <div class="fb-insp-qr-head">
+          <span class="fb-insp-qr-station">${r.station_id}</span>
+          <span style="color:${dColor};font-weight:600">${r.disposition}</span>
+          <span style="color:#666">#${r.attempt_number}</span>
+          <span style="color:#555;font-size:11px">t=${(r.simulation_time_s||0).toFixed(0)}s</span>
+        </div>
+        <div class="fb-insp-qr-type">${r.check_type||'?'}</div>`;
+      if (r.reason_code) html += `<div class="fb-insp-qr-reason">Reason: ${r.reason_code}</div>`;
+      html += `</div>`;
+    }
+    el.innerHTML = html;
+  },
+
+  _renderMeasurements(wipId, snap) {
+    const section = document.getElementById('fb-insp-measurements');
+    const el = document.getElementById('fb-insp-measurements-content');
+    if (!section || !el) return;
+    if (!wipId) { section.style.display = 'none'; return; }
+
+    const recs = (snap.quality_records||[]).filter(qr => qr.wip_id === wipId && qr.measurements && qr.measurements.length > 0);
+    if (!recs.length) { section.style.display = 'none'; return; }
+    section.style.display = '';
+
+    let html = '';
+    for (const r of recs) {
+      html += `<div class="fb-insp-meas-group"><div class="fb-insp-meas-station">${r.station_id} — ${r.check_type} #${r.attempt_number} <small>t=${(r.simulation_time_s||0).toFixed(0)}s</small></div>`;
+      for (const m of (r.measurements||[])) {
+        const v = m.value, lo = m.expected_min, hi = m.expected_max;
+        let inRange = true;
+        if (lo !== undefined && v < lo) inRange = false;
+        if (hi !== undefined && v > hi) inRange = false;
+        const rangeColor = inRange ? '#4ecca3' : '#e94560';
+        const rangeLabel = inRange ? 'IN RANGE' : 'OUT OF RANGE';
+        html += `<div class="fb-insp-meas-row">
+          <span class="fb-insp-meas-name">${m.name}</span>
+          <span class="fb-insp-meas-val">${v} ${m.unit||''}</span>
+          ${lo!==undefined&&hi!==undefined?`<span class="fb-insp-meas-range">Expected ${lo}–${hi} ${m.unit||''}</span>`:''}
+          ${lo!==undefined||hi!==undefined?`<span class="fb-insp-meas-inrange" style="color:${rangeColor}">${rangeLabel}</span>`:''}
+        </div>`;
+      }
+      html += `</div>`;
+    }
+    el.innerHTML = html;
+  },
+
+  _renderChecklist(wipId, snap) {
+    const section = document.getElementById('fb-insp-checklist');
+    const el = document.getElementById('fb-insp-checklist-content');
+    if (!section || !el) return;
+    if (!wipId) { section.style.display = 'none'; return; }
+
+    const recs = (snap.quality_records||[]).filter(qr => qr.wip_id === wipId && qr.checklist_items && qr.checklist_items.length > 0);
+    if (!recs.length) { section.style.display = 'none'; return; }
+    section.style.display = '';
+
+    let html = '';
+    for (const r of recs) {
+      const dColor = r.disposition === 'PASS' ? '#4ecca3' : '#e94560';
+      html += `<div class="fb-insp-cl-group">
+        <div class="fb-insp-cl-head">${r.station_id} — ${r.check_type} <span style="color:${dColor};font-weight:600">${r.disposition}</span> #${r.attempt_number} <small>t=${(r.simulation_time_s||0).toFixed(0)}s</small></div>
+        <div class="fb-insp-cl-items">`;
+      for (const item of r.checklist_items) {
+        html += `<div class="fb-insp-cl-item">&#8226; ${item}</div>`;
+      }
+      html += `</div></div>`;
+    }
+    el.innerHTML = html;
+  },
+
+  _renderInspGenealogy(wipId, snap) {
+    const section = document.getElementById('fb-insp-genealogy');
+    const el = document.getElementById('fb-insp-genealogy-content');
+    if (!section || !el) return;
+    if (!wipId || !wipId.startsWith('MTR')) { section.style.display = 'none'; return; }
+
+    const gen = (snap.genealogy||[]).filter(g => g.child_wip_id === wipId);
+    if (!gen.length) { section.style.display = ''; el.innerHTML = '<span class="fb-insp-empty">No genealogy record</span>'; return; }
+    section.style.display = '';
+
+    let html = '';
+    for (const g of gen) {
+      html += `<div class="fb-insp-gen-row">
+        <span style="color:#ffc107">${(g.parent_wip_ids||[]).join(' + ')}</span>
+        → <span style="color:#ffc107;font-weight:600">${g.child_wip_id}</span>
+        <div style="color:#666;font-size:11px">@ ${g.join_station} t=${(g.join_time_s||0).toFixed(0)}s</div>
+      </div>`;
+    }
+    el.innerHTML = html;
   },
 
   _renderEventStrip(snap) {
@@ -546,14 +779,24 @@ const ctrlB = {
     let html = '';
     for (const e of events.slice(-12).reverse()) {
       const dColor = e.disposition === 'PASS' ? '#4ecca3' : '#e94560';
-      html += `<div class="fb-qe-item">
+      const sid = e.station_id||'', wid = e.wip_id||'';
+      html += `<div class="fb-qe-item fb-qe-clickable" data-ev-station="${sid}" data-ev-wip="${wid}">
         <span style="color:${dColor};font-weight:600">${e.disposition||'?'}</span>
-        ${e.wip_id||''} @ ${e.station_id||''} #${e.attempt||1}
+        ${wid} @ ${sid} #${e.attempt||1}
         <small>t=${(e.simulation_time_s||0).toFixed(0)}s</small>
       </div>`;
     }
     if (!html) html = '<div style="color:#555;font-size:11px">No quality events</div>';
     list.innerHTML = html;
+
+    // Bind event clicks
+    list.querySelectorAll('.fb-qe-clickable').forEach(el => {
+      el.addEventListener('click', () => {
+        const sid = el.getAttribute('data-ev-station');
+        const wid = el.getAttribute('data-ev-wip');
+        this.selectEvent(sid, wid);
+      });
+    });
   },
 
   _renderGenealogyContext(snap) {

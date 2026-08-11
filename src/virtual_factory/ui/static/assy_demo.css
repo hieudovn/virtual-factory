@@ -110,35 +110,63 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e
 /* Inspector Placeholder */
 #fb-inspector-placeholder{min-height:80px;padding:10px;transition:all .2s}
 .fb-inspector-collapsed{border-top:2px solid #1e3a5f}
-.fb-inspector-collapsed #fb-inspector-label{font-size:12px;color:#666;display:block}
-.fb-inspector-collapsed #fb-inspector-hint{font-size:11px;color:#444}
-.fb-inspector-open{background:#0f1a2e;border-top:2px solid #17a2b8}
-.fb-inspector-open #fb-inspector-label{font-size:13px;color:#17a2b8;display:block;font-weight:600}
-.fb-inspector-open #fb-inspector-hint{font-size:11px;color:#8899bb;margin-top:4px;display:block}
 
-/* Frame B Controls */
-#fb-controls{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:#1a2332;border-top:1px solid #1e3a5f;min-height:36px;flex-shrink:0}
-.fb-ctrl-group{display:flex;align-items:center;gap:8px}
-.fb-zoom-group{display:flex;align-items:center;gap:4px}
-#fb-controls button{padding:4px 12px;border:none;border-radius:3px;font-size:12px;cursor:pointer;color:#fff}
-#fb-btn-reset{background:#e94560}
-#fb-btn-step{background:#4ecca3;color:#0d1117}
-#fb-btn-auto{background:#17a2b8}
-#fb-btn-pause{background:#5c4700}
-#fb-controls label{font-size:12px;color:#888;display:flex;align-items:center;gap:4px}
-#fb-controls select{background:#0f1a2e;color:#e0e0e0;border:1px solid #1e3a5f;border-radius:3px;padding:3px 6px;font-size:11px}
-.fb-zoom-group button{background:#0f1a2e;color:#8899bb;border:1px solid #1e3a5f;min-width:36px;text-align:center}
-.fb-zoom-group button:hover{background:#1a2a3e;color:#e0e0e0}
+/* Inspector — Frame C */
+#fb-inspector{display:flex;flex-direction:column;overflow:hidden;transition:all .2s}
+.fb-inspector-collapsed #fb-inspector{flex:0 0 auto;min-height:40px}
+.fb-inspector-open #fb-inspector{flex:1;overflow-y:auto}
+#fb-insp-header{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#141a24;border-bottom:1px solid #1e3a5f;flex-shrink:0}
+#fb-insp-title{font-size:14px;font-weight:600;color:#17a2b8}
+#fb-insp-close{background:none;border:none;color:#666;font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
+#fb-insp-close:hover{color:#e94560}
+#fb-insp-body{flex:1;overflow-y:auto;padding:8px 10px}
+.fb-insp-section{margin-bottom:12px;border-bottom:1px solid #1a2332;padding-bottom:8px}
+.fb-insp-section h5{font-size:12px;color:#8899bb;margin:0 0 6px 0;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.fb-insp-empty{color:#555;font-size:12px;font-style:italic}
+.fb-insp-historical{background:#3d2e00;color:#ffc107;font-size:11px;font-weight:600;padding:4px 8px;border-radius:3px;margin:4px 0}
+.fb-insp-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid #0f1a2e}
+.fb-insp-k{color:#666;min-width:70px}
+.fb-insp-v{color:#e0e0e0;text-align:right;flex:1}
 
-/* Frame B Station hover */
-.fb-station:hover rect:first-child{filter:brightness(1.3)}
+/* Quality History */
+.fb-insp-qr{padding:4px 0;border-bottom:1px solid #0f1a2e}
+.fb-insp-qr-head{display:flex;gap:8px;align-items:center;font-size:12px}
+.fb-insp-qr-station{color:#8899bb;font-weight:600;min-width:48px}
+.fb-insp-qr-type{font-size:11px;color:#555;margin-top:1px}
+.fb-insp-qr-reason{font-size:11px;color:#ffc107;margin-top:1px}
+
+/* Measurements */
+.fb-insp-meas-group{margin-bottom:8px}
+.fb-insp-meas-station{font-size:12px;color:#8899bb;font-weight:600;margin-bottom:4px}
+.fb-insp-meas-station small{font-weight:400;color:#555}
+.fb-insp-meas-row{display:flex;gap:8px;align-items:center;font-size:11px;padding:2px 0;flex-wrap:wrap}
+.fb-insp-meas-name{color:#ffc107;min-width:60px;font-family:monospace}
+.fb-insp-meas-val{color:#e0e0e0;min-width:60px}
+.fb-insp-meas-range{color:#666;font-size:10px}
+.fb-insp-meas-inrange{font-size:11px;font-weight:600;min-width:70px}
+
+/* Checklist */
+.fb-insp-cl-group{margin-bottom:8px}
+.fb-insp-cl-head{font-size:12px;color:#8899bb;margin-bottom:4px}
+.fb-insp-cl-items{margin-left:8px}
+.fb-insp-cl-item{font-size:11px;color:#999;padding:1px 0}
+
+/* Genealogy */
+.fb-insp-gen-row{padding:4px 0;font-size:12px}
+
+/* Event strip clickable */
+.fb-qe-clickable{cursor:pointer}
+.fb-qe-clickable:hover{background:#1a2332}
 
 /* Responsive 1366×768 */
 @media(max-width:1400px){
   #fb-right-panel{width:200px}
   #fb-event-strip h4{font-size:11px}
   .fb-qe-item{font-size:10px}
-  #fb-inspector-placeholder{min-height:60px}
-  .fb-inspector-open #fb-inspector-label{font-size:11px}
-  .fb-inspector-open #fb-inspector-hint{font-size:10px}
+  #fb-insp-title{font-size:12px}
+  .fb-insp-section h5{font-size:10px}
+  .fb-insp-row{font-size:11px}
+  .fb-insp-qr-head{font-size:11px}
+  .fb-insp-meas-row{font-size:10px}
+  .fb-insp-cl-item{font-size:10px}
 }

@@ -140,9 +140,38 @@
           <h4>AP04 JOIN Genealogy</h4>
           <div id="fb-genealogy-text"></div>
         </div>
-        <div id="fb-inspector-placeholder" class="fb-inspector-collapsed">
-          <span id="fb-inspector-label">Inspector</span>
-          <span id="fb-inspector-hint">Select a station</span>
+        <div id="fb-inspector" class="fb-inspector-collapsed">
+          <div id="fb-insp-header">
+            <span id="fb-insp-title">Inspector</span>
+            <button id="fb-insp-close" onclick="ctrlB.closeInspector()" title="Close Inspector">&times;</button>
+          </div>
+          <div id="fb-insp-body">
+            <!-- Summary -->
+            <div class="fb-insp-section" id="fb-insp-summary">
+              <h5>Summary</h5>
+              <div id="fb-insp-summary-content"></div>
+            </div>
+            <!-- Quality History -->
+            <div class="fb-insp-section" id="fb-insp-quality">
+              <h5>Quality History</h5>
+              <div id="fb-insp-quality-content"></div>
+            </div>
+            <!-- Measurements -->
+            <div class="fb-insp-section" id="fb-insp-measurements" style="display:none">
+              <h5>Measurements</h5>
+              <div id="fb-insp-measurements-content"></div>
+            </div>
+            <!-- Checklist -->
+            <div class="fb-insp-section" id="fb-insp-checklist" style="display:none">
+              <h5>Checklist</h5>
+              <div id="fb-insp-checklist-content"></div>
+            </div>
+            <!-- Genealogy -->
+            <div class="fb-insp-section" id="fb-insp-genealogy" style="display:none">
+              <h5>Genealogy</h5>
+              <div id="fb-insp-genealogy-content"></div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
