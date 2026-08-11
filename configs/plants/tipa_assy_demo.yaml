@@ -113,6 +113,7 @@ quality:
 #       └── ASSY-SL06 ─┘
 
 production_line:
+  plant_id: TIPA
   id: ASSY
   label: "ASSY Line"
 

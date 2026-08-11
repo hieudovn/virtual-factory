@@ -47,6 +47,7 @@ def _write_temp_yaml(content: dict) -> str:
 
 MINIMAL_VALID_EXTRA = {
     "production_line": {
+        "plant_id": "TIPA",
         "id": "ASSY",
         "label": "ASSY Line",
         "sub_lines": [
@@ -72,7 +73,7 @@ class TestIdentityParsing:
     def test_real_config_parses(self):
         """The real tipa_assy_demo.yaml must parse correctly."""
         identity = load_assy_demo_identity_from_yaml(str(REAL_CONFIG))
-        assert identity.plant_id == "tipa_assy_demo"
+        assert identity.plant_id == "TIPA"
         assert identity.production_line_id == "ASSY"
         assert identity.label == "ASSY Line"
         assert len(identity.sub_lines) == 6
@@ -134,9 +135,31 @@ class TestValidation:
 
     def test_missing_production_line_section(self):
         """Config without production_line section must raise."""
-        path = _write_temp_yaml({"plant": {"id": "TIPA"}})
+        path = _write_temp_yaml({})
         try:
             with pytest.raises(SubLineIdentityError, match="production_line"):
+                load_assy_demo_identity_from_yaml(path)
+        finally:
+            os.unlink(path)
+
+    def test_wrong_plant_id_rejected(self):
+        """Non-'TIPA' plant_id must be rejected."""
+        cfg = copy.deepcopy(MINIMAL_VALID_EXTRA)
+        cfg["production_line"]["plant_id"] = "SOME_OTHER_PLANT"
+        path = _write_temp_yaml(cfg)
+        try:
+            with pytest.raises(SubLineIdentityError, match="plant_id"):
+                load_assy_demo_identity_from_yaml(path)
+        finally:
+            os.unlink(path)
+
+    def test_wrong_production_line_id_rejected(self):
+        """Non-'ASSY' production_line_id must be rejected."""
+        cfg = copy.deepcopy(MINIMAL_VALID_EXTRA)
+        cfg["production_line"]["id"] = "NOT_ASSY"
+        path = _write_temp_yaml(cfg)
+        try:
+            with pytest.raises(SubLineIdentityError, match="production_line_id"):
                 load_assy_demo_identity_from_yaml(path)
         finally:
             os.unlink(path)

@@ -106,8 +106,18 @@ def _validate_tipa_demo_identity(pline: AssyProductionLineIdentity) -> None:
     """
     if not pline.plant_id:
         raise SubLineIdentityError("plant_id must not be empty")
+    if pline.plant_id != "TIPA":
+        raise SubLineIdentityError(
+            f"plant_id must be 'TIPA' for current TIPA baseline, "
+            f"got {pline.plant_id!r}"
+        )
     if not pline.production_line_id:
         raise SubLineIdentityError("production_line_id must not be empty")
+    if pline.production_line_id != "ASSY":
+        raise SubLineIdentityError(
+            f"production_line_id must be 'ASSY' for current TIPA baseline, "
+            f"got {pline.production_line_id!r}"
+        )
 
     ids = [sl.sub_line_id for sl in pline.sub_lines]
 
@@ -181,13 +191,15 @@ def load_assy_demo_identity_from_yaml(path: str) -> AssyProductionLineIdentity:
             f"No 'production_line' section found in {path}"
         )
 
+    plant_id = pline_data.get("plant_id", "")
     line_id = pline_data.get("id", "")
+
+    if not plant_id:
+        raise SubLineIdentityError("production_line.plant_id is required")
     if not line_id:
         raise SubLineIdentityError("production_line.id is required")
 
     line_label = pline_data.get("label", line_id)
-
-    plant_id = data.get("plant", {}).get("id", "TIPA")
 
     # Parse sub-lines
     raw_sub_lines = pline_data.get("sub_lines", [])
