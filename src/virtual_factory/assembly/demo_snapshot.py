@@ -72,6 +72,38 @@ class QualityEventView:
 
 
 @dataclass
+class QualityRecordView:
+    """M6-S04B-I06-P01 — Detached read model of one quality record.
+
+    Built from QualityRecord only.  No mutable runtime references.
+    """
+    record_id: str = ""
+    wip_id: str = ""
+    station_id: str = ""
+    check_type: str = ""
+    disposition: str = ""
+    attempt_number: int = 0
+    simulation_time_s: float = 0.0
+    measurements: list[dict] = field(default_factory=list)
+    checklist_items: list[str] = field(default_factory=list)
+    reason_code: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "record_id": self.record_id,
+            "wip_id": self.wip_id,
+            "station_id": self.station_id,
+            "check_type": self.check_type,
+            "disposition": self.disposition,
+            "attempt_number": self.attempt_number,
+            "simulation_time_s": self.simulation_time_s,
+            "measurements": self.measurements,
+            "checklist_items": self.checklist_items,
+            "reason_code": self.reason_code,
+        }
+
+
+@dataclass
 class ProductionSummary:
     """Production counters."""
     motors_created: int = 0     # AP04 joins completed
@@ -91,6 +123,7 @@ class AssyDemoSnapshot:
 
     M6-S04B-I03: Additive identity fields — plant_id, production_line_id,
     sub_line_id, variant.  Existing S04 fields preserved.
+    M6-S04B-I06-P01: Additive quality_records field.
     """
 
     simulation_time_s: float = 0.0
@@ -100,6 +133,7 @@ class AssyDemoSnapshot:
     positions: list[StationPositionView] = field(default_factory=list)
     genealogy: list[GenealogySummary] = field(default_factory=list)
     recent_quality_events: list[QualityEventView] = field(default_factory=list)
+    quality_records: list[QualityRecordView] = field(default_factory=list)
     production: ProductionSummary = field(default_factory=ProductionSummary)
     scenario: str = ""
 
@@ -162,6 +196,7 @@ class AssyDemoSnapshot:
                 "rso2_buffer": self.production.rso2_buffer,
             },
             "scenario": self.scenario,
+            "quality_records": [qr.to_dict() for qr in self.quality_records],
             # M6-S04B-I03 — additive identity
             "plant_id": self.plant_id,
             "production_line_id": self.production_line_id,
@@ -234,6 +269,25 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
             join_station=rec.join_station,
         ))
 
+    # Quality records — additive projection (M6-S04B-I06-P01)
+    quality_records: list[QualityRecordView] = []
+    for wip_id in runtime.wip_ids:
+        qh = runtime.get_quality_history(wip_id)
+        if qh:
+            for rec in qh.records:
+                quality_records.append(QualityRecordView(
+                    record_id=rec.record_id,
+                    wip_id=rec.wip_id,
+                    station_id=rec.station_id,
+                    check_type=rec.check_type.value if hasattr(rec.check_type, 'value') else str(rec.check_type),
+                    disposition=rec.disposition,
+                    attempt_number=rec.attempt_number,
+                    simulation_time_s=rec.simulation_time_s,
+                    measurements=[m.to_dict() for m in rec.measurements],
+                    checklist_items=list(rec.checklist_items),
+                    reason_code=rec.reason_code,
+                ))
+
     # Production summary
     holds = 0
     released = 0
@@ -262,6 +316,7 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
         positions=positions,
         genealogy=genealogy,
         recent_quality_events=quality_events,
+        quality_records=quality_records,
         production=prod,
         scenario=scenario,
     )
