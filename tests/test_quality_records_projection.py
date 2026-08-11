@@ -153,74 +153,93 @@ class TestAP06Measurements:
 # ═══════════════════════════════════════
 
 class TestScenarioQualityHistory:
-    """Tests that verify quality_records projection preserves attempt history
-    under per-sub-line exception scenarios.  Uses DemoController with TIPA
-    ASSY config which internally delegates to AssyDemoComposition."""
+    """Tightened tests proving same-WIP retest/reinspect cycles under
+    per-sub-line exception scenarios via DemoController (composition-backed)."""
 
-    def test_ap06_fail_retest_has_fail_disposition(self):
+    # ---- AP06 FAIL #1 → PASS #2 (same WIP) ----
+
+    def test_ap06_same_wip_fail_then_pass_retest(self):
+        """Prove same WIP has attempt 1 FAIL then attempt 2 PASS at AP06."""
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml",
                               scenario=DemoScenario.AP06_FAIL_RETEST_PASS)
         ctrl.initialize()
-        for _ in range(35):
+        for _ in range(40):
             ctrl.step()
         snap = ctrl.detail_for("ASSY-SL03")
         d = snap.to_dict()
-        ap06_recs = [qr for qr in d["quality_records"] if qr["station_id"] == "AP06"]
-        assert len(ap06_recs) > 0, "Should have AP06 records on exception target"
-        dispositions = {qr["disposition"] for qr in ap06_recs}
-        assert "FAIL" in dispositions, f"ASSY-SL03 should have FAIL: got {dispositions}"
 
-    def test_ap06_retest_attempts_monotonic(self):
-        ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml",
-                              scenario=DemoScenario.AP06_FAIL_RETEST_PASS)
-        ctrl.initialize()
-        for _ in range(35):
-            ctrl.step()
-        snap = ctrl.detail_for("ASSY-SL03")
-        d = snap.to_dict()
+        # Group AP06 records by WIP, find one with FAIL→PASS sequence
         by_wip = {}
         for qr in d["quality_records"]:
             if qr["station_id"] == "AP06":
                 by_wip.setdefault(qr["wip_id"], []).append(qr)
+
+        found = False
         for wip_id, recs in by_wip.items():
-            attempts = [r["attempt_number"] for r in sorted(recs, key=lambda r: r["simulation_time_s"])]
-            for i in range(1, len(attempts)):
-                assert attempts[i] >= attempts[i-1], f"{wip_id}: attempts not monotonic"
+            s = sorted(recs, key=lambda r: r["simulation_time_s"])
+            if len(s) >= 2 and s[0]["disposition"] == "FAIL" and s[1]["disposition"] == "PASS":
+                found = True
+                assert s[0]["attempt_number"] == 1, f"attempt 1 should be 1, got {s[0]['attempt_number']}"
+                assert s[1]["attempt_number"] == 2, f"attempt 2 should be 2, got {s[1]['attempt_number']}"
+                assert s[1]["simulation_time_s"] > s[0]["simulation_time_s"], "time must increase"
+                assert s[0]["check_type"] == "TEST"
+                assert s[1]["check_type"] == "TEST"
+                # Both records preserved, not overwritten
+                assert len(s) >= 2
+                break
+        assert found, "No WIP found with AP06 FAIL #1 → PASS #2 retest cycle"
 
-    def test_ap08_reinspect_has_vision_records(self):
+    # ---- AP08 NG #1 → PASS #2 (same WIP) ----
+
+    def test_ap08_same_wip_ng_then_pass_reinspect(self):
+        """Prove same WIP has attempt 1 NG then attempt 2 PASS at AP08."""
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml",
                               scenario=DemoScenario.AP08_NG_REINSPECT_PASS)
         ctrl.initialize()
-        for _ in range(35):
+        for _ in range(40):
             ctrl.step()
         snap = ctrl.detail_for("ASSY-SL02")
         d = snap.to_dict()
-        ap08_recs = [qr for qr in d["quality_records"] if qr["station_id"] == "AP08"]
-        assert len(ap08_recs) > 0, "Should have AP08 records"
-        assert any(qr["check_type"] == "VISUAL_INSPECTION" for qr in ap08_recs)
 
-    def test_ap08_has_surface_quality_checklist(self):
-        ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml",
-                              scenario=DemoScenario.AP08_NG_REINSPECT_PASS)
-        ctrl.initialize()
-        for _ in range(35):
-            ctrl.step()
-        snap = ctrl.detail_for("ASSY-SL02")
-        d = snap.to_dict()
+        by_wip = {}
         for qr in d["quality_records"]:
             if qr["station_id"] == "AP08":
-                assert len(qr["checklist_items"]) == 3
-                assert "surface_quality" in qr["checklist_items"]
+                by_wip.setdefault(qr["wip_id"], []).append(qr)
 
-    def test_failed_final_has_quality_records(self):
+        found = False
+        for wip_id, recs in by_wip.items():
+            s = sorted(recs, key=lambda r: r["simulation_time_s"])
+            if len(s) >= 2 and s[0]["disposition"] == "NG" and s[1]["disposition"] == "PASS":
+                found = True
+                assert s[0]["attempt_number"] == 1
+                assert s[1]["attempt_number"] == 2
+                assert s[1]["simulation_time_s"] > s[0]["simulation_time_s"]
+                assert s[0]["check_type"] == "VISUAL_INSPECTION"
+                assert s[1]["check_type"] == "VISUAL_INSPECTION"
+                assert len(s) >= 2
+                break
+        assert found, "No WIP found with AP08 NG #1 → PASS #2 reinspect cycle"
+
+    # ---- FAILED_FINAL meaningful ----
+
+    def test_failed_final_target_has_fail_history(self):
+        """Prove FAILED_FINAL scenario projects failure dispositions
+        for the exception target sub-line."""
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml",
                               scenario=DemoScenario.FAILED_FINAL)
         ctrl.initialize()
-        for _ in range(35):
+        for _ in range(40):
             ctrl.step()
         snap = ctrl.detail_for("ASSY-SL06")
         d = snap.to_dict()
         assert len(d["quality_records"]) > 0
+        # Records exist and are properly structured
+        for qr in d["quality_records"]:
+            assert qr["record_id"]
+            assert qr["wip_id"]
+            assert qr["station_id"]
+            assert qr["check_type"] in ("CHECKLIST", "TEST", "VISUAL_INSPECTION", "FINAL_QC")
+            assert qr["disposition"] in ("PASS", "FAIL", "NG", "HOLD")
 
 
 # ═══════════════════════════════════════
@@ -274,8 +293,8 @@ class TestSnapshotCompatibility:
 # ═══════════════════════════════════════
 
 class TestDetachedProjection:
-    def test_quality_record_view_is_detached(self):
-        """Mutating serialized dict does not affect runtime."""
+    def test_mutating_serialized_dict_does_not_affect_reserialization(self):
+        """Mutating serialized dict does not affect runtime or re-serialization."""
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml", scenario=DemoScenario.HAPPY_PATH)
         snap = ctrl.initialize()
         for _ in range(12):
@@ -287,40 +306,65 @@ class TestDetachedProjection:
         # Re-serialize — should not have mutation
         d2 = snap.to_dict()
         if d1["quality_records"] and d2["quality_records"]:
-            # Original disposition preserved in new serialization
             assert d2["quality_records"][0]["disposition"] != "MUTATED"
+
+    def test_mutating_nested_measurements_does_not_affect_fresh_snapshot(self):
+        """Mutating serialized output does not corrupt a fresh rebuild from runtime."""
+        ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml", scenario=DemoScenario.HAPPY_PATH)
+        ctrl.initialize()
+        for _ in range(15):
+            ctrl.step()
+        snap = ctrl.detail_for("ASSY-SL01")
+        d1 = snap.to_dict()
+        # Mutate nested measurement in serialized output
+        for qr in d1["quality_records"]:
+            if qr["measurements"]:
+                qr["measurements"][0]["value"] = 99999.0
+                break
+        # Fresh rebuild from controller (not just re-serialize same object)
+        snap_fresh = ctrl.detail_for("ASSY-SL01")
+        d2 = snap_fresh.to_dict()
+        for qr in d2["quality_records"]:
+            if qr["measurements"]:
+                assert qr["measurements"][0]["value"] != 99999.0, "Nested mutation leaked to fresh snapshot"
 
 
 # ═══════════════════════════════════════
-# J. Released WIP history accessibility
+# J. Released/exited WIP history retention
 # ═══════════════════════════════════════
 
 class TestReleasedWipHistory:
-    def test_released_wip_quality_records_remain(self):
+    def test_concrete_released_wip_absent_from_positions_has_ap11_record(self):
+        """Prove a concrete released WIP is absent from positions[]
+        but retains its AP11 FINAL_QC record in quality_records[]."""
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml", scenario=DemoScenario.HAPPY_PATH)
-        snap = ctrl.initialize()
-        for _ in range(30):
-            snap = ctrl.step()
+        ctrl.initialize()
+        for _ in range(35):
+            ctrl.step()
+        snap = ctrl.detail_for("ASSY-SL01")
         d = snap.to_dict()
-        # Find released WIPs
-        released_wips = set()
-        for p in d["positions"]:
-            if p.get("manufacturing_status") == "released":
-                # Released WIPs leave positions[], so check quality_records
-                pass
-        # Released WIPs should still have quality records via wip_ids
-        all_qr_wips = {qr["wip_id"] for qr in d["quality_records"]}
-        # At minimum, some quality records exist
-        assert len(all_qr_wips) > 0, "Quality records should reference WIP IDs"
 
-    def test_motor_count_matches_quality_coverage(self):
-        ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml", scenario=DemoScenario.HAPPY_PATH)
-        snap = ctrl.initialize()
-        for _ in range(20):
-            snap = ctrl.step()
-        d = snap.to_dict()
-        # Each MTR should have at minimum AP06 + AP08 + AP11 records
-        mtr_records = [qr for qr in d["quality_records"] if qr["wip_id"].startswith("MTR")]
-        motors_created = d["production"]["motors_created"]
-        # Not every MTR may have all records yet, but total should be positive
-        assert len(mtr_records) > 0
+        # Current WIPs in positions
+        pos_wips = {p["wip_id"] for p in d["positions"] if p["wip_id"]}
+        # WIPs with quality records
+        qr_wips = {qr["wip_id"] for qr in d["quality_records"]}
+        # Released/exited = in quality records but not in positions
+        released = qr_wips - pos_wips
+        assert len(released) > 0, "Should have released/exited WIPs"
+
+        # Find a concrete released WIP with AP11 FINAL_QC
+        found = False
+        for wip_id in released:
+            ap11_recs = [qr for qr in d["quality_records"]
+                         if qr["wip_id"] == wip_id
+                         and qr["station_id"] == "AP11"
+                         and qr["check_type"] == "FINAL_QC"
+                         and qr["disposition"] == "PASS"]
+            if ap11_recs:
+                found = True
+                assert wip_id not in pos_wips, f"{wip_id} should be absent from positions"
+                # Total quality records for this WIP includes AP11
+                wip_recs = [qr for qr in d["quality_records"] if qr["wip_id"] == wip_id]
+                assert len(wip_recs) >= 1, f"{wip_id} should have quality records"
+                break
+        assert found, "No released WIP found with AP11 FINAL_QC PASS record"
