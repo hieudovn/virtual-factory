@@ -1,0 +1,278 @@
+<!DOCTYPE html><html lang="en">
+<head><meta charset="UTF-8"><title>DG04-02 — Frame B Sub-line Detail Review Harness</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--panel:#0f1a2e;--border:#1e3a5f;--text:#e0e0e0;--muted:#8899bb;--pass:#4ecca3;--fail:#e94560;--warn:#ffc107;--cyan:#17a2b8}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* Review Controls (NOT production UI) */
+#review-bar{display:flex;gap:8px;padding:6px 12px;background:#1a1020;border-bottom:1px solid #2a1a40;align-items:center;flex-wrap:wrap;font-size:11px}
+#review-bar label{color:#9988bb;font-size:11px;margin-right:2px}
+#review-bar button,#review-bar select{padding:3px 10px;border:1px solid #2a1a40;border-radius:3px;background:#141028;color:#9988bb;cursor:pointer;font-size:11px}
+#review-bar button.active{background:#2a1a40;color:#c0a0e0;border-color:#4a3a60}
+#review-bar .sep{width:1px;height:18px;background:#2a1a40;margin:0 4px}
+
+/* Header */
+#header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#1a2332;border-bottom:2px solid var(--border);min-height:44px}
+#header .back{color:var(--cyan);cursor:pointer;font-size:12px}
+#header .title{font-size:18px;font-weight:600}
+#header .title .sl{color:var(--text)}#header .title .var{color:var(--muted);font-size:13px}
+#header .state-badge{padding:4px 12px;border-radius:4px;font-size:13px;font-weight:600}
+#header .meta{font-size:12px;color:var(--muted);display:flex;gap:16px}
+.state-operating{background:#1b4332;color:var(--pass)}.state-hold{background:#4a1a1a;color:var(--fail)}.state-ready{background:#0d2b3e;color:var(--cyan)}.state-stopped{background:#1a2332;color:var(--muted)}
+
+/* Main */
+#main{display:flex;flex:1;overflow:hidden}
+#canvas-wrap{flex:1;overflow:hidden;position:relative;background:var(--bg)}
+#canvas-svg{width:100%;height:100%;display:block}
+
+#inspector{width:280px;background:var(--panel);border-left:2px solid var(--border);padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;font-size:12px}
+#inspector.collapsed{width:36px;padding:8px 4px;writing-mode:vertical-lr;text-orientation:mixed;color:var(--muted);cursor:pointer}
+#inspector h3{color:var(--fail);font-size:13px;margin-bottom:4px}
+#inspector .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1a2740}
+#inspector .row .k{color:var(--muted)}#inspector .row .v{color:var(--text)}
+#inspector .genealogy-item{font-size:11px;padding:4px 8px;background:#1a2330;border-radius:3px;margin:3px 0;border-left:3px solid var(--warn)}
+#inspector .event-item{font-size:10px;padding:3px 6px;background:#1a1010;border-radius:3px;margin:2px 0}
+#inspector .event-item.PASS{background:#0d1a10}.event-item.FAIL,.event-item.NG{background:#1a1010}
+#inspector .gap{color:#555;font-style:italic;font-size:10px}
+
+/* Controls */
+#controls{display:flex;align-items:center;gap:8px;padding:6px 16px;background:#1a2332;border-top:1px solid var(--border)}
+#controls button{padding:4px 12px;border:none;border-radius:3px;font-size:12px;cursor:pointer;color:#fff}
+.btn-back{background:var(--cyan)}.btn-reset{background:var(--fail)}.btn-step{background:var(--pass);color:#0d1117}
+.btn-auto{background:var(--cyan)}.btn-pause{background:#5c4700}
+#controls label{font-size:11px;color:var(--muted)}
+
+/* Layer toggle indicators */
+.layer-on{color:var(--pass)}.layer-off{color:#555}
+</style></head>
+<body>
+<div id="app">
+<div id="review-bar">
+  <label>DG04-02 REVIEW HARNESS</label> <span class="sep"></span>
+  <label>State:</label>
+  <select id="state-select" onchange="loadFixture(this.value)"><option>B1_normal</option><option>B2_ap06_hold</option><option>B3_ap04_join</option><option>B4_ap08_ng</option><option>B5_ap11_released</option></select>
+  <span class="sep"></span>
+  <label>Viewport:</label>
+  <button onclick="setViewport(1920,1080)" id="v1920" class="active">1920×1080</button>
+  <button onclick="setViewport(1366,768)" id="v1366">1366×768</button>
+  <span class="sep"></span>
+  <label>Layers:</label>
+  <button onclick="toggleLayer('l1')" id="l1" class="active layer-on">Ops</button>
+  <button onclick="toggleLayer('l2')" id="l2" class="active layer-on">Quality</button>
+  <button onclick="toggleLayer('l3')" id="l3" class="layer-off">Context</button>
+  <span class="sep"></span>
+  <label>Inspector:</label>
+  <button onclick="toggleInspector()">Toggle</button>
+  <span class="sep"></span>
+  <label>Zoom:</label>
+  <button onclick="zoomOut()">−</button>
+  <button onclick="zoomReset()">100%</button>
+  <button onclick="zoomIn()">+</button>
+  <button onclick="zoomFit()">Fit</button>
+</div>
+
+<div id="header">
+  <span class="back">&larr; Back to ASSY Overview</span>
+  <span class="title"><span id="h-sl" class="sl">ASSY-SL01</span> <span id="h-var" class="var">HYDRAULIC</span></span>
+  <span class="meta"><span id="h-time">t=480s</span> <span id="h-dwell">DWELL 8</span></span>
+  <span id="h-state" class="state-badge state-operating">OPERATING</span>
+</div>
+
+<div id="main">
+  <div id="canvas-wrap">
+    <svg id="canvas-svg" viewBox="0 0 1920 700" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+  <div id="inspector">
+    <h3>INSPECTOR</h3>
+    <div id="inspector-content"><span class="gap">Click a station or WIP to inspect</span></div>
+  </div>
+</div>
+
+<div id="controls">
+  <button class="btn-back">&larr; Back</button><button class="btn-reset">&#x27F3; Reset</button><button class="btn-step">&#x25B6; Step</button><button class="btn-auto">&#x25B6;&#x25B6; Auto</button><button class="btn-pause" disabled>&#x23F8; Pause</button>
+  <label>Speed: 1x</label><label>Scenario: HAPPY_PATH</label>
+</div>
+</div>
+
+<script>
+/* ===== Fixture Loader ===== */
+const STATIONS=['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
+const LANDMARKS={AP04:'JOIN',AP06:'TEST',AP08:'VISION',AP11:'FINAL'};
+let currentData=null,selectedStation=null,zoomLevel=1;
+let showL1=true,showL2=true,showL3=false;
+
+async function loadFixture(name){
+  const resp=await fetch(`fixtures/${name}.json`);
+  currentData=await resp.json();selectedStation=null;
+  renderAll();
+}
+
+function setViewport(w,h){
+  document.getElementById('app').style.width=w+'px';
+  document.getElementById('app').style.height=h+'px';
+  document.getElementById('v1920').classList.toggle('active',w===1920);
+  document.getElementById('v1366').classList.toggle('active',w===1366);
+  renderAll();
+}
+
+function toggleLayer(l){const el=document.getElementById(l);el.classList.toggle('active');el.classList.toggle('layer-on');el.classList.toggle('layer-off');
+  if(l==='l1')showL1=el.classList.contains('active');
+  if(l==='l2')showL2=el.classList.contains('active');
+  if(l==='l3')showL3=el.classList.contains('active');
+  renderAll();}
+
+function toggleInspector(){document.getElementById('inspector').classList.toggle('collapsed')}
+function zoomOut(){zoomLevel=Math.max(0.5,zoomLevel-0.25);applyZoom()}
+function zoomIn(){zoomLevel=Math.min(2.0,zoomLevel+0.25);applyZoom()}
+function zoomReset(){zoomLevel=1;applyZoom()}
+function zoomFit(){zoomLevel=1;applyZoom()}
+function applyZoom(){
+  const svg=document.getElementById('canvas-svg');
+  svg.setAttribute('viewBox',`0 0 ${1920/zoomLevel} ${700/zoomLevel}`);
+}
+
+/* ===== Render ===== */
+function renderAll(){
+  if(!currentData)return;
+  const d=currentData;
+  // Header
+  document.getElementById('h-sl').textContent=d.sub_line_id;
+  document.getElementById('h-var').textContent=d.variant.toUpperCase();
+  document.getElementById('h-time').textContent='t='+d.simulation_time_s.toFixed(0)+'s';
+  document.getElementById('h-dwell').textContent='DWELL '+d.dwell_number;
+  const sb=document.getElementById('h-state');
+  if(d.line_state==='operating'){sb.textContent='OPERATING';sb.className='state-badge state-operating'}
+  else if(d.line_state==='ready_to_index'){sb.textContent='READY';sb.className='state-badge state-ready'}
+  else{sb.textContent=d.line_state.toUpperCase();sb.className='state-badge state-stopped'}
+  // Canvas
+  renderCanvas(d);
+  // Inspector if selected
+  if(selectedStation)renderInspector(d,selectedStation);
+}
+
+function renderCanvas(d){
+  const svg=document.getElementById('canvas-svg');
+  let html='<defs><linearGradient id="bgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0d1117"/><stop offset="100%" stop-color="#141a24"/></linearGradient></defs>';
+  html+='<rect width="1920" height="700" fill="url(#bgG)"/>';
+
+  // Conveyor
+  html+='<rect x="40" y="340" width="1840" height="8" rx="4" fill="#1a2740"/>';
+
+  // Station nodes
+  const sxStart=60,sxStep=140;
+  STATIONS.forEach((stId,i)=>{
+    const sx=sxStart+i*sxStep;
+    const pos=d.positions.find(p=>p.position_id===stId)||{};
+    const isLandmark=LANDMARKS[stId];
+    const isHeld=pos.is_quality_hold;
+    const isOcc=pos.is_occupied;
+    const isSel=selectedStation===stId;
+
+    let fill='#111d30',stroke='#1e3a5f',sw=1;
+    if(isHeld){fill='#1a1010';stroke='#e94560';sw=2}
+    else if(isOcc){fill='#111d30';stroke=isLandmark?'#ffc107':'#4ecca3';sw=isLandmark?2:1}
+    if(isSel){stroke='#17a2b8';sw=3}
+
+    html+=`<g class="station" data-station="${stId}" style="cursor:pointer" onclick="selectStation('${stId}')">`;
+    html+=`<rect x="${sx-40}" y="250" width="80" height="80" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+    html+=`<text x="${sx}" y="272" fill="${isHeld?'#e94560':'#e0e0e0'}" font-size="14" font-weight="600" text-anchor="middle">${stId}</text>`;
+
+    if(isLandmark&&showL1){
+      const lc=isHeld&&stId===d.positions.find(p=>p.position_id===stId&&p.is_quality_hold)?'#e94560':'#ffc107';
+      html+=`<text x="${sx}" y="288" fill="${lc}" font-size="9" text-anchor="middle">${LANDMARKS[stId]}</text>`;
+    }
+
+    if(isOcc&&showL1){
+      // WIP token
+      const wc=pos.wip_type==='MTR'?'#ffc107':'#4ecca3';
+      html+=`<rect x="${sx-34}" y="296" width="68" height="16" rx="3" fill="#1a2330" stroke="${wc}" stroke-width="1"/>`;
+      html+=`<text x="${sx}" y="308" fill="${wc}" font-size="12" font-weight="600" text-anchor="middle">${pos.wip_id}</text>`;
+      // Carrier
+      if(pos.carrier_id&&showL1){
+        html+=`<text x="${sx}" y="324" fill="#666" font-size="10" text-anchor="middle">${pos.carrier_id}</text>`;
+      }
+      // Quality badge
+      if(pos.latest_quality_result&&showL2){
+        const qc=pos.latest_quality_result==='PASS'?'#4ecca3':'#e94560';
+        html+=`<rect x="${sx-20}" y="316" width="40" height="12" rx="2" fill="${pos.latest_quality_result==='PASS'?'#1b4332':'#4a1a1a'}"/>`;
+        html+=`<text x="${sx}" y="326" fill="${qc}" font-size="9" text-anchor="middle">${pos.latest_quality_result}${pos.attempt_number>1?' #'+pos.attempt_number:''}</text>`;
+      }
+    }else if(!isOcc){
+      html+=`<text x="${sx}" y="310" fill="#444" font-size="10" text-anchor="middle">—</text>`;
+    }
+
+    html+='</g>';
+  });
+
+  // RSO2 branch at AP04
+  const ap04x=sxStart+4*sxStep;
+  html+=`<line x1="${ap04x}" y1="220" x2="${ap04x}" y2="250" stroke="#9988bb" stroke-width="2" stroke-dasharray="6,3"/>`;
+  html+=`<rect x="${ap04x-30}" y="206" width="60" height="14" rx="2" fill="#141028" stroke="#2a1a40"/>`;
+  html+=`<text x="${ap04x}" y="217" fill="#9988bb" font-size="9" text-anchor="middle">RSO2 IN</text>`;
+
+  // SSO2 input
+  html+=`<rect x="12" y="266" width="36" height="16" rx="2" fill="#111d30" stroke="#1e3a5f"/>`;
+  html+=`<text x="30" y="278" fill="#4ecca3" font-size="9" text-anchor="middle">SSO2</text>`;
+  html+=`<line x1="48" y1="274" x2="${sxStart-6}" y2="274" stroke="#4ecca3" stroke-width="1.5"/>`;
+
+  // OUT arrow at end
+  const outX=sxStart+11*sxStep+50;
+  html+=`<rect x="${outX-10}" y="266" width="40" height="16" rx="2" fill="#0d2b3e" stroke="#17a2b8"/>`;
+  html+=`<text x="${outX+10}" y="278" fill="#17a2b8" font-size="9" text-anchor="middle">OUT</text>`;
+  html+=`<line x1="${sxStart+11*sxStep+44}" y1="274" x2="${outX-14}" y2="274" stroke="#17a2b8" stroke-width="1.5"/>`;
+
+  // Event strip
+  if(showL3&&d.recent_quality_events){
+    let ey=390;
+    html+=`<text x="40" y="${ey}" fill="#666" font-size="10">RECENT EVENTS</text>`;
+    d.recent_quality_events.slice(-6).forEach(e=>{
+      ey+=16;
+      const ec=e.disposition==='PASS'?'#4ecca3':'#e94560';
+      html+=`<text x="40" y="${ey}" fill="${ec}" font-size="10">${e.disposition} | ${e.wip_id} @ ${e.station_id} #${e.attempt} | t=${e.simulation_time_s.toFixed(0)}s</text>`;
+    });
+  }
+
+  svg.innerHTML=html;
+}
+
+function selectStation(stId){
+  selectedStation=selectedStation===stId?null:stId;
+  if(selectedStation&&currentData){
+    const pos=currentData.positions.find(p=>p.position_id===stId);
+    if(pos)renderInspector(currentData,stId);
+    else document.getElementById('inspector-content').innerHTML='<span class="gap">No data</span>';
+  }else{
+    document.getElementById('inspector-content').innerHTML='<span class="gap">Click a station or WIP to inspect</span>';
+  }
+  renderAll();
+}
+
+function renderInspector(d,stId){
+  const pos=d.positions.find(p=>p.position_id===stId);
+  if(!pos)return;
+  const gene=d.genealogy.filter(g=>g.child_wip_id===pos.wip_id||g.parent_wip_ids.includes(pos.wip_id));
+  let html=`<h3>${stId}: ${pos.station_label||stId}</h3>`;
+  html+=`<div class="row"><span class="k">WIP</span><span class="v">${pos.wip_id||'—'}</span></div>`;
+  html+=`<div class="row"><span class="k">Carrier</span><span class="v">${pos.carrier_id||'—'}</span></div>`;
+  html+=`<div class="row"><span class="k">Status</span><span class="v">${pos.manufacturing_status||pos.quality_status||'—'}</span></div>`;
+  if(pos.latest_quality_result)html+=`<div class="row"><span class="k">Quality</span><span class="v">${pos.latest_quality_result} #${pos.attempt_number}</span></div>`;
+  if(pos.is_quality_hold)html+=`<div class="row"><span class="k">Hold</span><span class="v" style="color:#e94560">${pos.held_reason}</span></div>`;
+  if(gene.length){
+    html+='<h3>Genealogy</h3>';
+    gene.forEach(g=>{html+=`<div class="genealogy-item"><b>${g.child_wip_id}</b> &larr; ${g.parent_wip_ids.join(' + ')}<br><small>${g.join_station} @ t=${g.join_time_s.toFixed(0)}s</small></div>`;});
+  }
+  if(d.recent_quality_events&&d.recent_quality_events.length){
+    html+='<h3>Events</h3>';
+    const ev=d.recent_quality_events.filter(e=>e.station_id===stId||e.wip_id===pos.wip_id);
+    if(ev.length)ev.forEach(e=>{html+=`<div class="event-item ${e.disposition}">${e.disposition} | ${e.event_type} | #${e.attempt} | t=${e.simulation_time_s.toFixed(0)}s</div>`;});
+    else html+='<span class="gap">No events for this station</span>';
+  }
+  html+='<span class="gap" style="margin-top:8px">DATA GAP: Measurements/Checklist detail not in snapshot contract</span>';
+  document.getElementById('inspector-content').innerHTML=html;
+}
+
+document.addEventListener('DOMContentLoaded',()=>{loadFixture('B1_normal');setViewport(1920,1080);});
+</script>
+</body></html>
