@@ -90,3 +90,56 @@ quality:
   AP11:
     max_attempts: 1
     scenario: PASS   # final QC always PASS for demo
+
+# ═══════════════════════════════════════════════════════════
+# M6-S04B-I01 — Production Line Deployment Identity (ADDITIVE)
+# ═══════════════════════════════════════════════════════════
+#
+# This section is ADDITIVE. The existing process/runtime config
+# (conveyor, station_durations, upstream, quality, ap04, identity,
+# simulation) is unchanged and continues to be loaded by
+# load_assy_config_from_yaml() as before.
+#
+# This section is read by load_assy_demo_identity_from_yaml().
+#
+# TIPA Production Hierarchy:
+#   TIPA Plant
+#   └── ASSY Production Line
+#       ├── ASSY-SL01 ─┐
+#       ├── ASSY-SL02  ├─ Hydraulic SSO2 Input Variant
+#       ├── ASSY-SL03 ─┘
+#       ├── ASSY-SL04 ─┐
+#       ├── ASSY-SL05  ├─ Thermal SSO2 Input Variant
+#       └── ASSY-SL06 ─┘
+
+production_line:
+  id: ASSY
+  label: "ASSY Line"
+
+  sub_lines:
+    - id: ASSY-SL01
+      variant: hydraulic
+      label: "ASSY-SL01 — Hydraulic"
+
+    - id: ASSY-SL02
+      variant: hydraulic
+      label: "ASSY-SL02 — Hydraulic"
+
+    - id: ASSY-SL03
+      variant: hydraulic
+      label: "ASSY-SL03 — Hydraulic"
+
+    - id: ASSY-SL04
+      variant: thermal
+      label: "ASSY-SL04 — Thermal"
+
+    - id: ASSY-SL05
+      variant: thermal
+      label: "ASSY-SL05 — Thermal"
+
+    - id: ASSY-SL06
+      variant: thermal
+      label: "ASSY-SL06 — Thermal"
+
+  demo:
+    target_sub_line_for_exception: ASSY-SL03
