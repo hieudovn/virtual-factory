@@ -13,6 +13,7 @@ const ctrl = {
   _speed: 1.0,
   _scenario: 'HAPPY_PATH',
   _selectedSubLineId: 'ASSY-SL01',
+  _selectionInitialized: false,
   _lastOverview: null,
   _liveStatus: 'INIT',
 
@@ -24,6 +25,7 @@ const ctrl = {
   async reset() {
     this.stopAuto();
     this._scenario = document.getElementById('scenario-select').value;
+    this._selectionInitialized = false;
     await this.call('reset', { scenario: this._scenario });
     await this.refreshOverview();
   },
@@ -98,8 +100,11 @@ const ctrl = {
     hb.style.color = ov.total_active_holds > 0 ? '#e94560' : '#8899bb';
     this.renderStatus();
 
-    // Sync selected from backend
-    if (ov.selected_sub_line_id) this._selectedSubLineId = ov.selected_sub_line_id;
+    // Initialize selection from backend on first render only
+    if (!this._selectionInitialized) {
+      if (ov.selected_sub_line_id) this._selectedSubLineId = ov.selected_sub_line_id;
+      this._selectionInitialized = true;
+    }
 
     const START_Y = 82, LANE_H = 88, GAP = 12, GROUP_GAP = 20;
     const hydSl = (ov.sub_lines||[]).filter(s=>s.variant==='hydraulic');
