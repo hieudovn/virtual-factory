@@ -102,6 +102,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e
 .fb-qe-item{font-size:11px;padding:4px 0;border-bottom:1px solid #1a2332;color:#8899bb;line-height:1.4}
 .fb-qe-item small{color:#555}
 
+/* Genealogy Context */
+#fb-genealogy-context{padding:10px;border-bottom:1px solid #1e3a5f}
+#fb-genealogy-context h4{font-size:11px;color:#ffc107;margin-bottom:4px;font-weight:600}
+#fb-genealogy-text{font-size:11px;color:#8899bb;line-height:1.4;font-family:monospace}
+
 /* Inspector Placeholder */
 #fb-inspector-placeholder{min-height:80px;padding:10px;transition:all .2s}
 .fb-inspector-collapsed{border-top:2px solid #1e3a5f}

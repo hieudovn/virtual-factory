@@ -214,25 +214,35 @@ function renderLane(sl, y, selectedId) {
 
 /* ==============================
    Frame A → Frame B Navigation
+
+   INVARIANT: At most one frontend AUTO timer may invoke
+   /assy-demo/step at any moment. Frame A timer is stopped
+   when entering Frame B; Frame B timer is stopped when
+   leaving. No competing step sources.
    ============================== */
 function openFrameB(subLineId) {
+  // Stop Frame A AUTO timer before entering Frame B
+  if (ctrl._autoTimer) ctrl.stopAuto();
   document.getElementById('frame-a').style.display = 'none';
   document.getElementById('frame-b').style.display = 'flex';
   document.getElementById('frame-b').style.flexDirection = 'column';
   document.getElementById('frame-b').style.height = '100vh';
   ctrlB._initZoomPan();
+  // Sync speed/scenario from Frame A
+  ctrlB._speed = ctrl._speed;
+  ctrlB._scenario = ctrl._scenario;
   ctrlB.init(subLineId);
 }
 
 function closeFrameB() {
+  // Stop Frame B AUTO timer before leaving
+  if (ctrlB._autoTimer) ctrlB.stopAuto();
   document.getElementById('frame-b').style.display = 'none';
   document.getElementById('frame-a').style.display = 'flex';
   document.getElementById('frame-a').style.flexDirection = 'column';
   document.getElementById('frame-a').style.height = '100vh';
-  if (ctrl._lastOverview) {
-    ctrl.renderOverview(ctrl._lastOverview);
-    ctrl._refreshLaneStyles();
-  }
+  // Fresh overview from backend, not stale cache
+  ctrl.refreshOverview().then(() => ctrl._refreshLaneStyles());
 }
 
 
@@ -261,14 +271,19 @@ const ctrlB = {
   _panY: 0,
 
   async init(subLineId) {
+    // Observational only — does NOT reset runtime.
+    // Runtime state, scenario, counters, WIP positions preserved.
     this._subLineId = subLineId;
-    this._scenario = document.getElementById('fb-scenario-select').value;
+    this._selectedStation = null;
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
-    await this.call('reset', { scenario: this._scenario });
+    // Sync UI controls from carried-over values
+    document.getElementById('fb-scenario-select').value = this._scenario || 'HAPPY_PATH';
+    document.getElementById('fb-speed-select').value = String(this._speed);
     await this.refresh();
   },
 
   async reset() {
+    // Explicit user RESET action — calls backend reset
     this.stopAuto();
     this._scenario = document.getElementById('fb-scenario-select').value;
     this._selectedStation = null;
@@ -319,9 +334,17 @@ const ctrlB = {
 
   async refresh() {
     try {
-      const snap = await (await fetch(`${API}/sub-line/${encodeURIComponent(this._subLineId)}`)).json();
+      const resp = await fetch(`${API}/sub-line/${encodeURIComponent(this._subLineId)}`);
+      if (!resp.ok) throw new Error(`detail: ${resp.status}`);
+      const snap = await resp.json();
       this._lastSnapshot = snap;
       this._liveStatus = 'LIVE';
+      // Sync scenario dropdown from live snapshot
+      if (snap.scenario) {
+        this._scenario = snap.scenario;
+        const sel = document.getElementById('fb-scenario-select');
+        if (sel) sel.value = snap.scenario;
+      }
       this.render(snap);
     } catch (_) {
       this._liveStatus = this._lastSnapshot ? 'STALE' : 'UNAVAILABLE';
@@ -450,6 +473,15 @@ const ctrlB = {
     // LINE OUT arrow indicator text
     html += `<text x="1260" y="355" fill="#17a2b8" font-size="10">LINE OUT \u2192</text>`;
 
+    // AP04 genealogy context label on canvas
+    const genealogy = snap.genealogy || [];
+    if (genealogy.length > 0) {
+      const latest = genealogy[genealogy.length - 1];
+      const ap04x = FB_STATION_X[4]; // AP04 = index 4
+      html += `<text x="${ap04x}" y="280" fill="#ffc107" font-size="9" text-anchor="middle" opacity="0.9">${latest.parent_wip_ids.join(' + ')}</text>`;
+      html += `<text x="${ap04x}" y="292" fill="#ffc107" font-size="9" text-anchor="middle" opacity="0.7">\u2192 ${latest.child_wip_id}</text>`;
+    }
+
     stationsG.innerHTML = html;
 
     // Bind station clicks
@@ -457,6 +489,9 @@ const ctrlB = {
 
     // Render event strip
     this._renderEventStrip(snap);
+
+    // Render genealogy context in right panel
+    this._renderGenealogyContext(snap);
 
     // Apply zoom
     this.applyViewBox();
@@ -515,6 +550,25 @@ const ctrlB = {
     }
     if (!html) html = '<div style="color:#555;font-size:11px">No quality events</div>';
     list.innerHTML = html;
+  },
+
+  _renderGenealogyContext(snap) {
+    const el = document.getElementById('fb-genealogy-text');
+    if (!el) return;
+    const genealogy = snap.genealogy || [];
+    if (genealogy.length === 0) {
+      el.textContent = 'No JOIN records yet';
+      return;
+    }
+    let html = '';
+    for (const g of genealogy.slice(-4).reverse()) {
+      html += `<div style="padding:3px 0;border-bottom:1px solid #1a2332">`;
+      html += `<span style="color:#ffc107">${g.parent_wip_ids.join(' + ')}</span>`;
+      html += ` → <span style="color:#ffc107;font-weight:600">${g.child_wip_id}</span>`;
+      html += ` <small style="color:#555">@ ${g.join_station} t=${(g.join_time_s||0).toFixed(0)}s</small>`;
+      html += `</div>`;
+    }
+    el.innerHTML = html;
   },
 
   /* ---------- Zoom / Pan ---------- */
