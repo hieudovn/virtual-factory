@@ -36,17 +36,21 @@ M6-S05 ░░░░░░░░░░░░░░░░░░░░ PENDING     
 | M6-S04 Visualization + Controls | CLOSED | 10-Aug | `bceeba9` |
 | **M6-S05 MES Observation** | **PENDING** | — | — |
 
-### M6-S04B Design Architecture Phase (11-Aug)
+### M6-S04B Design Architecture Baseline (11-Aug) — FROZEN ✅
 
 | Deliverable | Nội dung | Trạng thái |
 |-------------|---------|-----------|
 | DG01 | Canonical UI/UX Design Guide v1.1 | CLOSED |
 | DG02 | Screen/Information Architecture | CLOSED |
 | DG02.1 | Parallel ASSY Sub-line Visualization | CLOSED |
-| DG02.2 | Terminology Normalization | READY FOR SA CLOSURE |
-| **DG03** | **Visual Design / Figma Gate** | **PENDING** |
+| DG02.2 | Terminology Normalization | CLOSED |
+| DG02.2-C01 | Consistency Correction | CLOSED |
+| **DG03** | **Visual Design / Figma Gate** | **AUTHORIZED** ⬅ |
+| M6-S05 | MES Observation Integration | **NOT AUTHORIZED** |
 
 **Terminology frozen**: SSO2 Line, RSO2 Line, ASSY Line, ASSY-SL01..SL06, Hydraulic/Thermal SSO2 Input Variant.
+
+> ⚠️ **DG03 Implementation Note**: Runtime hiện tại chỉ implement **một ASSY Sub-line detailed flow**. DG03 có thể thiết kế 6 sub-line, nhưng technical mapping phải chỉ rõ phần nào có data/runtime thật và phần nào cần mở rộng runtime trước khi render.
 
 ### Production Hierarchy (DG02.2)
 
