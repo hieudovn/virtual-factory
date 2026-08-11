@@ -139,10 +139,25 @@ function showBackMessage(){
 }
 
 /* ---- Zoom & Pan ---- */
+const CONTENT_BOUNDS={x:0,y:190,w:1920,h:270}; // SSO2→OUT, RSO2→conveyor
+
 function zoomOut(){zoomLevel=Math.max(0.5,zoomLevel-0.25);applyViewBox()}
 function zoomIn(){zoomLevel=Math.min(2.0,zoomLevel+0.25);applyViewBox()}
 function zoomReset(){zoomLevel=1;panX=0;panY=0;applyViewBox()}
-function zoomFit(){zoomLevel=1;panX=0;panY=0;applyViewBox()}
+
+function zoomFit(){
+  // Compute viewBox to enclose the physical content in current viewport
+  const wrap=document.getElementById('canvas-wrap');
+  const wrapW=wrap.clientWidth||1920, wrapH=wrap.clientHeight||700;
+  const c=CONTENT_BOUNDS;
+  const scaleX=wrapW/c.w, scaleY=wrapH/c.h;
+  const scale=Math.min(scaleX,scaleY);
+  zoomLevel=CANVAS_W/(c.w/scale);
+  panX=c.x*CANVAS_W/1920;
+  panY=c.y*CANVAS_H/700;
+  applyViewBox();
+}
+
 function applyViewBox(){
   const svg=document.getElementById('canvas-svg');
   const vw=CANVAS_W/zoomLevel,vh=CANVAS_H/zoomLevel;
@@ -150,19 +165,38 @@ function applyViewBox(){
   svg.setAttribute('viewBox',`${vx} ${vy} ${vw} ${vh}`);
 }
 
-// Wheel zoom
+// Pointer-anchored wheel zoom
+function svgPointFromClient(svgEl,clientX,clientY){
+  const r=svgEl.getBoundingClientRect();
+  const vb=svgEl.viewBox.baseVal;
+  return {
+    x:vb.x+(clientX-r.left)*vb.width/r.width,
+    y:vb.y+(clientY-r.top)*vb.height/r.height
+  };
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   const wrap=document.getElementById('canvas-wrap');
+  const svg=document.getElementById('canvas-svg');
+
   wrap.addEventListener('wheel',e=>{
     e.preventDefault();
+    const p=svgPointFromClient(svg,e.clientX,e.clientY);
+    const oldZoom=zoomLevel;
     const delta=-e.deltaY*0.005;
-    zoomLevel=Math.max(0.5,Math.min(2.0,zoomLevel+delta));
+    zoomLevel=Math.max(0.5,Math.min(2.0,oldZoom+delta));
+    if(zoomLevel===oldZoom)return;
+
+    const newVW=CANVAS_W/zoomLevel,newVH=CANVAS_H/zoomLevel;
+    const r=svg.getBoundingClientRect();
+    const fx=(e.clientX-r.left)/r.width,fy=(e.clientY-r.top)/r.height;
+    panX=(p.x-fx*newVW)*1920/CANVAS_W;
+    panY=(p.y-fy*newVH)*700/CANVAS_H;
     applyViewBox();
   },{passive:false});
 
   // Left-drag pan on empty canvas
   let dragging=false,startX,startY,startPanX,startPanY;
-  const svg=document.getElementById('canvas-svg');
   svg.addEventListener('mousedown',e=>{
     if(e.target===svg||e.target.tagName==='rect'&&!e.target.closest('.station')){
       dragging=true;startX=e.clientX;startY=e.clientY;

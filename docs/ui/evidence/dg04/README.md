@@ -33,7 +33,7 @@ README.md                        — This file
 | Viewport buttons | Toggle 1920×1080 / 1366×768 |
 | Layer toggles | Show/hide Ops / Quality / Context layers |
 | Inspector toggle | Collapse/expand right panel |
-| Zoom −/+/100%/Fit | SVG viewBox control |
+| Zoom −/+/100%/Fit | SVG viewBox control (pointer-anchored wheel zoom, Fit to content) |
 | Station click | Select station → Inspector populates |
 | Wheel over canvas | Zoom around cursor (50%–200%) |
 | Left-drag on canvas | Pan physical canvas |
@@ -59,10 +59,10 @@ Back, Reset, Step, Auto, Pause — these are design representations of proposed 
 
 ## Zoom / Pan
 
-- **100%**: Nominal design scale — full 1920×700 viewBox.
-- **Fit**: Restores full-line view + resets pan — distinct from 100% in semantics (Fit = "see the whole sub-line").
-- **Wheel zoom**: Mouse wheel over canvas → zoom around cursor, clamped 50%–200%.
-- **Left-drag**: Drag on empty canvas area → pan. Selected station preserves selection state.
+- **100%**: Nominal design scale — full 1920×700 viewBox at panX=0, panY=0.
+- **Fit**: Computes viewBox to enclose the physical content (SSO2 INPUT→OUT, RSO2→conveyor) within the current canvas element dimensions. Distinct from 100% — zoom level and panY vary with viewport size.
+- **Wheel zoom**: Pointer-anchored — the SVG coordinate under the cursor remains stationary. Clamped 50%–200%. Keeps the inspected point stable.
+- **Left-drag**: Drag on empty canvas area → pan. Selected station preserves selection state across zoom/pan operations.
 
 ## 1920×1080 Review
 
