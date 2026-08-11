@@ -365,7 +365,7 @@ class AssyOverviewSnapshot:
         }
 
 
-def build_summary(ctx) -> SubLineSummaryView:
+def build_summary(ctx, plant_id: str) -> SubLineSummaryView:
     """Build a SubLineSummaryView from an AssyDemoContext (public API only)."""
     runtime = ctx.runtime
     identity = ctx.identity
@@ -396,8 +396,7 @@ def build_summary(ctx) -> SubLineSummaryView:
     occupied = runtime.conveyor.occupied_positions()
 
     return SubLineSummaryView(
-        plant_id=identity.production_line_id,  # "ASSY" — fixed per I01 model
-        # Actually the canonical hierarchy: plant_id is from composition
+        plant_id=plant_id,
         production_line_id=identity.production_line_id,
         sub_line_id=identity.sub_line_id,
         variant=identity.variant,
@@ -419,43 +418,18 @@ def build_summary(ctx) -> SubLineSummaryView:
 def build_overview(composition) -> AssyOverviewSnapshot:
     """Build an AssyOverviewSnapshot from an AssyDemoComposition."""
     identity = composition.identity
+    plant_id = identity.plant_id if identity else "TIPA"
     summaries: list[SubLineSummaryView] = []
     total_created = 0
     total_released = 0
     total_holds = 0
 
     for ctx in composition.contexts.values():
-        s = build_summary(ctx)
-        # Fix plant_id — it should come from the line identity
+        s = build_summary(ctx, plant_id)
         summaries.append(s)
         total_created += s.motors_created
         total_released += s.motors_released
         total_holds += s.active_quality_holds
-
-    plant_id = identity.plant_id if identity else "TIPA"
-
-    # Inject correct plant_id into each summary
-    corrected_summaries = tuple(
-        SubLineSummaryView(
-            plant_id=plant_id,
-            production_line_id=s.production_line_id,
-            sub_line_id=s.sub_line_id,
-            variant=s.variant,
-            label=s.label,
-            effective_scenario=s.effective_scenario,
-            line_state=s.line_state,
-            dwell_number=s.dwell_number,
-            simulation_time_s=s.simulation_time_s,
-            wips_on_line=s.wips_on_line,
-            motors_created=s.motors_created,
-            motors_released=s.motors_released,
-            active_quality_holds=s.active_quality_holds,
-            held_station=s.held_station,
-            held_wip_id=s.held_wip_id,
-            is_exception=s.is_exception,
-        )
-        for s in summaries
-    )
 
     return AssyOverviewSnapshot(
         demo_step_number=composition.demo_step_number,
@@ -465,5 +439,5 @@ def build_overview(composition) -> AssyOverviewSnapshot:
         total_motors_created=total_created,
         total_motors_released=total_released,
         total_active_holds=total_holds,
-        sub_lines=corrected_summaries,
+        sub_lines=tuple(summaries),
     )

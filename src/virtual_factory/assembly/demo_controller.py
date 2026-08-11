@@ -186,12 +186,12 @@ class DemoController:
             raise ValueError(f"Unknown sub_line_id: {sub_line_id!r}")
         from virtual_factory.assembly.demo_snapshot import build_snapshot
         snap = build_snapshot(ctx.runtime, ctx.effective_scenario.value)
-        # Additive identity fields
-        snap.plant_id = ctx.identity.production_line_id  # "ASSY" from identity
+        # Canonical identity from composition
+        plant_id = "TIPA"
+        if self._composition.identity:
+            plant_id = self._composition.identity.plant_id
+        snap.plant_id = plant_id
         snap.production_line_id = ctx.identity.production_line_id
         snap.sub_line_id = ctx.identity.sub_line_id
         snap.variant = ctx.identity.variant
-        # Fix plant_id from composition identity
-        if self._composition.identity:
-            snap.plant_id = self._composition.identity.plant_id
         return snap

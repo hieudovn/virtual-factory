@@ -1,6 +1,7 @@
 """FastAPI monitoring API for Virtual Factory telemetry."""
 
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -238,7 +239,6 @@ def create_app(
 
     def _get_assy_controller():
         if _assy_controller["instance"] is None:
-            import os
             from virtual_factory.assembly.demo_controller import DemoController
             assy_config = os.environ.get(
                 "TIPA_ASSY_CONFIG",
