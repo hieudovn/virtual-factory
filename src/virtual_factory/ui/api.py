@@ -277,4 +277,36 @@ def create_app(
         ctrl = _get_assy_controller()
         return ctrl.snapshot().to_dict()
 
+    # ═══════════════════════════════════════════════════
+    # M6-S04B-I03 — Additive S04B Overview / Detail Endpoints
+    # ═══════════════════════════════════════════════════
+
+    _enable_s04b = os.environ.get("VF_ENABLE_S04B_OVERVIEW", "0") == "1"
+
+    if _enable_s04b:
+        @app.get("/assy-demo/overview")
+        def assy_demo_overview() -> dict:
+            ctrl = _get_assy_controller()
+            return ctrl.overview().to_dict()
+
+        @app.get("/assy-demo/sub-lines")
+        def assy_demo_sub_lines() -> list[dict]:
+            ctrl = _get_assy_controller()
+            ov = ctrl.overview()
+            return [s.to_dict() for s in ov.sub_lines]
+
+        @app.get("/assy-demo/sub-line/{sub_line_id}")
+        def assy_demo_sub_line_detail(sub_line_id: str) -> dict:
+            from virtual_factory.assembly.demo_controller import DemoController
+            ctrl = _get_assy_controller()
+            try:
+                snap = ctrl.detail_for(sub_line_id)
+                return snap.to_dict()
+            except ValueError:
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    status_code=404,
+                    content={"detail": f"Sub-line not found: {sub_line_id!r}"},
+                )
+
     return app

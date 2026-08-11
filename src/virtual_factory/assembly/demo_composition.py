@@ -165,6 +165,12 @@ class AssyDemoComposition:
     identity: Optional[AssyProductionLineIdentity] = None
     contexts: dict[str, AssyDemoContext] = field(default_factory=dict)
     demo_step_number: int = 0
+    _resolved_target_id: str = ""
+
+    @property
+    def target_sub_line_id(self) -> str:
+        """The sub-line currently receiving the exception scenario (read-only)."""
+        return self._resolved_target_id
 
     # --- Initialization ---
 
@@ -181,6 +187,7 @@ class AssyDemoComposition:
         self.demo_step_number = 0
 
         target_id = self._resolve_target()
+        self._resolved_target_id = target_id
 
         for sl_identity in self.identity.sub_lines:
             ctx_config = copy.deepcopy(base_config)

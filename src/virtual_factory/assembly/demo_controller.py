@@ -22,6 +22,8 @@ from virtual_factory.assembly.line_runtime import (
 )
 from virtual_factory.assembly.demo_snapshot import (
     AssyDemoSnapshot,
+    AssyOverviewSnapshot,
+    build_overview,
 )
 from virtual_factory.assembly.demo_composition import (
     AssyDemoComposition,
@@ -165,3 +167,31 @@ class DemoController:
         if self._composition is None:
             raise RuntimeError("Composition not initialized")
         self._composition.select_sub_line(sub_line_id)
+
+    def overview(self) -> AssyOverviewSnapshot:
+        """Build six-sub-line overview projection (M6-S04B-I03)."""
+        if self._composition is None:
+            raise RuntimeError("Composition not initialized")
+        return build_overview(self._composition)
+
+    def detail_for(self, sub_line_id: str) -> AssyDemoSnapshot:
+        """Build detailed snapshot for a specific sub-line by ID.
+
+        Does NOT mutate selected_sub_line_id.  Read-only access.
+        """
+        if self._composition is None:
+            raise RuntimeError("Composition not initialized")
+        ctx = self._composition.get_context(sub_line_id)
+        if ctx is None:
+            raise ValueError(f"Unknown sub_line_id: {sub_line_id!r}")
+        from virtual_factory.assembly.demo_snapshot import build_snapshot
+        snap = build_snapshot(ctx.runtime, ctx.effective_scenario.value)
+        # Additive identity fields
+        snap.plant_id = ctx.identity.production_line_id  # "ASSY" from identity
+        snap.production_line_id = ctx.identity.production_line_id
+        snap.sub_line_id = ctx.identity.sub_line_id
+        snap.variant = ctx.identity.variant
+        # Fix plant_id from composition identity
+        if self._composition.identity:
+            snap.plant_id = self._composition.identity.plant_id
+        return snap

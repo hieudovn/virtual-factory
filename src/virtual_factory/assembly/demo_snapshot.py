@@ -88,6 +88,9 @@ class AssyDemoSnapshot:
 
     Built from AssyLineRuntime public API only.
     No mutable runtime references.
+
+    M6-S04B-I03: Additive identity fields — plant_id, production_line_id,
+    sub_line_id, variant.  Existing S04 fields preserved.
     """
 
     simulation_time_s: float = 0.0
@@ -99,6 +102,12 @@ class AssyDemoSnapshot:
     recent_quality_events: list[QualityEventView] = field(default_factory=list)
     production: ProductionSummary = field(default_factory=ProductionSummary)
     scenario: str = ""
+
+    # M6-S04B-I03 — additive identity fields
+    plant_id: str = ""
+    production_line_id: str = ""
+    sub_line_id: str = ""
+    variant: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -153,6 +162,11 @@ class AssyDemoSnapshot:
                 "rso2_buffer": self.production.rso2_buffer,
             },
             "scenario": self.scenario,
+            # M6-S04B-I03 — additive identity
+            "plant_id": self.plant_id,
+            "production_line_id": self.production_line_id,
+            "sub_line_id": self.sub_line_id,
+            "variant": self.variant,
         }
 
 
@@ -250,4 +264,206 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
         recent_quality_events=quality_events,
         production=prod,
         scenario=scenario,
+    )
+
+
+# ═══════════════════════════════════════════════════════════
+# M6-S04B-I03 — Overview Projection Models
+# ═══════════════════════════════════════════════════════════
+
+# Station order for held-station selection
+_CANONICAL_STATION_ORDER = (
+    "PRE-ASSY", "AP01", "AP02", "AP03", "AP04", "AP05",
+    "AP06", "AP07", "AP08", "AP09", "AP10", "AP11",
+)
+
+_HOLD_STATUSES = frozenset({
+    QualityStatus.RETEST_PENDING,
+    QualityStatus.REINSPECT_PENDING,
+    QualityStatus.FAILED_FINAL,
+})
+
+
+@dataclass(frozen=True, slots=True)
+class SubLineSummaryView:
+    """Lightweight detached overview of one ASSY sub-line.
+
+    Built from public runtime state only.  No mutable references.
+    """
+
+    plant_id: str
+    production_line_id: str
+    sub_line_id: str
+    variant: str
+    label: str
+
+    effective_scenario: str
+
+    line_state: str             # ConveyorState value
+    dwell_number: int
+    simulation_time_s: float
+
+    wips_on_line: int
+    motors_created: int
+    motors_released: int
+
+    active_quality_holds: int
+    held_station: str           # first blocking station, "" if none
+    held_wip_id: str            # WIP at held station, "" if none
+    is_exception: bool
+
+    def to_dict(self) -> dict:
+        return {
+            "plant_id": self.plant_id,
+            "production_line_id": self.production_line_id,
+            "sub_line_id": self.sub_line_id,
+            "variant": self.variant,
+            "label": self.label,
+            "effective_scenario": self.effective_scenario,
+            "line_state": self.line_state,
+            "dwell_number": self.dwell_number,
+            "simulation_time_s": self.simulation_time_s,
+            "wips_on_line": self.wips_on_line,
+            "motors_created": self.motors_created,
+            "motors_released": self.motors_released,
+            "active_quality_holds": self.active_quality_holds,
+            "held_station": self.held_station,
+            "held_wip_id": self.held_wip_id,
+            "is_exception": self.is_exception,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class AssyOverviewSnapshot:
+    """Complete detached ASSY six-sub-line overview.
+
+    Built from AssyDemoComposition public state only.
+    No runtime references.  No global simulation_time_s.
+    """
+
+    demo_step_number: int
+    scenario: str                  # global requested demo scenario
+    target_sub_line_id: str
+    selected_sub_line_id: str
+
+    total_motors_created: int
+    total_motors_released: int
+    total_active_holds: int
+
+    sub_lines: tuple[SubLineSummaryView, ...]
+
+    def to_dict(self) -> dict:
+        return {
+            "demo_step_number": self.demo_step_number,
+            "scenario": self.scenario,
+            "target_sub_line_id": self.target_sub_line_id,
+            "selected_sub_line_id": self.selected_sub_line_id,
+            "total_motors_created": self.total_motors_created,
+            "total_motors_released": self.total_motors_released,
+            "total_active_holds": self.total_active_holds,
+            "sub_lines": [s.to_dict() for s in self.sub_lines],
+        }
+
+
+def build_summary(ctx) -> SubLineSummaryView:
+    """Build a SubLineSummaryView from an AssyDemoContext (public API only)."""
+    runtime = ctx.runtime
+    identity = ctx.identity
+
+    # Derive held station — first occupied blocking station in canonical order
+    held_station = ""
+    held_wip_id = ""
+    for pos in _CANONICAL_STATION_ORDER:
+        wip_id = runtime.conveyor.wip_at(pos)
+        if wip_id:
+            qs = runtime.get_current_quality_status(wip_id)
+            if qs in _HOLD_STATUSES:
+                held_station = pos
+                held_wip_id = wip_id
+                break
+
+    # Count active quality holds
+    holds = 0
+    released = 0
+    for wip_id in runtime.wip_ids:
+        ws = runtime.get_wip(wip_id)
+        if ws and ws.lifecycle == WipLifecycle.RELEASED:
+            released += 1
+        qs = runtime.get_current_quality_status(wip_id)
+        if qs in _HOLD_STATUSES:
+            holds += 1
+
+    occupied = runtime.conveyor.occupied_positions()
+
+    return SubLineSummaryView(
+        plant_id=identity.production_line_id,  # "ASSY" — fixed per I01 model
+        # Actually the canonical hierarchy: plant_id is from composition
+        production_line_id=identity.production_line_id,
+        sub_line_id=identity.sub_line_id,
+        variant=identity.variant,
+        label=identity.label,
+        effective_scenario=ctx.effective_scenario.value,
+        line_state=runtime.conveyor.state.value,
+        dwell_number=runtime.conveyor.dwell_number,
+        simulation_time_s=runtime.simulation_time_s,
+        wips_on_line=len(occupied),
+        motors_created=runtime.motor_count,
+        motors_released=released,
+        active_quality_holds=holds,
+        held_station=held_station,
+        held_wip_id=held_wip_id,
+        is_exception=(holds > 0),
+    )
+
+
+def build_overview(composition) -> AssyOverviewSnapshot:
+    """Build an AssyOverviewSnapshot from an AssyDemoComposition."""
+    identity = composition.identity
+    summaries: list[SubLineSummaryView] = []
+    total_created = 0
+    total_released = 0
+    total_holds = 0
+
+    for ctx in composition.contexts.values():
+        s = build_summary(ctx)
+        # Fix plant_id — it should come from the line identity
+        summaries.append(s)
+        total_created += s.motors_created
+        total_released += s.motors_released
+        total_holds += s.active_quality_holds
+
+    plant_id = identity.plant_id if identity else "TIPA"
+
+    # Inject correct plant_id into each summary
+    corrected_summaries = tuple(
+        SubLineSummaryView(
+            plant_id=plant_id,
+            production_line_id=s.production_line_id,
+            sub_line_id=s.sub_line_id,
+            variant=s.variant,
+            label=s.label,
+            effective_scenario=s.effective_scenario,
+            line_state=s.line_state,
+            dwell_number=s.dwell_number,
+            simulation_time_s=s.simulation_time_s,
+            wips_on_line=s.wips_on_line,
+            motors_created=s.motors_created,
+            motors_released=s.motors_released,
+            active_quality_holds=s.active_quality_holds,
+            held_station=s.held_station,
+            held_wip_id=s.held_wip_id,
+            is_exception=s.is_exception,
+        )
+        for s in summaries
+    )
+
+    return AssyOverviewSnapshot(
+        demo_step_number=composition.demo_step_number,
+        scenario=composition.scenario.value,
+        target_sub_line_id=composition.target_sub_line_id,
+        selected_sub_line_id=composition.selected_sub_line_id,
+        total_motors_created=total_created,
+        total_motors_released=total_released,
+        total_active_holds=total_holds,
+        sub_lines=corrected_summaries,
     )
