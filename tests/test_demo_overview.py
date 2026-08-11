@@ -305,11 +305,25 @@ class TestAP06ExceptionOverview:
                 break
         assert cleared, f"WIP {held_wip_id} should have cleared RETEST_PENDING"
 
-        # After clearance, overview should reflect resolution
+        # After clearance, overview should reflect resolution for tracked WIP
         ov2 = build_overview(comp)
         sl03_after = next(s for s in ov2.sub_lines if s.sub_line_id == "ASSY-SL03")
-        # The specific hold should be resolved (may have new holds on later motors)
         assert sl03_after.motors_created > 0, "Should have produced motors"
+
+        # The tracked held WIP must no longer appear as the active held WIP
+        assert sl03_after.held_wip_id != held_wip_id, (
+            f"Overview still reports {held_wip_id} as held after CLEAR"
+        )
+
+        if sl03_after.active_quality_holds == 0:
+            assert not sl03_after.is_exception
+            assert sl03_after.held_station == ""
+            assert sl03_after.held_wip_id == ""
+        else:
+            # A later motor may independently be held — but not the same WIP
+            assert sl03_after.held_wip_id != held_wip_id, (
+                f"Same WIP {held_wip_id} reported as held again"
+            )
 
 
 class TestAP08ExceptionOverview:
