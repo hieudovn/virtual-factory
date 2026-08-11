@@ -31,29 +31,47 @@ RSO2 simplified upstream
   → AP04 JOIN
 ```
 
-### 1.1 Multi-Line Topology (M6-S04B-DG02.1 — 11-Aug-2026)
+### 1.1 Multi-Sub-Line Topology (M6-S04B-DG02.2 — 11-Aug-2026)
 
-TIPA production is NOT a single line. It consists of **6 parallel process/line instances**, all based on the common ASSY process template above.
+TIPA ASSY is ONE Production Line containing **6 parallel ASSY Sub-lines**, all based on the common ASSY process template.
 
 ```
-TIPA Motor Production Area
-├── Hydraulic Group (SSO2 variant: Hydraulic Press)
-│   ├── Line/Process 01
-│   ├── Line/Process 02
-│   └── Line/Process 03
-└── Thermal Group (SSO2 variant: Thermal Press)
-    ├── Line/Process 04
-    ├── Line/Process 05
-    └── Line/Process 06
+TIPA Plant
+├── SSO2 Line (upstream)
+├── RSO2 Line (upstream)
+└── ASSY Line / Assembly Line
+    ├── ASSY-SL01 ─┐
+    ├── ASSY-SL02  ├─ Hydraulic SSO2 Input Variant
+    ├── ASSY-SL03 ─┘
+    ├── ASSY-SL04 ─┐
+    ├── ASSY-SL05  ├─ Thermal SSO2 Input Variant
+    └── ASSY-SL06 ─┘
 ```
 
-**Key architecture decisions**:
-- Common ASSY process template shared across all 6 instances.
-- Variant difference: SSO2 Hydraulic Press vs Thermal Press, primarily affecting test/profile behavior.
-- Future differences: modeled through configuration/variant specialization, NOT copy-paste forks.
-- Identity context: `plant → area → line → station → wip` (a bare `AP06` is not globally sufficient).
+**Key decisions**:
+- ASSY is ONE Production Line (not six lines).
+- Six ASSY Sub-lines execute the complete ASSY flow in parallel.
+- All six output complete finished motors.
+- Variant difference: SSO2 Hydraulic Press vs Thermal Press (primarily test/profile).
+- Future differences: configuration/variant specialization, not copy-paste.
 
-**Design authority**: `docs/demo/tipa/M6_S04B_DG02_1_MULTI_LINE_VISUALIZATION.md`
+**Canonical terminology**: See Section 1.2.
+
+### 1.2 Canonical TIPA Terminology (DG02.2)
+
+| Term | Meaning |
+|------|---------|
+| SSO2 Line | Upstream production line (stator-side semi-finished) |
+| RSO2 Line | Upstream production line (rotor semi-finished) |
+| ASSY Line | Primary demo line (assembly) |
+| ASSY Sub-line | One parallel execution path within ASSY (ASSY-SL01..SL06) |
+| Hydraulic SSO2 Input Variant | ASSY-SL01..03 |
+| Thermal SSO2 Input Variant | ASSY-SL04..06 |
+
+**Avoid**: six ASSY lines, six production lines, multi-line ASSY, Line 01..06.  
+**Prefer**: ASSY Line, ASSY Sub-line, parallel ASSY Sub-lines.
+
+**Design authority**: `docs/demo/tipa/M6_S04B_DG02_1_PARALLEL_SUB_LINE_VISUALIZATION.md`
 
 ---
 

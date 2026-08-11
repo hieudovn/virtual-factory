@@ -36,6 +36,29 @@ M6-S05 ░░░░░░░░░░░░░░░░░░░░ PENDING     
 | M6-S04 Visualization + Controls | CLOSED | 10-Aug | `bceeba9` |
 | **M6-S05 MES Observation** | **PENDING** | — | — |
 
+### M6-S04B Design Architecture Phase (11-Aug)
+
+| Deliverable | Nội dung | Trạng thái |
+|-------------|---------|-----------|
+| DG01 | Canonical UI/UX Design Guide v1.1 | CLOSED |
+| DG02 | Screen/Information Architecture | CLOSED |
+| DG02.1 | Parallel ASSY Sub-line Visualization | CLOSED |
+| DG02.2 | Terminology Normalization | READY FOR SA CLOSURE |
+| **DG03** | **Visual Design / Figma Gate** | **PENDING** |
+
+**Terminology frozen**: SSO2 Line, RSO2 Line, ASSY Line, ASSY-SL01..SL06, Hydraulic/Thermal SSO2 Input Variant.
+
+### Production Hierarchy (DG02.2)
+
+```
+TIPA Plant
+├── SSO2 Line (upstream)
+├── RSO2 Line (upstream)
+└── ASSY Line (primary demo)
+    ├── ASSY-SL01..03 (Hydraulic SSO2 Input Variant)
+    └── ASSY-SL04..06 (Thermal SSO2 Input Variant)
+```
+
 ---
 
 ## 3. Kiến Trúc 4 Lớp (Đã Hoàn Thành)

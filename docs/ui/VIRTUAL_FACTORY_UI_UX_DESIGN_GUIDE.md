@@ -483,32 +483,30 @@ Implementation technology and naming may vary. Conceptual responsibilities SHOUL
 
 ---
 
-## 20. Multi-Line / Repeated-Process Visualization
+## 20. Production Hierarchy / Parallel Sub-line Visualization
 
-When multiple production lines or process instances share a common process definition, use hierarchical visualization rather than rendering every station of every line at full detail.
+When a production line contains multiple parallel execution paths (sub-lines), use hierarchical visualization rather than rendering every sub-line at full station detail.
 
 ### Principles
 
-1. **Hierarchy**: `Plant/Area Overview → Line/Process Instance → Station/WIP Detail`.
+1. **Production hierarchy**: `Plant → Production Line → Sub-line / Parallel Execution Path → Station → WIP / Event`. A Production Line is NOT the same as a Sub-line. Parallel execution paths inside one line SHOULD NOT be called independent lines.
 
 2. **Distinguish concepts**:
-   - **Process Definition** — the common process template (stations, routing, quality gates).
-   - **Process Variant** — a specialization of the process definition (e.g., different upstream technology, different test profile, different equipment configuration).
-   - **Runtime Instance** — one executing instance of a process variant with its own state, WIPs, quality, and events.
+   - **Production Line** — a main physical line (e.g., SSO2, RSO2, ASSY).
+   - **Sub-line** — one parallel execution path within a production line.
+   - **Process Definition** — reusable manufacturing logic (stations, routing, quality).
+   - **Process Variant** — specialization of a process definition (e.g., different input variant, test profile).
+   - **Runtime Instance** — one executing instance with its own state.
 
-3. **Avoid duplication**: Shared process definitions SHOULD NOT be duplicated visually or logically. Variant differences SHOULD be expressed through configuration, not copy-paste forks.
+3. **Line overview**: When parallel sub-lines exist, provide a line-level overview showing all sub-lines with high-level state. Do NOT overload with station-level detail.
 
-4. **Area overview**: When multiple parallel instances exist, provide an area-level overview showing all instances with high-level state (operating, hold, ready, stopped). Do NOT overload the overview with station-level detail.
+4. **Drill-down**: Selecting a sub-line drills into the detailed shopfloor visualization.
 
-5. **Drill-down**: Selecting an instance drills into the detailed shopfloor visualization as defined by this guide.
+5. **Variant styling**: Variants MAY be visually distinguishable through labels, icons, neutral badges, or grouping. Variant styling MUST NOT consume semantic state colors.
 
-6. **Variant styling**: Process variants MAY be visually distinguishable through labels, icons, neutral badges, or grouping. Variant styling MUST NOT consume semantic state colors (red/green/amber reserved for FAIL/PASS/HOLD).
+6. **Avoid flattening**: UI terminology MUST follow the domain/physical hierarchy. Do not flatten sub-lines into top-level production lines.
 
-7. **Context hierarchy**: Identity/context SHOULD distinguish `plant → area → line → station → wip` when multiple parallel instances exist. A station ID alone is not globally sufficient.
-
-### Runtime Direction
-
-Each line/process instance SHOULD eventually maintain independent state (conveyor, dwell, WIP, genealogy, quality, events) while reusing common definitions/configurations.
+7. **Context hierarchy**: Identity SHOULD distinguish `plant → line → sub_line → station → wip` when parallel sub-lines exist.
 
 ---
 
