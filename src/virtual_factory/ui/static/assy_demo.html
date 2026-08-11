@@ -3,93 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TIPA ASSY Demo — M6-S04</title>
+<title>TIPA ASSY Demo — M6-S04B Frame A</title>
 <link rel="stylesheet" href="/static/assy_demo.css">
 </head>
 <body>
 <div id="app">
-  <!-- Header -->
-  <header>
-    <h1>TIPA Motor Assembly Line Simulation</h1>
-    <div id="status-bar">
-      <span id="sim-time">t=0s</span>
-      <span id="line-state" class="state stopped">STOPPED</span>
-      <span id="dwell">Dwell 0</span>
-      <span id="speed-display">1x</span>
-      <span id="scenario-display">HAPPY_PATH</span>
-    </div>
-  </header>
 
-  <!-- Main Content -->
-  <main>
-    <!-- ASSY Line -->
-    <section id="assy-line">
-      <div id="conveyor-track">
-        <div id="positions-container"></div>
+  <!-- ===== S04B Frame A — Six-Sub-Line Overview ===== -->
+  <div id="frame-a" style="display:none">
+
+    <!-- Global Header -->
+    <header id="global-header">
+      <div class="header-left">
+        <span class="plant-badge">TIPA</span>
+        <span class="line-badge">ASSY Line</span>
       </div>
-      <div id="line-legend">
-        <span class="legend pass">PASS</span>
-        <span class="legend fail">FAIL/NG</span>
-        <span class="legend hold">HOLD</span>
-        <span class="legend released">RELEASED</span>
-        <span class="legend empty">EMPTY</span>
+      <div class="header-center">
+        <span id="demo-step" class="step-badge">DEMO STEP 000</span>
       </div>
+      <div class="header-right">
+        <span id="global-scenario" class="scenario-badge">HAPPY_PATH</span>
+        <span class="total-badge">Created: <b id="total-created">0</b></span>
+        <span class="total-badge">Released: <b id="total-released">0</b></span>
+        <span id="total-holds-badge" class="total-badge holds">Holds: <b id="total-holds">0</b></span>
+      </div>
+    </header>
+
+    <!-- Main: Six Sub-Line Lanes -->
+    <main id="overview-main">
+      <svg id="overview-svg" viewBox="0 0 1920 760" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0d1117"/>
+            <stop offset="100%" stop-color="#141a24"/>
+          </linearGradient>
+        </defs>
+        <rect width="1920" height="760" fill="url(#bgGrad)"/>
+        <text x="40" y="34" fill="#e0e0e0" font-size="16" font-weight="600">ASSY LINE — 6 PARALLEL SUB-LINES</text>
+        <text x="40" y="62" fill="#8899bb" font-size="12" font-weight="600">HYDRAULIC SSO2 INPUT VARIANT</text>
+        <text x="40" y="370" fill="#9988bb" font-size="12" font-weight="600">THERMAL SSO2 INPUT VARIANT</text>
+        <g id="svg-lanes"></g>
+        <text x="40" y="745" fill="#555" font-size="10">DEMO / SYNTHETIC DATA — All sub-line states from live runtime projection</text>
+      </svg>
+    </main>
+
+    <footer id="controls">
+      <button id="btn-reset" onclick="ctrl.reset()">&#x27F3; RESET</button>
+      <button id="btn-step" onclick="ctrl.step()">&#x25B6; STEP</button>
+      <button id="btn-auto" onclick="ctrl.toggleAuto()">&#x25B6;&#x25B6; AUTO</button>
+      <button id="btn-pause" onclick="ctrl.pause()" disabled>&#x23F8; PAUSE</button>
+      <label>Speed:
+        <select id="speed-select" onchange="ctrl.setSpeed(this.value)">
+          <option value="0.5">0.5x</option><option value="1" selected>1x</option>
+          <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
+        </select>
+      </label>
+      <label>Scenario:
+        <select id="scenario-select" onchange="ctrl.setScenario(this.value)">
+          <option value="HAPPY_PATH">Happy Path</option>
+          <option value="AP06_FAIL_RETEST_PASS">AP06 Fail &#x2192; Retest &#x2192; Pass</option>
+          <option value="AP08_NG_REINSPECT_PASS">AP08 NG &#x2192; Reinspect &#x2192; Pass</option>
+          <option value="FAILED_FINAL">Failed Final</option>
+        </select>
+      </label>
+      <span id="line-state-display" style="color:#888;font-size:12px;margin-left:12px;"></span>
+    </footer>
+  </div>
+
+  <!-- ===== S04 Fallback ===== -->
+  <div id="frame-s04">
+    <header><h1>TIPA Motor Assembly Line Simulation</h1>
+      <div id="status-bar">
+        <span id="sim-time">t=0s</span><span id="line-state" class="state stopped">STOPPED</span>
+        <span id="dwell">Dwell 0</span><span id="speed-display">1x</span>
+        <span id="scenario-display">HAPPY_PATH</span>
+      </div>
+    </header>
+    <main><section id="assy-line"><div id="conveyor-track"><div id="positions-container"></div></div>
+      <div id="line-legend"><span class="legend pass">PASS</span><span class="legend fail">FAIL/NG</span>
+      <span class="legend hold">HOLD</span><span class="legend released">RELEASED</span><span class="legend empty">EMPTY</span></div>
     </section>
-
-    <!-- Side Panel -->
     <aside id="side-panel">
-      <!-- Production Summary -->
-      <div class="panel-box">
-        <h3>Production</h3>
-        <div id="prod-summary">
-          <div>Motors: <span id="motors-completed">0</span></div>
-          <div>Released: <span id="motors-released">0</span></div>
-          <div>On line: <span id="wips-on-line">0</span></div>
-          <div>Holds: <span id="active-holds">0</span></div>
-          <div>RSO2 buffer: <span id="rso2-buf">0</span></div>
-        </div>
-      </div>
+      <div class="panel-box"><h3>Production</h3><div id="prod-summary">
+        <div>Motors: <span id="motors-completed">0</span></div><div>Released: <span id="motors-released">0</span></div>
+        <div>On line: <span id="wips-on-line">0</span></div><div>Holds: <span id="active-holds">0</span></div>
+        <div>RSO2 buffer: <span id="rso2-buf">0</span></div></div></div>
+      <div class="panel-box"><h3>Genealogy</h3><div id="genealogy-list"></div></div>
+      <div class="panel-box"><h3>Recent Quality Events</h3><div id="quality-events"></div></div>
+    </aside></main>
+    <footer id="controls-s04">
+      <button onclick="ctrlS04.reset()">&#x27F3; RESET</button>
+      <button onclick="ctrlS04.step()">&#x25B6; STEP</button>
+      <button onclick="ctrlS04.toggleAuto()">&#x25B6;&#x25B6; AUTO</button>
+      <button onclick="ctrlS04.pause()" disabled>&#x23F8; PAUSE</button>
+      <label>Speed:<select id="speed-select-s04" onchange="ctrlS04.setSpeed(this.value)">
+        <option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="5">5x</option><option value="10">10x</option></select></label>
+      <label>Scenario:<select id="scenario-select-s04" onchange="ctrlS04.setScenario(this.value)">
+        <option value="HAPPY_PATH">Happy Path</option><option value="AP06_FAIL_RETEST_PASS">AP06 Fail &#x2192; Retest &#x2192; Pass</option>
+        <option value="AP08_NG_REINSPECT_PASS">AP08 NG &#x2192; Reinspect &#x2192; Pass</option><option value="FAILED_FINAL">Failed Final</option></select></label>
+    </footer>
+  </div>
 
-      <!-- Genealogy -->
-      <div class="panel-box" id="genealogy-panel">
-        <h3>Genealogy (last joins)</h3>
-        <div id="genealogy-list"></div>
-      </div>
-
-      <!-- Quality Events -->
-      <div class="panel-box">
-        <h3>Recent Quality Events</h3>
-        <div id="quality-events"></div>
-      </div>
-    </aside>
-  </main>
-
-  <!-- Controls -->
-  <footer id="controls">
-    <button id="btn-reset" onclick="ctrl.reset()">⟳ RESET</button>
-    <button id="btn-step" onclick="ctrl.step()">▶ STEP</button>
-    <button id="btn-auto" onclick="ctrl.toggleAuto()">▶▶ AUTO</button>
-    <button id="btn-pause" onclick="ctrl.pause()" disabled>⏸ PAUSE</button>
-    <label>Speed:
-      <select id="speed-select" onchange="ctrl.setSpeed(this.value)">
-        <option value="0.5">0.5x</option>
-        <option value="1" selected>1x</option>
-        <option value="2">2x</option>
-        <option value="5">5x</option>
-        <option value="10">10x</option>
-      </select>
-    </label>
-    <label>Scenario:
-      <select id="scenario-select" onchange="ctrl.setScenario(this.value)">
-        <option value="HAPPY_PATH">Happy Path</option>
-        <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
-        <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>
-        <option value="FAILED_FINAL">Failed Final</option>
-      </select>
-    </label>
-  </footer>
 </div>
-
 <script src="/static/assy_demo.js"></script>
 </body>
 </html>

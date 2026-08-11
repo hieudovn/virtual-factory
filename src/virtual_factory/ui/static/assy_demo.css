@@ -1,66 +1,75 @@
-/* M6-S04 — TIPA ASSY Demo Styles */
+/* M6-S04B — Frame A ASSY Overview Styles */
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
-#app { display: flex; flex-direction: column; height: 100vh; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e0;height:100vh;overflow:hidden}
+#app{height:100vh;display:flex;flex-direction:column}
 
-/* Header */
-header { background: #16213e; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f3460; }
-header h1 { font-size: 1.2em; color: #e94560; }
-#status-bar { display: flex; gap: 15px; font-size: 0.85em; }
-#status-bar span { padding: 3px 8px; border-radius: 4px; background: #0f3460; }
-.state.stopped { color: #4ecca3; }
-.state.operating { color: #ffc107; }
-.state.ready_to_index { color: #17a2b8; }
-.state.indexing { color: #e94560; }
+/* ===== Frame A Global Header ===== */
+#global-header{display:flex;align-items:center;justify-content:space-between;padding:6px 20px;background:#1a2332;border-bottom:2px solid #1e3a5f;min-height:44px}
+.header-left{display:flex;gap:10px;align-items:center}
+.plant-badge{background:#0d2b3e;color:#17a2b8;padding:3px 10px;border-radius:3px;font-size:13px;font-weight:600}
+.line-badge{background:#1e3a5f;color:#8899bb;padding:3px 10px;border-radius:3px;font-size:13px}
+.header-center{flex:1;text-align:center}
+.step-badge{background:#1b4332;color:#4ecca3;padding:4px 16px;border-radius:4px;font-size:14px;font-weight:600;font-family:monospace}
+.header-right{display:flex;gap:12px;align-items:center}
+.scenario-badge{background:#3d2e00;color:#ffc107;padding:3px 10px;border-radius:3px;font-size:12px}
+.total-badge{font-size:12px;color:#8899bb}
+.total-badge b{color:#e0e0e0}
+.total-badge.holds{color:#e94560}
+.total-badge.holds b{color:#e94560}
 
-/* Main layout */
-main { display: flex; flex: 1; overflow: hidden; }
-#assy-line { flex: 1; padding: 15px; overflow-x: auto; }
-#side-panel { width: 320px; background: #16213e; padding: 12px; overflow-y: auto; border-left: 2px solid #0f3460; }
+/* ===== Frame A Main ===== */
+#overview-main{flex:1;overflow:hidden;background:#0d1117}
+#overview-svg{width:100%;height:100%;display:block}
 
-/* Conveyor track */
-#conveyor-track { background: #0f3460; border-radius: 8px; padding: 15px; min-width: fit-content; }
-#positions-container { display: flex; gap: 6px; align-items: stretch; }
+/* ===== Frame A Controls ===== */
+#controls,#controls-s04{display:flex;align-items:center;gap:8px;padding:6px 16px;background:#1a2332;border-top:1px solid #1e3a5f;min-height:36px}
+#controls button,#controls-s04 button{padding:4px 12px;border:none;border-radius:3px;font-size:12px;cursor:pointer;color:#fff}
+#btn-reset,#btn-reset-s04{background:#e94560}
+#btn-step,#btn-step-s04{background:#4ecca3;color:#0d1117}
+#btn-auto,#btn-auto-s04{background:#17a2b8}
+#btn-pause,#btn-pause-s04{background:#5c4700}
+#controls label,#controls-s04 label{font-size:12px;color:#888;display:flex;align-items:center;gap:4px}
+#controls select,#controls-s04 select{background:#0f1a2e;color:#e0e0e0;border:1px solid #1e3a5f;border-radius:3px;padding:3px 6px;font-size:11px}
 
-/* Position card */
-.position { background: #1a1a2e; border: 2px solid #333; border-radius: 6px; padding: 8px; min-width: 95px; text-align: center; transition: all 0.2s; }
-.position.occupied { border-color: #4ecca3; }
-.position.quality-hold { border-color: #e94560; animation: pulse 1.5s infinite; }
-.position.released { border-color: #17a2b8; background: #0d2b3e; }
-.position.ap04 { border-color: #ffc107; }
-.position .pos-id { font-weight: bold; font-size: 0.75em; color: #888; }
-.position .pos-label { font-size: 0.7em; color: #aaa; margin: 3px 0; }
-.position .wip-info { margin-top: 5px; }
-.position .wip-id { font-size: 0.8em; font-weight: bold; }
-.position .wip-id.mtr { color: #ffc107; }
-.position .wip-id.sso2 { color: #4ecca3; }
-.position .carrier { font-size: 0.65em; color: #888; }
-.position .quality-badge { font-size: 0.65em; padding: 2px 5px; border-radius: 3px; margin-top: 3px; display: inline-block; }
-.quality-badge.pass { background: #1b4332; color: #4ecca3; }
-.quality-badge.fail, .quality-badge.ng { background: #4a1a1a; color: #e94560; }
-.quality-badge.hold { background: #5c4700; color: #ffc107; }
-.quality-badge.retest { background: #3d2e00; color: #ffc107; }
-
-@keyframes pulse { 0%,100% { border-color: #e94560; } 50% { border-color: #ff6b81; } }
-
-/* Panel boxes */
-.panel-box { background: #0f3460; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
-.panel-box h3 { font-size: 0.85em; color: #e94560; margin-bottom: 6px; }
-#prod-summary div { font-size: 0.8em; padding: 2px 0; display: flex; justify-content: space-between; }
-#genealogy-list .genealogy-item { font-size: 0.75em; padding: 3px 0; border-bottom: 1px solid #1a3a5c; }
-#quality-events .qe-item { font-size: 0.7em; padding: 2px 0; }
-.qe-item .qe-disp { font-weight: bold; }
-.qe-item .qe-disp.FAIL, .qe-item .qe-disp.NG { color: #e94560; }
-.qe-item .qe-disp.PASS { color: #4ecca3; }
-
-/* Controls */
-#controls { background: #16213e; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-top: 2px solid #0f3460; flex-wrap: wrap; }
-#controls button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
-#btn-reset { background: #e94560; color: #fff; }
-#btn-step { background: #4ecca3; color: #1a1a2e; }
-#btn-auto { background: #17a2b8; color: #fff; }
-#btn-pause { background: #ffc107; color: #1a1a2e; }
-#btn-pause:disabled { opacity: 0.4; }
-#controls label { font-size: 0.85em; color: #aaa; }
-#controls select { background: #0f3460; color: #e0e0e0; border: 1px solid #333; padding: 5px; border-radius: 3px; }
+/* ===== S04 Fallback Styles (preserved) ===== */
+#frame-s04{display:flex;flex-direction:column;height:100vh}
+#frame-s04 header{background:#16213e;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460}
+#frame-s04 header h1{font-size:1.2em;color:#e94560}
+#status-bar{display:flex;gap:15px;font-size:.85em}
+#status-bar span{padding:3px 8px;border-radius:4px;background:#0f3460}
+.state.stopped{color:#4ecca3}.state.operating{color:#ffc107}
+.state.ready_to_index{color:#17a2b8}.state.indexing{color:#e94560}
+#frame-s04 main{display:flex;flex:1;overflow:hidden}
+#assy-line{flex:1;padding:15px;overflow-x:auto}
+#side-panel{width:320px;background:#16213e;padding:12px;overflow-y:auto;border-left:2px solid #0f3460}
+#conveyor-track{background:#0f3460;border-radius:8px;padding:15px}
+#positions-container{display:flex;gap:6px;align-items:stretch}
+.position{background:#1a1a2e;border:2px solid #333;border-radius:6px;padding:8px;min-width:95px;text-align:center;transition:all .2s}
+.position.occupied{border-color:#4ecca3}
+.position.quality-hold{border-color:#e94560;animation:pulse 1.5s infinite}
+.position.released{border-color:#17a2b8;background:#0d2b3e}
+.position.ap04{border-color:#ffc107}
+.position .pos-id{font-weight:bold;font-size:.75em;color:#888}
+.position .pos-label{font-size:.7em;color:#aaa;margin:3px 0}
+.position .wip-info{margin-top:5px}
+.position .wip-id{font-size:.8em;font-weight:bold}
+.position .wip-id.mtr{color:#ffc107}.position .wip-id.sso2{color:#4ecca3}
+.position .carrier{font-size:.65em;color:#888}
+.position .quality-badge{font-size:.65em;padding:2px 5px;border-radius:3px;margin-top:3px;display:inline-block}
+.quality-badge.pass{background:#1b4332;color:#4ecca3}
+.quality-badge.fail,.quality-badge.ng{background:#4a1a1a;color:#e94560}
+.quality-badge.hold{background:#5c4700;color:#ffc107}
+@keyframes pulse{0%,100%{border-color:#e94560}50%{border-color:#ff6b81}}
+.panel-box{background:#0f3460;border-radius:6px;padding:10px;margin-bottom:10px}
+.panel-box h3{font-size:.85em;color:#e94560;margin-bottom:6px}
+#prod-summary div{font-size:.8em;padding:2px 0;display:flex;justify-content:space-between}
+.genealogy-item{font-size:.78em;padding:4px 0;border-bottom:1px solid #1a1a2e}
+.qe-item{font-size:.72em;padding:4px 0;border-bottom:1px solid #1a1a2e;display:flex;gap:6px;align-items:center}
+.qe-disp{font-size:.65em;padding:1px 5px;border-radius:2px}
+.qe-disp.PASS{background:#1b4332;color:#4ecca3}
+.qe-disp.FAIL,.qe-disp.NG{background:#4a1a1a;color:#e94560}
+#line-legend{display:flex;gap:16px;padding:8px 15px;font-size:.75em}
+.legend::before{content:'\25CF';margin-right:4px}
+.legend.pass{color:#4ecca3}.legend.fail{color:#e94560}
+.legend.hold{color:#ffc107}.legend.released{color:#17a2b8}.legend.empty{color:#555}
