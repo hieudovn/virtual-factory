@@ -125,6 +125,18 @@ const ctrl = {
         const slId = el.getAttribute('data-sl');
         if (slId) { this._selectedSubLineId = slId; this._refreshLaneStyles(); }
       });
+      el.addEventListener('dblclick', () => {
+        const slId = el.getAttribute('data-sl');
+        if (slId) { this._selectedSubLineId = slId; openFrameB(slId); }
+      });
+    });
+    // Detail button click
+    document.querySelectorAll('.fb-detail-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const slId = btn.getAttribute('data-sl');
+        if (slId) openFrameB(slId);
+      });
     });
   },
 
@@ -180,7 +192,7 @@ function renderLane(sl, y, selectedId) {
 
   // Detail affordance
   const detailAfford = isSel
-    ? `<text x="1580" y="${y+50}" fill="#17a2b8" font-size="10" style="cursor:pointer">\u2197 Detail</text>`
+    ? `<rect x="1555" y="${y+36}" width="72" height="22" rx="3" fill="#0d2b3e" stroke="#17a2b8" stroke-width="1" class="fb-detail-btn" data-sl="${sl.sub_line_id}" style="cursor:pointer"/><text x="1590" y="${y+52}" fill="#17a2b8" font-size="10" text-anchor="middle" class="fb-detail-btn" data-sl="${sl.sub_line_id}" style="cursor:pointer;pointer-events:none">\u2197 Detail</text>`
     : '';
 
   return `
@@ -201,8 +213,391 @@ function renderLane(sl, y, selectedId) {
 
 
 /* ==============================
-   S04 Fallback Controller (preserved)
+   Frame A → Frame B Navigation
    ============================== */
+function openFrameB(subLineId) {
+  document.getElementById('frame-a').style.display = 'none';
+  document.getElementById('frame-b').style.display = 'flex';
+  document.getElementById('frame-b').style.flexDirection = 'column';
+  document.getElementById('frame-b').style.height = '100vh';
+  ctrlB._initZoomPan();
+  ctrlB.init(subLineId);
+}
+
+function closeFrameB() {
+  document.getElementById('frame-b').style.display = 'none';
+  document.getElementById('frame-a').style.display = 'flex';
+  document.getElementById('frame-a').style.flexDirection = 'column';
+  document.getElementById('frame-a').style.height = '100vh';
+  if (ctrl._lastOverview) {
+    ctrl.renderOverview(ctrl._lastOverview);
+    ctrl._refreshLaneStyles();
+  }
+}
+
+
+/* ==============================
+   M6-S04B-I05 Frame B Controller
+   ============================== */
+const FB_STATIONS = ['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
+const FB_LANDMARKS = { AP04:'JOIN', AP06:'TEST', AP08:'VISION', AP11:'FINAL' };
+// Station X positions on the 1920 canvas (conveyor at y=380)
+const FB_STATION_X = [140,240,340,440,540,640,740,840,940,1040,1140,1240];
+const FB_CANVAS_W = 1920, FB_CANVAS_H = 700;
+const FB_CONTENT_BOUNDS = { x:0, y:190, w:1920, h:320 };
+
+const ctrlB = {
+  _subLineId: 'ASSY-SL01',
+  _autoTimer: null,
+  _speed: 1.0,
+  _scenario: 'HAPPY_PATH',
+  _lastSnapshot: null,
+  _liveStatus: 'INIT',
+  _selectedStation: null,
+
+  // Zoom/Pan state
+  _zoomLevel: 1,
+  _panX: 0,
+  _panY: 0,
+
+  async init(subLineId) {
+    this._subLineId = subLineId;
+    this._scenario = document.getElementById('fb-scenario-select').value;
+    this._zoomLevel = 1; this._panX = 0; this._panY = 0;
+    await this.call('reset', { scenario: this._scenario });
+    await this.refresh();
+  },
+
+  async reset() {
+    this.stopAuto();
+    this._scenario = document.getElementById('fb-scenario-select').value;
+    this._selectedStation = null;
+    this._zoomLevel = 1; this._panX = 0; this._panY = 0;
+    await this.call('reset', { scenario: this._scenario });
+    await this.refresh();
+  },
+
+  async step() {
+    await this.call('step');
+    await this.refresh();
+  },
+
+  back() { this.stopAuto(); closeFrameB(); },
+
+  toggleAuto() {
+    if (this._autoTimer) { this.stopAuto(); return; }
+    this.startAuto();
+  },
+
+  startAuto() {
+    document.getElementById('fb-btn-auto').textContent = '\u23F9 STOP';
+    document.getElementById('fb-btn-pause').disabled = false;
+    this._autoTimer = setInterval(() => this.step(), Math.round(1000 / this._speed));
+  },
+
+  stopAuto() {
+    if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; }
+    document.getElementById('fb-btn-auto').textContent = '\u25B6\u25B6 AUTO';
+    document.getElementById('fb-btn-pause').disabled = true;
+  },
+
+  pause() { if (this._autoTimer) this.stopAuto(); },
+
+  setSpeed(val) {
+    this._speed = parseFloat(val);
+    if (this._autoTimer) { this.stopAuto(); this.startAuto(); }
+  },
+
+  setScenario(val) { this._scenario = val; this.reset(); },
+
+  async call(action, body) {
+    const opts = body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : { method:'POST' };
+    const resp = await fetch(`${API}/${action}`, opts);
+    if (!resp.ok) throw new Error(`${action}: ${resp.status}`);
+    return resp.json();
+  },
+
+  async refresh() {
+    try {
+      const snap = await (await fetch(`${API}/sub-line/${encodeURIComponent(this._subLineId)}`)).json();
+      this._lastSnapshot = snap;
+      this._liveStatus = 'LIVE';
+      this.render(snap);
+    } catch (_) {
+      this._liveStatus = this._lastSnapshot ? 'STALE' : 'UNAVAILABLE';
+      this.renderStatus();
+    }
+  },
+
+  renderStatus() {
+    const el = document.getElementById('fb-live-status');
+    if (!el) return;
+    if (this._liveStatus === 'LIVE') { el.textContent = '\u25CF LIVE'; el.style.color = '#4ecca3'; }
+    else if (this._liveStatus === 'STALE') { el.textContent = '\u25CB STALE'; el.style.color = '#ffc107'; }
+    else { el.textContent = '\u2715 BACKEND UNAVAILABLE'; el.style.color = '#e94560'; }
+  },
+
+  /* ---------- SVG Render ---------- */
+  render(snap) {
+    this.renderStatus();
+    if (!snap) return;
+
+    // Header
+    document.getElementById('fb-sub-line-id').textContent = snap.sub_line_id || this._subLineId;
+    document.getElementById('fb-variant').textContent = (snap.variant||'').toUpperCase();
+    document.getElementById('fb-sim-time').textContent = `t=${(snap.simulation_time_s||0).toFixed(0)}s`;
+    document.getElementById('fb-dwell').textContent = `DWELL ${snap.dwell_number||0}`;
+    document.getElementById('fb-scenario').textContent = snap.scenario || this._scenario;
+
+    // Line state badge
+    const lsEl = document.getElementById('fb-line-state');
+    const ls = snap.line_state || 'stopped';
+    lsEl.textContent = ls.toUpperCase();
+    lsEl.className = 'fb-state-badge';
+    if (ls === 'operating') { lsEl.style.background = '#1b4332'; lsEl.style.color = '#4ecca3'; }
+    else if (ls === 'stopped') { lsEl.style.background = '#1a2332'; lsEl.style.color = '#888'; }
+    else if (ls === 'ready_to_index') { lsEl.style.background = '#0d2b3e'; lsEl.style.color = '#17a2b8'; }
+    else if (ls === 'indexing') { lsEl.style.background = '#4a1a1a'; lsEl.style.color = '#e94560'; }
+    else { lsEl.style.background = '#1a2332'; lsEl.style.color = '#888'; }
+
+    // Production text
+    const prod = snap.production || {};
+    document.getElementById('fb-prod-text').textContent =
+      `Created: ${prod.motors_created||0}  Released: ${prod.motors_released||0}  On Line: ${prod.wips_on_line||0}  Holds: ${prod.active_quality_holds||0}`;
+
+    // Build position lookup
+    const posMap = {};
+    for (const p of (snap.positions||[])) posMap[p.position_id] = p;
+
+    // Render stations
+    const stationsG = document.getElementById('fb-stations');
+    if (!stationsG) return;
+    let html = '';
+    const selSt = this._selectedStation;
+
+    // SSO2 input label
+    html += `<text x="26" y="400" fill="#4ecca3" font-size="9" text-anchor="middle">INPUT</text>`;
+
+    FB_STATIONS.forEach((stId, si) => {
+      const sx = FB_STATION_X[si];
+      const sy = 340;
+      const p = posMap[stId] || {};
+      const isLandmark = FB_LANDMARKS[stId];
+      const isOcc = p.is_occupied && p.wip_id;
+      const isHeld = p.is_quality_hold;
+      const isSel = selSt === stId;
+      const wipType = p.wip_type || '';
+      const qResult = p.latest_quality_result || '';
+      const isReleased = p.manufacturing_status === 'released';
+
+      // Station box
+      let borderColor = '#1e3a5f';
+      let bgColor = '#111d30';
+      if (isLandmark && stId === 'AP04') { borderColor = '#ffc107'; bgColor = '#1a1a10'; }
+      else if (isLandmark && stId === 'AP11') { borderColor = '#17a2b8'; bgColor = '#0d1a20'; }
+      if (isHeld) { borderColor = '#e94560'; bgColor = '#1a1015'; }
+      if (isReleased && stId === 'AP11') { borderColor = '#17a2b8'; bgColor = '#0d2b3e'; }
+      if (isSel) { borderColor = '#fff'; }
+
+      html += `<g class="fb-station" data-station="${stId}" style="cursor:pointer">`;
+      html += `<rect x="${sx-44}" y="${sy}" width="88" height="90" rx="4" fill="${bgColor}" stroke="${borderColor}" stroke-width="${isSel||isHeld?2:1}"/>`;
+
+      // Station ID + landmark
+      html += `<text x="${sx}" y="${sy+18}" fill="${isHeld?'#e94560':'#8899bb'}" font-size="15" font-weight="600" text-anchor="middle">${stId}</text>`;
+      if (isLandmark) {
+        html += `<text x="${sx}" y="${sy+34}" fill="${stId==='AP04'?'#ffc107':stId==='AP11'?'#17a2b8':'#ffc107'}" font-size="11" font-weight="600" text-anchor="middle">${FB_LANDMARKS[stId]}</text>`;
+      }
+
+      if (isOcc) {
+        // Carrier
+        const carrierY = sy + (isLandmark ? 42 : 40);
+        html += `<rect x="${sx-38}" y="${carrierY}" width="76" height="28" rx="3" fill="none" stroke="#1e3a5f" stroke-width="1"/>`;
+        if (p.carrier_id) {
+          html += `<text x="${sx}" y="${carrierY+12}" fill="#8899bb" font-size="11" font-weight="400" text-anchor="middle">${p.carrier_id}</text>`;
+        }
+        // WIP
+        const wipY = carrierY + 23;
+        const wipColor = wipType === 'SSO2' ? '#4ecca3' : '#ffc107';
+        html += `<text x="${sx}" y="${wipY}" fill="${wipColor}" font-size="14" font-weight="600" text-anchor="middle">${p.wip_id}</text>`;
+
+        // Quality badge
+        const badgeY = wipY + 14;
+        if (qResult && !isHeld) {
+          const qColor = qResult === 'PASS' ? '#4ecca3' : '#e94560';
+          let qText = qResult;
+          if (p.attempt_number > 1) qText += ` #${p.attempt_number}`;
+          html += `<text x="${sx}" y="${badgeY}" fill="${qColor}" font-size="12" font-weight="600" text-anchor="middle">${qText}</text>`;
+        }
+        if (isHeld) {
+          html += `<text x="${sx}" y="${badgeY}" fill="#e94560" font-size="12" font-weight="600" text-anchor="middle">HOLD</text>`;
+        }
+        if (isReleased) {
+          html += `<text x="${sx}" y="${badgeY}" fill="#17a2b8" font-size="12" font-weight="600" text-anchor="middle">RELEASED</text>`;
+        }
+      } else {
+        // Empty station
+        const emptyY = sy + (isLandmark ? 50 : 46);
+        html += `<text x="${sx}" y="${emptyY}" fill="#333" font-size="24" text-anchor="middle">\u2014</text>`;
+      }
+
+      if (isHeld && p.held_reason) {
+        html += `<text x="${sx}" y="${sy+96}" fill="#e94560" font-size="9" text-anchor="middle">${p.held_reason}</text>`;
+      }
+
+      html += `</g>`;
+    });
+
+    // LINE OUT arrow indicator text
+    html += `<text x="1260" y="355" fill="#17a2b8" font-size="10">LINE OUT \u2192</text>`;
+
+    stationsG.innerHTML = html;
+
+    // Bind station clicks
+    this._bindStationClicks(snap);
+
+    // Render event strip
+    this._renderEventStrip(snap);
+
+    // Apply zoom
+    this.applyViewBox();
+  },
+
+  _bindStationClicks(snap) {
+    const posMap = {};
+    for (const p of (snap.positions||[])) posMap[p.position_id] = p;
+
+    document.querySelectorAll('#fb-stations .fb-station').forEach(el => {
+      el.addEventListener('click', () => {
+        const stId = el.getAttribute('data-station');
+        this._selectedStation = (this._selectedStation === stId) ? null : stId;
+        this.render(snap);
+        this._updateInspector(posMap[stId] || null);
+      });
+    });
+  },
+
+  _updateInspector(pos) {
+    const label = document.getElementById('fb-inspector-label');
+    const hint = document.getElementById('fb-inspector-hint');
+    const placeholder = document.getElementById('fb-inspector-placeholder');
+    if (!pos) {
+      label.textContent = 'Inspector';
+      hint.textContent = 'Select a station';
+      placeholder.className = 'fb-inspector-collapsed';
+      return;
+    }
+    placeholder.className = 'fb-inspector-open';
+    label.textContent = `${pos.position_id}: ${pos.station_label || pos.position_id}`;
+    if (pos.wip_id) {
+      hint.innerHTML = `<b>WIP:</b> ${pos.wip_id} &nbsp; <b>Carrier:</b> ${pos.carrier_id||'\u2014'} &nbsp; <b>Status:</b> ${pos.manufacturing_status||'active'}`;
+      if (pos.latest_quality_result) {
+        hint.innerHTML += ` &nbsp; <b>Quality:</b> <span style="color:${pos.latest_quality_result==='PASS'?'#4ecca3':'#e94560'}">${pos.latest_quality_result}${pos.attempt_number>1?' #'+pos.attempt_number:''}</span>`;
+      }
+      if (pos.is_quality_hold) hint.innerHTML += ` &nbsp; <b style="color:#e94560">HOLD</b>`;
+      if (pos.held_reason) hint.innerHTML += ` &nbsp; <small>(${pos.held_reason})</small>`;
+    } else {
+      hint.textContent = 'Station empty';
+    }
+  },
+
+  _renderEventStrip(snap) {
+    const list = document.getElementById('fb-event-list');
+    if (!list) return;
+    const events = snap.recent_quality_events || [];
+    let html = '';
+    for (const e of events.slice(-12).reverse()) {
+      const dColor = e.disposition === 'PASS' ? '#4ecca3' : '#e94560';
+      html += `<div class="fb-qe-item">
+        <span style="color:${dColor};font-weight:600">${e.disposition||'?'}</span>
+        ${e.wip_id||''} @ ${e.station_id||''} #${e.attempt||1}
+        <small>t=${(e.simulation_time_s||0).toFixed(0)}s</small>
+      </div>`;
+    }
+    if (!html) html = '<div style="color:#555;font-size:11px">No quality events</div>';
+    list.innerHTML = html;
+  },
+
+  /* ---------- Zoom / Pan ---------- */
+  svgPointFromClient(svg, clientX, clientY) {
+    const pt = svg.createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    return pt.matrixTransform(ctm.inverse());
+  },
+
+  applyViewBox() {
+    const svg = document.getElementById('fb-canvas-svg');
+    if (!svg) return;
+    const vw = FB_CANVAS_W / this._zoomLevel;
+    const vh = FB_CANVAS_H / this._zoomLevel;
+    const vx = this._panX * FB_CANVAS_W / 1920;
+    const vy = this._panY * FB_CANVAS_H / 700;
+    svg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+  },
+
+  zoomOut() { this._zoomLevel = Math.max(0.5, this._zoomLevel - 0.25); this.applyViewBox(); },
+  zoomIn() { this._zoomLevel = Math.min(2.0, this._zoomLevel + 0.25); this.applyViewBox(); },
+  zoomReset() { this._zoomLevel = 1; this._panX = 0; this._panY = 0; this.applyViewBox(); },
+
+  zoomFit() {
+    const wrap = document.getElementById('fb-canvas-wrap');
+    const wrapW = wrap ? wrap.clientWidth : 1920;
+    const wrapH = wrap ? wrap.clientHeight : 700;
+    const c = FB_CONTENT_BOUNDS;
+    const scaleX = wrapW / c.w, scaleY = wrapH / c.h;
+    const scale = Math.min(scaleX, scaleY);
+    this._zoomLevel = FB_CANVAS_W / (c.w / scale);
+    this._panX = c.x * FB_CANVAS_W / 1920;
+    this._panY = c.y * FB_CANVAS_H / 700;
+    this.applyViewBox();
+  },
+
+  _initZoomPan() {
+    const wrap = document.getElementById('fb-canvas-wrap');
+    const svg = document.getElementById('fb-canvas-svg');
+    if (!wrap || !svg) return;
+    if (wrap._fbZoomInited) return;
+    wrap._fbZoomInited = true;
+
+    // Wheel zoom
+    wrap.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const p = this.svgPointFromClient(svg, e.clientX, e.clientY);
+      if (!p) return;
+      const oldZoom = this._zoomLevel;
+      const delta = -e.deltaY * 0.005;
+      this._zoomLevel = Math.max(0.5, Math.min(2.0, oldZoom + delta));
+      if (this._zoomLevel === oldZoom) return;
+      this.applyViewBox();
+      const q = this.svgPointFromClient(svg, e.clientX, e.clientY);
+      if (!q) return;
+      this._panX += (p.x - q.x) * 1920 / FB_CANVAS_W;
+      this._panY += (p.y - q.y) * 700 / FB_CANVAS_H;
+      this.applyViewBox();
+    }, { passive: false });
+
+    // Left-drag pan
+    let dragging = false, startX, startY, startPanX, startPanY;
+    svg.addEventListener('mousedown', (e) => {
+      if (e.target === svg || (e.target.tagName === 'rect' && !e.target.closest('.fb-station'))) {
+        dragging = true; startX = e.clientX; startY = e.clientY;
+        startPanX = this._panX; startPanY = this._panY;
+        svg.style.cursor = 'grabbing'; e.preventDefault();
+      }
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const dx = (e.clientX - startX) * (FB_CANVAS_W / 1920) / this._zoomLevel;
+      const dy = (e.clientY - startY) * (FB_CANVAS_H / 700) / this._zoomLevel;
+      this._panX = startPanX - dx; this._panY = startPanY - dy;
+      this.applyViewBox();
+    });
+    window.addEventListener('mouseup', () => {
+      if (dragging) { dragging = false; svg.style.cursor = ''; }
+    });
+  }
+};
 const ctrlS04 = {
   _autoTimer: null, _speed: 1.0, _scenario: 'HAPPY_PATH',
 

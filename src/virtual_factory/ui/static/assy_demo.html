@@ -71,6 +71,109 @@
     </footer>
   </div>
 
+  <!-- ===== M6-S04B-I05 Frame B — Sub-line Detail ===== -->
+  <div id="frame-b" style="display:none">
+
+    <!-- Frame B Header -->
+    <header id="fb-header">
+      <div class="fb-header-left">
+        <button id="fb-btn-back" class="fb-back-btn" onclick="ctrlB.back()">&#x2190; Back to Overview</button>
+        <span class="plant-badge">TIPA</span>
+        <span class="line-badge">ASSY Line</span>
+      </div>
+      <div class="fb-header-center">
+        <span id="fb-sub-line-id" class="fb-sl-badge">ASSY-SL01</span>
+        <span id="fb-variant" class="fb-variant-badge">HYDRAULIC</span>
+        <span id="fb-line-state" class="fb-state-badge">OPERATING</span>
+      </div>
+      <div class="fb-header-right">
+        <span id="fb-sim-time" class="fb-time-badge">t=0s</span>
+        <span id="fb-dwell" class="fb-dwell-badge">DWELL 0</span>
+        <span id="fb-scenario" class="scenario-badge">HAPPY_PATH</span>
+        <span id="fb-live-status" style="font-size:10px;"></span>
+      </div>
+    </header>
+
+    <!-- Frame B Main: Physical Canvas + Events + Inspector -->
+    <main id="fb-main">
+      <!-- SVG Physical Canvas -->
+      <div id="fb-canvas-wrap">
+        <svg id="fb-canvas-svg" viewBox="0 0 1920 700" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="fbBgGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0d1117"/>
+              <stop offset="100%" stop-color="#141a24"/>
+            </linearGradient>
+            <marker id="arrowOut" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#17a2b8"/>
+            </marker>
+            <marker id="arrowFlow" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+              <polygon points="0 0, 8 2.5, 0 5" fill="#1e3a5f"/>
+            </marker>
+          </defs>
+          <rect width="1920" height="700" fill="url(#fbBgGrad)"/>
+          <!-- Conveyor bar -->
+          <rect id="fb-conveyor" x="80" y="380" width="1600" height="10" rx="4" fill="#1a2740" stroke="#1e3a5f" stroke-width="1"/>
+          <!-- SSO2 input -->
+          <line x1="20" y1="380" x2="100" y2="380" stroke="#4ecca3" stroke-width="3" marker-end="url(#arrowFlow)"/>
+          <text x="20" y="370" fill="#4ecca3" font-size="11" font-weight="600">SSO2</text>
+          <!-- RSO2 branch -->
+          <line id="fb-rso2-line" x1="540" y1="260" x2="540" y2="375" stroke="#ffc107" stroke-width="2" marker-end="url(#arrowFlow)" stroke-dasharray="6,3"/>
+          <text id="fb-rso2-label" x="545" y="270" fill="#ffc107" font-size="11" font-weight="600">RSO2</text>
+          <!-- OUT arrow -->
+          <line x1="1720" y1="380" x2="1780" y2="380" stroke="#17a2b8" stroke-width="3" marker-end="url(#arrowOut)"/>
+          <text x="1730" y="370" fill="#17a2b8" font-size="11" font-weight="600">OUT</text>
+          <!-- Station nodes -->
+          <g id="fb-stations"></g>
+          <!-- Production summary text -->
+          <text id="fb-prod-text" x="40" y="50" fill="#8899bb" font-size="12" font-family="monospace"></text>
+        </svg>
+      </div>
+
+      <!-- Event Strip + Inspector rail -->
+      <div id="fb-right-panel">
+        <div id="fb-event-strip">
+          <h4 id="fb-event-title">Recent Quality Events</h4>
+          <div id="fb-event-list"></div>
+        </div>
+        <div id="fb-inspector-placeholder" class="fb-inspector-collapsed">
+          <span id="fb-inspector-label">Inspector</span>
+          <span id="fb-inspector-hint">Select a station</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Frame B Controls + Zoom -->
+    <footer id="fb-controls">
+      <div class="fb-ctrl-group">
+        <button id="fb-btn-reset" onclick="ctrlB.reset()">&#x27F3; RESET</button>
+        <button id="fb-btn-step" onclick="ctrlB.step()">&#x25B6; STEP</button>
+        <button id="fb-btn-auto" onclick="ctrlB.toggleAuto()">&#x25B6;&#x25B6; AUTO</button>
+        <button id="fb-btn-pause" onclick="ctrlB.pause()" disabled>&#x23F8; PAUSE</button>
+        <label>Speed:
+          <select id="fb-speed-select" onchange="ctrlB.setSpeed(this.value)">
+            <option value="0.5">0.5x</option><option value="1" selected>1x</option>
+            <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
+          </select>
+        </label>
+        <label>Scenario:
+          <select id="fb-scenario-select" onchange="ctrlB.setScenario(this.value)">
+            <option value="HAPPY_PATH">Happy Path</option>
+            <option value="AP06_FAIL_RETEST_PASS">AP06 Fail &#x2192; Retest &#x2192; Pass</option>
+            <option value="AP08_NG_REINSPECT_PASS">AP08 NG &#x2192; Reinspect &#x2192; Pass</option>
+            <option value="FAILED_FINAL">Failed Final</option>
+          </select>
+        </label>
+      </div>
+      <div class="fb-zoom-group">
+        <button onclick="ctrlB.zoomOut()" title="Zoom Out">&minus;</button>
+        <button onclick="ctrlB.zoomReset()" title="100%">100%</button>
+        <button onclick="ctrlB.zoomIn()" title="Zoom In">+</button>
+        <button onclick="ctrlB.zoomFit()" title="Fit">Fit</button>
+      </div>
+    </footer>
+  </div>
+
   <!-- ===== S04 Fallback ===== -->
   <div id="frame-s04">
     <header><h1>TIPA Motor Assembly Line Simulation</h1>
