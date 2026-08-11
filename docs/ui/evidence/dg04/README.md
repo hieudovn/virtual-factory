@@ -12,12 +12,12 @@ python -m http.server 8091
 
 ```
 dg04_review_harness.html        — Interactive Frame B prototype
-fixtures/                        — Deterministic state data
-  B1_normal.json                 — 6 WIPs, normal OPERATING
-  B2_ap06_hold.json              — AP06 RETEST_PENDING, FAIL #1
-  B3_ap04_join.json              — AP04 JOIN focus
-  B4_ap08_ng.json                — AP08 REINSPECT_PENDING, NG #1
-  B5_ap11_released.json          — AP11 RELEASED, MTR-0010 → OUT
+fixtures/                        — Deterministic state data (design evidence; see classification below)
+  B1_normal.json                 — 6 WIPs, normal OPERATING (representative current-state)
+  B2_ap06_hold.json              — AP06 RETEST_PENDING, FAIL #1 (representative current-state)
+  B3_ap04_join.json              — AP04 JOIN focus (transient design fixture; not guaranteed after every public step)
+  B4_ap08_ng.json                — AP08 REINSPECT_PENDING, NG #1 (representative current-state)
+  B5_ap11_released.json          — AP11 RELEASED, MTR-0010 → OUT (pre-index transient; not guaranteed as public post-step API state)
 DG04_B1_1920_normal.png          — Supplemental screenshot
 DG04_B2_1920_ap06_hold.png       — Supplemental screenshot
 DG04_B3_1920_ap04_join.png       — Supplemental screenshot
@@ -81,6 +81,8 @@ Back, Reset, Step, Auto, Pause — these are design representations of proposed 
 ## Fixture Integrity
 
 All fixtures follow `AssyDemoSnapshot.to_dict()` contract. No invented API fields. 3 DATA GAPs documented in Inspector placeholders.
+
+**Fixture observability**: B1, B2, B4 are representative current-state review fixtures. B3 (`ap04_join`) is a transient design fixture — the joined MTR child may have already indexed downstream in a live step. B5 (`ap11_released`) is a pre-index transient fixture — `ConveyorLine.index()` removes the AP11 occupant after release. Fixtures are deterministic design evidence for visual review; not all are guaranteed as externally observable controller states in a live stepping session. See DG04 architecture §12 for the full transient state rule.
 
 ## Frame A Refinement Recommendations
 

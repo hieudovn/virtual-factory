@@ -119,13 +119,19 @@ Source: `GET /assy-demo/sub-line/{sub_line_id}` → `AssyDemoSnapshot`
 | `recent_quality_events[]` | Event strip + Inspector |
 | `production` | Compact summary |
 
-### DATA GAPs (documented, not blocking)
+### DATA GAPs (documented, not blocking I05)
 
 | Gap | Impact |
 |-----|--------|
-| No per-station elapsed time in snapshot | Cannot show "60% complete" progress bars without runtime change |
+| No per-station elapsed/progress percentage | Cannot show "60% complete" progress bars without runtime change |
 | No RSO2 WIP identity at AP04 position | JOIN parent display limited to genealogy records |
 | Quality events are flat list | Need client-side filtering by station/WIP for Inspector |
+| No detailed checklist item payloads | Inspector checklist section deferred to later gate |
+| No detailed measurement values | Inspector measurements section deferred to later gate |
+| No detailed test-result payloads beyond current quality/event projection | Inspector test details deferred to later gate |
+| No guaranteed transient pre-index frame capture | AP04 JOIN and AP11 RELEASED may not be observable in every post-step snapshot (see §12) |
+
+**Available now for I05**: `positions[]`, `genealogy[]`, `recent_quality_events[]`, `production`, identity fields, `simulation_time_s`, `line_state`, `dwell_number`, `scenario`.
 
 ---
 
@@ -344,7 +350,64 @@ After Frame B typography is validated, apply the same 11px minimum rule to Frame
 
 ---
 
-## 12. Required Design States (I05 Acceptance)
+## 12. Live Snapshot Observability / Transient State Rule
+
+> **Principle**: Frame B physical occupancy is always rendered from the current `positions[]` snapshot.
+
+> Historical or transient manufacturing facts may be shown through genealogy, quality events, counters, or contextual labels, but must **never** be converted into fake current physical occupancy.
+
+### 12.1 Frozen Truthfulness Invariant
+
+- `positions[]` is the **sole source of truth** for current physical conveyor/station occupancy in Frame B.
+- Historical facts do **not** imply current position:
+  - Genealogy says MTR-0008 was created at AP04 → does **not** mean MTR-0008 is currently at AP04.
+  - FINAL_QC PASS event says MTR-0010 passed AP11 → does **not** mean MTR-0010 is currently occupying AP11.
+  - `motors_released > 0` → does **not** imply a released motor is still on the conveyor.
+
+### 12.2 AP04 JOIN — Transient Occupancy Rule
+
+AP04 is a join station where runtime creates the MTR child and genealogy record during station execution. When the whole line becomes ready, the same demo step may immediately index the MTR child from AP04 to AP05 before the public post-step snapshot is returned.
+
+**Rules for I05**:
+- Show MTR at AP04 **only if** `positions[AP04].wip_id` says it is there.
+- The AP04 JOIN landmark (amber border, "JOIN" label, RSO2 input branch) is always rendered.
+- Genealogy may show that JOIN occurred (`genealogy[]`) even after the child has moved downstream — this is **contextual/historical evidence**, not physical occupancy.
+- RSO2 parent identity comes from `genealogy[]`, never fabricated from conveyor occupancy.
+- If the current AP04 occupant is the joined MTR child, render it truthfully. If it has already indexed downstream, do **not** fabricate an MTR token at AP04.
+
+### 12.3 AP11 RELEASED — Transient Occupancy Rule
+
+Runtime AP11 PASS sets WIP lifecycle to `RELEASED` and fires `STATION_COMPLETE(..., "RELEASED")`. However, `ConveyorLine.index()` shifts all occupancy downstream on the same step. Since AP11 is the last configured conveyor position, the AP11 carrier/WIP leaves the 12-position occupancy map after index.
+
+The live public `/assy-demo/sub-line/{id}` API cannot guarantee a persistent snapshot where AP11 is occupied by a RELEASED WIP.
+
+**Rules for I05**:
+- Show a RELEASED WIP at AP11 **only if** the current API snapshot actually contains that WIP at `positions[AP11]`.
+- Otherwise, represent release using truthful available evidence:
+  - `production.motors_released` counter
+  - AP11 `FINAL_QC` event in `recent_quality_events[]`
+  - LINE OUT direction indicator
+  - Current AP11 occupancy from `positions[]` (may be empty or contain next WIP)
+- The AP11 FINAL landmark (cyan border, "FINAL" label, LINE OUT arrow) is always rendered.
+- Never synthesize a released token at AP11 that isn't in `positions[]`.
+
+### 12.4 Fixture Observability Classification
+
+The DG04 design fixtures serve distinct purposes:
+
+| Fixture | Classification |
+|---------|---------------|
+| B1_normal | Representative current-state review fixture |
+| B2_ap06_hold | Representative current-state review fixture |
+| B3_ap04_join | **Design fixture representing a JOIN-visible state.** Not guaranteed to be returned after every public `step`. The MTR child may have already indexed downstream. |
+| B4_ap08_ng | Representative current-state review fixture |
+| B5_ap11_released | **Pre-index / transient design fixture.** Not guaranteed as a public post-step API state. Represents a useful visual design state before `index_line()` shifts occupancy. |
+
+Fixtures are **deterministic design evidence for visual review**. They are not all guaranteed as externally observable controller states in a live stepping session.
+
+---
+
+## 13. Required Design States (I05 Acceptance)
 
 ### B1 — Normal Populated Sub-line
 
@@ -369,9 +432,9 @@ After Frame B typography is validated, apply the same 11px minimum rule to Frame
 - AP04 station with amber border
 - SSO2 parent identity shown
 - RSO2 parent identity shown (from genealogy)
-- MTR child WIP token at AP04
 - "JOIN" label
 - Genealogy accessible
+- Actual AP04 occupant comes from `positions[]` — if the joined MTR child is present at AP04, render it; if it has indexed downstream, show current occupant (if any), never fabricate an MTR token
 
 ### B4 — AP08 NG / REINSPECT
 
@@ -383,13 +446,14 @@ After Frame B typography is validated, apply the same 11px minimum rule to Frame
 ### B5 — AP11 RELEASED
 
 - AP11 station with cyan border
-- `RELEASED` status
+- FINAL QC landmark visible
 - Arrow to LINE OUT
-- Motor count incremented
+- `motors_released` counter shown from `production`
+- Current AP11 occupancy from `positions[]` — show RELEASED WIP at AP11 only when actually present in the snapshot; otherwise represent release via counters + FINAL_QC events + LINE OUT indicator
 
 ---
 
-## 13. I05 Acceptance Matrix
+## 14. I05 Acceptance Matrix
 
 | # | Criterion | Source |
 |---|-----------|--------|
@@ -401,10 +465,10 @@ After Frame B typography is validated, apply the same 11px minimum rule to Frame
 | 6 | WIP ID displayed at occupied stations | API |
 | 7 | Carrier ID displayed at occupied stations | API |
 | 8 | Quality badges: PASS/FAIL/NG/HOLD | API |
-| 9 | AP04 JOIN: amber border, parent→child visible | API + genealogy |
+| 9 | AP04 JOIN: amber border, JOIN label, RSO2 input branch, genealogy accessible, actual occupant from `positions[]` | API + genealogy |
 | 10 | AP06 HOLD: red border, RETEST_PENDING, attempt | API |
 | 11 | AP08 NG: red border, REINSPECT_PENDING | API |
-| 12 | AP11 RELEASED: cyan border, LINE OUT arrow | API |
+| 12 | AP11 FINAL: cyan border, LINE OUT arrow, motors_released counter, occupancy from `positions[]` | API |
 | 13 | Event strip shows recent quality events | API |
 | 14 | ← Back returns to Frame A overview | Navigation |
 | 15 | Zoom controls: [-][100%][+][Fit] | Canvas |
@@ -416,7 +480,7 @@ After Frame B typography is validated, apply the same 11px minimum rule to Frame
 
 ---
 
-## 14. Forbidden
+## 15. Forbidden
 
 - ❌ Frame B is not a zoomed Frame A
 - ❌ No fake station occupancy (use `positions[]` array)
@@ -430,7 +494,7 @@ After Frame B typography is validated, apply the same 11px minimum rule to Frame
 
 ---
 
-## 15. Scope
+## 16. Scope
 
 - ✅ DG04-01 design-only
 - ✅ Frame B information architecture frozen
