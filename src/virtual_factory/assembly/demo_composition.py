@@ -100,6 +100,7 @@ class AssyDemoContext:
     identity: AssySubLineIdentity
     config: AssyLineConfig
     runtime: AssyLineRuntime
+    effective_scenario: DemoScenario = DemoScenario.HAPPY_PATH
 
     # Per-context feed state (isolated — not shared across contexts)
     carrier_seq: int = 1
@@ -199,6 +200,7 @@ class AssyDemoComposition:
                 identity=sl_identity,
                 config=ctx_config,
                 runtime=runtime,
+                effective_scenario=ctx_scenario,
                 carrier_seq=1,
                 sso2_idx=0,
                 sso2_ids=[],
@@ -287,11 +289,14 @@ class AssyDemoComposition:
     # --- Snapshot ---
 
     def snapshot(self) -> AssyDemoSnapshot:
-        """Build detached snapshot for the currently selected context."""
+        """Build detached snapshot for the currently selected context.
+
+        Uses the context's effective scenario, not the global demo scenario.
+        """
         ctx = self.selected_context
         if ctx is None:
             return AssyDemoSnapshot()
-        return build_snapshot(ctx.runtime, self.scenario.value)
+        return build_snapshot(ctx.runtime, ctx.effective_scenario.value)
 
     # --- Reset ---
 

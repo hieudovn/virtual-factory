@@ -139,7 +139,7 @@ class DemoController:
 
     @property
     def completed_motors(self) -> int:
-        """Total motors released across all contexts (S04 backward compat: selected context)."""
+        """Motors released in the selected context (S04 backward compat)."""
         if self._composition is None:
             return 0
         ctx = self._composition.selected_context

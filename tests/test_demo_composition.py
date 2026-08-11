@@ -239,17 +239,80 @@ class TestRuntimeIsolation:
             )
 
     def test_same_bare_wip_ids_tolerated(self):
-        """Both SL01 and SL02 can have MTR-0001 without conflict."""
+        """Both SL01 and SL02 create MTR-0001 — distinct objects, isolated."""
         comp = AssyDemoComposition(config_path=str(REAL_CONFIG))
         comp.initialize()
 
-        for _ in range(15):
+        # Drive enough steps so both contexts produce MTR-0001
+        for _ in range(30):
             comp.step_all()
 
         sl01 = comp.contexts["ASSY-SL01"].runtime
         sl02 = comp.contexts["ASSY-SL02"].runtime
-        # Both may have MTR-0001 — they are separate runtimes
-        assert "MTR-0001" in sl01.wip_ids or "MTR-0001" in sl02.wip_ids or True
+
+        # Both must contain MTR-0001
+        assert "MTR-0001" in sl01.wip_ids, "SL01 should have MTR-0001"
+        assert "MTR-0001" in sl02.wip_ids, "SL02 should have MTR-0001"
+
+        # They must be distinct Python objects
+        sl01_mtr = sl01.get_wip("MTR-0001")
+        sl02_mtr = sl02.get_wip("MTR-0001")
+        assert sl01_mtr is not sl02_mtr, (
+            "MTR-0001 in SL01 and SL02 must be different objects"
+        )
+
+        # Mutating one must not affect the other
+        from virtual_factory.assembly.line_runtime import WipLifecycle
+        original_sl02_lifecycle = sl02_mtr.lifecycle
+        sl01_mtr.lifecycle = WipLifecycle.RELEASED
+        assert sl02.get_wip("MTR-0001").lifecycle == original_sl02_lifecycle, (
+            "Mutating SL01's MTR-0001 must not affect SL02's MTR-0001"
+        )
+
+    def test_context_effective_scenario(self):
+        """Each context stores its effective scenario correctly."""
+        comp = AssyDemoComposition(
+            config_path=str(REAL_CONFIG),
+            scenario=DemoScenario.AP06_FAIL_RETEST_PASS,
+        )
+        comp.initialize()
+
+        assert comp.contexts["ASSY-SL03"].effective_scenario == DemoScenario.AP06_FAIL_RETEST_PASS
+        assert comp.contexts["ASSY-SL01"].effective_scenario == DemoScenario.HAPPY_PATH
+        assert comp.contexts["ASSY-SL02"].effective_scenario == DemoScenario.HAPPY_PATH
+        assert comp.contexts["ASSY-SL04"].effective_scenario == DemoScenario.HAPPY_PATH
+
+    def test_snapshot_scenario_reflects_selected_context(self):
+        """Selected SL01 (non-target) snapshot says HAPPY_PATH, not global exception."""
+        comp = AssyDemoComposition(
+            config_path=str(REAL_CONFIG),
+            scenario=DemoScenario.AP06_FAIL_RETEST_PASS,
+        )
+        comp.initialize()
+
+        # Default selected is SL01 (non-target, HAPPY_PATH)
+        snap = comp.snapshot()
+        assert snap.scenario == "HAPPY_PATH", (
+            f"SL01 snapshot scenario should be HAPPY_PATH, got {snap.scenario}"
+        )
+
+        # Select SL03 (target, exception)
+        comp.select_sub_line("ASSY-SL03")
+        snap = comp.snapshot()
+        assert snap.scenario == "AP06_FAIL_RETEST_PASS", (
+            f"SL03 snapshot scenario should be AP06_FAIL_RETEST_PASS, got {snap.scenario}"
+        )
+
+    def test_all_happy_path_snapshots(self):
+        """HAPPY_PATH: all 6 context snapshots say HAPPY_PATH."""
+        comp = AssyDemoComposition(config_path=str(REAL_CONFIG))
+        comp.initialize()
+        for sl_id in CANONICAL_TIPA_SUB_LINE_IDS:
+            comp.select_sub_line(sl_id)
+            snap = comp.snapshot()
+            assert snap.scenario == "HAPPY_PATH", (
+                f"{sl_id} snapshot scenario should be HAPPY_PATH, got {snap.scenario}"
+            )
 
 
 # ═══════════════════════════════════════════════════════════
@@ -290,11 +353,39 @@ class TestStepAll:
         """simulation_time_s values are NOT asserted equal across contexts."""
         comp = AssyDemoComposition(config_path=str(REAL_CONFIG))
         comp.initialize()
-        comp.step_all()
+        for _ in range(5):
+            comp.step_all()
 
         times = {ctx.runtime.simulation_time_s for ctx in comp.contexts.values()}
-        # We don't assert len(times) == 1 — times can differ
-        assert len(times) >= 1  # at least one unique value
+        # Times may differ — we just verify they all advanced
+        for sl_id, ctx in comp.contexts.items():
+            assert ctx.runtime.simulation_time_s > 0, (
+                f"{sl_id} simulation time should have advanced"
+            )
+
+    def test_step_all_steps_each_context_exactly_once(self):
+        """One step_all() calls step_context() exactly once per context."""
+        comp = AssyDemoComposition(config_path=str(REAL_CONFIG))
+        comp.initialize()
+
+        # Record trace length before step
+        trace_before = {
+            sl_id: len(ctx.runtime.trace)
+            for sl_id, ctx in comp.contexts.items()
+        }
+
+        comp.step_all()
+
+        # Every context must have exactly one DWELL_BEGIN or DWELL_CONTINUE added
+        for sl_id, ctx in comp.contexts.items():
+            new_events = ctx.runtime.trace[trace_before[sl_id]:]
+            dwell_events = [e for e in new_events
+                           if e.event_type == "DWELL_META"
+                           and ("DWELL_BEGIN" in e.detail or "DWELL_CONTINUE" in e.detail)]
+            assert len(dwell_events) == 1, (
+                f"{sl_id}: expected exactly 1 dwell event in step, "
+                f"got {len(dwell_events)}: {[e.detail for e in dwell_events]}"
+            )
 
 
 # ═══════════════════════════════════════════════════════════
@@ -305,20 +396,46 @@ class TestHoldDivergence:
     """Tests that a HOLD on target does not globally block all contexts."""
 
     def test_target_hold_does_not_block_other_contexts(self):
-        """Target SL03 can HOLD while SL01 continues advancing."""
+        """Target SL03 enters HOLD while SL01 continues advancing."""
         comp = AssyDemoComposition(
             config_path=str(REAL_CONFIG),
             scenario=DemoScenario.AP06_FAIL_RETEST_PASS,
         )
         comp.initialize()
 
-        # Step many times to encounter FAIL on SL03
-        for _ in range(20):
+        # Drive until SL03 AP06 produces FAIL + HOLD
+        from virtual_factory.assembly.quality_records import QualityStatus
+        sl03_held = False
+        for _ in range(30):
+            comp.step_all()
+            # Check if SL03 has any WIP with RETEST_PENDING
+            for wip_id in comp.contexts["ASSY-SL03"].runtime.wip_ids:
+                qs = comp.contexts["ASSY-SL03"].runtime.get_current_quality_status(wip_id)
+                if qs == QualityStatus.RETEST_PENDING:
+                    sl03_held = True
+                    break
+            if sl03_held:
+                break
+
+        assert sl03_held, "SL03 should have entered RETEST_PENDING after enough steps"
+
+        # Record SL01 state after HOLD is active
+        sl01_dwell_at_hold = comp.contexts["ASSY-SL01"].runtime.conveyor.dwell_number
+        sl01_time_at_hold = comp.contexts["ASSY-SL01"].runtime.simulation_time_s
+
+        # Step a few more times — SL01 should continue progressing
+        for _ in range(5):
             comp.step_all()
 
-        # SL01 should have advanced (dwell_number > some minimum)
-        sl01_dwell = comp.contexts["ASSY-SL01"].runtime.conveyor.dwell_number
-        assert sl01_dwell > 0, "SL01 should have completed at least one dwell"
+        sl01_dwell_after = comp.contexts["ASSY-SL01"].runtime.conveyor.dwell_number
+        sl01_time_after = comp.contexts["ASSY-SL01"].runtime.simulation_time_s
+
+        assert sl01_dwell_after > sl01_dwell_at_hold, (
+            f"SL01 should have advanced dwells: {sl01_dwell_at_hold} → {sl01_dwell_after}"
+        )
+        assert sl01_time_after > sl01_time_at_hold, (
+            f"SL01 time should have advanced: {sl01_time_at_hold} → {sl01_time_after}"
+        )
 
     def test_hold_runtime_time_continues_advancing(self):
         """Even during HOLD, the held runtime's simulation_time_s advances."""
@@ -334,6 +451,26 @@ class TestHoldDivergence:
         # SL03 time should be > 0 (time passes even during HOLD/retest)
         sl03_time = comp.contexts["ASSY-SL03"].runtime.simulation_time_s
         assert sl03_time > 0, "Held runtime time should advance"
+
+    def test_hold_is_local_to_target_context(self):
+        """Non-target contexts never see RETEST_PENDING quality."""
+        comp = AssyDemoComposition(
+            config_path=str(REAL_CONFIG),
+            scenario=DemoScenario.AP06_FAIL_RETEST_PASS,
+        )
+        comp.initialize()
+
+        for _ in range(30):
+            comp.step_all()
+
+        from virtual_factory.assembly.quality_records import QualityStatus
+        for sl_id in ("ASSY-SL01", "ASSY-SL02", "ASSY-SL04", "ASSY-SL05", "ASSY-SL06"):
+            runtime = comp.contexts[sl_id].runtime
+            for wip_id in runtime.wip_ids:
+                qs = runtime.get_current_quality_status(wip_id)
+                assert qs != QualityStatus.RETEST_PENDING, (
+                    f"Non-target {sl_id} WIP {wip_id} has RETEST_PENDING"
+                )
 
 
 # ═══════════════════════════════════════════════════════════
@@ -537,3 +674,33 @@ class TestDemoControllerBackwardCompat:
         # After reset with new scenario, target should have exception overrides
         target = ctrl.composition.contexts["ASSY-SL03"]
         assert 2 in target.config.quality.ap06.overrides
+
+    def test_snapshot_scenario_matches_selected_context(self):
+        """Controller snapshot scenario reflects selected context, not global."""
+        ctrl = DemoController(config_path=str(REAL_CONFIG))
+        ctrl.set_scenario(DemoScenario.AP06_FAIL_RETEST_PASS)
+        ctrl.initialize()
+
+        # Default selected SL01 (non-target) → HAPPY_PATH
+        snap = ctrl.snapshot()
+        assert snap.scenario == "HAPPY_PATH", (
+            f"SL01 snapshot should be HAPPY_PATH, got {snap.scenario}"
+        )
+
+        # Select target SL03 → AP06_FAIL_RETEST_PASS
+        ctrl.select_sub_line("ASSY-SL03")
+        snap = ctrl.snapshot()
+        assert snap.scenario == "AP06_FAIL_RETEST_PASS", (
+            f"SL03 snapshot should be AP06_FAIL_RETEST_PASS, got {snap.scenario}"
+        )
+
+    def test_snapshot_scenario_happy_path_all_contexts(self):
+        """HAPPY_PATH: all 6 context snapshots say HAPPY_PATH."""
+        ctrl = DemoController(config_path=str(REAL_CONFIG))
+        ctrl.initialize()
+        for sl_id in sorted(ctrl.composition.contexts.keys()):
+            ctrl.select_sub_line(sl_id)
+            snap = ctrl.snapshot()
+            assert snap.scenario == "HAPPY_PATH", (
+                f"{sl_id} snapshot should be HAPPY_PATH, got {snap.scenario}"
+            )
