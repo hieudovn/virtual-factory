@@ -1,9 +1,21 @@
-# M6-S04B-DG03 — Visual Design / Figma Gate
+# M6-S04B-DG03-C01 — Visual Design Gate (Corrected)
 
-> **Status**: Visual design gate — ready for SA review.  
+> **Status**: Visual design gate — corrected per SA review. Ready for SA review.  
 > **Design tool**: SVG/HTML mockups (Figma-ready specification).  
 > **Date**: 2026-08-11  
+> **Correction**: DG03-C01 — 4 SA blockers resolved.  
 > **Design Authority**: `docs/ui/VIRTUAL_FACTORY_UI_UX_DESIGN_GUIDE.md` v1.1
+
+---
+
+## Blocker Resolution Summary
+
+| Blocker | Issue | Resolution |
+|---------|-------|------------|
+| 1 | Frame A was six-card dashboard | Rewritten as physical-flow parallel lanes |
+| 2 | HAPPY_PATH + QUALITY HOLD contradiction | Scenario label fixed to AP06_FAIL_RETEST_PASS |
+| 3 | OPERATING + HOLD contradiction in Frame B | Header now shows QUALITY HOLD with AP06/MTR context |
+| 4 | Insufficient visual evidence (2 frames) | Now 13 visual states across 3 HTML files |
 
 ---
 

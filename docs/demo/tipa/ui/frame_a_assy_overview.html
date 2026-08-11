@@ -1,183 +1,177 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>DG03 Frame A — ASSY Line Overview</title>
+<!DOCTYPE html><html lang="en">
+<head><meta charset="UTF-8"><title>DG03-C01 Frame A — ASSY Line Overview (Physical-First)</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#0d1117; display:flex; justify-content:center; align-items:center; height:100vh; font-family:'Segoe UI',system-ui,sans-serif; }
-  svg { max-width:100%; max-height:100%; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;display:flex;justify-content:center;align-items:center;height:100vh;font-family:'Segoe UI',system-ui,sans-serif}
 </style></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0d1117"/><stop offset="100%" stop-color="#161b22"/></linearGradient>
-    <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1a2332"/><stop offset="100%" stop-color="#0f1a2e"/></linearGradient>
-    <linearGradient id="hydroGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2740"/><stop offset="100%" stop-color="#111d30"/></linearGradient>
-    <linearGradient id="thermalGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#221a30"/><stop offset="100%" stop-color="#181125"/></linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0d1117"/><stop offset="100%" stop-color="#161b22"/></linearGradient>
+  <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1a2332"/><stop offset="100%" stop-color="#0f1a2e"/></linearGradient>
+</defs>
+<rect width="1920" height="1080" fill="url(#bg)"/>
 
-  <!-- Background -->
-  <rect width="1920" height="1080" fill="url(#bg)"/>
+<!-- Header -->
+<rect x="0" y="0" width="1920" height="56" fill="url(#headerGrad)"/>
+<line x1="0" y1="56" x2="1920" y2="56" stroke="#1e3a5f" stroke-width="2"/>
+<text x="32" y="38" fill="#e0e0e0" font-size="22" font-weight="600">TIPA MOTOR PRODUCTION — ASSY LINE</text>
+<text x="420" y="38" fill="#4ecca3" font-size="13">6 PARALLEL SUB-LINES</text>
+<text x="1600" y="38" fill="#888" font-size="12" font-family="monospace">t=480s</text>
 
-  <!-- Header Bar -->
-  <rect x="0" y="0" width="1920" height="64" fill="url(#headerGrad)"/>
-  <line x1="0" y1="64" x2="1920" y2="64" stroke="#1e3a5f" stroke-width="2"/>
-  <text x="32" y="42" fill="#e0e0e0" font-size="22" font-weight="600">TIPA MOTOR PRODUCTION</text>
-  <text x="280" y="42" fill="#4ecca3" font-size="13" opacity="0.8">ASSY LINE OVERVIEW</text>
+<!-- Subtitle -->
+<text x="80" y="100" fill="#8899bb" font-size="14" font-weight="600">HYDRAULIC SSO2 INPUT VARIANT</text>
 
-  <!-- Status Bar (right side) -->
-  <g transform="translate(1400,0)">
-    <rect x="0" y="8" width="80" height="48" rx="4" fill="#0f1a2e" stroke="#1e3a5f" stroke-width="1"/>
-    <text x="40" y="28" fill="#888" font-size="10" text-anchor="middle">SIM TIME</text>
-    <text x="40" y="46" fill="#4ecca3" font-size="14" text-anchor="middle" font-family="monospace">00:12:34</text>
-    <rect x="90" y="8" width="80" height="48" rx="4" fill="#0f1a2e" stroke="#1e3a5f" stroke-width="1"/>
-    <text x="130" y="28" fill="#888" font-size="10" text-anchor="middle">SCENARIO</text>
-    <text x="130" y="46" fill="#e0e0e0" font-size="13" text-anchor="middle">HAPPY_PATH</text>
-    <rect x="180" y="8" width="60" height="48" rx="4" fill="#0f1a2e" stroke="#1e3a5f" stroke-width="1"/>
-    <text x="210" y="28" fill="#888" font-size="10" text-anchor="middle">SPEED</text>
-    <text x="210" y="46" fill="#ffc107" font-size="13" text-anchor="middle">1x</text>
+<!-- ===== Hydraulic Sub-lines — physical parallel lanes ===== -->
+<g transform="translate(80,120)">
+  <!-- ASSY-SL01 lane -->
+  <g>
+    <rect x="0" y="0" width="1760" height="90" rx="4" fill="#111d30" stroke="#1e3a5f" stroke-width="1"/>
+    <!-- Label -->
+    <text x="12" y="22" fill="#8899bb" font-size="13" font-weight="600">ASSY-SL01</text>
+    <rect x="110" y="10" width="72" height="18" rx="3" fill="#1b4332"/>
+    <text x="146" y="24" fill="#4ecca3" font-size="10" text-anchor="middle">OPERATING</text>
+    <!-- Entry -->
+    <rect x="210" y="14" width="50" height="14" rx="2" fill="#1e3a5f"/>
+    <text x="235" y="25" fill="#8899bb" font-size="9" text-anchor="middle">SSO2(H)</text>
+    <line x1="260" y1="21" x2="300" y2="21" stroke="#2d5a8f" stroke-width="2"/>
+    <!-- Process flow — horizontal bar with station dots -->
+    <rect x="300" y="16" width="1100" height="10" rx="5" fill="#1a2740"/>
+    <circle cx="340" cy="21" r="7" fill="#4ecca3" opacity="0.7"/>
+    <circle cx="420" cy="21" r="7" fill="#4ecca3" opacity="0.5"/>
+    <circle cx="500" cy="21" r="7" fill="#4ecca3" opacity="0.5"/>
+    <circle cx="580" cy="21" r="7" fill="#ffc107" opacity="0.7"/>
+    <circle cx="660" cy="21" r="7" fill="#4ecca3" opacity="0.5"/>
+    <circle cx="820" cy="21" r="7" fill="#4ecca3" opacity="0.5"/>
+    <circle cx="980" cy="21" r="7" fill="#4ecca3" opacity="0.5"/>
+    <circle cx="1140" cy="21" r="7" fill="#4ecca3" opacity="0.3"/>
+    <circle cx="1300" cy="21" r="7" fill="#4ecca3" opacity="0.3"/>
+    <!-- Output -->
+    <line x1="1400" y1="21" x2="1440" y2="21" stroke="#17a2b8" stroke-width="2"/>
+    <rect x="1440" y="14" width="55" height="14" rx="2" fill="#0d2b3e"/>
+    <text x="1467" y="25" fill="#17a2b8" font-size="9" text-anchor="middle">MOTOR</text>
+    <!-- Stats -->
+    <text x="1520" y="25" fill="#666" font-size="10">WIP:5</text>
+    <text x="1580" y="25" fill="#666" font-size="10">OUT:3</text>
+    <text x="1640" y="25" fill="#666" font-size="10">DW:12</text>
+    <!-- WIP tokens along bar -->
+    <rect x="335" y="50" width="30" height="14" rx="2" fill="#1e3a5f"/>
+    <text x="350" y="61" fill="#aaa" font-size="8" text-anchor="middle">PAL-001</text>
+    <rect x="575" y="50" width="30" height="14" rx="2" fill="#1e3a5f"/>
+    <text x="590" y="61" fill="#aaa" font-size="8" text-anchor="middle">PAL-002</text>
+    <rect x="815" y="50" width="44" height="14" rx="2" fill="#3d2e00"/>
+    <text x="837" y="61" fill="#ffc107" font-size="8" text-anchor="middle">MTR-0005</text>
   </g>
 
-  <!-- Section: Hydraulic -->
-  <text x="80" y="120" fill="#8899bb" font-size="15" font-weight="600">HYDRAULIC SSO2 INPUT VARIANT</text>
-  <line x1="80" y1="128" x2="460" y2="128" stroke="#1e3a5f" stroke-width="1"/>
-
-  <!-- Hydraulic Sub-lines -->
-  <g transform="translate(80,150)">
-    <!-- SL01 - Operating -->
-    <g>
-      <rect x="0" y="0" width="520" height="160" rx="6" fill="url(#hydroGrad)" stroke="#1e3a5f" stroke-width="1"/>
-      <text x="16" y="24" fill="#8899bb" font-size="12" font-weight="600">ASSY-SL01</text>
-      <rect x="120" y="10" width="80" height="22" rx="3" fill="#1b4332" stroke="#2d6a4f" stroke-width="1"/>
-      <text x="160" y="26" fill="#4ecca3" font-size="11" text-anchor="middle">OPERATING</text>
-      <!-- Simplified flow -->
-      <rect x="16" y="44" width="468" height="8" rx="4" fill="#1e3a5f"/>
-      <circle cx="48" cy="48" r="6" fill="#4ecca3" opacity="0.6"/>
-      <circle cx="130" cy="48" r="6" fill="#4ecca3" opacity="0.4"/>
-      <circle cx="212" cy="48" r="6" fill="#4ecca3" opacity="0.4"/>
-      <circle cx="294" cy="48" r="6" fill="#ffc107" opacity="0.6"/>
-      <circle cx="376" cy="48" r="6" fill="#4ecca3" opacity="0.4"/>
-      <circle cx="458" cy="48" r="6" fill="#4ecca3" opacity="0.3"/>
-      <!-- Stats -->
-      <text x="16" y="82" fill="#666" font-size="10">WIP: 5</text>
-      <text x="100" y="82" fill="#666" font-size="10">OUTPUT: 3</text>
-      <text x="200" y="82" fill="#666" font-size="10">DWELL: 12</text>
-      <text x="300" y="82" fill="#4ecca3" font-size="10">NORMAL</text>
-      <!-- Feeder hint -->
-      <rect x="16" y="100" width="40" height="14" rx="2" fill="#0f1a2e" stroke="#1e3a5f" stroke-width="0.5"/>
-      <text x="36" y="111" fill="#555" font-size="8" text-anchor="middle">SSO2(H)</text>
-      <!-- Output hint -->
-      <rect x="436" y="100" width="48" height="14" rx="2" fill="#0f1a2e" stroke="#1e3a5f" stroke-width="0.5"/>
-      <text x="460" y="111" fill="#555" font-size="8" text-anchor="middle">MOTOR</text>
-    </g>
-
-    <!-- SL02 - Operating -->
-    <g transform="translate(0,175)">
-      <rect x="0" y="0" width="520" height="160" rx="6" fill="url(#hydroGrad)" stroke="#1e3a5f" stroke-width="1"/>
-      <text x="16" y="24" fill="#8899bb" font-size="12" font-weight="600">ASSY-SL02</text>
-      <rect x="120" y="10" width="80" height="22" rx="3" fill="#1b4332" stroke="#2d6a4f" stroke-width="1"/>
-      <text x="160" y="26" fill="#4ecca3" font-size="11" text-anchor="middle">OPERATING</text>
-      <rect x="16" y="44" width="468" height="8" rx="4" fill="#1e3a5f"/>
-      <circle cx="48" cy="48" r="6" fill="#4ecca3" opacity="0.6"/>
-      <circle cx="130" cy="48" r="6" fill="#4ecca3" opacity="0.4"/>
-      <circle cx="294" cy="48" r="6" fill="#ffc107" opacity="0.6"/>
-      <circle cx="458" cy="48" r="6" fill="#4ecca3" opacity="0.3"/>
-      <text x="16" y="82" fill="#666" font-size="10">WIP: 4</text>
-      <text x="100" y="82" fill="#666" font-size="10">OUTPUT: 4</text>
-      <text x="200" y="82" fill="#666" font-size="10">DWELL: 15</text>
-      <text x="300" y="82" fill="#4ecca3" font-size="10">NORMAL</text>
-    </g>
-
-    <!-- SL03 - QUALITY HOLD (selected/highlighted) -->
-    <g transform="translate(0,350)">
-      <rect x="0" y="0" width="520" height="160" rx="6" fill="url(#hydroGrad)" stroke="#e94560" stroke-width="2" filter="url(#glow)"/>
-      <text x="16" y="24" fill="#ff6b81" font-size="12" font-weight="600">ASSY-SL03</text>
-      <rect x="120" y="10" width="100" height="22" rx="3" fill="#4a1a1a" stroke="#e94560" stroke-width="1"/>
-      <text x="170" y="26" fill="#e94560" font-size="11" text-anchor="middle">QUALITY HOLD</text>
-      <rect x="16" y="44" width="468" height="8" rx="4" fill="#1e3a5f"/>
-      <circle cx="48" cy="48" r="6" fill="#4ecca3" opacity="0.3"/>
-      <circle cx="130" cy="48" r="6" fill="#4ecca3" opacity="0.3"/>
-      <circle cx="212" cy="48" r="6" fill="#e94560" opacity="0.8" filter="url(#glow)"/>
-      <circle cx="294" cy="48" r="6" fill="#333" opacity="0.3"/>
-      <text x="16" y="82" fill="#666" font-size="10">WIP: 6</text>
-      <text x="100" y="82" fill="#666" font-size="10">OUTPUT: 1</text>
-      <text x="200" y="82" fill="#666" font-size="10">DWELL: 8</text>
-      <text x="300" y="82" fill="#e94560" font-size="10">AP06 — MTR-0003 — FAIL #1</text>
-    </g>
+  <!-- ASSY-SL02 lane -->
+  <g transform="translate(0,105)">
+    <rect x="0" y="0" width="1760" height="90" rx="4" fill="#111d30" stroke="#1e3a5f" stroke-width="1"/>
+    <text x="12" y="22" fill="#8899bb" font-size="13" font-weight="600">ASSY-SL02</text>
+    <rect x="110" y="10" width="72" height="18" rx="3" fill="#1b4332"/>
+    <text x="146" y="24" fill="#4ecca3" font-size="10" text-anchor="middle">OPERATING</text>
+    <rect x="210" y="14" width="50" height="14" rx="2" fill="#1e3a5f"/>
+    <text x="235" y="25" fill="#8899bb" font-size="9" text-anchor="middle">SSO2(H)</text>
+    <line x1="260" y1="21" x2="300" y2="21" stroke="#2d5a8f" stroke-width="2"/>
+    <rect x="300" y="16" width="1100" height="10" rx="5" fill="#1a2740"/>
+    <circle cx="400" cy="21" r="7" fill="#4ecca3" opacity="0.7"/>
+    <circle cx="560" cy="21" r="7" fill="#4ecca3" opacity="0.5"/>
+    <circle cx="720" cy="21" r="7" fill="#ffc107" opacity="0.7"/>
+    <circle cx="960" cy="21" r="7" fill="#4ecca3" opacity="0.3"/>
+    <line x1="1400" y1="21" x2="1440" y2="21" stroke="#17a2b8" stroke-width="2"/>
+    <rect x="1440" y="14" width="55" height="14" rx="2" fill="#0d2b3e"/>
+    <text x="1467" y="25" fill="#17a2b8" font-size="9" text-anchor="middle">MOTOR</text>
+    <text x="1520" y="25" fill="#666" font-size="10">WIP:4</text>
+    <text x="1580" y="25" fill="#666" font-size="10">OUT:4</text>
+    <text x="1640" y="25" fill="#666" font-size="10">DW:15</text>
   </g>
 
-  <!-- Section: Thermal -->
-  <text x="680" y="120" fill="#9988bb" font-size="15" font-weight="600">THERMAL SSO2 INPUT VARIANT</text>
-  <line x1="680" y1="128" x2="1060" y2="128" stroke="#2a1a40" stroke-width="1"/>
+  <!-- ASSY-SL03 — QUALITY HOLD (highlighted exception lane) -->
+  <g transform="translate(0,210)">
+    <rect x="0" y="0" width="1760" height="90" rx="4" fill="#1a1015" stroke="#e94560" stroke-width="2"/>
+    <text x="12" y="22" fill="#e94560" font-size="13" font-weight="600">ASSY-SL03</text>
+    <rect x="110" y="10" width="100" height="18" rx="3" fill="#4a1a1a"/>
+    <text x="160" y="24" fill="#e94560" font-size="10" text-anchor="middle">QUALITY HOLD</text>
+    <rect x="230" y="14" width="50" height="14" rx="2" fill="#1e3a5f"/>
+    <text x="255" y="25" fill="#8899bb" font-size="9" text-anchor="middle">SSO2(H)</text>
+    <line x1="280" y1="21" x2="300" y2="21" stroke="#2d5a8f" stroke-width="2"/>
+    <rect x="300" y="16" width="1100" height="10" rx="5" fill="#1a2740"/>
+    <circle cx="360" cy="21" r="7" fill="#4ecca3" opacity="0.4"/>
+    <circle cx="500" cy="21" r="7" fill="#4ecca3" opacity="0.4"/>
+    <circle cx="640" cy="21" r="7" fill="#e94560" opacity="0.9"/>
+    <circle cx="780" cy="21" r="7" fill="#333" opacity="0.3"/>
+    <line x1="1400" y1="21" x2="1440" y2="21" stroke="#17a2b8" stroke-width="2"/>
+    <rect x="1440" y="14" width="55" height="14" rx="2" fill="#0d2b3e"/>
+    <text x="1467" y="25" fill="#17a2b8" font-size="9" text-anchor="middle">MOTOR</text>
+    <text x="1520" y="25" fill="#666" font-size="10">WIP:6</text>
+    <text x="1580" y="25" fill="#666" font-size="10">OUT:1</text>
+    <!-- Exception detail in lane -->
+    <text x="640" y="50" fill="#e94560" font-size="9" text-anchor="middle">⏸ HOLD</text>
+    <text x="640" y="64" fill="#888" font-size="8" text-anchor="middle">AP06 / MTR-0003 / FAIL #1</text>
+  </g>
+</g>
 
-  <g transform="translate(680,150)">
-    <!-- SL04 -->
-    <g>
-      <rect x="0" y="0" width="520" height="160" rx="6" fill="url(#thermalGrad)" stroke="#2a1a40" stroke-width="1"/>
-      <text x="16" y="24" fill="#9988bb" font-size="12" font-weight="600">ASSY-SL04</text>
-      <rect x="120" y="10" width="80" height="22" rx="3" fill="#1b4332" stroke="#2d6a4f" stroke-width="1"/>
-      <text x="160" y="26" fill="#4ecca3" font-size="11" text-anchor="middle">OPERATING</text>
-      <rect x="16" y="44" width="468" height="8" rx="4" fill="#2a1a40"/>
-      <circle cx="48" cy="48" r="6" fill="#4ecca3" opacity="0.5"/>
-      <circle cx="212" cy="48" r="6" fill="#4ecca3" opacity="0.4"/>
-      <circle cx="376" cy="48" r="6" fill="#ffc107" opacity="0.5"/>
-      <text x="16" y="82" fill="#666" font-size="10">WIP: 5</text>
-      <text x="100" y="82" fill="#666" font-size="10">OUTPUT: 3</text>
-      <text x="300" y="82" fill="#4ecca3" font-size="10">NORMAL</text>
-      <rect x="16" y="100" width="40" height="14" rx="2" fill="#141028" stroke="#2a1a40" stroke-width="0.5"/>
-      <text x="36" y="111" fill="#555" font-size="8" text-anchor="middle">SSO2(T)</text>
-    </g>
+<!-- Thermal section -->
+<text x="80" y="490" fill="#9988bb" font-size="14" font-weight="600">THERMAL SSO2 INPUT VARIANT</text>
 
-    <!-- SL05 -->
-    <g transform="translate(0,175)">
-      <rect x="0" y="0" width="520" height="160" rx="6" fill="url(#thermalGrad)" stroke="#2a1a40" stroke-width="1"/>
-      <text x="16" y="24" fill="#9988bb" font-size="12" font-weight="600">ASSY-SL05</text>
-      <rect x="120" y="10" width="80" height="22" rx="3" fill="#1b4332" stroke="#2d6a4f" stroke-width="1"/>
-      <text x="160" y="26" fill="#4ecca3" font-size="11" text-anchor="middle">OPERATING</text>
-      <text x="16" y="82" fill="#666" font-size="10">WIP: 4</text>
-      <text x="100" y="82" fill="#666" font-size="10">OUTPUT: 4</text>
-      <text x="300" y="82" fill="#4ecca3" font-size="10">NORMAL</text>
-    </g>
-
-    <!-- SL06 -->
-    <g transform="translate(0,350)">
-      <rect x="0" y="0" width="520" height="160" rx="6" fill="url(#thermalGrad)" stroke="#2a1a40" stroke-width="1"/>
-      <text x="16" y="24" fill="#9988bb" font-size="12" font-weight="600">ASSY-SL06</text>
-      <rect x="120" y="10" width="60" height="22" rx="3" fill="#0f1a2e" stroke="#2a1a40" stroke-width="1"/>
-      <text x="150" y="26" fill="#17a2b8" font-size="11" text-anchor="middle">READY</text>
-      <text x="16" y="82" fill="#666" font-size="10">WIP: 2</text>
-      <text x="100" y="82" fill="#666" font-size="10">OUTPUT: 6</text>
-      <text x="300" y="82" fill="#17a2b8" font-size="10">READY</text>
-    </g>
+<g transform="translate(80,510)">
+  <!-- ASSY-SL04 -->
+  <g>
+    <rect x="0" y="0" width="1760" height="90" rx="4" fill="#141028" stroke="#2a1a40" stroke-width="1"/>
+    <text x="12" y="22" fill="#9988bb" font-size="13" font-weight="600">ASSY-SL04</text>
+    <rect x="110" y="10" width="72" height="18" rx="3" fill="#1b4332"/>
+    <text x="146" y="24" fill="#4ecca3" font-size="10" text-anchor="middle">OPERATING</text>
+    <rect x="210" y="14" width="50" height="14" rx="2" fill="#2a1a40"/>
+    <text x="235" y="25" fill="#9988bb" font-size="9" text-anchor="middle">SSO2(T)</text>
+    <line x1="260" y1="21" x2="300" y2="21" stroke="#3a2a5f" stroke-width="2"/>
+    <rect x="300" y="16" width="1100" height="10" rx="5" fill="#221a35"/>
+    <circle cx="420" cy="21" r="7" fill="#4ecca3" opacity="0.6"/>
+    <circle cx="660" cy="21" r="7" fill="#4ecca3" opacity="0.5"/>
+    <circle cx="980" cy="21" r="7" fill="#4ecca3" opacity="0.3"/>
+    <line x1="1400" y1="21" x2="1440" y2="21" stroke="#17a2b8" stroke-width="2"/>
+    <rect x="1440" y="14" width="55" height="14" rx="2" fill="#0d2b3e"/>
+    <text x="1467" y="25" fill="#17a2b8" font-size="9" text-anchor="middle">MOTOR</text>
+    <text x="1520" y="25" fill="#666" font-size="10">WIP:5</text>
+    <text x="1640" y="25" fill="#666" font-size="10">DW:10</text>
   </g>
 
-  <!-- Production Summary (bottom) -->
-  <g transform="translate(32,960)">
-    <rect x="0" y="0" width="1856" height="56" rx="4" fill="#0f1a2e" stroke="#1e3a5f" stroke-width="1"/>
-    <text x="20" y="24" fill="#888" font-size="11">MOTORS CREATED: 18</text>
-    <text x="200" y="24" fill="#888" font-size="11">RELEASED: 12</text>
-    <text x="380" y="24" fill="#888" font-size="11">ACTIVE WIPs: 26</text>
-    <text x="560" y="24" fill="#888" font-size="11">QUALITY HOLDS: 1</text>
-    <text x="760" y="24" fill="#888" font-size="11">SSO2 BUFFER: 4</text>
-    <text x="940" y="24" fill="#888" font-size="11">RSO2 BUFFER: 3</text>
-    <text x="1600" y="24" fill="#555" font-size="10">ASSY LINE</text>
-    <text x="1720" y="38" fill="#555" font-size="9">6 SUB-LINES</text>
+  <!-- ASSY-SL05 -->
+  <g transform="translate(0,105)">
+    <rect x="0" y="0" width="1760" height="90" rx="4" fill="#141028" stroke="#2a1a40" stroke-width="1"/>
+    <text x="12" y="22" fill="#9988bb" font-size="13" font-weight="600">ASSY-SL05</text>
+    <rect x="110" y="10" width="72" height="18" rx="3" fill="#1b4332"/>
+    <text x="146" y="24" fill="#4ecca3" font-size="10" text-anchor="middle">OPERATING</text>
+    <rect x="210" y="14" width="50" height="14" rx="2" fill="#2a1a40"/>
+    <text x="235" y="25" fill="#9988bb" font-size="9" text-anchor="middle">SSO2(T)</text>
+    <line x1="260" y1="21" x2="300" y2="21" stroke="#3a2a5f" stroke-width="2"/>
+    <text x="1520" y="25" fill="#666" font-size="10">WIP:4</text>
+    <text x="1640" y="25" fill="#666" font-size="10">DW:13</text>
   </g>
 
-  <!-- Controls -->
-  <g transform="translate(680,960)">
-    <rect x="0" y="60" width="560" height="36" rx="4" fill="#0f1a2e" stroke="#1e3a5f" stroke-width="1"/>
-    <rect x="10" y="66" width="70" height="24" rx="3" fill="#e94560"/>
-    <text x="45" y="83" fill="#fff" font-size="11" text-anchor="middle" font-weight="600">RESET</text>
-    <rect x="90" y="66" width="70" height="24" rx="3" fill="#4ecca3"/>
-    <text x="125" y="83" fill="#0d1117" font-size="11" text-anchor="middle" font-weight="600">STEP</text>
-    <rect x="170" y="66" width="70" height="24" rx="3" fill="#17a2b8"/>
-    <text x="205" y="83" fill="#fff" font-size="11" text-anchor="middle" font-weight="600">AUTO</text>
-    <rect x="250" y="66" width="70" height="24" rx="3" fill="#ffc107"/>
-    <text x="285" y="83" fill="#0d1117" font-size="11" text-anchor="middle" font-weight="600">PAUSE</text>
-    <text x="370" y="83" fill="#888" font-size="11">SPEED: 1x</text>
-    <text x="450" y="83" fill="#888" font-size="11">SCENARIO: HAPPY_PATH</text>
+  <!-- ASSY-SL06 -->
+  <g transform="translate(0,210)">
+    <rect x="0" y="0" width="1760" height="90" rx="4" fill="#141028" stroke="#2a1a40" stroke-width="1"/>
+    <text x="12" y="22" fill="#9988bb" font-size="13" font-weight="600">ASSY-SL06</text>
+    <rect x="110" y="10" width="60" height="18" rx="3" fill="#0d2b2e"/>
+    <text x="140" y="24" fill="#17a2b8" font-size="10" text-anchor="middle">READY</text>
+    <text x="1520" y="25" fill="#666" font-size="10">WIP:2</text>
+    <text x="1580" y="25" fill="#666" font-size="10">OUT:6</text>
   </g>
+</g>
+
+<!-- Bottom bar -->
+<g transform="translate(32,920)">
+  <rect x="0" y="0" width="1856" height="48" rx="4" fill="#0f1a2e" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="20" y="20" fill="#888" font-size="11">MOTORS CREATED: 18</text>
+  <text x="200" y="20" fill="#888" font-size="11">RELEASED: 12</text>
+  <text x="380" y="20" fill="#888" font-size="11">ACTIVE WIPs: 26</text>
+  <text x="560" y="20" fill="#e94560" font-size="11">QUALITY HOLDS: 1</text>
+  <rect x="10" y="30" width="70" height="14" rx="2" fill="#e94560"/>
+  <text x="45" y="41" fill="#fff" font-size="9" text-anchor="middle" font-weight="600">RESET</text>
+  <rect x="90" y="30" width="70" height="14" rx="2" fill="#4ecca3"/>
+  <text x="125" y="41" fill="#0d1117" font-size="9" text-anchor="middle" font-weight="600">STEP</text>
+  <rect x="170" y="30" width="70" height="14" rx="2" fill="#17a2b8"/>
+  <text x="205" y="41" fill="#fff" font-size="9" text-anchor="middle" font-weight="600">AUTO</text>
+  <text x="300" y="41" fill="#888" font-size="10">1x | AP06_FAIL_RETEST_PASS</text>
+</g>
 </svg>
-</body>
-</html>
+</body></html>
