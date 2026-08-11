@@ -222,24 +222,36 @@ class TestScenarioQualityHistory:
 
     # ---- FAILED_FINAL meaningful ----
 
-    def test_failed_final_target_has_fail_history(self):
-        """Prove FAILED_FINAL scenario projects failure dispositions
-        for the exception target sub-line."""
+    def test_failed_final_same_wip_both_attempts_fail(self):
+        """Prove FAILED_FINAL: same WIP has attempt 1 FAIL + attempt 2 FAIL at AP06,
+        both records preserved, terminal failure state reached."""
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml",
                               scenario=DemoScenario.FAILED_FINAL)
         ctrl.initialize()
-        for _ in range(40):
+        for _ in range(55):
             ctrl.step()
-        snap = ctrl.detail_for("ASSY-SL06")
+        snap = ctrl.detail_for("ASSY-SL03")
         d = snap.to_dict()
-        assert len(d["quality_records"]) > 0
-        # Records exist and are properly structured
+
+        # Group AP06 records by WIP, find one with FAIL→FAIL sequence
+        by_wip = {}
         for qr in d["quality_records"]:
-            assert qr["record_id"]
-            assert qr["wip_id"]
-            assert qr["station_id"]
-            assert qr["check_type"] in ("CHECKLIST", "TEST", "VISUAL_INSPECTION", "FINAL_QC")
-            assert qr["disposition"] in ("PASS", "FAIL", "NG", "HOLD")
+            if qr["station_id"] == "AP06":
+                by_wip.setdefault(qr["wip_id"], []).append(qr)
+
+        found = False
+        for wip_id, recs in by_wip.items():
+            s = sorted(recs, key=lambda r: r["simulation_time_s"])
+            if len(s) >= 2 and s[0]["disposition"] == "FAIL" and s[1]["disposition"] == "FAIL":
+                found = True
+                assert s[0]["attempt_number"] == 1
+                assert s[1]["attempt_number"] == 2
+                assert s[1]["simulation_time_s"] > s[0]["simulation_time_s"]
+                assert s[0]["check_type"] == "TEST"
+                assert s[1]["check_type"] == "TEST"
+                assert len(s) >= 2, "Both attempts must be preserved, not overwritten"
+                break
+        assert found, "No WIP found with AP06 FAIL #1 → FAIL #2 (terminal failure)"
 
 
 # ═══════════════════════════════════════
