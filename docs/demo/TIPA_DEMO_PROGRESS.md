@@ -147,6 +147,8 @@ M6-S05 ░░░░░░░░░░░░░░░░░░░░ PENDING     
 - `AP08_NG_REINSPECT_PASS` — motor 2: AP08 NG → REINSPECT → PASS
 - `FAILED_FINAL` — AP06 max attempts exhausted
 
+**UI/UX Design Authority**: [`docs/ui/VIRTUAL_FACTORY_UI_UX_DESIGN_GUIDE.md`](../ui/VIRTUAL_FACTORY_UI_UX_DESIGN_GUIDE.md)
+
 **Khởi động**: `uvicorn virtual_factory.ui.api:create_app --factory` → `http://localhost:8000/assy-demo`
 
 **Corrections**: C01 (Projection Boundary & Demo Semantics)
