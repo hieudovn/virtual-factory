@@ -165,14 +165,15 @@ function applyViewBox(){
   svg.setAttribute('viewBox',`${vx} ${vy} ${vw} ${vh}`);
 }
 
-// Pointer-anchored wheel zoom
-function svgPointFromClient(svgEl,clientX,clientY){
-  const r=svgEl.getBoundingClientRect();
-  const vb=svgEl.viewBox.baseVal;
-  return {
-    x:vb.x+(clientX-r.left)*vb.width/r.width,
-    y:vb.y+(clientY-r.top)*vb.height/r.height
-  };
+// Pointer-anchored wheel zoom — uses browser SVG CTM for correct
+// geometry under preserveAspectRatio="xMidYMid meet" letterboxing.
+function svgPointFromClient(svg, clientX, clientY) {
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+  return pt.matrixTransform(ctm.inverse());
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
@@ -181,17 +182,25 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   wrap.addEventListener('wheel',e=>{
     e.preventDefault();
+    // 1. SVG coords under pointer before zoom
     const p=svgPointFromClient(svg,e.clientX,e.clientY);
+    if(!p)return;
+
     const oldZoom=zoomLevel;
     const delta=-e.deltaY*0.005;
     zoomLevel=Math.max(0.5,Math.min(2.0,oldZoom+delta));
     if(zoomLevel===oldZoom)return;
 
-    const newVW=CANVAS_W/zoomLevel,newVH=CANVAS_H/zoomLevel;
-    const r=svg.getBoundingClientRect();
-    const fx=(e.clientX-r.left)/r.width,fy=(e.clientY-r.top)/r.height;
-    panX=(p.x-fx*newVW)*1920/CANVAS_W;
-    panY=(p.y-fy*newVH)*700/CANVAS_H;
+    // 2. Apply tentative viewBox with new zoom, old pan
+    applyViewBox();
+
+    // 3. SVG coords under pointer after zoom change
+    const q=svgPointFromClient(svg,e.clientX,e.clientY);
+    if(!q)return;
+
+    // 4. Shift pan so p stays under pointer
+    panX+=(p.x-q.x)*1920/CANVAS_W;
+    panY+=(p.y-q.y)*700/CANVAS_H;
     applyViewBox();
   },{passive:false});
 

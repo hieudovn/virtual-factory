@@ -61,7 +61,7 @@ Back, Reset, Step, Auto, Pause — these are design representations of proposed 
 
 - **100%**: Nominal design scale — full 1920×700 viewBox at panX=0, panY=0.
 - **Fit**: Computes viewBox to enclose the physical content (SSO2 INPUT→OUT, RSO2→conveyor) within the current canvas element dimensions. Distinct from 100% — zoom level and panY vary with viewport size.
-- **Wheel zoom**: Pointer-anchored — the SVG coordinate under the cursor remains stationary. Clamped 50%–200%. Keeps the inspected point stable.
+- **Wheel zoom**: Pointer-anchored — uses `getScreenCTM().inverse()` to convert client coordinates to SVG user coordinates, correctly handling `preserveAspectRatio="xMidYMid meet"` letterboxing. The SVG coordinate under the cursor remains stationary after zoom. Clamped 50%–200%. Keeps the inspected point stable.
 - **Left-drag**: Drag on empty canvas area → pan. Selected station preserves selection state across zoom/pan operations.
 
 ## 1920×1080 Review
