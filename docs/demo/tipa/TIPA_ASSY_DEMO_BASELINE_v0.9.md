@@ -3,11 +3,15 @@
 > **Status**: M6-S01 freeze. Implementation-ready specification.  
 > **Purpose**: Authoritative demo manufacturing baseline for the 21-Aug-2026 TIPA demo.  
 > **NOT a claim that all TIPA process facts are confirmed.**  
-> **Update (11-Aug)**: Multi-line topology clarified — see Section 1.1.
+> **Update (11-Aug)**: Parallel ASSY sub-line topology clarified — see Section 1.1.
 
 ---
 
-## 1. Authoritative Demo Topology (Single Line)
+## 1. ASSY Sub-line Detailed Process Template (Single Sub-line Flow)
+
+> This section defines the detailed station-by-station process for ONE ASSY Sub-line.
+> The larger TIPA production hierarchy (SSO2 Line, RSO2 Line, ASSY Line with 6 sub-lines)
+> is defined in Section 1.1.
 
 ```
 SSO2 simplified upstream
@@ -68,7 +72,7 @@ TIPA Plant
 | Hydraulic SSO2 Input Variant | ASSY-SL01..03 |
 | Thermal SSO2 Input Variant | ASSY-SL04..06 |
 
-**Avoid**: six ASSY lines, six production lines, multi-line ASSY, Line 01..06.  
+**Avoid**: six ASSY lines, six production lines, parallel ASSY lines, Line 01..06.  
 **Prefer**: ASSY Line, ASSY Sub-line, parallel ASSY Sub-lines.
 
 **Design authority**: `docs/demo/tipa/M6_S04B_DG02_1_PARALLEL_SUB_LINE_VISUALIZATION.md`

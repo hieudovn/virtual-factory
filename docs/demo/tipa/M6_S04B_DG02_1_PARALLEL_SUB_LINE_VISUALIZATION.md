@@ -204,7 +204,15 @@ PlantRuntime
     └── SubLineRuntime ASSY-SL06 (Thermal)
 ```
 
-Each sub-line maintains independent: line state, conveyor, dwell/index, WIP, genealogy, quality, events.
+Each sub-line requires its own sub-line-scoped identity, WIP, genealogy, quality, and event context.
+
+Conveyor/index/control ownership and synchronization boundaries across sub-lines remain TBD (see Section 8). Shared coordination MAY be introduced later only if confirmed by plant reality.
+
+**Do NOT** invent an `ASSYLineCoordinator` now.
+
+Distinguish:
+- **logically separate execution context** (required — identity, WIP, genealogy, quality, events per sub-line);
+- **physically/control-independent conveyor/runtime** (TBD — may or may not be independent).
 
 **Not implemented in this task.**
 

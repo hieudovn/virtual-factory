@@ -237,12 +237,13 @@ virtual-factory/
 | Process model / runtime | 🟢 100% — indexed line hoàn chỉnh |
 | WIP + genealogy | 🟢 100% — AP04 join, carrier separation |
 | Quality / test / rework | 🟢 100% — PASS/HOLD/RETEST/REINSPECT/FAILED_FINAL |
-| Visualization | 🟢 100% — web-based SPA, 4 scenarios |
+| S04 functional visualization | 🟢 100% — CLOSED, web-based SPA, 4 scenarios |
+| S04B enhanced visualization | 🟡 DESIGN ONLY — DG01/DG02/DG02.1/DG02.2 done; DG03 Figma + implementation pending |
 | MES integration | 🔴 0% — M6-S05 pending |
 | Stability / regression | 🟢 1142 tests passed |
 | Demo script / readiness | 🟡 70% — cần M6-S05 |
 
-**Overall Demo Readiness**: ~70%
+**Overall Demo Readiness**: ~70% (M6-S04 CLOSED; M6-S04B design-only; M6-S05 pending)
 
 ---
 
