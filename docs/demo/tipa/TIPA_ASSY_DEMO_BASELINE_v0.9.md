@@ -1,12 +1,13 @@
 # TIPA ASSY Demo Baseline — v0.9
 
-> **Status**: M6-S01 freeze. Implementation-ready specification.
-> **Purpose**: Authoritative demo manufacturing baseline for the 21-Aug-2026 TIPA demo.
-> **NOT a claim that all TIPA process facts are confirmed.**
+> **Status**: M6-S01 freeze. Implementation-ready specification.  
+> **Purpose**: Authoritative demo manufacturing baseline for the 21-Aug-2026 TIPA demo.  
+> **NOT a claim that all TIPA process facts are confirmed.**  
+> **Update (11-Aug)**: Multi-line topology clarified — see Section 1.1.
 
 ---
 
-## 1. Authoritative Demo Topology
+## 1. Authoritative Demo Topology (Single Line)
 
 ```
 SSO2 simplified upstream
@@ -29,6 +30,30 @@ RSO2 simplified upstream
   → RSO2 semi-finished buffer
   → AP04 JOIN
 ```
+
+### 1.1 Multi-Line Topology (M6-S04B-DG02.1 — 11-Aug-2026)
+
+TIPA production is NOT a single line. It consists of **6 parallel process/line instances**, all based on the common ASSY process template above.
+
+```
+TIPA Motor Production Area
+├── Hydraulic Group (SSO2 variant: Hydraulic Press)
+│   ├── Line/Process 01
+│   ├── Line/Process 02
+│   └── Line/Process 03
+└── Thermal Group (SSO2 variant: Thermal Press)
+    ├── Line/Process 04
+    ├── Line/Process 05
+    └── Line/Process 06
+```
+
+**Key architecture decisions**:
+- Common ASSY process template shared across all 6 instances.
+- Variant difference: SSO2 Hydraulic Press vs Thermal Press, primarily affecting test/profile behavior.
+- Future differences: modeled through configuration/variant specialization, NOT copy-paste forks.
+- Identity context: `plant → area → line → station → wip` (a bare `AP06` is not globally sufficient).
+
+**Design authority**: `docs/demo/tipa/M6_S04B_DG02_1_MULTI_LINE_VISUALIZATION.md`
 
 ---
 

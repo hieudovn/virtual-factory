@@ -1,7 +1,7 @@
 # Virtual Factory — Canonical UI/UX Design Guide
 
 > **Canonical UI/UX Design Source of Truth**  
-> Version 1.0 — 2026-08-11
+> Version 1.1 — 2026-08-11
 
 ---
 
@@ -483,7 +483,36 @@ Implementation technology and naming may vary. Conceptual responsibilities SHOUL
 
 ---
 
-## 20. TIPA M6-S04B Pilot
+## 20. Multi-Line / Repeated-Process Visualization
+
+When multiple production lines or process instances share a common process definition, use hierarchical visualization rather than rendering every station of every line at full detail.
+
+### Principles
+
+1. **Hierarchy**: `Plant/Area Overview → Line/Process Instance → Station/WIP Detail`.
+
+2. **Distinguish concepts**:
+   - **Process Definition** — the common process template (stations, routing, quality gates).
+   - **Process Variant** — a specialization of the process definition (e.g., different upstream technology, different test profile, different equipment configuration).
+   - **Runtime Instance** — one executing instance of a process variant with its own state, WIPs, quality, and events.
+
+3. **Avoid duplication**: Shared process definitions SHOULD NOT be duplicated visually or logically. Variant differences SHOULD be expressed through configuration, not copy-paste forks.
+
+4. **Area overview**: When multiple parallel instances exist, provide an area-level overview showing all instances with high-level state (operating, hold, ready, stopped). Do NOT overload the overview with station-level detail.
+
+5. **Drill-down**: Selecting an instance drills into the detailed shopfloor visualization as defined by this guide.
+
+6. **Variant styling**: Process variants MAY be visually distinguishable through labels, icons, neutral badges, or grouping. Variant styling MUST NOT consume semantic state colors (red/green/amber reserved for FAIL/PASS/HOLD).
+
+7. **Context hierarchy**: Identity/context SHOULD distinguish `plant → area → line → station → wip` when multiple parallel instances exist. A station ID alone is not globally sufficient.
+
+### Runtime Direction
+
+Each line/process instance SHOULD eventually maintain independent state (conveyor, dwell, WIP, genealogy, quality, events) while reusing common definitions/configurations.
+
+---
+
+## 21. TIPA M6-S04B Pilot
 
 M6-S04B is the first full pilot of this design system.
 
@@ -495,7 +524,7 @@ TIPA-specific station semantics belong in milestone/domain specifications. This 
 
 ---
 
-## 21. Design Authority & Change Control
+## 22. Design Authority & Change Control
 
 Changes that materially alter the following MUST be explicitly reviewed by SA/PO:
 
@@ -512,7 +541,7 @@ Minor visual improvements that preserve these principles MAY be made without red
 
 ---
 
-## 22. Relation to Milestone Documents
+## 23. Relation to Milestone Documents
 
 Milestone-specific documents MAY define: plant layout, production line topology, station semantics, customer-specific terminology, demo storyboard, required screens, temporary constraints.
 
@@ -527,7 +556,7 @@ Do NOT duplicate the full canonical design guide into milestone files.
 
 ---
 
-## 23. Document Quality
+## 24. Document Quality
 
 This guide MUST be:
 
@@ -546,4 +575,5 @@ Figma is a design artifact. This Markdown guide in the repo is the canonical des
 
 | Date | Author | Change |
 |------|--------|--------|
+| 2026-08-11 | PM | v1.1 — Added Section 20: Multi-Line / Repeated-Process Visualization |
 | 2026-08-11 | PM | Initial canonical version 1.0 |
