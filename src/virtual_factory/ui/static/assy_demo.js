@@ -700,12 +700,15 @@ const ctrlB = {
       <text x="${L.lineInConnX+8}" y="${L.offLineY-8}" fill="var(--vf-state-pass)" font-size="9" font-weight="600">LINE IN</text>
       <polygon points="${L.lineInConnX-4},${L.conveyorY+L.conveyorH} ${L.lineInConnX+4},${L.conveyorY+L.conveyorH} ${L.lineInConnX},${L.conveyorY+L.conveyorH-8}" fill="var(--vf-state-pass)" opacity="0.55"/>`;
 
-    // EXH-UI-01: One global RIGHT→LEFT product-flow arrow (behind everything)
-    zonesG.innerHTML += `
-      <g opacity="0.07">
+    // EXH-UI-01-C01: Global RIGHT→LEFT product-flow arrow in dedicated flow-cue layer
+    // Rendered ABOVE conveyor, BELOW stations — visible at low opacity
+    const flowG = document.getElementById('vf-flow-cue');
+    if (flowG) {
+      flowG.innerHTML = `<g opacity="0.07">
         <rect x="250" y="445" width="1500" height="65" rx="10" fill="var(--vf-accent)"/>
         <polygon points="250,445 160,477 250,510" fill="var(--vf-accent)"/>
       </g>`;
+    }
 
     // Conveyor (EXH-UI-01: 150px height, pallet 100×80 fits inside)
     const convG = document.getElementById('vf-conveyor-group');
@@ -1247,12 +1250,16 @@ const ctrlS04 = {
 
 /* ═══════════════════════════════════════
    Feature Detection + Boot
+   EXH-UI-01-C01: Guarded — only boots when production DOM exists
    ═══════════════════════════════════════ */
 async function detectS04B() {
   try { const r = await fetch(`${API}/overview`); return r.ok; } catch (_) { return false; }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // EXH-UI-01-C01: Harness isolation guard — do NOT auto-boot in harness context
+  if (!document.getElementById('frame-a')) return;
+
   const s04b = await detectS04B();
   if (s04b) {
     document.getElementById('frame-a').style.display = 'flex';
