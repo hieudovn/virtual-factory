@@ -37,9 +37,9 @@
       </div>
 
       <div class="vf-tb-controls">
-        <button id="btn-reset" class="vf-btn danger" onclick="ctrl.reset()">↻ RESET</button>
-        <button id="btn-step" class="vf-btn success" onclick="ctrl.step()">▶ STEP</button>
-        <button id="btn-auto" class="vf-btn primary" onclick="ctrl.toggleAuto()">▶▶ AUTO</button>
+        <button id="btn-reset" class="vf-btn danger-outline" onclick="ctrl.reset()">↻ RESET</button>
+        <button id="btn-step" class="vf-btn primary" onclick="ctrl.step()">▶ STEP</button>
+        <button id="btn-auto" class="vf-btn accent-outline" onclick="ctrl.toggleAuto()">▶▶ AUTO</button>
         <button id="btn-pause" class="vf-btn" onclick="ctrl.pause()" disabled>⏸ PAUSE</button>
       </div>
 
@@ -88,7 +88,7 @@
       </div>
 
       <div class="vf-sb-actions">
-        <button class="vf-btn" onclick="ctrl.reset()">↻ Reset Line</button>
+        <button class="vf-btn danger-outline" onclick="ctrl.reset()">↻ Reset Line</button>
         <button class="vf-btn" onclick="ctrl.reset()">⚠ Clear Alarms</button>
         <button class="vf-btn" onclick="console.log('Export')">⬇ Export</button>
       </div>
@@ -128,6 +128,9 @@
             </marker>
             <marker id="arrowRight" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
               <polygon points="10 0, 0 3.5, 10 7" fill="var(--vf-flow-material)"/>
+            </marker>
+            <marker id="arrowJoin" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+              <polygon points="0 0, 8 2.5, 0 5" fill="#C8960E"/>
             </marker>
           </defs>
           <!-- Grid background -->
@@ -202,9 +205,10 @@
         </div>
 
         <!-- Event Strip (bottom-left) -->
-        <div id="vf-event-strip">
-          <h4 id="fb-event-title">Recent Quality Events</h4>
-          <div id="fb-event-list"></div>
+        <div id="vf-event-strip" onclick="this.classList.toggle('expanded')">
+          <h4 id="fb-event-title">Quality Events</h4>
+          <span class="vf-qe-inline" id="fb-event-inline"></span>
+          <div id="fb-event-list" style="display:none;"></div>
         </div>
 
         <!-- Right panel (hidden, legacy compatibility) -->

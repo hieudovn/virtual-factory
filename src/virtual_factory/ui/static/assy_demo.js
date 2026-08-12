@@ -77,245 +77,208 @@ const VF_ICON = {
    VF Visual Primitive Library (C03R Enhanced)
    ═══════════════════════════════════════ */
 const VF = {
-  // ── Wooden pallet carrier (reference-style, realistic top-down) ──
+  // ── Wooden pallet carrier (C01: scaled up, 96×32) ──
   pallet(x, y) {
-    const w=76, h=26;
-    return `<rect x="${x-w/2}" y="${y}" width="${w}" height="${h}" rx="3" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="0.6"/>
-      <rect x="${x-w/2-1}" y="${y+1}" width="${w+2}" height="3" rx="1" fill="var(--vf-pallet-dark)" opacity="0.3"/>
-      <line x1="${x-w/2+4}" y1="${y+9}" x2="${x+w/2-4}" y2="${y+9}" stroke="var(--vf-pallet-dark)" stroke-width="1" opacity="0.4"/>
-      <line x1="${x-w/2+4}" y1="${y+17}" x2="${x+w/2-4}" y2="${y+17}" stroke="var(--vf-pallet-dark)" stroke-width="1" opacity="0.4"/>
-      <rect x="${x-20}" y="${y-2}" width="40" height="3" rx="1" fill="rgba(0,0,0,0.04)"/>`;
+    const w=96, h=32;
+    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="0.8"/>
+      <rect x="${x-w/2-1}" y="${y-h/2+1}" width="${w+2}" height="4" rx="2" fill="var(--vf-pallet-dark)" opacity="0.25"/>
+      <line x1="${x-w/2+5}" y1="${y-4}" x2="${x+w/2-5}" y2="${y-4}" stroke="var(--vf-pallet-dark)" stroke-width="1.2" opacity="0.4"/>
+      <line x1="${x-w/2+5}" y1="${y+4}" x2="${x+w/2-5}" y2="${y+4}" stroke="var(--vf-pallet-dark)" stroke-width="1.2" opacity="0.4"/>
+      <line x1="${x-w/2+5}" y1="${y+12}" x2="${x+w/2-5}" y2="${y+12}" stroke="var(--vf-pallet-dark)" stroke-width="1" opacity="0.35"/>
+      <rect x="${x-24}" y="${y-h/2-3}" width="48" height="4" rx="1" fill="rgba(0,0,0,0.05)"/>`;
   },
 
-  // ── STATOR ASSY — metallic ring with teal accent ──
+  // ── STATOR ASSY — metallic ring (C01: scaled up) ──
   statorAssy(x, y) {
-    const r=16;
-    return `<circle cx="${x}" cy="${y}" r="${r}" fill="#2A9DAA" stroke="#1E8090" stroke-width="1.5"/>
-      <circle cx="${x}" cy="${y}" r="8" fill="var(--vf-bg-canvas)" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="5" fill="none" stroke="#1E8090" stroke-width="0.6" opacity="0.4"/>
-      <!-- Bolt holes -->
-      <circle cx="${x-9}" cy="${y-6}" r="1.8" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x+9}" cy="${y-6}" r="1.8" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x-9}" cy="${y+6}" r="1.8" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x+9}" cy="${y+6}" r="1.8" fill="#1E8090" opacity="0.5"/>`;
+    const r=20;
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--vf-obj-stator)" stroke="#1E8090" stroke-width="1.8"/>
+      <circle cx="${x}" cy="${y}" r="10" fill="var(--vf-bg-canvas)" opacity="0.5"/>
+      <circle cx="${x}" cy="${y}" r="6" fill="none" stroke="#1E8090" stroke-width="0.7" opacity="0.4"/>
+      <circle cx="${x-11}" cy="${y-8}" r="2.2" fill="#1E8090" opacity="0.5"/>
+      <circle cx="${x+11}" cy="${y-8}" r="2.2" fill="#1E8090" opacity="0.5"/>
+      <circle cx="${x-11}" cy="${y+8}" r="2.2" fill="#1E8090" opacity="0.5"/>
+      <circle cx="${x+11}" cy="${y+8}" r="2.2" fill="#1E8090" opacity="0.5"/>`;
   },
 
-  // ── ROTOR — shaft with amber accent ──
+  // ── ROTOR — shaft (C01: scaled up) ──
   rotor(x, y) {
-    return `<rect x="${x-20}" y="${y-5}" width="40" height="10" rx="5" fill="var(--vf-obj-rotor)" stroke="#C88020" stroke-width="1"/>
-      <rect x="${x-3}" y="${y-7}" width="6" height="14" rx="3" fill="#D09030"/>
-      <rect x="${x-16}" y="${y-3}" width="32" height="6" rx="3" fill="#D09030" opacity="0.4"/>
-      <line x1="${x-16}" y1="${y}" x2="${x+16}" y2="${y}" stroke="#C08028" stroke-width="0.6" opacity="0.4"/>`;
+    return `<rect x="${x-24}" y="${y-6}" width="48" height="12" rx="6" fill="var(--vf-obj-rotor)" stroke="#C88020" stroke-width="1.2"/>
+      <rect x="${x-4}" y="${y-8}" width="8" height="16" rx="4" fill="#D09030"/>
+      <rect x="${x-20}" y="${y-3}" width="40" height="6" rx="3" fill="#D09030" opacity="0.4"/>
+      <line x1="${x-20}" y1="${y}" x2="${x+20}" y2="${y}" stroke="#C08028" stroke-width="0.7" opacity="0.4"/>`;
   },
 
-  // ── MTR JOINED — assembled motor body, green accent ──
+  // ── MTR JOINED — assembled motor (C01: scaled up) ──
   motorJoined(x, y) {
-    return `<rect x="${x-16}" y="${y-10}" width="32" height="20" rx="7" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1.2"/>
-      <rect x="${x-6}" y="${y-13}" width="12" height="4" rx="1.5" fill="#308A72" opacity="0.5"/>
-      <!-- Shaft end -->
-      <circle cx="${x}" cy="${y}" r="4" fill="#308A72" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="2" fill="#fff" opacity="0.3"/>
-      <!-- Mounting feet -->
-      <rect x="${x-18}" y="${y+3}" width="5" height="4" rx="1" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="0.8"/>
-      <rect x="${x+13}" y="${y+3}" width="5" height="4" rx="1" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="0.8"/>`;
+    return `<rect x="${x-20}" y="${y-12}" width="40" height="24" rx="8" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1.4"/>
+      <rect x="${x-8}" y="${y-16}" width="16" height="5" rx="2" fill="#308A72" opacity="0.5"/>
+      <circle cx="${x}" cy="${y}" r="5" fill="#308A72" opacity="0.5"/>
+      <circle cx="${x}" cy="${y}" r="2.5" fill="#fff" opacity="0.3"/>
+      <rect x="${x-22}" y="${y+4}" width="6" height="5" rx="1.5" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="0.9"/>
+      <rect x="${x+16}" y="${y+4}" width="6" height="5" rx="1.5" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="0.9"/>`;
   },
 
-  // ── MTR PRE-TEST — complete motor, blue accent ──
+  // ── MTR PRE-TEST — complete motor (C01: scaled up) ──
   motorPreTest(x, y) {
-    return `<rect x="${x-17}" y="${y-10}" width="34" height="20" rx="8" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.2"/>
-      <circle cx="${x}" cy="${y}" r="4.5" fill="#2E7098" opacity="0.4"/>
-      <circle cx="${x}" cy="${y}" r="2" fill="#fff" opacity="0.2"/>
-      <!-- Endcaps -->
-      <rect x="${x-19}" y="${y-7}" width="4" height="14" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <rect x="${x+15}" y="${y-7}" width="4" height="14" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <!-- Mounting feet -->
-      <rect x="${x-17}" y="${y+5}" width="6" height="4" rx="1.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.6"/>
-      <rect x="${x+11}" y="${y+5}" width="6" height="4" rx="1.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.6"/>`;
+    return `<rect x="${x-21}" y="${y-12}" width="42" height="24" rx="9" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.4"/>
+      <circle cx="${x}" cy="${y}" r="5.5" fill="#2E7098" opacity="0.4"/>
+      <circle cx="${x}" cy="${y}" r="2.5" fill="#fff" opacity="0.2"/>
+      <rect x="${x-23}" y="${y-8}" width="5" height="16" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.9"/>
+      <rect x="${x+18}" y="${y-8}" width="5" height="16" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.9"/>
+      <rect x="${x-19}" y="${y+6}" width="7" height="5" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.7"/>
+      <rect x="${x+12}" y="${y+6}" width="7" height="5" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.7"/>`;
   },
 
-  // ── TESTED MTR — pre-test body + blue T marker ──
+  // ── TESTED MTR — blue T marker (C01: scaled up) ──
   motorTested(x, y) {
-    return `<rect x="${x-17}" y="${y-10}" width="34" height="20" rx="8" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.2"/>
-      <circle cx="${x}" cy="${y}" r="4.5" fill="#2E7098" opacity="0.4"/>
-      <rect x="${x-19}" y="${y-7}" width="4" height="14" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <rect x="${x+15}" y="${y-7}" width="4" height="14" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <rect x="${x-17}" y="${y+5}" width="6" height="4" rx="1.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.6"/>
-      <rect x="${x+11}" y="${y+5}" width="6" height="4" rx="1.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.6"/>
-      <!-- Test marker — blue T ring (NEVER green checkmark) -->
-      <circle cx="${x+14}" cy="${y-8}" r="5" fill="none" stroke="var(--vf-accent)" stroke-width="1"/>
-      <text x="${x+14}" y="${y-5}" fill="var(--vf-accent)" font-size="6.5" text-anchor="middle" font-weight="bold">T</text>`;
+    return `<rect x="${x-21}" y="${y-12}" width="42" height="24" rx="9" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.4"/>
+      <circle cx="${x}" cy="${y}" r="5.5" fill="#2E7098" opacity="0.4"/>
+      <rect x="${x-23}" y="${y-8}" width="5" height="16" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.9"/>
+      <rect x="${x+18}" y="${y-8}" width="5" height="16" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.9"/>
+      <rect x="${x-19}" y="${y+6}" width="7" height="5" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.7"/>
+      <rect x="${x+12}" y="${y+6}" width="7" height="5" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.7"/>
+      <circle cx="${x+17}" cy="${y-10}" r="6" fill="none" stroke="var(--vf-accent)" stroke-width="1.2"/>
+      <text x="${x+17}" y="${y-6}" fill="var(--vf-accent)" font-size="8" text-anchor="middle" font-weight="bold">T</text>`;
   },
 
-  // ── PACKED GOODS — carton on pallet ──
+  // ── PACKED GOODS — carton (C01: scaled up) ──
   packedGoods(x, y) {
-    return `<rect x="${x-18}" y="${y-11}" width="36" height="22" rx="4" fill="var(--vf-obj-packed)" stroke="#9A6838" stroke-width="1.2"/>
-      <!-- Carton tape -->
-      <line x1="${x}" y1="${y-11}" x2="${x}" y2="${y+11}" stroke="#9A6838" stroke-width="0.8" opacity="0.35"/>
-      <line x1="${x-18}" y1="${y}" x2="${x+18}" y2="${y}" stroke="#9A6838" stroke-width="0.8" opacity="0.35"/>
-      <!-- Top flaps -->
-      <rect x="${x-9}" y="${y-12}" width="6" height="2.5" rx="1" fill="#9A6838" opacity="0.5"/>
-      <rect x="${x+3}" y="${y-12}" width="6" height="2.5" rx="1" fill="#9A6838" opacity="0.5"/>`;
+    return `<rect x="${x-22}" y="${y-13}" width="44" height="26" rx="5" fill="var(--vf-obj-packed)" stroke="#9A6838" stroke-width="1.4"/>
+      <line x1="${x}" y1="${y-13}" x2="${x}" y2="${y+13}" stroke="#9A6838" stroke-width="1" opacity="0.35"/>
+      <line x1="${x-22}" y1="${y}" x2="${x+22}" y2="${y}" stroke="#9A6838" stroke-width="1" opacity="0.35"/>
+      <rect x="${x-11}" y="${y-14}" width="7" height="3" rx="1.5" fill="#9A6838" opacity="0.5"/>
+      <rect x="${x+4}" y="${y-14}" width="7" height="3" rx="1.5" fill="#9A6838" opacity="0.5"/>`;
   },
 
-  // ── Quality state overlay (NEVER implies category) ──
+  // ── Quality state overlay ──
   stateOverlay(x, y, state) {
     if (!state || state==='PASS'||state==='clear'||state==='CLEAR') return '';
     const isHold = state==='HOLD'||state==='retest_pending'||state==='reinspect_pending';
     const isTerminal = state==='FAILED_FINAL'||state==='failed_final';
     const color = isHold ? 'var(--vf-state-hold)' : 'var(--vf-state-fail)';
-    const r = isTerminal ? 8 : 6;
+    const r = isTerminal ? 9 : 7;
     if (isTerminal) {
-      return `<circle cx="${x+14}" cy="${y-16}" r="${r}" fill="${color}"/>
-        <text x="${x+14}" y="${y-12}" fill="#fff" font-size="9" text-anchor="middle" font-weight="bold">✕</text>`;
+      return `<circle cx="${x+18}" cy="${y-20}" r="${r}" fill="${color}"/>
+        <text x="${x+18}" y="${y-15}" fill="#fff" font-size="10" text-anchor="middle" font-weight="bold">✕</text>`;
     }
-    return `<rect x="${x+8}" y="${y-22}" width="${r*2}" height="${r*2}" rx="3" fill="${color}" opacity="0.92"/>
-      <text x="${x+8+r}" y="${y-13}" fill="#fff" font-size="${r+1}" text-anchor="middle" font-weight="bold">!</text>`;
+    return `<rect x="${x+10}" y="${y-28}" width="${r*2}" height="${r*2}" rx="3" fill="${color}" opacity="0.92"/>
+      <text x="${x+10+r}" y="${y-17}" fill="#fff" font-size="${r+2}" text-anchor="middle" font-weight="bold">!</text>`;
   },
 
-  // ── Station machine body (reference-style realistic top-down) ──
+  // ── Station machine body (C01: stronger silhouette, 96×68px) ──
   stationBody(x, y, archetype, stId) {
     const cx = x, cy = y;
     let body = '';
+    const bw = 96, bh = 68;
 
-    // Base machine footprint
-    const bw = 72, bh = 52;
-    body += `<rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" rx="5" fill="#F4F6F8" stroke="var(--vf-border)" stroke-width="1"/>`;
+    // Base machine footprint with shadow
+    body += `<rect x="${cx-bw/2+1}" y="${cy-bh/2+1}" width="${bw}" height="${bh}" rx="6" fill="rgba(0,0,0,0.05)"/>`;
+    body += `<rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" rx="6" fill="#F5F6F8" stroke="var(--vf-border)" stroke-width="1.2"/>`;
 
     if (archetype === 'INPUT') {
-      // Prep/load area with fixture
-      body += `<rect x="${cx-24}" y="${cy-14}" width="48" height="28" rx="3" fill="#E8ECF2" stroke="#D5DBE1" stroke-width="0.8"/>`;
-      body += `<circle cx="${cx-12}" cy="${cy}" r="5" fill="none" stroke="#A0AAB6" stroke-width="1"/>`;
-      body += `<circle cx="${cx+12}" cy="${cy}" r="5" fill="none" stroke="#A0AAB6" stroke-width="1"/>`;
+      body += `<rect x="${cx-30}" y="${cy-18}" width="60" height="36" rx="4" fill="#E9ECF2" stroke="#D0D5E0" stroke-width="1"/>`;
+      body += `<circle cx="${cx-15}" cy="${cy}" r="7" fill="none" stroke="#A0AAB6" stroke-width="1.2"/>`;
+      body += `<circle cx="${cx+15}" cy="${cy}" r="7" fill="none" stroke="#A0AAB6" stroke-width="1.2"/>`;
     } else if (archetype === 'JOIN') {
-      // Two-input fixture, prominent
-      body += `<rect x="${cx-28}" y="${cy-16}" width="56" height="32" rx="4" fill="#FFFDF5" stroke="#C8960E" stroke-width="1.2"/>`;
-      body += `<circle cx="${cx-10}" cy="${cy}" r="6" fill="none" stroke="#C8960E" stroke-width="1"/>`;
-      body += `<circle cx="${cx+10}" cy="${cy}" r="6" fill="none" stroke="#C8960E" stroke-width="1"/>`;
-      body += `<line x1="${cx-4}" y1="${cy}" x2="${cx+4}" y2="${cy}" stroke="#C8960E" stroke-width="1.5"/>`;
+      body += `<rect x="${cx-36}" y="${cy-22}" width="72" height="44" rx="5" fill="#FFFDF5" stroke="#C8960E" stroke-width="1.5"/>`;
+      body += `<circle cx="${cx-14}" cy="${cy}" r="8" fill="none" stroke="#C8960E" stroke-width="1.3"/>`;
+      body += `<circle cx="${cx+14}" cy="${cy}" r="8" fill="none" stroke="#C8960E" stroke-width="1.3"/>`;
+      body += `<line x1="${cx-6}" y1="${cy}" x2="${cx+6}" y2="${cy}" stroke="#C8960E" stroke-width="2"/>`;
+      // Arrow indicators for two inputs
+      body += `<line x1="${cx-28}" y1="${cy-18}" x2="${cx-18}" y2="${cy-8}" stroke="#C8960E" stroke-width="1.2" marker-end="url(#arrowJoin)"/>`;
+      body += `<line x1="${cx+28}" y1="${cy-18}" x2="${cx+18}" y2="${cy-8}" stroke="#C8960E" stroke-width="1.2" marker-end="url(#arrowJoin)"/>`;
     } else if (archetype === 'TEST') {
-      // Test bench with monitor
-      body += `<rect x="${cx-22}" y="${cy-12}" width="44" height="24" rx="3" fill="#EAF2FF" stroke="var(--vf-accent)" stroke-width="0.8"/>`;
-      body += `<rect x="${cx+6}" y="${cy-16}" width="16" height="10" rx="2" fill="#fff" stroke="var(--vf-accent)" stroke-width="0.6"/>`;
-      body += `<text x="${cx+14}" y="${cy-9}" fill="var(--vf-accent)" font-size="7" text-anchor="middle">T</text>`;
+      body += `<rect x="${cx-30}" y="${cy-16}" width="60" height="32" rx="4" fill="#EAF2FF" stroke="var(--vf-accent)" stroke-width="1.2"/>`;
+      body += `<rect x="${cx+8}" y="${cy-22}" width="22" height="13" rx="3" fill="#fff" stroke="var(--vf-accent)" stroke-width="0.8"/>`;
+      body += `<text x="${cx+19}" y="${cy-13}" fill="var(--vf-accent)" font-size="8" text-anchor="middle" font-weight="700">T</text>`;
+      body += `<rect x="${cx-26}" y="${cy+6}" width="52" height="3" rx="1" fill="var(--vf-accent)" opacity="0.15"/>`;
     } else if (archetype === 'VISION') {
-      // Camera/vision cell
-      body += `<rect x="${cx-20}" y="${cy-10}" width="40" height="20" rx="3" fill="#F0F4FF" stroke="var(--vf-accent)" stroke-width="0.8"/>`;
-      body += `<circle cx="${cx}" cy="${cy}" r="5" fill="none" stroke="var(--vf-accent)" stroke-width="0.8"/>`;
-      body += `<circle cx="${cx}" cy="${cy}" r="1.5" fill="var(--vf-accent)"/>`;
+      body += `<rect x="${cx-28}" y="${cy-14}" width="56" height="28" rx="4" fill="#F0F4FF" stroke="var(--vf-accent)" stroke-width="1.2"/>`;
+      body += `<circle cx="${cx-4}" cy="${cy}" r="9" fill="none" stroke="var(--vf-accent)" stroke-width="1"/>`;
+      body += `<circle cx="${cx-4}" cy="${cy}" r="3" fill="var(--vf-accent)" opacity="0.6"/>`;
+      body += `<rect x="${cx+10}" y="${cy-7}" width="14" height="8" rx="2" fill="#fff" stroke="var(--vf-accent)" stroke-width="0.7"/>`;
+      body += `<circle cx="${cx+17}" cy="${cy-3}" r="1.5" fill="var(--vf-accent)"/>`;
     } else if (archetype === 'PACK') {
-      // Packing station
-      body += `<rect x="${cx-22}" y="${cy-12}" width="44" height="24" rx="3" fill="#FDF8F2" stroke="#B68B57" stroke-width="0.8"/>`;
-      body += `<rect x="${cx-16}" y="${cy-6}" width="32" height="12" rx="2" fill="none" stroke="#B68B57" stroke-width="0.6" stroke-dasharray="3,2"/>`;
+      body += `<rect x="${cx-30}" y="${cy-16}" width="60" height="32" rx="4" fill="#FDF8F2" stroke="#B68B57" stroke-width="1.2"/>`;
+      body += `<rect x="${cx-22}" y="${cy-8}" width="44" height="16" rx="3" fill="none" stroke="#B68B57" stroke-width="0.8" stroke-dasharray="4,3"/>`;
+      body += `<rect x="${cx-10}" y="${cy-16}" width="8" height="3" rx="1.5" fill="#B68B57" opacity="0.4"/>`;
+      body += `<rect x="${cx+2}" y="${cy-16}" width="8" height="3" rx="1.5" fill="#B68B57" opacity="0.4"/>`;
     } else if (archetype === 'FINAL') {
-      // QC check table
-      body += `<rect x="${cx-22}" y="${cy-12}" width="44" height="24" rx="3" fill="#F0F5FF" stroke="var(--vf-accent)" stroke-width="0.8"/>`;
-      body += `<polyline points="${cx-10},${cy} ${cx-3},${cy+5} ${cx+10},${cy-6}" fill="none" stroke="var(--vf-state-pass)" stroke-width="1.5"/>`;
+      body += `<rect x="${cx-30}" y="${cy-14}" width="60" height="28" rx="4" fill="#F0F5FF" stroke="var(--vf-accent)" stroke-width="1.2"/>`;
+      body += `<polyline points="${cx-12},${cy} ${cx-4},${cy+6} ${cx+14},${cy-8}" fill="none" stroke="var(--vf-state-pass)" stroke-width="2"/>`;
+      body += `<rect x="${cx-22}" y="${cy+4}" width="44" height="3" rx="1.5" fill="var(--vf-state-pass)" opacity="0.15"/>`;
     } else if (archetype === 'CHECK') {
-      // Inspection/measurement
-      body += `<rect x="${cx-20}" y="${cy-10}" width="40" height="20" rx="3" fill="#F8F9FB" stroke="var(--vf-text-muted)" stroke-width="0.8"/>`;
-      body += `<rect x="${cx-12}" y="${cy-6}" width="24" height="3" rx="1" fill="var(--vf-text-muted)" opacity="0.3"/>`;
-      body += `<rect x="${cx-12}" y="${cy+1}" width="24" height="3" rx="1" fill="var(--vf-text-muted)" opacity="0.3"/>`;
+      body += `<rect x="${cx-26}" y="${cy-12}" width="52" height="24" rx="4" fill="#F8F9FB" stroke="var(--vf-text-muted)" stroke-width="1"/>`;
+      body += `<rect x="${cx-16}" y="${cy-6}" width="32" height="4" rx="2" fill="var(--vf-text-muted)" opacity="0.25"/>`;
+      body += `<rect x="${cx-16}" y="${cy+2}" width="32" height="4" rx="2" fill="var(--vf-text-muted)" opacity="0.25"/>`;
     } else {
-      // MANUAL — workbench + operator
-      body += `<rect x="${cx-22}" y="${cy-12}" width="44" height="24" rx="3" fill="#F4F6F8" stroke="var(--vf-border)" stroke-width="0.8"/>`;
+      body += `<rect x="${cx-28}" y="${cy-14}" width="56" height="28" rx="4" fill="#F4F6F8" stroke="var(--vf-border)" stroke-width="1"/>`;
     }
 
     return body;
   },
 
-  // ── AP badge floating above station ──
+  // ── AP badge (C01: larger, annotation not main graphic) ──
   apBadge(x, y, stId) {
-    const cy = y - 34;
-    return `<rect x="${x-18}" y="${cy-8}" width="36" height="16" rx="4" fill="var(--vf-bg-surface)" stroke="var(--vf-accent)" stroke-width="1"/>
-      <text x="${x}" y="${cy+5}" fill="var(--vf-accent)" font-size="11" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${stId}</text>`;
+    const cy = y - 44;
+    return `<rect x="${x-20}" y="${cy-9}" width="40" height="18" rx="5" fill="var(--vf-bg-surface)" stroke="var(--vf-accent)" stroke-width="1.2"/>
+      <text x="${x}" y="${cy+5}" fill="var(--vf-accent)" font-size="12" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${stId}</text>`;
   },
 
-  // ── Operation name below badge ──
   opName(x, y, stId) {
-    const cy = y - 16;
+    const cy = y - 22;
     const name = STATION_OPS[stId] || stId;
-    return `<text x="${x}" y="${cy}" fill="var(--vf-text-secondary)" font-size="10" font-weight="500" text-anchor="middle">${name}</text>`;
+    return `<text x="${x}" y="${cy}" fill="var(--vf-text-secondary)" font-size="11" font-weight="500" text-anchor="middle">${name}</text>`;
   },
 
-  // ── Connector line from badge to station ──
   badgeConnector(x, y) {
-    return `<line x1="${x}" y1="${y-42}" x2="${x}" y2="${y-26}" stroke="var(--vf-accent-light)" stroke-width="1" stroke-dasharray="2,3"/>`;
+    return `<line x1="${x}" y1="${y-54}" x2="${x}" y2="${y-34}" stroke="var(--vf-accent-light)" stroke-width="1" stroke-dasharray="2,4"/>`;
   },
 
-  // ── Conveyor roller at station ──
   conveyorRoller(x, y) {
-    return `<rect x="${x-12}" y="${y+22}" width="24" height="5" rx="2" fill="var(--vf-conveyor-roller)"/>`;
+    return `<rect x="${x-14}" y="${y+30}" width="28" height="5" rx="2.5" fill="var(--vf-conveyor-roller)"/>`;
   },
 
-  // ── Complete station rendering (reference-style) ──
+  // ── Complete station rendering ──
   station(x, y, stId, archetype, isLandmark, isSel, isHeld) {
     let html = '';
-    const cy = y + 20; // center of station body
-
-    // Connector
+    const cy = y + 24;
     html += VF.badgeConnector(x, cy);
-
-    // Station body
     html += `<g class="vf-station-group" data-station="${stId}" style="cursor:pointer;">`;
     html += VF.stationBody(x, cy, archetype, stId);
-
-    // Conveyor roller
     html += VF.conveyorRoller(x, y);
-
-    // AP Badge
     html += VF.apBadge(x, y, stId);
-
-    // Operation name
     html += VF.opName(x, y, stId);
-
-    // Landmark accent
     if (isLandmark) {
       const lmName = LANDMARK_LABELS[stId];
       if (lmName) {
         const lc = archetype==='JOIN'?'#C8960E':'var(--vf-accent)';
-        html += `<text x="${x}" y="${y+42}" fill="${lc}" font-size="9" font-weight="600" text-anchor="middle">${lmName}</text>`;
+        html += `<text x="${x}" y="${y+56}" fill="${lc}" font-size="10" font-weight="700" text-anchor="middle">${lmName}</text>`;
       }
     }
-
     html += `</g>`;
     return html;
   },
 
-  // ── WIP token on pallet at station ──
+  // ── WIP token on pallet (C01: no permanent carrier text, larger) ──
   wipToken(x, y, wipId, tokenType, isHeld, qResult, carrierId) {
-    const ty = y + 58;
+    const ty = y + 74;
     let html = `<g class="vf-wip-group" data-wip="${wipId}" style="cursor:pointer;">`;
-
-    // Pallet
     html += VF.pallet(x, ty);
-
-    // WIP visual
-    if (tokenType === 'STATOR') html += VF.statorAssy(x, ty - 10);
-    else if (tokenType === 'JOINED') html += VF.motorJoined(x, ty - 10);
-    else if (tokenType === 'PRETEST') html += VF.motorPreTest(x, ty - 10);
-    else if (tokenType === 'TESTED') html += VF.motorTested(x, ty - 10);
-    else if (tokenType === 'PACKED') html += VF.packedGoods(x, ty - 10);
-
-    // State overlay
+    if (tokenType === 'STATOR') html += VF.statorAssy(x, ty - 2);
+    else if (tokenType === 'JOINED') html += VF.motorJoined(x, ty - 2);
+    else if (tokenType === 'PRETEST') html += VF.motorPreTest(x, ty - 2);
+    else if (tokenType === 'TESTED') html += VF.motorTested(x, ty - 2);
+    else if (tokenType === 'PACKED') html += VF.packedGoods(x, ty - 2);
     if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
       html += VF.stateOverlay(x, ty, isHeld ? 'HOLD' : qResult);
     }
-
-    // WIP ID label
+    // Only show WIP ID (no carrier microtext — C01)
     html += `<text x="${x}" y="${ty+22}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">${wipId}</text>`;
-
-    if (carrierId) {
-      html += `<text x="${x}" y="${ty+33}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle">${carrierId}</text>`;
-    }
-
     html += `</g>`;
     return html;
   }
 };
-
-/* ═══════════════════════════════════════
-   Frame A Controller
-   ═══════════════════════════════════════ */
 const ctrl = {
   _autoTimer: null,
   _speed: 1.0,
@@ -350,6 +313,7 @@ const ctrl = {
 
   startAuto() {
     document.getElementById('btn-auto').textContent = '⏹ STOP';
+    document.getElementById('btn-auto').className = 'vf-btn primary';
     document.getElementById('btn-pause').disabled = false;
     this._autoTimer = setInterval(() => this.step(), Math.round(1000 / this._speed));
   },
@@ -357,6 +321,7 @@ const ctrl = {
   stopAuto() {
     if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; }
     document.getElementById('btn-auto').textContent = '▶▶ AUTO';
+    document.getElementById('btn-auto').className = 'vf-btn accent-outline';
     document.getElementById('btn-pause').disabled = true;
   },
 
@@ -606,6 +571,7 @@ const ctrlB = {
 
   startAuto() {
     document.getElementById('btn-auto').textContent = '⏹ STOP';
+    document.getElementById('btn-auto').className = 'vf-btn primary';
     document.getElementById('btn-pause').disabled = false;
     this._autoTimer = setInterval(() => this.step(), Math.round(1000 / this._speed));
   },
@@ -613,6 +579,7 @@ const ctrlB = {
   stopAuto() {
     if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; }
     document.getElementById('btn-auto').textContent = '▶▶ AUTO';
+    document.getElementById('btn-auto').className = 'vf-btn accent-outline';
     document.getElementById('btn-pause').disabled = true;
   },
 
@@ -672,47 +639,44 @@ const ctrlB = {
     }
     gridG.innerHTML = gh;
 
-    // Zone boxes
+    // Zone boxes (C01: improved with contextual pallets)
     const zonesG = document.getElementById('vf-zones');
     if (!zonesG) return;
     zonesG.innerHTML = `
-      <!-- Raw Material Zone (RIGHT) -->
-      <rect x="1740" y="80" width="160" height="280" rx="4" fill="none" stroke="var(--vf-border)" stroke-width="1" stroke-dasharray="5,4"/>
-      <text x="1820" y="100" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">RAW MATERIAL</text>
-      <!-- Rework/Hold Area (LOWER) -->
-      <rect x="400" y="620" width="1100" height="100" rx="4" fill="none" stroke="var(--vf-state-hold)" stroke-width="1" stroke-dasharray="5,4" opacity="0.5"/>
-      <text x="950" y="640" fill="var(--vf-state-hold)" font-size="10" text-anchor="middle" font-weight="500" opacity="0.7">REWORK / HOLD AREA</text>
-      <!-- Finished Goods Zone (LEFT) -->
-      <rect x="60" y="80" width="160" height="280" rx="4" fill="none" stroke="var(--vf-border)" stroke-width="1" stroke-dasharray="5,4"/>
-      <text x="140" y="100" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">FINISHED GOODS</text>`;
+      <!-- Raw Material Zone (RIGHT) — larger, with pallet visuals -->
+      <rect x="1720" y="70" width="180" height="320" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
+      <text x="1810" y="90" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">RAW MATERIAL</text>
+      <!-- Rework/Hold Area (LOWER) — contextual, light -->
+      <rect x="400" y="600" width="1100" height="80" rx="4" fill="none" stroke="var(--vf-state-hold)" stroke-width="1" stroke-dasharray="5,4" opacity="0.4"/>
+      <text x="950" y="620" fill="var(--vf-state-hold)" font-size="9" text-anchor="middle" font-weight="500" opacity="0.6">REWORK / HOLD AREA</text>
+      <!-- Finished Goods Zone (LEFT) — balanced with raw material -->
+      <rect x="40" y="70" width="180" height="320" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
+      <text x="130" y="90" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">FINISHED GOODS</text>`;
 
-    // Conveyor
+    // Conveyor (C01: larger, more industrial)
     const convG = document.getElementById('vf-conveyor-group');
     if (!convG) return;
     let ch = '';
-    const convY = 400, convH = 56;
-    // Main conveyor body
-    ch += `<rect x="130" y="${convY+8}" width="1670" height="40" rx="4" fill="var(--vf-conveyor-body)"/>`;
-    // Rails
-    ch += `<rect x="130" y="${convY+4}" width="1670" height="6" rx="2" fill="var(--vf-conveyor-frame)"/>`;
-    ch += `<rect x="130" y="${convY+46}" width="1670" height="6" rx="2" fill="var(--vf-conveyor-frame)"/>`;
-    // Roller segments
-    for (let rx = 160; rx < 1780; rx += 28) {
-      ch += `<rect x="${rx}" y="${convY+18}" width="12" height="20" rx="2" fill="var(--vf-conveyor-roller)"/>`;
+    const convY = 420, convH = 64;
+    ch += `<rect x="100" y="${convY+10}" width="1720" height="44" rx="5" fill="var(--vf-conveyor-body)"/>`;
+    ch += `<rect x="100" y="${convY+4}" width="1720" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>`;
+    ch += `<rect x="100" y="${convY+52}" width="1720" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>`;
+    for (let rx = 140; rx < 1800; rx += 32) {
+      ch += `<rect x="${rx}" y="${convY+20}" width="14" height="24" rx="3" fill="var(--vf-conveyor-roller)"/>`;
     }
-    // Flow arrows (green, pointing LEFT)
-    for (let ax = 300; ax < 1700; ax += 280) {
-      ch += `<line x1="${ax+20}" y1="${convY+28}" x2="${ax-20}" y2="${convY+28}" stroke="var(--vf-flow-product)" stroke-width="2.5" marker-end="url(#arrowLeft)"/>`;
+    // Flow arrows LEFT
+    for (let ax = 280; ax < 1700; ax += 260) {
+      ch += `<line x1="${ax+24}" y1="${convY+32}" x2="${ax-24}" y2="${convY+32}" stroke="var(--vf-flow-product)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
     }
-    // SSO2 input arrow (RIGHT)
-    ch += `<line x1="1880" y1="${convY+28}" x2="1800" y2="${convY+28}" stroke="var(--vf-flow-material)" stroke-width="2.5" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="1890" y="${convY+20}" fill="var(--vf-flow-material)" font-size="11" font-weight="600" text-anchor="end">SSO2 INPUT</text>`;
-    // OUT arrow (LEFT)
-    ch += `<line x1="200" y1="${convY+28}" x2="130" y2="${convY+28}" stroke="var(--vf-flow-product)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="195" y="${convY+20}" fill="var(--vf-flow-product)" font-size="11" font-weight="600" text-anchor="end">OUT</text>`;
-    // RSO2 branch feed (into AP04 at x=1380)
-    ch += `<line x1="1380" y1="280" x2="1380" y2="${convY+4}" stroke="#C8960E" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="1390" y="290" fill="#C8960E" font-size="10" font-weight="600">RSO2 ROTOR FEED</text>`;
+    // SSO2 input (RIGHT) with pallet visual
+    ch += `<line x1="1880" y1="${convY+32}" x2="1800" y2="${convY+32}" stroke="var(--vf-flow-material)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
+    ch += `<text x="1890" y="${convY+22}" fill="var(--vf-flow-material)" font-size="11" font-weight="600" text-anchor="end">SSO2 INPUT</text>`;
+    // OUT (LEFT)
+    ch += `<line x1="180" y1="${convY+32}" x2="100" y2="${convY+32}" stroke="var(--vf-flow-product)" stroke-width="3.5" marker-end="url(#arrowLeft)"/>`;
+    ch += `<text x="175" y="${convY+22}" fill="var(--vf-flow-product)" font-size="11" font-weight="600" text-anchor="end">OUT</text>`;
+    // RSO2 branch into AP04
+    ch += `<line x1="1380" y1="240" x2="1380" y2="${convY+4}" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
+    ch += `<text x="1390" y="250" fill="#C8960E" font-size="10" font-weight="600">RSO2 ROTOR FEED</text>`;
 
     convG.innerHTML = ch;
   },
@@ -763,11 +727,11 @@ const ctrlB = {
     if (!stationsG) return;
     let html = '';
     const selSt = this._selectedStation;
-    const convY = 400;
+    const convY = 420; // C01: matches new conveyor position
 
     FB_STATIONS.forEach((stId, si) => {
       const sx = FB_STATION_X[si];
-      const sy = convY - 30; // station sits above conveyor
+      const sy = convY - 60; // C01: stations sit higher above larger conveyor
       const p = posMap[stId] || {};
       const isLandmark = !!FB_LANDMARKS[stId];
       const isHeld = p.is_quality_hold;
@@ -797,21 +761,24 @@ const ctrlB = {
       }
     });
 
-    // RSO2 rotor visual at branch point
+    // RSO2 rotor at branch point (C01: more prominent, two-input story)
     const genealogy = snap.genealogy || [];
+    html += `<g transform="translate(1380, 280)">`;
+    html += VF.rotor(0, -8);
     if (genealogy.length > 0) {
-      html += `<g transform="translate(1380, 310)">${VF.rotor(0, -8)}</g>`;
+      html += `<text x="0" y="-22" fill="#C8960E" font-size="9" text-anchor="middle" font-weight="600">ROTOR → AP04</text>`;
     }
+    html += `</g>`;
 
-    // Raw material pallets (RIGHT side)
-    html += `<g transform="translate(1840, 360)">${VF.pallet(0, 0)}${VF.statorAssy(0, -10)}</g>`;
-    html += `<text x="1840" y="345" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">SSO2 SUPPLY</text>`;
-    html += `<g transform="translate(1400, 300)">${VF.pallet(0, 0)}${VF.rotor(0, -10)}</g>`;
-    html += `<text x="1400" y="285" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">RSO2 BUFFER</text>`;
+    // Raw material zone (RIGHT) — SSO2 STATOR pallet + RSO2 ROTOR (C01: improved)
+    html += `<g transform="translate(1810, 350)">${VF.pallet(0, 0)}${VF.statorAssy(0, -2)}</g>`;
+    html += `<text x="1810" y="330" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">SSO2 STATOR SUPPLY</text>`;
+    html += `<g transform="translate(1810, 290)">${VF.pallet(0, 0)}${VF.rotor(0, -2)}</g>`;
+    html += `<text x="1810" y="270" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">RSO2 ROTOR BUFFER</text>`;
 
-    // Finished goods pallet (LEFT side)
-    html += `<g transform="translate(120, 360)">${VF.pallet(0, 0)}${VF.packedGoods(0, -10)}</g>`;
-    html += `<text x="120" y="345" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">OUT PALLET</text>`;
+    // Finished goods zone (LEFT) — packed goods pallets (C01: improved)
+    html += `<g transform="translate(130, 350)">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
+    html += `<text x="130" y="330" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
 
     stationsG.innerHTML = html;
 
@@ -1092,14 +1059,24 @@ const ctrlB = {
   _renderEventStrip(snap) {
     const strip = document.getElementById('vf-event-strip');
     const list = document.getElementById('fb-event-list');
-    if (!strip || !list) return;
+    const inline = document.getElementById('fb-event-inline');
+    if (!strip) return;
     const events = snap.recent_quality_events || [];
     if (!events.length) { strip.classList.remove('visible'); return; }
     strip.classList.add('visible');
-    list.innerHTML = events.slice(-10).map(e => {
-      const dc = e.disposition === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
-      return `<div class="vf-qe-item" onclick="ctrlB.selectEvent('${e.station_id}','${e.wip_id}')"><span style="color:${dc};font-weight:600">${e.disposition}</span> ${e.wip_id} @ ${e.station_id} #${e.attempt} <small>t=${(e.simulation_time_s||0).toFixed(0)}s</small></div>`;
-    }).join('');
+    // Compact 1-line inline summary (C01)
+    if (inline) {
+      const latest = events.slice(-3).map(e =>
+        `${e.disposition} ${e.wip_id} @ ${e.station_id}`
+      ).join('  ·  ');
+      inline.textContent = latest;
+    }
+    if (list) {
+      list.innerHTML = events.slice(-10).map(e => {
+        const dc = e.disposition === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+        return `<div class="vf-qe-item" onclick="ctrlB.selectEvent('${e.station_id}','${e.wip_id}')"><span style="color:${dc};font-weight:600">${e.disposition}</span> ${e.wip_id} @ ${e.station_id} #${e.attempt} <small>t=${(e.simulation_time_s||0).toFixed(0)}s</small></div>`;
+      }).join('');
+    }
   },
 
   _renderGenealogyContext(snap) {
