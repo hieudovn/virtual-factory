@@ -127,12 +127,15 @@ The physical canvas is the dominant visual layer. All information displays are s
 
 ### Compact linear layout (Strategy A — recommended)
 ```
-RIGHT SIDE (input)                              LEFT SIDE (output)
-                                                          
-  [SSO2]→[PRE]→[AP01]→[AP02]→[AP03]→╔AP04╗→[AP05]→╔AP06╗→[AP07]→╔AP08╗→[AP09]→[AP10]→╔AP11╗→[OUT]
-                                      ║JOIN║         ║TEST║         ║VISN║                  ║FINAL║
-                               [RSO2]→╝                                     ╝                  ╝
+LEFT / DOWNSTREAM (output)                                    RIGHT / UPSTREAM (input)
+
+[OUT] ← ╔AP11╗ ← [AP10] ← [AP09] ← ╔AP08╗ ← [AP07] ← ╔AP06╗ ← [AP05] ← ╔AP04╗ ← [AP03] ← [AP02] ← [AP01] ← [PRE] ← [SSO2]
+        ║FINAL║                            ║VISN║              ║TEST║              ║JOIN║
+                                                                                ↑
+                                                                             [RSO2]
 ```
+
+Flow direction: **RIGHT → LEFT**. SSO2 and RSO2 inputs enter from the RIGHT side. LINE OUT exits to the LEFT. All station-to-station arrows point LEFT (←).
 
 ---
 
@@ -181,7 +184,41 @@ Never use a single color to encode both category and state.
 
 ---
 
-## 9. Station Archetypes
+## 8-A. WIP Visual-State Evolution Contract
+
+This section freezes the exact mapping from process segment to visual token rendered on the pallet. The mapping is derived from current repo manufacturing semantics (station labels, WIP lifecycle, quality check types).
+
+### Process Segment → Visual Token
+
+| Process segment | Stations | Runtime meaning | Visual token | Quality overlay |
+|----------------|----------|----------------|-------------|-----------------|
+| SSO2 input → AP03 | PRE-ASSY, AP01, AP02, AP03 | Stator-side assembly: stator + pressed motor housing WIP | **STATOR ASSY** | Current quality state from `positions[]` (PASS check at AP03) |
+| RSO2 → AP04 | (branch) | Rotor shaft input to join | **ROTOR** | N/A — rotor is a component, not a quality-checked WIP at this stage |
+| AP04 → AP05 | AP04, AP05 | Joined motor: stator + rotor joined at AP04. MTR child created. Genealogy record written. | **MTR JOINED** | Current quality state from `positions[]` |
+| AP05 → AP06 | AP05 (mechanical completion) | Mechanically assembled motor, immediately before electrical test | **MTR PRE-TEST** | Current quality state from `positions[]` |
+| AP06 → AP09 | AP06, AP07, AP08, AP09 | Electrically tested motor. Quality outcome determined at AP06 (TEST), visually inspected at AP08 (VISION). Motor silhouette unchanged; quality outcome is an overlay. | **TESTED MTR** | PASS / FAIL / HOLD / NG overlay from `quality_records[]` + `positions[]` |
+| AP09 → OUT | AP09, AP10, AP11 | Packaging: boxing at AP09, closing/labeling/palletizing at AP10, final QC inspection at AP11. The WIP is now a packaged carton on a pallet. | **PACKED GOODS** | Final disposition from `positions[]` + `quality_records[]` (AP11 FINAL_QC PASS or terminal failure) |
+
+### Transition point for PACKED GOODS
+
+PACKED GOODS begins at **AP09 (Boxing)**. This is the first station where the motor is placed into packaging material. AP10 completes packaging (closing, labeling, palletizing). AP11 performs final QC on the packaged product.
+
+**Repo evidence**: Station labels in `StationPositionView.labels()`:
+- `AP09`: "AP09 — Boxing"
+- `AP10`: "AP10 — Closing / labeling / palletizing"
+- `AP11`: "AP11 — Final QC / release"
+
+The WIP visual changes from TESTED MTR to PACKED GOODS when the pallet reaches AP09. The packed goods then proceed through AP10 and AP11 where they receive FINAL_QC quality checks.
+
+### Critical invariants
+
+1. **Object category ≠ quality state**: Quality outcome (PASS/FAIL/HOLD/NG) is always an overlay, never a change of object category. A TESTED MTR with FAIL is still a TESTED MTR with a red overlay — not a seventh WIP type called "FAILED MOTOR".
+
+2. **Pallet ≠ WIP identity**: The wooden pallet is the carrier. The WIP object (stator assy, rotor, joined motor, etc.) is placed ON the pallet. WIP identity (`wip_id` from `positions[]`) labels the WIP, not the pallet.
+
+3. **`positions[]` remains sole physical truth**: The visual token rendered at a station is determined by the WIP's manufacturing stage (derived from its identity, type, and position in the process flow), NOT from genealogy or event history. If `positions[]` says a station is occupied by a particular WIP, the visual token matches that WIP's stage.
+
+4. **No category invention**: The six categories (STATOR ASSY, ROTOR, MTR JOINED, MTR PRE-TEST, TESTED MTR, PACKED GOODS) are the complete visual taxonomy. Do not add categories unless runtime manufacturing semantics introduce a genuinely new WIP stage.
 
 Stations are stationary, rendered in top-down plan style. Each has: body footprint, type icon, AP label, connection to conveyor.
 
