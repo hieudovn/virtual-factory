@@ -16,11 +16,11 @@ const VF_LAYOUT = {
   stationX: [1720, 1600, 1485, 1370, 1240, 1115, 985, 865, 735, 615, 495, 365],
   lineOutX: 135,
   preX: 1720, ap04X: 1240, ap06X: 985, ap08X: 735, ap11X: 365,
-  // Y positions
-  conveyorY: 440, conveyorH: 76,
-  stationY: 370,  // station base reference (above conveyor)
-  wipY: 480,      // WIP/pallet center Y (inside conveyor body)
-  rso2BranchX: 1240, rso2BranchTopY: 250,
+  // Y positions — C02-C01: conveyor 2.5x wider (160px)
+  conveyorY: 420, conveyorH: 160,
+  stationY: 330,  // station base above wider conveyor
+  wipY: 470,      // WIP/pallet center inside wider conveyor
+  rso2BranchX: 1240, rso2BranchTopY: 230,
   // Zone positions
   rawX: 1720, rawW: 180, rawY: 70, rawH: 300,
   fgX: 30, fgW: 180, fgY: 70, fgH: 300,
@@ -97,15 +97,15 @@ const VF_ICON = {
    VF Visual Primitive Library (C03R Enhanced)
    ═══════════════════════════════════════ */
 const VF = {
-  // ── Wooden pallet carrier (C01: scaled up, 96×32) ──
+  // ── Wooden pallet carrier (C02-C01: 2.5x scale, 144×48) ──
   pallet(x, y) {
-    const w=96, h=32;
-    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="0.8"/>
-      <rect x="${x-w/2-1}" y="${y-h/2+1}" width="${w+2}" height="4" rx="2" fill="var(--vf-pallet-dark)" opacity="0.25"/>
-      <line x1="${x-w/2+5}" y1="${y-4}" x2="${x+w/2-5}" y2="${y-4}" stroke="var(--vf-pallet-dark)" stroke-width="1.2" opacity="0.4"/>
-      <line x1="${x-w/2+5}" y1="${y+4}" x2="${x+w/2-5}" y2="${y+4}" stroke="var(--vf-pallet-dark)" stroke-width="1.2" opacity="0.4"/>
-      <line x1="${x-w/2+5}" y1="${y+12}" x2="${x+w/2-5}" y2="${y+12}" stroke="var(--vf-pallet-dark)" stroke-width="1" opacity="0.35"/>
-      <rect x="${x-24}" y="${y-h/2-3}" width="48" height="4" rx="1" fill="rgba(0,0,0,0.05)"/>`;
+    const w=144, h=48;
+    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="5" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="1"/>
+      <rect x="${x-w/2-1}" y="${y-h/2+2}" width="${w+2}" height="6" rx="3" fill="var(--vf-pallet-dark)" opacity="0.2"/>
+      <line x1="${x-w/2+8}" y1="${y-6}" x2="${x+w/2-8}" y2="${y-6}" stroke="var(--vf-pallet-dark)" stroke-width="1.5" opacity="0.35"/>
+      <line x1="${x-w/2+8}" y1="${y+6}" x2="${x+w/2-8}" y2="${y+6}" stroke="var(--vf-pallet-dark)" stroke-width="1.5" opacity="0.35"/>
+      <line x1="${x-w/2+8}" y1="${y+18}" x2="${x+w/2-8}" y2="${y+18}" stroke="var(--vf-pallet-dark)" stroke-width="1.2" opacity="0.3"/>
+      <rect x="${x-36}" y="${y-h/2-4}" width="72" height="5" rx="2" fill="rgba(0,0,0,0.04)"/>`;
   },
 
   // ── STATOR ASSY — metallic ring (C01: scaled up) ──
@@ -290,7 +290,7 @@ const VF = {
 
   // ── WIP token on pallet (C01: no permanent carrier text, larger) ──
   wipToken(x, y, wipId, tokenType, isHeld, qResult, carrierId) {
-    const ty = y + 110;  // C02: from stationY to wipY
+    const ty = y + 140;  // C02-C01: from stationY(330) to wipY(470)
     let html = `<g class="vf-wip-group" data-wip="${wipId}" style="cursor:pointer;">`;
     html += VF.pallet(x, ty);
     if (tokenType === 'STATOR') html += VF.statorAssy(x, ty - 2);
@@ -679,28 +679,26 @@ const ctrlB = {
       <rect x="${L.fgX}" y="${L.fgY}" width="${L.fgW}" height="${L.fgH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
       <text x="${L.fgX+L.fgW/2}" y="${L.fgY+20}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">FINISHED GOODS</text>`;
 
-    // BIG BACKGROUND FLOW ARROW (C02: one subtle arrow, replaces repeated mini arrows)
     zonesG.innerHTML += `
-      <!-- C02: single large product-flow background arrow RIGHT→LEFT -->
-      <polygon points="1750,${L.conveyorY+12} 1700,${L.conveyorY-10} 1700,${L.conveyorY-2} 450,${L.conveyorY-2} 450,${L.conveyorY-10} 400,${L.conveyorY+12} 450,${L.conveyorY+34} 450,${L.conveyorY+26} 1700,${L.conveyorY+26} 1700,${L.conveyorY+34}" fill="var(--vf-flow-product)" opacity="0.07"/>`;
+      <!-- C02-C01: background flow arrow removed -->`;
 
     // Conveyor (C02: 76px height, pallet fits inside)
     const convG = document.getElementById('vf-conveyor-group');
     if (!convG) return;
     let ch = '';
-    ch += `<rect x="${L.convStartX}" y="${L.conveyorY+8}" width="${L.convEndX-L.convStartX}" height="60" rx="6" fill="var(--vf-conveyor-body)"/>`;
-    ch += `<rect x="${L.convStartX}" y="${L.conveyorY}" width="${L.convEndX-L.convStartX}" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>`;
-    ch += `<rect x="${L.convStartX}" y="${L.conveyorY+L.conveyorH-8}" width="${L.convEndX-L.convStartX}" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>`;
-    // Rollers
-    for (let rx = L.convStartX + 30; rx < L.convEndX; rx += 36) {
-      ch += `<rect x="${rx}" y="${L.conveyorY+22}" width="14" height="32" rx="3" fill="var(--vf-conveyor-roller)" opacity="0.5"/>`;
+    ch += `<rect x="${L.convStartX}" y="${L.conveyorY+10}" width="${L.convEndX-L.convStartX}" height="140" rx="8" fill="var(--vf-conveyor-body)"/>`;
+    ch += `<rect x="${L.convStartX}" y="${L.conveyorY}" width="${L.convEndX-L.convStartX}" height="10" rx="4" fill="var(--vf-conveyor-frame)"/>`;
+    ch += `<rect x="${L.convStartX}" y="${L.conveyorY+L.conveyorH-10}" width="${L.convEndX-L.convStartX}" height="10" rx="4" fill="var(--vf-conveyor-frame)"/>`;
+    // Rollers (C02-C01: taller for wider conveyor)
+    for (let rx = L.convStartX + 30; rx < L.convEndX; rx += 40) {
+      ch += `<rect x="${rx}" y="${L.conveyorY+25}" width="16" height="110" rx="4" fill="var(--vf-conveyor-roller)" opacity="0.4"/>`;
     }
     // SSO2 input (RIGHT)
-    ch += `<line x1="${L.lineInX}" y1="${L.conveyorY+38}" x2="${L.lineInX-50}" y2="${L.conveyorY+38}" stroke="var(--vf-flow-material)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="${L.lineInX}" y="${L.conveyorY+24}" fill="var(--vf-flow-material)" font-size="11" font-weight="600" text-anchor="end">SSO2</text>`;
+    ch += `<line x1="${L.lineInX}" y1="${L.conveyorY+80}" x2="${L.lineInX-50}" y2="${L.conveyorY+80}" stroke="var(--vf-flow-material)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
+    ch += `<text x="${L.lineInX}" y="${L.conveyorY+60}" fill="var(--vf-flow-material)" font-size="11" font-weight="600" text-anchor="end">SSO2</text>`;
     // OUT (LEFT)
-    ch += `<line x1="${L.lineOutX+50}" y1="${L.conveyorY+38}" x2="${L.lineOutX}" y2="${L.conveyorY+38}" stroke="var(--vf-flow-product)" stroke-width="3.5" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="${L.lineOutX+40}" y="${L.conveyorY+24}" fill="var(--vf-flow-product)" font-size="11" font-weight="600" text-anchor="end">OUT</text>`;
+    ch += `<line x1="${L.lineOutX+50}" y1="${L.conveyorY+80}" x2="${L.lineOutX}" y2="${L.conveyorY+80}" stroke="var(--vf-flow-product)" stroke-width="3.5" marker-end="url(#arrowLeft)"/>`;
+    ch += `<text x="${L.lineOutX+40}" y="${L.conveyorY+60}" fill="var(--vf-flow-product)" font-size="11" font-weight="600" text-anchor="end">OUT</text>`;
     // RSO2 branch into AP04
     ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
     ch += `<text x="${L.ap04X+10}" y="${L.rso2BranchTopY+10}" fill="#C8960E" font-size="9" font-weight="600">RSO2</text>`;
