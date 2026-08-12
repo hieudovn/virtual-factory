@@ -41,8 +41,8 @@ const VF_TOKEN_LABEL = {STATOR:'STATOR',JOINED:'JOINED',PRETEST:'PRE-TEST',TESTE
 
 // Station operation names (C03R canonical)
 const STATION_OPS = {
-  'PRE-ASSY':'Prep','AP01':'Stator Assy','AP02':'Terminal Box','AP03':'Mech Check',
-  'AP04':'JOIN','AP05':'Mech Assy','AP06':'EOL Test','AP07':'Finish',
+  'PRE-ASSY':'Prep','AP01':'Stator Assy','AP02':'Term. Box','AP03':'Mech. Check',
+  'AP04':'JOIN','AP05':'Mech. Assy','AP06':'EOL Test','AP07':'Finish',
   'AP08':'Vision','AP09':'Boxing','AP10':'Pack / Label','AP11':'Final QC'
 };
 
@@ -219,10 +219,18 @@ const VF = {
       body += `<rect x="${cx+10}" y="${cy-7}" width="14" height="8" rx="2" fill="#fff" stroke="var(--vf-accent)" stroke-width="0.7"/>`;
       body += `<circle cx="${cx+17}" cy="${cy-3}" r="1.5" fill="var(--vf-accent)"/>`;
     } else if (archetype === 'PACK') {
-      body += `<rect x="${cx-30}" y="${cy-16}" width="60" height="32" rx="4" fill="#FDF8F2" stroke="#B68B57" stroke-width="1.2"/>`;
-      body += `<rect x="${cx-22}" y="${cy-8}" width="44" height="16" rx="3" fill="none" stroke="#B68B57" stroke-width="0.8" stroke-dasharray="4,3"/>`;
-      body += `<rect x="${cx-10}" y="${cy-16}" width="8" height="3" rx="1.5" fill="#B68B57" opacity="0.4"/>`;
-      body += `<rect x="${cx+2}" y="${cy-16}" width="8" height="3" rx="1.5" fill="#B68B57" opacity="0.4"/>`;
+      if (stId === 'AP09') {
+        body += `<rect x="${cx-30}" y="${cy-16}" width="60" height="32" rx="4" fill="#FDF8F2" stroke="#B68B57" stroke-width="1.2"/>`;
+        body += `<rect x="${cx-22}" y="${cy-8}" width="44" height="16" rx="3" fill="none" stroke="#B68B57" stroke-width="0.8" stroke-dasharray="4,3"/>`;
+        body += `<rect x="${cx-14}" y="${cy-10}" width="8" height="12" rx="1" fill="none" stroke="#B68B57" stroke-width="0.7"/>`;
+        body += `<rect x="${cx+6}" y="${cy-10}" width="8" height="12" rx="1" fill="none" stroke="#B68B57" stroke-width="0.7"/>`;
+      } else {
+        body += `<rect x="${cx-30}" y="${cy-16}" width="60" height="32" rx="4" fill="#FDF8F2" stroke="#9A6838" stroke-width="1.2"/>`;
+        body += `<rect x="${cx-22}" y="${cy-10}" width="44" height="20" rx="3" fill="none" stroke="#9A6838" stroke-width="0.8"/>`;
+        body += `<line x1="${cx-16}" y1="${cy-10}" x2="${cx+16}" y2="${cy+10}" stroke="#9A6838" stroke-width="0.6" opacity="0.4"/>`;
+        body += `<rect x="${cx-20}" y="${cy-12}" width="40" height="3" rx="1" fill="#9A6838" opacity="0.5"/>`;
+        body += `<rect x="${cx-20}" y="${cy+9}" width="40" height="3" rx="1" fill="#9A6838" opacity="0.5"/>`;
+      }
     } else if (archetype === 'FINAL') {
       body += `<rect x="${cx-30}" y="${cy-14}" width="60" height="28" rx="4" fill="#F0F5FF" stroke="var(--vf-accent)" stroke-width="1.2"/>`;
       body += `<polyline points="${cx-12},${cy} ${cx-4},${cy+6} ${cx+14},${cy-8}" fill="none" stroke="var(--vf-state-pass)" stroke-width="2"/>`;
