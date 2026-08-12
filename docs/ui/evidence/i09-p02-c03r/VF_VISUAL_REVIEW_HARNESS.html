@@ -128,6 +128,7 @@ function build() {
   h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap06fail\')">AP06 FAIL/HOLD adversarial</button>';
   h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap08ng\')">AP08 NG/HOLD adversarial</button>';
   h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap04join\')">AP04 JOIN boundary</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'failedfinal\')">FAILED_FINAL status adjacent</button>';
   h+='<button class="vf-btn" onclick="harnessMotionTest(\'reduced\')">Reduced Motion</button>';
   h+='<button class="vf-btn" onclick="harnessMotionTest(\'stepblock\')">STEP while animating</button>';
   h+='</div>';
@@ -192,6 +193,16 @@ function build() {
       var plansJ = MotionEngine.detect(prevJ, nextJ);
       status.textContent = 'AP04 JOIN boundary: ' + plansJ.length + ' plan(s) \u2014 DIRECT SETTLE (new MTR child identity).';
       status.style.color = plansJ.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'failedfinal') {
+      // FAILED_FINAL with FAIL result (quality_status is terminal, independent of result)
+      var prevF1 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP06'}] };
+      var nextF1 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP07', latest_quality_result:'FAIL', quality_status:'FAILED_FINAL', is_quality_hold:false}] };
+      var plansF1 = MotionEngine.detect(prevF1, nextF1);
+      // FAILED_FINAL with PASS result (proves status is independent)
+      var nextF2 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP07', latest_quality_result:'PASS', quality_status:'FAILED_FINAL', is_quality_hold:false}] };
+      var plansF2 = MotionEngine.detect(prevF1, nextF2);
+      status.textContent = 'FAILED_FINAL (FAIL result): ' + plansF1.length + ' plan(s); (PASS result): ' + plansF2.length + ' plan(s) \u2014 REJECTED.';
+      status.style.color = (plansF1.length === 0 && plansF2.length === 0) ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
     } else if (kind === 'reduced') {
       MotionEngine._prefersReduced = true;
       var prev5 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };

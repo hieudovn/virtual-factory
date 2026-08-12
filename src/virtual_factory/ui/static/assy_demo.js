@@ -586,12 +586,18 @@ const MotionEngine = {
 
       const isHeld = p.is_quality_hold;
       const qResult = (p.latest_quality_result || '').toUpperCase();
+      // I07-C02: quality_status is orthogonal to latest_quality_result.
+      // FAILED_FINAL is terminal containment state, NOT a detection result.
+      const qStatus = (p.quality_status || '').toUpperCase();
 
       // I07-C01: HOLD gates motion — held WIP never creates a plan
       if (isHeld) continue;
 
-      // I07 frozen invariants: AP06 FAIL / AP08 NG / FAILED_FINAL → NO MOVE
-      if (qResult === 'FAIL' || qResult === 'NG' || qResult === 'FAILED_FINAL') continue;
+      // I07 frozen invariants: AP06 FAIL / AP08 NG → NO MOVE
+      if (qResult === 'FAIL' || qResult === 'NG') continue;
+
+      // I07-C02: FAILED_FINAL (terminal) gates motion independently
+      if (qStatus === 'FAILED_FINAL') continue;
 
       const fromIdx = FB_STATIONS.indexOf(prevPos);
       const toIdx = FB_STATIONS.indexOf(newPos);
