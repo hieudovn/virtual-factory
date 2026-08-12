@@ -8,7 +8,27 @@ const LANDMARK_LABELS = { AP04:'JOIN', AP06:'TEST', AP08:'VISION', AP11:'FINAL' 
 const STATIONS = ['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
 const FB_STATIONS = STATIONS;
 const FB_LANDMARKS = LANDMARK_LABELS;
-const FB_STATION_X = [1780,1680,1580,1480,1380,1280,1180,1080,980,880,780,680];
+// C02: centralized layout — single source of truth for all coordinates
+const VF_LAYOUT = {
+  canvasW: 1920, canvasH: 1080,
+  // X positions RIGHT→LEFT (C02: even spacing 110-130px, landmarks get +15px)
+  lineInX: 1890,
+  stationX: [1720, 1600, 1485, 1370, 1240, 1115, 985, 865, 735, 615, 495, 365],
+  lineOutX: 135,
+  preX: 1720, ap04X: 1240, ap06X: 985, ap08X: 735, ap11X: 365,
+  // Y positions
+  conveyorY: 440, conveyorH: 76,
+  stationY: 370,  // station base reference (above conveyor)
+  wipY: 480,      // WIP/pallet center Y (inside conveyor body)
+  rso2BranchX: 1240, rso2BranchTopY: 250,
+  // Zone positions
+  rawX: 1720, rawW: 180, rawY: 70, rawH: 300,
+  fgX: 30, fgW: 180, fgY: 70, fgH: 300,
+  reworkX: 400, reworkW: 1100, reworkY: 600, reworkH: 60,
+  // Conveyor span
+  convStartX: 110, convEndX: 1830,
+};
+const FB_STATION_X = VF_LAYOUT.stationX;
 const FB_CANVAS_W = 1920, FB_CANVAS_H = 1080;
 
 // Position → visual token mapping (DG06-01-C02 frozen)
@@ -236,7 +256,7 @@ const VF = {
   },
 
   conveyorRoller(x, y) {
-    return `<rect x="${x-14}" y="${y+30}" width="28" height="5" rx="2.5" fill="var(--vf-conveyor-roller)"/>`;
+    return `<rect x="${x-14}" y="${y+70}" width="28" height="5" rx="2.5" fill="var(--vf-conveyor-roller)"/>`;
   },
 
   // ── Complete station rendering ──
@@ -262,7 +282,7 @@ const VF = {
 
   // ── WIP token on pallet (C01: no permanent carrier text, larger) ──
   wipToken(x, y, wipId, tokenType, isHeld, qResult, carrierId) {
-    const ty = y + 74;
+    const ty = y + 110;  // C02: from stationY to wipY
     let html = `<g class="vf-wip-group" data-wip="${wipId}" style="cursor:pointer;">`;
     html += VF.pallet(x, ty);
     if (tokenType === 'STATOR') html += VF.statorAssy(x, ty - 2);
@@ -639,44 +659,43 @@ const ctrlB = {
     }
     gridG.innerHTML = gh;
 
-    // Zone boxes (C01: improved with contextual pallets)
+    // Zone boxes (C02: positioned via VF_LAYOUT)
     const zonesG = document.getElementById('vf-zones');
     if (!zonesG) return;
+    const L = VF_LAYOUT;
     zonesG.innerHTML = `
-      <!-- Raw Material Zone (RIGHT) — larger, with pallet visuals -->
-      <rect x="1720" y="70" width="180" height="320" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
-      <text x="1810" y="90" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">RAW MATERIAL</text>
-      <!-- Rework/Hold Area (LOWER) — contextual, light -->
-      <rect x="400" y="600" width="1100" height="80" rx="4" fill="none" stroke="var(--vf-state-hold)" stroke-width="1" stroke-dasharray="5,4" opacity="0.4"/>
-      <text x="950" y="620" fill="var(--vf-state-hold)" font-size="9" text-anchor="middle" font-weight="500" opacity="0.6">REWORK / HOLD AREA</text>
-      <!-- Finished Goods Zone (LEFT) — balanced with raw material -->
-      <rect x="40" y="70" width="180" height="320" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
-      <text x="130" y="90" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">FINISHED GOODS</text>`;
+      <rect x="${L.rawX}" y="${L.rawY}" width="${L.rawW}" height="${L.rawH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
+      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+20}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">RAW MATERIAL</text>
+      <rect x="${L.reworkX}" y="${L.reworkY}" width="${L.reworkW}" height="${L.reworkH}" rx="4" fill="none" stroke="var(--vf-state-hold)" stroke-width="1" stroke-dasharray="5,4" opacity="0.35"/>
+      <text x="${L.reworkX+L.reworkW/2}" y="${L.reworkY+16}" fill="var(--vf-state-hold)" font-size="9" text-anchor="middle" font-weight="500" opacity="0.5">REWORK / HOLD AREA</text>
+      <rect x="${L.fgX}" y="${L.fgY}" width="${L.fgW}" height="${L.fgH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
+      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+20}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">FINISHED GOODS</text>`;
 
-    // Conveyor (C01: larger, more industrial)
+    // BIG BACKGROUND FLOW ARROW (C02: one subtle arrow, replaces repeated mini arrows)
+    zonesG.innerHTML += `
+      <!-- C02: single large product-flow background arrow RIGHT→LEFT -->
+      <polygon points="1750,${L.conveyorY+12} 1700,${L.conveyorY-10} 1700,${L.conveyorY-2} 450,${L.conveyorY-2} 450,${L.conveyorY-10} 400,${L.conveyorY+12} 450,${L.conveyorY+34} 450,${L.conveyorY+26} 1700,${L.conveyorY+26} 1700,${L.conveyorY+34}" fill="var(--vf-flow-product)" opacity="0.07"/>`;
+
+    // Conveyor (C02: 76px height, pallet fits inside)
     const convG = document.getElementById('vf-conveyor-group');
     if (!convG) return;
     let ch = '';
-    const convY = 420, convH = 64;
-    ch += `<rect x="100" y="${convY+10}" width="1720" height="44" rx="5" fill="var(--vf-conveyor-body)"/>`;
-    ch += `<rect x="100" y="${convY+4}" width="1720" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>`;
-    ch += `<rect x="100" y="${convY+52}" width="1720" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>`;
-    for (let rx = 140; rx < 1800; rx += 32) {
-      ch += `<rect x="${rx}" y="${convY+20}" width="14" height="24" rx="3" fill="var(--vf-conveyor-roller)"/>`;
+    ch += `<rect x="${L.convStartX}" y="${L.conveyorY+8}" width="${L.convEndX-L.convStartX}" height="60" rx="6" fill="var(--vf-conveyor-body)"/>`;
+    ch += `<rect x="${L.convStartX}" y="${L.conveyorY}" width="${L.convEndX-L.convStartX}" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>`;
+    ch += `<rect x="${L.convStartX}" y="${L.conveyorY+L.conveyorH-8}" width="${L.convEndX-L.convStartX}" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>`;
+    // Rollers
+    for (let rx = L.convStartX + 30; rx < L.convEndX; rx += 36) {
+      ch += `<rect x="${rx}" y="${L.conveyorY+22}" width="14" height="32" rx="3" fill="var(--vf-conveyor-roller)" opacity="0.5"/>`;
     }
-    // Flow arrows LEFT
-    for (let ax = 280; ax < 1700; ax += 260) {
-      ch += `<line x1="${ax+24}" y1="${convY+32}" x2="${ax-24}" y2="${convY+32}" stroke="var(--vf-flow-product)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
-    }
-    // SSO2 input (RIGHT) with pallet visual
-    ch += `<line x1="1880" y1="${convY+32}" x2="1800" y2="${convY+32}" stroke="var(--vf-flow-material)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="1890" y="${convY+22}" fill="var(--vf-flow-material)" font-size="11" font-weight="600" text-anchor="end">SSO2 INPUT</text>`;
+    // SSO2 input (RIGHT)
+    ch += `<line x1="${L.lineInX}" y1="${L.conveyorY+38}" x2="${L.lineInX-50}" y2="${L.conveyorY+38}" stroke="var(--vf-flow-material)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
+    ch += `<text x="${L.lineInX}" y="${L.conveyorY+24}" fill="var(--vf-flow-material)" font-size="11" font-weight="600" text-anchor="end">SSO2</text>`;
     // OUT (LEFT)
-    ch += `<line x1="180" y1="${convY+32}" x2="100" y2="${convY+32}" stroke="var(--vf-flow-product)" stroke-width="3.5" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="175" y="${convY+22}" fill="var(--vf-flow-product)" font-size="11" font-weight="600" text-anchor="end">OUT</text>`;
+    ch += `<line x1="${L.lineOutX+50}" y1="${L.conveyorY+38}" x2="${L.lineOutX}" y2="${L.conveyorY+38}" stroke="var(--vf-flow-product)" stroke-width="3.5" marker-end="url(#arrowLeft)"/>`;
+    ch += `<text x="${L.lineOutX+40}" y="${L.conveyorY+24}" fill="var(--vf-flow-product)" font-size="11" font-weight="600" text-anchor="end">OUT</text>`;
     // RSO2 branch into AP04
-    ch += `<line x1="1380" y1="240" x2="1380" y2="${convY+4}" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="1390" y="250" fill="#C8960E" font-size="10" font-weight="600">RSO2 ROTOR FEED</text>`;
+    ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
+    ch += `<text x="${L.ap04X+10}" y="${L.rso2BranchTopY+10}" fill="#C8960E" font-size="9" font-weight="600">RSO2</text>`;
 
     convG.innerHTML = ch;
   },
@@ -722,16 +741,32 @@ const ctrlB = {
     const posMap = {};
     for (const p of (snap.positions||[])) posMap[p.position_id] = p;
 
-    // Render stations on canvas
+    // Render stations on canvas (C02: use VF_LAYOUT)
     const stationsG = document.getElementById('fb-stations');
     if (!stationsG) return;
     let html = '';
     const selSt = this._selectedStation;
-    const convY = 420; // C01: matches new conveyor position
+    const L = VF_LAYOUT;
+    const convY = L.conveyorY;
+    const stationY = L.stationY;
+
+    // LINE-IN (far RIGHT, C02)
+    html += `<g>
+      <rect x="${L.lineInX-15}" y="${convY}" width="30" height="${L.conveyorH}" rx="4" fill="var(--vf-conveyor-body)" stroke="var(--vf-conveyor-frame)" stroke-width="1.5"/>
+      <text x="${L.lineInX}" y="${convY-12}" fill="var(--vf-flow-material)" font-size="11" font-weight="700" text-anchor="middle">LINE IN</text>
+      <text x="${L.lineInX}" y="${convY+L.conveyorH+14}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">← ENTRY</text>
+    </g>`;
+
+    // LINE-OUT (far LEFT, C02)
+    html += `<g>
+      <rect x="${L.lineOutX-15}" y="${convY}" width="30" height="${L.conveyorH}" rx="4" fill="var(--vf-conveyor-body)" stroke="var(--vf-conveyor-frame)" stroke-width="1.5"/>
+      <text x="${L.lineOutX}" y="${convY-12}" fill="var(--vf-flow-product)" font-size="11" font-weight="700" text-anchor="middle">LINE OUT</text>
+      <text x="${L.lineOutX}" y="${convY+L.conveyorH+14}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">EXIT →</text>
+    </g>`;
 
     FB_STATIONS.forEach((stId, si) => {
       const sx = FB_STATION_X[si];
-      const sy = convY - 60; // C01: stations sit higher above larger conveyor
+      const sy = stationY;  // C02: uniform station Y
       const p = posMap[stId] || {};
       const isLandmark = !!FB_LANDMARKS[stId];
       const isHeld = p.is_quality_hold;
@@ -757,28 +792,28 @@ const ctrlB = {
       }
 
       if (isHeld && p.held_reason) {
-        html += `<text x="${sx}" y="${sy+82}" fill="var(--vf-state-fail)" font-size="9" text-anchor="middle">${p.held_reason}</text>`;
+        html += `<text x="${sx}" y="${sy+96}" fill="var(--vf-state-fail)" font-size="9" text-anchor="middle">${p.held_reason}</text>`;
       }
     });
 
-    // RSO2 rotor at branch point (C01: more prominent, two-input story)
+    // C02: RSO2 rotor at branch point (use VF_LAYOUT coordinates)
     const genealogy = snap.genealogy || [];
-    html += `<g transform="translate(1380, 280)">`;
+    html += `<g transform="translate(${L.ap04X}, ${L.rso2BranchTopY+20})">`;
     html += VF.rotor(0, -8);
     if (genealogy.length > 0) {
-      html += `<text x="0" y="-22" fill="#C8960E" font-size="9" text-anchor="middle" font-weight="600">ROTOR → AP04</text>`;
+      html += `<text x="0" y="-12" fill="#C8960E" font-size="9" text-anchor="middle" font-weight="600">ROTOR</text>`;
     }
     html += `</g>`;
 
-    // Raw material zone (RIGHT) — SSO2 STATOR pallet + RSO2 ROTOR (C01: improved)
-    html += `<g transform="translate(1810, 350)">${VF.pallet(0, 0)}${VF.statorAssy(0, -2)}</g>`;
-    html += `<text x="1810" y="330" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">SSO2 STATOR SUPPLY</text>`;
-    html += `<g transform="translate(1810, 290)">${VF.pallet(0, 0)}${VF.rotor(0, -2)}</g>`;
-    html += `<text x="1810" y="270" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">RSO2 ROTOR BUFFER</text>`;
+    // C02: Raw material zone (RIGHT) — positioned via VF_LAYOUT
+    html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+220})">${VF.pallet(0, 0)}${VF.statorAssy(0, -2)}</g>`;
+    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+200}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">SSO2 STATOR</text>`;
+    html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+150})">${VF.pallet(0, 0)}${VF.rotor(0, -2)}</g>`;
+    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+130}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">RSO2 ROTOR</text>`;
 
-    // Finished goods zone (LEFT) — packed goods pallets (C01: improved)
-    html += `<g transform="translate(130, 350)">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
-    html += `<text x="130" y="330" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
+    // C02: Finished goods zone (LEFT) — positioned via VF_LAYOUT
+    html += `<g transform="translate(${L.fgX+L.fgW/2}, ${L.fgY+220})">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
+    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+200}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
 
     stationsG.innerHTML = html;
 
