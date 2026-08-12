@@ -122,11 +122,14 @@ function build() {
   h+='<div class="h-section"><h2>10. Controlled Motion Contract</h2>';
   h+='<p style="font-size:12px;color:var(--vf-text-secondary);margin-bottom:12px;">Uses shared production MotionEngine from assy_demo.js. No second motion engine. Deterministic tests below.</p>';
   h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
-  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap03to04\')">Animate AP03 \u2192 AP04</button>';
-  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap04to05\')">Animate AP04 \u2192 AP05 JOIN</button>';
-  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap06fail\')">AP06 FAIL \u2014 NO MOVE</button>';
-  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap08ng\')">AP08 NG \u2014 NO MOVE</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap03to04\')">Forward AP03\u2192AP04</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'reverse\')">Reverse AP05\u2192AP04</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'hold\')">Generic HOLD adjacent</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap06fail\')">AP06 FAIL/HOLD adversarial</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap08ng\')">AP08 NG/HOLD adversarial</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap04join\')">AP04 JOIN boundary</button>';
   h+='<button class="vf-btn" onclick="harnessMotionTest(\'reduced\')">Reduced Motion</button>';
+  h+='<button class="vf-btn" onclick="harnessMotionTest(\'stepblock\')">STEP while animating</button>';
   h+='</div>';
   h+='<svg id="motion-svg" viewBox="0 0 700 320" style="width:100%;height:280px;background:var(--vf-bg-canvas);">';
   h+='<rect x="60" y="220" width="580" height="44" rx="5" fill="var(--vf-conveyor-body)"/><rect x="60" y="214" width="580" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>';
@@ -148,32 +151,47 @@ function build() {
       status.textContent = 'MotionEngine not loaded'; status.style.color = 'var(--vf-state-fail)';
       return;
     }
+    function report(name, plans) {
+      status.textContent = name + ': ' + plans.length + ' plan(s)';
+      status.style.color = 'var(--vf-state-pass)';
+    }
     if (kind === 'ap03to04') {
       var prev = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };
       var next = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
       var plans = MotionEngine.detect(prev, next);
-      status.textContent = 'AP03\u2192AP04 detect(): ' + plans.length + ' plan(s). Animating 450ms.';
-      status.style.color = 'var(--vf-state-pass)';
+      status.textContent = 'Forward AP03\u2192AP04: ' + plans.length + ' plan(s). Animating 450ms.';
+      status.style.color = plans.length === 1 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
       MotionEngine.animate(plans, function(){ status.textContent = 'Settled: W1 at AP04 (authoritative).'; });
-    } else if (kind === 'ap04to05') {
-      var prev2 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
-      var next2 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP05'}] };
-      var plans2 = MotionEngine.detect(prev2, next2);
-      status.textContent = 'AP04\u2192AP05 detect(): ' + plans2.length + ' plan(s). Animating JOIN output.';
-      status.style.color = 'var(--vf-state-pass)';
-      MotionEngine.animate(plans2, function(){ status.textContent = 'Settled: W1 at AP05 (authoritative).'; });
+    } else if (kind === 'reverse') {
+      var prevR = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP05'}] };
+      var nextR = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var plansR = MotionEngine.detect(prevR, nextR);
+      status.textContent = 'Reverse AP05\u2192AP04: ' + plansR.length + ' plan(s) \u2014 REJECTED (forward-only).';
+      status.style.color = plansR.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'hold') {
+      var prevH = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP05'}] };
+      var nextH = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP06', is_quality_hold:true}] };
+      var plansH = MotionEngine.detect(prevH, nextH);
+      status.textContent = 'Generic HOLD adjacent: ' + plansH.length + ' plan(s) \u2014 REJECTED.';
+      status.style.color = plansH.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
     } else if (kind === 'ap06fail') {
-      var prev3 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP06', latest_quality_result:'FAIL'}] };
-      var next3 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP06', latest_quality_result:'FAIL'}] };
-      var plans3 = MotionEngine.detect(prev3, next3);
-      status.textContent = 'AP06 FAIL: ' + plans3.length + ' plan(s) \u2014 NO MOVE (invariant held).';
-      status.style.color = plans3.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+      var prev6 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP06'}] };
+      var next6 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP07', is_quality_hold:true, latest_quality_result:'FAIL'}] };
+      var plans6 = MotionEngine.detect(prev6, next6);
+      status.textContent = 'AP06 FAIL/HOLD adversarial: ' + plans6.length + ' plan(s) \u2014 REJECTED.';
+      status.style.color = plans6.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
     } else if (kind === 'ap08ng') {
-      var prev4 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP08', latest_quality_result:'NG'}] };
-      var next4 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP08', latest_quality_result:'NG'}] };
-      var plans4 = MotionEngine.detect(prev4, next4);
-      status.textContent = 'AP08 NG: ' + plans4.length + ' plan(s) \u2014 NO MOVE (invariant held).';
-      status.style.color = plans4.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+      var prev8 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP08'}] };
+      var next8 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP09', is_quality_hold:true, latest_quality_result:'NG'}] };
+      var plans8 = MotionEngine.detect(prev8, next8);
+      status.textContent = 'AP08 NG/HOLD adversarial: ' + plans8.length + ' plan(s) \u2014 REJECTED.';
+      status.style.color = plans8.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'ap04join') {
+      var prevJ = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var nextJ = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP05'}] };
+      var plansJ = MotionEngine.detect(prevJ, nextJ);
+      status.textContent = 'AP04 JOIN boundary: ' + plansJ.length + ' plan(s) \u2014 DIRECT SETTLE (new MTR child identity).';
+      status.style.color = plansJ.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
     } else if (kind === 'reduced') {
       MotionEngine._prefersReduced = true;
       var prev5 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };
@@ -182,6 +200,14 @@ function build() {
       status.textContent = 'Reduced motion: direct settle, ' + plans5.length + ' plan(s) skipped interpolation.';
       status.style.color = 'var(--vf-state-pass)';
       MotionEngine.animate(plans5, function(){ MotionEngine._prefersReduced = false; status.textContent = 'Settled instantly (reduced motion).'; });
+    } else if (kind === 'stepblock') {
+      var prevS = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };
+      var nextS = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var plansS = MotionEngine.detect(prevS, nextS);
+      MotionEngine.animate(plansS);
+      var blocked = MotionEngine.isAnimating;
+      status.textContent = 'STEP while animating: isAnimating=' + blocked + ' \u2014 STEP would be blocked until settle.';
+      status.style.color = blocked ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
     }
   };
 }

@@ -584,9 +584,11 @@ const MotionEngine = {
       const prevPos = prevMap[wipId];
       if (!prevPos || prevPos === newPos) continue;
 
-      // Determine if this is a quality hold that shouldn't move
       const isHeld = p.is_quality_hold;
       const qResult = (p.latest_quality_result || '').toUpperCase();
+
+      // I07-C01: HOLD gates motion — held WIP never creates a plan
+      if (isHeld) continue;
 
       // I07 frozen invariants: AP06 FAIL / AP08 NG / FAILED_FINAL → NO MOVE
       if (qResult === 'FAIL' || qResult === 'NG' || qResult === 'FAILED_FINAL') continue;
@@ -595,8 +597,12 @@ const MotionEngine = {
       const toIdx = FB_STATIONS.indexOf(newPos);
       if (fromIdx < 0 || toIdx < 0) continue;
 
-      // Only animate adjacent transitions
-      if (Math.abs(toIdx - fromIdx) !== 1) continue;
+      // I07-C01: forward-adjacent ONLY (reverse → direct settle, no interpolation)
+      if (toIdx !== fromIdx + 1) continue;
+
+      // I07-C01: AP04→AP05 is a JOIN identity boundary — new MTR child
+      // appears at AP05 with a NEW wip_id; same-ID AP04→AP05 never animates.
+      if (prevPos === 'AP04' && newPos === 'AP05') continue;
 
       plans.push({
         wip_id: wipId,
@@ -604,7 +610,7 @@ const MotionEngine = {
         toX: FB_STATION_X[toIdx],
         tokenType: VF_TOKEN[newPos] || 'STATOR',
         duration: 450,
-        isJoinOut: prevPos === 'AP04' && newPos === 'AP05',
+        transition_type: 'FORWARD_ADJACENT',
       });
     }
     return plans;
@@ -755,7 +761,8 @@ const ctrlB = {
   },
 
   async step() {
-    if (this._stepLocked) return;  // I07: prevent overlapping
+    // I07-C01: block STEP during active motion or in-flight step
+    if (this._stepLocked || MotionEngine.isAnimating) return;
     this._stepLocked = true;
     try {
       await this.call('step');
