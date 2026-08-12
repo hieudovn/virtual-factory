@@ -1,6 +1,7 @@
 /* M6-S04B-I09-P02-C03R — Reference-Locked Visual Implementation */
 /* Design Authority: VF_DESIGN_AUTHORITY_REFERENCE_LOCKED_I09_P02_C03R.md */
-/* Baseline: 2fbdf6e */
+/* Baseline: c0062c3 (EXH-01-C01 frozen contract) */
+/* EXH-UI-01: Demo-safe exception UI + physical composition final freeze */
 
 const API = '/assy-demo';
 const LANDMARKS = new Set(['AP04','AP06','AP08','AP11']);
@@ -8,23 +9,25 @@ const LANDMARK_LABELS = { AP04:'JOIN', AP06:'TEST', AP08:'VISION', AP11:'FINAL' 
 const STATIONS = ['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
 const FB_STATIONS = STATIONS;
 const FB_LANDMARKS = LANDMARK_LABELS;
-// C02: centralized layout — single source of truth for all coordinates
+// EXH-UI-01: pallet 100×80, conveyor 150px, off-line exception handling zone
 const VF_LAYOUT = {
   canvasW: 1920, canvasH: 1080,
-  // X positions RIGHT→LEFT (C02: even spacing 110-130px, landmarks get +15px)
+  // X positions RIGHT→LEFT (normal gap ~120px, landmarks ~130px)
   lineInX: 1890,
   stationX: [1720, 1600, 1485, 1370, 1240, 1115, 985, 865, 735, 615, 495, 365],
   lineOutX: 135,
   preX: 1720, ap04X: 1240, ap06X: 985, ap08X: 735, ap11X: 365,
-  // Y positions — C02-C01: conveyor 2.5x wider (160px)
-  conveyorY: 420, conveyorH: 160,
-  stationY: 330,  // station base above wider conveyor
-  wipY: 500,      // WIP/pallet center (centered in conveyor body 430-570)
+  // Y positions — EXH-UI-01: conveyor 150px, pallet 100×80
+  conveyorY: 420, conveyorH: 150,
+  stationY: 330,
+  wipY: 495,      // WIP/pallet center (centered in conveyor body 420-570)
   rso2BranchX: 1240, rso2BranchTopY: 230,
   // Zone positions
   rawX: 1720, rawW: 180, rawY: 70, rawH: 300,
   fgX: 30, fgW: 180, fgY: 70, fgH: 300,
-  reworkX: 400, reworkW: 1100, reworkY: 600, reworkH: 60,
+  // EXH-UI-01: OFF-LINE EXCEPTION HANDLING conceptual zone (below conveyor)
+  offLineX: 500, offLineW: 700, offLineY: 630, offLineH: 130,
+  lineOutConnX: 1050, lineInConnX: 650,
   // Conveyor span
   convStartX: 110, convEndX: 1830,
 };
@@ -97,15 +100,15 @@ const VF_ICON = {
    VF Visual Primitive Library (C03R Enhanced)
    ═══════════════════════════════════════ */
 const VF = {
-  // ── Wooden pallet — 120×120, centered in conveyor ──
+  // ── Wooden pallet — EXH-UI-01: 100×80 ──
   pallet(x, y) {
-    const w=120, h=120;
-    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="5" fill="var(--vf-pallet-wood)" stroke="#8B7355" stroke-width="1.5"/>
-      <rect x="${x-w/2-2}" y="${y-h/2+2}" width="${w+4}" height="8" rx="4" fill="var(--vf-pallet-dark)" opacity="0.15"/>
-      <line x1="${x-w/2+8}" y1="${y-24}" x2="${x+w/2-8}" y2="${y-24}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.3"/>
-      <line x1="${x-w/2+8}" y1="${y}" x2="${x+w/2-8}" y2="${y}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.3"/>
-      <line x1="${x-w/2+8}" y1="${y+24}" x2="${x+w/2-8}" y2="${y+24}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.3"/>
-      <rect x="${x-30}" y="${y-h/2-5}" width="60" height="6" rx="2" fill="rgba(0,0,0,0.04)"/>`;
+    const w=100, h=80;
+    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="var(--vf-pallet-wood)" stroke="#8B7355" stroke-width="1.5"/>
+      <rect x="${x-w/2-2}" y="${y-h/2+2}" width="${w+4}" height="6" rx="3" fill="var(--vf-pallet-dark)" opacity="0.15"/>
+      <line x1="${x-w/2+7}" y1="${y-16}" x2="${x+w/2-7}" y2="${y-16}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
+      <line x1="${x-w/2+7}" y1="${y}" x2="${x+w/2-7}" y2="${y}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
+      <line x1="${x-w/2+7}" y1="${y+16}" x2="${x+w/2-7}" y2="${y+16}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
+      <rect x="${x-24}" y="${y-h/2-4}" width="48" height="5" rx="2" fill="rgba(0,0,0,0.04)"/>`;
   },
 
   // ── STATOR ASSY — metallic ring (C02-C01: 1.5x for wider conveyor) ──
@@ -264,7 +267,7 @@ const VF = {
   },
 
   conveyorRoller(x, y) {
-    return `<rect x="${x-14}" y="${y+70}" width="28" height="5" rx="2.5" fill="var(--vf-conveyor-roller)"/>`;
+    return `<rect x="${x-14}" y="${y+68}" width="28" height="5" rx="2.5" fill="var(--vf-conveyor-roller)"/>`;
   },
 
   // ── Complete station rendering ──
@@ -288,9 +291,9 @@ const VF = {
     return html;
   },
 
-  // ── WIP token on pallet (C01: no permanent carrier text, larger) ──
+  // ── WIP token on pallet (EXH-UI-01: no permanent carrier text) ──
   wipToken(x, y, wipId, tokenType, isHeld, qResult, carrierId) {
-    const ty = y + 170;  // from stationY(330) to wipY(500)
+    const ty = y + 165;  // from stationY(330) to wipY(495)
     let html = `<g class="vf-wip-group" data-wip="${wipId}" style="cursor:pointer;">`;
     html += VF.pallet(x, ty);
     if (tokenType === 'STATOR') html += VF.statorAssy(x, ty - 2);
@@ -301,8 +304,8 @@ const VF = {
     if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
       html += VF.stateOverlay(x, ty, isHeld ? 'HOLD' : qResult);
     }
-    // Only show WIP ID (no carrier microtext — C01)
-    html += `<text x="${x}" y="${ty+22}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">${wipId}</text>`;
+    // Only show WIP ID (no carrier microtext — EXH-UI-01)
+    html += `<text x="${x}" y="${ty+16}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle">${wipId}</text>`;
     html += `</g>`;
     return html;
   }
@@ -667,35 +670,57 @@ const ctrlB = {
     }
     gridG.innerHTML = gh;
 
-    // Zone boxes (C02: positioned via VF_LAYOUT)
+    // Zone boxes (EXH-UI-01: corrected zone labels per frozen contract)
     const zonesG = document.getElementById('vf-zones');
     if (!zonesG) return;
     const L = VF_LAYOUT;
     zonesG.innerHTML = `
+      <!-- ASSY INPUT / LINE START (RIGHT) -->
       <rect x="${L.rawX}" y="${L.rawY}" width="${L.rawW}" height="${L.rawH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
-      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+20}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">RAW MATERIAL</text>
-      <rect x="${L.reworkX}" y="${L.reworkY}" width="${L.reworkW}" height="${L.reworkH}" rx="4" fill="none" stroke="var(--vf-state-hold)" stroke-width="1" stroke-dasharray="5,4" opacity="0.35"/>
-      <text x="${L.reworkX+L.reworkW/2}" y="${L.reworkY+16}" fill="var(--vf-state-hold)" font-size="9" text-anchor="middle" font-weight="500" opacity="0.5">REWORK / HOLD AREA</text>
+      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+16}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">ASSY INPUT</text>
+      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+30}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.6">LINE START</text>
+
+      <!-- ASSY OUTPUT / LINE END (LEFT) -->
       <rect x="${L.fgX}" y="${L.fgY}" width="${L.fgW}" height="${L.fgH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
-      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+20}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">FINISHED GOODS</text>`;
+      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+16}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">ASSY OUTPUT</text>
+      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+30}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.6">LINE END</text>
 
+      <!-- EXH-UI-01: OFF-LINE EXCEPTION HANDLING conceptual zone -->
+      <rect x="${L.offLineX}" y="${L.offLineY}" width="${L.offLineW}" height="${L.offLineH}" rx="6" fill="#FAFBFD" stroke="var(--vf-text-muted)" stroke-width="1.2" stroke-dasharray="8,5" opacity="0.7"/>
+      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">OFF-LINE EXCEPTION HANDLING</text>
+      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+34}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.5">CONCEPTUAL — Inspect / Diagnose / Optional Rework / Verify</text>
+
+      <!-- LINE OUT connector (RIGHT side: main line → off-line zone) -->
+      <line x1="${L.lineOutConnX}" y1="${L.conveyorY+L.conveyorH}" x2="${L.lineOutConnX}" y2="${L.offLineY}" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
+      <text x="${L.lineOutConnX+8}" y="${L.conveyorY+L.conveyorH+18}" fill="var(--vf-state-hold)" font-size="9" font-weight="600">LINE OUT</text>
+      <polygon points="${L.lineOutConnX-4},${L.offLineY} ${L.lineOutConnX+4},${L.offLineY} ${L.lineOutConnX},${L.offLineY+8}" fill="var(--vf-state-hold)" opacity="0.55"/>
+
+      <!-- LINE IN connector (LEFT side: off-line zone → main line) -->
+      <line x1="${L.lineInConnX}" y1="${L.offLineY}" x2="${L.lineInConnX}" y2="${L.conveyorY+L.conveyorH}" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
+      <text x="${L.lineInConnX+8}" y="${L.offLineY-8}" fill="var(--vf-state-pass)" font-size="9" font-weight="600">LINE IN</text>
+      <polygon points="${L.lineInConnX-4},${L.conveyorY+L.conveyorH} ${L.lineInConnX+4},${L.conveyorY+L.conveyorH} ${L.lineInConnX},${L.conveyorY+L.conveyorH-8}" fill="var(--vf-state-pass)" opacity="0.55"/>`;
+
+    // EXH-UI-01: One global RIGHT→LEFT product-flow arrow (behind everything)
     zonesG.innerHTML += `
-      <!-- C02-C01: background flow arrow removed -->`;
+      <g opacity="0.07">
+        <rect x="250" y="445" width="1500" height="65" rx="10" fill="var(--vf-accent)"/>
+        <polygon points="250,445 160,477 250,510" fill="var(--vf-accent)"/>
+      </g>`;
 
-    // Conveyor (C02: 76px height, pallet fits inside)
+    // Conveyor (EXH-UI-01: 150px height, pallet 100×80 fits inside)
     const convG = document.getElementById('vf-conveyor-group');
     if (!convG) return;
     let ch = '';
-    ch += `<rect x="${L.convStartX}" y="${L.conveyorY+10}" width="${L.convEndX-L.convStartX}" height="140" rx="8" fill="var(--vf-conveyor-body)"/>`;
+    ch += `<rect x="${L.convStartX}" y="${L.conveyorY+10}" width="${L.convEndX-L.convStartX}" height="130" rx="8" fill="var(--vf-conveyor-body)"/>`;
     ch += `<rect x="${L.convStartX}" y="${L.conveyorY}" width="${L.convEndX-L.convStartX}" height="10" rx="4" fill="var(--vf-conveyor-frame)"/>`;
     ch += `<rect x="${L.convStartX}" y="${L.conveyorY+L.conveyorH-10}" width="${L.convEndX-L.convStartX}" height="10" rx="4" fill="var(--vf-conveyor-frame)"/>`;
-    // Rollers (C02-C01: taller for wider conveyor)
+    // Rollers (EXH-UI-01: adjusted for 150px conveyor)
     for (let rx = L.convStartX + 30; rx < L.convEndX; rx += 40) {
-      ch += `<rect x="${rx}" y="${L.conveyorY+25}" width="16" height="110" rx="4" fill="var(--vf-conveyor-roller)" opacity="0.4"/>`;
+      ch += `<rect x="${rx}" y="${L.conveyorY+22}" width="16" height="106" rx="4" fill="var(--vf-conveyor-roller)" opacity="0.4"/>`;
     }
     // RSO2 branch into AP04
     ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="${L.ap04X+10}" y="${L.rso2BranchTopY+10}" fill="#C8960E" font-size="9" font-weight="600">RSO2</text>`;
+    ch += `<text x="${L.ap04X+10}" y="${L.rso2BranchTopY+10}" fill="#C8960E" font-size="9" font-weight="600">RSO2 ROTOR</text>`;
 
     convG.innerHTML = ch;
   },
@@ -750,21 +775,8 @@ const ctrlB = {
     const convY = L.conveyorY;
     const stationY = L.stationY;
 
-    // LINE-IN: off-line repair entry near AP06 (TEST) — above conveyor
-    html += `<g>
-      <rect x="${L.ap06X-50}" y="${convY-120}" width="100" height="70" rx="6" fill="#FFF8E6" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,3"/>
-      <text x="${L.ap06X}" y="${convY-95}" fill="var(--vf-state-hold)" font-size="11" font-weight="700" text-anchor="middle">LINE IN</text>
-      <text x="${L.ap06X}" y="${convY-78}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">QC HOLD → REPAIR</text>
-      <line x1="${L.ap06X}" y1="${convY-50}" x2="${L.ap06X}" y2="${convY-10}" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="4,2"/>
-    </g>`;
-
-    // LINE-OUT: off-line repair return near AP08 (VISION) — above conveyor
-    html += `<g>
-      <rect x="${L.ap08X-50}" y="${convY-120}" width="100" height="70" rx="6" fill="#E6F5EC" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,3"/>
-      <text x="${L.ap08X}" y="${convY-95}" fill="var(--vf-state-pass)" font-size="11" font-weight="700" text-anchor="middle">LINE OUT</text>
-      <text x="${L.ap08X}" y="${convY-78}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">REPAIR → RETURN</text>
-      <line x1="${L.ap08X}" y1="${convY-50}" x2="${L.ap08X}" y2="${convY-10}" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="4,2"/>
-    </g>`;
+    // EXH-UI-01: No hardcoded LINE IN/OUT at AP06/AP08.
+    // LINE OUT / LINE IN are rendered as conceptual connectors in _renderGridAndConveyor.
 
     FB_STATIONS.forEach((stId, si) => {
       const sx = FB_STATION_X[si];
@@ -807,15 +819,15 @@ const ctrlB = {
     }
     html += `</g>`;
 
-    // C02: Raw material zone (RIGHT) — positioned via VF_LAYOUT
+    // EXH-UI-01: Raw material zone (RIGHT) — contextual pallets
     html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+220})">${VF.pallet(0, 0)}${VF.statorAssy(0, -2)}</g>`;
-    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+200}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">SSO2 STATOR</text>`;
+    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+195}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" font-weight="500">SSO2 STATOR</text>`;
     html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+150})">${VF.pallet(0, 0)}${VF.rotor(0, -2)}</g>`;
-    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+130}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">RSO2 ROTOR</text>`;
+    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+125}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" font-weight="500">RSO2 ROTOR</text>`;
 
-    // C02: Finished goods zone (LEFT) — positioned via VF_LAYOUT
+    // EXH-UI-01: Finished goods zone (LEFT) — contextual pallets
     html += `<g transform="translate(${L.fgX+L.fgW/2}, ${L.fgY+220})">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
-    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+200}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
+    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
 
     stationsG.innerHTML = html;
 
