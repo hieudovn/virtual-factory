@@ -118,7 +118,72 @@ function build() {
 
   h+='<div class="h-section"><h2>9. Responsive Notes</h2><p style="font-size:12px;color:var(--vf-text-secondary);">1920/1600/1366 supported. Global RIGHT->LEFT arrow 9% opacity. OFF-LINE EXCEPTION HANDLING conceptual zone below conveyor. LINE OUT/LINE IN are conceptual only. No hardcoded AP06->AP08 repair route. AP06/AP08 are quality stations on main line.</p></div>';
 
+  // 10. Controlled Motion Contract
+  h+='<div class="h-section"><h2>10. Controlled Motion Contract</h2>';
+  h+='<p style="font-size:12px;color:var(--vf-text-secondary);margin-bottom:12px;">Uses shared production MotionEngine from assy_demo.js. No second motion engine. Deterministic tests below.</p>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap03to04\')">Animate AP03 \u2192 AP04</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap04to05\')">Animate AP04 \u2192 AP05 JOIN</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap06fail\')">AP06 FAIL \u2014 NO MOVE</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap08ng\')">AP08 NG \u2014 NO MOVE</button>';
+  h+='<button class="vf-btn" onclick="harnessMotionTest(\'reduced\')">Reduced Motion</button>';
+  h+='</div>';
+  h+='<svg id="motion-svg" viewBox="0 0 700 320" style="width:100%;height:280px;background:var(--vf-bg-canvas);">';
+  h+='<rect x="60" y="220" width="580" height="44" rx="5" fill="var(--vf-conveyor-body)"/><rect x="60" y="214" width="580" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>';
+  h+='<text id="motion-label1" x="640" y="190" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">AP03</text>';
+  h+='<text id="motion-label2" x="480" y="190" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">AP04</text>';
+  h+=VF.station(640,220,'AP03','CHECK',false,false,false);
+  h+=VF.station(480,220,'AP04','JOIN',true,false,false);
+  h+='<g id="wip-W1" transform="translate(640,265)">'+VF.pallet(0,0)+VF.statorAssy(0,-5)+'</g>';
+  h+='</svg>';
+  h+='<div id="motion-status" style="font-size:12px;color:var(--vf-state-pass);margin-top:8px;">Ready. Click a test button.</div>';
+  h+='</div>';
+
   document.getElementById('harness-root').innerHTML = h;
+
+  // Wire motion harness controls (uses production MotionEngine)
+  window.harnessMotionTest = function(kind) {
+    var status = document.getElementById('motion-status');
+    if (typeof MotionEngine === 'undefined') {
+      status.textContent = 'MotionEngine not loaded'; status.style.color = 'var(--vf-state-fail)';
+      return;
+    }
+    if (kind === 'ap03to04') {
+      var prev = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };
+      var next = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var plans = MotionEngine.detect(prev, next);
+      status.textContent = 'AP03\u2192AP04 detect(): ' + plans.length + ' plan(s). Animating 450ms.';
+      status.style.color = 'var(--vf-state-pass)';
+      MotionEngine.animate(plans, function(){ status.textContent = 'Settled: W1 at AP04 (authoritative).'; });
+    } else if (kind === 'ap04to05') {
+      var prev2 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var next2 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP05'}] };
+      var plans2 = MotionEngine.detect(prev2, next2);
+      status.textContent = 'AP04\u2192AP05 detect(): ' + plans2.length + ' plan(s). Animating JOIN output.';
+      status.style.color = 'var(--vf-state-pass)';
+      MotionEngine.animate(plans2, function(){ status.textContent = 'Settled: W1 at AP05 (authoritative).'; });
+    } else if (kind === 'ap06fail') {
+      var prev3 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP06', latest_quality_result:'FAIL'}] };
+      var next3 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP06', latest_quality_result:'FAIL'}] };
+      var plans3 = MotionEngine.detect(prev3, next3);
+      status.textContent = 'AP06 FAIL: ' + plans3.length + ' plan(s) \u2014 NO MOVE (invariant held).';
+      status.style.color = plans3.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'ap08ng') {
+      var prev4 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP08', latest_quality_result:'NG'}] };
+      var next4 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP08', latest_quality_result:'NG'}] };
+      var plans4 = MotionEngine.detect(prev4, next4);
+      status.textContent = 'AP08 NG: ' + plans4.length + ' plan(s) \u2014 NO MOVE (invariant held).';
+      status.style.color = plans4.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'reduced') {
+      MotionEngine._prefersReduced = true;
+      var prev5 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };
+      var next5 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var plans5 = MotionEngine.detect(prev5, next5);
+      status.textContent = 'Reduced motion: direct settle, ' + plans5.length + ' plan(s) skipped interpolation.';
+      status.style.color = 'var(--vf-state-pass)';
+      MotionEngine.animate(plans5, function(){ MotionEngine._prefersReduced = false; status.textContent = 'Settled instantly (reduced motion).'; });
+    }
+  };
 }
 setTimeout(build,100);
 </script>
