@@ -97,77 +97,77 @@ const VF_ICON = {
    VF Visual Primitive Library (C03R Enhanced)
    ═══════════════════════════════════════ */
 const VF = {
-  // ── Wooden pallet carrier (C02-C01: 2.5x scale, 144×48) ──
+  // ── Wooden pallet carrier (C02-C01: scaled for 160px conveyor, 180×72) ──
   pallet(x, y) {
-    const w=144, h=48;
-    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="5" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="1"/>
-      <rect x="${x-w/2-1}" y="${y-h/2+2}" width="${w+2}" height="6" rx="3" fill="var(--vf-pallet-dark)" opacity="0.2"/>
-      <line x1="${x-w/2+8}" y1="${y-6}" x2="${x+w/2-8}" y2="${y-6}" stroke="var(--vf-pallet-dark)" stroke-width="1.5" opacity="0.35"/>
-      <line x1="${x-w/2+8}" y1="${y+6}" x2="${x+w/2-8}" y2="${y+6}" stroke="var(--vf-pallet-dark)" stroke-width="1.5" opacity="0.35"/>
-      <line x1="${x-w/2+8}" y1="${y+18}" x2="${x+w/2-8}" y2="${y+18}" stroke="var(--vf-pallet-dark)" stroke-width="1.2" opacity="0.3"/>
-      <rect x="${x-36}" y="${y-h/2-4}" width="72" height="5" rx="2" fill="rgba(0,0,0,0.04)"/>`;
+    const w=180, h=72;
+    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="6" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="1.2"/>
+      <rect x="${x-w/2-2}" y="${y-h/2+2}" width="${w+4}" height="8" rx="4" fill="var(--vf-pallet-dark)" opacity="0.2"/>
+      <line x1="${x-w/2+10}" y1="${y-10}" x2="${x+w/2-10}" y2="${y-10}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.35"/>
+      <line x1="${x-w/2+10}" y1="${y+10}" x2="${x+w/2-10}" y2="${y+10}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.35"/>
+      <line x1="${x-w/2+10}" y1="${y+28}" x2="${x+w/2-10}" y2="${y+28}" stroke="var(--vf-pallet-dark)" stroke-width="1.5" opacity="0.3"/>
+      <rect x="${x-45}" y="${y-h/2-5}" width="90" height="6" rx="2" fill="rgba(0,0,0,0.04)"/>`;
   },
 
-  // ── STATOR ASSY — metallic ring (C01: scaled up) ──
+  // ── STATOR ASSY — metallic ring (C02-C01: 1.5x for wider conveyor) ──
   statorAssy(x, y) {
-    const r=20;
+    const r=28;
     return `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--vf-obj-stator)" stroke="#1E8090" stroke-width="1.8"/>
-      <circle cx="${x}" cy="${y}" r="10" fill="var(--vf-bg-canvas)" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="6" fill="none" stroke="#1E8090" stroke-width="0.7" opacity="0.4"/>
-      <circle cx="${x-11}" cy="${y-8}" r="2.2" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x+11}" cy="${y-8}" r="2.2" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x-11}" cy="${y+8}" r="2.2" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x+11}" cy="${y+8}" r="2.2" fill="#1E8090" opacity="0.5"/>`;
+      <circle cx="${x}" cy="${y}" r="14" fill="var(--vf-bg-canvas)" opacity="0.5"/>
+      <circle cx="${x}" cy="${y}" r="8" fill="none" stroke="#1E8090" stroke-width="0.9" opacity="0.4"/>
+      <circle cx="${x-15}" cy="${y-11}" r="3" fill="#1E8090" opacity="0.5"/>
+      <circle cx="${x+15}" cy="${y-11}" r="3" fill="#1E8090" opacity="0.5"/>
+      <circle cx="${x-15}" cy="${y+11}" r="3" fill="#1E8090" opacity="0.5"/>
+      <circle cx="${x+15}" cy="${y+11}" r="3" fill="#1E8090" opacity="0.5"/>`;
   },
 
-  // ── ROTOR — shaft (C01: scaled up) ──
+  // ── ROTOR — shaft (C02-C01: 1.5x for wider conveyor) ──
   rotor(x, y) {
-    return `<rect x="${x-24}" y="${y-6}" width="48" height="12" rx="6" fill="var(--vf-obj-rotor)" stroke="#C88020" stroke-width="1.2"/>
-      <rect x="${x-4}" y="${y-8}" width="8" height="16" rx="4" fill="#D09030"/>
-      <rect x="${x-20}" y="${y-3}" width="40" height="6" rx="3" fill="#D09030" opacity="0.4"/>
-      <line x1="${x-20}" y1="${y}" x2="${x+20}" y2="${y}" stroke="#C08028" stroke-width="0.7" opacity="0.4"/>`;
+    return `<rect x="${x-32}" y="${y-8}" width="64" height="16" rx="8" fill="var(--vf-obj-rotor)" stroke="#C88020" stroke-width="1.5"/>
+      <rect x="${x-5}" y="${y-10}" width="10" height="20" rx="5" fill="#D09030"/>
+      <rect x="${x-26}" y="${y-4}" width="52" height="8" rx="4" fill="#D09030" opacity="0.4"/>
+      <line x1="${x-26}" y1="${y}" x2="${x+26}" y2="${y}" stroke="#C08028" stroke-width="0.9" opacity="0.4"/>`;
   },
 
-  // ── MTR JOINED — assembled motor (C01: scaled up) ──
+  // ── MTR JOINED — assembled motor (C02-C01: 1.5x for wider conveyor) ──
   motorJoined(x, y) {
-    return `<rect x="${x-20}" y="${y-12}" width="40" height="24" rx="8" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1.4"/>
-      <rect x="${x-8}" y="${y-16}" width="16" height="5" rx="2" fill="#308A72" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="5" fill="#308A72" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="2.5" fill="#fff" opacity="0.3"/>
-      <rect x="${x-22}" y="${y+4}" width="6" height="5" rx="1.5" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="0.9"/>
-      <rect x="${x+16}" y="${y+4}" width="6" height="5" rx="1.5" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="0.9"/>`;
+    return `<rect x="${x-28}" y="${y-16}" width="56" height="32" rx="10" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1.6"/>
+      <rect x="${x-10}" y="${y-20}" width="20" height="6" rx="3" fill="#308A72" opacity="0.5"/>
+      <circle cx="${x}" cy="${y}" r="7" fill="#308A72" opacity="0.5"/>
+      <circle cx="${x}" cy="${y}" r="3" fill="#fff" opacity="0.3"/>
+      <rect x="${x-30}" y="${y+6}" width="8" height="7" rx="2" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1"/>
+      <rect x="${x+22}" y="${y+6}" width="8" height="7" rx="2" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1"/>`;
   },
 
-  // ── MTR PRE-TEST — complete motor (C01: scaled up) ──
+  // ── MTR PRE-TEST — complete motor (C02-C01: 1.5x for wider conveyor) ──
   motorPreTest(x, y) {
-    return `<rect x="${x-21}" y="${y-12}" width="42" height="24" rx="9" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.4"/>
-      <circle cx="${x}" cy="${y}" r="5.5" fill="#2E7098" opacity="0.4"/>
-      <circle cx="${x}" cy="${y}" r="2.5" fill="#fff" opacity="0.2"/>
-      <rect x="${x-23}" y="${y-8}" width="5" height="16" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.9"/>
-      <rect x="${x+18}" y="${y-8}" width="5" height="16" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.9"/>
-      <rect x="${x-19}" y="${y+6}" width="7" height="5" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.7"/>
-      <rect x="${x+12}" y="${y+6}" width="7" height="5" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.7"/>`;
+    return `<rect x="${x-30}" y="${y-16}" width="60" height="32" rx="10" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.6"/>
+      <circle cx="${x}" cy="${y}" r="7" fill="#2E7098" opacity="0.4"/>
+      <circle cx="${x}" cy="${y}" r="3" fill="#fff" opacity="0.2"/>
+      <rect x="${x-32}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
+      <rect x="${x+26}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
+      <rect x="${x-26}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
+      <rect x="${x+17}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>`;
   },
 
-  // ── TESTED MTR — blue T marker (C01: scaled up) ──
+  // ── TESTED MTR — blue T marker (C02-C01: 1.5x for wider conveyor) ──
   motorTested(x, y) {
-    return `<rect x="${x-21}" y="${y-12}" width="42" height="24" rx="9" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.4"/>
-      <circle cx="${x}" cy="${y}" r="5.5" fill="#2E7098" opacity="0.4"/>
-      <rect x="${x-23}" y="${y-8}" width="5" height="16" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.9"/>
-      <rect x="${x+18}" y="${y-8}" width="5" height="16" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.9"/>
-      <rect x="${x-19}" y="${y+6}" width="7" height="5" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.7"/>
-      <rect x="${x+12}" y="${y+6}" width="7" height="5" rx="2" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.7"/>
-      <circle cx="${x+17}" cy="${y-10}" r="6" fill="none" stroke="var(--vf-accent)" stroke-width="1.2"/>
-      <text x="${x+17}" y="${y-6}" fill="var(--vf-accent)" font-size="8" text-anchor="middle" font-weight="bold">T</text>`;
+    return `<rect x="${x-30}" y="${y-16}" width="60" height="32" rx="10" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.6"/>
+      <circle cx="${x}" cy="${y}" r="7" fill="#2E7098" opacity="0.4"/>
+      <rect x="${x-32}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
+      <rect x="${x+26}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
+      <rect x="${x-26}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
+      <rect x="${x+17}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
+      <circle cx="${x+24}" cy="${y-14}" r="8" fill="none" stroke="var(--vf-accent)" stroke-width="1.5"/>
+      <text x="${x+24}" y="${y-9}" fill="var(--vf-accent)" font-size="10" text-anchor="middle" font-weight="bold">T</text>`;
   },
 
-  // ── PACKED GOODS — carton (C01: scaled up) ──
+  // ── PACKED GOODS — carton (C02-C01: 1.5x for wider conveyor) ──
   packedGoods(x, y) {
-    return `<rect x="${x-22}" y="${y-13}" width="44" height="26" rx="5" fill="var(--vf-obj-packed)" stroke="#9A6838" stroke-width="1.4"/>
-      <line x1="${x}" y1="${y-13}" x2="${x}" y2="${y+13}" stroke="#9A6838" stroke-width="1" opacity="0.35"/>
-      <line x1="${x-22}" y1="${y}" x2="${x+22}" y2="${y}" stroke="#9A6838" stroke-width="1" opacity="0.35"/>
-      <rect x="${x-11}" y="${y-14}" width="7" height="3" rx="1.5" fill="#9A6838" opacity="0.5"/>
-      <rect x="${x+4}" y="${y-14}" width="7" height="3" rx="1.5" fill="#9A6838" opacity="0.5"/>`;
+    return `<rect x="${x-30}" y="${y-18}" width="60" height="36" rx="6" fill="var(--vf-obj-packed)" stroke="#9A6838" stroke-width="1.6"/>
+      <line x1="${x}" y1="${y-18}" x2="${x}" y2="${y+18}" stroke="#9A6838" stroke-width="1.2" opacity="0.35"/>
+      <line x1="${x-30}" y1="${y}" x2="${x+30}" y2="${y}" stroke="#9A6838" stroke-width="1.2" opacity="0.35"/>
+      <rect x="${x-16}" y="${y-19}" width="10" height="4" rx="2" fill="#9A6838" opacity="0.5"/>
+      <rect x="${x+6}" y="${y-19}" width="10" height="4" rx="2" fill="#9A6838" opacity="0.5"/>`;
   },
 
   // ── Quality state overlay ──
