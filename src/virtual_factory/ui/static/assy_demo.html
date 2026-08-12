@@ -98,6 +98,16 @@
     <main id="fb-main">
       <!-- SVG Physical Canvas -->
       <div id="fb-canvas-wrap">
+        <!-- I09-P01 Popup Scaffold -->
+        <div id="vf-popup">
+          <div id="vf-popup-header">
+            <span id="vf-popup-title">Overview</span>
+            <button id="vf-popup-close" onclick="ctrlB.closePopup()" title="Close">&times;</button>
+          </div>
+          <div id="vf-popup-body">
+            <div class="vf-popup-empty">Popup — I09-P04 integration</div>
+          </div>
+        </div>
         <svg id="fb-canvas-svg" viewBox="0 0 1920 700" preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id="fbBgGrad" x1="0" y1="0" x2="0" y2="1">
@@ -111,22 +121,28 @@
               <polygon points="0 0, 8 2.5, 0 5" fill="#1e3a5f"/>
             </marker>
           </defs>
-          <rect width="1920" height="700" fill="url(#fbBgGrad)"/>
-          <!-- Conveyor bar -->
-          <rect id="fb-conveyor" x="80" y="380" width="1600" height="10" rx="4" fill="#1a2740" stroke="#1e3a5f" stroke-width="1"/>
-          <!-- SSO2 input -->
-          <line x1="20" y1="380" x2="100" y2="380" stroke="#4ecca3" stroke-width="3" marker-end="url(#arrowFlow)"/>
-          <text x="20" y="370" fill="#4ecca3" font-size="11" font-weight="600">SSO2</text>
-          <!-- RSO2 branch -->
-          <line id="fb-rso2-line" x1="540" y1="260" x2="540" y2="375" stroke="#ffc107" stroke-width="2" marker-end="url(#arrowFlow)" stroke-dasharray="6,3"/>
-          <text id="fb-rso2-label" x="545" y="270" fill="#ffc107" font-size="11" font-weight="600">RSO2</text>
-          <!-- OUT arrow -->
-          <line x1="1720" y1="380" x2="1780" y2="380" stroke="#17a2b8" stroke-width="3" marker-end="url(#arrowOut)"/>
-          <text x="1730" y="370" fill="#17a2b8" font-size="11" font-weight="600">OUT</text>
+          <rect width="1920" height="700" fill="var(--vf-bg-canvas)"/>
+          <!-- I09-P01 Conveyor scaffold: belt + rails + rollers + LEFT arrows -->
+          <rect id="fb-conveyor-belt" x="60" y="375" width="1800" height="18" rx="4" fill="#E5E9ED" stroke="var(--vf-conveyor-edge)" stroke-width="1"/>
+          <rect id="fb-conveyor-rail-top" x="60" y="372" width="1800" height="4" rx="2" fill="var(--vf-conveyor-edge)"/>
+          <rect id="fb-conveyor-rail-bot" x="60" y="392" width="1800" height="4" rx="2" fill="var(--vf-conveyor-edge)"/>
+          <!-- Roller segments -->
+          <g id="fb-conveyor-rollers" fill="var(--vf-conveyor-roller)" opacity="0.5">
+            <!-- JS-populated or kept simple -->
+          </g>
+          <!-- SSO2 input (RIGHT side) -->
+          <line x1="1900" y1="384" x2="1820" y2="384" stroke="var(--vf-state-pass)" stroke-width="3" marker-end="url(#arrowFlow)"/>
+          <text x="1900" y="374" fill="var(--vf-state-pass)" font-size="11" font-weight="600" text-anchor="end">SSO2</text>
+          <!-- RSO2 branch (RIGHT side, into AP04) -->
+          <line id="fb-rso2-line" x1="1380" y1="280" x2="1380" y2="370" stroke="#B8860B" stroke-width="2" marker-end="url(#arrowFlow)" stroke-dasharray="6,3"/>
+          <text id="fb-rso2-label" x="1385" y="290" fill="#B8860B" font-size="11" font-weight="600">RSO2</text>
+          <!-- OUT arrow (LEFT side) -->
+          <line x1="200" y1="384" x2="140" y2="384" stroke="var(--vf-state-selected)" stroke-width="3" marker-end="url(#arrowOut)"/>
+          <text x="190" y="374" fill="var(--vf-state-selected)" font-size="11" font-weight="600" text-anchor="end">OUT</text>
           <!-- Station nodes -->
           <g id="fb-stations"></g>
           <!-- Production summary text -->
-          <text id="fb-prod-text" x="40" y="50" fill="#8899bb" font-size="12" font-family="monospace"></text>
+          <text id="fb-prod-text" x="40" y="50" fill="var(--vf-text-secondary)" font-size="12" font-family="monospace"></text>
         </svg>
       </div>
 

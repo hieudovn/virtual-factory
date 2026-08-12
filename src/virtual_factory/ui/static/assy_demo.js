@@ -251,10 +251,11 @@ function closeFrameB() {
    ============================== */
 const FB_STATIONS = ['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
 const FB_LANDMARKS = { AP04:'JOIN', AP06:'TEST', AP08:'VISION', AP11:'FINAL' };
-// Station X positions on the 1920 canvas (conveyor at y=380)
-const FB_STATION_X = [140,240,340,440,540,640,740,840,940,1040,1140,1240];
+// Station X positions on the 1920 canvas (RIGHT→LEFT flow, I09-P01)
+// PRE-ASSY rightmost (~1780), AP11 leftmost (~680)
+const FB_STATION_X = [1780,1680,1580,1480,1380,1280,1180,1080,980,880,780,680];
 const FB_CANVAS_W = 1920, FB_CANVAS_H = 700;
-const FB_CONTENT_BOUNDS = { x:0, y:190, w:1920, h:320 };
+const FB_CONTENT_BOUNDS = { x:100, y:190, w:1720, h:320 };
 
 const ctrlB = {
   _subLineId: 'ASSY-SL01',
@@ -434,21 +435,21 @@ const ctrlB = {
       const isReleased = p.manufacturing_status === 'released';
 
       // Station box
-      let borderColor = '#1e3a5f';
-      let bgColor = '#111d30';
-      if (isLandmark && stId === 'AP04') { borderColor = '#ffc107'; bgColor = '#1a1a10'; }
-      else if (isLandmark && stId === 'AP11') { borderColor = '#17a2b8'; bgColor = '#0d1a20'; }
-      if (isHeld) { borderColor = '#e94560'; bgColor = '#1a1015'; }
-      if (isReleased && stId === 'AP11') { borderColor = '#17a2b8'; bgColor = '#0d2b3e'; }
-      if (isSel) { borderColor = '#fff'; }
+      let borderColor = 'var(--vf-border-soft)';
+      let bgColor = '#F8F9FB';
+      if (isLandmark && stId === 'AP04') { borderColor = '#B8860B'; bgColor = '#FFFDF5'; }
+      else if (isLandmark && stId === 'AP11') { borderColor = 'var(--vf-state-selected)'; bgColor = '#F0F5FF'; }
+      if (isHeld) { borderColor = 'var(--vf-state-fail)'; bgColor = '#FFF5F5'; }
+      if (isReleased && stId === 'AP11') { borderColor = 'var(--vf-state-selected)'; bgColor = '#F0F8FF'; }
+      if (isSel) { borderColor = 'var(--vf-state-selected)'; }
 
       html += `<g class="fb-station" data-station="${stId}" style="cursor:pointer">`;
       html += `<rect x="${sx-44}" y="${sy}" width="88" height="90" rx="4" fill="${bgColor}" stroke="${borderColor}" stroke-width="${isSel||isHeld?2:1}"/>`;
 
       // Station ID + landmark
-      html += `<text x="${sx}" y="${sy+18}" fill="${isHeld?'#e94560':'#8899bb'}" font-size="15" font-weight="600" text-anchor="middle">${stId}</text>`;
+      html += `<text x="${sx}" y="${sy+18}" fill="${isHeld?'var(--vf-state-fail)':'var(--vf-text-secondary)'}" font-size="15" font-weight="600" text-anchor="middle">${stId}</text>`;
       if (isLandmark) {
-        html += `<text x="${sx}" y="${sy+34}" fill="${stId==='AP04'?'#ffc107':stId==='AP11'?'#17a2b8':'#ffc107'}" font-size="11" font-weight="600" text-anchor="middle">${FB_LANDMARKS[stId]}</text>`;
+        html += `<text x="${sx}" y="${sy+34}" fill="${stId==='AP04'?'#B8860B':stId==='AP11'?'var(--vf-state-selected)':'#B8860B'}" font-size="11" font-weight="600" text-anchor="middle">${FB_LANDMARKS[stId]}</text>`;
       }
 
       if (isOcc) {
@@ -457,27 +458,27 @@ const ctrlB = {
         html += `<g class="fb-wip-token" data-wip="${p.wip_id}" style="cursor:pointer">`;
         html += `<rect x="${sx-38}" y="${carrierY}" width="76" height="28" rx="3" fill="none" stroke="#1e3a5f" stroke-width="1"/>`;
         if (p.carrier_id) {
-          html += `<text x="${sx}" y="${carrierY+12}" fill="#8899bb" font-size="11" font-weight="400" text-anchor="middle">${p.carrier_id}</text>`;
+          html += `<text x="${sx}" y="${carrierY+12}" fill="var(--vf-text-muted)" font-size="11" font-weight="400" text-anchor="middle">${p.carrier_id}</text>`;
         }
         // WIP
         const wipY = carrierY + 23;
-        const wipColor = wipType === 'SSO2' ? '#4ecca3' : '#ffc107';
+        const wipColor = wipType === 'SSO2' ? 'var(--vf-obj-stator)' : '#B8860B';
         html += `<text x="${sx}" y="${wipY}" fill="${wipColor}" font-size="14" font-weight="600" text-anchor="middle">${p.wip_id}</text>`;
         html += `</g>`;  // close fb-wip-token
 
         // Quality badge
         const badgeY = wipY + 14;
         if (qResult && !isHeld) {
-          const qColor = qResult === 'PASS' ? '#4ecca3' : '#e94560';
+          const qColor = qResult === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
           let qText = qResult;
           if (p.attempt_number > 1) qText += ` #${p.attempt_number}`;
           html += `<text x="${sx}" y="${badgeY}" fill="${qColor}" font-size="12" font-weight="600" text-anchor="middle">${qText}</text>`;
         }
         if (isHeld) {
-          html += `<text x="${sx}" y="${badgeY}" fill="#e94560" font-size="12" font-weight="600" text-anchor="middle">HOLD</text>`;
+          html += `<text x="${sx}" y="${badgeY}" fill="var(--vf-state-fail)" font-size="12" font-weight="600" text-anchor="middle">HOLD</text>`;
         }
         if (isReleased) {
-          html += `<text x="${sx}" y="${badgeY}" fill="#17a2b8" font-size="12" font-weight="600" text-anchor="middle">RELEASED</text>`;
+          html += `<text x="${sx}" y="${badgeY}" fill="var(--vf-state-selected)" font-size="12" font-weight="600" text-anchor="middle">RELEASED</text>`;
         }
       } else {
         // Empty station
@@ -492,8 +493,8 @@ const ctrlB = {
       html += `</g>`;
     });
 
-    // LINE OUT arrow indicator text
-    html += `<text x="1260" y="355" fill="#17a2b8" font-size="10">LINE OUT \u2192</text>`;
+    // LINE OUT arrow indicator text (LEFT side)
+    html += `<text x="120" y="355" fill="var(--vf-state-selected)" font-size="10">LINE OUT \u2190</text>`;
 
     // AP04 genealogy context label on canvas
     const genealogy = snap.genealogy || [];
@@ -615,6 +616,10 @@ const ctrlB = {
     this._applyHighlights();
     this._renderInspector(this._lastSnapshot);
   },
+
+  /* I09-P01 popup scaffold */
+  openPopup() { document.getElementById('vf-popup').classList.add('vf-popup-open'); },
+  closePopup() { document.getElementById('vf-popup').classList.remove('vf-popup-open'); },
 
   /* ---------- Inspector Render ---------- */
   _renderInspector(snap) {

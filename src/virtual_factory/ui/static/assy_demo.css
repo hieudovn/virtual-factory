@@ -1,10 +1,45 @@
-/* M6-S04B — Frame A ASSY Overview Styles */
+/* M6-S04B — TIPA ASSY Demo Styles */
+/* I09-P01: VF tokens + bright shell + top-down scaffold */
+
+/* ═══════════════════════════════════════
+   VF Unified Design Tokens (I09-P01)
+   ═══════════════════════════════════════ */
+:root{
+  --vf-bg-page:#F5F7FA;
+  --vf-bg-canvas:#FFFFFF;
+  --vf-bg-panel:rgba(255,255,255,0.92);
+  --vf-border-soft:#D9E1EA;
+  --vf-border-panel:#C5CDD5;
+  --vf-text-primary:#1F2A37;
+  --vf-text-secondary:#5B6777;
+  --vf-text-muted:#8899A5;
+  --vf-conveyor:#AEB8C4;
+  --vf-conveyor-edge:#7C8796;
+  --vf-conveyor-roller:#D5DBE1;
+  --vf-flow-arrow:#5B8DEF;
+  --vf-obj-stator:#2DB9C8;
+  --vf-obj-rotor:#E8A23A;
+  --vf-obj-joined:#42A58A;
+  --vf-obj-pretest:#3E8FB0;
+  --vf-obj-packed:#B68B57;
+  --vf-pallet-wood:#C89A63;
+  --vf-state-pass:#2EAD5B;
+  --vf-state-hold:#E5A93B;
+  --vf-state-fail:#D84B4B;
+  --vf-state-selected:#2F80ED;
+  --vf-state-historical:#7B8AA0;
+  --vf-shell-header:#FFFFFF;
+  --vf-shell-footer:#F8F9FB;
+  --vf-space-xs:4px;--vf-space-sm:8px;--vf-space-md:12px;
+  --vf-space-lg:16px;--vf-space-xl:24px;--vf-space-xxl:32px;
+  --vf-radius-sm:6px;--vf-radius-md:10px;--vf-radius-lg:14px;
+}
 
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e0;height:100vh;overflow:hidden}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--vf-bg-page);color:var(--vf-text-primary);height:100vh;overflow:hidden}
 #app{height:100vh;display:flex;flex-direction:column}
 
-/* ===== Frame A Global Header ===== */
+/* ===== Frame A (preserved dark for P01) ===== */
 #global-header{display:flex;align-items:center;justify-content:space-between;padding:6px 20px;background:#1a2332;border-bottom:2px solid #1e3a5f;min-height:44px}
 .header-left{display:flex;gap:10px;align-items:center}
 .plant-badge{background:#0d2b3e;color:#17a2b8;padding:3px 10px;border-radius:3px;font-size:13px;font-weight:600}
@@ -17,12 +52,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e
 .total-badge b{color:#e0e0e0}
 .total-badge.holds{color:#e94560}
 .total-badge.holds b{color:#e94560}
-
-/* ===== Frame A Main ===== */
 #overview-main{flex:1;overflow:hidden;background:#0d1117}
 #overview-svg{width:100%;height:100%;display:block}
-
-/* ===== Frame A Controls ===== */
 #controls,#controls-s04{display:flex;align-items:center;gap:8px;padding:6px 16px;background:#1a2332;border-top:1px solid #1e3a5f;min-height:36px}
 #controls button,#controls-s04 button{padding:4px 12px;border:none;border-radius:3px;font-size:12px;cursor:pointer;color:#fff}
 #btn-reset,#btn-reset-s04{background:#e94560}
@@ -32,7 +63,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e
 #controls label,#controls-s04 label{font-size:12px;color:#888;display:flex;align-items:center;gap:4px}
 #controls select,#controls-s04 select{background:#0f1a2e;color:#e0e0e0;border:1px solid #1e3a5f;border-radius:3px;padding:3px 6px;font-size:11px}
 
-/* ===== S04 Fallback Styles (preserved) ===== */
+/* ===== S04 Fallback (preserved dark) ===== */
 #frame-s04{display:flex;flex-direction:column;height:100vh}
 #frame-s04 header{background:#16213e;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460}
 #frame-s04 header h1{font-size:1.2em;color:#e94560}
@@ -74,93 +105,108 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e0e0e
 .legend.pass{color:#4ecca3}.legend.fail{color:#e94560}
 .legend.hold{color:#ffc107}.legend.released{color:#17a2b8}.legend.empty{color:#555}
 
-/* ===== M6-S04B-I05 Frame B — Sub-line Detail ===== */
-#frame-b{height:100vh;display:flex;flex-direction:column;background:#0d1117}
+/* ═══════════════════════════════════════
+   I09-P01 Frame B — Bright Shell + Top-Down Scene
+   ═══════════════════════════════════════ */
+#frame-b{height:100vh;display:flex;flex-direction:column;background:var(--vf-bg-page)}
 
-/* Frame B Header */
-#fb-header{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:#1a2332;border-bottom:2px solid #1e3a5f;min-height:44px;flex-shrink:0}
+/* Header */
+#fb-header{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:var(--vf-shell-header);border-bottom:1px solid var(--vf-border-soft);min-height:44px;flex-shrink:0}
 .fb-header-left{display:flex;gap:10px;align-items:center}
-.fb-back-btn{background:#0f1a2e;color:#17a2b8;border:1px solid #1e3a5f;border-radius:3px;padding:4px 12px;font-size:12px;cursor:pointer}
-.fb-back-btn:hover{background:#0d2b3e}
+.fb-back-btn{background:var(--vf-bg-page);color:var(--vf-state-selected);border:1px solid var(--vf-border-soft);border-radius:var(--vf-radius-sm);padding:4px 12px;font-size:12px;cursor:pointer}
+.fb-back-btn:hover{background:#EBEEF2}
 .fb-header-center{display:flex;gap:8px;align-items:center}
-.fb-sl-badge{background:#0d2b3e;color:#17a2b8;padding:3px 12px;border-radius:3px;font-size:14px;font-weight:600;font-family:monospace}
-.fb-variant-badge{font-size:11px;color:#8899bb;text-transform:uppercase}
-.fb-state-badge{padding:3px 10px;border-radius:3px;font-size:12px;font-weight:600}
+.fb-sl-badge{background:#E8F0FE;color:var(--vf-state-selected);padding:3px 12px;border-radius:var(--vf-radius-sm);font-size:14px;font-weight:600;font-family:monospace}
+.fb-variant-badge{font-size:11px;color:var(--vf-text-muted);text-transform:uppercase}
+.fb-state-badge{padding:3px 10px;border-radius:var(--vf-radius-sm);font-size:12px;font-weight:600}
 .fb-header-right{display:flex;gap:10px;align-items:center}
-.fb-time-badge{font-family:monospace;font-size:13px;color:#8899bb}
-.fb-dwell-badge{font-family:monospace;font-size:12px;color:#666}
+.fb-time-badge{font-family:monospace;font-size:13px;color:var(--vf-text-secondary)}
+.fb-dwell-badge{font-family:monospace;font-size:12px;color:var(--vf-text-muted)}
 
-/* Frame B Main Layout */
+/* Main layout */
 #fb-main{flex:1;display:flex;overflow:hidden}
-#fb-canvas-wrap{flex:1;overflow:hidden;background:#0d1117;position:relative}
+#fb-canvas-wrap{flex:1;overflow:hidden;background:var(--vf-bg-canvas);position:relative}
 #fb-canvas-svg{width:100%;height:100%;display:block}
 
-/* Frame B Right Panel */
-#fb-right-panel{width:280px;display:flex;flex-direction:column;background:#141a24;border-left:2px solid #1e3a5f;flex-shrink:0}
-#fb-event-strip{flex:1;overflow-y:auto;padding:10px;border-bottom:1px solid #1e3a5f}
-#fb-event-strip h4{font-size:12px;color:#e94560;margin-bottom:6px;font-weight:600}
-.fb-qe-item{font-size:11px;padding:4px 0;border-bottom:1px solid #1a2332;color:#8899bb;line-height:1.4}
-.fb-qe-item small{color:#555}
+/* I09-P01 Top-Right Popup Scaffold */
+#vf-popup{position:absolute;top:12px;right:12px;width:360px;max-height:55vh;background:var(--vf-bg-panel);border:1px solid var(--vf-border-panel);border-radius:var(--vf-radius-md);box-shadow:0 4px 16px rgba(0,0,0,0.08);display:none;flex-direction:column;z-index:10;overflow:hidden;backdrop-filter:blur(8px)}
+#vf-popup.vf-popup-open{display:flex}
+#vf-popup-header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--vf-border-soft);flex-shrink:0}
+#vf-popup-title{font-size:13px;font-weight:600;color:var(--vf-text-primary)}
+#vf-popup-close{background:none;border:none;color:var(--vf-text-muted);font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
+#vf-popup-close:hover{color:var(--vf-state-fail)}
+#vf-popup-body{flex:1;overflow-y:auto;padding:10px 12px;font-size:12px;color:var(--vf-text-secondary)}
+#vf-popup-body .vf-popup-empty{color:var(--vf-text-muted);font-style:italic;text-align:center;padding:16px 0}
 
-/* Genealogy Context */
-#fb-genealogy-context{padding:10px;border-bottom:1px solid #1e3a5f}
-#fb-genealogy-context h4{font-size:11px;color:#ffc107;margin-bottom:4px;font-weight:600}
-#fb-genealogy-text{font-size:11px;color:#8899bb;line-height:1.4;font-family:monospace}
+/* Right Panel */
+#fb-right-panel{width:260px;display:flex;flex-direction:column;background:var(--vf-shell-header);border-left:1px solid var(--vf-border-soft);flex-shrink:0}
+#fb-event-strip{flex:1;overflow-y:auto;padding:10px;border-bottom:1px solid var(--vf-border-soft)}
+#fb-event-strip h4{font-size:12px;color:var(--vf-state-fail);margin-bottom:6px;font-weight:600}
+.fb-qe-item{font-size:11px;padding:4px 0;border-bottom:1px solid #EEF0F3;color:var(--vf-text-secondary);line-height:1.4}
+.fb-qe-item small{color:var(--vf-text-muted)}
+.fb-qe-clickable{cursor:pointer}
+.fb-qe-clickable:hover{background:#F0F2F5}
+#fb-genealogy-context{padding:10px;border-bottom:1px solid var(--vf-border-soft)}
+#fb-genealogy-context h4{font-size:11px;color:#B8860B;margin-bottom:4px;font-weight:600}
+#fb-genealogy-text{font-size:11px;color:var(--vf-text-secondary);line-height:1.4;font-family:monospace}
 
-/* Inspector Placeholder */
-#fb-inspector-placeholder{min-height:80px;padding:10px;transition:all .2s}
-.fb-inspector-collapsed{border-top:2px solid #1e3a5f}
-
-/* Inspector — Frame C */
+/* Inspector — Frame C (light-adapted) */
+.fb-inspector-collapsed{border-top:1px solid var(--vf-border-soft)}
 #fb-inspector{display:flex;flex-direction:column;overflow:hidden;transition:all .2s}
 #fb-inspector.fb-inspector-collapsed{flex:0 0 auto;min-height:40px}
 #fb-inspector.fb-inspector-open{flex:1;overflow-y:auto}
-#fb-insp-header{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#141a24;border-bottom:1px solid #1e3a5f;flex-shrink:0}
-#fb-insp-title{font-size:14px;font-weight:600;color:#17a2b8}
-#fb-insp-close{background:none;border:none;color:#666;font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
-#fb-insp-close:hover{color:#e94560}
+#fb-insp-header{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--vf-shell-header);border-bottom:1px solid var(--vf-border-soft);flex-shrink:0}
+#fb-insp-title{font-size:14px;font-weight:600;color:var(--vf-state-selected)}
+#fb-insp-close{background:none;border:none;color:var(--vf-text-muted);font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
+#fb-insp-close:hover{color:var(--vf-state-fail)}
 #fb-insp-body{flex:1;overflow-y:auto;padding:8px 10px}
-.fb-insp-section{margin-bottom:12px;border-bottom:1px solid #1a2332;padding-bottom:8px}
-.fb-insp-section h5{font-size:12px;color:#8899bb;margin:0 0 6px 0;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.fb-insp-empty{color:#555;font-size:12px;font-style:italic}
-.fb-insp-historical{background:#3d2e00;color:#ffc107;font-size:11px;font-weight:600;padding:4px 8px;border-radius:3px;margin:4px 0}
-.fb-insp-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid #0f1a2e}
-.fb-insp-k{color:#666;min-width:70px}
-.fb-insp-v{color:#e0e0e0;text-align:right;flex:1}
-
-/* Quality History */
-.fb-insp-qr{padding:4px 0;border-bottom:1px solid #0f1a2e}
+.fb-insp-section{margin-bottom:12px;border-bottom:1px solid #EEF0F3;padding-bottom:8px}
+.fb-insp-section h5{font-size:12px;color:var(--vf-text-secondary);margin:0 0 6px 0;font-weight:600;text-transform:uppercase}
+.fb-insp-empty{color:var(--vf-text-muted);font-size:12px;font-style:italic}
+.fb-insp-historical{background:#FFF3CD;color:#856404;font-size:11px;font-weight:600;padding:4px 8px;border-radius:var(--vf-radius-sm);margin:4px 0}
+.fb-insp-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid #F0F2F5}
+.fb-insp-k{color:var(--vf-text-muted);min-width:70px}
+.fb-insp-v{color:var(--vf-text-primary);text-align:right;flex:1}
+.fb-insp-qr{padding:4px 0;border-bottom:1px solid #F0F2F5}
 .fb-insp-qr-head{display:flex;gap:8px;align-items:center;font-size:12px}
-.fb-insp-qr-station{color:#8899bb;font-weight:600;min-width:48px}
-.fb-insp-qr-type{font-size:11px;color:#555;margin-top:1px}
-.fb-insp-qr-reason{font-size:11px;color:#ffc107;margin-top:1px}
-
-/* Measurements */
+.fb-insp-qr-station{color:var(--vf-text-secondary);font-weight:600;min-width:48px}
+.fb-insp-qr-type{font-size:11px;color:var(--vf-text-muted);margin-top:1px}
+.fb-insp-qr-reason{font-size:11px;color:#856404;margin-top:1px}
 .fb-insp-meas-group{margin-bottom:8px}
-.fb-insp-meas-station{font-size:12px;color:#8899bb;font-weight:600;margin-bottom:4px}
-.fb-insp-meas-station small{font-weight:400;color:#555}
+.fb-insp-meas-station{font-size:12px;color:var(--vf-text-secondary);font-weight:600;margin-bottom:4px}
+.fb-insp-meas-station small{font-weight:400;color:var(--vf-text-muted)}
 .fb-insp-meas-row{display:flex;gap:8px;align-items:center;font-size:11px;padding:2px 0;flex-wrap:wrap}
-.fb-insp-meas-name{color:#ffc107;min-width:60px;font-family:monospace}
-.fb-insp-meas-val{color:#e0e0e0;min-width:60px}
-.fb-insp-meas-range{color:#666;font-size:10px}
+.fb-insp-meas-name{color:#B8860B;min-width:60px;font-family:monospace}
+.fb-insp-meas-val{color:var(--vf-text-primary);min-width:60px}
+.fb-insp-meas-range{color:var(--vf-text-muted);font-size:10px}
 .fb-insp-meas-inrange{font-size:11px;font-weight:600;min-width:70px}
-
-/* Checklist */
 .fb-insp-cl-group{margin-bottom:8px}
-.fb-insp-cl-head{font-size:12px;color:#8899bb;margin-bottom:4px}
+.fb-insp-cl-head{font-size:12px;color:var(--vf-text-secondary);margin-bottom:4px}
 .fb-insp-cl-items{margin-left:8px}
-.fb-insp-cl-item{font-size:11px;color:#999;padding:1px 0}
-
-/* Genealogy */
+.fb-insp-cl-item{font-size:11px;color:var(--vf-text-muted);padding:1px 0}
 .fb-insp-gen-row{padding:4px 0;font-size:12px}
 
-/* Event strip clickable */
-.fb-qe-clickable{cursor:pointer}
-.fb-qe-clickable:hover{background:#1a2332}
+/* Controls */
+#fb-controls{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:var(--vf-shell-footer);border-top:1px solid var(--vf-border-soft);min-height:36px;flex-shrink:0}
+.fb-ctrl-group{display:flex;align-items:center;gap:8px}
+.fb-zoom-group{display:flex;align-items:center;gap:4px}
+#fb-controls button{padding:4px 12px;border:none;border-radius:var(--vf-radius-sm);font-size:12px;cursor:pointer;font-weight:500}
+#fb-btn-reset{background:var(--vf-state-fail);color:#fff}
+#fb-btn-step{background:var(--vf-state-pass);color:#fff}
+#fb-btn-auto{background:var(--vf-state-selected);color:#fff}
+#fb-btn-pause{background:#B8860B;color:#fff}
+#fb-controls label{font-size:12px;color:var(--vf-text-secondary);display:flex;align-items:center;gap:4px}
+#fb-controls select{background:var(--vf-bg-page);color:var(--vf-text-primary);border:1px solid var(--vf-border-soft);border-radius:var(--vf-radius-sm);padding:3px 6px;font-size:11px}
+.fb-zoom-group button{background:var(--vf-bg-page);color:var(--vf-text-secondary);border:1px solid var(--vf-border-soft);min-width:36px;text-align:center;border-radius:var(--vf-radius-sm)}
+.fb-zoom-group button:hover{background:#EBEEF2;color:var(--vf-text-primary)}
 
-/* Responsive 1366×768 */
+/* Station hover */
+.fb-station:hover rect:first-child{filter:brightness(0.95)}
+
+/* Responsive 1366 */
 @media(max-width:1400px){
   #fb-right-panel{width:200px}
+  #vf-popup{width:280px;right:4px;top:4px;max-height:45vh}
   #fb-event-strip h4{font-size:11px}
   .fb-qe-item{font-size:11px}
   #fb-insp-title{font-size:13px}
