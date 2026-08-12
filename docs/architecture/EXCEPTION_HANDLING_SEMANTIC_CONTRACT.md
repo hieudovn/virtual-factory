@@ -1,12 +1,12 @@
 # Exception Handling — Canonical Semantic Contract
 
-> **Status**: DESIGN AUTHORITY — Locked for EXH-01  
-> **Baseline**: `67ade9c`  
+> **Status**: DESIGN AUTHORITY — Locked for EXH-01-C01  
+> **Baseline**: `53a481c` (corrected from `67ade9c`)  
 > **Scope**: Assembly (ASSY) Indexed Line Demo  
 
 ---
 
-## 1. Taxonomy
+## 1. Six-Layer Taxonomy
 
 ### 1.1 Detection Result
 *What was observed at a quality station.*
@@ -26,16 +26,18 @@
 | **RETEST_PENDING** | FAIL at TEST station; retest required | QualityStatus.RETEST_PENDING |
 | **REINSPECT_PENDING** | NG at VISION station; reinspect required | QualityStatus.REINSPECT_PENDING |
 | **FAILED_FINAL** | Max attempts exhausted; terminal hold | QualityStatus.FAILED_FINAL |
+| **HOLD** (generic) | Reserved for future generic containment — NOT equivalent to RETEST_PENDING | Declared but unused in current demo |
 
-### 1.3 Exception Routing Actions
-*Where the WIP goes for handling.*
+### 1.3 Routing / Transfer
+*Where the WIP goes for exception handling.*
 
 | Term | Definition | Current Demo Support |
 |------|-----------|---------------------|
 | **STAY_AT_STATION** | WIP remains at current station for retest/reinspect | ✅ Fully implemented |
-| **LINE_OUT** | WIP physically leaves the main conveyor for off-line handling | ❌ NOT IMPLEMENTED (UI label only) |
-| **LINE_IN** | WIP physically returns to main conveyor after off-line handling | ❌ NOT IMPLEMENTED (UI label only) |
-| **RETURN_TO_STATION** | WIP returns to a specific station (not necessarily the detection station) | ❌ NOT IMPLEMENTED |
+| **LINE_OUT** | WIP physically leaves the main conveyor for off-line handling | ❌ NOT IMPLEMENTED (contextual UI concept only) |
+| **LINE_IN** | WIP physically returns to main conveyor after off-line handling | ❌ NOT IMPLEMENTED (contextual UI concept only) |
+
+**Critical rule**: LINE OUT / LINE IN are routing concepts inside Exception Handling. They are NOT line start/end markers. Do NOT hardcode LINE OUT to AP06 or LINE IN to AP08.
 
 ### 1.4 Treatment
 *What is done to the WIP during exception handling.*
@@ -43,8 +45,7 @@
 | Term | Definition | Current Demo Support |
 |------|-----------|---------------------|
 | **INSPECTION_ONLY** | Visual/measurement inspection without modification | ⚠️ Implicit in retest/reinspect |
-| **REWORK** | Active correction of the WIP | ❌ NOT IMPLEMENTED (M3 topology has REWORK edge but ASSY runtime never uses it) |
-| **NO_ACTION** | Re-test without treatment | ✅ Implicit in current retest |
+| **REWORK** | Active correction/repair of the WIP | ❌ NOT IMPLEMENTED |
 
 ### 1.5 Verification
 *How the exception is confirmed resolved.*
@@ -61,14 +62,14 @@
 |------|-----------|----------------|
 | **RESUME** | WIP continues normal production | ✅ CLEAR state after retest PASS |
 | **RELEASE** | WIP exits the line (at AP11) | ✅ `WipLifecycle.RELEASED` |
-| **FAILED_FINAL** | Terminal hold; WIP cannot proceed | ✅ Blocks indexing, requires operator intervention |
-| **SCRAP** | WIP scrapped and removed from line | ❌ Defined in enums but NOT IMPLEMENTED in ASSY runtime |
+| **FAILED_FINAL** | Terminal hold; WIP cannot proceed | ✅ Blocks indexing; runtime owns this state |
+| **SCRAP** | WIP scrapped and removed from line | ❌ Defined in enums but NOT IMPLEMENTED in authoritative ASSY runtime |
 
 ---
 
 ## 2. Canonical Exception Flow
 
-### 2.1 Current Demo Implementation (Same-Station Retest)
+### 2.1 Current Demo Implementation (Same-Station Retest/Reinspect — FROZEN)
 
 ```
 DETECT FAIL/NG at quality station
@@ -77,7 +78,7 @@ DETECT FAIL/NG at quality station
 SET RETEST_PENDING / REINSPECT_PENDING
       │
       ▼
-CONVEYOR BLOCKS (station not complete)
+CONVEYOR BLOCKS (station not complete; runtime owns blocking logic)
       │
       ▼
 DWELL timer resets to 0.0
@@ -88,6 +89,8 @@ RE-TEST / RE-INSPECT at same station
       ├── PASS ──► CLEAR → WIP proceeds
       │
       └── FAIL/NG (max attempts reached) ──► FAILED_FINAL → terminal hold
+                                              (runtime emits QUALITY_FAILED_FINAL,
+                                               then QUALITY_WAITING_DISPOSITION)
 ```
 
 ### 2.2 Future Target (Off-Line Handling — NOT IMPLEMENTED)
@@ -113,46 +116,95 @@ OFF-LINE INSPECTION / DIAGNOSIS
 
 ---
 
-## 3. Compatibility Constraints
+## 3. Authoritative Ownership
+
+| Concern | Owner |
+|---------|-------|
+| Exception state and blocking behavior | **Runtime** (`AssyLineRuntime`) |
+| Exception observability/display | **Snapshot / UI** |
+| Exception orchestration | **NOT Controller** — controller orchestrates scenario selection only |
+
+> **Rule**: Controller does NOT own quality business logic. Runtime owns state. Snapshot exposes it.
+
+---
+
+## 4. Compatibility Constraints
 
 ### Preserved Contracts
 
 | Contract | Status |
 |----------|--------|
-| `positions[]` as sole occupancy truth | ✅ PRESERVED |
+| `positions[]` as sole main-line occupancy truth | ✅ FROZEN |
+| `positions[]` must NOT be used for off-line WIP tracking | ✅ FROZEN |
+| Off-line WIP must use additive contracts (e.g., `exception_cases[]`, `offline_wips[]`) | ✅ RULE |
 | `DemoSnapshot` structure | ✅ PRESERVED |
 | `QualityRecord` history per WIP | ✅ PRESERVED |
 | `is_quality_hold` → blocks indexing | ✅ PRESERVED |
-| MES adapter boundary | ✅ PRESERVED (contract, not implementation) |
-| Scenario definitions (HAPPY_PATH, AP06_FAIL_RETEST_PASS, AP08_NG_REINSPECT_PASS, FAILED_FINAL) | ✅ PRESERVED |
-
-### Semantic Debt — To Be Addressed Before MES/Production
-
-| Issue | Impact |
-|-------|--------|
-| `QualityStatus.HOLD` declared but never used | Confusing enum — should be deprecated or aliased |
-| `QualityRecord.disposition` uses `str` not `QualityDisposition` enum | Type inconsistency with `quality.py` |
-| Dual `WipStatus` / `WipLifecycle` models | Two different lifecycle representations for same entity |
-| `_HOLD_STATUSES` excludes `QualityStatus.HOLD` | Consistent with dead code but confusing for readers |
-| No SCRAP implementation in ASSY runtime | Defined everywhere, used nowhere |
 
 ---
 
-## 4. UI Labeling Rules
+## 5. Future Type Architecture (EXH-DOM-01, NOT IMPLEMENTED)
 
-| UI Element | Canonical Meaning | Current UI |
-|-----------|-------------------|------------|
-| **LINE IN** | WIP returns to main line from off-line handling | At AP06: "QC HOLD → REPAIR" |
-| **LINE OUT** | WIP leaves main line for off-line handling | At AP08: "REPAIR → RETURN" |
-| **ASSY INPUT** | Line start / entry point | Not yet implemented |
-| **ASSY OUTPUT** | Line end / discharge point | Not yet implemented |
-| **HOLD AREA** | Contextual rework/hold zone | "REWORK / HOLD AREA" |
-| **QC HOLD** | Active quality hold on WIP | Shown on station with held_reason |
+Current `QualityDisposition` enum mixes detection result, treatment, and terminal disposition. Future target:
 
-**Rule**: LINE IN/OUT labels describe exception routing. Do NOT reuse for line start/end.
+```text
+QualityResult:      PASS | FAIL | NG
+TreatmentType:      NONE | INSPECTION_ONLY | ADJUSTMENT | REWORK | REPAIR
+FinalDisposition:   RESUME | RELEASE | SCRAP | FAILED_FINAL
+```
+
+Do NOT implement now. Documented as target for EXH-DOM-01.
 
 ---
 
-> **This contract is frozen for the August demo scope.**  
-> Off-line routing (LINE_OUT/LINE_IN) is declared as NOT IMPLEMENTED.  
-> UI labels are contextual/conceptual and backed by same-station retest/reinspect only.
+## 6. Future ExceptionCase Model (EXH-CASE-01, NOT IMPLEMENTED)
+
+```
+WIP
+ ├── manufacturing lifecycle
+ ├── physical location/occupancy (positions[])
+ ├── quality history
+ └── 0..N ExceptionCase
+      ├── exception_id
+      ├── detected_at_station
+      ├── trigger_type / trigger_result
+      ├── containment_status
+      ├── handling_mode (ON_LINE / OFF_LINE)
+      ├── line_out_occurred / line_in_occurred
+      ├── treatment_type
+      ├── verification_type
+      └── final_disposition
+```
+
+ExceptionCase is orthogonal to WIP lifecycle. One WIP may have multiple exception cases.
+
+---
+
+## 7. UI Labeling Rules
+
+| UI Element | Canonical Meaning | Rule |
+|-----------|-------------------|------|
+| **LINE OUT** | WIP leaves main line for off-line handling | May appear as contextual/conceptual architecture; mark as CONCEPTUAL if runtime does not support |
+| **LINE IN** | WIP returns to main line after off-line handling | Same rule as LINE OUT |
+| **QC HOLD** | Active quality hold | Shown on station with held_reason from runtime |
+| **OFF-LINE HANDLING** | Conceptual zone for exception handling | Contextual only; no active WIP unless runtime supports |
+| **ASSY INPUT / OUTPUT** | Line start/end boundaries | Do NOT reuse LINE IN/OUT for these |
+
+---
+
+## 8. Frozen Demo Truth (August 2026)
+
+### AP06 (TEST)
+FAIL → RETEST_PENDING → WIP stays at AP06 → retest at same station → PASS: CLEAR → continue → max attempts: FAILED_FINAL
+
+### AP08 (VISION)
+NG → REINSPECT_PENDING → WIP stays at AP08 → reinspect at same station → PASS: CLEAR → continue → max attempts: FAILED_FINAL
+
+**No actual LINE OUT, LINE IN, REWORK, or SCRAP in authoritative August runtime.**
+
+---
+
+> **This contract is frozen for EXH-01-C01.**  
+> **DOCS ONLY — zero production code changes.**
+  
+

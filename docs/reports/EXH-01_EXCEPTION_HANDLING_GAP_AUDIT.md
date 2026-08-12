@@ -1,88 +1,90 @@
-# EXH-01 — Exception Handling Gap Audit
+# EXH-01-C01 — Exception Handling Gap Audit (Corrected)
 
-> **Baseline**: `67ade9c`  
+> **Baseline**: `53a481c`  
+> **Corrected from**: EXH-01 (`67ade9c`)  
 > **Scope**: Assembly (ASSY) Indexed Line  
 
 ---
 
-## 1. Findings by Severity
+## 1. Severity Definitions
+
+| Level | Criteria |
+|-------|----------|
+| **CRITICAL** | Demo/runtime tells a materially false manufacturing story OR violates an authoritative invariant |
+| **HIGH** | Architecture likely to cause incorrect future implementation/integration |
+| **MEDIUM** | Observability, naming, dead semantic code, maintainability |
+| **DEFER** | Requires real plant routing/business rules not yet known |
+
+---
+
+## 2. Findings by Corrected Severity
 
 ### CRITICAL — Must Fix Before Physical Freeze
 
 | # | Finding | File | Impact |
 |---|---------|------|--------|
-| C1 | **LINE-IN/LINE-OUT labels describe off-line repair workflow not supported by runtime** | `assy_demo.js:753-765` | UI is semantically misleading: shows "QC HOLD → REPAIR" and "REPAIR → RETURN" but runtime has no LINE_OUT/LINE_IN mechanism |
-| C2 | **No explicit FAILED_FINAL handling in step loop** | `demo_composition.py:136-138` | Indexing is implicitly blocked by station-not-complete; but controller should explicitly detect and surface FAILED_FINAL |
+| C1 | **LINE-IN/OUT labels imply fixed AP06→AP08 off-line repair route not supported by runtime** | `assy_demo.js:753-765` | UI is semantically misleading |
 
 ### HIGH — Should Fix Before MES/Production
 
-| # | Finding | File | Impact |
-|---|---------|------|--------|
-| H1 | `QualityStatus.HOLD` declared but never used | `quality_records.py:29` | Confusing for developers; code inspection expected HOLD to be set somewhere |
-| H2 | `QualityRecord.disposition` uses `str` not `QualityDisposition` enum | `quality_records.py:91` | Type inconsistency with `quality.py` |
-| H3 | `MESAdapter` is contract-only, never connected to runtime | `mes_adapter.py:118-168` | No MES event emission from ASSY runtime |
-| H4 | No bridge from `LineEvent` → `MESEvent` | `mes_adapter.py` | Assembly runtime events are internal-only |
-| H5 | SCRAP disposition has no route in TIPA topology | `tipa.py:77` | Only PASS and REWORK edges exist |
+| # | Finding | File |
+|---|---------|------|
+| H1 | `QualityStatus.HOLD` declared but never used — generic containment vs specific RETEST_PENDING | `quality_records.py:29` |
+| H2 | `QualityDisposition` mixes result, treatment, and terminal disposition (PASS/FAIL/REWORK/SCRAP, no NG) | `quality.py:12` |
+| H3 | MES adapter (`MESAdapter`) is contract-only, never connected to runtime | `mes_adapter.py:118` |
+| H4 | No bridge from `LineEvent` → `MESEvent` | `mes_adapter.py` |
+| H5 | `tipa.py` is legacy M3 topology — not authoritative for August ASSY demo; SCRAP edge would target wrong module | `tipa.py:77` |
 
 ### MEDIUM — Clarify But Does Not Block
 
-| # | Finding | File | Impact |
-|---|---------|------|--------|
-| M1 | Dual lifecycle model: `WipStatus` + `WipLifecycle` | `line_runtime.py:55-61`, `wip.py:15-22` | Two different lifecycle representations |
-| M2 | `_HOLD_STATUSES` excludes `QualityStatus.HOLD` | `demo_snapshot.py:335-338` | Technically correct but confusing |
-| M3 | `_map_event_type()` missing HOLD/FAILED_FINAL mappings | `mes_adapter.py:171-182` | Can't emit HOLD events to MES |
+| # | Finding | File |
+|---|---------|------|
+| M1 | No explicit FAILED_FINAL surfacing in demo controller — runtime owns blocking correctly but snapshot/UI may not surface it clearly | `demo_composition.py:136` |
+| M2 | Dual lifecycle model: `WipStatus` + `WipLifecycle` | `line_runtime.py:55` |
+| M3 | `_map_event_type()` missing HOLD/FAILED_FINAL entries | `mes_adapter.py:171` |
 
 ### DEFER — Enhancement, Not Required for Demo
 
-| # | Finding | File | Impact |
-|---|---------|------|--------|
-| D1 | No off-line repair routing in runtime | `line_runtime.py` | Requires significant runtime redesign |
-| D2 | No SCRAP implementation in ASSY runtime | `line_runtime.py:487-494` | Defined in enums but unreachable |
-| D3 | Equipment fault YAMLs unrelated to assembly quality | `configs/faults/*.yaml` | Different domain |
+| # | Finding |
+|---|---------|
+| D1 | No off-line repair routing in authoritative runtime (LINE_OUT/LINE_IN) |
+| D2 | No SCRAP execution in authoritative ASSY runtime |
+| D3 | No ExceptionCase model / exception lifecycle events |
 
 ---
 
-## 2. Recommendation Matrix
+## 3. Corrected Recommendation Matrix
 
-| Gap | Severity | Demo Impact | Architecture Impact | Fix Now? | Proposed Slice |
-|-----|----------|-------------|---------------------|----------|----------------|
-| C1 — LINE-IN/OUT labels | CRITICAL | UI is misleading | Low (label change) | **YES** | EXH-01-C01: Relabel to "QC HOLD" / "QC CLEAR" or add "CONCEPTUAL" marker |
-| C2 — FAILED_FINAL explicit | CRITICAL | Controller ignores terminal state | Low (add check) | **YES** | EXH-01-C01: Add FAILED_FINAL detection in step loop |
-| H1 — QualityStatus.HOLD dead code | HIGH | None | Low (deprecate) | Before MES | EXH-02: Deprecate or alias |
-| H2 — disposition string vs enum | HIGH | None | Medium (refactor) | Before MES | EXH-02: Unify type |
-| H5 — SCRAP no route | HIGH | None | Medium (add edge) | Before MES | EXH-03: Add SCRAP sink |
-| H3/H4 — MES integration | HIGH | None | Large (new adapter) | Before MES | EXH-04: Wire LineEvent→MESEvent |
-| M1-M3 — Clarifications | MEDIUM | None | Low | Any time | EXH-02 |
-| D1-D3 — Deferred | DEFER | None | Large | Later | M7+ |
+| Gap | Severity | Demo Impact | Fix Now? | Proposed Slice |
+|-----|----------|-------------|----------|----------------|
+| C1 — LINE-IN/OUT labels | CRITICAL | UI misleading | YES | EXH-UI-01: relabel as CONCEPTUAL or remove fixed AP06/AP08 mapping |
+| M1 — FAILED_FINAL surfacing | MEDIUM | Observability | Optional | EXH-OBS-01: snapshot/UI clarity |
+| H1 — HOLD semantics | HIGH | None | Before MES | EXH-DOM-01 |
+| H2 — Disposition enum mixing | HIGH | None | Before MES | EXH-DOM-01 |
+| H5 — Legacy topology vs authoritative | HIGH | None | Before SCRAP | EXH-SCRAP-01 (target authoritative runtime) |
+| H3/H4 — MES integration | HIGH | None | Before MES | EXH-MES-01 |
+| D1-D3 — Deferred | DEFER | None | Post-demo | EXH-CASE-01, EXH-ROUTE-01 |
 
 ---
 
-## 3. Current State: What IS Implemented
+## 4. Frozen Demo Truth
 
 | Capability | Status |
 |-----------|--------|
-| Same-station quality check (AP03, AP06, AP08, AP11) | ✅ |
-| FAIL → RETEST_PENDING | ✅ |
-| NG → REINSPECT_PENDING | ✅ |
-| Max attempts → FAILED_FINAL | ✅ |
+| Same-station quality check + retest/reinspect | ✅ |
+| FAIL → RETEST_PENDING, NG → REINSPECT_PENDING | ✅ |
+| Max attempts → FAILED_FINAL (runtime-owned) | ✅ |
 | HOLD blocks conveyor indexing | ✅ |
-| Quality history per WIP | ✅ |
-| Scenario switching (HAPPY_PATH, AP06_FAIL_RETEST, AP08_NG_REINSPECT, FAILED_FINAL) | ✅ |
-| Snapshot projection includes holds | ✅ |
-| Overview shows exception sub-lines | ✅ |
-
-## 4. Current State: What is NOT Implemented
-
-| Capability | Status |
-|-----------|--------|
-| Off-line repair routing (LINE_OUT) | ❌ |
-| Off-line return routing (LINE_IN) | ❌ |
-| REWORK treatment (changing WIP state) | ❌ |
-| SCRAP disposition execution | ❌ |
-| MES event emission | ❌ |
-| Runtime LINE_OUT/LINE_IN events | ❌ |
+| Runtime emits QUALITY_FAILED_FINAL, QUALITY_WAITING_DISPOSITION | ✅ |
+| Controller does NOT own quality business logic | ✅ |
+| LINE OUT / LINE IN off-line routing | ❌ NOT IMPLEMENTED |
+| REWORK treatment | ❌ NOT IMPLEMENTED |
+| SCRAP execution | ❌ NOT IMPLEMENTED |
 
 ---
 
-> **EXH-01 Gap Audit — COMPLETE**  
-> **Recommended immediate action**: EXH-01-C01 — relabel LINE-IN/OUT to match current runtime truth
+> **EXH-01-C01 Gap Audit — CORRECTED**  
+> **Production code changed: NO**
+  
+> **Scope**: Assembly (ASSY) Indexed Line  
+
