@@ -320,12 +320,15 @@ const VF = {
       <rect x="${x+3}" y="${y-11}" width="5" height="2" rx="1" fill="#9A6838" opacity="0.5"/>`;
   },
 
-  // State overlay
+  // State overlay — quality state only, never implies category
   stateOverlay(x, y, state) {
-    if (!state || state==='PASS') return '';
-    const color = state==='FAIL'||state==='NG'?'var(--vf-state-fail)':'var(--vf-state-hold)';
-    return `<rect x="${x+10}" y="${y-16}" width="12" height="12" rx="3" fill="${color}" opacity="0.9"/>
-      <text x="${x+16}" y="${y-7}" fill="#fff" font-size="8" text-anchor="middle" font-weight="bold">!</text>`;
+    if (!state || state==='PASS'|| state==='clear'|| state==='CLEAR') return '';
+    const isHold = state==='HOLD'||state==='retest_pending'||state==='reinspect_pending';
+    const isTerminal = state==='FAILED_FINAL'||state==='failed_final';
+    const color = isHold ? 'var(--vf-state-hold)' : 'var(--vf-state-fail)';
+    const r = isTerminal ? 7 : 5;
+    return `<rect x="${x+10}" y="${y-18}" width="${r*2}" height="${r*2}" rx="2" fill="${color}" opacity="0.9"/>
+      <text x="${x+10+r}" y="${y-9}" fill="#fff" font-size="${r+2}" text-anchor="middle" font-weight="bold">!</text>`;
   },
 
   // Equipment icons (small plan-view SVG)
@@ -351,35 +354,55 @@ const VF = {
     return `<rect x="${x-6}" y="${y-4}" width="12" height="8" rx="2" fill="#E8F0FE" stroke="var(--vf-text-muted)" stroke-width="0.8"/>
       <line x1="${x-3}" y1="${y+2}" x2="${x+3}" y2="${y+2}" stroke="var(--vf-text-muted)" stroke-width="0.6"/>`;
   },
+  operatorIcon(x, y) {
+    return `<circle cx="${x}" cy="${y-3}" r="4" fill="none" stroke="var(--vf-text-secondary)" stroke-width="1"/>
+      <path d="M${x-5},${y+5} L${x+5},${y+5}" stroke="var(--vf-text-secondary)" stroke-width="1" fill="none"/>`;
+  },
+  packageIcon(x, y) {
+    return `<rect x="${x-8}" y="${y-5}" width="16" height="10" rx="2" fill="none" stroke="#B68B57" stroke-width="1.2"/>
+      <line x1="${x}" y1="${y-5}" x2="${x}" y2="${y+5}" stroke="#B68B57" stroke-width="0.6" opacity="0.5"/>
+      <line x1="${x-8}" y1="${y}" x2="${x+8}" y2="${y}" stroke="#B68B57" stroke-width="0.6" opacity="0.5"/>`;
+  },
+  qualityCheckIcon(x, y) {
+    return `<rect x="${x-7}" y="${y-4}" width="14" height="10" rx="2" fill="none" stroke="var(--vf-text-muted)" stroke-width="1"/>
+      <polyline points="${x-4},${y} ${x-1},${y+3} ${x+5},${y-3}" fill="none" stroke="var(--vf-text-secondary)" stroke-width="1.2"/>`;
+  },
 
   // Station cell scaffold
   stationCell(x, y, stId, archetype, occupied, isLandmark, isSel) {
     let html = '';
     const cx = x, cy = y + 45;
+    // Archetype-specific icon + background
+    let iconHtml = '', bgFill = '#F8F9FB', border = 'var(--vf-border-soft)', bw = isSel ? 2 : 1;
     if (archetype === 'INPUT') {
-      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F8F9FB" stroke="var(--vf-border-soft)" stroke-width="${isSel?2:1}"/>
-        <rect x="${cx-30}" y="${cy-28}" width="60" height="6" rx="2" fill="var(--vf-conveyor-roller)"/>
-        ${VF.hmiIcon(cx+20, cy-8)}`;
+      iconHtml = VF.hmiIcon(cx+22, cy-12);
     } else if (archetype === 'JOIN') {
-      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#FFFDF5" stroke="#B8860B" stroke-width="${isSel?2:1.5}"/>
-        ${VF.joinIcon(cx+22, cy-12)}`;
+      iconHtml = VF.joinIcon(cx+22, cy-12);
+      bgFill = '#FFFDF5'; border = '#B8860B'; bw = isSel ? 2 : 1.5;
     } else if (archetype === 'TEST') {
-      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F8F9FB" stroke="var(--vf-state-selected)" stroke-width="${isSel?2:1.2}"/>
-        ${VF.testIcon(cx+22, cy-12)}`;
+      iconHtml = VF.testIcon(cx+22, cy-12);
+      border = 'var(--vf-state-selected)'; bw = isSel ? 2 : 1.2;
     } else if (archetype === 'VISION') {
-      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F8F9FB" stroke="var(--vf-state-selected)" stroke-width="${isSel?2:1.2}"/>
-        ${VF.visionIcon(cx+22, cy-12)}`;
+      iconHtml = VF.visionIcon(cx+22, cy-12);
+      border = 'var(--vf-state-selected)'; bw = isSel ? 2 : 1.2;
     } else if (archetype === 'FINAL') {
-      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F0F5FF" stroke="var(--vf-state-selected)" stroke-width="${isSel?2:1.2}"/>
-        ${VF.finalIcon(cx+22, cy-12)}`;
+      iconHtml = VF.qualityCheckIcon(cx+22, cy-12);
+      bgFill = '#F0F5FF'; border = 'var(--vf-state-selected)'; bw = isSel ? 2 : 1.2;
+    } else if (archetype === 'PACK') {
+      iconHtml = VF.packageIcon(cx+22, cy-12);
+    } else if (archetype === 'CHECK') {
+      iconHtml = VF.qualityCheckIcon(cx+22, cy-12);
+    } else if (archetype === 'MANUAL') {
+      iconHtml = VF.operatorIcon(cx+22, cy-12);
     } else {
-      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F8F9FB" stroke="var(--vf-border-soft)" stroke-width="${isSel?2:1}"/>`;
+      iconHtml = VF.operatorIcon(cx+22, cy-12);
     }
+    html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="${bgFill}" stroke="${border}" stroke-width="${bw}"/>`;
+    html += iconHtml;
     html += `<text x="${cx}" y="${cy-18}" fill="var(--vf-text-secondary)" font-size="13" font-weight="600" text-anchor="middle">${stId}</text>`;
     if (isLandmark) {
       html += `<text x="${cx}" y="${cy-6}" fill="${archetype==='JOIN'?'#B8860B':'var(--vf-state-selected)'}" font-size="10" font-weight="600" text-anchor="middle">${FB_LANDMARKS[stId]}</text>`;
     }
-    // Conveyor connection stub
     html += `<rect x="${cx-10}" y="${cy+30}" width="20" height="6" rx="2" fill="var(--vf-conveyor-roller)"/>`;
     return html;
   }
@@ -570,11 +593,14 @@ const ctrlB = {
       const isReleased = p.manufacturing_status === 'released';
 
       // I09-P02: determine station archetype + visual token
-      let archetype = 'ASSY';
+      let archetype = 'MANUAL';
       if (stId === 'PRE-ASSY') archetype = 'INPUT';
+      else if (stId === 'AP03') archetype = 'CHECK';
       else if (stId === 'AP04') archetype = 'JOIN';
       else if (stId === 'AP06') archetype = 'TEST';
       else if (stId === 'AP08') archetype = 'VISION';
+      else if (stId === 'AP09') archetype = 'PACK';
+      else if (stId === 'AP10') archetype = 'PACK';
       else if (stId === 'AP11') archetype = 'FINAL';
 
       const tokenType = VF_TOKEN[stId] || 'STATOR';
