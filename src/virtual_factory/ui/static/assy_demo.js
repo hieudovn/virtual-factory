@@ -553,6 +553,157 @@ function closeFrameB() {
 }
 
 /* ═══════════════════════════════════════
+   I07 Motion Engine — Controlled Runtime-Truth Motion
+   ═══════════════════════════════════════ */
+const MotionEngine = {
+  _plans: [],
+  _rafId: null,
+  _settleCallback: null,
+  _animating: false,
+  _prefersReduced: false,
+
+  init() {
+    this._prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
+      this._prefersReduced = e.matches;
+    });
+  },
+
+  /** Compare two snapshots, return MotionPlan[] for valid adjacent station transitions */
+  detect(prevSnap, newSnap) {
+    const plans = [];
+    if (!prevSnap || !newSnap) return plans;
+    if (prevSnap.sub_line_id !== newSnap.sub_line_id) return plans; // no cross-subline
+
+    const prevMap = {};
+    (prevSnap.positions || []).forEach(p => { prevMap[p.wip_id] = p.position_id; });
+
+    for (const p of (newSnap.positions || [])) {
+      const wipId = p.wip_id;
+      const newPos = p.position_id;
+      const prevPos = prevMap[wipId];
+      if (!prevPos || prevPos === newPos) continue;
+
+      // Determine if this is a quality hold that shouldn't move
+      const isHeld = p.is_quality_hold;
+      const qResult = (p.latest_quality_result || '').toUpperCase();
+
+      // I07 frozen invariants: AP06 FAIL / AP08 NG / FAILED_FINAL → NO MOVE
+      if (qResult === 'FAIL' || qResult === 'NG' || qResult === 'FAILED_FINAL') continue;
+
+      const fromIdx = FB_STATIONS.indexOf(prevPos);
+      const toIdx = FB_STATIONS.indexOf(newPos);
+      if (fromIdx < 0 || toIdx < 0) continue;
+
+      // Only animate adjacent transitions
+      if (Math.abs(toIdx - fromIdx) !== 1) continue;
+
+      plans.push({
+        wip_id: wipId,
+        fromX: FB_STATION_X[fromIdx],
+        toX: FB_STATION_X[toIdx],
+        tokenType: VF_TOKEN[newPos] || 'STATOR',
+        duration: 450,
+        isJoinOut: prevPos === 'AP04' && newPos === 'AP05',
+      });
+    }
+    return plans;
+  },
+
+  /** Start animation for detected plans; calls onSettle when all complete */
+  animate(plans, onSettle) {
+    this.cancel();
+    if (!plans.length) { if (onSettle) onSettle(); return; }
+
+    // Reduced motion: skip animation, settle immediately
+    if (this._prefersReduced) {
+      for (const plan of plans) {
+        const el = document.getElementById(`wip-${plan.wip_id}`);
+        if (el) el.removeAttribute('transform');
+      }
+      if (onSettle) onSettle();
+      return;
+    }
+
+    this._plans = plans;
+    this._settleCallback = onSettle;
+    this._animating = true;
+    const startTime = performance.now();
+
+    // Pre-offset: move WIPs to fromX (they were rendered at toX)
+    for (const plan of plans) {
+      const el = document.getElementById(`wip-${plan.wip_id}`);
+      if (!el) continue;
+      const dx = plan.fromX - plan.toX;
+      el.setAttribute('transform', `translate(${dx}, 0)`);
+    }
+
+    const tick = (now) => {
+      const elapsed = now - startTime;
+      let allDone = true;
+
+      for (let i = this._plans.length - 1; i >= 0; i--) {
+        const plan = this._plans[i];
+        const el = document.getElementById(`wip-${plan.wip_id}`);
+        if (!el) { this._plans.splice(i, 1); continue; }
+
+        const t = Math.min(elapsed / plan.duration, 1.0);
+        // easeInOutCubic
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const dx = (plan.fromX - plan.toX) * (1 - ease);
+        el.setAttribute('transform', `translate(${dx}, 0)`);
+
+        if (t < 1) allDone = false;
+      }
+
+      if (!allDone && this._plans.length > 0) {
+        this._rafId = requestAnimationFrame(tick);
+      } else {
+        // Settle: remove all transforms, re-render clean
+        this._settle();
+      }
+    };
+
+    this._rafId = requestAnimationFrame(tick);
+  },
+
+  _settle() {
+    for (const plan of this._plans) {
+      const el = document.getElementById(`wip-${plan.wip_id}`);
+      if (el) el.removeAttribute('transform');
+    }
+    this._plans = [];
+    this._animating = false;
+    if (this._settleCallback) {
+      const cb = this._settleCallback;
+      this._settleCallback = null;
+      cb();
+    }
+  },
+
+  cancel() {
+    if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+    // Remove transforms from any remaining animated elements
+    for (const plan of this._plans) {
+      const el = document.getElementById(`wip-${plan.wip_id}`);
+      if (el) el.removeAttribute('transform');
+    }
+    this._plans = [];
+    this._animating = false;
+    this._settleCallback = null;
+  },
+
+  get isAnimating() { return this._animating; },
+
+  /** Clear previous snapshot context (sub-line switch, reset) */
+  clearContext() {
+    this.cancel();
+  },
+};
+
+MotionEngine.init();
+
+/* ═══════════════════════════════════════
    Frame B Controller
    ═══════════════════════════════════════ */
 const ctrlB = {
@@ -569,6 +720,8 @@ const ctrlB = {
   _zoomLevel: 1,
   _panX: 0,
   _panY: 0,
+  _stepLocked: false,  // I07: prevent overlapping step animations
+  _snapVersion: 0,     // I07: increment per snapshot for tracking
 
   async init(subLineId) {
     this._subLineId = subLineId;
@@ -576,6 +729,10 @@ const ctrlB = {
     this._selectedWipId = null;
     this._inspectorOpen = false;
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
+    this._stepLocked = false;
+    this._snapVersion = 0;
+    MotionEngine.clearContext();
+    this._lastSnapshot = null;  // I07: no cross-subline motion
     document.getElementById('fb-scenario-select').value = this._scenario || 'HAPPY_PATH';
     document.getElementById('fb-speed-select').value = String(this._speed);
     this._renderGridAndConveyor();
@@ -584,16 +741,29 @@ const ctrlB = {
 
   async reset() {
     this.stopAuto();
+    MotionEngine.cancel();
+    this._stepLocked = false;
+    this._snapVersion = 0;
     this._scenario = document.getElementById('fb-scenario-select').value;
     this._selectedStation = null;
     this._selectedWipId = null;
     this._inspectorOpen = false;
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
+    this._lastSnapshot = null;  // I07: discard stale snapshot
     await this.call('reset', { scenario: this._scenario });
     await this.refresh();
   },
 
-  async step() { await this.call('step'); await this.refresh(); },
+  async step() {
+    if (this._stepLocked) return;  // I07: prevent overlapping
+    this._stepLocked = true;
+    try {
+      await this.call('step');
+      await this.refresh();
+    } finally {
+      this._stepLocked = false;
+    }
+  },
 
   back() { this.stopAuto(); closeFrameB(); },
 
@@ -603,7 +773,11 @@ const ctrlB = {
     document.getElementById('btn-auto').textContent = '⏹ STOP';
     document.getElementById('btn-auto').className = 'vf-btn primary';
     document.getElementById('btn-pause').disabled = false;
-    this._autoTimer = setInterval(() => this.step(), Math.round(1000 / this._speed));
+    // I07: skip step if animation still running (no backlog)
+    this._autoTimer = setInterval(() => {
+      if (MotionEngine.isAnimating || this._stepLocked) return;
+      this.step();
+    }, Math.round(1000 / this._speed));
   },
 
   stopAuto() {
@@ -631,9 +805,19 @@ const ctrlB = {
       const resp = await fetch(`${API}/sub-line/${encodeURIComponent(this._subLineId)}`);
       if (!resp.ok) throw new Error(`detail: ${resp.status}`);
       const snap = await resp.json();
-      this._lastSnapshot = snap;
       this._liveStatus = 'LIVE';
-      this.render(snap);
+      this._snapVersion++;
+      // I07: detect transitions, render, then animate
+      const plans = MotionEngine.detect(this._lastSnapshot, snap);
+      this._renderStatic(snap);
+      this._renderWips(snap);
+      if (plans.length > 0) {
+        MotionEngine.animate(plans, () => {
+          // Re-render WIPs cleanly at final positions after settle
+          this._renderWips(snap);
+        });
+      }
+      this._lastSnapshot = snap;
     } catch (_) {
       this._liveStatus = this._lastSnapshot ? 'STALE' : 'UNAVAILABLE';
       this.renderStatus();
@@ -727,12 +911,12 @@ const ctrlB = {
     convG.innerHTML = ch;
   },
 
-  /* ── Frame B SVG Render ── */
-  render(snap) {
+  /* ── I07: Static elements rendered once per snapshot (stations, context, zones) ── */
+  _renderStatic(snap) {
     this.renderStatus();
     if (!snap) return;
 
-    // Top bar: Frame B context
+    // Top bar context
     document.getElementById('fb-sub-line-id').textContent = snap.sub_line_id || this._subLineId;
     document.getElementById('fb-variant').textContent = (snap.variant||'').toUpperCase();
     document.getElementById('fb-sim-time').textContent = `t=${(snap.simulation_time_s||0).toFixed(0)}s`;
@@ -748,18 +932,15 @@ const ctrlB = {
     else if (ls === 'indexing') { lsEl.style.background = '#FFF3CD'; lsEl.style.color = 'var(--vf-state-hold)'; }
     else { lsEl.style.background = '#EEF0F3'; lsEl.style.color = 'var(--vf-text-muted)'; }
 
-    // Production text
     const prod = snap.production || {};
     document.getElementById('fb-prod-text').textContent =
       `Created: ${prod.motors_created||0}  Released: ${prod.motors_released||0}  On Line: ${prod.wips_on_line||0}  Holds: ${prod.active_quality_holds||0}`;
 
-    // Sidebar metrics
     const wipEl = document.getElementById('vf-sb-wip'); if (wipEl) wipEl.textContent = prod.wips_on_line||0;
     document.getElementById('total-created').textContent = prod.motors_created||0;
     document.getElementById('total-released').textContent = prod.motors_released||0;
     document.getElementById('total-holds').textContent = prod.active_quality_holds||0;
 
-    // Persistence: if WIP selected, update position
     if (this._inspectorOpen && this._selectedWipId) {
       const pos = (snap.positions||[]).find(p => p.wip_id === this._selectedWipId);
       this._selectedStation = pos ? pos.position_id : null;
@@ -768,29 +949,21 @@ const ctrlB = {
     const posMap = {};
     for (const p of (snap.positions||[])) posMap[p.position_id] = p;
 
-    // Render stations on canvas (C02: use VF_LAYOUT)
     const stationsG = document.getElementById('fb-stations');
     if (!stationsG) return;
     let html = '';
     const selSt = this._selectedStation;
     const L = VF_LAYOUT;
-    const convY = L.conveyorY;
-    const stationY = L.stationY;
 
-    // EXH-UI-01: No hardcoded LINE IN/OUT at AP06/AP08.
-    // LINE OUT / LINE IN are rendered as conceptual connectors in _renderGridAndConveyor.
-
+    // Stations (static — no motion on these)
     FB_STATIONS.forEach((stId, si) => {
       const sx = FB_STATION_X[si];
-      const sy = stationY;  // C02: uniform station Y
+      const sy = L.stationY;
       const p = posMap[stId] || {};
       const isLandmark = !!FB_LANDMARKS[stId];
       const isHeld = p.is_quality_hold;
       const isSel = selSt === stId;
-      const qResult = p.latest_quality_result || '';
-      const tokenType = VF_TOKEN[stId] || 'STATOR';
 
-      // Determine archetype
       let archetype = 'MANUAL';
       if (stId === 'PRE-ASSY') archetype = 'INPUT';
       else if (stId === 'AP03') archetype = 'CHECK';
@@ -802,17 +975,12 @@ const ctrlB = {
       else if (stId === 'AP11') archetype = 'FINAL';
 
       html += VF.station(sx, sy, stId, archetype, isLandmark, isSel, isHeld);
-
-      if (p.is_occupied && p.wip_id) {
-        html += VF.wipToken(sx, sy, p.wip_id, tokenType, isHeld, qResult, p.carrier_id);
-      }
-
       if (isHeld && p.held_reason) {
         html += `<text x="${sx}" y="${sy+96}" fill="var(--vf-state-fail)" font-size="9" text-anchor="middle">${p.held_reason}</text>`;
       }
     });
 
-    // C02: RSO2 rotor at branch point (use VF_LAYOUT coordinates)
+    // RSO2 rotor context
     const genealogy = snap.genealogy || [];
     html += `<g transform="translate(${L.ap04X}, ${L.rso2BranchTopY+20})">`;
     html += VF.rotor(0, -8);
@@ -821,25 +989,58 @@ const ctrlB = {
     }
     html += `</g>`;
 
-    // EXH-UI-01: Raw material zone (RIGHT) — contextual pallets
+    // Context zones (static)
     html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+220})">${VF.pallet(0, 0)}${VF.statorAssy(0, -2)}</g>`;
     html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+195}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">SSO2 STATOR</text>`;
     html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+150})">${VF.pallet(0, 0)}${VF.rotor(0, -2)}</g>`;
     html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+125}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">RSO2 ROTOR</text>`;
-
-    // EXH-UI-01: Finished goods zone (LEFT) — contextual pallets
     html += `<g transform="translate(${L.fgX+L.fgW/2}, ${L.fgY+220})">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
     html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
 
     stationsG.innerHTML = html;
-
     this._applyHighlights();
     this._bindStationClicks();
-    this._bindWipClicks();
     this._renderEventStrip(snap);
     this._renderGenealogyContext(snap);
     this._renderInspector(snap);
     this.applyViewBox();
+  },
+
+  /* ── I07: WIP rendering with IDs for motion targeting ── */
+  _renderWips(snap) {
+    const wipsG = document.getElementById('fb-wips');
+    if (!wipsG || !snap) return;
+    const posMap = {};
+    for (const p of (snap.positions||[])) posMap[p.position_id] = p;
+    const L = VF_LAYOUT;
+    const sy = L.stationY;
+    let html = '';
+
+    FB_STATIONS.forEach((stId, si) => {
+      const p = posMap[stId] || {};
+      if (!p.is_occupied || !p.wip_id) return;
+      const sx = FB_STATION_X[si];
+      const isHeld = p.is_quality_hold;
+      const qResult = p.latest_quality_result || '';
+      const tokenType = VF_TOKEN[stId] || 'STATOR';
+
+      // I07: render WIP with unique ID for motion targeting
+      html += `<g id="wip-${p.wip_id}" class="vf-wip-group" data-wip="${p.wip_id}" style="cursor:pointer;">`;
+      html += VF.pallet(sx, sy + 165);
+      if (tokenType === 'STATOR') html += VF.statorAssy(sx, sy + 163);
+      else if (tokenType === 'JOINED') html += VF.motorJoined(sx, sy + 163);
+      else if (tokenType === 'PRETEST') html += VF.motorPreTest(sx, sy + 163);
+      else if (tokenType === 'TESTED') html += VF.motorTested(sx, sy + 163);
+      else if (tokenType === 'PACKED') html += VF.packedGoods(sx, sy + 163);
+      if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
+        html += VF.stateOverlay(sx, sy + 165, isHeld ? 'HOLD' : qResult);
+      }
+      html += `<text x="${sx}" y="${sy+181}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">${p.wip_id}</text>`;
+      html += `</g>`;
+    });
+
+    wipsG.innerHTML = html;
+    this._bindWipClicks();
   },
 
   _applyHighlights() {

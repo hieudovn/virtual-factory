@@ -706,3 +706,12 @@ html, body {
 #frame-s04 footer button { padding: 4px 12px; border: none; border-radius: 3px; font-size: 12px; cursor: pointer; color: #fff; }
 #frame-s04 footer label { font-size: 12px; color: #888; display: flex; align-items: center; gap: 4px; }
 #frame-s04 footer select { background: #0f1a2e; color: #e0e0e0; border: 1px solid #1e3a5f; border-radius: 3px; padding: 3px 6px; font-size: 11px; }
+
+/* ═══════════════════════════════════════
+   I07: Reduced Motion
+   ═══════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  #fb-wips .vf-wip-group {
+    transition: none !important;
+  }
+}
