@@ -186,39 +186,96 @@ Never use a single color to encode both category and state.
 
 ## 8-A. WIP Visual-State Evolution Contract
 
-This section freezes the exact mapping from process segment to visual token rendered on the pallet. The mapping is derived from current repo manufacturing semantics (station labels, WIP lifecycle, quality check types).
+### 8-A.1 Public Post-Index Snapshot Principle
 
-### Process Segment → Visual Token
+> **Frame B/I09 physical token rendering is based on the public post-index `positions[]` snapshot. A station's current occupant is shown in the manufacturing state it has when it ARRIVES at that station. Effects of that station's operation become visible only after successful dwell completion and index to the next position.**
 
-| Process segment | Stations | Runtime meaning | Visual token | Quality overlay |
-|----------------|----------|----------------|-------------|-----------------|
-| SSO2 input → AP03 | PRE-ASSY, AP01, AP02, AP03 | Stator-side assembly: stator + pressed motor housing WIP | **STATOR ASSY** | Current quality state from `positions[]` (PASS check at AP03) |
-| RSO2 → AP04 | (branch) | Rotor shaft input to join | **ROTOR** | N/A — rotor is a component, not a quality-checked WIP at this stage |
-| AP04 → AP05 | AP04, AP05 | Joined motor: stator + rotor joined at AP04. MTR child created. Genealogy record written. | **MTR JOINED** | Current quality state from `positions[]` |
-| AP05 → AP06 | AP05 (mechanical completion) | Mechanically assembled motor, immediately before electrical test | **MTR PRE-TEST** | Current quality state from `positions[]` |
-| AP06 → AP09 | AP06, AP07, AP08, AP09 | Electrically tested motor. Quality outcome determined at AP06 (TEST), visually inspected at AP08 (VISION). Motor silhouette unchanged; quality outcome is an overlay. | **TESTED MTR** | PASS / FAIL / HOLD / NG overlay from `quality_records[]` + `positions[]` |
-| AP09 → OUT | AP09, AP10, AP11 | Packaging: boxing at AP09, closing/labeling/palletizing at AP10, final QC inspection at AP11. The WIP is now a packaged carton on a pallet. | **PACKED GOODS** | Final disposition from `positions[]` + `quality_records[]` (AP11 FINAL_QC PASS or terminal failure) |
+This aligns with DG04-03 live-contract reconciliation: the public `/assy-demo/sub-line/{id}` endpoint returns the snapshot **after** step orchestration completes, which includes `index_line()` shifting all occupancy downstream.
 
-### Transition point for PACKED GOODS
+**No transient or pre-index state may be fabricated.**
 
-PACKED GOODS begins at **AP09 (Boxing)**. This is the first station where the motor is placed into packaging material. AP10 completes packaging (closing, labeling, palletizing). AP11 performs final QC on the packaged product.
+### 8-A.2 Canonical Position → Visual Token Mapping
 
-**Repo evidence**: Station labels in `StationPositionView.labels()`:
-- `AP09`: "AP09 — Boxing"
-- `AP10`: "AP10 — Closing / labeling / palletizing"
-- `AP11`: "AP11 — Final QC / release"
+The mapping follows the public post-index snapshot order. "Operation occurs at" describes the station where manufacturing work happens. "Visible token at" describes what the public snapshot shows at each position.
 
-The WIP visual changes from TESTED MTR to PACKED GOODS when the pallet reaches AP09. The packed goods then proceed through AP10 and AP11 where they receive FINAL_QC quality checks.
+| Current position in `positions[]` | Base visual token | Operation meaning | Operation that produced this state |
+|---|---|---|---|
+| PRE-ASSY | **STATOR ASSY** | Line entry / prep | (upstream SSO2 feed) |
+| AP01 | **STATOR ASSY** | Stator-side assembly | — |
+| AP02 | **STATOR ASSY** | Terminal box wiring | — |
+| AP03 | **STATOR ASSY** | Mechanical prep + QC check | — |
+| AP04 | **STATOR ASSY** | JOIN occurs here. MTR child created during dwell, but **child not yet visible downstream** until index. RSO2 component shown as branch feed. | — |
+| AP05 | **MTR JOINED** | Assembly + painting + measurements | AP04 JOIN completed; MTR child indexed to AP05 |
+| AP06 | **MTR PRE-TEST** | Electrical / functional TEST occurs here. If FAIL/HOLD/RETEST, WIP may remain at AP06 for retest. | AP05 mechanical assembly completed |
+| AP07 | **TESTED MTR** | Finishing / nameplate | AP06 successful TEST completed and indexed |
+| AP08 | **TESTED MTR** | Visual inspection occurs here. NG/reinspect shown as overlay only; base object unchanged. | AP06 TEST was successful (or retest passed) |
+| AP09 | **TESTED MTR** | Boxing occurs here. Packaging operation begins during dwell. | AP08 passed (or reinspect passed) |
+| AP10 | **PACKED GOODS** | Closing / labeling / palletizing | AP09 boxing completed |
+| AP11 | **PACKED GOODS** | Final QC / release. FINAL_QC check occurs here. | AP10 packaging completed |
+| OUT / released | No physical token unless `positions[]` explicitly contains one | History only otherwise | AP11 released and indexed out |
 
-### Critical invariants
+### 8-A.3 RSO2 Branch
 
-1. **Object category ≠ quality state**: Quality outcome (PASS/FAIL/HOLD/NG) is always an overlay, never a change of object category. A TESTED MTR with FAIL is still a TESTED MTR with a red overlay — not a seventh WIP type called "FAILED MOTOR".
+RSO2 is a **branch component feed**, not a main-conveyor position. It is shown as:
 
-2. **Pallet ≠ WIP identity**: The wooden pallet is the carrier. The WIP object (stator assy, rotor, joined motor, etc.) is placed ON the pallet. WIP identity (`wip_id` from `positions[]`) labels the WIP, not the pallet.
+- RSO2 input line branching into AP04 from upper or lower side
+- **ROTOR** visual token at the RSO2 input point (amber `#E8A23A`, narrow shaft silhouette)
+- RSO2 identity shown from genealogy (`parent_wip_ids` in `genealogy[]`) when available
+- Never fabricated as main-conveyor occupancy
 
-3. **`positions[]` remains sole physical truth**: The visual token rendered at a station is determined by the WIP's manufacturing stage (derived from its identity, type, and position in the process flow), NOT from genealogy or event history. If `positions[]` says a station is occupied by a particular WIP, the visual token matches that WIP's stage.
+### 8-A.4 Manufacturing vs Visual Transition Distinctions
 
-4. **No category invention**: The six categories (STATOR ASSY, ROTOR, MTR JOINED, MTR PRE-TEST, TESTED MTR, PACKED GOODS) are the complete visual taxonomy. Do not add categories unless runtime manufacturing semantics introduce a genuinely new WIP stage.
+These distinctions are critical truthfulness rules:
+
+| Station | Manufacturing operation | Public visual transition |
+|--------|------------------------|-------------------------|
+| AP04 | **JOIN** occurs here | `MTR JOINED` first visible at **AP05** after index |
+| AP05 | Mechanical completion | `MTR PRE-TEST` first visible at **AP06** after index |
+| AP06 | Electrical TEST | `TESTED MTR` first visible at **AP07** after successful test + index |
+| AP09 | Boxing / packaging start | `PACKED GOODS` first visible at **AP10** after boxing + index |
+
+### 8-A.5 Exception Semantics
+
+#### AP06 FAIL / HOLD / RETEST_PENDING
+
+While a WIP is physically held at AP06 due to FAIL/RETEST_PENDING:
+
+- **Base visual**: `MTR PRE-TEST` (the motor has not yet been successfully tested)
+- **Quality overlay**: FAIL (red badge/ring) or HOLD (amber badge/ring) from `positions[]`
+- **Attempt counter**: shown from `positions[].attempt_number` and `quality_records[]`
+- If retest eventually passes: WIP indexes to AP07, base visual becomes `TESTED MTR`
+
+**Never** show a WIP held at AP06 as `TESTED MTR` just because it is at the TEST station. The test has not yet passed.
+
+#### AP08 NG / REINSPECT_PENDING
+
+While a WIP is held at AP08 due to NG/REINSPECT_PENDING:
+
+- **Base visual**: `TESTED MTR` (AP06 test was successful; the motor IS tested)
+- **Quality overlay**: NG (red badge/ring) or HOLD (amber badge/ring)
+- Base object category does NOT change — reinspect is a quality overlay
+- If reinspect passes: WIP indexes to AP09, base visual remains `TESTED MTR`
+
+#### FAILED_FINAL
+
+- WIP may have exhausted max attempts at AP06 or AP08
+- Base visual follows the same rules as above (PRE-TEST at AP06, TESTED at AP08)
+- Terminal state shown via FAIL overlay + "FAILED_FINAL" context
+- Quality history in Inspector preserves all attempt records
+
+### 8-A.6 Critical Invariants
+
+1. **Object category ≠ quality state**: Quality outcome is always an overlay, never a change of object category. A `MTR PRE-TEST` with FAIL is still `MTR PRE-TEST` with a red overlay — not a seventh WIP type.
+
+2. **Pallet ≠ WIP identity**: The wooden pallet is the carrier. The WIP object is placed ON the pallet. WIP identity (`wip_id` from `positions[]`) labels the WIP, not the pallet.
+
+3. **`positions[]` remains sole physical truth**: The visual token is determined by the WIP's position in the process flow (derived from its identity, type, and current `position_id`), NOT from genealogy or event history.
+
+4. **No category invention**: The six categories (STATOR ASSY, ROTOR, MTR JOINED, MTR PRE-TEST, TESTED MTR, PACKED GOODS) are the complete visual taxonomy.
+
+5. **No transient pre-index state**: The public snapshot represents post-index state. Effects of station operations become visible only after the WIP indexes to the next position. Do not render WIP in a state that the station has not yet completed.
+
+---
 
 Stations are stationary, rendered in top-down plan style. Each has: body footprint, type icon, AP label, connection to conveyor.
 
