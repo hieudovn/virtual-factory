@@ -1,7 +1,7 @@
 /* M6-S04B-I09-P02-C03R — Reference-Locked Visual Implementation */
 /* Design Authority: VF_DESIGN_AUTHORITY_REFERENCE_LOCKED_I09_P02_C03R.md */
-/* Baseline: c0062c3 (EXH-01-C01 frozen contract) */
-/* EXH-UI-01: Demo-safe exception UI + physical composition final freeze */
+/* Baseline: 27f3ed6 (EXH-UI-01-C01) */
+/* EXH-UI-01-C02: Physical composition readability — tighter viewBox, larger fonts */
 
 const API = '/assy-demo';
 const LANDMARKS = new Set(['AP04','AP06','AP08','AP11']);
@@ -9,30 +9,29 @@ const LANDMARK_LABELS = { AP04:'JOIN', AP06:'TEST', AP08:'VISION', AP11:'FINAL' 
 const STATIONS = ['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
 const FB_STATIONS = STATIONS;
 const FB_LANDMARKS = LANDMARK_LABELS;
-// EXH-UI-01: pallet 100×80, conveyor 150px, off-line exception handling zone
+// EXH-UI-01-C02: canvasH 820 (cropped from 1080), pallet 100×80, off-line zone
 const VF_LAYOUT = {
-  canvasW: 1920, canvasH: 1080,
+  canvasW: 1920, canvasH: 820,
   // X positions RIGHT→LEFT (normal gap ~120px, landmarks ~130px)
   lineInX: 1890,
   stationX: [1720, 1600, 1485, 1370, 1240, 1115, 985, 865, 735, 615, 495, 365],
   lineOutX: 135,
   preX: 1720, ap04X: 1240, ap06X: 985, ap08X: 735, ap11X: 365,
-  // Y positions — EXH-UI-01: conveyor 150px, pallet 100×80
+  // Y positions — EXH-UI-01-C02: canvas 820, conveyor 150px
   conveyorY: 420, conveyorH: 150,
   stationY: 330,
-  wipY: 495,      // WIP/pallet center (centered in conveyor body 420-570)
+  wipY: 495,
   rso2BranchX: 1240, rso2BranchTopY: 230,
   // Zone positions
   rawX: 1720, rawW: 180, rawY: 70, rawH: 300,
   fgX: 30, fgW: 180, fgY: 70, fgH: 300,
-  // EXH-UI-01: OFF-LINE EXCEPTION HANDLING conceptual zone (below conveyor)
   offLineX: 500, offLineW: 700, offLineY: 630, offLineH: 130,
   lineOutConnX: 1050, lineInConnX: 650,
   // Conveyor span
   convStartX: 110, convEndX: 1830,
 };
 const FB_STATION_X = VF_LAYOUT.stationX;
-const FB_CANVAS_W = 1920, FB_CANVAS_H = 1080;
+const FB_CANVAS_W = 1920, FB_CANVAS_H = 820;
 
 // Position → visual token mapping (DG06-01-C02 frozen)
 const VF_TOKEN = {
@@ -252,14 +251,14 @@ const VF = {
   // ── AP badge (C01: larger, annotation not main graphic) ──
   apBadge(x, y, stId) {
     const cy = y - 44;
-    return `<rect x="${x-20}" y="${cy-9}" width="40" height="18" rx="5" fill="var(--vf-bg-surface)" stroke="var(--vf-accent)" stroke-width="1.2"/>
-      <text x="${x}" y="${cy+5}" fill="var(--vf-accent)" font-size="12" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${stId}</text>`;
+    return `<rect x="${x-22}" y="${cy-10}" width="44" height="20" rx="5" fill="var(--vf-bg-surface)" stroke="var(--vf-accent)" stroke-width="1.3"/>
+      <text x="${x}" y="${cy+5}" fill="var(--vf-accent)" font-size="13" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${stId}</text>`;
   },
 
   opName(x, y, stId) {
     const cy = y - 22;
     const name = STATION_OPS[stId] || stId;
-    return `<text x="${x}" y="${cy}" fill="var(--vf-text-secondary)" font-size="11" font-weight="500" text-anchor="middle">${name}</text>`;
+    return `<text x="${x}" y="${cy}" fill="var(--vf-text-secondary)" font-size="12" font-weight="500" text-anchor="middle">${name}</text>`;
   },
 
   badgeConnector(x, y) {
@@ -284,7 +283,7 @@ const VF = {
       const lmName = LANDMARK_LABELS[stId];
       if (lmName) {
         const lc = archetype==='JOIN'?'#C8960E':'var(--vf-accent)';
-        html += `<text x="${x}" y="${y+56}" fill="${lc}" font-size="10" font-weight="700" text-anchor="middle">${lmName}</text>`;
+        html += `<text x="${x}" y="${y+56}" fill="${lc}" font-size="11" font-weight="700" text-anchor="middle">${lmName}</text>`;
       }
     }
     html += `</g>`;
@@ -304,8 +303,8 @@ const VF = {
     if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
       html += VF.stateOverlay(x, ty, isHeld ? 'HOLD' : qResult);
     }
-    // Only show WIP ID (no carrier microtext — EXH-UI-01)
-    html += `<text x="${x}" y="${ty+16}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle">${wipId}</text>`;
+    // Only show WIP ID (EXH-UI-01-C02: slightly larger)
+    html += `<text x="${x}" y="${ty+16}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">${wipId}</text>`;
     html += `</g>`;
     return html;
   }
@@ -677,34 +676,34 @@ const ctrlB = {
     zonesG.innerHTML = `
       <!-- ASSY INPUT / LINE START (RIGHT) -->
       <rect x="${L.rawX}" y="${L.rawY}" width="${L.rawW}" height="${L.rawH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
-      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+16}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">ASSY INPUT</text>
-      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+30}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.6">LINE START</text>
+      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+16}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">ASSY INPUT</text>
+      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+30}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" opacity="0.6">LINE START</text>
 
       <!-- ASSY OUTPUT / LINE END (LEFT) -->
       <rect x="${L.fgX}" y="${L.fgY}" width="${L.fgW}" height="${L.fgH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
-      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+16}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">ASSY OUTPUT</text>
-      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+30}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.6">LINE END</text>
+      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+16}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">ASSY OUTPUT</text>
+      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+30}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" opacity="0.6">LINE END</text>
 
       <!-- EXH-UI-01: OFF-LINE EXCEPTION HANDLING conceptual zone -->
       <rect x="${L.offLineX}" y="${L.offLineY}" width="${L.offLineW}" height="${L.offLineH}" rx="6" fill="#FAFBFD" stroke="var(--vf-text-muted)" stroke-width="1.2" stroke-dasharray="8,5" opacity="0.7"/>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">OFF-LINE EXCEPTION HANDLING</text>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+34}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.5">CONCEPTUAL — Inspect / Diagnose / Optional Rework / Verify</text>
+      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">OFF-LINE EXCEPTION HANDLING</text>
+      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+34}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" opacity="0.5">CONCEPTUAL — Inspect / Diagnose / Optional Rework / Verify</text>
 
       <!-- LINE OUT connector (RIGHT side: main line → off-line zone) -->
       <line x1="${L.lineOutConnX}" y1="${L.conveyorY+L.conveyorH}" x2="${L.lineOutConnX}" y2="${L.offLineY}" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
-      <text x="${L.lineOutConnX+8}" y="${L.conveyorY+L.conveyorH+18}" fill="var(--vf-state-hold)" font-size="9" font-weight="600">LINE OUT</text>
+      <text x="${L.lineOutConnX+8}" y="${L.conveyorY+L.conveyorH+18}" fill="var(--vf-state-hold)" font-size="10" font-weight="600">LINE OUT</text>
       <polygon points="${L.lineOutConnX-4},${L.offLineY} ${L.lineOutConnX+4},${L.offLineY} ${L.lineOutConnX},${L.offLineY+8}" fill="var(--vf-state-hold)" opacity="0.55"/>
 
       <!-- LINE IN connector (LEFT side: off-line zone → main line) -->
       <line x1="${L.lineInConnX}" y1="${L.offLineY}" x2="${L.lineInConnX}" y2="${L.conveyorY+L.conveyorH}" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
-      <text x="${L.lineInConnX+8}" y="${L.offLineY-8}" fill="var(--vf-state-pass)" font-size="9" font-weight="600">LINE IN</text>
+      <text x="${L.lineInConnX+8}" y="${L.offLineY-8}" fill="var(--vf-state-pass)" font-size="10" font-weight="600">LINE IN</text>
       <polygon points="${L.lineInConnX-4},${L.conveyorY+L.conveyorH} ${L.lineInConnX+4},${L.conveyorY+L.conveyorH} ${L.lineInConnX},${L.conveyorY+L.conveyorH-8}" fill="var(--vf-state-pass)" opacity="0.55"/>`;
 
     // EXH-UI-01-C01: Global RIGHT→LEFT product-flow arrow in dedicated flow-cue layer
     // Rendered ABOVE conveyor, BELOW stations — visible at low opacity
     const flowG = document.getElementById('vf-flow-cue');
     if (flowG) {
-      flowG.innerHTML = `<g opacity="0.07">
+      flowG.innerHTML = `<g opacity="0.09">
         <rect x="250" y="445" width="1500" height="65" rx="10" fill="var(--vf-accent)"/>
         <polygon points="250,445 160,477 250,510" fill="var(--vf-accent)"/>
       </g>`;
@@ -824,13 +823,13 @@ const ctrlB = {
 
     // EXH-UI-01: Raw material zone (RIGHT) — contextual pallets
     html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+220})">${VF.pallet(0, 0)}${VF.statorAssy(0, -2)}</g>`;
-    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+195}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" font-weight="500">SSO2 STATOR</text>`;
+    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+195}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">SSO2 STATOR</text>`;
     html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+150})">${VF.pallet(0, 0)}${VF.rotor(0, -2)}</g>`;
-    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+125}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" font-weight="500">RSO2 ROTOR</text>`;
+    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+125}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">RSO2 ROTOR</text>`;
 
     // EXH-UI-01: Finished goods zone (LEFT) — contextual pallets
     html += `<g transform="translate(${L.fgX+L.fgW/2}, ${L.fgY+220})">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
-    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
+    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
 
     stationsG.innerHTML = html;
 
