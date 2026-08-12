@@ -19,7 +19,7 @@ const VF_LAYOUT = {
   // Y positions — C02-C01: conveyor 2.5x wider (160px)
   conveyorY: 420, conveyorH: 160,
   stationY: 330,  // station base above wider conveyor
-  wipY: 470,      // WIP/pallet center inside wider conveyor
+  wipY: 500,      // WIP/pallet center (centered in conveyor body 430-570)
   rso2BranchX: 1240, rso2BranchTopY: 230,
   // Zone positions
   rawX: 1720, rawW: 180, rawY: 70, rawH: 300,
@@ -97,15 +97,15 @@ const VF_ICON = {
    VF Visual Primitive Library (C03R Enhanced)
    ═══════════════════════════════════════ */
 const VF = {
-  // ── Wooden pallet carrier — square 150×150 ──
+  // ── Wooden pallet — 120×120, centered in conveyor ──
   pallet(x, y) {
-    const w=150, h=150;
-    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="6" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="1.5"/>
-      <rect x="${x-w/2-2}" y="${y-h/2+3}" width="${w+4}" height="10" rx="5" fill="var(--vf-pallet-dark)" opacity="0.18"/>
-      <line x1="${x-w/2+10}" y1="${y-30}" x2="${x+w/2-10}" y2="${y-30}" stroke="var(--vf-pallet-dark)" stroke-width="2.5" opacity="0.35"/>
-      <line x1="${x-w/2+10}" y1="${y}" x2="${x+w/2-10}" y2="${y}" stroke="var(--vf-pallet-dark)" stroke-width="2.5" opacity="0.35"/>
-      <line x1="${x-w/2+10}" y1="${y+30}" x2="${x+w/2-10}" y2="${y+30}" stroke="var(--vf-pallet-dark)" stroke-width="2.5" opacity="0.35"/>
-      <rect x="${x-40}" y="${y-h/2-6}" width="80" height="8" rx="3" fill="rgba(0,0,0,0.05)"/>`;
+    const w=120, h=120;
+    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="5" fill="var(--vf-pallet-wood)" stroke="#8B7355" stroke-width="1.5"/>
+      <rect x="${x-w/2-2}" y="${y-h/2+2}" width="${w+4}" height="8" rx="4" fill="var(--vf-pallet-dark)" opacity="0.15"/>
+      <line x1="${x-w/2+8}" y1="${y-24}" x2="${x+w/2-8}" y2="${y-24}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.3"/>
+      <line x1="${x-w/2+8}" y1="${y}" x2="${x+w/2-8}" y2="${y}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.3"/>
+      <line x1="${x-w/2+8}" y1="${y+24}" x2="${x+w/2-8}" y2="${y+24}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.3"/>
+      <rect x="${x-30}" y="${y-h/2-5}" width="60" height="6" rx="2" fill="rgba(0,0,0,0.04)"/>`;
   },
 
   // ── STATOR ASSY — metallic ring (C02-C01: 1.5x for wider conveyor) ──
@@ -290,7 +290,7 @@ const VF = {
 
   // ── WIP token on pallet (C01: no permanent carrier text, larger) ──
   wipToken(x, y, wipId, tokenType, isHeld, qResult, carrierId) {
-    const ty = y + 140;  // C02-C01: from stationY(330) to wipY(470)
+    const ty = y + 170;  // from stationY(330) to wipY(500)
     let html = `<g class="vf-wip-group" data-wip="${wipId}" style="cursor:pointer;">`;
     html += VF.pallet(x, ty);
     if (tokenType === 'STATOR') html += VF.statorAssy(x, ty - 2);
