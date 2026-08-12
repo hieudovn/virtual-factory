@@ -247,8 +247,143 @@ function closeFrameB() {
 
 
 /* ==============================
-   M6-S04B-I05 Frame B Controller
+   M6-S04B-I09-P02 — VF Visual Primitive Library
    ============================== */
+
+// Position → visual token mapping (post-index snapshot, DG06-01-C02 frozen)
+const VF_TOKEN = {
+  'PRE-ASSY':'STATOR','AP01':'STATOR','AP02':'STATOR','AP03':'STATOR','AP04':'STATOR',
+  'AP05':'JOINED','AP06':'PRETEST','AP07':'TESTED','AP08':'TESTED','AP09':'TESTED',
+  'AP10':'PACKED','AP11':'PACKED'
+};
+const VF_TOKEN_LABEL = {STATOR:'STATOR',JOINED:'JOINED',PRETEST:'PRE-TEST',TESTED:'TESTED',PACKED:'PACKED'};
+
+const VF = {
+  // Wooden pallet carrier
+  pallet(x, y) {
+    const w=72, h=24;
+    return `<rect x="${x-w/2}" y="${y}" width="${w}" height="${h}" rx="3" fill="var(--vf-pallet-wood)"/>
+      <line x1="${x-w/2+4}" y1="${y+8}" x2="${x+w/2-4}" y2="${y+8}" stroke="#B08050" stroke-width="0.8" opacity="0.5"/>
+      <line x1="${x-w/2+4}" y1="${y+16}" x2="${x+w/2-4}" y2="${y+16}" stroke="#B08050" stroke-width="0.8" opacity="0.5"/>`;
+  },
+
+  // STATOR ASSY — circular housing with central opening
+  statorAssy(x, y) {
+    const r=15;
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--vf-obj-stator)" stroke="#1FA0B0" stroke-width="1.5"/>
+      <circle cx="${x}" cy="${y}" r="6" fill="var(--vf-bg-canvas)" opacity="0.6"/>
+      <rect x="${x-12}" y="${y-8}" width="6" height="4" rx="1" fill="#1FA0B0" opacity="0.7"/>
+      <rect x="${x+6}" y="${y-8}" width="6" height="4" rx="1" fill="#1FA0B0" opacity="0.7"/>`;
+  },
+
+  // ROTOR — elongated shaft
+  rotor(x, y) {
+    return `<rect x="${x-18}" y="${y-5}" width="36" height="10" rx="5" fill="var(--vf-obj-rotor)" stroke="#D09030" stroke-width="1"/>
+      <rect x="${x-2}" y="${y-6}" width="4" height="12" rx="2" fill="#D09030"/>
+      <line x1="${x-15}" y1="${y}" x2="${x+15}" y2="${y}" stroke="#C08028" stroke-width="1" opacity="0.5"/>`;
+  },
+
+  // MTR JOINED — compact cylindrical motor body
+  motorJoined(x, y) {
+    return `<rect x="${x-14}" y="${y-9}" width="28" height="18" rx="6" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1.2"/>
+      <circle cx="${x}" cy="${y}" r="3" fill="#308A72" opacity="0.6"/>
+      <rect x="${x-6}" y="${y-12}" width="4" height="3" rx="1" fill="#308A72" opacity="0.5"/>
+      <rect x="${x+2}" y="${y-12}" width="4" height="3" rx="1" fill="#308A72" opacity="0.5"/>`;
+  },
+
+  // MTR PRE-TEST — complete motor body with mounting feet
+  motorPreTest(x, y) {
+    return `<rect x="${x-16}" y="${y-10}" width="32" height="20" rx="7" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.2"/>
+      <circle cx="${x}" cy="${y}" r="3.5" fill="#2E7098" opacity="0.5"/>
+      <rect x="${x-18}" y="${y-5}" width="4" height="5" rx="1" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
+      <rect x="${x+14}" y="${y-5}" width="4" height="5" rx="1" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
+      <circle cx="${x-10}" cy="${y+2}" r="1.5" fill="#2E7098" opacity="0.4"/>
+      <circle cx="${x+10}" cy="${y+2}" r="1.5" fill="#2E7098" opacity="0.4"/>`;
+  },
+
+  // TESTED MTR — motor body + test-complete marker
+  motorTested(x, y) {
+    return `<rect x="${x-16}" y="${y-10}" width="32" height="20" rx="7" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.2"/>
+      <circle cx="${x}" cy="${y}" r="3.5" fill="#2E7098" opacity="0.5"/>
+      <rect x="${x-18}" y="${y-5}" width="4" height="5" rx="1" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
+      <rect x="${x+14}" y="${y-5}" width="4" height="5" rx="1" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
+      <circle cx="${x+12}" cy="${y-8}" r="4" fill="var(--vf-state-pass)" opacity="0.8"/>
+      <text x="${x+12}" y="${y-5}" fill="#fff" font-size="6" text-anchor="middle" font-weight="bold">\u2713</text>`;
+  },
+
+  // PACKED GOODS — carton on pallet
+  packedGoods(x, y) {
+    return `<rect x="${x-16}" y="${y-10}" width="32" height="20" rx="4" fill="var(--vf-obj-packed)" stroke="#9A6838" stroke-width="1.2"/>
+      <line x1="${x}" y1="${y-10}" x2="${x}" y2="${y+10}" stroke="#9A6838" stroke-width="0.8" opacity="0.4"/>
+      <line x1="${x-16}" y1="${y}" x2="${x+16}" y2="${y}" stroke="#9A6838" stroke-width="0.8" opacity="0.4"/>
+      <rect x="${x-8}" y="${y-11}" width="5" height="2" rx="1" fill="#9A6838" opacity="0.5"/>
+      <rect x="${x+3}" y="${y-11}" width="5" height="2" rx="1" fill="#9A6838" opacity="0.5"/>`;
+  },
+
+  // State overlay
+  stateOverlay(x, y, state) {
+    if (!state || state==='PASS') return '';
+    const color = state==='FAIL'||state==='NG'?'var(--vf-state-fail)':'var(--vf-state-hold)';
+    return `<rect x="${x+10}" y="${y-16}" width="12" height="12" rx="3" fill="${color}" opacity="0.9"/>
+      <text x="${x+16}" y="${y-7}" fill="#fff" font-size="8" text-anchor="middle" font-weight="bold">!</text>`;
+  },
+
+  // Equipment icons (small plan-view SVG)
+  joinIcon(x, y) {
+    return `<circle cx="${x}" cy="${y}" r="7" fill="none" stroke="#B8860B" stroke-width="1.2"/>
+      <line x1="${x-5}" y1="${y}" x2="${x+5}" y2="${y}" stroke="#B8860B" stroke-width="1"/>
+      <line x1="${x}" y1="${y-5}" x2="${x}" y2="${y+5}" stroke="#B8860B" stroke-width="1"/>`;
+  },
+  testIcon(x, y) {
+    return `<rect x="${x-8}" y="${y-5}" width="16" height="10" rx="2" fill="none" stroke="var(--vf-state-selected)" stroke-width="1.2"/>
+      <text x="${x}" y="${y+3}" fill="var(--vf-state-selected)" font-size="7" text-anchor="middle">T</text>`;
+  },
+  visionIcon(x, y) {
+    return `<rect x="${x-7}" y="${y-5}" width="14" height="8" rx="2" fill="none" stroke="var(--vf-state-selected)" stroke-width="1"/>
+      <circle cx="${x}" cy="${y-1}" r="3" fill="none" stroke="var(--vf-state-selected)" stroke-width="0.8"/>
+      <circle cx="${x}" cy="${y-1}" r="1" fill="var(--vf-state-selected)"/>`;
+  },
+  finalIcon(x, y) {
+    return `<rect x="${x-7}" y="${y-5}" width="14" height="10" rx="2" fill="none" stroke="var(--vf-state-selected)" stroke-width="1.2"/>
+      <polyline points="${x-4},${y} ${x-1},${y+3} ${x+5},${y-3}" fill="none" stroke="var(--vf-state-pass)" stroke-width="1.5"/>`;
+  },
+  hmiIcon(x, y) {
+    return `<rect x="${x-6}" y="${y-4}" width="12" height="8" rx="2" fill="#E8F0FE" stroke="var(--vf-text-muted)" stroke-width="0.8"/>
+      <line x1="${x-3}" y1="${y+2}" x2="${x+3}" y2="${y+2}" stroke="var(--vf-text-muted)" stroke-width="0.6"/>`;
+  },
+
+  // Station cell scaffold
+  stationCell(x, y, stId, archetype, occupied, isLandmark, isSel) {
+    let html = '';
+    const cx = x, cy = y + 45;
+    if (archetype === 'INPUT') {
+      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F8F9FB" stroke="var(--vf-border-soft)" stroke-width="${isSel?2:1}"/>
+        <rect x="${cx-30}" y="${cy-28}" width="60" height="6" rx="2" fill="var(--vf-conveyor-roller)"/>
+        ${VF.hmiIcon(cx+20, cy-8)}`;
+    } else if (archetype === 'JOIN') {
+      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#FFFDF5" stroke="#B8860B" stroke-width="${isSel?2:1.5}"/>
+        ${VF.joinIcon(cx+22, cy-12)}`;
+    } else if (archetype === 'TEST') {
+      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F8F9FB" stroke="var(--vf-state-selected)" stroke-width="${isSel?2:1.2}"/>
+        ${VF.testIcon(cx+22, cy-12)}`;
+    } else if (archetype === 'VISION') {
+      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F8F9FB" stroke="var(--vf-state-selected)" stroke-width="${isSel?2:1.2}"/>
+        ${VF.visionIcon(cx+22, cy-12)}`;
+    } else if (archetype === 'FINAL') {
+      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F0F5FF" stroke="var(--vf-state-selected)" stroke-width="${isSel?2:1.2}"/>
+        ${VF.finalIcon(cx+22, cy-12)}`;
+    } else {
+      html += `<rect x="${cx-40}" y="${cy-32}" width="80" height="64" rx="6" fill="#F8F9FB" stroke="var(--vf-border-soft)" stroke-width="${isSel?2:1}"/>`;
+    }
+    html += `<text x="${cx}" y="${cy-18}" fill="var(--vf-text-secondary)" font-size="13" font-weight="600" text-anchor="middle">${stId}</text>`;
+    if (isLandmark) {
+      html += `<text x="${cx}" y="${cy-6}" fill="${archetype==='JOIN'?'#B8860B':'var(--vf-state-selected)'}" font-size="10" font-weight="600" text-anchor="middle">${FB_LANDMARKS[stId]}</text>`;
+    }
+    // Conveyor connection stub
+    html += `<rect x="${cx-10}" y="${cy+30}" width="20" height="6" rx="2" fill="var(--vf-conveyor-roller)"/>`;
+    return html;
+  }
+};
 const FB_STATIONS = ['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
 const FB_LANDMARKS = { AP04:'JOIN', AP06:'TEST', AP08:'VISION', AP11:'FINAL' };
 // Station X positions on the 1920 canvas (RIGHT→LEFT flow, I09-P01)
@@ -434,60 +569,54 @@ const ctrlB = {
       const qResult = p.latest_quality_result || '';
       const isReleased = p.manufacturing_status === 'released';
 
-      // Station box
-      let borderColor = 'var(--vf-border-soft)';
-      let bgColor = '#F8F9FB';
-      if (isLandmark && stId === 'AP04') { borderColor = '#B8860B'; bgColor = '#FFFDF5'; }
-      else if (isLandmark && stId === 'AP11') { borderColor = 'var(--vf-state-selected)'; bgColor = '#F0F5FF'; }
-      if (isHeld) { borderColor = 'var(--vf-state-fail)'; bgColor = '#FFF5F5'; }
-      if (isReleased && stId === 'AP11') { borderColor = 'var(--vf-state-selected)'; bgColor = '#F0F8FF'; }
-      if (isSel) { borderColor = 'var(--vf-state-selected)'; }
+      // I09-P02: determine station archetype + visual token
+      let archetype = 'ASSY';
+      if (stId === 'PRE-ASSY') archetype = 'INPUT';
+      else if (stId === 'AP04') archetype = 'JOIN';
+      else if (stId === 'AP06') archetype = 'TEST';
+      else if (stId === 'AP08') archetype = 'VISION';
+      else if (stId === 'AP11') archetype = 'FINAL';
+
+      const tokenType = VF_TOKEN[stId] || 'STATOR';
+      const tokenLabel = VF_TOKEN_LABEL[tokenType] || '';
+
+      // Station border treatment
+      let stBorder = isSel ? 'var(--vf-state-selected)' : 'var(--vf-border-soft)';
+      if (isHeld) stBorder = 'var(--vf-state-fail)';
 
       html += `<g class="fb-station" data-station="${stId}" style="cursor:pointer">`;
-      html += `<rect x="${sx-44}" y="${sy}" width="88" height="90" rx="4" fill="${bgColor}" stroke="${borderColor}" stroke-width="${isSel||isHeld?2:1}"/>`;
-
-      // Station ID + landmark
-      html += `<text x="${sx}" y="${sy+18}" fill="${isHeld?'var(--vf-state-fail)':'var(--vf-text-secondary)'}" font-size="15" font-weight="600" text-anchor="middle">${stId}</text>`;
-      if (isLandmark) {
-        html += `<text x="${sx}" y="${sy+34}" fill="${stId==='AP04'?'#B8860B':stId==='AP11'?'var(--vf-state-selected)':'#B8860B'}" font-size="11" font-weight="600" text-anchor="middle">${FB_LANDMARKS[stId]}</text>`;
-      }
+      html += VF.stationCell(sx, sy, stId, archetype, isOcc, isLandmark, isSel);
 
       if (isOcc) {
-        // Carrier + WIP token group — clickable independently
-        const carrierY = sy + (isLandmark ? 42 : 40);
+        // Pallet + WIP token group
+        const tokenX = sx, tokenY = sy + 60;
         html += `<g class="fb-wip-token" data-wip="${p.wip_id}" style="cursor:pointer">`;
-        html += `<rect x="${sx-38}" y="${carrierY}" width="76" height="28" rx="3" fill="none" stroke="#1e3a5f" stroke-width="1"/>`;
+        html += VF.pallet(tokenX, tokenY);
+        // WIP visual by position
+        if (tokenType === 'STATOR') html += VF.statorAssy(tokenX, tokenY - 6);
+        else if (tokenType === 'JOINED') html += VF.motorJoined(tokenX, tokenY - 6);
+        else if (tokenType === 'PRETEST') html += VF.motorPreTest(tokenX, tokenY - 6);
+        else if (tokenType === 'TESTED') html += VF.motorTested(tokenX, tokenY - 6);
+        else if (tokenType === 'PACKED') html += VF.packedGoods(tokenX, tokenY - 6);
+        // State overlay
+        if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
+          html += VF.stateOverlay(tokenX, tokenY, isHeld ? 'HOLD' : qResult);
+        }
+        // WIP ID label
+        html += `<text x="${tokenX}" y="${tokenY+22}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">${p.wip_id}</text>`;
+        // Token label
+        html += `<text x="${tokenX}" y="${tokenY-20}" fill="var(--vf-text-secondary)" font-size="9" text-anchor="middle" font-weight="600">${tokenLabel}</text>`;
         if (p.carrier_id) {
-          html += `<text x="${sx}" y="${carrierY+12}" fill="var(--vf-text-muted)" font-size="11" font-weight="400" text-anchor="middle">${p.carrier_id}</text>`;
+          html += `<text x="${tokenX}" y="${tokenY+33}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle">${p.carrier_id}</text>`;
         }
-        // WIP
-        const wipY = carrierY + 23;
-        const wipColor = wipType === 'SSO2' ? 'var(--vf-obj-stator)' : '#B8860B';
-        html += `<text x="${sx}" y="${wipY}" fill="${wipColor}" font-size="14" font-weight="600" text-anchor="middle">${p.wip_id}</text>`;
-        html += `</g>`;  // close fb-wip-token
-
-        // Quality badge
-        const badgeY = wipY + 14;
-        if (qResult && !isHeld) {
-          const qColor = qResult === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
-          let qText = qResult;
-          if (p.attempt_number > 1) qText += ` #${p.attempt_number}`;
-          html += `<text x="${sx}" y="${badgeY}" fill="${qColor}" font-size="12" font-weight="600" text-anchor="middle">${qText}</text>`;
-        }
-        if (isHeld) {
-          html += `<text x="${sx}" y="${badgeY}" fill="var(--vf-state-fail)" font-size="12" font-weight="600" text-anchor="middle">HOLD</text>`;
-        }
-        if (isReleased) {
-          html += `<text x="${sx}" y="${badgeY}" fill="var(--vf-state-selected)" font-size="12" font-weight="600" text-anchor="middle">RELEASED</text>`;
-        }
+        html += `</g>`;
       } else {
         // Empty station
-        const emptyY = sy + (isLandmark ? 50 : 46);
-        html += `<text x="${sx}" y="${emptyY}" fill="#333" font-size="24" text-anchor="middle">\u2014</text>`;
+        html += `<text x="${sx}" y="${sy+68}" fill="var(--vf-text-muted)" font-size="14" text-anchor="middle">\u2014</text>`;
       }
 
       if (isHeld && p.held_reason) {
-        html += `<text x="${sx}" y="${sy+96}" fill="#e94560" font-size="9" text-anchor="middle">${p.held_reason}</text>`;
+        html += `<text x="${sx}" y="${sy+96}" fill="var(--vf-state-fail)" font-size="9" text-anchor="middle">${p.held_reason}</text>`;
       }
 
       html += `</g>`;
@@ -501,8 +630,8 @@ const ctrlB = {
     if (genealogy.length > 0) {
       const latest = genealogy[genealogy.length - 1];
       const ap04x = FB_STATION_X[4]; // AP04 = index 4
-      html += `<text x="${ap04x}" y="280" fill="#ffc107" font-size="9" text-anchor="middle" opacity="0.9">${latest.parent_wip_ids.join(' + ')}</text>`;
-      html += `<text x="${ap04x}" y="292" fill="#ffc107" font-size="9" text-anchor="middle" opacity="0.7">\u2192 ${latest.child_wip_id}</text>`;
+      // ROTOR visual at RSO2 branch point (above AP04)
+      html += `<g transform="translate(${ap04x}, 300)">${VF.rotor(0, -8)}</g>`;
     }
 
     stationsG.innerHTML = html;
