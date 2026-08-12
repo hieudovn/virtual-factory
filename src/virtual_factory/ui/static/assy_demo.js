@@ -97,15 +97,15 @@ const VF_ICON = {
    VF Visual Primitive Library (C03R Enhanced)
    ═══════════════════════════════════════ */
 const VF = {
-  // ── Wooden pallet carrier (C02-C01: scaled for 160px conveyor, 180×72) ──
+  // ── Wooden pallet carrier — square 150×150 ──
   pallet(x, y) {
-    const w=180, h=72;
-    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="6" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="1.2"/>
-      <rect x="${x-w/2-2}" y="${y-h/2+2}" width="${w+4}" height="8" rx="4" fill="var(--vf-pallet-dark)" opacity="0.2"/>
-      <line x1="${x-w/2+10}" y1="${y-10}" x2="${x+w/2-10}" y2="${y-10}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.35"/>
-      <line x1="${x-w/2+10}" y1="${y+10}" x2="${x+w/2-10}" y2="${y+10}" stroke="var(--vf-pallet-dark)" stroke-width="2" opacity="0.35"/>
-      <line x1="${x-w/2+10}" y1="${y+28}" x2="${x+w/2-10}" y2="${y+28}" stroke="var(--vf-pallet-dark)" stroke-width="1.5" opacity="0.3"/>
-      <rect x="${x-45}" y="${y-h/2-5}" width="90" height="6" rx="2" fill="rgba(0,0,0,0.04)"/>`;
+    const w=150, h=150;
+    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="6" fill="var(--vf-pallet-wood)" stroke="#B08050" stroke-width="1.5"/>
+      <rect x="${x-w/2-2}" y="${y-h/2+3}" width="${w+4}" height="10" rx="5" fill="var(--vf-pallet-dark)" opacity="0.18"/>
+      <line x1="${x-w/2+10}" y1="${y-30}" x2="${x+w/2-10}" y2="${y-30}" stroke="var(--vf-pallet-dark)" stroke-width="2.5" opacity="0.35"/>
+      <line x1="${x-w/2+10}" y1="${y}" x2="${x+w/2-10}" y2="${y}" stroke="var(--vf-pallet-dark)" stroke-width="2.5" opacity="0.35"/>
+      <line x1="${x-w/2+10}" y1="${y+30}" x2="${x+w/2-10}" y2="${y+30}" stroke="var(--vf-pallet-dark)" stroke-width="2.5" opacity="0.35"/>
+      <rect x="${x-40}" y="${y-h/2-6}" width="80" height="8" rx="3" fill="rgba(0,0,0,0.05)"/>`;
   },
 
   // ── STATOR ASSY — metallic ring (C02-C01: 1.5x for wider conveyor) ──
