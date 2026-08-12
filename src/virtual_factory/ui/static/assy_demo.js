@@ -307,8 +307,8 @@ const VF = {
       <circle cx="${x}" cy="${y}" r="3.5" fill="#2E7098" opacity="0.5"/>
       <rect x="${x-18}" y="${y-5}" width="4" height="5" rx="1" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
       <rect x="${x+14}" y="${y-5}" width="4" height="5" rx="1" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <circle cx="${x+12}" cy="${y-8}" r="4" fill="var(--vf-state-pass)" opacity="0.8"/>
-      <text x="${x+12}" y="${y-5}" fill="#fff" font-size="6" text-anchor="middle" font-weight="bold">\u2713</text>`;
+      <circle cx="${x+12}" cy="${y-8}" r="4" fill="none" stroke="var(--vf-flow-arrow)" stroke-width="1"/>
+      <text x="${x+12}" y="${y-5}" fill="var(--vf-flow-arrow)" font-size="6" text-anchor="middle" font-weight="bold">T</text>`;
   },
 
   // PACKED GOODS — carton on pallet
