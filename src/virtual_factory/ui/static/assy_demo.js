@@ -693,12 +693,6 @@ const ctrlB = {
     for (let rx = L.convStartX + 30; rx < L.convEndX; rx += 40) {
       ch += `<rect x="${rx}" y="${L.conveyorY+25}" width="16" height="110" rx="4" fill="var(--vf-conveyor-roller)" opacity="0.4"/>`;
     }
-    // SSO2 input (RIGHT)
-    ch += `<line x1="${L.lineInX}" y1="${L.conveyorY+80}" x2="${L.lineInX-50}" y2="${L.conveyorY+80}" stroke="var(--vf-flow-material)" stroke-width="3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="${L.lineInX}" y="${L.conveyorY+60}" fill="var(--vf-flow-material)" font-size="11" font-weight="600" text-anchor="end">SSO2</text>`;
-    // OUT (LEFT)
-    ch += `<line x1="${L.lineOutX+50}" y1="${L.conveyorY+80}" x2="${L.lineOutX}" y2="${L.conveyorY+80}" stroke="var(--vf-flow-product)" stroke-width="3.5" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="${L.lineOutX+40}" y="${L.conveyorY+60}" fill="var(--vf-flow-product)" font-size="11" font-weight="600" text-anchor="end">OUT</text>`;
     // RSO2 branch into AP04
     ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
     ch += `<text x="${L.ap04X+10}" y="${L.rso2BranchTopY+10}" fill="#C8960E" font-size="9" font-weight="600">RSO2</text>`;
@@ -756,18 +750,20 @@ const ctrlB = {
     const convY = L.conveyorY;
     const stationY = L.stationY;
 
-    // LINE-IN (far RIGHT, C02)
+    // LINE-IN: off-line repair entry near AP06 (TEST) — above conveyor
     html += `<g>
-      <rect x="${L.lineInX-15}" y="${convY}" width="30" height="${L.conveyorH}" rx="4" fill="var(--vf-conveyor-body)" stroke="var(--vf-conveyor-frame)" stroke-width="1.5"/>
-      <text x="${L.lineInX}" y="${convY-12}" fill="var(--vf-flow-material)" font-size="11" font-weight="700" text-anchor="middle">LINE IN</text>
-      <text x="${L.lineInX}" y="${convY+L.conveyorH+14}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">← ENTRY</text>
+      <rect x="${L.ap06X-50}" y="${convY-120}" width="100" height="70" rx="6" fill="#FFF8E6" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="${L.ap06X}" y="${convY-95}" fill="var(--vf-state-hold)" font-size="11" font-weight="700" text-anchor="middle">LINE IN</text>
+      <text x="${L.ap06X}" y="${convY-78}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">QC HOLD → REPAIR</text>
+      <line x1="${L.ap06X}" y1="${convY-50}" x2="${L.ap06X}" y2="${convY-10}" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="4,2"/>
     </g>`;
 
-    // LINE-OUT (far LEFT, C02)
+    // LINE-OUT: off-line repair return near AP08 (VISION) — above conveyor
     html += `<g>
-      <rect x="${L.lineOutX-15}" y="${convY}" width="30" height="${L.conveyorH}" rx="4" fill="var(--vf-conveyor-body)" stroke="var(--vf-conveyor-frame)" stroke-width="1.5"/>
-      <text x="${L.lineOutX}" y="${convY-12}" fill="var(--vf-flow-product)" font-size="11" font-weight="700" text-anchor="middle">LINE OUT</text>
-      <text x="${L.lineOutX}" y="${convY+L.conveyorH+14}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">EXIT →</text>
+      <rect x="${L.ap08X-50}" y="${convY-120}" width="100" height="70" rx="6" fill="#E6F5EC" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="${L.ap08X}" y="${convY-95}" fill="var(--vf-state-pass)" font-size="11" font-weight="700" text-anchor="middle">LINE OUT</text>
+      <text x="${L.ap08X}" y="${convY-78}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">REPAIR → RETURN</text>
+      <line x1="${L.ap08X}" y1="${convY-50}" x2="${L.ap08X}" y2="${convY-10}" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="4,2"/>
     </g>`;
 
     FB_STATIONS.forEach((stId, si) => {
