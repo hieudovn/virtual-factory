@@ -3,6 +3,7 @@
 > **Baseline**: `1b0bbe4`
 > **Gate type**: DESIGN/CONTRACT ONLY — no runtime/API/snapshot/UI implementation.
 > **Design authority input**: `OPS-01_Operation_Execution_Station_Interaction_Contract_Design_v0.1.md` (SA working baseline).
+> **C01 addendum**: `OPS-01-C01_UX_Interaction_Contract_Addendum.md` — Station Interaction Surface (design-only, appended §13).
 > **Date**: 2026-08-13
 
 ---
@@ -315,4 +316,29 @@ Today this is enforced **implicitly** by the synchronous blocked conveyor (a WIP
 
 ---
 
-> **OPS-01 — READY FOR SA REVIEW.**
+## 13. Station Interaction Surface (OPS-01-C01 addendum)
+
+Design-only. OPS-03 remains the implementation slice. This section pins the UI/interaction architecture so later OPS-03 cannot fork it.
+
+1. **Single interaction surface** — reuse the existing top-right Context Inspector / popup as the future Station/WIP Operation Interaction surface. No persistent per-AP control window. Clicking a station or its current WIP must resolve to the same underlying `OperationExecution`.
+
+2. **Station click vs WIP click** — station click = station-first context (“what is happening at this station?”); WIP click = WIP-first context (“what does this WIP currently need?”). Both reference the same active operation state and must not create duplicate control state.
+
+3. **Capability-driven renderer** — UI generated from station capabilities, never hard-coded `if AP03 / if AP06`:
+   - `execution` → DONE
+   - `checklist` → checklist + confirm
+   - `measurement` + `quality_decision` → measurement fields + PASS/FAIL
+   - `final_disposition` → RELEASE/HOLD/REJECT as allowed by the contract
+   Exact field definitions may be station configuration; renderer architecture must be generic.
+
+4. **Manual mode** — when a station reaches an action-required state, the station/WIP becomes visually marked `ACTION REQUIRED`. User clicks station/WIP to open the inspector and execute the required action. Do **not** auto-open popups. Simple execution stations in a globally MANUAL run wait for user `DONE`.
+
+5. **Auto mode** — inspector remains available as a monitor/view surface. The simulator performs the same completion transition automatically after configured work time. AUTO is **not** auto-PASS for quality gates.
+
+6. **Simulation panel separation** — the floating Simulation Control Panel is responsible only for runtime controls (RESET/STEP/AUTO/PAUSE/speed/runtime status). Operation forms (checklist / PASS/FAIL / DONE) belong in the Station/WIP Inspector, not in the Simulation Control Panel. A future aggregate cue such as `N actions required` may be shown in the Simulation Panel, but it must not duplicate station control logic.
+
+7. **No implementation in C01** — this addendum is contract only. OPS-03 implements the capability-driven station interaction UI.
+
+---
+
+> **OPS-01-C01 — READY FOR SA REVIEW.**
