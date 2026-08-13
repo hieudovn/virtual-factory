@@ -508,6 +508,45 @@ html, body {
 .vf-popup-pill.fail { background: #FDE8E8; color: var(--vf-state-fail); }
 .vf-popup-pill.info { background: var(--vf-accent-light); color: var(--vf-accent); }
 
+/* I09-P04 — context popup + selection highlight */
+.vf-context-note {
+  font-size: 11px; color: var(--vf-text-secondary); padding: 4px 0 8px 0;
+  line-height: 1.4;
+}
+.vf-context-tag {
+  margin-top: 10px; padding: 6px 8px; border-radius: 6px;
+  font-size: 10px; color: var(--vf-text-muted);
+  background: var(--vf-bg-page); border: 1px dashed var(--vf-border);
+  text-align: center;
+}
+.vf-popup-sep {
+  height: 1px; background: var(--vf-border-light); margin: 6px 0;
+}
+.vf-insp-link {
+  color: var(--vf-accent); cursor: pointer; text-decoration: underline dotted;
+  font-weight: 600;
+}
+.vf-insp-link:hover { text-decoration: underline; }
+/* I09-P05: dedicated selection ring (not an error glow, keeps text readable in motion) */
+.vf-wip-sel-halo {
+  display: none;
+  fill: rgba(47,111,219,0.06);
+  stroke: var(--vf-accent);
+  stroke-width: 2;
+  stroke-dasharray: 5, 3;
+  pointer-events: none;
+}
+#fb-wips .vf-wip-group.selected .vf-wip-sel-halo {
+  display: block;
+  filter: drop-shadow(0 0 3px rgba(47,111,219,0.35));
+}
+/* I09-P04: make whole context group clickable, incl. empty space */
+#fb-context-sources [data-context],
+#fb-context-offline [data-context] {
+  pointer-events: all;
+  pointer-events: bounding-box;
+}
+
 /* ═══════════════════════════════════════
    Inspector (legacy, preserved)
    ═══════════════════════════════════════ */
@@ -572,10 +611,50 @@ html, body {
 .vf-insp-cl-item { font-size: 10px; color: var(--vf-text-muted); padding: 1px 0 1px 16px; }
 
 /* ═══════════════════════════════════════
+   I09-P06 — Floating Simulation Control Panel
+   ═══════════════════════════════════════ */
+#vf-sim-panel {
+  position: absolute; left: var(--vf-md); bottom: var(--vf-md);
+  width: 300px;
+  background: var(--vf-bg-popup); backdrop-filter: blur(8px);
+  border: 1px solid var(--vf-border); border-radius: var(--vf-radius-md);
+  box-shadow: var(--vf-shadow-md);
+  padding: 10px 12px;
+  z-index: 35;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.vf-sim-panel-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--vf-text-muted); font-weight: 600;
+}
+.vf-sim-panel-status {
+  display: flex; align-items: center; gap: 12px;
+  font-family: 'Consolas', 'Cascadia Code', monospace;
+  font-size: 11px; color: var(--vf-text-secondary);
+}
+.vf-sim-panel-status .vf-status-item.live {
+  font-size: 11px;
+}
+.vf-sim-line-state {
+  font-size: 12px; font-weight: 600;
+  padding: 3px 8px; border-radius: 4px;
+  background: var(--vf-bg-page); color: var(--vf-text-secondary);
+}
+.vf-sim-panel-controls {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+}
+.vf-sim-panel-controls .vf-btn {
+  padding: 3px 8px; font-size: 11px;
+}
+.vf-sim-panel-controls .vf-ft-select {
+  padding: 3px 6px; font-size: 11px;
+}
+
+/* ═══════════════════════════════════════
    Quality Event Strip — collapsed 1-line tray by default (C01)
    ═══════════════════════════════════════ */
 #vf-event-strip {
-  position: absolute; left: var(--vf-md); bottom: var(--vf-md); right: 340px;
+  position: absolute; left: 328px; bottom: var(--vf-md); right: 340px;
   height: 28px; overflow: hidden;
   background: var(--vf-bg-popup); backdrop-filter: blur(8px);
   border: 1px solid var(--vf-border); border-radius: var(--vf-radius-sm);
@@ -641,6 +720,7 @@ html, body {
   #vf-popup { width: 300px; max-height: 50vh; right: 4px; top: 4px; }
   #vf-inspector { width: 260px; right: 4px; bottom: 4px; }
   #vf-event-strip { right: 270px; }
+  #vf-sim-panel { width: 272px; padding: 8px 10px; }
   .vf-subline-cards { grid-template-columns: repeat(3, 1fr); }
   #vf-topbar { padding: 0 var(--vf-md); }
   #vf-footer { padding: 0 var(--vf-md); }
@@ -653,7 +733,7 @@ html, body {
   .vf-subline-cards { grid-template-columns: repeat(2, 1fr); }
   #vf-popup { width: 260px; }
   #vf-inspector { width: 220px; }
-  #vf-event-strip { right: 230px; }
+  #vf-event-strip { right: 230px; left: 296px; }
 }
 
 /* ═══════════════════════════════════════

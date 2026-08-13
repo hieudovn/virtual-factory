@@ -30,29 +30,15 @@
         <span id="live-status" class="vf-status-item live">● LIVE</span>
         <!-- Frame A step -->
         <span id="demo-step" class="vf-status-step">DEMO STEP 000</span>
-        <!-- Frame B time -->
-        <span id="fb-sim-time" class="vf-status-time" style="display:none;">t=0s</span>
-        <!-- Frame B dwell -->
-        <span id="fb-dwell" class="vf-status-item" style="display:none;font-family:Consolas,monospace;font-size:11px;color:var(--vf-text-muted);">DWELL 0</span>
       </div>
 
-      <div class="vf-tb-controls">
-        <button id="btn-reset" class="vf-btn danger-outline" onclick="uiReset()">↻ RESET</button>
-        <button id="btn-step" class="vf-btn primary" onclick="uiStep()">▶ STEP</button>
-        <button id="btn-auto" class="vf-btn accent-outline" onclick="uiToggleAuto()">▶▶ AUTO</button>
-        <button id="btn-pause" class="vf-btn" onclick="uiPause()" disabled>⏸ PAUSE</button>
-      </div>
-
-      <!-- Frame B sub-line ID (visible only in Frame B) -->
+      <!-- Frame B global context (sub-line / variant / scenario) -->
       <span id="fb-sub-line-id" style="display:none;background:var(--vf-accent-light);color:var(--vf-accent);padding:2px 12px;border-radius:4px;font-size:14px;font-weight:600;font-family:Consolas,monospace;">ASSY-SL01</span>
       <span id="fb-variant" style="display:none;font-size:11px;color:var(--vf-text-muted);text-transform:uppercase;">HYDRAULIC</span>
-      <span id="fb-line-state" style="display:none;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:600;">OPERATING</span>
       <span id="fb-scenario" style="display:none;background:#FFF3CD;color:#856404;padding:2px 10px;border-radius:3px;font-size:12px;">HAPPY_PATH</span>
-      <span id="fb-live-status" style="display:none;font-size:10px;"></span>
     </div>
 
     <div class="vf-tb-right">
-      <span id="line-state-display" style="color:var(--vf-text-muted);font-size:11px;"></span>
       <button class="vf-tb-icon-btn" title="Overview" onclick="closeFrameB();ctrl.refreshOverview();">⊞</button>
       <button class="vf-tb-icon-btn" title="Settings">⚙</button>
       <button class="vf-tb-icon-btn" title="Help">?</button>
@@ -151,10 +137,30 @@
           <g id="fb-context-offline"></g>
           <!-- Production summary text -->
           <text id="fb-prod-text" x="20" y="30" fill="var(--vf-text-secondary)" font-size="11" font-family="monospace"></text>
-          <!-- Footer note -->
-          <text x="20" y="805" fill="var(--vf-text-muted)" font-size="10">TIPA ASSY Line — Physical Top-Down View — RIGHT→LEFT flow</text>
-          <text x="1820" y="805" fill="var(--vf-text-muted)" font-size="10" text-anchor="end">t=0s DWELL 0</text>
         </svg>
+
+        <!-- I09-P06: Floating Simulation Control (bottom-left of canvas) -->
+        <div id="vf-sim-panel">
+          <div class="vf-sim-panel-title">Simulation</div>
+          <div class="vf-sim-panel-status">
+            <span id="fb-live-status" class="vf-status-item live">● LIVE</span>
+            <span id="fb-sim-time" class="vf-status-time">t=0s</span>
+            <span id="fb-dwell" class="vf-status-item">DWELL 0</span>
+          </div>
+          <div id="fb-line-state" class="vf-sim-line-state">Conveyor: stopped (post-index)</div>
+          <div class="vf-sim-panel-controls">
+            <button id="btn-reset" class="vf-btn danger-outline" onclick="uiReset()">↻ RESET</button>
+            <button id="btn-step" class="vf-btn primary" onclick="uiStep()">▶ STEP</button>
+            <button id="btn-auto" class="vf-btn accent-outline" onclick="uiToggleAuto()">▶▶ AUTO</button>
+            <button id="btn-pause" class="vf-btn" onclick="uiPause()" disabled>⏸ PAUSE</button>
+            <select class="vf-ft-select" id="fb-speed-select" onchange="ctrlB.setSpeed(this.value)">
+              <option value="0.1">0.1x</option>
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option><option value="1" selected>1x</option>
+              <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
+            </select>
+          </div>
+        </div>
 
         <!-- Floating Popup (top-right, reference-style) -->
         <div id="vf-popup">
@@ -319,7 +325,7 @@
       </label>
     </div>
     <div class="vf-ft-group">
-      <label class="vf-ft-label">
+      <label class="vf-ft-label" id="vf-speed-label-a">
         Speed:
         <select class="vf-ft-select" id="speed-select" onchange="ctrl.setSpeed(this.value)">
           <option value="0.1">0.1x</option>
@@ -328,12 +334,6 @@
           <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
         </select>
       </label>
-      <select class="vf-ft-select" id="fb-speed-select" onchange="ctrlB.setSpeed(this.value)" style="display:none;">
-        <option value="0.1">0.1x</option>
-        <option value="0.25">0.25x</option>
-        <option value="0.5">0.5x</option><option value="1" selected>1x</option>
-        <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
-      </select>
     </div>
     <div class="vf-ft-group">
       <!-- Frame B zoom controls -->
@@ -346,71 +346,8 @@
     </div>
   </footer>
 
-</div><!-- /app -
+</div><!-- /app -->
 
-<script src="/static/assy_demo.js"></script>
-</body>
-</html>
-        <button id="fb-btn-pause" onclick="ctrlB.pause()" disabled>&#x23F8; PAUSE</button>
-        <label>Speed:
-          <select id="fb-speed-select" onchange="ctrlB.setSpeed(this.value)">
-            <option value="0.5">0.5x</option><option value="1" selected>1x</option>
-            <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
-          </select>
-        </label>
-        <label>Scenario:
-          <select id="fb-scenario-select" onchange="ctrlB.setScenario(this.value)">
-            <option value="HAPPY_PATH">Happy Path</option>
-            <option value="AP06_FAIL_RETEST_PASS">AP06 Fail &#x2192; Retest &#x2192; Pass</option>
-            <option value="AP08_NG_REINSPECT_PASS">AP08 NG &#x2192; Reinspect &#x2192; Pass</option>
-            <option value="FAILED_FINAL">Failed Final</option>
-          </select>
-        </label>
-      </div>
-      <div class="fb-zoom-group">
-        <button onclick="ctrlB.zoomOut()" title="Zoom Out">&minus;</button>
-        <button onclick="ctrlB.zoomReset()" title="100%">100%</button>
-        <button onclick="ctrlB.zoomIn()" title="Zoom In">+</button>
-        <button onclick="ctrlB.zoomFit()" title="Fit">Fit</button>
-      </div>
-    </footer>
-  </div>
-
-  <!-- ===== S04 Fallback ===== -->
-  <div id="frame-s04">
-    <header><h1>TIPA Motor Assembly Line Simulation</h1>
-      <div id="status-bar">
-        <span id="sim-time">t=0s</span><span id="line-state" class="state stopped">STOPPED</span>
-        <span id="dwell">Dwell 0</span><span id="speed-display">1x</span>
-        <span id="scenario-display">HAPPY_PATH</span>
-      </div>
-    </header>
-    <main><section id="assy-line"><div id="conveyor-track"><div id="positions-container"></div></div>
-      <div id="line-legend"><span class="legend pass">PASS</span><span class="legend fail">FAIL/NG</span>
-      <span class="legend hold">HOLD</span><span class="legend released">RELEASED</span><span class="legend empty">EMPTY</span></div>
-    </section>
-    <aside id="side-panel">
-      <div class="panel-box"><h3>Production</h3><div id="prod-summary">
-        <div>Motors: <span id="motors-completed">0</span></div><div>Released: <span id="motors-released">0</span></div>
-        <div>On line: <span id="wips-on-line">0</span></div><div>Holds: <span id="active-holds">0</span></div>
-        <div>RSO2 buffer: <span id="rso2-buf">0</span></div></div></div>
-      <div class="panel-box"><h3>Genealogy</h3><div id="genealogy-list"></div></div>
-      <div class="panel-box"><h3>Recent Quality Events</h3><div id="quality-events"></div></div>
-    </aside></main>
-    <footer id="controls-s04">
-      <button id="btn-reset-s04" onclick="ctrlS04.reset()">&#x27F3; RESET</button>
-      <button id="btn-step-s04" onclick="ctrlS04.step()">&#x25B6; STEP</button>
-      <button id="btn-auto-s04" onclick="ctrlS04.toggleAuto()">&#x25B6;&#x25B6; AUTO</button>
-      <button id="btn-pause-s04" onclick="ctrlS04.pause()" disabled>&#x23F8; PAUSE</button>
-      <label>Speed:<select id="speed-select-s04" onchange="ctrlS04.setSpeed(this.value)">
-        <option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="5">5x</option><option value="10">10x</option></select></label>
-      <label>Scenario:<select id="scenario-select-s04" onchange="ctrlS04.setScenario(this.value)">
-        <option value="HAPPY_PATH">Happy Path</option><option value="AP06_FAIL_RETEST_PASS">AP06 Fail &#x2192; Retest &#x2192; Pass</option>
-        <option value="AP08_NG_REINSPECT_PASS">AP08 NG &#x2192; Reinspect &#x2192; Pass</option><option value="FAILED_FINAL">Failed Final</option></select></label>
-    </footer>
-  </div>
-
-</div>
 <script src="/static/assy_demo.js"></script>
 </body>
 </html>
