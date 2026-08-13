@@ -43,9 +43,9 @@ const VF_TOKEN_LABEL = {STATOR:'STATOR',JOINED:'JOINED',PRETEST:'PRE-TEST',TESTE
 
 // Station operation names (C03R canonical)
 const STATION_OPS = {
-  'PRE-ASSY':'Prep','AP01':'Stator Assy','AP02':'Term. Box','AP03':'Mech. Check',
-  'AP04':'JOIN','AP05':'Mech. Assy','AP06':'EOL Test','AP07':'Finish',
-  'AP08':'Vision','AP09':'Boxing','AP10':'Pack / Label','AP11':'Final QC'
+  'PRE-ASSY':'Prep','AP01':'TBox Install','AP02':'TBox Wiring','AP03':'SSO2 & TBox QC',
+  'AP04':'RSO2 & BB-LS','AP05':'BB-OS, Fan & Cover','AP06':'Electrical Test','AP07':'Nameplate & Finish',
+  'AP08':'Visual Inspection','AP09':'Boxing','AP10':'Pack & Palletize','AP11':'Packing QC'
 };
 
 /* ═══════════════════════════════════════
