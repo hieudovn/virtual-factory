@@ -37,10 +37,10 @@
       </div>
 
       <div class="vf-tb-controls">
-        <button id="btn-reset" class="vf-btn danger-outline" onclick="ctrl.reset()">↻ RESET</button>
-        <button id="btn-step" class="vf-btn primary" onclick="ctrl.step()">▶ STEP</button>
-        <button id="btn-auto" class="vf-btn accent-outline" onclick="ctrl.toggleAuto()">▶▶ AUTO</button>
-        <button id="btn-pause" class="vf-btn" onclick="ctrl.pause()" disabled>⏸ PAUSE</button>
+        <button id="btn-reset" class="vf-btn danger-outline" onclick="uiReset()">↻ RESET</button>
+        <button id="btn-step" class="vf-btn primary" onclick="uiStep()">▶ STEP</button>
+        <button id="btn-auto" class="vf-btn accent-outline" onclick="uiToggleAuto()">▶▶ AUTO</button>
+        <button id="btn-pause" class="vf-btn" onclick="uiPause()" disabled>⏸ PAUSE</button>
       </div>
 
       <!-- Frame B sub-line ID (visible only in Frame B) -->
@@ -318,11 +318,15 @@
       <label class="vf-ft-label">
         Speed:
         <select class="vf-ft-select" id="speed-select" onchange="ctrl.setSpeed(this.value)">
+          <option value="0.1">0.1x</option>
+          <option value="0.25">0.25x</option>
           <option value="0.5">0.5x</option><option value="1" selected>1x</option>
           <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
         </select>
       </label>
       <select class="vf-ft-select" id="fb-speed-select" onchange="ctrlB.setSpeed(this.value)" style="display:none;">
+        <option value="0.1">0.1x</option>
+        <option value="0.25">0.25x</option>
         <option value="0.5">0.5x</option><option value="1" selected>1x</option>
         <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
       </select>

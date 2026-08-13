@@ -553,6 +553,34 @@ function closeFrameB() {
 }
 
 /* ═══════════════════════════════════════
+   Frame-Aware Top-Bar Control Router
+   ═══════════════════════════════════════ */
+function _inFrameB() {
+  const fb = document.getElementById('frame-b');
+  return !!fb && fb.style.display !== 'none';
+}
+
+function uiReset() {
+  if (_inFrameB()) ctrlB.reset();
+  else ctrl.reset();
+}
+
+function uiStep() {
+  if (_inFrameB()) ctrlB.step();
+  else ctrl.step();
+}
+
+function uiToggleAuto() {
+  if (_inFrameB()) ctrlB.toggleAuto();
+  else ctrl.toggleAuto();
+}
+
+function uiPause() {
+  if (_inFrameB()) ctrlB.pause();
+  else ctrl.pause();
+}
+
+/* ═══════════════════════════════════════
    I07 Motion Engine — Controlled Runtime-Truth Motion
    ═══════════════════════════════════════ */
 const MotionEngine = {
