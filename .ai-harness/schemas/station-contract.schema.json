@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtual-factory.ai-harness/schemas/station-contract.schema.json",
+  "title": "Station Contract",
+  "description": "Generic capability-based contract for one ASSY station. OPS-01 design/contract only — no runtime implementation at this gate.",
+  "type": "object",
+  "required": ["station_id", "capabilities"],
+  "additionalProperties": false,
+  "properties": {
+    "station_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Position/station identifier, e.g. AP03."
+    },
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "execution",
+        "checklist",
+        "measurement",
+        "quality_decision",
+        "exception",
+        "identity_transformation",
+        "final_disposition"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "execution": { "type": "boolean", "description": "Station performs a physical/manufacturing operation." },
+        "checklist": { "type": "boolean", "description": "Operation requires checklist item confirmation." },
+        "measurement": { "type": "boolean", "description": "Operation produces measurable values." },
+        "quality_decision": { "type": "boolean", "description": "Operation yields a PASS/FAIL/NG quality decision." },
+        "exception": { "type": "boolean", "description": "Operation may raise HOLD / LINE OUT / note." },
+        "identity_transformation": { "type": "boolean", "description": "Operation transforms WIP identity (e.g. AP04 JOIN)." },
+        "final_disposition": { "type": "boolean", "description": "Operation disposes the WIP (release/hold/reject)." }
+      }
+    },
+    "default_mode": {
+      "type": "string",
+      "enum": ["MANUAL", "AUTO", "ASSISTED"],
+      "default": "AUTO",
+      "description": "Default completion mode for this station contract."
+    },
+    "normal_action": {
+      "type": "string",
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE"],
+      "description": "Primary completion action exposed by the station."
+    },
+    "required_action": {
+      "type": "string",
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE"],
+      "description": "Action required before the WIP is eligible to index."
+    },
+    "work_duration_s": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Configured simulated operation duration, independent of visual animation timing."
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Station IDs whose contracts must be satisfied before this station may execute (e.g. AP04 requires AP03)."
+    }
+  }
+}

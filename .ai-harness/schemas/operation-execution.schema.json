@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtual-factory.ai-harness/schemas/operation-execution.schema.json",
+  "title": "Operation Execution",
+  "description": "State model for one operation execution at a station. OPS-01 design/contract only — additive to positions[]; does not alter occupancy truth.",
+  "type": "object",
+  "required": ["execution_id", "station_id", "wip_id", "state"],
+  "additionalProperties": false,
+  "properties": {
+    "execution_id": { "type": "string", "minLength": 1 },
+    "station_id": { "type": "string", "minLength": 1 },
+    "wip_id": { "type": "string", "minLength": 1 },
+    "state": {
+      "type": "string",
+      "enum": [
+        "ARRIVED",
+        "READY",
+        "WORKING",
+        "AWAITING_COMPLETION",
+        "AWAITING_DECISION",
+        "COMPLETED",
+        "HELD",
+        "FAILED",
+        "EXCEPTION_PENDING",
+        "ELIGIBLE_TO_INDEX"
+      ]
+    },
+    "started_at_sim_s": { "type": ["number", "null"] },
+    "completed_at_sim_s": { "type": ["number", "null"] },
+    "work_duration_s": { "type": "number" },
+    "completion_mode": {
+      "type": "string",
+      "enum": ["MANUAL", "AUTO", "ASSISTED"]
+    },
+    "inputs": { "type": "object" },
+    "checklist": { "type": "array", "items": { "type": "string" } },
+    "measurements": { "type": "array", "items": { "type": "object" } },
+    "operation_result": {
+      "type": ["string", "null"],
+      "enum": ["DONE", "JOIN_COMPLETE", "TEST_COMPLETE", "INSPECTION_COMPLETE", "CONFIRMED", null]
+    },
+    "quality_result": {
+      "type": ["string", "null"],
+      "enum": ["PASS", "FAIL", "NG", null]
+    },
+    "routing_action": {
+      "type": ["string", "null"],
+      "enum": ["CONTINUE", "STAY_AT_STATION", "LINE_OUT", "LINE_IN", null]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["simulated", "manual", "imported"] }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    }
+  }
+}

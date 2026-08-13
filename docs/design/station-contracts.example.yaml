@@ -1,0 +1,192 @@
+# OPS-01 — Station contract examples (machine-readable draft)
+# Design/contract only — no runtime implementation.
+# Schema: .ai-harness/schemas/station-contract.schema.json
+
+stations:
+  - station_id: PRE-ASSY
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: false
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: DONE
+    required_action: DONE
+    work_duration_s: 30
+
+  - station_id: AP01
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: false
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: DONE
+    required_action: DONE
+    work_duration_s: 60
+
+  - station_id: AP02
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: false
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: DONE
+    required_action: DONE
+    work_duration_s: 75
+
+  - station_id: AP03
+    default_mode: MANUAL
+    capabilities:
+      execution: true
+      checklist: true
+      measurement: false
+      quality_decision: true
+      exception: true
+      identity_transformation: false
+      final_disposition: false
+    normal_action: CONFIRM_AND_COMPLETE
+    required_action: CONFIRM_AND_COMPLETE
+    work_duration_s: 45
+
+  - station_id: AP04
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: false
+      exception: false
+      identity_transformation: true
+      final_disposition: false
+    normal_action: JOIN_COMPLETE
+    required_action: JOIN_COMPLETE
+    work_duration_s: 60
+    prerequisites: [AP03]
+
+  - station_id: AP05
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: false
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: DONE
+    required_action: DONE
+    work_duration_s: 90
+
+  - station_id: AP06
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: true
+      quality_decision: true
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: CONFIRM
+    required_action: CONFIRM
+    work_duration_s: 60
+
+  - station_id: AP07
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: false
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: DONE
+    required_action: DONE
+    work_duration_s: 30
+
+  - station_id: AP08
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: true
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: CONFIRM
+    required_action: CONFIRM
+    work_duration_s: 30
+
+  - station_id: AP09
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: false
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: DONE
+    required_action: DONE
+    work_duration_s: 45
+
+  - station_id: AP10
+    default_mode: AUTO
+    capabilities:
+      execution: true
+      checklist: false
+      measurement: false
+      quality_decision: false
+      exception: false
+      identity_transformation: false
+      final_disposition: false
+    normal_action: DONE
+    required_action: DONE
+    work_duration_s: 45
+
+  - station_id: AP11
+    default_mode: MANUAL
+    capabilities:
+      execution: true
+      checklist: true
+      measurement: false
+      quality_decision: true
+      exception: true
+      identity_transformation: false
+      final_disposition: true
+    normal_action: RELEASE
+    required_action: RELEASE
+    work_duration_s: 30
+
+# Example OperationExecution snapshot projection (additive — does not alter positions[])
+operation_execution_example:
+  execution_id: EXEC-00042
+  station_id: AP05
+  wip_id: MTR-0042
+  state: WORKING
+  started_at_sim_s: 1840
+  completed_at_sim_s: null
+  work_duration_s: 35
+  completion_mode: AUTO
+  inputs: {}
+  checklist: []
+  measurements: []
+  operation_result: null
+  quality_result: null
+  routing_action: null
+  source:
+    type: simulated
