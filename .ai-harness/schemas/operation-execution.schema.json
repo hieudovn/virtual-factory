@@ -4,7 +4,26 @@
   "title": "Operation Execution",
   "description": "State model for one operation execution at a station. OPS-01 design/contract, reconciled with OPS-02 runtime serialization (C03). Additive to positions[]; does not alter occupancy truth.",
   "type": "object",
-  "required": ["execution_id", "station_id", "wip_id", "state"],
+  "required": [
+    "execution_id",
+    "station_id",
+    "wip_id",
+    "state",
+    "started_at_sim_s",
+    "completed_at_sim_s",
+    "work_duration_s",
+    "completion_mode",
+    "command",
+    "inputs",
+    "checklist",
+    "measurements",
+    "operation_result",
+    "quality_result",
+    "routing_action",
+    "source",
+    "attempt_number",
+    "terminal"
+  ],
   "additionalProperties": false,
   "$defs": {
     "checklistItem": {

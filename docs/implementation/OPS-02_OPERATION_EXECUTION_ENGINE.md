@@ -59,4 +59,10 @@
 - **Executable validation.** `tests/test_ops02_schema_contract.py` loads the authoritative schema and validates real runtime `to_dict()` payloads using `jsonschema` (`Draft202012Validator`): 9 positive runtime cases + 5 negative fail-closed cases, plus schema file-quality checks. Added `jsonschema>=4.0` to `[project.optional-dependencies].dev`.
 - `active_operations[]` (`ActiveOperationView`) is a UI read-model subset (empty-string enum defaults, no `checklist`/`source`) and is intentionally **not** validated against this full contract schema.
 
+## OPS-02-C03-R1 — Contract hardening
+
+- **Full serialization shape locked.** All 18 fields always emitted by `OperationExecution.to_dict()` are now in `required` (nullable fields may still be `null`; `required` only requires the key to exist). A partial payload (e.g. only identity + state) is no longer schema-valid.
+- **Hard dependency.** `jsonschema` is imported directly in the contract tests — a missing dev dependency now fails (errors), not skips.
+- Added negative test: deleting any always-emitted field (`attempt_number`, `terminal`, `source`, `work_duration_s`) must fail validation. No runtime changes.
+
 

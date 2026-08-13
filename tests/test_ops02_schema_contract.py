@@ -14,11 +14,7 @@ import json
 from pathlib import Path
 
 import pytest
-
-try:
-    import jsonschema
-except ImportError:  # pragma: no cover - dependency not installed
-    jsonschema = None
+import jsonschema
 
 from virtual_factory.assembly.line_runtime import (
     AssyLineConfig,
@@ -35,11 +31,6 @@ SCHEMA_PATH = (
     Path(__file__).resolve().parents[1]
     / ".ai-harness" / "schemas" / "operation-execution.schema.json"
 )
-
-needs_jsonschema = pytest.mark.skipif(
-    jsonschema is None, reason="jsonschema not installed"
-)
-
 
 # ═══════════════════════════════════════════════════════════
 # Helpers (self-contained; mirror the OPS-02 test fast-config)
@@ -139,7 +130,6 @@ def test_schema_is_draft_2020_12_with_metadata(schema: dict):
     assert schema.get("additionalProperties") is False
 
 
-@needs_jsonschema
 def test_schema_is_itself_valid(schema: dict):
     jsonschema.Draft202012Validator.check_schema(schema)
 
@@ -148,7 +138,6 @@ def test_schema_is_itself_valid(schema: dict):
 # Positive — representative runtime payloads validate
 # ═══════════════════════════════════════════════════════════
 
-@needs_jsonschema
 def test_case1_simple_auto_execution(validator):
     line = setup_line(make_fast_config())
     line.global_run_mode = CompletionMode.AUTO
@@ -160,7 +149,6 @@ def test_case1_simple_auto_execution(validator):
     assert_valid(validator, payload)
 
 
-@needs_jsonschema
 def test_case2_manual_waiting(validator):
     line = setup_line(make_fast_config())
     advance_to_before(line, "AP01")
@@ -172,7 +160,6 @@ def test_case2_manual_waiting(validator):
     assert_valid(validator, payload)
 
 
-@needs_jsonschema
 def test_case3_ap03_structured_checklist(validator):
     line = setup_line(make_fast_config())
     advance_to_before(line, "AP03")
@@ -195,7 +182,6 @@ def test_case3_ap03_structured_checklist(validator):
     assert_valid(validator, payload)
 
 
-@needs_jsonschema
 def test_case4_ap06_pass(validator):
     line = setup_line(make_fast_config(ap06="PASS"))
     line.global_run_mode = CompletionMode.AUTO
@@ -207,7 +193,6 @@ def test_case4_ap06_pass(validator):
     assert_valid(validator, payload)
 
 
-@needs_jsonschema
 def test_case5_ap06_fail_retest_pending(validator):
     cfg = make_fast_config(ap06="FAIL_FIRST_THEN_PASS")
     cfg.quality.ap06.max_attempts = 2
@@ -221,7 +206,6 @@ def test_case5_ap06_fail_retest_pending(validator):
     assert_valid(validator, payload)
 
 
-@needs_jsonschema
 def test_case6_ap06_terminal_failed_final(validator):
     cfg = make_fast_config(ap06="ALWAYS_FAIL")
     cfg.quality.ap06.max_attempts = 2
@@ -237,7 +221,6 @@ def test_case6_ap06_terminal_failed_final(validator):
     assert_valid(validator, payload)
 
 
-@needs_jsonschema
 def test_case7_ap08_inspection(validator):
     line = setup_line(make_fast_config(ap08="PASS"))
     line.global_run_mode = CompletionMode.AUTO
@@ -249,7 +232,6 @@ def test_case7_ap08_inspection(validator):
     assert_valid(validator, payload)
 
 
-@needs_jsonschema
 def test_case8_ap11_released(validator):
     line = setup_line(make_fast_config())
     line.global_run_mode = CompletionMode.AUTO
@@ -260,7 +242,6 @@ def test_case8_ap11_released(validator):
     assert_valid(validator, payload)
 
 
-@needs_jsonschema
 def test_case9_assisted_waiting(validator):
     line = setup_line(make_fast_config())
     advance_to_before(line, "AP03")
@@ -298,36 +279,38 @@ def test_case10_active_operations_projection_is_a_view():
 # Negative — schema fails closed
 # ═══════════════════════════════════════════════════════════
 
-@needs_jsonschema
 def test_negative_checklist_missing_item_id(validator):
     p = base_payload()
     p["checklist"] = [{"completed": True}]
     assert_invalid(validator, p)
 
 
-@needs_jsonschema
 def test_negative_checklist_non_boolean_completed(validator):
     p = base_payload()
     p["checklist"] = [{"item_id": "demo_item_1", "completed": "yes"}]
     assert_invalid(validator, p)
 
 
-@needs_jsonschema
 def test_negative_invalid_completion_mode(validator):
     p = base_payload()
     p["completion_mode"] = "HYBRID"
     assert_invalid(validator, p)
 
 
-@needs_jsonschema
 def test_negative_unknown_top_level_property(validator):
     p = base_payload()
     p["unexpected_field"] = 1
     assert_invalid(validator, p)
 
 
-@needs_jsonschema
 def test_negative_invalid_state_enum(validator):
     p = base_payload()
     p["state"] = "NOT_A_STATE"
     assert_invalid(validator, p)
+
+
+def test_negative_missing_required_field(validator):
+    for field in ("attempt_number", "terminal", "source", "work_duration_s"):
+        p = base_payload()
+        del p[field]
+        assert_invalid(validator, p)
