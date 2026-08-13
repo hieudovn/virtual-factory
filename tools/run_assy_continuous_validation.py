@@ -26,11 +26,6 @@ from virtual_factory.assembly.demo_composition import (
 )
 
 
-SSO2_TARGET = 10          # bounded upstream SSO2 inventory target
-SSO2_LOW_WATERMARK = 3    # top-up when remaining < this
-RSO2_TARGET = 6           # bounded RSO2 buffer target (on-demand top-up)
-
-
 def run(
     config_path: str,
     sub_line_id: str,
@@ -43,6 +38,7 @@ def run(
         config_path=config_path,
         scenario=DemoScenario(scenario),
         selected_sub_line_id=sub_line_id,
+        continuous_feed_enabled=continuous_feed,
     )
     composition.initialize()
     composition.select_sub_line(sub_line_id)
@@ -60,16 +56,8 @@ def run(
             ctx = composition.selected_context
             assert ctx is not None
 
-            # --- Continuous feed (demo/test driver only) ---
-            if continuous_feed:
-                remaining_sso2 = len(ctx.sso2_ids) - ctx.sso2_idx
-                if remaining_sso2 < SSO2_LOW_WATERMARK:
-                    for _ in range(SSO2_TARGET - remaining_sso2):
-                        ctx.sso2_ids.append(ctx.runtime.produce_sso2_wip())
-                if ctx.runtime.rso2_buffer_size < RSO2_TARGET:
-                    # Top-up RSO2 buffer (on-demand, bounded)
-                    for _ in range(RSO2_TARGET - ctx.runtime.rso2_buffer_size):
-                        ctx.runtime.produce_rso2_wip()
+            # Continuous feed is applied inside composition.step_all()
+            # via the shared ContinuousFeedPolicy. No duplicate logic here.
 
             composition.step_all()
 

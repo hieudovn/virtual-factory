@@ -86,6 +86,35 @@ SCENARIO_TARGET_DEFAULTS: dict[DemoScenario, str] = {
 
 
 # ═══════════════════════════════════════════════════════════
+# Continuous Feed Policy (DEMO ORCHESTRATION — not plant truth)
+# ═══════════════════════════════════════════════════════════
+
+@dataclass
+class ContinuousFeedPolicy:
+    """Bounded upstream replenishment policy for DEMO orchestration only.
+
+    Replenishes SSO2 upstream inventory and tops up the RSO2 buffer.
+    Does NOT modify AssyLineRuntime business semantics.
+    Replenished WIPs enter ASSY only through existing introduce_next_sso2().
+    """
+
+    sso2_target: int = 10
+    sso2_low_watermark: int = 3
+    rso2_target: int = 6   # DEMO POLICY — not plant truth
+
+    def replenish(self, ctx: "AssyDemoContext") -> None:
+        """Top up SSO2 feed queue and RSO2 buffer for one context."""
+        remaining_sso2 = len(ctx.sso2_ids) - ctx.sso2_idx
+        if remaining_sso2 < self.sso2_low_watermark:
+            for _ in range(self.sso2_target - remaining_sso2):
+                ctx.sso2_ids.append(ctx.runtime.produce_sso2_wip())
+        # RSO2 top-up (DEMO POLICY) — in addition to on-demand in step_context
+        if ctx.runtime.rso2_buffer_size < self.rso2_target:
+            for _ in range(self.rso2_target - ctx.runtime.rso2_buffer_size):
+                ctx.runtime.produce_rso2_wip()
+
+
+# ═══════════════════════════════════════════════════════════
 # AssyDemoContext
 # ═══════════════════════════════════════════════════════════
 
@@ -160,6 +189,10 @@ class AssyDemoComposition:
     config_path: str
     scenario: DemoScenario = DemoScenario.HAPPY_PATH
     selected_sub_line_id: str = "ASSY-SL01"
+
+    # DEMO orchestration feed policy (not plant truth)
+    continuous_feed_enabled: bool = True
+    feed_policy: ContinuousFeedPolicy = field(default_factory=ContinuousFeedPolicy)
 
     # Initialized state
     identity: Optional[AssyProductionLineIdentity] = None
@@ -288,7 +321,15 @@ class AssyDemoComposition:
         Each context advances independently via step_context().
         demo_step_number increments once per composition step.
         No assertion about equal simulation_time_s.
+
+        SIM-VAL-01-C01: applies continuous feed policy (when enabled)
+        BEFORE each context steps, so upstream inventory is available
+        for introduce_next_sso2() during index.
         """
+        if self.continuous_feed_enabled:
+            for ctx in self.contexts.values():
+                self.feed_policy.replenish(ctx)
+
         for ctx in self.contexts.values():
             ctx.step_context()
         self.demo_step_number += 1
@@ -299,11 +340,20 @@ class AssyDemoComposition:
         """Build detached snapshot for the currently selected context.
 
         Uses the context's effective scenario, not the global demo scenario.
+        SIM-VAL-01-C01: attaches canonical sub-line identity.
         """
         ctx = self.selected_context
         if ctx is None:
             return AssyDemoSnapshot()
-        return build_snapshot(ctx.runtime, ctx.effective_scenario.value)
+        snap = build_snapshot(ctx.runtime, ctx.effective_scenario.value)
+        plant_id = "TIPA"
+        if self.identity:
+            plant_id = self.identity.plant_id
+        snap.plant_id = plant_id
+        snap.production_line_id = ctx.identity.production_line_id
+        snap.sub_line_id = ctx.identity.sub_line_id
+        snap.variant = ctx.identity.variant
+        return snap
 
     # --- Reset ---
 

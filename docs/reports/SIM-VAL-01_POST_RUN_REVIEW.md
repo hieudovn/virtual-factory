@@ -2,6 +2,7 @@
 
 > **Gate**: SIM-VAL-01 (mandatory audit deliverable)  
 > **Baseline SHA**: `4204d4f`  
+> **Updated by**: SIM-VAL-01-C01 (continuous browser runtime proof)  
 > **Purpose**: Identify missing, misleading, unstable, or incomplete aspects across runtime, model, UI/UX, and observability from the actual sustained end-to-end run.  
 > **PM does NOT fix findings here unless explicitly authorized.**
 
@@ -19,24 +20,42 @@ Evidence: BASELINE_RUN.md — 7 released then 0 WIPs, starvation_step=17.
 Expected / desired behavior: Continuous production without starving.
 Impact: Demo stops after ~7 motors unless feed driver used.
 Root-cause hypothesis: Upstream seed is a fixed finite list; no replenishment path in composition.initialize().
-Recommended action: Add bounded upstream replenishment to demo composition OR ship the minimal feed driver.
-Priority: P0 — Fix before internal integrated demo
-Proposed next gate: SIM-VAL-02 or I09-P03 follow-up
-Confidence: HIGH (confirmed by baseline run)
+Recommended action: Add bounded upstream replenishment to demo composition (DONE in C01).
+Priority: P0 — RESOLVED BY C01
+Proposed next gate: —
+Confidence: HIGH
+RESOLUTION: SIM-VAL-01-C01 added ContinuousFeedPolicy to AssyDemoComposition.
+  Actual browser/API instance now sustains >10 releases without starving
+  (C01 browser run: 18 created / 11 released, line still full at 12 WIPs).
 ```
 
 ```text
 Finding ID: A-02
 Category: Runtime / Logic Gaps
-Observed behavior: simulation_time_s advances monotonically by 120s per dwell even when line is empty/stopped after starvation.
-Evidence: baseline trace — simulation_time_s=7200 after 60 steps, but line empty after step 17.
-Expected / desired behavior: Demo clock advances only when meaningful work occurs (or empty steps flagged).
-Impact: Misleading time counter during starvation.
-Root-cause hypothesis: step_all() advances all contexts unconditionally; no idle detection.
-Recommended action: Detect empty/idle state and surface it in UI; do not silently present time as productive.
-Priority: P1 — Improve before official TIPA demo
-Proposed next gate: I09-P04 (popup/inspector info) or SIM-VAL-02
+Observed behavior: simulation_time_s advances monotonically by 120s per dwell; line_state="stopped" appears even during productive steady-state.
+Evidence: C01 browser/API trace — line_state="stopped" 45/45 records while motors continuously created/released.
+Expected / desired behavior: Distinguish conveyor instantaneous state from production starvation/idle state.
+Impact: "stopped" label can be misread as production stopped/starved.
+Root-cause hypothesis: ConveyorState.STOPPED means "conveyor halted, stations may begin operating" (post-index instantaneous state), NOT production stopped. The snapshot is taken after each index completes, so it always shows STOPPED.
+Recommended action: Document semantics; optionally add derived presentation field in a future gate.
+Priority: P1 — SEMANTICS DOCUMENTED (Path A), presentation improvement deferred
+Proposed next gate: I09-P04 (popup/inspector info)
+Confidence: HIGH (confirmed via ConveyorState enum: INDEXING/STOPPED/OPERATING/READY_TO_INDEX)
+```
+
+```text
+Finding ID: A-03 (NEW in C01)
+Category: Runtime / Logic Gaps
+Observed behavior: AssyDemoComposition.snapshot() returned blank sub_line_id/production_line_id/variant/plant_id.
+Evidence: SIM-VAL-01 trace showed sub_line_id="" in all records.
+Expected / desired behavior: Authoritative snapshot carries selected sub-line identity.
+Impact: Trace identity incomplete; evidence ambiguous.
+Root-cause hypothesis: composition.snapshot() called build_snapshot() without attaching ctx.identity.
+Recommended action: Attach identity in composition.snapshot() (DONE in C01).
+Priority: P0 — RESOLVED BY C01
+Proposed next gate: —
 Confidence: HIGH
+RESOLUTION: SIM-VAL-01-C01 now sets plant_id, production_line_id, sub_line_id, variant in composition.snapshot(). Verified: sub_line_id="ASSY-SL01" in API and trace.
 ```
 
 ### B. Simulation Model Gaps
@@ -229,8 +248,9 @@ Priority: TBD
 
 | ID | Category | Finding | Evidence | Impact | Priority | Recommended Action | Proposed Gate |
 |----|----------|---------|----------|--------|----------|-------------------|---------------|
-| A-01 | Runtime | Finite SSO2 seed starves at step 17 | baseline run | Demo stops after 7 motors | P0 | bounded replenishment or ship feed driver | SIM-VAL-02 |
-| A-02 | Runtime | Demo clock advances while empty | baseline trace | Misleading time | P1 | detect idle/empty state | I09-P04 |
+| A-01 | Runtime | Finite SSO2 seed starves at step 17 | baseline run | Demo stops after 7 motors | P0 — RESOLVED BY C01 | bounded replenishment | — |
+| A-02 | Runtime | line_state="stopped" is post-index conveyor state, not production stop | C01 trace | Misleading label | P1 — documented | derived presentation field | I09-P04 |
+| A-03 | Runtime | Snapshot blank sub_line_id | trace | Trace identity incomplete | P0 — RESOLVED BY C01 | attach identity | — |
 | B-01 | Model | RSO2 on-demand cadence | trace | Buffer simplification | TBD | plant validation | plant validation |
 | B-02 | Model | LINE OUT/IN/REWORK conceptual-only | frozen contract | Representational only | TBD | EXH-ROUTE-01 | EXH-ROUTE-01 |
 | B-03 | Model | Uniform 120s dwell | trace | Cycle realism limited | TBD | plant validation | plant validation |
