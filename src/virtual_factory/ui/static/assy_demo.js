@@ -755,6 +755,7 @@ const ctrlB = {
   _liveStatus: 'INIT',
   _selectedStation: null,
   _selectedWipId: null,
+  _contextType: null,   // I09-P04: 'sso2' | 'rso2' | 'offline' | null
   _inspectorOpen: false,
   _popupTab: 'overview',
   _zoomLevel: 1,
@@ -767,6 +768,7 @@ const ctrlB = {
     this._subLineId = subLineId;
     this._selectedStation = null;
     this._selectedWipId = null;
+    this._contextType = null;
     this._inspectorOpen = false;
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     this._stepLocked = false;
@@ -787,6 +789,7 @@ const ctrlB = {
     this._scenario = document.getElementById('fb-scenario-select').value;
     this._selectedStation = null;
     this._selectedWipId = null;
+    this._contextType = null;
     this._inspectorOpen = false;
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     this._lastSnapshot = null;  // I07: discard stale snapshot
@@ -964,6 +967,7 @@ const ctrlB = {
 
     // ── SSO2 INPUT source (near ASSY INPUT / PRE-ASSY, RIGHT side) ──
     const sx = L.rawX + L.rawW / 2;   // zone center (~1810)
+    html += `<g data-context="sso2" style="cursor:pointer;">`;
     html += `<text x="${sx}" y="${L.rawY+42}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">SSO2 INPUT</text>`;
     html += `<text x="${sx}" y="${L.rawY+56}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">STATOR + SHIELD SOURCE</text>`;
     // 3 stator icons stacked vertically, 58px spacing (r=28 → 56px diameter, no overlap)
@@ -974,9 +978,11 @@ const ctrlB = {
     // light connector toward PRE-ASSY (flow RIGHT→LEFT entry)
     const sso2Bottom = L.rawY + 82 + 2 * 58;
     html += `<line x1="${sx - 30}" y1="${sso2Bottom + 22}" x2="${L.preX + 6}" y2="${L.stationY - 26}" stroke="var(--vf-text-muted)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#arrowLeft)"/>`;
+    html += `</g>`;
 
     // ── RSO2 ROTOR FEED (above AP04 JOIN, vertical stack) ──
     const ax = L.ap04X;
+    html += `<g data-context="rso2" style="cursor:pointer;">`;
     html += `<text x="${ax}" y="${L.rso2BranchTopY - 80}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">RSO2 ROTOR FEED</text>`;
     html += `<text x="${ax}" y="${L.rso2BranchTopY - 68}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">TO AP04 JOIN</text>`;
     // 3 rotor icons stacked vertically, 26px spacing (rotor height 16px, no overlap)
@@ -984,8 +990,10 @@ const ctrlB = {
       const ry = L.rso2BranchTopY - 54 + i * 26;
       html += `<g transform="translate(${ax}, ${ry})" opacity="0.78">${VF.rotor(0, 0)}</g>`;
     }
+    html += `</g>`;
 
     g.innerHTML = html;
+    this._bindContextClicks();
   },
 
   /* ── UI-CTX-02: Off-line context tray (representative items, NOT runtime WIP) ── */
@@ -998,6 +1006,7 @@ const ctrlB = {
     let html = '';
 
     // 3 representative ghost items (semi-finished / WIP / finished)
+    html += `<g data-context="offline" style="cursor:pointer;">`;
     const items = [
       { x: cx - 230, type: 'stator', label: 'WIP' },
       { x: cx, type: 'mtr', label: 'MTR' },
@@ -1014,8 +1023,68 @@ const ctrlB = {
     }
     // CONTEXT watermark
     html += `<text x="${L.offLineX + L.offLineW - 14}" y="${L.offLineY + L.offLineH - 10}" fill="var(--vf-text-muted)" font-size="8" text-anchor="end" opacity="0.6">CONTEXT — not live WIP</text>`;
+    html += `</g>`;
 
     g.innerHTML = html;
+    this._bindContextClicks();
+  },
+
+  /* ── I09-P04: Bind context source/offline click handlers ── */
+  _bindContextClicks() {
+    document.querySelectorAll('#fb-context-sources [data-context], #fb-context-offline [data-context]').forEach(el => {
+      if (el._ctxBound) return;
+      el._ctxBound = true;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.selectContext(el.getAttribute('data-context'));
+      });
+    });
+  },
+
+  /* ── I09-P04: Context popup for source/off-line zones ── */
+  selectContext(type) {
+    this._contextType = type;
+    this._selectedStation = null;
+    this._selectedWipId = null;
+    this._inspectorOpen = true;
+    const snap = this._lastSnapshot;
+    if (snap) { this._applyHighlights(); this._renderContextPopup(snap); this._renderInspector(snap); }
+  },
+
+  _renderContextPopup(snap) {
+    const popup = document.getElementById('vf-popup');
+    const title = document.getElementById('vf-popup-title');
+    const body = document.getElementById('vf-popup-body');
+    const tabs = document.getElementById('vf-popup-tabs');
+    if (!this._contextType || !snap) { this.closePopup(); return; }
+    if (tabs) tabs.style.display = 'none';
+
+    const prod = snap.production || {};
+    if (this._contextType === 'sso2') {
+      title.textContent = 'SSO2 INPUT';
+      body.innerHTML = `
+        <div class="vf-context-note">Upstream stator + shield source feeding ASSY start / PRE-ASSY.</div>
+        <div class="vf-popup-row"><span class="vf-popup-k">Context</span><span class="vf-popup-v">source</span></div>
+        <div class="vf-popup-row"><span class="vf-popup-k">SSO2 buffer</span><span class="vf-popup-v">${prod.sso2_buffer !== undefined ? prod.sso2_buffer : 'not exposed'}</span></div>
+        <div class="vf-context-tag">Context source — upstream line not simulated</div>`;
+    } else if (this._contextType === 'rso2') {
+      title.textContent = 'RSO2 ROTOR FEED';
+      body.innerHTML = `
+        <div class="vf-context-note">Rotor source feeding AP04 JOIN.</div>
+        <div class="vf-popup-row"><span class="vf-popup-k">Feeds</span><span class="vf-popup-v">AP04 JOIN</span></div>
+        <div class="vf-popup-row"><span class="vf-popup-k">RSO2 buffer</span><span class="vf-popup-v">${prod.rso2_buffer !== undefined ? prod.rso2_buffer : 'not exposed'}</span></div>
+        <div class="vf-context-tag">Context source — upstream line not simulated</div>`;
+    } else if (this._contextType === 'offline') {
+      title.textContent = 'LINE-OUT / OFF-LINE CONTEXT';
+      body.innerHTML = `
+        <div class="vf-context-note">Items may leave the main line for inspection, diagnosis or verification. Rework is optional; LINE IN represents return routing.</div>
+        <div class="vf-popup-row"><span class="vf-popup-k">Active off-line occupancy</span><span class="vf-popup-v">not tracked in current demo</span></div>
+        <div class="vf-context-tag">Representative items shown are context-only, not live WIP</div>`;
+    } else {
+      this.closePopup();
+      return;
+    }
+    this.openPopup();
   },
 
   /* ── I07: Static elements rendered once per snapshot (stations, context, zones) ── */
@@ -1032,12 +1101,12 @@ const ctrlB = {
 
     const lsEl = document.getElementById('fb-line-state');
     const ls = snap.line_state || 'stopped';
-    lsEl.textContent = ls.toUpperCase();
-    if (ls === 'operating') { lsEl.style.background = '#E6F5EC'; lsEl.style.color = 'var(--vf-state-pass)'; }
-    else if (ls === 'stopped') { lsEl.style.background = '#EEF0F3'; lsEl.style.color = 'var(--vf-text-muted)'; }
-    else if (ls === 'ready_to_index') { lsEl.style.background = '#EAF2FF'; lsEl.style.color = 'var(--vf-accent)'; }
-    else if (ls === 'indexing') { lsEl.style.background = '#FFF3CD'; lsEl.style.color = 'var(--vf-state-hold)'; }
-    else { lsEl.style.background = '#EEF0F3'; lsEl.style.color = 'var(--vf-text-muted)'; }
+    // I09-P04: present conveyor state semantically (stopped ≠ production stopped)
+    if (ls === 'stopped') { lsEl.textContent = 'Conveyor: stopped (post-index)'; lsEl.style.background = '#EEF0F3'; lsEl.style.color = 'var(--vf-text-muted)'; }
+    else if (ls === 'operating') { lsEl.textContent = 'Conveyor: station work'; lsEl.style.background = '#E6F5EC'; lsEl.style.color = 'var(--vf-state-pass)'; }
+    else if (ls === 'ready_to_index') { lsEl.textContent = 'Conveyor: ready to index'; lsEl.style.background = '#EAF2FF'; lsEl.style.color = 'var(--vf-accent)'; }
+    else if (ls === 'indexing') { lsEl.textContent = 'Conveyor: indexing'; lsEl.style.background = '#FFF3CD'; lsEl.style.color = 'var(--vf-state-hold)'; }
+    else { lsEl.textContent = ls.toUpperCase(); lsEl.style.background = '#EEF0F3'; lsEl.style.color = 'var(--vf-text-muted)'; }
 
     const prod = snap.production || {};
     document.getElementById('fb-prod-text').textContent =
@@ -1120,7 +1189,8 @@ const ctrlB = {
       const tokenType = VF_TOKEN[stId] || 'STATOR';
 
       // I07: render WIP with unique ID for motion targeting
-      html += `<g id="wip-${p.wip_id}" class="vf-wip-group" data-wip="${p.wip_id}" style="cursor:pointer;">`;
+      const isSelWip = (p.wip_id === this._selectedWipId);
+      html += `<g id="wip-${p.wip_id}" class="vf-wip-group${isSelWip?' selected':''}" data-wip="${p.wip_id}" style="cursor:pointer;">`;
       html += VF.pallet(sx, sy + 165);
       if (tokenType === 'STATOR') html += VF.statorAssy(sx, sy + 163);
       else if (tokenType === 'JOINED') html += VF.motorJoined(sx, sy + 163);
@@ -1150,6 +1220,10 @@ const ctrlB = {
         if (rects.length > 0) rects[0].style.filter = 'drop-shadow(0 0 6px rgba(47,111,219,0.4))';
       }
     }
+    // I09-P04: selected-WIP highlight follow
+    document.querySelectorAll('#fb-wips .vf-wip-group').forEach(el => {
+      el.classList.toggle('selected', this._selectedWipId === el.getAttribute('data-wip'));
+    });
   },
 
   _bindStationClicks() {
@@ -1177,6 +1251,7 @@ const ctrlB = {
     if (this._selectedStation === stId && !this._selectedWipId) { this.closeInspector(); return; }
     this._selectedStation = stId;
     this._selectedWipId = null;
+    this._contextType = null;
     const snap = this._lastSnapshot;
     if (snap) {
       const pos = (snap.positions||[]).find(p => p.position_id === stId);
@@ -1190,6 +1265,7 @@ const ctrlB = {
   selectWip(wipId) {
     this._selectedWipId = wipId;
     this._selectedStation = null;
+    this._contextType = null;
     const snap = this._lastSnapshot;
     if (snap) {
       const pos = (snap.positions||[]).find(p => p.wip_id === wipId);
@@ -1217,6 +1293,7 @@ const ctrlB = {
     this._inspectorOpen = false;
     this._selectedStation = null;
     this._selectedWipId = null;
+    this._contextType = null;
     this._applyHighlights();
     this._renderInspector(this._lastSnapshot);
     this.closePopup();
@@ -1232,6 +1309,8 @@ const ctrlB = {
     const popup = document.getElementById('vf-popup');
     const title = document.getElementById('vf-popup-title');
     const body = document.getElementById('vf-popup-body');
+    const tabs = document.getElementById('vf-popup-tabs');
+    if (tabs) tabs.style.display = '';   // restore tabs for station/WIP inspector
 
     const stId = this._selectedStation;
     const wipId = this._selectedWipId;
@@ -1250,6 +1329,12 @@ const ctrlB = {
       html += `<div class="vf-popup-row"><span class="vf-popup-k">Status</span><span class="vf-popup-v">${pos.manufacturing_status||'active'}</span></div>`;
       html += `<div class="vf-popup-row"><span class="vf-popup-k">Quality</span><span class="vf-popup-v" style="color:${qColor};font-weight:600">${pos.latest_quality_result||'clear'}${pos.attempt_number>1?' #'+pos.attempt_number:''}</span></div>`;
       if (pos.is_quality_hold) html += `<div class="vf-popup-row"><span class="vf-popup-k">Hold</span><span class="vf-popup-v" style="color:var(--vf-state-fail)">${pos.held_reason||'Active'}</span></div>`;
+      // I09-P04: genealogy for MTR children
+      const childGenealogy = (snap.genealogy||[]).filter(g => g.child_wip_id === pos.wip_id);
+      if (childGenealogy.length) {
+        const g = childGenealogy[childGenealogy.length-1];
+        html += `<div class="vf-popup-sep"></div><div class="vf-popup-row"><span class="vf-popup-k">Joined</span><span class="vf-popup-v">← ${(g.parent_wip_ids||[]).join(' + ')} @ ${g.join_station||'AP04'}</span></div>`;
+      }
       body.innerHTML = html;
     } else if (pos && !pos.is_occupied) {
       title.textContent = `${stId} — Empty`;
@@ -1258,9 +1343,18 @@ const ctrlB = {
       title.textContent = `WIP ${wipId}`;
       const onLine = (snap.positions||[]).some(p => p.wip_id === wipId);
       const recs = (snap.quality_records||[]).filter(qr => qr.wip_id === wipId);
-      body.innerHTML = `<div class="vf-popup-row"><span class="vf-popup-k">WIP</span><span class="vf-popup-v">${wipId}</span></div>
-        ${!onLine?'<div class="vf-insp-historical">HISTORICAL — Exited line</div>':''}
-        <div class="vf-popup-row"><span class="vf-popup-k">Records</span><span class="vf-popup-v">${recs.length} quality records</span></div>`;
+      let html = `<div class="vf-popup-row"><span class="vf-popup-k">WIP</span><span class="vf-popup-v">${wipId}</span></div>`;
+      // I09-P04: AP04 identity boundary — selected SSO2 consumed → child MTR
+      const asParent = (snap.genealogy||[]).filter(g => (g.parent_wip_ids||[]).includes(wipId));
+      if (!onLine && asParent.length) {
+        const g = asParent[asParent.length-1];
+        html += `<div class="vf-context-note">Consumed at ${g.join_station||'AP04'} — this identity is now the parent of a new motor.</div>`;
+        html += `<div class="vf-popup-row"><span class="vf-popup-k">Child MTR</span><span class="vf-popup-v" style="cursor:pointer;color:var(--vf-accent);font-weight:600" onclick="ctrlB.selectWip('${g.child_wip_id}')">${g.child_wip_id} ↗</span></div>`;
+      } else if (!onLine) {
+        html += `<div class="vf-insp-historical">HISTORICAL — Exited line</div>`;
+      }
+      html += `<div class="vf-popup-row"><span class="vf-popup-k">Records</span><span class="vf-popup-v">${recs.length} quality records</span></div>`;
+      body.innerHTML = html;
     } else {
       title.textContent = 'Inspector';
       body.innerHTML = '<div class="vf-popup-empty">Select a station or WIP</div>';
@@ -1286,8 +1380,12 @@ const ctrlB = {
     for (const p of (snap.positions||[])) posMap[p.position_id] = p;
     const pos = stId ? (posMap[stId] || null) : null;
 
+    const ctxTitle = this._contextType === 'sso2' ? 'SSO2 INPUT'
+      : this._contextType === 'rso2' ? 'RSO2 ROTOR FEED'
+      : this._contextType === 'offline' ? 'LINE-OUT / OFF-LINE'
+      : null;
     document.getElementById('vf-inspector-title').textContent =
-      stId ? `${stId}${pos&&pos.station_label?': '+pos.station_label:''}` : (wipId||'Inspector');
+      ctxTitle || (stId ? `${stId}${pos&&pos.station_label?': '+pos.station_label:''}` : (wipId||'Inspector'));
 
     this._renderSummary(pos, wipId, snap);
     this._renderQualityHistory(wipId, snap);
@@ -1308,6 +1406,17 @@ const ctrlB = {
   _renderSummary(pos, wipId, snap) {
     const el = document.getElementById('fb-insp-summary-content');
     if (!el) return;
+    if (this._contextType) {
+      // I09-P04: context selection — show semantic context in legacy inspector too
+      if (this._contextType === 'sso2') {
+        el.innerHTML = `<div class="vf-insp-row"><span class="vf-insp-k">Context</span><span class="vf-insp-v">SSO2 INPUT — upstream stator + shield source feeding ASSY start / PRE-ASSY.</span></div><div class="vf-insp-empty">Context source — upstream line not simulated</div>`;
+      } else if (this._contextType === 'rso2') {
+        el.innerHTML = `<div class="vf-insp-row"><span class="vf-insp-k">Context</span><span class="vf-insp-v">RSO2 ROTOR FEED — rotor source feeding AP04 JOIN.</span></div><div class="vf-insp-empty">Feeds AP04 JOIN — upstream line not simulated</div>`;
+      } else {
+        el.innerHTML = `<div class="vf-insp-row"><span class="vf-insp-k">Context</span><span class="vf-insp-v">LINE-OUT / OFF-LINE — representative items are context-only, not live WIP.</span></div>`;
+      }
+      return;
+    }
     if (pos && pos.is_occupied && pos.wip_id) {
       const qColor = pos.latest_quality_result === 'PASS' ? 'var(--vf-state-pass)' : pos.latest_quality_result ? 'var(--vf-state-fail)' : 'var(--vf-text-muted)';
       let html = `<div class="vf-insp-row"><span class="vf-insp-k">Station</span><span class="vf-insp-v">${pos.position_id} — ${pos.station_label||pos.position_id}</span></div>`;
@@ -1397,7 +1506,10 @@ const ctrlB = {
     section.style.display = '';
     let html = '';
     for (const g of relevant) {
-      html += `<div class="vf-insp-gen-row"><b style="color:#C8960E">${g.child_wip_id}</b> ← ${(g.parent_wip_ids||[]).join(' + ')}<br><span style="font-size:10px;color:var(--vf-text-muted)">t=${(g.join_time_s||0).toFixed(0)}s @ ${g.join_station||'AP04'}</span></div>`;
+      const parents = (g.parent_wip_ids||[]).map(p =>
+        `<span class="vf-insp-link" onclick="ctrlB.selectWip('${p}')" title="Inspect parent">${p}</span>`
+      ).join(' + ');
+      html += `<div class="vf-insp-gen-row"><b style="color:#C8960E">${g.child_wip_id}</b> ← ${parents}<br><span style="font-size:10px;color:var(--vf-text-muted)">t=${(g.join_time_s||0).toFixed(0)}s @ ${g.join_station||'AP04'}</span></div>`;
     }
     el.innerHTML = html;
   },
@@ -1432,7 +1544,7 @@ const ctrlB = {
     const genealogy = snap.genealogy || [];
     if (!genealogy.length) { el.innerHTML = 'No joins recorded'; return; }
     el.innerHTML = genealogy.slice(-4).map(g =>
-      `<div><b style="color:#C8960E">${g.child_wip_id}</b> ← ${(g.parent_wip_ids||[]).join(' + ')} @ t=${(g.join_time_s||0).toFixed(0)}s</div>`
+      `<div><b style="color:#C8960E">${g.child_wip_id}</b> ← ${(g.parent_wip_ids||[]).map(p=>`<span class="vf-insp-link" onclick="ctrlB.selectWip('${p}')">${p}</span>`).join(' + ')} @ t=${(g.join_time_s||0).toFixed(0)}s</div>`
     ).join('');
   },
 

@@ -508,6 +508,35 @@ html, body {
 .vf-popup-pill.fail { background: #FDE8E8; color: var(--vf-state-fail); }
 .vf-popup-pill.info { background: var(--vf-accent-light); color: var(--vf-accent); }
 
+/* I09-P04 — context popup + selection highlight */
+.vf-context-note {
+  font-size: 11px; color: var(--vf-text-secondary); padding: 4px 0 8px 0;
+  line-height: 1.4;
+}
+.vf-context-tag {
+  margin-top: 10px; padding: 6px 8px; border-radius: 6px;
+  font-size: 10px; color: var(--vf-text-muted);
+  background: var(--vf-bg-page); border: 1px dashed var(--vf-border);
+  text-align: center;
+}
+.vf-popup-sep {
+  height: 1px; background: var(--vf-border-light); margin: 6px 0;
+}
+.vf-insp-link {
+  color: var(--vf-accent); cursor: pointer; text-decoration: underline dotted;
+  font-weight: 600;
+}
+.vf-insp-link:hover { text-decoration: underline; }
+#fb-wips .vf-wip-group.selected > * {
+  filter: drop-shadow(0 0 5px rgba(47,111,219,0.65));
+}
+/* I09-P04: make whole context group clickable, incl. empty space */
+#fb-context-sources [data-context],
+#fb-context-offline [data-context] {
+  pointer-events: all;
+  pointer-events: bounding-box;
+}
+
 /* ═══════════════════════════════════════
    Inspector (legacy, preserved)
    ═══════════════════════════════════════ */
