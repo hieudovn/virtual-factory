@@ -32,12 +32,18 @@
       "type": "string",
       "enum": ["MANUAL", "AUTO", "ASSISTED"]
     },
+    "command": {
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
+      "description": "User/system-invoked action (separate from normalized operation_result)."
+    },
     "inputs": { "type": "object" },
     "checklist": { "type": "array", "items": { "type": "string" } },
     "measurements": { "type": "array", "items": { "type": "object" } },
     "operation_result": {
       "type": ["string", "null"],
-      "enum": ["DONE", "JOIN_COMPLETE", "TEST_COMPLETE", "INSPECTION_COMPLETE", "CONFIRMED", null]
+      "enum": ["DONE", "CONFIRMED", "JOIN_COMPLETE", "TEST_COMPLETE", "INSPECTION_COMPLETE", "RELEASED", null],
+      "description": "Normalized result of a successful completion. Distinct from command and from quality_result."
     },
     "quality_result": {
       "type": ["string", "null"],

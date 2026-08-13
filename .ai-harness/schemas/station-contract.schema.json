@@ -38,7 +38,12 @@
       "type": "string",
       "enum": ["MANUAL", "AUTO", "ASSISTED"],
       "default": "AUTO",
-      "description": "Default completion mode for this station contract."
+      "description": "Default completion mode for this station contract (lowest precedence fallback)."
+    },
+    "mode_override": {
+      "type": "string",
+      "enum": ["MANUAL", "AUTO", "ASSISTED"],
+      "description": "Explicit per-station mode override. Highest precedence when configured; overrides the global run mode and the station default."
     },
     "normal_action": {
       "type": "string",

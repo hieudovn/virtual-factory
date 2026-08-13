@@ -116,22 +116,56 @@ Machine-readable example: `docs/design/station-contracts.example.yaml`.
 
 ## 4. OperationExecution state model
 
-Generic lifecycle, **per WIP per station**, orthogonal to physical position, quality status, exception case, WIP identity, and line state:
+Generic state machine, **per WIP per station**, orthogonal to physical position, quality status, exception case, WIP identity, and line state:
 
 ```text
-ARRIVED
-  ↓
-READY
-  ↓
-WORKING
-  ↓
-AWAITING_COMPLETION   (execution stations)
-AWAITING_DECISION     (quality-decision stations)
-  ↓
-COMPLETED | HELD | FAILED | EXCEPTION_PENDING
-  ↓
-ELIGIBLE_TO_INDEX
+ARRIVED → READY → WORKING → AWAITING_COMPLETION | AWAITING_DECISION → outcome
 ```
+
+### States
+
+| State | Meaning |
+|-------|---------|
+| `ARRIVED` | WIP is physically present at the station |
+| `READY` | prerequisites satisfied; operation may begin |
+| `WORKING` | operation in progress (elapsed < `work_duration_s`) |
+| `AWAITING_COMPLETION` | execution done; waiting for completion action (`DONE`/`CONFIRM_AND_COMPLETE`) |
+| `AWAITING_DECISION` | measurement/check produced; waiting for quality decision confirmation (`CONFIRM`) |
+| `COMPLETED` | operation successfully completed (`operation_result` recorded) |
+| `HELD` | quality/exception hold — retest/reinspect pending |
+| `FAILED` | quality FAIL/NG recorded (attempt pending or exhausted) |
+| `EXCEPTION_PENDING` | station/user raised an exception (HOLD / LINE OUT / note) |
+| `ELIGIBLE_TO_INDEX` | successful completion only; WIP may advance |
+
+### Legal transition table
+
+| From | To | Condition |
+|------|----|-----------|
+| — | `ARRIVED` | WIP indexed into position |
+| `ARRIVED` | `READY` | station prerequisites satisfied |
+| `READY` | `WORKING` | operation start |
+| `WORKING` | `AWAITING_COMPLETION` | `work_duration_s` elapsed (execution station) |
+| `WORKING` | `AWAITING_DECISION` | measurement/check produced (quality station) |
+| `AWAITING_COMPLETION` | `COMPLETED` | completion action supplied (MANUAL) or auto-invoked (AUTO) |
+| `AWAITING_DECISION` | `COMPLETED` | decision confirmed **and** `quality_result = PASS` |
+| `AWAITING_DECISION` | `FAILED` | decision confirmed **and** `quality_result ∈ {FAIL, NG}` |
+| `COMPLETED` | `ELIGIBLE_TO_INDEX` | `operation_result` recorded |
+| `FAILED` | `AWAITING_DECISION` | retest/reinspect allowed (`attempt < max_attempts`) — new attempt |
+| `FAILED` | `HELD` | `max_attempts` exhausted → terminal `FAILED_FINAL` |
+| `HELD` | `AWAITING_DECISION` | explicit recovery to a new attempt where policy allows |
+| `COMPLETED` | `HELD` | post-completion exception raised (only if `exception` capability) |
+| `EXCEPTION_PENDING` | `READY` / `WORKING` / `COMPLETED` | exception resolved by configured recovery path |
+
+### Eligibility rule
+
+> Only `COMPLETED` may transition to `ELIGIBLE_TO_INDEX`.
+> `HELD`, `FAILED`, and `EXCEPTION_PENDING` are **never** eligible.
+
+### Recovery semantics
+
+- `FAILED` (quality FAIL/NG): if `attempt_number < max_attempts`, the operation returns to `AWAITING_DECISION` on a **new attempt** (same station, same WIP). If attempts are exhausted, transition to `HELD` with terminal quality `FAILED_FINAL`; no further automatic attempts.
+- `HELD`: recovery is explicit (user/system resolution) back to a working/decision state; never auto-indexed.
+- `EXCEPTION_PENDING`: recovery is explicit; resolved back to the appropriate state per the configured exception path.
 
 ```yaml
 operation_execution:
@@ -143,10 +177,11 @@ operation_execution:
   completed_at_sim_s: null
   work_duration_s: 35
   completion_mode: MANUAL | AUTO | ASSISTED
+  command: DONE                  # user/system-invoked action (see §7)
   inputs: {}
   checklist: []
   measurements: []
-  operation_result: null
+  operation_result: null         # normalized result of successful completion
   quality_result: null
   routing_action: null
   source: { type: simulated | manual | imported }
@@ -167,6 +202,27 @@ operation_execution:
 **Invariant**: MANUAL, AUTO, and ASSISTED share **one** lifecycle and one state model — they differ only in who/what supplies the completion action, never in separate logic trees.
 
 Demo timing guidance: nominal visual wait ~1–2 s for simple stations, scaled by simulation speed; actual `work_duration_s` remains configurable and independent of visual animation timing.
+
+### Run-mode precedence
+
+Effective completion mode is resolved in this order (highest first):
+
+1. Explicit per-station `mode_override` (only if configured).
+2. Global run mode (`MANUAL | AUTO | ASSISTED`).
+3. `station_contract.default_mode` (per-station fallback).
+
+```text
+effective_mode(station) =
+    station.mode_override        # if configured
+    else global_run_mode         # if set
+    else station.default_mode
+```
+
+Consequences:
+- **MANUAL run**: simple execution stations wait for user `DONE`.
+- **AUTO run**: the same lifecycle automatically invokes the completion action after configured `work_duration_s`.
+- **ASSISTED**: system prepares/defaults; user confirms where the contract allows.
+- No separate logic trees: all modes drive the same state machine; only the source of the completion action differs.
 
 ---
 
@@ -203,6 +259,29 @@ Four separate axes — must never be conflated:
 **Sharpening note (current repo)**: today AP06/AP08 conflate "test operation complete" with "station complete". On FAIL/NG the runtime leaves the station incomplete (quality hold), which is behaviorally correct for retest, but does not expose the conceptual fact that the *test operation itself completed with a FAIL quality result*. OPS-02 must model `operation_result=TEST_COMPLETE` + `quality_result=FAIL` + `quality_status=RETEST_PENDING` + `routing=STAY_AT_STATION` as distinct facts.
 
 `QualityStatus.HOLD` is declared but currently unused; OPS-02 should either give it a precise meaning (user-initiated exception hold) or retire it.
+
+### Command/action vs normalized operation_result
+
+Chosen model: **A — command/action is a separate vocabulary from normalized `operation_result`.**
+
+- **command/action** (what the user/system invokes): `DONE`, `CONFIRM`, `CONFIRM_AND_COMPLETE`, `JOIN_COMPLETE`, `RELEASE`.
+- **normalized `operation_result`** (successful outcome, recorded): `DONE`, `CONFIRMED`, `JOIN_COMPLETE`, `TEST_COMPLETE`, `INSPECTION_COMPLETE`, `RELEASED`.
+
+Mapping:
+
+| command | station | normalized `operation_result` |
+|---------|---------|-------------------------------|
+| `DONE` | PRE-ASSY, AP01/02/05/07/09/10 | `DONE` |
+| `CONFIRM_AND_COMPLETE` | AP03 | `CONFIRMED` |
+| `JOIN_COMPLETE` | AP04 | `JOIN_COMPLETE` |
+| `CONFIRM` | AP06 | `TEST_COMPLETE` |
+| `CONFIRM` | AP08 | `INSPECTION_COMPLETE` |
+| `RELEASE` | AP11 | `RELEASED` |
+
+Unambiguity guarantees:
+- AP03 confirmation = `command=CONFIRM_AND_COMPLETE` → `operation_result=CONFIRMED`; `quality_result` stays `null` (AP03 has no PASS/FAIL decision in the current demo) unless a future config adds one.
+- AP11 release = `command=RELEASE` → `operation_result=RELEASED`; `quality_result=PASS` carries the final-QC decision independently of routing.
+- `quality_result` and `routing_action` are never overloaded to carry AP03/AP11 completion semantics.
 
 ---
 

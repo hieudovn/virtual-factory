@@ -1,6 +1,10 @@
 # OPS-01 — Station contract examples (machine-readable draft)
 # Design/contract only — no runtime implementation.
 # Schema: .ai-harness/schemas/station-contract.schema.json
+#
+# NOTE: work_duration_s values are DEMO/ILLUSTRATIVE only — NOT verified TIPA cycle times.
+# Run-mode precedence (highest → lowest):
+#   station.mode_override  →  global run mode  →  station.default_mode
 
 stations:
   - station_id: PRE-ASSY
@@ -182,6 +186,7 @@ operation_execution_example:
   completed_at_sim_s: null
   work_duration_s: 35
   completion_mode: AUTO
+  command: DONE
   inputs: {}
   checklist: []
   measurements: []
