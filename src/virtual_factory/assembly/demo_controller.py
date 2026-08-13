@@ -231,3 +231,13 @@ class DemoController:
             raise RuntimeError("Composition not initialized")
         self._composition.set_run_mode(mode)
         return self.snapshot()
+
+    def submit_station_action(
+        self, station_id: str, wip_id: str, action: str,
+    ) -> AssyDemoSnapshot:
+        """OPS-03-C02: exception station action (thin adapter)."""
+        rt = self.runtime
+        if rt is None:
+            raise RuntimeError("Composition not initialized")
+        rt.submit_station_action(station_id, wip_id, action)
+        return self.snapshot()

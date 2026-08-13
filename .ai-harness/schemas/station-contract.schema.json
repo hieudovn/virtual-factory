@@ -74,6 +74,21 @@
       "type": ["string", "null"],
       "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
       "description": "The action gated by checklist completion. Null when checklist capability does not gate an action."
+    },
+    "decision_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Quality decisions the operator may supply (e.g. PASS, FAIL, NG)."
+    },
+    "exception_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Exception actions allowed at this station (e.g. HOLD)."
+    },
+    "final_disposition_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Final disposition actions (e.g. RELEASE, HOLD)."
     }
   }
 }

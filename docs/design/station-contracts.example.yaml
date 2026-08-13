@@ -68,6 +68,9 @@ stations:
       - demo_item_2
       - demo_item_3
     checklist_required_for_action: CONFIRM_AND_COMPLETE
+    # OPS-03-C02: exception affordance (containment only; no physical route invented)
+    exception_actions:
+      - HOLD
 
   - station_id: AP04
     default_mode: AUTO
@@ -111,6 +114,10 @@ stations:
     normal_action: CONFIRM
     required_action: CONFIRM
     work_duration_s: 60
+    # OPS-03-C02: operator-owned quality decision surface (MANUAL/ASSISTED)
+    decision_actions:
+      - PASS
+      - FAIL
 
   - station_id: AP07
     default_mode: AUTO
@@ -139,6 +146,10 @@ stations:
     normal_action: CONFIRM
     required_action: CONFIRM
     work_duration_s: 30
+    # OPS-03-C02: operator-owned vision decision surface (MANUAL/ASSISTED)
+    decision_actions:
+      - PASS
+      - NG
 
   - station_id: AP09
     default_mode: AUTO
@@ -181,6 +192,12 @@ stations:
     normal_action: RELEASE
     required_action: RELEASE
     work_duration_s: 30
+    # OPS-03-C02: final disposition + exception (HOLD = containment only)
+    final_disposition_actions:
+      - RELEASE
+      - HOLD
+    exception_actions:
+      - HOLD
 
 # Example OperationExecution snapshot projection (additive — does not alter positions[])
 operation_execution_example:

@@ -619,6 +619,18 @@ html, body {
 }
 .vf-op-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 .vf-op-btn { align-self: flex-end; padding: 4px 14px; font-size: 12px; }
+.vf-btn.pass { border-color: var(--vf-state-pass); color: var(--vf-state-pass); background: #E6F5EC; }
+.vf-btn.fail { border-color: var(--vf-state-fail); color: var(--vf-state-fail); background: #FDE8E8; }
+.vf-op-decisions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+.vf-op-exception { margin-top: 8px; border-top: 1px dashed var(--vf-border); padding-top: 6px; }
+.vf-op-exc-toggle {
+  background: none; border: none; color: var(--vf-text-muted); font-size: 11px;
+  cursor: pointer; padding: 2px 0; text-decoration: underline dotted;
+}
+.vf-op-exc-toggle:hover { color: var(--vf-state-fail); }
+.vf-op-exc-body { display: none; margin-top: 6px; gap: 6px; flex-wrap: wrap; }
+.vf-op-exc-body.open { display: flex; }
+.vf-op-exc-body .vf-op-btn { padding: 3px 10px; font-size: 11px; }
 .vf-op-note { font-size: 11px; color: var(--vf-text-muted); font-style: italic; padding: 4px 0; }
 .vf-op-error {
   margin-top: 8px; padding: 6px 8px; border-radius: 6px;

@@ -1651,9 +1651,32 @@ const ctrlB = {
       html += '</div>';
       const allDone = items.length > 0 && items.every(it => this._checklistChecked(op, it.item_id));
       html += `<button class="vf-btn primary vf-op-btn" ${allDone ? '' : 'disabled'} onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}')">${this._commandLabel(cmd)}</button>`;
+    } else if (contract && Array.isArray(contract.decision_actions) && contract.decision_actions.length
+        && op.completion_mode && op.completion_mode !== 'AUTO') {
+      // OPS-03-C02: operator-owned quality decision surface (MANUAL/ASSISTED)
+      html += '<div class="vf-op-decisions">';
+      for (const d of contract.decision_actions) {
+        const cls = d === 'PASS' ? 'vf-btn pass' : 'vf-btn fail';
+        html += `<button class="${cls} vf-op-btn" onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}',{decision:'${d}'})">${d}</button>`;
+      }
+      html += '</div>';
+      if (op.completion_mode === 'ASSISTED') {
+        html += `<button class="vf-btn primary vf-op-btn" onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}')">ACCEPT PROPOSED</button>`;
+      }
     } else {
       html += `<button class="vf-btn primary vf-op-btn" onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}')">${this._commandLabel(cmd)}</button>`;
     }
+    return html;
+  },
+
+  _renderExceptionControlsHtml(op, contract) {
+    let html = '<div class="vf-op-exception">';
+    html += '<button type="button" class="vf-op-exc-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\')">⋯ Exception</button>';
+    html += '<div class="vf-op-exc-body">';
+    for (const a of (contract.exception_actions || [])) {
+      html += `<button class="vf-btn fail vf-op-btn" onclick="ctrlB.submitStationAction('${op.station_id}','${op.wip_id}','${a}')">${a}</button>`;
+    }
+    html += '</div></div>';
     return html;
   },
 
@@ -1673,6 +1696,9 @@ const ctrlB = {
       const qc = op.quality_result === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
       html += `<div class="vf-popup-row"><span class="vf-popup-k">Quality</span><span class="vf-popup-v" style="color:${qc};font-weight:600">${op.quality_result}${op.attempt_number > 1 ? ' #' + op.attempt_number : ''}</span></div>`;
     }
+    if (op.routing_action) {
+      html += `<div class="vf-popup-row"><span class="vf-popup-k">Routing</span><span class="vf-popup-v" style="color:var(--vf-state-hold);font-weight:600">${op.routing_action}</span></div>`;
+    }
     if (op.terminal) html += '<div class="vf-popup-row"><span class="vf-popup-k">Terminal</span><span class="vf-popup-v" style="color:var(--vf-state-fail);font-weight:600">FAILED — no recovery</span></div>';
     if (contract && contract.capabilities && contract.capabilities.measurement) {
       const mhtml = this._measurementRowsHtml(snap, op);
@@ -1685,23 +1711,27 @@ const ctrlB = {
     } else if (op.completion_mode === 'AUTO' && waiting) {
       html += '<div class="vf-op-note">AUTO — runtime will resolve on next step</div>';
     }
+    if (contract && Array.isArray(contract.exception_actions) && contract.exception_actions.length) {
+      html += this._renderExceptionControlsHtml(op, contract);
+    }
     return html;
   },
 
-  async submitCommand(stId, wipId, command) {
+  async submitCommand(stId, wipId, command, extraPayload) {
     const snap = this._lastSnapshot;
     const op = snap ? this._findOperation(snap) : null;
     const contract = snap ? this._contractFor(snap, stId) : null;
     const body = { station_id: stId, wip_id: wipId, command };
+    if (extraPayload) body.payload = Object.assign({}, extraPayload);
     if (this._isChecklistGate(contract, command)) {
       // OPS-03-C01: submit the FULL required item set; the server validates
       // the exact required ids independently of the disabled-button convenience.
-      body.payload = {
+      body.payload = Object.assign({}, extraPayload || {}, {
         checklist: (contract.checklist_items || []).map(it => ({
           item_id: it.item_id,
           completed: this._checklistChecked(op, it.item_id),
         })),
-      };
+      });
     }
     let resp;
     try {
@@ -1726,6 +1756,32 @@ const ctrlB = {
     }
     const next = await resp.json();
     this._pendingChecklist = {};
+    this._opError = '';
+    this._applyAuthoritativeSnapshot(next);
+  },
+
+  async submitStationAction(stId, wipId, action) {
+    let resp;
+    try {
+      resp = await fetch(`${API}/station-action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ station_id: stId, wip_id: wipId, action }),
+      });
+    } catch (err) {
+      this._opError = 'Network error — action not submitted';
+      if (this._lastSnapshot) this._renderPopup(this._lastSnapshot);
+      return;
+    }
+    if (!resp.ok) {
+      let detail = `Action rejected (${resp.status})`;
+      try { const j = await resp.json(); if (j && j.detail) detail = j.detail; } catch (_) {}
+      this._opError = detail;
+      await this.refresh();
+      this._renderPopup(this._lastSnapshot);
+      return;
+    }
+    const next = await resp.json();
     this._opError = '';
     this._applyAuthoritativeSnapshot(next);
   },

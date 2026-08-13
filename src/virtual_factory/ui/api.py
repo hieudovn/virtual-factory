@@ -305,6 +305,29 @@ def create_app(
             )
         return snap.to_dict()
 
+    @app.post("/assy-demo/station-action")
+    def assy_demo_station_action(body: dict) -> dict:
+        """Submit an exception station action (HOLD). Runtime decides."""
+        from fastapi.responses import JSONResponse
+        from virtual_factory.assembly.line_runtime import AssyLineError
+        ctrl = _get_assy_controller()
+        station_id = body.get("station_id", "")
+        wip_id = body.get("wip_id", "")
+        action = body.get("action", "")
+        if not station_id or not wip_id or not action:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "station_id, wip_id and action are required"},
+            )
+        try:
+            snap = ctrl.submit_station_action(station_id, wip_id, action)
+        except AssyLineError as exc:
+            return JSONResponse(
+                status_code=409,
+                content={"detail": str(exc), "status": "error"},
+            )
+        return snap.to_dict()
+
     @app.post("/assy-demo/run-mode")
     def assy_demo_run_mode(body: dict) -> dict:
         """Set global run mode (MANUAL/AUTO/ASSISTED) for the demo contexts."""

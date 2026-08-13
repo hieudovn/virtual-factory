@@ -73,6 +73,9 @@ class StationContract:
     prerequisites: tuple[str, ...] = ()
     checklist_items: tuple[str, ...] = ()  # required checklist ids (neutral); gate template
     checklist_required_for_action: Optional[StationCommand] = None  # action gated by checklist
+    decision_actions: tuple[str, ...] = ()  # quality decisions operator may supply (PASS/FAIL/NG)
+    exception_actions: tuple[str, ...] = ()  # exception actions (HOLD / LINE_OUT / ...)
+    final_disposition_actions: tuple[str, ...] = ()  # final disposition (RELEASE / HOLD / ...)
 
     @property
     def allowed_commands(self) -> tuple[StationCommand, ...]:
@@ -106,6 +109,9 @@ class StationContract:
                 self.checklist_required_for_action.value
                 if self.checklist_required_for_action else None
             ),
+            "decision_actions": list(self.decision_actions),
+            "exception_actions": list(self.exception_actions),
+            "final_disposition_actions": list(self.final_disposition_actions),
         }
 
 
@@ -150,6 +156,7 @@ def build_default_assy_contracts(
             work_duration_s=_duration("AP03", 45.0),
             checklist_items=DEMO_CHECKLIST_ITEM_IDS,
             checklist_required_for_action=StationCommand.CONFIRM_AND_COMPLETE,
+            exception_actions=("HOLD",),
         ),
         "AP04": StationContract(
             station_id="AP04",
@@ -166,6 +173,7 @@ def build_default_assy_contracts(
             normal_action=StationCommand.CONFIRM,
             required_action=StationCommand.CONFIRM,
             work_duration_s=_duration("AP06", 60.0),
+            decision_actions=("PASS", "FAIL"),
         ),
         "AP07": _exec_only("AP07", _duration("AP07", 30.0)),
         "AP08": StationContract(
@@ -174,6 +182,7 @@ def build_default_assy_contracts(
             normal_action=StationCommand.CONFIRM,
             required_action=StationCommand.CONFIRM,
             work_duration_s=_duration("AP08", 30.0),
+            decision_actions=("PASS", "NG"),
         ),
         "AP09": _exec_only("AP09", _duration("AP09", 45.0)),
         "AP10": _exec_only("AP10", _duration("AP10", 45.0)),
@@ -190,6 +199,8 @@ def build_default_assy_contracts(
             normal_action=StationCommand.RELEASE,
             required_action=StationCommand.RELEASE,
             work_duration_s=_duration("AP11", 30.0),
+            final_disposition_actions=("RELEASE", "HOLD"),
+            exception_actions=("HOLD",),
         ),
     }
     return contracts
@@ -232,6 +243,9 @@ def load_station_contracts_from_yaml(path: str) -> dict[str, StationContract]:
             prerequisites=tuple(str(p) for p in entry.get("prerequisites", [])),
             checklist_items=tuple(str(x) for x in entry.get("checklist_items", [])),
             checklist_required_for_action=_cmd(entry.get("checklist_required_for_action")),
+            decision_actions=tuple(str(x) for x in entry.get("decision_actions", [])),
+            exception_actions=tuple(str(x) for x in entry.get("exception_actions", [])),
+            final_disposition_actions=tuple(str(x) for x in entry.get("final_disposition_actions", [])),
         )
         contracts[contract.station_id] = contract
     for contract in contracts.values():
@@ -287,3 +301,18 @@ def _validate_contract_invariants(contract: StationContract) -> None:
                 f"{gate.value!r} is not an allowed command "
                 f"{[c.value for c in contract.allowed_commands]}"
             )
+    if contract.decision_actions and not contract.capabilities.quality_decision:
+        raise ValueError(
+            f"Station contract {contract.station_id!r}: decision_actions set but "
+            f"capabilities.quality_decision is false"
+        )
+    if contract.final_disposition_actions and not contract.capabilities.final_disposition:
+        raise ValueError(
+            f"Station contract {contract.station_id!r}: final_disposition_actions "
+            f"set but capabilities.final_disposition is false"
+        )
+    if contract.exception_actions and not contract.capabilities.exception:
+        raise ValueError(
+            f"Station contract {contract.station_id!r}: exception_actions set but "
+            f"capabilities.exception is false"
+        )

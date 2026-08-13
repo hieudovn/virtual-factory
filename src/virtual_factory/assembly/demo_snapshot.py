@@ -167,6 +167,9 @@ class StationContractView:
     allowed_commands: list = field(default_factory=list)
     checklist_items: list = field(default_factory=list)
     checklist_required_for_action: str = ""
+    decision_actions: list = field(default_factory=list)
+    exception_actions: list = field(default_factory=list)
+    final_disposition_actions: list = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -178,6 +181,9 @@ class StationContractView:
             "allowed_commands": self.allowed_commands,
             "checklist_items": self.checklist_items,
             "checklist_required_for_action": self.checklist_required_for_action,
+            "decision_actions": self.decision_actions,
+            "exception_actions": self.exception_actions,
+            "final_disposition_actions": self.final_disposition_actions,
         }
 
 
@@ -411,6 +417,9 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
                 contract.checklist_required_for_action.value
                 if contract.checklist_required_for_action else ""
             ),
+            decision_actions=list(contract.decision_actions),
+            exception_actions=list(contract.exception_actions),
+            final_disposition_actions=list(contract.final_disposition_actions),
         ))
 
     # Production summary

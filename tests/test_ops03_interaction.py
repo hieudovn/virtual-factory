@@ -126,6 +126,8 @@ class TestStationContractProjection:
                 "station_id", "capabilities", "default_mode",
                 "required_action", "normal_action", "allowed_commands",
                 "checklist_items", "checklist_required_for_action",
+                "decision_actions", "exception_actions",
+                "final_disposition_actions",
             }
             assert set(c["capabilities"].keys()) == {
                 "execution", "checklist", "measurement", "quality_decision",
@@ -332,15 +334,57 @@ class TestAP11NoChecklistInherit:
         assert line.get_wip(wip).lifecycle.value == "released"
 
 
+class TestStationActionException:
+    def test_ap03_hold_marks_stay_non_eligible(self):
+        line = setup_line(make_fast_config())
+        _, op, wip = to_awaiting(line, "AP03")
+        line.submit_station_action("AP03", wip, "HOLD")
+        assert op.routing_action == "STAY_AT_STATION"
+        assert op.state == OperationState.AWAITING_COMPLETION
+        assert op.operation_result is None
+        assert op.quality_result is None
+        assert line.conveyor.is_position_complete("AP03") is False
+
+    def test_unsupported_action_fails_closed(self):
+        line = setup_line(make_fast_config())
+        _, _, wip = to_awaiting(line, "AP03")
+        with pytest.raises(AssyLineError):
+            line.submit_station_action("AP03", wip, "LINE_OUT")
+
+    def test_ap11_hold_keeps_non_released(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP11")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip = line.conveyor.wip_at("AP11")
+        line.submit_station_action("AP11", wip, "HOLD")
+        op = line.operation_registry.active_for("AP11", wip)
+        assert op.routing_action == "STAY_AT_STATION"
+        assert line.get_wip(wip).lifecycle.value != "released"
+        assert line.conveyor.is_position_complete("AP11") is False
+
+
 class TestQualityDecisionCommand:
     def test_ap06_pass_read_from_runtime(self):
         line = setup_line(make_fast_config(ap06="PASS"))
         _, _, wip = to_awaiting(line, "AP06")
-        line.submit_operation_command("AP06", wip, StationCommand.CONFIRM)
+        line.submit_operation_command(
+            "AP06", wip, StationCommand.CONFIRM, payload={"decision": "PASS"})
         found = [o for o in line.operation_registry._operations.values()
                  if o.station_id == "AP06"]
         assert found[-1].quality_result == "PASS"
         assert found[-1].operation_result == OperationResult.TEST_COMPLETE
+
+    def test_ap06_manual_requires_decision(self):
+        line = setup_line(make_fast_config(ap06="PASS"))
+        _, _, wip = to_awaiting(line, "AP06")
+        # MANUAL with no decision must fail closed
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command("AP06", wip, StationCommand.CONFIRM)
+        # invalid decision must fail closed
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command(
+                "AP06", wip, StationCommand.CONFIRM, payload={"decision": "MAYBE"})
 
     def test_ap06_fail_retest_keeps_wip_at_ap06(self):
         cfg = make_fast_config(ap06="FAIL_FIRST_THEN_PASS")
@@ -350,14 +394,16 @@ class TestQualityDecisionCommand:
         line.global_run_mode = CompletionMode.MANUAL
         line.execute_dwell()
         wip = line.conveyor.wip_at("AP06")
-        line.submit_operation_command("AP06", wip, StationCommand.CONFIRM)
+        line.submit_operation_command(
+            "AP06", wip, StationCommand.CONFIRM, payload={"decision": "FAIL"})
         assert line.get_current_quality_status(wip) == QualityStatus.RETEST_PENDING
         assert line.conveyor.is_position_complete("AP06") is False
         found = [o for o in line.operation_registry._operations.values()
                  if o.station_id == "AP06"]
         assert found[-1].quality_result == "FAIL"
         # retest attempt → PASS, then eligible
-        line.submit_operation_command("AP06", wip, StationCommand.CONFIRM)
+        line.submit_operation_command(
+            "AP06", wip, StationCommand.CONFIRM, payload={"decision": "PASS"})
         assert line.get_current_quality_status(wip) == QualityStatus.CLEAR
         assert line.conveyor.is_position_complete("AP06") is True
 
@@ -369,7 +415,8 @@ class TestQualityDecisionCommand:
         line.global_run_mode = CompletionMode.MANUAL
         line.execute_dwell()
         wip = line.conveyor.wip_at("AP08")
-        line.submit_operation_command("AP08", wip, StationCommand.CONFIRM)
+        line.submit_operation_command(
+            "AP08", wip, StationCommand.CONFIRM, payload={"decision": "NG"})
         assert line.get_current_quality_status(wip) == QualityStatus.REINSPECT_PENDING
         assert line.conveyor.is_position_complete("AP08") is False
 

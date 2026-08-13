@@ -125,4 +125,34 @@ Physical Canvas (positions[])
   demonstrates the generic gate fields; AP11 keeps `checklist=true` with no
   demo checklist gate.
 
+## OPS-03-C02 / OPS-04-PRE — Complete decision & exception interaction
+
+- **Contract metadata.** `StationContract` gains `decision_actions`
+  (`PASS`/`FAIL` for AP06, `PASS`/`NG` for AP08), `exception_actions`
+  (`HOLD` for AP03/AP11), and `final_disposition_actions` (`RELEASE`/`HOLD`
+  for AP11). Loader parses + validates them; projection exposes them.
+- **Operator quality decision.** At a `quality_decision` station in MANUAL,
+  `submit_operation_command(..., CONFIRM)` now **requires** `payload.decision`
+  ∈ `decision_actions` (fail-closed); the decision overrides the scenario
+  resolution. ASSISTED allows override or accepts the scenario proposal
+  (`ACCEPT PROPOSED`). AUTO ignores the operator decision — scenario decides.
+- **Exception station action.** New `AssyLineRuntime.submit_station_action()`
+  (thin adapter `DemoController.submit_station_action` + API
+  `POST /assy-demo/station-action`): `HOLD` → `routing_action =
+  STAY_AT_STATION` (containment, non-eligible); does NOT touch
+  `operation_result` / `quality_result` / state. LINE_OUT is **not**
+  implemented (physical routing unconfirmed) and fails closed.
+- **Final disposition.** AP11 exposes `RELEASE` (required action) plus `HOLD`
+  via the exception affordance.
+- **Renderer.** Decision surface (PASS/FAIL/NG buttons) for MANUAL/ASSISTED
+  quality stations; `⋯ Exception` drawer for exception-capable stations;
+  `Routing` row displayed from `active_operations[].routing_action`.
+- **Orthogonality preserved.** `operation_result` ≠ `quality_result` ≠
+  `quality_status` ≠ `routing_action` ≠ exception state.
+- **Visual evidence.** 13 screenshots under
+  `docs/ui/evidence/ops03-c02/` (AP03 incomplete/complete/after, AP05
+  DONE before/after, AP06 decision surface + FAIL/PASS, AP08 decision
+  surface + NG, AP11 release surface + HOLD + RELEASE).
+
+
 

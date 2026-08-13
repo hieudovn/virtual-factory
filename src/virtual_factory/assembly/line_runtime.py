@@ -662,11 +662,23 @@ class AssyLineRuntime:
             checklist = (payload or {}).get("checklist", []) if payload else []
             op.checklist = _validate_checklist_completion(checklist, contract)
 
+        # OPS-03-C02: operator-supplied quality decision (PASS/FAIL/NG).
+        decision = (payload or {}).get("decision") if payload else None
+        if contract.decision_actions:
+            if decision is not None and decision not in contract.decision_actions:
+                raise AssyLineError(
+                    f"Invalid quality decision {decision!r} at {station_id} "
+                    f"(allowed: {list(contract.decision_actions)})")
+            if op.completion_mode == CompletionMode.MANUAL and decision is None:
+                raise AssyLineError(
+                    f"Manual quality decision required at {station_id}: "
+                    f"choose one of {list(contract.decision_actions)}")
+
         op.command = cmd
         if payload is not None:
             op.inputs.update(payload)
 
-        events = self._run_operation_domain(station_id, wip_id, op, contract)
+        events = self._run_operation_domain(station_id, wip_id, op, contract, decision=decision)
 
         # Resolve post-domain outcome
         if op.state == OperationState.COMPLETED:
@@ -681,12 +693,43 @@ class AssyLineRuntime:
                 op.transition(OperationState.AWAITING_DECISION)  # new attempt next dwell
         return events
 
+    def submit_station_action(
+        self, station_id: str, wip_id: str, action: str,
+    ) -> list[LineEvent]:
+        """OPS-03-C02: exception station action (non-completion, non-quality).
+
+        HOLD → routing_action = STAY_AT_STATION (containment, non-eligible).
+        Does NOT touch operation_result / quality_result / operation state.
+        Other actions fail closed until their physical semantics are confirmed.
+        """
+        op = self.operation_registry.active_for(station_id, wip_id)
+        if op is None:
+            raise AssyLineError(
+                f"No active operation for station={station_id} wip={wip_id}")
+        contract = self.station_contracts.get(station_id)
+        if contract is None:
+            raise AssyLineError(f"No station contract for {station_id}")
+        if action not in contract.exception_actions:
+            raise AssyLineError(
+                f"Exception action {action!r} not allowed at {station_id} "
+                f"(allowed: {list(contract.exception_actions)})")
+        if action == "HOLD":
+            op.routing_action = "STAY_AT_STATION"
+        else:
+            raise AssyLineError(
+                f"Exception action {action!r} is not safely representable "
+                f"in the current runtime (no physical routing confirmed)")
+        return [self._make_event(
+            "STATION_ACTION", station_id, wip_id,
+            f"action={action} routing={op.routing_action}")]
+
     def _run_operation_domain(
         self,
         pos: str,
         wip_id: str,
         op: OperationExecution,
         contract: StationContract,
+        decision: Optional[str] = None,
     ) -> list[LineEvent]:
         """Execute station domain work and map the outcome onto the operation.
 
@@ -700,7 +743,11 @@ class AssyLineRuntime:
             op.transition(OperationState.COMPLETED)
         elif contract.capabilities.quality_decision:
             station_key, check_type = _QUALITY_STATION_MAP[pos]
-            events = self._execute_quality_station(pos, wip_id, station_key, check_type)
+            # OPS-03-C02: in AUTO the simulator/scenario decides; operator
+            # decision only overrides in MANUAL/ASSISTED.
+            eff_decision = decision if op.completion_mode != CompletionMode.AUTO else None
+            events = self._execute_quality_station(
+                pos, wip_id, station_key, check_type, decision=eff_decision)
             qstatus = self.get_current_quality_status(wip_id)
             qh = self.get_quality_history(wip_id)
             op.quality_result = qh.last_disposition(pos) if qh else None
@@ -778,6 +825,7 @@ class AssyLineRuntime:
 
     def _execute_quality_station(
         self, position: str, wip_id: str, station_key: str, check_type: CheckType,
+        decision: Optional[str] = None,
     ) -> list[LineEvent]:
         """Execute a quality station (AP03, AP06, AP08, AP11).
 
@@ -809,6 +857,10 @@ class AssyLineRuntime:
 
         disposition = resolve_quality_disposition(
             station_key, motor_seq, attempt, qcfg, check_type)
+
+        # OPS-03-C02: operator-supplied quality decision overrides the scenario.
+        if decision is not None:
+            disposition = decision
 
         events.append(self._make_event(
             "QUALITY_START", position, wip_id,
