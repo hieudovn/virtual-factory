@@ -248,17 +248,17 @@ const VF = {
     return body;
   },
 
-  // ── AP badge (C01: larger, annotation not main graphic) ──
+  // ── AP badge (larger for readability) ──
   apBadge(x, y, stId) {
-    const cy = y - 44;
-    return `<rect x="${x-22}" y="${cy-10}" width="44" height="20" rx="5" fill="var(--vf-bg-surface)" stroke="var(--vf-accent)" stroke-width="1.3"/>
-      <text x="${x}" y="${cy+5}" fill="var(--vf-accent)" font-size="13" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${stId}</text>`;
+    const cy = y - 46;
+    return `<rect x="${x-24}" y="${cy-11}" width="48" height="22" rx="5" fill="var(--vf-bg-surface)" stroke="var(--vf-accent)" stroke-width="1.4"/>
+      <text x="${x}" y="${cy+6}" fill="var(--vf-accent)" font-size="14" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${stId}</text>`;
   },
 
   opName(x, y, stId) {
-    const cy = y - 22;
+    const cy = y - 24;
     const name = STATION_OPS[stId] || stId;
-    return `<text x="${x}" y="${cy}" fill="var(--vf-text-secondary)" font-size="12" font-weight="500" text-anchor="middle">${name}</text>`;
+    return `<text x="${x}" y="${cy}" fill="var(--vf-text)" font-size="13" font-weight="600" text-anchor="middle">${name}</text>`;
   },
 
   badgeConnector(x, y) {
@@ -283,7 +283,7 @@ const VF = {
       const lmName = LANDMARK_LABELS[stId];
       if (lmName) {
         const lc = archetype==='JOIN'?'#C8960E':'var(--vf-accent)';
-        html += `<text x="${x}" y="${y+56}" fill="${lc}" font-size="11" font-weight="700" text-anchor="middle">${lmName}</text>`;
+        html += `<text x="${x}" y="${y+64}" fill="${lc}" font-size="12" font-weight="700" text-anchor="middle">${lmName}</text>`;
       }
     }
     html += `</g>`;
@@ -303,8 +303,8 @@ const VF = {
     if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
       html += VF.stateOverlay(x, ty, isHeld ? 'HOLD' : qResult);
     }
-    // Only show WIP ID (EXH-UI-01-C02: slightly larger)
-    html += `<text x="${x}" y="${ty+16}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">${wipId}</text>`;
+    // Only show WIP ID (readable)
+    html += `<text x="${x}" y="${ty+16}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">${wipId}</text>`;
     html += `</g>`;
     return html;
   }
@@ -901,27 +901,27 @@ const ctrlB = {
     zonesG.innerHTML = `
       <!-- ASSY INPUT / LINE START (RIGHT) -->
       <rect x="${L.rawX}" y="${L.rawY}" width="${L.rawW}" height="${L.rawH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
-      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+16}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">ASSY INPUT</text>
-      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+30}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" opacity="0.6">LINE START</text>
+      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+16}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">ASSY INPUT</text>
+      <text x="${L.rawX+L.rawW/2}" y="${L.rawY+30}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">LINE START</text>
 
       <!-- ASSY OUTPUT / LINE END (LEFT) -->
       <rect x="${L.fgX}" y="${L.fgY}" width="${L.fgW}" height="${L.fgH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
-      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+16}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">ASSY OUTPUT</text>
-      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+30}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" opacity="0.6">LINE END</text>
+      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+16}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">ASSY OUTPUT</text>
+      <text x="${L.fgX+L.fgW/2}" y="${L.fgY+30}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">LINE END</text>
 
       <!-- EXH-UI-01: OFF-LINE EXCEPTION HANDLING conceptual zone -->
       <rect x="${L.offLineX}" y="${L.offLineY}" width="${L.offLineW}" height="${L.offLineH}" rx="6" fill="#FAFBFD" stroke="var(--vf-text-muted)" stroke-width="1.2" stroke-dasharray="8,5" opacity="0.7"/>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text-muted)" font-size="11" text-anchor="middle" font-weight="600">OFF-LINE EXCEPTION HANDLING</text>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+34}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" opacity="0.5">CONCEPTUAL — Inspect / Diagnose / Optional Rework / Verify</text>
+      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">OFF-LINE EXCEPTION HANDLING</text>
+      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+36}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">CONCEPTUAL — WIP FAIL/NG only · Inspect / Diagnose / Optional Rework / Verify</text>
 
       <!-- LINE OUT connector (RIGHT side: main line → off-line zone) -->
       <line x1="${L.lineOutConnX}" y1="${L.conveyorY+L.conveyorH}" x2="${L.lineOutConnX}" y2="${L.offLineY}" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
-      <text x="${L.lineOutConnX+8}" y="${L.conveyorY+L.conveyorH+18}" fill="var(--vf-state-hold)" font-size="10" font-weight="600">LINE OUT</text>
+      <text x="${L.lineOutConnX+8}" y="${L.conveyorY+L.conveyorH+18}" fill="var(--vf-state-hold)" font-size="11" font-weight="700">LINE OUT</text>
       <polygon points="${L.lineOutConnX-4},${L.offLineY} ${L.lineOutConnX+4},${L.offLineY} ${L.lineOutConnX},${L.offLineY+8}" fill="var(--vf-state-hold)" opacity="0.55"/>
 
       <!-- LINE IN connector (LEFT side: off-line zone → main line) -->
       <line x1="${L.lineInConnX}" y1="${L.offLineY}" x2="${L.lineInConnX}" y2="${L.conveyorY+L.conveyorH}" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
-      <text x="${L.lineInConnX+8}" y="${L.offLineY-8}" fill="var(--vf-state-pass)" font-size="10" font-weight="600">LINE IN</text>
+      <text x="${L.lineInConnX+8}" y="${L.offLineY-8}" fill="var(--vf-state-pass)" font-size="11" font-weight="700">LINE IN</text>
       <polygon points="${L.lineInConnX-4},${L.conveyorY+L.conveyorH} ${L.lineInConnX+4},${L.conveyorY+L.conveyorH} ${L.lineInConnX},${L.conveyorY+L.conveyorH-8}" fill="var(--vf-state-pass)" opacity="0.55"/>`;
 
     // EXH-UI-01-C01: Global RIGHT→LEFT product-flow arrow in dedicated flow-cue layer
@@ -947,7 +947,7 @@ const ctrlB = {
     }
     // RSO2 branch into AP04
     ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="${L.ap04X+10}" y="${L.rso2BranchTopY+10}" fill="#C8960E" font-size="9" font-weight="600">RSO2 ROTOR</text>`;
+    ch += `<text x="${L.ap04X+12}" y="${L.rso2BranchTopY+8}" fill="#C8960E" font-size="10" font-weight="700">RSO2</text>`;
 
     convG.innerHTML = ch;
   },
@@ -1021,22 +1021,19 @@ const ctrlB = {
       }
     });
 
-    // RSO2 rotor context
+    // RSO2 rotor context (single active rotor at AP04 join feed)
     const genealogy = snap.genealogy || [];
     html += `<g transform="translate(${L.ap04X}, ${L.rso2BranchTopY+20})">`;
     html += VF.rotor(0, -8);
-    if (genealogy.length > 0) {
-      html += `<text x="0" y="-12" fill="#C8960E" font-size="9" text-anchor="middle" font-weight="600">ROTOR</text>`;
-    }
     html += `</g>`;
 
-    // Context zones (static)
+    // Context zones (static, not live occupancy)
     html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+220})">${VF.pallet(0, 0)}${VF.statorAssy(0, -2)}</g>`;
-    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+195}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">SSO2 STATOR</text>`;
+    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+195}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">SSO2 LINE — source</text>`;
     html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+150})">${VF.pallet(0, 0)}${VF.rotor(0, -2)}</g>`;
-    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+125}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">RSO2 ROTOR</text>`;
+    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+125}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">RSO2 LINE — buffer</text>`;
     html += `<g transform="translate(${L.fgX+L.fgW/2}, ${L.fgY+220})">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
-    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="500">PACKED GOODS</text>`;
+    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">PACKED GOODS</text>`;
 
     stationsG.innerHTML = html;
     this._applyHighlights();
@@ -1076,7 +1073,7 @@ const ctrlB = {
       if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
         html += VF.stateOverlay(sx, sy + 165, isHeld ? 'HOLD' : qResult);
       }
-      html += `<text x="${sx}" y="${sy+181}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">${p.wip_id}</text>`;
+      html += `<text x="${sx}" y="${sy+181}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">${p.wip_id}</text>`;
       html += `</g>`;
     });
 
