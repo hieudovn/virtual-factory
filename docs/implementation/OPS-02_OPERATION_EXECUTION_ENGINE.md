@@ -41,3 +41,10 @@
 - **C01-01 (AP03 checklist gate).** AP03 is a checklist gate, not a quality-decision station. Completing AP03 runs `_execute_ap03_checklist` (emits `STATION_START`/`STATION_COMPLETE`, marks WIP `COMPLETED_STATION`) and produces `operation_result = CONFIRMED` with `quality_result = None`. **No quality record** is fabricated (nothing appears in the `quality_records` projection). `submit_operation_command` rejects `CONFIRM_AND_COMPLETE` at AP03 when `payload['checklist']` is missing or empty (no bypass).
 - **C01-02 (ASSISTED distinct from AUTO).** `_should_auto_submit` now distinguishes modes: `AUTO` auto-submits; `MANUAL` never auto-submits; `ASSISTED` waits for explicit confirmation on checklist / quality-decision / final-disposition / identity-transformation contracts, while pure execution may auto-submit. Fail-safe: wait if unclear.
 - **C01-03 (freeze effective mode).** The effective completion mode is resolved once at operation creation (`_resolve_mode` at `OperationRegistry.start`) and stored on `op.completion_mode`; all subsequent auto-submit gating reads the frozen value, so a mid-operation `global_run_mode` change does not retroactively alter an already-active operation.
+
+## OPS-02-C02 — Checklist completion semantics
+
+- Checklist payload is now **structured** — a list of `{"item_id": str, "completed": bool}` items. `OperationExecution.checklist` is `list[dict]`.
+- `_validate_checklist_completion()` enforces the gate **fail-closed**: checklist must be a non-empty list; every item must be an object with a non-empty string `item_id`; and `completed` must be exactly `True` for every item. A present-but-incomplete item (`completed: False`), a missing `item_id`, or a plain-string item is rejected — **item exists ≠ item completed**.
+- AUTO synthetic checklist is now fully neutral (`demo_item_1/2/3`, all `completed: true`) — simulation placeholders, not TIPA process facts.
+

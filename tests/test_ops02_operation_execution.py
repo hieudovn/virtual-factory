@@ -287,7 +287,10 @@ class TestAP03Checklist:
         assert op.state == OperationState.AWAITING_COMPLETION
         line.submit_operation_command(
             "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
-            payload={"checklist": ["mech_check_done", "visual_check_done"]},
+            payload={"checklist": [
+                {"item_id": "demo_item_1", "completed": True},
+                {"item_id": "demo_item_2", "completed": True},
+            ]},
         )
         op2 = line.operation_registry.active_for("AP03", "SSO2-0001")
         assert op2 is None
@@ -592,7 +595,84 @@ class TestAssistedNotAuto:
                  if o.station_id == "AP03"]
         assert found[-1].operation_result == OperationResult.CONFIRMED
         assert found[-1].quality_result is None
-        assert found[-1].checklist  # synthetic checklist populated
+        # C02: synthetic checklist is neutral + fully completed
+        ids = {it["item_id"] for it in found[-1].checklist}
+        assert ids == {"demo_item_1", "demo_item_2", "demo_item_3"}
+        assert all(it["completed"] is True for it in found[-1].checklist)
+        assert line.conveyor.is_position_complete("AP03")
+
+
+class TestAP03ChecklistGateC02:
+    def _to_ap03_awaiting(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP03")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        op = line.operation_registry.active_for("AP03", "SSO2-0001")
+        assert op.state == OperationState.AWAITING_COMPLETION
+        return line
+
+    def test_item_exists_but_not_completed_rejected(self):
+        line = self._to_ap03_awaiting()
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command(
+                "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
+                payload={"checklist": [
+                    {"item_id": "demo_item_1", "completed": False},
+                ]},
+            )
+        op = line.operation_registry.active_for("AP03", "SSO2-0001")
+        assert op.state == OperationState.AWAITING_COMPLETION
+        assert line.conveyor.is_position_complete("AP03") is False
+
+    def test_plain_string_items_rejected(self):
+        line = self._to_ap03_awaiting()
+        # a plain string has no completion state — must fail closed
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command(
+                "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
+                payload={"checklist": ["anything"]},
+            )
+        assert line.conveyor.is_position_complete("AP03") is False
+
+    def test_item_missing_item_id_rejected(self):
+        line = self._to_ap03_awaiting()
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command(
+                "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
+                payload={"checklist": [{"completed": True}]},
+            )
+        assert line.conveyor.is_position_complete("AP03") is False
+
+    def test_partial_completion_rejected(self):
+        line = self._to_ap03_awaiting()
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command(
+                "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
+                payload={"checklist": [
+                    {"item_id": "demo_item_1", "completed": True},
+                    {"item_id": "demo_item_2", "completed": False},
+                ]},
+            )
+        assert line.conveyor.is_position_complete("AP03") is False
+
+    def test_all_completed_accepts_and_records(self):
+        line = self._to_ap03_awaiting()
+        line.submit_operation_command(
+            "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
+            payload={"checklist": [
+                {"item_id": "demo_item_1", "completed": True},
+                {"item_id": "demo_item_2", "completed": True},
+            ]},
+        )
+        found = [o for o in line.operation_registry._operations.values()
+                 if o.station_id == "AP03" and o.wip_id == "SSO2-0001"]
+        assert found[-1].operation_result == OperationResult.CONFIRMED
+        assert found[-1].quality_result is None
+        assert found[-1].checklist == [
+            {"item_id": "demo_item_1", "completed": True},
+            {"item_id": "demo_item_2", "completed": True},
+        ]
         assert line.conveyor.is_position_complete("AP03")
 
 

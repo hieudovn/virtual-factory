@@ -102,7 +102,7 @@ class OperationExecution:
     completion_mode: CompletionMode = CompletionMode.AUTO
     command: Optional[StationCommand] = None
     inputs: dict = field(default_factory=dict)
-    checklist: list[str] = field(default_factory=list)
+    checklist: list[dict] = field(default_factory=list)
     measurements: list[dict] = field(default_factory=list)
     operation_result: Optional[OperationResult] = None
     quality_result: Optional[str] = None   # "PASS" | "FAIL" | "NG" | None

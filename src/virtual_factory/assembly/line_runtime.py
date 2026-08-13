@@ -228,10 +228,50 @@ _QUALITY_STATION_MAP: dict[str, tuple[str, "CheckType"]] = {
     "AP11": ("ap11", CheckType.FINAL_QC),
 }
 
-# DEMO_SYNTHETIC generic checklist placeholder for AP03 — NOT verified TIPA facts.
-_AP03_SYNTHETIC_CHECKLIST: tuple[str, ...] = (
-    "mechanical_prep_ok", "visual_check_ok", "measurement_subset_ok",
+# DEMO_SYNTHETIC neutral checklist placeholder for AP03 — NOT TIPA process facts.
+# The runtime only knows item_id + completed (OPS-02-C02); names are neutral.
+_AP03_SYNTHETIC_CHECKLIST: tuple[dict, ...] = (
+    {"item_id": "demo_item_1", "completed": True},
+    {"item_id": "demo_item_2", "completed": True},
+    {"item_id": "demo_item_3", "completed": True},
 )
+
+
+def _validate_checklist_completion(items) -> list[dict]:
+    """OPS-02-C02: validate checklist COMPLETION, not mere presence.
+
+    Fail-closed gate:
+      - checklist is a non-empty list
+      - every item is a dict with a non-empty string ``item_id``
+      - ``completed`` is exactly ``True`` for every item
+        (item exists != item completed)
+    Returns the normalized completed items.
+    """
+    if not isinstance(items, (list, tuple)) or not items:
+        raise AssyLineError(
+            "Checklist gate: CONFIRM_AND_COMPLETE requires a non-empty "
+            "checklist (payload['checklist'] missing or empty)"
+        )
+    normalized: list[dict] = []
+    for it in items:
+        if not isinstance(it, dict):
+            raise AssyLineError(
+                "Checklist gate: each checklist item must be an object "
+                "{item_id, completed}"
+            )
+        item_id = it.get("item_id")
+        completed = it.get("completed")
+        if not isinstance(item_id, str) or not item_id:
+            raise AssyLineError(
+                "Checklist gate: checklist item is missing a non-empty 'item_id'"
+            )
+        if completed is not True:
+            raise AssyLineError(
+                f"Checklist gate: item '{item_id}' is not completed "
+                f"(completed={completed!r}) - item exists != item completed"
+            )
+        normalized.append({"item_id": item_id, "completed": True})
+    return normalized
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -488,18 +528,19 @@ class AssyLineRuntime:
         return False  # fail-safe
 
     def _execute_ap03_checklist(
-        self, wip_id: str, checklist_items: list[str],
+        self, wip_id: str, checklist_items: list[dict],
     ) -> list[LineEvent]:
-        """AP03 checklist gate completion (C01-01). No quality record."""
+        """AP03 checklist gate completion (C01-01 / C02). No quality record."""
         events: list[LineEvent] = []
         events.append(self._make_event("STATION_START", "AP03", wip_id, "checklist gate"))
         ws = self._wips.get(wip_id)
         if ws:
             ws.station_count += 1
             ws.lifecycle = WipLifecycle.COMPLETED_STATION
+        completed = sum(1 for it in checklist_items if it.get("completed") is True)
         events.append(self._make_event(
             "STATION_COMPLETE", "AP03", wip_id,
-            f"checklist complete items={len(checklist_items)}"))
+            f"checklist complete items={completed}"))
         return events
 
     def _advance_operation(
@@ -599,14 +640,10 @@ class AssyLineRuntime:
                 f"Operation {op.execution_id} not awaiting action "
                 f"(state={op.state.value})")
 
-        # C01-01: checklist gate — validate actual checklist completion.
+        # C01-01 / C02: checklist gate — validate actual checklist COMPLETION.
         if contract.capabilities.checklist and cmd == StationCommand.CONFIRM_AND_COMPLETE:
             checklist = (payload or {}).get("checklist", []) if payload else []
-            if not checklist:
-                raise AssyLineError(
-                    f"AP03 checklist gate: {cmd.value} requires completed checklist "
-                    f"items (payload['checklist'] missing or empty)")
-            op.checklist = list(checklist)
+            op.checklist = _validate_checklist_completion(checklist)
 
         op.command = cmd
         if payload is not None:
