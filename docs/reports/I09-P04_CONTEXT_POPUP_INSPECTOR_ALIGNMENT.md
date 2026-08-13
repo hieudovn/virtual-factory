@@ -1,9 +1,11 @@
 # I09-P04 — Context Popup / Inspector Alignment
 
 > **Baseline**: `e46d2a8`
-> **Head triển khai**: `21c2c80`
+> **Head triển khai**: `58f4a75`
+> **Commit chain**: `e46d2a8 → 7e6e0a7 → 58f4a75`
 > **Ngày**: 2026-08-13
 > **Loại**: UI interaction alignment — **KHÔNG đổi backend/runtime/API/snapshot/positions[]/motion**
+> **C01**: reset stale-popup defect fix (được SA authorize) — chỉ `ctrlB.reset()` cleanup
 
 ---
 
@@ -21,6 +23,7 @@ Căn chỉnh tương tác giữa context source (SSO2 / RSO2 / line-out) và pop
 |------|----------|
 | `src/virtual_factory/ui/static/assy_demo.js` | `_bindContextClicks()`, `selectContext(type)`, `_renderContextPopup()`, line_state wording, AP04 boundary trong `_renderPopup`, selected-WIP highlight, genealogy parent links clickable |
 | `src/virtual_factory/ui/static/assy_demo.css` | `pointer-events` cho context groups, `.vf-context-note/tag`, `.vf-popup-sep`, `.vf-insp-link`, selected WIP halo |
+| `src/virtual_factory/ui/static/assy_demo.js` **(C01)** | `ctrlB.reset()`: `this.closePopup(); this._renderInspector(null);` ngay sau khi clear interaction state, trước API round-trip |
 
 ---
 
@@ -71,6 +74,21 @@ và thêm **Joined** row cho MTR child (← SSO2-xxxx + RSO2-xxxx @ AP04).
 
 ---
 
+## 7b. C01 — Reset stale-popup correction
+
+- **Defect**: `reset()` chỉ xóa interaction state nội bộ, không đóng DOM popup → stale truth hiển thị sau RESET.
+- **Fix**: `this.closePopup(); this._renderInspector(null);` chạy **trước** `call('reset')`/`refresh()`.
+- **Verify 4+1 trường hợp** (before → after):
+  | Case | popup | inspector | halo |
+  |------|:---:|:---:|:---:|
+  | station → RESET | closed | closed | — |
+  | WIP → RESET | closed | closed | cleared |
+  | SSO2 context → RESET | closed | closed | — |
+  | RSO2 context → RESET | closed | closed | — |
+  | off-line context → RESET | closed | closed | — |
+
+---
+
 ## 8. Responsive
 
 | Viewport | Kết quả |
@@ -83,19 +101,21 @@ SVG `#fb-canvas-svg` fill container (kiểm chứng 1172×650 tại viewport tes
 
 ---
 
-## 9. Evidence
+## 9. Evidence matrix
 
 `docs/ui/evidence/i09-p04/`:
-- EV1 frame B context sources + line_state wording
-- EV2 SSO2 context popup
-- EV3 RSO2 context popup
-- EV4 line-out/offline context popup
-- EV5 WIP inspector + tabs restored
-- EV6 selected WIP highlight
-- EV7 AP04 identity boundary (consumed SSO2 → child MTR)
-- EV8 child MTR navigation
-- EV9 genealogy clickable parent links
-- EV12 context cleared on close
+
+| Criterion | Evidence | Result |
+|-----------|----------|:---:|
+| Context source clickable | EV2 (SSO2), EV3 (RSO2), EV4 (offline) | PASS |
+| WIP inspector + tabs restored | EV5 | PASS |
+| Selected-WIP highlight follows identity | EV5a (PRE-ASSY, before), EV5b (AP01, after) — same `SSO2-0001`, no duplicate | PASS |
+| Selected highlight present | EV6 | PASS |
+| AP04 identity boundary (consumed SSO2 → child MTR) | EV7, EV8 | PASS |
+| Genealogy parent links clickable | EV9 | PASS |
+| 1366×768 popup fit | EV11 (popup rect fully in viewport, controls usable) | PASS |
+| Reset clears popup/context (C01) | EV13 (before RESET), EV14 (after RESET) | PASS |
+| Frame B context sources + line_state | EV1 | PASS |
 
 ---
 
@@ -110,7 +130,7 @@ Toàn bộ suite: `1278 passed, 2 failed` — 2 failure là **pre-existing** ngo
 thay đổi UI (JS/CSS-only).
 
 Browser smoke: context click SSO2/RSO2/offline, WIP click, selected highlight, AP04 boundary,
-console 0 errors.
+selected WIP before/after STEP, 1366 popup fit, reset clears popup/selection/context, console 0 errors.
 
 ---
 
@@ -130,6 +150,9 @@ console 0 errors.
 | Continuous feed policy | NO |
 | I09-P05 | NOT STARTED |
 
+C01 correction (authorized): chỉ thêm `closePopup()` + `_renderInspector(null)` trong `ctrlB.reset()`.
+Không đổi runtime/API/snapshot/motion; không refactor popup architecture.
+
 ---
 
-> **I09-P04 — READY FOR SA REVIEW.**
+> **I09-P04-C01 — READY FOR SA REVIEW.**
