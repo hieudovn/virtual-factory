@@ -334,6 +334,37 @@ class AssyDemoComposition:
             ctx.step_context()
         self.demo_step_number += 1
 
+    def step_sub_line(self, sub_line_id: str) -> None:
+        """Execute one demo cycle for exactly one sub-line context.
+
+        This is an additive presentation-control entry point: it uses the
+        same feed policy and runtime ``step_context`` as ``step_all`` but
+        deliberately leaves every other sub-line untouched.
+        """
+        ctx = self.get_context(sub_line_id)
+        if ctx is None:
+            raise ValueError(f"Unknown sub_line_id: {sub_line_id!r}")
+        if self.continuous_feed_enabled:
+            self.feed_policy.replenish(ctx)
+        ctx.step_context()
+        self.demo_step_number += 1
+
+    def step_sub_lines(self, sub_line_ids: list[str]) -> None:
+        """Advance a selected group on one shared demo clock tick."""
+        selected = []
+        for sub_line_id in sub_line_ids:
+            ctx = self.get_context(sub_line_id)
+            if ctx is None:
+                raise ValueError(f"Unknown sub_line_id: {sub_line_id!r}")
+            selected.append(ctx)
+        if self.continuous_feed_enabled:
+            for ctx in selected:
+                self.feed_policy.replenish(ctx)
+        for ctx in selected:
+            ctx.step_context()
+        if selected:
+            self.demo_step_number += 1
+
     # --- Snapshot ---
 
     def snapshot(self) -> AssyDemoSnapshot:

@@ -43,9 +43,14 @@ const VF_TOKEN_LABEL = {STATOR:'STATOR',JOINED:'JOINED',PRETEST:'PRE-TEST',TESTE
 
 // Station operation names (C03R canonical)
 const STATION_OPS = {
-  'PRE-ASSY':'Prep','AP01':'TBox Install','AP02':'TBox Wiring','AP03':'SSO2 & TBox QC',
-  'AP04':'RSO2 & BB-LS','AP05':'BB-OS, Fan & Cover','AP06':'Electrical Test','AP07':'Nameplate & Finish',
-  'AP08':'Visual Inspection','AP09':'Boxing','AP10':'Pack & Palletize','AP11':'Packing QC'
+  'PRE-ASSY':'Prep','AP01':'TBox fit','AP02':'TBox wire','AP03':'SSO2 QC',
+  'AP04':'Rotor join','AP05':'Motor fit','AP06':'E-test','AP07':'Finish',
+  'AP08':'Visual QC','AP09':'Box','AP10':'Pack','AP11':'Final QC'
+};
+const STATION_ARIA_OPS = {
+  'PRE-ASSY':'Preparation','AP01':'Terminal box installation','AP02':'Terminal box wiring','AP03':'SSO2 and terminal-box quality check',
+  'AP04':'RSO2 and bearing / lock-screw join','AP05':'Bearing, fan and cover assembly','AP06':'Electrical test','AP07':'Nameplate and finish',
+  'AP08':'Visual inspection','AP09':'Boxing','AP10':'Pack and palletize','AP11':'Packing quality check'
 };
 
 /* ═══════════════════════════════════════
@@ -99,77 +104,53 @@ const VF_ICON = {
    VF Visual Primitive Library (C03R Enhanced)
    ═══════════════════════════════════════ */
 const VF = {
-  // ── Wooden pallet — EXH-UI-01: 100×80 ──
+  // ── Carrier pallet — a neutral carrier, visually separate from the WIP. ──
   pallet(x, y) {
-    const w=100, h=80;
-    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="var(--vf-pallet-wood)" stroke="#8B7355" stroke-width="1.5"/>
-      <rect x="${x-w/2-2}" y="${y-h/2+2}" width="${w+4}" height="6" rx="3" fill="var(--vf-pallet-dark)" opacity="0.15"/>
-      <line x1="${x-w/2+7}" y1="${y-16}" x2="${x+w/2-7}" y2="${y-16}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
-      <line x1="${x-w/2+7}" y1="${y}" x2="${x+w/2-7}" y2="${y}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
-      <line x1="${x-w/2+7}" y1="${y+16}" x2="${x+w/2-7}" y2="${y+16}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
-      <rect x="${x-24}" y="${y-h/2-4}" width="48" height="5" rx="2" fill="rgba(0,0,0,0.04)"/>`;
+    const w=104, h=48;
+    return `<g class="vf-pallet-shell">
+      <rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="5" fill="var(--vf-pallet)" stroke="#5c4e3f" stroke-width="1.5"/>
+      <rect x="${x-w/2+7}" y="${y-h/2+7}" width="${w-14}" height="9" rx="2" fill="var(--vf-pallet-light)" opacity=".85"/>
+      <rect x="${x-w/2+7}" y="${y-2}" width="${w-14}" height="4" rx="2" fill="#5c4e3f" opacity=".65"/>
+      <rect x="${x-w/2+7}" y="${y+h/2-13}" width="${w-14}" height="6" rx="2" fill="var(--vf-pallet-light)" opacity=".78"/>
+      <path d="M${x-38} ${y+24}v8M${x-12} ${y+24}v8M${x+12} ${y+24}v8M${x+38} ${y+24}v8" stroke="#5c4e3f" stroke-width="5" stroke-linecap="round"/>
+    </g>`;
   },
 
-  // ── STATOR ASSY — metallic ring (C02-C01: 1.5x for wider conveyor) ──
+  // ── Product visual stages are derived only from position (frozen contract). ──
   statorAssy(x, y) {
-    const r=28;
-    return `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--vf-obj-stator)" stroke="#1E8090" stroke-width="1.8"/>
-      <circle cx="${x}" cy="${y}" r="14" fill="var(--vf-bg-canvas)" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="8" fill="none" stroke="#1E8090" stroke-width="0.9" opacity="0.4"/>
-      <circle cx="${x-15}" cy="${y-11}" r="3" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x+15}" cy="${y-11}" r="3" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x-15}" cy="${y+11}" r="3" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x+15}" cy="${y+11}" r="3" fill="#1E8090" opacity="0.5"/>`;
+    return `<g aria-label="Stator assembly">
+      <circle cx="${x}" cy="${y-8}" r="27" fill="#64748b" stroke="#334155" stroke-width="2"/>
+      <circle cx="${x}" cy="${y-8}" r="18" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+      <circle cx="${x}" cy="${y-8}" r="10" fill="#334155"/>
+      <path d="M${x-25} ${y-8}h50M${x} ${y-33}v50M${x-18} ${y-26}l36 36M${x+18} ${y-26}l-36 36" stroke="#94a3b8" stroke-width="2" opacity=".85"/>
+      <rect x="${x+16}" y="${y-35}" width="22" height="15" rx="3" fill="#475569" stroke="#334155"/>
+      <path d="M${x+21} ${y-20}v8m5-8v8m5-8v8" stroke="#fbbf24" stroke-width="2"/>
+    </g>`;
   },
 
   // ── ROTOR — shaft (C02-C01: 1.5x for wider conveyor) ──
   rotor(x, y) {
-    return `<rect x="${x-32}" y="${y-8}" width="64" height="16" rx="8" fill="var(--vf-obj-rotor)" stroke="#C88020" stroke-width="1.5"/>
-      <rect x="${x-5}" y="${y-10}" width="10" height="20" rx="5" fill="#D09030"/>
-      <rect x="${x-26}" y="${y-4}" width="52" height="8" rx="4" fill="#D09030" opacity="0.4"/>
-      <line x1="${x-26}" y1="${y}" x2="${x+26}" y2="${y}" stroke="#C08028" stroke-width="0.9" opacity="0.4"/>`;
+    return `<g aria-label="Rotor component"><rect x="${x-34}" y="${y-7}" width="68" height="14" rx="7" fill="#64748b" stroke="#334155" stroke-width="1.5"/><circle cx="${x-17}" cy="${y}" r="13" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/><circle cx="${x+17}" cy="${y}" r="13" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/><path d="M${x-40} ${y}h80" stroke="#e2e8f0" stroke-width="3"/></g>`;
   },
 
   // ── MTR JOINED — assembled motor (C02-C01: 1.5x for wider conveyor) ──
   motorJoined(x, y) {
-    return `<rect x="${x-28}" y="${y-16}" width="56" height="32" rx="10" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1.6"/>
-      <rect x="${x-10}" y="${y-20}" width="20" height="6" rx="3" fill="#308A72" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="7" fill="#308A72" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="3" fill="#fff" opacity="0.3"/>
-      <rect x="${x-30}" y="${y+6}" width="8" height="7" rx="2" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1"/>
-      <rect x="${x+22}" y="${y+6}" width="8" height="7" rx="2" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1"/>`;
+    return `<g aria-label="Joined motor"><rect x="${x-34}" y="${y-22}" width="68" height="36" rx="14" fill="#475569" stroke="#1e293b" stroke-width="2"/><circle cx="${x-25}" cy="${y-4}" r="17" fill="#64748b" stroke="#1e293b" stroke-width="2"/><circle cx="${x-25}" cy="${y-4}" r="7" fill="#cbd5e1"/><path d="M${x+34} ${y-4}h20" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/><rect x="${x-8}" y="${y-35}" width="22" height="13" rx="3" fill="#64748b" stroke="#1e293b"/><path d="M${x-10} ${y+14}v8m26-8v8" stroke="#1e293b" stroke-width="5" stroke-linecap="round"/><path d="M${x-8} ${y-12}h32m-32 8h32" stroke="#94a3b8" stroke-width="1.4" opacity=".9"/></g>`;
   },
 
   // ── MTR PRE-TEST — complete motor (C02-C01: 1.5x for wider conveyor) ──
   motorPreTest(x, y) {
-    return `<rect x="${x-30}" y="${y-16}" width="60" height="32" rx="10" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.6"/>
-      <circle cx="${x}" cy="${y}" r="7" fill="#2E7098" opacity="0.4"/>
-      <circle cx="${x}" cy="${y}" r="3" fill="#fff" opacity="0.2"/>
-      <rect x="${x-32}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
-      <rect x="${x+26}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
-      <rect x="${x-26}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <rect x="${x+17}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>`;
+    return `${this.motorJoined(x, y)}<g aria-label="Pre-test motor"><circle cx="${x-25}" cy="${y-4}" r="22" fill="none" stroke="#0f766e" stroke-width="5"/><path d="M${x-44} ${y-4}h8" stroke="#0f766e" stroke-width="4" stroke-linecap="round"/></g>`;
   },
 
   // ── TESTED MTR — blue T marker (C02-C01: 1.5x for wider conveyor) ──
   motorTested(x, y) {
-    return `<rect x="${x-30}" y="${y-16}" width="60" height="32" rx="10" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.6"/>
-      <circle cx="${x}" cy="${y}" r="7" fill="#2E7098" opacity="0.4"/>
-      <rect x="${x-32}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
-      <rect x="${x+26}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
-      <rect x="${x-26}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <rect x="${x+17}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <circle cx="${x+24}" cy="${y-14}" r="8" fill="none" stroke="var(--vf-accent)" stroke-width="1.5"/>
-      <text x="${x+24}" y="${y-9}" fill="var(--vf-accent)" font-size="10" text-anchor="middle" font-weight="bold">T</text>`;
+    return `${this.motorPreTest(x, y)}<g aria-label="Tested motor"><rect x="${x-3}" y="${y-18}" width="22" height="11" rx="2" fill="#e2e8f0" stroke="#0f766e"/><path d="m${x+2} ${y-12} 3 3 7-7" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
   },
 
   // ── PACKED GOODS — carton (C02-C01: 1.5x for wider conveyor) ──
   packedGoods(x, y) {
-    return `<rect x="${x-30}" y="${y-18}" width="60" height="36" rx="6" fill="var(--vf-obj-packed)" stroke="#9A6838" stroke-width="1.6"/>
-      <line x1="${x}" y1="${y-18}" x2="${x}" y2="${y+18}" stroke="#9A6838" stroke-width="1.2" opacity="0.35"/>
-      <line x1="${x-30}" y1="${y}" x2="${x+30}" y2="${y}" stroke="#9A6838" stroke-width="1.2" opacity="0.35"/>
-      <rect x="${x-16}" y="${y-19}" width="10" height="4" rx="2" fill="#9A6838" opacity="0.5"/>
-      <rect x="${x+6}" y="${y-19}" width="10" height="4" rx="2" fill="#9A6838" opacity="0.5"/>`;
+    return `<g aria-label="Packed goods"><path d="M${x-34} ${y-18}h68v42h-68z" fill="#cbd5e1" stroke="#475569" stroke-width="2"/><path d="M${x-34} ${y-18}v-10h68v10M${x} ${y-28}v52M${x-34} ${y-2}h68" fill="none" stroke="#64748b" stroke-width="1.5"/><rect x="${x-18}" y="${y-12}" width="22" height="10" rx="2" fill="#f8fafc"/><path d="M${x-14} ${y-7}h14" stroke="#94a3b8" stroke-width="1.5"/></g>`;
   },
 
   // ── Quality state overlay ──
@@ -187,78 +168,46 @@ const VF = {
       <text x="${x+10+r}" y="${y-17}" fill="#fff" font-size="${r+2}" text-anchor="middle" font-weight="bold">!</text>`;
   },
 
-  // ── Station machine body (C01: stronger silhouette, 96×68px) ──
+  // ── Station cells: one calm industrial language, operation icon carries the distinction. ──
   stationBody(x, y, archetype, stId) {
     const cx = x, cy = y;
-    let body = '';
-    const bw = 96, bh = 68;
-
-    // Base machine footprint with shadow
-    body += `<rect x="${cx-bw/2+1}" y="${cy-bh/2+1}" width="${bw}" height="${bh}" rx="6" fill="rgba(0,0,0,0.05)"/>`;
-    body += `<rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" rx="6" fill="#F5F6F8" stroke="var(--vf-border)" stroke-width="1.2"/>`;
-
-    if (archetype === 'INPUT') {
-      body += `<rect x="${cx-30}" y="${cy-18}" width="60" height="36" rx="4" fill="#E9ECF2" stroke="#D0D5E0" stroke-width="1"/>`;
-      body += `<circle cx="${cx-15}" cy="${cy}" r="7" fill="none" stroke="#A0AAB6" stroke-width="1.2"/>`;
-      body += `<circle cx="${cx+15}" cy="${cy}" r="7" fill="none" stroke="#A0AAB6" stroke-width="1.2"/>`;
-    } else if (archetype === 'JOIN') {
-      body += `<rect x="${cx-36}" y="${cy-22}" width="72" height="44" rx="5" fill="#FFFDF5" stroke="#C8960E" stroke-width="1.5"/>`;
-      body += `<circle cx="${cx-14}" cy="${cy}" r="8" fill="none" stroke="#C8960E" stroke-width="1.3"/>`;
-      body += `<circle cx="${cx+14}" cy="${cy}" r="8" fill="none" stroke="#C8960E" stroke-width="1.3"/>`;
-      body += `<line x1="${cx-6}" y1="${cy}" x2="${cx+6}" y2="${cy}" stroke="#C8960E" stroke-width="2"/>`;
-      // Arrow indicators for two inputs
-      body += `<line x1="${cx-28}" y1="${cy-18}" x2="${cx-18}" y2="${cy-8}" stroke="#C8960E" stroke-width="1.2" marker-end="url(#arrowJoin)"/>`;
-      body += `<line x1="${cx+28}" y1="${cy-18}" x2="${cx+18}" y2="${cy-8}" stroke="#C8960E" stroke-width="1.2" marker-end="url(#arrowJoin)"/>`;
-    } else if (archetype === 'TEST') {
-      body += `<rect x="${cx-30}" y="${cy-16}" width="60" height="32" rx="4" fill="#EAF2FF" stroke="var(--vf-accent)" stroke-width="1.2"/>`;
-      body += `<rect x="${cx+8}" y="${cy-22}" width="22" height="13" rx="3" fill="#fff" stroke="var(--vf-accent)" stroke-width="0.8"/>`;
-      body += `<text x="${cx+19}" y="${cy-13}" fill="var(--vf-accent)" font-size="8" text-anchor="middle" font-weight="700">T</text>`;
-      body += `<rect x="${cx-26}" y="${cy+6}" width="52" height="3" rx="1" fill="var(--vf-accent)" opacity="0.15"/>`;
-    } else if (archetype === 'VISION') {
-      body += `<rect x="${cx-28}" y="${cy-14}" width="56" height="28" rx="4" fill="#F0F4FF" stroke="var(--vf-accent)" stroke-width="1.2"/>`;
-      body += `<circle cx="${cx-4}" cy="${cy}" r="9" fill="none" stroke="var(--vf-accent)" stroke-width="1"/>`;
-      body += `<circle cx="${cx-4}" cy="${cy}" r="3" fill="var(--vf-accent)" opacity="0.6"/>`;
-      body += `<rect x="${cx+10}" y="${cy-7}" width="14" height="8" rx="2" fill="#fff" stroke="var(--vf-accent)" stroke-width="0.7"/>`;
-      body += `<circle cx="${cx+17}" cy="${cy-3}" r="1.5" fill="var(--vf-accent)"/>`;
-    } else if (archetype === 'PACK') {
-      if (stId === 'AP09') {
-        body += `<rect x="${cx-30}" y="${cy-16}" width="60" height="32" rx="4" fill="#FDF8F2" stroke="#B68B57" stroke-width="1.2"/>`;
-        body += `<rect x="${cx-22}" y="${cy-8}" width="44" height="16" rx="3" fill="none" stroke="#B68B57" stroke-width="0.8" stroke-dasharray="4,3"/>`;
-        body += `<rect x="${cx-14}" y="${cy-10}" width="8" height="12" rx="1" fill="none" stroke="#B68B57" stroke-width="0.7"/>`;
-        body += `<rect x="${cx+6}" y="${cy-10}" width="8" height="12" rx="1" fill="none" stroke="#B68B57" stroke-width="0.7"/>`;
-      } else {
-        body += `<rect x="${cx-30}" y="${cy-16}" width="60" height="32" rx="4" fill="#FDF8F2" stroke="#9A6838" stroke-width="1.2"/>`;
-        body += `<rect x="${cx-22}" y="${cy-10}" width="44" height="20" rx="3" fill="none" stroke="#9A6838" stroke-width="0.8"/>`;
-        body += `<line x1="${cx-16}" y1="${cy-10}" x2="${cx+16}" y2="${cy+10}" stroke="#9A6838" stroke-width="0.6" opacity="0.4"/>`;
-        body += `<rect x="${cx-20}" y="${cy-12}" width="40" height="3" rx="1" fill="#9A6838" opacity="0.5"/>`;
-        body += `<rect x="${cx-20}" y="${cy+9}" width="40" height="3" rx="1" fill="#9A6838" opacity="0.5"/>`;
-      }
-    } else if (archetype === 'FINAL') {
-      body += `<rect x="${cx-30}" y="${cy-14}" width="60" height="28" rx="4" fill="#F0F5FF" stroke="var(--vf-accent)" stroke-width="1.2"/>`;
-      body += `<polyline points="${cx-12},${cy} ${cx-4},${cy+6} ${cx+14},${cy-8}" fill="none" stroke="var(--vf-state-pass)" stroke-width="2"/>`;
-      body += `<rect x="${cx-22}" y="${cy+4}" width="44" height="3" rx="1.5" fill="var(--vf-state-pass)" opacity="0.15"/>`;
-    } else if (archetype === 'CHECK') {
-      body += `<rect x="${cx-26}" y="${cy-12}" width="52" height="24" rx="4" fill="#F8F9FB" stroke="var(--vf-text-muted)" stroke-width="1"/>`;
-      body += `<rect x="${cx-16}" y="${cy-6}" width="32" height="4" rx="2" fill="var(--vf-text-muted)" opacity="0.25"/>`;
-      body += `<rect x="${cx-16}" y="${cy+2}" width="32" height="4" rx="2" fill="var(--vf-text-muted)" opacity="0.25"/>`;
-    } else {
-      body += `<rect x="${cx-28}" y="${cy-14}" width="56" height="28" rx="4" fill="#F4F6F8" stroke="var(--vf-border)" stroke-width="1"/>`;
-    }
-
-    return body;
+    const isJoin = stId === 'AP04';
+    const isCritical = ['AP06','AP08','AP11'].includes(stId);
+    const stroke = isJoin ? '#b45309' : isCritical ? 'var(--vf-accent)' : '#64748b';
+    let icon = '<path d="M-16 8h32M-12-8h24M-8-14v28M8-14v28"/>';
+    if (stId === 'AP01') icon = '<rect x="-14" y="-10" width="28" height="20" rx="3"/><path d="M-6-10v-6m6 6v-6m6 6v-6"/>';
+    if (stId === 'AP02') icon = '<path d="M-16-10c10 0 2 20 12 20S2-10 16-10M-16 9h32"/>';
+    if (stId === 'AP03') icon = '<path d="M-14-10h28M-10-10v20m20-20v20M-16 10h32"/><circle cx="0" cy="0" r="4"/>';
+    if (stId === 'AP04') icon = '<circle cx="-10" cy="0" r="8"/><circle cx="10" cy="0" r="8"/><path d="M-2 0h4M0-15v7"/>';
+    if (stId === 'AP05') icon = '<circle cx="0" cy="0" r="13"/><path d="M0-13v26M-13 0h26M-9-9l18 18M9-9-9 9"/>';
+    if (stId === 'AP06') icon = '<rect x="-14" y="-11" width="28" height="22" rx="3"/><path d="M-9 5 0-4l5 5 4-7"/>';
+    if (stId === 'AP07') icon = '<rect x="-13" y="-10" width="26" height="20" rx="2"/><path d="M-8-4h16M-8 1h11M-8 6h8"/>';
+    if (stId === 'AP08') icon = '<rect x="-14" y="-9" width="28" height="18" rx="3"/><circle cx="-3" cy="0" r="5"/><path d="M10-5h4v10h-4"/>';
+    if (stId === 'AP09') icon = '<path d="M-14-8 0-15 14-8v16L0 15-14 8Z M-14-8 0 0l14-8M0 0v15"/>';
+    if (stId === 'AP10') icon = '<path d="M-14-4h28v12h-28zM-10 8v6m10-6v6m10-6v6M-10-10h20"/>';
+    if (stId === 'AP11') icon = '<rect x="-13" y="-12" width="26" height="24" rx="3"/><path d="m-7 1 5 5 9-11M-7-6h8"/>';
+    if (stId === 'PRE-ASSY') icon = '<path d="M-16 7h32M-11 7V-8h22V7M-7-3h14"/>';
+    return `<g class="vf-station-shell" filter="url(#vf-soft-shadow)">
+      <rect x="${cx-48}" y="${cy-34}" width="96" height="68" rx="8" fill="#f8fafc" stroke="${stroke}" stroke-width="${isJoin || isCritical ? 2 : 1.3}"/>
+      <g transform="translate(${cx} ${cy})" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</g>
+      <circle cx="${cx+35}" cy="${cy-21}" r="4" fill="${isJoin ? '#f59e0b' : isCritical ? 'var(--vf-accent)' : '#94a3b8'}"/>
+    </g>`;
   },
 
   // ── AP badge (larger for readability) ──
   apBadge(x, y, stId) {
     const cy = y - 46;
-    return `<rect x="${x-24}" y="${cy-11}" width="48" height="22" rx="5" fill="var(--vf-bg-surface)" stroke="var(--vf-accent)" stroke-width="1.4"/>
-      <text x="${x}" y="${cy+6}" fill="var(--vf-accent)" font-size="14" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${stId}</text>`;
+    const landmark = LANDMARK_LABELS[stId];
+    const label = landmark ? `${stId} · ${landmark}` : stId.replace('PRE-ASSY','PRE');
+    const width = landmark ? 82 : 50;
+    return `<rect x="${x-width/2}" y="${cy-11}" width="${width}" height="22" rx="5" fill="#fff" stroke="#94a3b8" stroke-width="1.2"/>
+      <text x="${x}" y="${cy+5}" fill="#334155" font-size="${landmark ? 10 : 12}" font-weight="800" text-anchor="middle" font-family="Consolas,monospace">${label}</text>`;
   },
 
   opName(x, y, stId) {
     const cy = y - 24;
     const name = STATION_OPS[stId] || stId;
-    return `<text x="${x}" y="${cy}" fill="var(--vf-text)" font-size="13" font-weight="600" text-anchor="middle">${name}</text>`;
+    return `<text x="${x}" y="${cy}" fill="#334155" font-size="12" font-weight="700" text-anchor="middle">${name}</text>`;
   },
 
   badgeConnector(x, y) {
@@ -274,18 +223,11 @@ const VF = {
     let html = '';
     const cy = y + 24;
     html += VF.badgeConnector(x, cy);
-    html += `<g class="vf-station-group" data-station="${stId}" style="cursor:pointer;">`;
+    html += `<g class="vf-station-group" data-station="${stId}" tabindex="0" role="button" aria-label="${stId}: ${STATION_ARIA_OPS[stId] || stId}">`;
     html += VF.stationBody(x, cy, archetype, stId);
     html += VF.conveyorRoller(x, y);
     html += VF.apBadge(x, y, stId);
     html += VF.opName(x, y, stId);
-    if (isLandmark) {
-      const lmName = LANDMARK_LABELS[stId];
-      if (lmName) {
-        const lc = archetype==='JOIN'?'#C8960E':'var(--vf-accent)';
-        html += `<text x="${x}" y="${y+64}" fill="${lc}" font-size="12" font-weight="700" text-anchor="middle">${lmName}</text>`;
-      }
-    }
     html += `</g>`;
     return html;
   },
@@ -309,9 +251,155 @@ const VF = {
     return html;
   }
 };
+
+/* Overview controls the composition; detail controls the selected sub-line.
+   Each timer maps to a real runtime endpoint, so cards never claim a state
+   that the simulation has not actually advanced. */
+const SimulationCoordinator = {
+  _allTimer: null,
+  _lineTimers: new Map(),
+  _pausedAllLines: new Set(),
+  _speed: 100,
+  _scenario: 'HAPPY_PATH',
+  _locked: false,
+  intervalMs() { return Math.round(120000 / this._speed); },
+  speedNote() { const s = this.intervalMs() / 1000; return `${this._speed}× · ${s % 1 ? s.toFixed(1) : s} s/step`; },
+  syncControls({ syncValues = false, source = null } = {}) {
+    const allRunning = !!this._allTimer;
+    const runningLines = this._runningLineCount();
+    const activeDetailId = ctrlB && ctrlB._subLineId;
+    const detailRunning = !!(activeDetailId && (allRunning || this._lineTimers.has(activeDetailId)));
+    if (syncValues) {
+      document.querySelectorAll('[data-sim-speed]').forEach(el => { if (el !== source) el.value = String(this._speed); });
+      document.querySelectorAll('[data-sim-scenario]').forEach(el => { if (el !== source) el.value = this._scenario; });
+    }
+    document.querySelectorAll('[data-sim-speed-note]').forEach(el => { el.textContent = this.speedNote(); });
+    this._setControlState('[data-sim-command="all-run"]', allRunning, 'Run all');
+    this._setControlState('[data-sim-command="detail-run"]', detailRunning, 'Run line');
+    document.querySelectorAll('[data-sim-command="all-pause"]').forEach(el => { el.disabled = !allRunning; });
+    document.querySelectorAll('[data-sim-command="detail-pause"]').forEach(el => { el.disabled = !detailRunning; });
+    document.querySelectorAll('[data-sim-command="all-step"], [data-sim-command="detail-step"], [data-sim-command="reset"]').forEach(el => { el.disabled = this._locked; });
+    const overviewState = document.getElementById('vf-overview-sim-state');
+    if (overviewState) { overviewState.textContent = runningLines ? `Simulation: RUNNING · ${runningLines}/6` : 'Simulation: PAUSED'; overviewState.classList.toggle('running', !!runningLines); }
+    const detailState = document.getElementById('vf-detail-sim-state');
+    if (detailState) { detailState.textContent = detailRunning ? 'Simulation: RUNNING' : 'Simulation: STOPPED'; detailState.classList.toggle('running', detailRunning); }
+  },
+  _setControlState(selector, running, label) {
+    document.querySelectorAll(selector).forEach(el => {
+      el.setAttribute('aria-pressed', String(running));
+      el.className = running ? 'vf-btn primary' : 'vf-btn outline';
+      el.innerHTML = running ? '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>Running' : `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 4 14 8-14 8Zm0 0v16"/></svg>${label}`;
+    });
+  },
+  _allLineIds() { return ['ASSY-SL01','ASSY-SL02','ASSY-SL03','ASSY-SL04','ASSY-SL05','ASSY-SL06']; },
+  _activeAllLineIds() { return this._allLineIds().filter(id => !this._pausedAllLines.has(id)); },
+  _runningLineCount() { return this._allTimer ? this._activeAllLineIds().length : this._lineTimers.size; },
+  isLineRunning(subLineId) { return !!((this._allTimer && !this._pausedAllLines.has(subLineId)) || this._lineTimers.has(subLineId)); },
+  async refreshActive() {
+    await ctrl.refreshOverview();
+    if (_inFrameB()) await ctrlB.refresh();
+  },
+  async stepAll() {
+    if (this._locked || MotionEngine.isAnimating) return;
+    this._locked = true;
+    try {
+      const activeIds = this._activeAllLineIds();
+      if (activeIds.length === 6) await ctrl._stepRaw();
+      else if (activeIds.length) await ctrl.call('step-lines', { sub_line_ids: activeIds });
+      await ctrl.refreshOverview();
+      if (_inFrameB() && this.isLineRunning(ctrlB._subLineId)) await ctrlB.refresh();
+    } finally {
+      this._locked = false;
+      this.syncControls();
+    }
+  },
+  async stepLine(subLineId) {
+    if (!subLineId || this._locked || MotionEngine.isAnimating) return;
+    this._locked = true;
+    try {
+      await ctrlB._stepLineRaw(subLineId);
+      await ctrl.refreshOverview();
+    } finally {
+      this._locked = false;
+      this.syncControls();
+    }
+  },
+  startAll() {
+    if (this._allTimer) return;
+    [...this._lineTimers.keys()].forEach(id => this.stopLine(id));
+    this._pausedAllLines.clear();
+    this._allTimer = setInterval(() => { if (!this._locked && !MotionEngine.isAnimating) this.stepAll(); }, this.intervalMs());
+    this.syncControls();
+  },
+  stopAll() {
+    if (this._allTimer) clearInterval(this._allTimer);
+    this._allTimer = null;
+    this._pausedAllLines.clear();
+    this.syncControls();
+  },
+  toggleAll() { this._allTimer ? this.stopAll() : this.startAll(); },
+  pauseAll() { this._stopAllTimers(); },
+  startLine(subLineId) {
+    if (!subLineId || this._lineTimers.has(subLineId)) return;
+    if (this._allTimer) {
+      this._pausedAllLines.delete(subLineId);
+      this.syncControls();
+      ctrl.refreshOverview();
+      return;
+    }
+    const timer = setInterval(() => { if (!this._locked && !MotionEngine.isAnimating) this.stepLine(subLineId); }, this.intervalMs());
+    this._lineTimers.set(subLineId, timer);
+    this.syncControls();
+    ctrl.refreshOverview();
+  },
+  stopLine(subLineId) {
+    if (this._allTimer) {
+      this._pausedAllLines.add(subLineId);
+      this.syncControls();
+      ctrl.refreshOverview();
+      return;
+    }
+    const timer = this._lineTimers.get(subLineId);
+    if (timer) clearInterval(timer);
+    this._lineTimers.delete(subLineId);
+    this.syncControls();
+    ctrl.refreshOverview();
+  },
+  toggleLine(subLineId) { this.isLineRunning(subLineId) ? this.stopLine(subLineId) : this.startLine(subLineId); },
+  pauseLine(subLineId) { this.stopLine(subLineId); },
+  _stopAllTimers() {
+    this.stopAll();
+    [...this._lineTimers.keys()].forEach(id => this.stopLine(id));
+  },
+  setSpeed(value, source = null) {
+    const speed = Number(value);
+    this._speed = [1,2,5,10,20,50,100,200].includes(speed) ? speed : 100;
+    ctrl._speed = this._speed; ctrlB._speed = this._speed;
+    if (this._allTimer) { clearInterval(this._allTimer); this._allTimer = setInterval(() => { if (!this._locked && !MotionEngine.isAnimating) this.stepAll(); }, this.intervalMs()); }
+    this._lineTimers.forEach((timer, id) => { clearInterval(timer); this._lineTimers.set(id, setInterval(() => { if (!this._locked && !MotionEngine.isAnimating) this.stepLine(id); }, this.intervalMs())); });
+    this.syncControls({ syncValues: true, source });
+  },
+  async setScenario(value, source = null) { this._scenario = value || 'HAPPY_PATH'; this.syncControls({ syncValues: true, source }); await this.reset(); },
+  async reset() {
+    this._stopAllTimers();
+    this._locked = true;
+    MotionEngine.cancel();
+    ctrl._scenario = this._scenario; ctrlB._scenario = this._scenario;
+    ctrl._selectionInitialized = false;
+    ctrlB.clearInteraction();
+    this.syncControls({ syncValues: true });
+    try {
+      await ctrl.call('reset', { scenario: this._scenario });
+      await this.refreshActive();
+    } finally {
+      this._locked = false;
+      this.syncControls({ syncValues: true });
+    }
+  }
+};
 const ctrl = {
   _autoTimer: null,
-  _speed: 1.0,
+  _speed: 100,
   _scenario: 'HAPPY_PATH',
   _selectedSubLineId: 'ASSY-SL01',
   _selectionInitialized: false,
@@ -321,45 +409,28 @@ const ctrl = {
   async init() {
     await this.call('reset', { scenario: this._scenario });
     await this.refreshOverview();
+    SimulationCoordinator.syncControls();
   },
 
   async reset() {
-    this.stopAuto();
-    this._scenario = document.getElementById('scenario-select').value;
-    this._selectionInitialized = false;
-    await this.call('reset', { scenario: this._scenario });
-    await this.refreshOverview();
+    return SimulationCoordinator.reset();
   },
 
   async step() {
+    return SimulationCoordinator.stepAll();
+  },
+
+  async _stepRaw() {
     await this.call('step');
     await this.refreshOverview();
   },
 
-  toggleAuto() {
-    if (this._autoTimer) { this.stopAuto(); return; }
-    this.startAuto();
-  },
-
-  startAuto() {
-    document.getElementById('btn-auto').textContent = '⏹ STOP';
-    document.getElementById('btn-auto').className = 'vf-btn primary';
-    document.getElementById('btn-pause').disabled = false;
-    this._autoTimer = setInterval(() => this.step(), Math.round(1000 / this._speed));
-  },
-
-  stopAuto() {
-    if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; }
-    document.getElementById('btn-auto').textContent = '▶▶ AUTO';
-    document.getElementById('btn-auto').className = 'vf-btn accent-outline';
-    document.getElementById('btn-pause').disabled = true;
-  },
-
-  pause() { if (this._autoTimer) this.stopAuto(); },
-
-  setSpeed(val) { this._speed = parseFloat(val); if (this._autoTimer) { this.stopAuto(); this.startAuto(); } },
-
-  setScenario(val) { this._scenario = val; this.reset(); },
+  toggleAuto() { SimulationCoordinator.toggleAll(); },
+  startAuto() { SimulationCoordinator.startAll(); },
+  stopAuto() { SimulationCoordinator.stopAll(); },
+  pause() { SimulationCoordinator.pauseAll(); },
+  setSpeed(val) { SimulationCoordinator.setSpeed(val); },
+  setScenario(val) { return SimulationCoordinator.setScenario(val); },
 
   async call(action, body) {
     const opts = body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : { method:'POST' };
@@ -383,9 +454,9 @@ const ctrl = {
   renderStatus() {
     const el = document.getElementById('live-status');
     if (!el) return;
-    if (this._liveStatus === 'LIVE') { el.textContent = '● LIVE'; el.style.color = 'var(--vf-state-pass)'; el.className = 'vf-status-item live'; }
-    else if (this._liveStatus === 'STALE') { el.textContent = '○ STALE'; el.style.color = 'var(--vf-state-hold)'; el.className = 'vf-status-item'; }
-    else { el.textContent = '✕ BACKEND UNAVAILABLE'; el.style.color = 'var(--vf-state-fail)'; el.className = 'vf-status-item'; }
+    if (this._liveStatus === 'LIVE') { el.textContent = 'Live'; el.style.color = 'var(--vf-state-pass)'; }
+    else if (this._liveStatus === 'STALE') { el.textContent = 'Stale data'; el.style.color = 'var(--vf-state-hold)'; }
+    else { el.textContent = 'Backend unavailable'; el.style.color = 'var(--vf-state-fail)'; }
   },
 
   /* ── Frame A Card Render ── */
@@ -399,6 +470,13 @@ const ctrl = {
 
     const wip = (ov.sub_lines||[]).reduce((s,sl)=>s+(sl.wips_on_line||0), 0);
     const wipEl = document.getElementById('vf-sb-wip'); if (wipEl) wipEl.textContent = wip;
+    const summary = {
+      'vf-overview-created': ov.total_motors_created,
+      'vf-overview-released': ov.total_motors_released,
+      'vf-overview-wip': wip,
+      'vf-overview-holds': ov.total_active_holds,
+    };
+    Object.entries(summary).forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.textContent = value ?? 0; });
 
     const hb = document.getElementById('total-holds-badge');
     if (hb) hb.style.color = ov.total_active_holds > 0 ? 'var(--vf-state-fail)' : 'var(--vf-text-muted)';
@@ -425,14 +503,14 @@ const ctrl = {
     if (isSel) cls += ' selected';
     if (isExc) cls += ' exception';
 
-    let stateCls = 'operating', stateLabel = sl.line_state.toUpperCase();
+    const isRunning = SimulationCoordinator.isLineRunning(sl.sub_line_id);
+    let stateCls = isRunning ? 'operating' : 'stopped';
+    let stateLabel = isRunning ? 'RUNNING' : 'STOPPED';
     if (isExc) { stateCls = 'hold'; stateLabel = 'QUALITY HOLD'; }
-    else if (sl.line_state === 'stopped') { stateCls = 'stopped'; }
-    else if (sl.line_state === 'ready_to_index') { stateCls = 'ready'; }
 
     // Mini process strip
     let dots = '';
-    STATIONS.forEach((stId, si) => {
+    [...STATIONS].reverse().forEach((stId) => {
       const isLandmark = LANDMARKS.has(stId);
       const isHeld = isExc && sl.held_station === stId;
       let bg = '#D5DBE1';
@@ -444,33 +522,39 @@ const ctrl = {
       dots += `<span class="vf-sc-dot${dc}${dh}" style="background:${bg};" title="${stId}${isLandmark?' ('+LANDMARK_LABELS[stId]+')':''}"></span>`;
     });
 
-    return `<div class="${cls}" data-sl="${sl.sub_line_id}" data-variant="${sl.variant}">
+    return `<article class="${cls}" data-sl="${sl.sub_line_id}" data-variant="${sl.variant}" tabindex="0" role="button" aria-label="${sl.sub_line_id}, ${stateLabel}. View line detail.">
       <div class="vf-sc-header">
         <span class="vf-sc-id">${sl.sub_line_id}</span>
         <span class="vf-sc-state ${stateCls}">${stateLabel}</span>
       </div>
       <div class="vf-sc-meta">${sl.variant.toUpperCase()}</div>
-      <div class="vf-sc-strip">${dots}</div>
+      <div class="vf-sc-flow-cue" aria-label="Product flow from input on the right to output on the left">OUT ← IN</div><div class="vf-sc-strip">${dots}</div>
       <div class="vf-sc-stats">
         <span>WIP: <b>${sl.wips_on_line}</b></span>
         <span>OUT: <b>${sl.motors_released}</b></span>
         <span>DW: <b>${sl.dwell_number}</b></span>
         <span>t=<b>${sl.simulation_time_s.toFixed(0)}s</b></span>
       </div>
-      ${isExc && sl.held_station ? `<div style="font-size:10px;color:var(--vf-state-fail);margin-top:4px;">⏸ ${sl.held_station} / ${sl.held_wip_id}</div>` : ''}
-      <span class="vf-sc-detail-hint">↗ Double-click for detail</span>
-    </div>`;
+      ${isExc && sl.held_station ? `<div style="font-size:10px;color:var(--vf-state-fail);margin-top:4px;font-weight:700;">Hold · ${sl.held_station} / ${sl.held_wip_id}</div>` : ''}
+      <span class="vf-sc-detail-hint">View line →</span>
+    </article>`;
   },
 
   _bindCardClicks() {
     document.querySelectorAll('.vf-subline-card').forEach(card => {
       card.addEventListener('click', () => {
         const slId = card.getAttribute('data-sl');
-        if (slId) { this._selectedSubLineId = slId; this._refreshCardStyles(); }
-      });
-      card.addEventListener('dblclick', () => {
-        const slId = card.getAttribute('data-sl');
+        // A card is the visible entry point to the line, so a single click must
+        // match its accessible name and keyboard behavior.  The selected-line
+        // state and the simulation runtime are otherwise untouched.
         if (slId) { this._selectedSubLineId = slId; openFrameB(slId); }
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const slId = card.getAttribute('data-sl');
+          if (slId) { this._selectedSubLineId = slId; openFrameB(slId); }
+        }
       });
     });
   },
@@ -487,7 +571,6 @@ const ctrl = {
    Frame A ↔ Frame B Navigation
    ═══════════════════════════════════════ */
 function openFrameB(subLineId) {
-  if (ctrl._autoTimer) ctrl.stopAuto();
   document.getElementById('frame-a').style.display = 'none';
   document.getElementById('frame-b').style.display = 'flex';
   document.getElementById('frame-b').style.flexDirection = 'column';
@@ -505,26 +588,20 @@ function openFrameB(subLineId) {
   document.getElementById('fb-scenario').style.display = '';
   document.getElementById('fb-live-status').style.display = '';
 
-  // Toggle footer: show Frame B scenario/speed
+  // Frame B owns its command bar; keep the legacy footer hidden.
   document.getElementById('vf-scenario-label-a').style.display = 'none';
-  document.getElementById('vf-scenario-label-b').style.display = '';
   document.getElementById('speed-select').style.display = 'none';
   document.getElementById('vf-speed-label-a').style.display = 'none';
-  document.getElementById('fb-speed-select').style.display = '';
-  document.getElementById('vf-zoom-group').style.display = '';
-  document.getElementById('vf-zoom-label').style.display = '';
-
-  // Update sidebar with Frame B context
-  document.getElementById('vf-sidebar').querySelector('.vf-sb-section h3').textContent = 'Sub-Line Detail';
+  document.getElementById('vf-footer').style.display = 'none';
 
   ctrlB._initZoomPan();
-  ctrlB._speed = ctrl._speed;
-  ctrlB._scenario = ctrl._scenario;
-  ctrlB.init(subLineId);
+  ctrlB._speed = SimulationCoordinator._speed;
+  ctrlB._scenario = SimulationCoordinator._scenario;
+  ctrlB.init(subLineId).then(() => SimulationCoordinator.syncControls());
 }
 
 function closeFrameB() {
-  if (ctrlB._autoTimer) ctrlB.stopAuto();
+  MotionEngine.cancel();
   document.getElementById('frame-b').style.display = 'none';
   document.getElementById('frame-a').style.display = 'flex';
   document.getElementById('frame-a').style.flexDirection = 'column';
@@ -542,18 +619,13 @@ function closeFrameB() {
   document.getElementById('fb-scenario').style.display = 'none';
   document.getElementById('fb-live-status').style.display = 'none';
 
-  // Toggle footer: show Frame A scenario/speed
+  // Restore the small Frame A selector strip.
   document.getElementById('vf-scenario-label-a').style.display = '';
-  document.getElementById('vf-scenario-label-b').style.display = 'none';
   document.getElementById('speed-select').style.display = '';
   document.getElementById('vf-speed-label-a').style.display = '';
-  document.getElementById('fb-speed-select').style.display = 'none';
-  document.getElementById('vf-zoom-group').style.display = 'none';
-  document.getElementById('vf-zoom-label').style.display = 'none';
+  document.getElementById('vf-footer').style.display = 'none';
 
-  document.getElementById('vf-sidebar').querySelector('.vf-sb-section h3').textContent = 'Line Overview';
-
-  ctrl.refreshOverview().then(() => ctrl._refreshCardStyles());
+  ctrl.refreshOverview().then(() => { ctrl._refreshCardStyles(); SimulationCoordinator.syncControls(); });
 }
 
 /* ═══════════════════════════════════════
@@ -565,23 +637,19 @@ function _inFrameB() {
 }
 
 function uiReset() {
-  if (_inFrameB()) ctrlB.reset();
-  else ctrl.reset();
+  SimulationCoordinator.reset();
 }
 
 function uiStep() {
-  if (_inFrameB()) ctrlB.step();
-  else ctrl.step();
+  SimulationCoordinator.stepAll();
 }
 
 function uiToggleAuto() {
-  if (_inFrameB()) ctrlB.toggleAuto();
-  else ctrl.toggleAuto();
+  SimulationCoordinator.toggleAll();
 }
 
 function uiPause() {
-  if (_inFrameB()) ctrlB.pause();
-  else ctrl.pause();
+  SimulationCoordinator.pauseAll();
 }
 
 /* ═══════════════════════════════════════
@@ -638,8 +706,8 @@ const MotionEngine = {
       // I07-C01: forward-adjacent ONLY (reverse → direct settle, no interpolation)
       if (toIdx !== fromIdx + 1) continue;
 
-      // I07-C01: AP04→AP05 is a JOIN identity boundary — new MTR child
-      // appears at AP05 with a NEW wip_id; same-ID AP04→AP05 never animates.
+      // AP04→AP05 normally changes WIP identity, so same-ID transitions are
+      // not expected here. The genealogy-backed child handoff is added below.
       if (prevPos === 'AP04' && newPos === 'AP05') continue;
 
       plans.push({
@@ -649,6 +717,27 @@ const MotionEngine = {
         tokenType: VF_TOKEN[newPos] || 'STATOR',
         duration: 450,
         transition_type: 'FORWARD_ADJACENT',
+      });
+    }
+    // AP04 join creates a new motor child at AP05. Animate that child only
+    // when the authoritative genealogy record proves the AP04 parentage.
+    const nextMap = {};
+    (newSnap.positions || []).forEach(p => { if (p.wip_id) nextMap[p.wip_id] = p; });
+    for (const link of (newSnap.genealogy || [])) {
+      const childId = link.child_wip_id;
+      const child = nextMap[childId];
+      const parents = link.parent_wip_ids || [];
+      const hasAp04Parent = parents.some(parentId => prevMap[parentId] === 'AP04');
+      const qResult = (child?.latest_quality_result || '').toUpperCase();
+      const qStatus = (child?.quality_status || '').toUpperCase();
+      if (!child || child.position_id !== 'AP05' || !hasAp04Parent || child.is_quality_hold || qResult === 'FAIL' || qResult === 'NG' || qStatus === 'FAILED_FINAL') continue;
+      plans.push({
+        wip_id: childId,
+        fromX: FB_STATION_X[FB_STATIONS.indexOf('AP04')],
+        toX: FB_STATION_X[FB_STATIONS.indexOf('AP05')],
+        tokenType: VF_TOKEN.AP05 || 'JOINED',
+        duration: 450,
+        transition_type: 'JOIN_GENEALOGY_HANDOFF',
       });
     }
     return plans;
@@ -673,6 +762,7 @@ const MotionEngine = {
     this._settleCallback = onSettle;
     this._animating = true;
     const startTime = performance.now();
+    const rollers = document.getElementById('vf-conveyor-rollers');
 
     // Pre-offset: move WIPs to fromX (they were rendered at toX)
     for (const plan of plans) {
@@ -685,6 +775,7 @@ const MotionEngine = {
     const tick = (now) => {
       const elapsed = now - startTime;
       let allDone = true;
+      let beltEase = 0;
 
       for (let i = this._plans.length - 1; i >= 0; i--) {
         const plan = this._plans[i];
@@ -694,11 +785,13 @@ const MotionEngine = {
         const t = Math.min(elapsed / plan.duration, 1.0);
         // easeInOutCubic
         const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        beltEase = Math.max(beltEase, ease);
         const dx = (plan.fromX - plan.toX) * (1 - ease);
         el.setAttribute('transform', `translate(${dx}, 0)`);
 
         if (t < 1) allDone = false;
       }
+      if (rollers) rollers.setAttribute('transform', `translate(${-40 * beltEase}, 0)`);
 
       if (!allDone && this._plans.length > 0) {
         this._rafId = requestAnimationFrame(tick);
@@ -716,6 +809,8 @@ const MotionEngine = {
       const el = document.getElementById(`wip-${plan.wip_id}`);
       if (el) el.removeAttribute('transform');
     }
+    const rollers = document.getElementById('vf-conveyor-rollers');
+    if (rollers) rollers.removeAttribute('transform');
     this._plans = [];
     this._animating = false;
     if (this._settleCallback) {
@@ -732,6 +827,8 @@ const MotionEngine = {
       const el = document.getElementById(`wip-${plan.wip_id}`);
       if (el) el.removeAttribute('transform');
     }
+    const rollers = document.getElementById('vf-conveyor-rollers');
+    if (rollers) rollers.removeAttribute('transform');
     this._plans = [];
     this._animating = false;
     this._settleCallback = null;
@@ -753,7 +850,7 @@ MotionEngine.init();
 const ctrlB = {
   _subLineId: 'ASSY-SL01',
   _autoTimer: null,
-  _speed: 1.0,
+  _speed: 100,
   _scenario: 'HAPPY_PATH',
   _lastSnapshot: null,
   _liveStatus: 'INIT',
@@ -767,6 +864,7 @@ const ctrlB = {
   _panY: 0,
   _stepLocked: false,  // I07: prevent overlapping step animations
   _snapVersion: 0,     // I07: increment per snapshot for tracking
+  _proposedFlow: false,
 
   async init(subLineId) {
     this._subLineId = subLineId;
@@ -776,21 +874,22 @@ const ctrlB = {
     this._inspectorOpen = false;
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     this._stepLocked = false;
+    this._proposedFlow = false;
     this._snapVersion = 0;
     MotionEngine.clearContext();
     this._lastSnapshot = null;  // I07: no cross-subline motion
-    document.getElementById('fb-scenario-select').value = this._scenario || 'HAPPY_PATH';
-    document.getElementById('fb-speed-select').value = String(this._speed);
+    document.getElementById('fb-scenario-select').value = SimulationCoordinator._scenario;
+    document.getElementById('fb-speed-select').value = String(SimulationCoordinator._speed);
     this._renderGridAndConveyor();
+    this._bindDrawerTabs();
+    this._applyProposedFlow();
     await this.refresh();
   },
 
-  async reset() {
-    this.stopAuto();
+  clearInteraction() {
     MotionEngine.cancel();
     this._stepLocked = false;
     this._snapVersion = 0;
-    this._scenario = document.getElementById('fb-scenario-select').value;
     this._selectedStation = null;
     this._selectedWipId = null;
     this._contextType = null;
@@ -801,49 +900,92 @@ const ctrlB = {
     this._renderInspector(null);
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     this._lastSnapshot = null;  // I07: discard stale snapshot
-    await this.call('reset', { scenario: this._scenario });
-    await this.refresh();
+  },
+
+  async reset() {
+    return SimulationCoordinator.reset();
   },
 
   async step() {
+    return SimulationCoordinator.stepLine(this._subLineId);
+  },
+
+  async _stepRaw() {
+    return this._stepLineRaw(this._subLineId);
+  },
+
+  async _stepLineRaw(subLineId) {
     // I07-C01: block STEP during active motion or in-flight step
     if (this._stepLocked || MotionEngine.isAnimating) return;
     this._stepLocked = true;
     try {
-      await this.call('step');
-      await this.refresh();
+      const snap = await this.call(`sub-line/${subLineId}/step`);
+      this._liveStatus = 'LIVE';
+      this._renderSnapshot(snap);
     } finally {
       this._stepLocked = false;
     }
   },
 
-  back() { this.stopAuto(); closeFrameB(); },
+  back() { closeFrameB(); },
+  toggleAuto() { SimulationCoordinator.toggleLine(this._subLineId); },
+  startAuto() { SimulationCoordinator.startLine(this._subLineId); },
+  stopAuto() { SimulationCoordinator.stopLine(this._subLineId); },
+  pause() { SimulationCoordinator.pauseLine(this._subLineId); },
+  setSpeed(val) { SimulationCoordinator.setSpeed(val); },
+  setScenario(val) { return SimulationCoordinator.setScenario(val); },
 
-  toggleAuto() { if (this._autoTimer) { this.stopAuto(); return; } this.startAuto(); },
-
-  startAuto() {
-    document.getElementById('btn-auto').textContent = '⏹ STOP';
-    document.getElementById('btn-auto').className = 'vf-btn primary';
-    document.getElementById('btn-pause').disabled = false;
-    // I07: skip step if animation still running (no backlog)
-    this._autoTimer = setInterval(() => {
-      if (MotionEngine.isAnimating || this._stepLocked) return;
-      this.step();
-    }, Math.round(1000 / this._speed));
+  _syncAutoControls(isRunning) {
+    SimulationCoordinator.syncControls();
   },
 
-  stopAuto() {
-    if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; }
-    document.getElementById('btn-auto').textContent = '▶▶ AUTO';
-    document.getElementById('btn-auto').className = 'vf-btn accent-outline';
-    document.getElementById('btn-pause').disabled = true;
+  toggleProposedFlow() {
+    this._proposedFlow = !this._proposedFlow;
+    if (this._proposedFlow) {
+      this._contextType = 'proposed';
+      this._selectedStation = null; this._selectedWipId = null;
+      this._inspectorOpen = true;
+      this._renderContextPopup(this._lastSnapshot);
+    } else {
+      this._contextType = null; this._inspectorOpen = false;
+      this.closePopup();
+    }
+    this._applyProposedFlow();
   },
 
-  pause() { if (this._autoTimer) this.stopAuto(); },
+  _applyProposedFlow() {
+    const toggle = document.getElementById('vf-proposed-flow-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', String(!!this._proposedFlow));
+  },
 
-  setSpeed(val) { this._speed = parseFloat(val); if (this._autoTimer) { this.stopAuto(); this.startAuto(); } },
+  _bindDrawerTabs() {
+    const tabs = document.querySelectorAll('#vf-popup-tabs .vf-popup-tab');
+    tabs.forEach(tab => {
+      if (tab.dataset.bound === 'true') return;
+      tab.dataset.bound = 'true';
+      tab.addEventListener('click', () => this.setPopupTab(tab.dataset.tab || 'overview'));
+      tab.addEventListener('keydown', (e) => {
+        if (!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
+        e.preventDefault();
+        const list = [...document.querySelectorAll('#vf-popup-tabs .vf-popup-tab')];
+        const current = list.indexOf(tab);
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : (current + (e.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length;
+        list[next].focus();
+        this.setPopupTab(list[next].dataset.tab || 'overview');
+      });
+    });
+  },
 
-  setScenario(val) { this._scenario = val; ctrl._scenario = val; const selA = document.getElementById('scenario-select'); if (selA) selA.value = val; this.reset(); },
+  setPopupTab(tab) {
+    this._popupTab = tab;
+    document.querySelectorAll('#vf-popup-tabs .vf-popup-tab').forEach(button => {
+      const active = button.dataset.tab === tab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+    });
+    if (this._lastSnapshot && this._inspectorOpen) this._renderPopup(this._lastSnapshot);
+  },
 
   async call(action, body) {
     const opts = body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : { method:'POST' };
@@ -858,30 +1000,33 @@ const ctrlB = {
       if (!resp.ok) throw new Error(`detail: ${resp.status}`);
       const snap = await resp.json();
       this._liveStatus = 'LIVE';
-      this._snapVersion++;
-      // I07: detect transitions, render, then animate
-      const plans = MotionEngine.detect(this._lastSnapshot, snap);
-      this._renderStatic(snap);
-      this._renderWips(snap);
-      if (plans.length > 0) {
-        MotionEngine.animate(plans, () => {
-          // Re-render WIPs cleanly at final positions after settle
-          this._renderWips(snap);
-        });
-      }
-      this._lastSnapshot = snap;
+      this._renderSnapshot(snap);
     } catch (_) {
       this._liveStatus = this._lastSnapshot ? 'STALE' : 'UNAVAILABLE';
       this.renderStatus();
     }
   },
 
+  _renderSnapshot(snap) {
+    this._snapVersion++;
+    // One shared rendering path is used for both initial refresh and the
+    // detail bar's per-line Step/Run command, so motion cannot disappear
+    // merely because the control surface changed.
+    const plans = MotionEngine.detect(this._lastSnapshot, snap);
+    this._renderStatic(snap);
+    this._renderWips(snap);
+    if (plans.length > 0) {
+      MotionEngine.animate(plans, () => this._renderWips(snap));
+    }
+    this._lastSnapshot = snap;
+  },
+
   renderStatus() {
     const el = document.getElementById('fb-live-status');
     if (!el) return;
-    if (this._liveStatus === 'LIVE') { el.textContent = '● LIVE'; el.style.color = 'var(--vf-state-pass)'; }
-    else if (this._liveStatus === 'STALE') { el.textContent = '○ STALE'; el.style.color = 'var(--vf-state-hold)'; }
-    else { el.textContent = '✕ BACKEND UNAVAILABLE'; el.style.color = 'var(--vf-state-fail)'; }
+    if (this._liveStatus === 'LIVE') { el.textContent = 'Live'; el.style.color = 'var(--vf-state-pass)'; }
+    else if (this._liveStatus === 'STALE') { el.textContent = 'Stale data'; el.style.color = 'var(--vf-state-hold)'; }
+    else { el.textContent = 'Backend unavailable'; el.style.color = 'var(--vf-state-fail)'; }
   },
 
   /* ── Grid + Conveyor Background (static, rendered once) ── */
@@ -920,20 +1065,7 @@ const ctrlB = {
       <text x="${L.fgX+L.fgW/2}" y="${L.fgY+16}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">ASSY OUTPUT</text>
       <text x="${L.fgX+L.fgW/2}" y="${L.fgY+30}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">LINE END</text>
 
-      <!-- UI-CTX-02: LINE-OUT / OFF-LINE ITEMS conceptual zone -->
-      <rect x="${L.offLineX}" y="${L.offLineY}" width="${L.offLineW}" height="${L.offLineH}" rx="6" fill="#FAFBFD" stroke="var(--vf-text-muted)" stroke-width="1.2" stroke-dasharray="8,5" opacity="0.7"/>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">LINE-OUT / OFF-LINE ITEMS</text>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+34}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">INSPECT · VERIFY · OPTIONAL REWORK · CONTEXT</text>
-
-      <!-- LINE OUT connector (RIGHT side: main line → off-line zone) -->
-      <line x1="${L.lineOutConnX}" y1="${L.conveyorY+L.conveyorH}" x2="${L.lineOutConnX}" y2="${L.offLineY}" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
-      <text x="${L.lineOutConnX+8}" y="${L.conveyorY+L.conveyorH+18}" fill="var(--vf-state-hold)" font-size="11" font-weight="700">LINE OUT</text>
-      <polygon points="${L.lineOutConnX-4},${L.offLineY} ${L.lineOutConnX+4},${L.offLineY} ${L.lineOutConnX},${L.offLineY+8}" fill="var(--vf-state-hold)" opacity="0.55"/>
-
-      <!-- LINE IN connector (LEFT side: off-line zone → main line) -->
-      <line x1="${L.lineInConnX}" y1="${L.offLineY}" x2="${L.lineInConnX}" y2="${L.conveyorY+L.conveyorH}" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
-      <text x="${L.lineInConnX+8}" y="${L.offLineY-8}" fill="var(--vf-state-pass)" font-size="11" font-weight="700">LINE IN</text>
-      <polygon points="${L.lineInConnX-4},${L.conveyorY+L.conveyorH} ${L.lineInConnX+4},${L.conveyorY+L.conveyorH} ${L.lineInConnX},${L.conveyorY+L.conveyorH-8}" fill="var(--vf-state-pass)" opacity="0.55"/>`;
+       <!-- Proposed LINE OUT / LINE IN routing lives in the right-hand context drawer. -->`;
 
     // EXH-UI-01-C01: Global RIGHT→LEFT product-flow arrow in dedicated flow-cue layer
     // Rendered ABOVE conveyor, BELOW stations — visible at low opacity
@@ -949,15 +1081,16 @@ const ctrlB = {
     const convG = document.getElementById('vf-conveyor-group');
     if (!convG) return;
     let ch = '';
+    ch += `<defs><clipPath id="vf-conveyor-clip"><rect x="${L.convStartX+6}" y="${L.conveyorY+16}" width="${L.convEndX-L.convStartX-12}" height="118" rx="5"/></clipPath></defs>`;
     ch += `<rect x="${L.convStartX}" y="${L.conveyorY+10}" width="${L.convEndX-L.convStartX}" height="130" rx="8" fill="var(--vf-conveyor-body)"/>`;
     ch += `<rect x="${L.convStartX}" y="${L.conveyorY}" width="${L.convEndX-L.convStartX}" height="10" rx="4" fill="var(--vf-conveyor-frame)"/>`;
     ch += `<rect x="${L.convStartX}" y="${L.conveyorY+L.conveyorH-10}" width="${L.convEndX-L.convStartX}" height="10" rx="4" fill="var(--vf-conveyor-frame)"/>`;
-    // Rollers (EXH-UI-01: adjusted for 150px conveyor)
-    for (let rx = L.convStartX + 30; rx < L.convEndX; rx += 40) {
+    // The roller surface moves only when an authoritative WIP motion plan exists.
+    ch += `<g id="vf-conveyor-rollers" clip-path="url(#vf-conveyor-clip)">`;
+    for (let rx = L.convStartX - 20; rx < L.convEndX + 40; rx += 40) {
       ch += `<rect x="${rx}" y="${L.conveyorY+22}" width="16" height="106" rx="4" fill="var(--vf-conveyor-roller)" opacity="0.4"/>`;
     }
-    // RSO2 branch into AP04 (light feed connector; queue rendered in context-sources)
-    ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
+    ch += `</g>`;
 
     convG.innerHTML = ch;
 
@@ -970,37 +1103,19 @@ const ctrlB = {
   _renderContextSources() {
     const g = document.getElementById('fb-context-sources');
     if (!g) return;
-    const L = VF_LAYOUT;
-    let html = '';
-
-    // ── SSO2 INPUT source (near ASSY INPUT / PRE-ASSY, RIGHT side) ──
-    const sx = L.rawX + L.rawW / 2;   // zone center (~1810)
-    html += `<g data-context="sso2" style="cursor:pointer;">`;
-    html += `<text x="${sx}" y="${L.rawY+42}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">SSO2 INPUT</text>`;
-    html += `<text x="${sx}" y="${L.rawY+56}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">STATOR + SHIELD SOURCE</text>`;
-    // 3 stator icons stacked vertically, 58px spacing (r=28 → 56px diameter, no overlap)
-    for (let i = 0; i < 3; i++) {
-      const sy = L.rawY + 82 + i * 58;
-      html += `<g transform="translate(${sx}, ${sy})" opacity="0.5">${VF.statorAssy(0, 0)}</g>`;
-    }
-    // light connector toward PRE-ASSY (flow RIGHT→LEFT entry)
-    const sso2Bottom = L.rawY + 82 + 2 * 58;
-    html += `<line x1="${sx - 30}" y1="${sso2Bottom + 22}" x2="${L.preX + 6}" y2="${L.stationY - 26}" stroke="var(--vf-text-muted)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#arrowLeft)"/>`;
-    html += `</g>`;
-
-    // ── RSO2 ROTOR FEED (above AP04 JOIN, vertical stack) ──
-    const ax = L.ap04X;
-    html += `<g data-context="rso2" style="cursor:pointer;">`;
-    html += `<text x="${ax}" y="${L.rso2BranchTopY - 80}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">RSO2 ROTOR FEED</text>`;
-    html += `<text x="${ax}" y="${L.rso2BranchTopY - 68}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">TO AP04 JOIN</text>`;
-    // 3 rotor icons stacked vertically, 26px spacing (rotor height 16px, no overlap)
-    for (let i = 0; i < 3; i++) {
-      const ry = L.rso2BranchTopY - 54 + i * 26;
-      html += `<g transform="translate(${ax}, ${ry})" opacity="0.5">${VF.rotor(0, 0)}</g>`;
-    }
-    html += `</g>`;
-
-    g.innerHTML = html;
+    const source = (kind, x, title, subtitle, visual, targetX) => {
+      const top = 102, visualY = 166, targetY = VF_LAYOUT.stationY - 10;
+      return `<g class="vf-upstream-compact" data-context="${kind}" tabindex="0" role="button" aria-label="${title} upstream context">
+        <rect x="${x-58}" y="${top-20}" width="116" height="126" rx="8"/>
+        <text x="${x}" y="${top}" text-anchor="middle" class="vf-upstream-title">${title}</text>
+        <text x="${x}" y="${top+13}" text-anchor="middle" class="vf-upstream-sub">${subtitle}</text>
+        <g transform="translate(${x}, ${visualY})" opacity=".68">${visual}</g>
+        <text x="${x}" y="${visualY+42}" text-anchor="middle" class="vf-upstream-output">OUTPUT</text>
+        <path d="M${x} ${top+106}V${targetY-12}H${targetX}V${targetY}" class="vf-upstream-feed" marker-end="url(#arrowJoin)"/>
+      </g>`;
+    };
+    g.innerHTML = source('sso2', VF_LAYOUT.stationX[1], 'SSO2', 'Stator source', VF.statorAssy(0, 0), VF_LAYOUT.stationX[1])
+      + source('rso2', VF_LAYOUT.stationX[4], 'RSO2', 'Rotor source', VF.rotor(0, 0), VF_LAYOUT.stationX[4]);
     this._bindContextClicks();
   },
 
@@ -1008,6 +1123,10 @@ const ctrlB = {
   _renderContextOffline() {
     const g = document.getElementById('fb-context-offline');
     if (!g) return;
+    // LINE OUT / LINE IN is a proposed-context drawer, not a physical route
+    // in the current factory model. Keep this legacy renderer inert.
+    g.innerHTML = '';
+    return;
     const L = VF_LAYOUT;
     const cx = L.offLineX + L.offLineW / 2;   // ~850
     const itemY = L.offLineY + 56;
@@ -1046,11 +1165,18 @@ const ctrlB = {
         e.stopPropagation();
         this.selectContext(el.getAttribute('data-context'));
       });
+      el.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault(); e.stopPropagation();
+        this.selectContext(el.getAttribute('data-context'));
+      });
     });
   },
 
   /* ── I09-P04: Context popup for source/off-line zones ── */
   selectContext(type) {
+    this._proposedFlow = false;
+    this._applyProposedFlow();
     this._contextType = type;
     this._selectedStation = null;
     this._selectedWipId = null;
@@ -1082,12 +1208,12 @@ const ctrlB = {
         <div class="vf-popup-row"><span class="vf-popup-k">Feeds</span><span class="vf-popup-v">AP04 JOIN</span></div>
         <div class="vf-popup-row"><span class="vf-popup-k">RSO2 buffer</span><span class="vf-popup-v">${prod.rso2_buffer !== undefined ? prod.rso2_buffer : 'not exposed'}</span></div>
         <div class="vf-context-tag">Context source — upstream line not simulated</div>`;
-    } else if (this._contextType === 'offline') {
+    } else if (this._contextType === 'offline' || this._contextType === 'proposed') {
       title.textContent = 'LINE-OUT / OFF-LINE CONTEXT';
       body.innerHTML = `
-        <div class="vf-context-note">Items may leave the main line for inspection, diagnosis or verification. Rework is optional; LINE IN represents return routing.</div>
+        <div class="vf-context-note">Proposed flow only. Items may leave the main line for inspection, diagnosis or verification; this is not factory-confirmed runtime routing.</div>
         <div class="vf-popup-row"><span class="vf-popup-k">Active off-line occupancy</span><span class="vf-popup-v">not tracked in current demo</span></div>
-        <div class="vf-context-tag">Representative items shown are context-only, not live WIP</div>`;
+        <div class="vf-context-tag">Proposed flow — context-only, not live WIP</div>`;
     } else {
       this.closePopup();
       return;
@@ -1102,6 +1228,8 @@ const ctrlB = {
 
     // Top bar context
     document.getElementById('fb-sub-line-id').textContent = snap.sub_line_id || this._subLineId;
+    const lineTitle = document.getElementById('vf-line-title');
+    if (lineTitle) lineTitle.textContent = snap.sub_line_id || this._subLineId;
     document.getElementById('fb-variant').textContent = (snap.variant||'').toUpperCase();
     document.getElementById('fb-sim-time').textContent = `t=${(snap.simulation_time_s||0).toFixed(0)}s`;
     document.getElementById('fb-dwell').textContent = `DWELL ${snap.dwell_number||0}`;
@@ -1124,6 +1252,13 @@ const ctrlB = {
     document.getElementById('total-created').textContent = prod.motors_created||0;
     document.getElementById('total-released').textContent = prod.motors_released||0;
     document.getElementById('total-holds').textContent = prod.active_quality_holds||0;
+    const inlineMetrics = {
+      'vf-created-inline': prod.motors_created||0,
+      'vf-released-inline': prod.motors_released||0,
+      'vf-wip-inline': prod.wips_on_line||0,
+      'vf-holds-inline': prod.active_quality_holds||0,
+    };
+    Object.entries(inlineMetrics).forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.textContent = value; });
 
     if (this._inspectorOpen && this._selectedWipId) {
       const pos = (snap.positions||[]).find(p => p.wip_id === this._selectedWipId);
@@ -1167,7 +1302,7 @@ const ctrlB = {
     // UI-CTX-02: SSO2/RSO2 source cues moved to _renderContextSources.
     // Only PACKED GOODS contextual pallet remains in ASSY OUTPUT zone.
     html += `<g transform="translate(${L.fgX+L.fgW/2}, ${L.fgY+220})">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
-    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">PACKED GOODS</text>`;
+    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+178}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">PACKED GOODS</text>`;
 
     stationsG.innerHTML = html;
     this._applyHighlights();
@@ -1198,11 +1333,12 @@ const ctrlB = {
 
       // I07: render WIP with unique ID for motion targeting
       const isSelWip = (p.wip_id === this._selectedWipId);
-      html += `<g id="wip-${p.wip_id}" class="vf-wip-group${isSelWip?' selected':''}" data-wip="${p.wip_id}" style="cursor:pointer;">`;
+      html += `<g id="wip-${p.wip_id}" class="vf-wip-group${isSelWip?' selected':''}" data-wip="${p.wip_id}" tabindex="0" role="button" aria-label="WIP ${p.wip_id} at ${stId}">`;
       // I09-P05: dedicated selection ring behind WIP (visible on .selected, no text blur)
       html += `<rect class="vf-wip-sel-halo" x="${sx-56}" y="${sy+119}" width="112" height="92" rx="10"/>`;
       html += VF.pallet(sx, sy + 165);
-      if (tokenType === 'STATOR') html += VF.statorAssy(sx, sy + 163);
+      if (stId === 'PRE-ASSY') { /* preparation carrier intentionally empty */ }
+      else if (tokenType === 'STATOR') html += VF.statorAssy(sx, sy + 163);
       else if (tokenType === 'JOINED') html += VF.motorJoined(sx, sy + 163);
       else if (tokenType === 'PRETEST') html += VF.motorPreTest(sx, sy + 163);
       else if (tokenType === 'TESTED') html += VF.motorTested(sx, sy + 163);
@@ -1210,7 +1346,10 @@ const ctrlB = {
       if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
         html += VF.stateOverlay(sx, sy + 165, isHeld ? 'HOLD' : qResult);
       }
-      html += `<text x="${sx}" y="${sy+181}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle">${p.wip_id}</text>`;
+      // Keep the WIP identity legible on top of the dark conveyor.  Its physical
+      // position is unchanged; this is just a label plate in the visual layer.
+      html += `<rect class="vf-wip-label-plate" x="${sx-46}" y="${sy+104}" width="92" height="20" rx="5"/>`;
+      html += `<text x="${sx}" y="${sy+118}" class="vf-wip-label" text-anchor="middle">${p.wip_id}</text>`;
       html += `</g>`;
     });
 
@@ -1238,21 +1377,25 @@ const ctrlB = {
 
   _bindStationClicks() {
     document.querySelectorAll('#fb-stations .vf-station-group').forEach(el => {
-      el.addEventListener('click', (e) => {
+      const select = (e) => {
         if (e.target.closest('.vf-wip-group')) return;
         const stId = el.getAttribute('data-station');
         this.selectStation(stId);
-      });
+      };
+      el.addEventListener('click', select);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(e); } });
     });
   },
 
   _bindWipClicks() {
     document.querySelectorAll('#fb-wips .vf-wip-group').forEach(el => {
-      el.addEventListener('click', (e) => {
+      const select = (e) => {
         e.stopPropagation();
         const wipId = el.getAttribute('data-wip');
         if (wipId) this.selectWip(wipId);
-      });
+      };
+      el.addEventListener('click', select);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(e); } });
     });
   },
 
@@ -1304,73 +1447,92 @@ const ctrlB = {
     this._selectedStation = null;
     this._selectedWipId = null;
     this._contextType = null;
+    this._proposedFlow = false;
+    this._applyProposedFlow();
     this._applyHighlights();
     this._renderInspector(this._lastSnapshot);
     this.closePopup();
   },
 
   /* ── Popup ── */
-  openPopup() { document.getElementById('vf-popup').classList.add('open'); },
-  closePopup() { document.getElementById('vf-popup').classList.remove('open'); },
+  openPopup() { const el = document.getElementById('vf-popup'); el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); },
+  closePopup() { const el = document.getElementById('vf-popup'); el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); },
 
   _renderPopup(snap) {
     if (!this._inspectorOpen || !snap) { this.closePopup(); return; }
-
-    const popup = document.getElementById('vf-popup');
     const title = document.getElementById('vf-popup-title');
     const body = document.getElementById('vf-popup-body');
     const tabs = document.getElementById('vf-popup-tabs');
-    if (tabs) tabs.style.display = '';   // restore tabs for station/WIP inspector
+    if (tabs) tabs.style.display = '';
 
     const stId = this._selectedStation;
     const wipId = this._selectedWipId;
     const posMap = {};
     for (const p of (snap.positions||[])) posMap[p.position_id] = p;
     const pos = stId ? (posMap[stId] || null) : null;
+    const effectiveWipId = pos?.wip_id || wipId;
+    const recs = (snap.quality_records||[]).filter(qr => qr.wip_id === effectiveWipId)
+      .sort((a,b) => (a.simulation_time_s||0) - (b.simulation_time_s||0));
+    const tab = this._popupTab || 'overview';
+    this.setPopupTabState(tab);
 
-    if (pos && pos.is_occupied && pos.wip_id) {
-      title.textContent = `${stId} — ${pos.wip_id}`;
-      const qColor = pos.latest_quality_result === 'PASS' ? 'var(--vf-state-pass)' : pos.latest_quality_result ? 'var(--vf-state-fail)' : 'var(--vf-text-muted)';
-      let html = '';
-      html += `<div class="vf-popup-row"><span class="vf-popup-k">Station</span><span class="vf-popup-v">${pos.position_id} — ${pos.station_label||pos.position_id}</span></div>`;
-      html += `<div class="vf-popup-row"><span class="vf-popup-k">WIP</span><span class="vf-popup-v">${pos.wip_id}</span></div>`;
-      html += `<div class="vf-popup-row"><span class="vf-popup-k">Product</span><span class="vf-popup-v">${pos.wip_type||'MTR'}</span></div>`;
-      if (pos.carrier_id) html += `<div class="vf-popup-row"><span class="vf-popup-k">Carrier</span><span class="vf-popup-v">${pos.carrier_id}</span></div>`;
-      html += `<div class="vf-popup-row"><span class="vf-popup-k">Status</span><span class="vf-popup-v">${pos.manufacturing_status||'active'}</span></div>`;
-      html += `<div class="vf-popup-row"><span class="vf-popup-k">Quality</span><span class="vf-popup-v" style="color:${qColor};font-weight:600">${pos.latest_quality_result||'clear'}${pos.attempt_number>1?' #'+pos.attempt_number:''}</span></div>`;
-      if (pos.is_quality_hold) html += `<div class="vf-popup-row"><span class="vf-popup-k">Hold</span><span class="vf-popup-v" style="color:var(--vf-state-fail)">${pos.held_reason||'Active'}</span></div>`;
-      // I09-P04: genealogy for MTR children
-      const childGenealogy = (snap.genealogy||[]).filter(g => g.child_wip_id === pos.wip_id);
-      if (childGenealogy.length) {
-        const g = childGenealogy[childGenealogy.length-1];
-        html += `<div class="vf-popup-sep"></div><div class="vf-popup-row"><span class="vf-popup-k">Joined</span><span class="vf-popup-v">← ${(g.parent_wip_ids||[]).join(' + ')} @ ${g.join_station||'AP04'}</span></div>`;
-      }
-      body.innerHTML = html;
-    } else if (pos && !pos.is_occupied) {
+    if (pos && !pos.is_occupied) {
       title.textContent = `${stId} — Empty`;
       body.innerHTML = `<div class="vf-popup-empty">No WIP at this station</div>`;
-    } else if (wipId) {
-      title.textContent = `WIP ${wipId}`;
-      const onLine = (snap.positions||[]).some(p => p.wip_id === wipId);
-      const recs = (snap.quality_records||[]).filter(qr => qr.wip_id === wipId);
-      let html = `<div class="vf-popup-row"><span class="vf-popup-k">WIP</span><span class="vf-popup-v">${wipId}</span></div>`;
-      // I09-P04: AP04 identity boundary — selected SSO2 consumed → child MTR
-      const asParent = (snap.genealogy||[]).filter(g => (g.parent_wip_ids||[]).includes(wipId));
-      if (!onLine && asParent.length) {
-        const g = asParent[asParent.length-1];
-        html += `<div class="vf-context-note">Consumed at ${g.join_station||'AP04'} — this identity is now the parent of a new motor.</div>`;
-        html += `<div class="vf-popup-row"><span class="vf-popup-k">Child MTR</span><span class="vf-popup-v" style="cursor:pointer;color:var(--vf-accent);font-weight:600" onclick="ctrlB.selectWip('${g.child_wip_id}')">${g.child_wip_id} ↗</span></div>`;
-      } else if (!onLine) {
-        html += `<div class="vf-insp-historical">HISTORICAL — Exited line</div>`;
-      }
-      html += `<div class="vf-popup-row"><span class="vf-popup-k">Records</span><span class="vf-popup-v">${recs.length} quality records</span></div>`;
-      body.innerHTML = html;
-    } else {
+    } else if (!effectiveWipId && !pos) {
       title.textContent = 'Inspector';
       body.innerHTML = '<div class="vf-popup-empty">Select a station or WIP</div>';
+    } else {
+      title.textContent = pos ? `${stId} — ${effectiveWipId}` : `WIP ${effectiveWipId}`;
+      if (tab === 'quality') body.innerHTML = this._popupQualityHtml(recs);
+      else if (tab === 'history') body.innerHTML = this._popupHistoryHtml(effectiveWipId, pos, snap, recs);
+      else if (tab === 'genealogy') body.innerHTML = this._popupGenealogyHtml(effectiveWipId, snap);
+      else body.innerHTML = this._popupSummaryHtml(effectiveWipId, pos, snap, recs);
     }
-
     this.openPopup();
+  },
+
+  setPopupTabState(tab) {
+    document.querySelectorAll('#vf-popup-tabs .vf-popup-tab').forEach(button => {
+      const active = button.dataset.tab === tab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+    });
+  },
+
+  _popupSummaryHtml(wipId, pos, snap, recs) {
+    const onLine = (snap.positions||[]).some(p => p.wip_id === wipId);
+    const q = pos?.latest_quality_result || 'clear';
+    const qColor = q === 'PASS' ? 'var(--vf-state-pass)' : q === 'clear' ? 'var(--vf-text-muted)' : 'var(--vf-state-fail)';
+    let html = pos ? `<div class="vf-popup-row"><span class="vf-popup-k">Station</span><span class="vf-popup-v">${pos.position_id} — ${pos.station_label||pos.position_id}</span></div>` : '';
+    html += `<div class="vf-popup-row"><span class="vf-popup-k">WIP</span><span class="vf-popup-v vf-mono">${wipId}</span></div>`;
+    if (pos?.wip_type) html += `<div class="vf-popup-row"><span class="vf-popup-k">Product</span><span class="vf-popup-v">${pos.wip_type}</span></div>`;
+    if (pos?.carrier_id) html += `<div class="vf-popup-row"><span class="vf-popup-k">Carrier</span><span class="vf-popup-v vf-mono">${pos.carrier_id}</span></div>`;
+    html += `<div class="vf-popup-row"><span class="vf-popup-k">Line status</span><span class="vf-popup-v">${pos?.manufacturing_status || (onLine ? 'active' : 'historical')}</span></div>`;
+    html += `<div class="vf-popup-row"><span class="vf-popup-k">Quality</span><span class="vf-popup-v" style="color:${qColor}">${q}${pos?.attempt_number>1?' #'+pos.attempt_number:''}</span></div>`;
+    if (pos?.is_quality_hold) html += `<div class="vf-popup-row"><span class="vf-popup-k">Hold</span><span class="vf-popup-v" style="color:var(--vf-state-fail)">${pos.held_reason||'Active'}</span></div>`;
+    if (!onLine) html += `<div class="vf-context-tag">Historical record — this WIP is not currently on the line.</div>`;
+    html += `<div class="vf-popup-row"><span class="vf-popup-k">Quality records</span><span class="vf-popup-v">${recs.length}</span></div>`;
+    return html;
+  },
+
+  _popupQualityHtml(recs) {
+    if (!recs.length) return '<div class="vf-popup-empty">No quality records for this WIP.</div>';
+    return `<h3 class="vf-popup-section-title">Quality records</h3>${recs.map(r => `<div class="vf-popup-event"><div class="vf-popup-event-head"><span>${r.station_id} · ${r.disposition}</span><span>#${r.attempt_number||1}</span></div><small>${r.check_type||'Inspection'}${r.reason_code?' · '+r.reason_code:''} · t=${(r.simulation_time_s||0).toFixed(0)}s</small></div>`).join('')}`;
+  },
+
+  _popupHistoryHtml(wipId, pos, snap, recs) {
+    const onLine = (snap.positions||[]).some(p => p.wip_id === wipId);
+    let html = `<h3 class="vf-popup-section-title">Trace</h3><div class="vf-popup-row"><span class="vf-popup-k">Current</span><span class="vf-popup-v">${onLine ? (pos?.position_id || 'On line') : 'Exited line'}</span></div>`;
+    html += `<div class="vf-popup-row"><span class="vf-popup-k">Events</span><span class="vf-popup-v">${recs.length}</span></div>`;
+    return html + (recs.length ? `<div class="vf-popup-sep"></div>${recs.map(r => `<div class="vf-popup-event"><div class="vf-popup-event-head"><span>${r.station_id}</span><span>${r.disposition}</span></div><small>${r.check_type||'Inspection'} · t=${(r.simulation_time_s||0).toFixed(0)}s</small></div>`).join('')}` : '<div class="vf-popup-empty">No history has been published for this WIP.</div>');
+  },
+
+  _popupGenealogyHtml(wipId, snap) {
+    const links = (snap.genealogy||[]).filter(g => g.child_wip_id === wipId || (g.parent_wip_ids||[]).includes(wipId));
+    if (!links.length) return '<div class="vf-popup-empty">No AP04 genealogy is recorded for this WIP.</div>';
+    return `<h3 class="vf-popup-section-title">AP04 genealogy</h3>${links.map(g => `<div class="vf-popup-event"><div class="vf-popup-event-head"><span class="vf-mono">${g.child_wip_id}</span><span>${g.join_station||'AP04'}</span></div><small>Created from ${(g.parent_wip_ids||[]).map(p=>`<span class="vf-insp-link" onclick="ctrlB.selectWip('${p}')">${p}</span>`).join(' + ')} · t=${(g.join_time_s||0).toFixed(0)}s</small></div>`).join('')}`;
   },
 
   /* ── Inspector Render (legacy data integration) ── */
@@ -1392,7 +1554,7 @@ const ctrlB = {
 
     const ctxTitle = this._contextType === 'sso2' ? 'SSO2 INPUT'
       : this._contextType === 'rso2' ? 'RSO2 ROTOR FEED'
-      : this._contextType === 'offline' ? 'LINE-OUT / OFF-LINE'
+      : (this._contextType === 'offline' || this._contextType === 'proposed') ? 'PROPOSED FLOW'
       : null;
     document.getElementById('vf-inspector-title').textContent =
       ctxTitle || (stId ? `${stId}${pos&&pos.station_label?': '+pos.station_label:''}` : (wipId||'Inspector'));
@@ -1627,15 +1789,15 @@ const ctrlB = {
    S04 Fallback Controller (preserved)
    ═══════════════════════════════════════ */
 const ctrlS04 = {
-  _autoTimer: null, _speed: 1.0, _scenario: 'HAPPY_PATH',
+  _autoTimer: null, _speed: 100, _scenario: 'HAPPY_PATH',
   async init() { await this.call('reset', { scenario: this._scenario }); this.render(await this.call('snapshot')); },
   async reset() { this.stopAuto(); this._scenario = document.getElementById('scenario-select-s04').value; await this.call('reset', { scenario: this._scenario }); this.render(await this.call('snapshot')); },
   async step() { this.render(await this.call('step')); },
   toggleAuto() { this._autoTimer ? this.stopAuto() : this.startAuto(); },
-  startAuto() { document.getElementById('btn-auto-s04').textContent = '⏹ STOP'; document.getElementById('btn-pause-s04').disabled = false; this._autoTimer = setInterval(() => this.step(), Math.round(1000 / this._speed)); },
-  stopAuto() { if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; } document.getElementById('btn-auto-s04').textContent = '▶▶ AUTO'; document.getElementById('btn-pause-s04').disabled = true; },
+  startAuto() { document.getElementById('btn-auto-s04').textContent = 'STOP'; document.getElementById('btn-pause-s04').disabled = false; this._autoTimer = setInterval(() => this.step(), Math.round(120000 / this._speed)); },
+  stopAuto() { if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; } document.getElementById('btn-auto-s04').textContent = 'Run'; document.getElementById('btn-pause-s04').disabled = true; },
   pause() { if (this._autoTimer) this.stopAuto(); },
-  setSpeed(val) { this._speed = parseFloat(val); if (this._autoTimer) { this.stopAuto(); this.startAuto(); } },
+  setSpeed(val) { const speed = Number(val); this._speed = [1,2,5,10,20,50,100,200].includes(speed) ? speed : 100; if (this._autoTimer) { this.stopAuto(); this.startAuto(); } },
   setScenario(val) { this._scenario = val; this.reset(); },
   async call(action, body) { const opts = body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : { method:'POST' }; const resp = await fetch(`${API}/${action}`, opts); return resp.json(); },
   render(snap) {
@@ -1676,6 +1838,9 @@ async function detectS04B() {
 document.addEventListener('DOMContentLoaded', async () => {
   // EXH-UI-01-C01: Harness isolation guard — do NOT auto-boot in harness context
   if (!document.getElementById('frame-a')) return;
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && _inFrameB()) ctrlB.closeInspector();
+  });
 
   const s04b = await detectS04B();
   if (s04b) {
@@ -1684,10 +1849,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('frame-a').style.height = '100%';
     document.getElementById('frame-s04').style.display = 'none';
     document.getElementById('vf-scenario-label-a').style.display = '';
-    document.getElementById('vf-scenario-label-b').style.display = 'none';
-    document.getElementById('fb-speed-select').style.display = 'none';
-    document.getElementById('vf-zoom-group').style.display = 'none';
-    document.getElementById('vf-zoom-label').style.display = 'none';
+    document.getElementById('vf-footer').style.display = 'none';
     // Hide Frame B context in top bar
     ['fb-sim-time','fb-dwell','fb-sub-line-id','fb-variant','fb-line-state','fb-scenario','fb-live-status'].forEach(id => {
       const el = document.getElementById(id); if (el) el.style.display = 'none';

@@ -3,351 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TIPA ASSY Demo — M6-S04B</title>
+<title>TIPA ASSY | Virtual Factory</title>
 <link rel="stylesheet" href="/static/assy_demo.css">
 </head>
 <body>
+<a class="vf-skip-link" href="#vf-canvas-area">Skip to simulation</a>
 <div id="app">
-
-  <!-- ═══════════════════════════════════════
-       SHARED TOP APPLICATION BAR
-       ═══════════════════════════════════════ -->
   <header id="vf-topbar">
-    <div class="vf-tb-left">
-      <div class="vf-logo">
-        <span class="vf-logo-mark">VF</span>
-        <div>
-          <span class="vf-logo-text">VIRTUAL FACTORY</span>
-          <span class="vf-logo-sub">ASSEMBLY LINE SIMULATION</span>
-        </div>
+    <div class="vf-brand">
+      <span class="vf-brand-mark" aria-hidden="true">VF</span>
+      <div>
+        <p class="vf-eyebrow">Virtual Factory</p>
+        <h1>TIPA Assembly</h1>
       </div>
-      <!-- Frame A context (hidden in Frame B) -->
-      <span id="global-scenario" class="scenario-badge" style="background:#FFF3CD;color:#856404;padding:2px 10px;border-radius:3px;font-size:12px;display:none;">HAPPY_PATH</span>
     </div>
-
-    <div class="vf-tb-center">
-      <div class="vf-status-strip">
-        <span id="live-status" class="vf-status-item live">● LIVE</span>
-        <!-- Frame A step -->
-        <span id="demo-step" class="vf-status-step">DEMO STEP 000</span>
-      </div>
-
-      <!-- Frame B global context (sub-line / variant / scenario) -->
-      <span id="fb-sub-line-id" style="display:none;background:var(--vf-accent-light);color:var(--vf-accent);padding:2px 12px;border-radius:4px;font-size:14px;font-weight:600;font-family:Consolas,monospace;">ASSY-SL01</span>
-      <span id="fb-variant" style="display:none;font-size:11px;color:var(--vf-text-muted);text-transform:uppercase;">HYDRAULIC</span>
-      <span id="fb-scenario" style="display:none;background:#FFF3CD;color:#856404;padding:2px 10px;border-radius:3px;font-size:12px;">HAPPY_PATH</span>
+    <div class="vf-top-context" aria-label="Simulation context">
+      <span id="global-scenario" class="vf-context-chip">HAPPY_PATH</span>
+      <span id="fb-sub-line-id" class="vf-context-chip vf-context-code" style="display:none">ASSY-SL01</span>
+      <span id="fb-variant" class="vf-context-text" style="display:none">HYDRAULIC</span>
+      <span id="fb-scenario" class="vf-context-chip" style="display:none">HAPPY_PATH</span>
+      <span id="demo-step" class="vf-context-text vf-mono">Demo step 000</span>
     </div>
-
-    <div class="vf-tb-right">
-      <button class="vf-tb-icon-btn" title="Overview" onclick="closeFrameB();ctrl.refreshOverview();">⊞</button>
-      <button class="vf-tb-icon-btn" title="Settings">⚙</button>
-      <button class="vf-tb-icon-btn" title="Help">?</button>
+    <div class="vf-top-actions">
+      <span id="live-status" class="vf-live-status" role="status" aria-live="polite">Live</span>
+      <button id="btn-overview" class="vf-icon-button" type="button" title="Back to line overview" aria-label="Back to line overview" onclick="closeFrameB();ctrl.refreshOverview();">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
+      </button>
     </div>
   </header>
 
-  <!-- ═══════════════════════════════════════
-       MAIN CONTENT: Sidebar + Canvas
-       ═══════════════════════════════════════ -->
   <div class="vf-main">
-
-    <!-- SHARED LEFT SIDEBAR -->
-    <nav id="vf-sidebar">
-      <div class="vf-sb-section">
-        <h3>Line Overview</h3>
-        <div class="vf-sb-metric"><span class="vf-sb-mk">WIP ON LINE</span><span id="vf-sb-wip" class="vf-sb-mv">0</span></div>
-        <div class="vf-sb-metric"><span class="vf-sb-mk">CREATED</span><span id="total-created" class="vf-sb-mv">0</span></div>
-        <div class="vf-sb-metric"><span class="vf-sb-mk">RELEASED</span><span id="total-released" class="vf-sb-mv">0</span></div>
-        <div class="vf-sb-metric hold"><span class="vf-sb-mk">HELD</span><span id="total-holds" class="vf-sb-mv">0</span></div>
-        <div class="vf-sb-metric fail" style="display:none;"><span class="vf-sb-mk">FAILED</span><span id="vf-sb-failed" class="vf-sb-mv">0</span></div>
-        <span id="total-holds-badge" style="display:none;"></span>
+    <!-- Kept as a data target for the existing overview controller; visually replaced by the context strip. -->
+    <aside id="vf-sidebar" aria-label="Line metrics">
+      <div class="vf-sb-section"><h3>Line Overview</h3>
+        <div class="vf-sb-metric"><span>WIP on line</span><strong id="vf-sb-wip">0</strong></div>
+        <div class="vf-sb-metric"><span>Created</span><strong id="total-created">0</strong></div>
+        <div class="vf-sb-metric"><span>Released</span><strong id="total-released">0</strong></div>
+        <div class="vf-sb-metric"><span>Held</span><strong id="total-holds">0</strong></div>
+        <span id="total-holds-badge" hidden></span>
       </div>
+    </aside>
 
-      <div class="vf-sb-section">
-        <h3>Legend</h3>
-        <div class="vf-sb-legend-item"><span class="vf-sb-legend-swatch" style="background:var(--vf-obj-stator);"></span> Raw Material</div>
-        <div class="vf-sb-legend-item"><span class="vf-sb-legend-swatch" style="background:var(--vf-obj-joined);"></span> WIP / Processing</div>
-        <div class="vf-sb-legend-item"><span class="vf-sb-legend-swatch" style="background:var(--vf-state-hold);"></span> Hold</div>
-        <div class="vf-sb-legend-item"><span class="vf-sb-legend-swatch" style="background:var(--vf-state-fail);"></span> Failed</div>
-        <div class="vf-sb-legend-item"><span class="vf-sb-legend-swatch" style="background:var(--vf-obj-packed);"></span> Finished Goods</div>
-        <div class="vf-sb-legend-item"><span class="vf-sb-legend-swatch" style="background:var(--vf-flow-product);"></span> Product Flow</div>
-        <div class="vf-sb-legend-item"><span class="vf-sb-legend-swatch" style="background:var(--vf-flow-material);"></span> Material Flow</div>
-      </div>
-
-      <div class="vf-sb-actions">
-        <button class="vf-btn danger-outline" onclick="ctrl.reset()">↻ Reset Line</button>
-        <button class="vf-btn" onclick="ctrl.reset()">⚠ Clear Alarms</button>
-        <button class="vf-btn" onclick="console.log('Export')">⬇ Export</button>
-      </div>
-    </nav>
-
-    <!-- CANVAS AREA -->
-    <div id="vf-canvas-area">
-
-      <!-- ═══════════════════════════════════════
-           S04B Frame A — Six-Sub-Line Overview
-           ═══════════════════════════════════════ -->
-      <div id="frame-a" style="display:none;">
+    <main id="vf-canvas-area">
+      <section id="frame-a" aria-labelledby="overview-title">
         <div id="vf-overview-main">
-          <div class="vf-overview-title">ASSY LINE — 6 PARALLEL SUB-LINES</div>
-          <div class="vf-overview-subtitle">HYDRAULIC / THERMAL SSO2 INPUT VARIANTS — Click to select, double-click for detail</div>
-          <div class="vf-overview-group-label">HYDRAULIC SSO2 INPUT VARIANT</div>
-          <div id="vf-hyd-cards" class="vf-subline-cards"></div>
-          <div class="vf-overview-group-label">THERMAL SSO2 INPUT VARIANT</div>
-          <div id="vf-thm-cards" class="vf-subline-cards"></div>
-          <div style="font-size:10px;color:var(--vf-text-muted);margin-top:var(--vf-xl);">DEMO / SYNTHETIC DATA — All sub-line states from live runtime projection</div>
-        </div>
-        <!-- Hidden old SVG overview (preserved for compatibility, JS may still reference it) -->
-        <svg id="overview-svg" viewBox="0 0 1920 820" preserveAspectRatio="xMidYMid meet" style="display:none;">
-          <g id="svg-lanes"></g>
-        </svg>
-      </div>
-
-      <!-- ═══════════════════════════════════════
-           M6-S04B Frame B — Sub-line Detail Canvas
-           ═══════════════════════════════════════ -->
-      <div id="frame-b" style="display:none;">
-        <!-- SVG Physical Canvas (EXH-UI-01-C02: cropped to 820) -->
-        <svg id="fb-canvas-svg" viewBox="0 0 1920 820" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <marker id="arrowLeft" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="var(--vf-flow-product)"/>
-            </marker>
-            <marker id="arrowRight" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-              <polygon points="10 0, 0 3.5, 10 7" fill="var(--vf-flow-material)"/>
-            </marker>
-            <marker id="arrowJoin" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
-              <polygon points="0 0, 8 2.5, 0 5" fill="#C8960E"/>
-            </marker>
-          </defs>
-          <!-- Grid background -->
-          <g id="vf-grid-bg"></g>
-          <!-- Zone boxes -->
-          <g id="vf-zones"></g>
-          <!-- UI-CTX-02: Contextual source cues (SSO2/RSO2) -->
-          <g id="fb-context-sources"></g>
-          <!-- Conveyor -->
-          <g id="vf-conveyor-group"></g>
-          <!-- EXH-UI-01-C01: Global product-flow arrow (above conveyor, below stations) -->
-          <g id="vf-flow-cue"></g>
-          <!-- Stations -->
-          <g id="fb-stations"></g>
-          <!-- I07: WIP layer (separate for motion animation) -->
-          <g id="fb-wips"></g>
-          <!-- UI-CTX-02: Off-line context tray (representative items only) -->
-          <g id="fb-context-offline"></g>
-          <!-- Production summary text -->
-          <text id="fb-prod-text" x="20" y="30" fill="var(--vf-text-secondary)" font-size="11" font-family="monospace"></text>
-        </svg>
-
-        <!-- I09-P06: Floating Simulation Control (bottom-left of canvas) -->
-        <div id="vf-sim-panel">
-          <div class="vf-sim-panel-title">Simulation</div>
-          <div class="vf-sim-panel-status">
-            <span id="fb-live-status" class="vf-status-item live">● LIVE</span>
-            <span id="fb-sim-time" class="vf-status-time">t=0s</span>
-            <span id="fb-dwell" class="vf-status-item">DWELL 0</span>
-          </div>
-          <div id="fb-line-state" class="vf-sim-line-state">Conveyor: stopped (post-index)</div>
-          <div class="vf-sim-panel-controls">
-            <button id="btn-reset" class="vf-btn danger-outline" onclick="uiReset()">↻ RESET</button>
-            <button id="btn-step" class="vf-btn primary" onclick="uiStep()">▶ STEP</button>
-            <button id="btn-auto" class="vf-btn accent-outline" onclick="uiToggleAuto()">▶▶ AUTO</button>
-            <button id="btn-pause" class="vf-btn" onclick="uiPause()" disabled>⏸ PAUSE</button>
-            <select class="vf-ft-select" id="fb-speed-select" onchange="ctrlB.setSpeed(this.value)">
-              <option value="0.1">0.1x</option>
-              <option value="0.25">0.25x</option>
-              <option value="0.5">0.5x</option><option value="1" selected>1x</option>
-              <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Floating Popup (top-right, reference-style) -->
-        <div id="vf-popup">
-          <div id="vf-popup-header">
-            <span id="vf-popup-title">Station Overview</span>
-            <button id="vf-popup-close" onclick="ctrlB.closePopup()" title="Close">×</button>
-          </div>
-          <div id="vf-popup-tabs">
-            <button class="vf-popup-tab active" data-tab="overview">Overview</button>
-            <button class="vf-popup-tab" data-tab="quality">Quality</button>
-            <button class="vf-popup-tab" data-tab="history">History</button>
-            <button class="vf-popup-tab" data-tab="genealogy">Genealogy</button>
-          </div>
-          <div id="vf-popup-body">
-            <div class="vf-popup-empty">Select a station or WIP to inspect</div>
-          </div>
-        </div>
-
-        <!-- Floating Inspector (bottom-right, legacy data integration) -->
-        <div id="vf-inspector">
-          <div id="vf-inspector-header">
-            <span id="vf-inspector-title">Inspector</span>
-            <button id="vf-inspector-close" onclick="ctrlB.closeInspector()" title="Close">×</button>
-          </div>
-          <div id="vf-inspector-body">
-            <!-- Legacy inspector content — JS renders here -->
-            <div id="fb-inspector" style="display:none;">
-              <div id="fb-insp-header" style="display:none;">
-                <span id="fb-insp-title">Inspector</span>
-                <button id="fb-insp-close" onclick="ctrlB.closeInspector()" title="Close">×</button>
-              </div>
-              <div id="fb-insp-body" style="display:none;">
-                <div class="fb-insp-section" id="fb-insp-summary">
-                  <h5>Summary</h5>
-                  <div id="fb-insp-summary-content"></div>
-                </div>
-                <div class="fb-insp-section" id="fb-insp-quality">
-                  <h5>Quality History</h5>
-                  <div id="fb-insp-quality-content"></div>
-                </div>
-                <div class="fb-insp-section" id="fb-insp-measurements" style="display:none">
-                  <h5>Measurements</h5>
-                  <div id="fb-insp-measurements-content"></div>
-                </div>
-                <div class="fb-insp-section" id="fb-insp-checklist" style="display:none">
-                  <h5>Checklist</h5>
-                  <div id="fb-insp-checklist-content"></div>
-                </div>
-                <div class="fb-insp-section" id="fb-insp-genealogy" style="display:none">
-                  <h5>Genealogy</h5>
-                  <div id="fb-insp-genealogy-content"></div>
-                </div>
-              </div>
+          <div class="vf-page-heading">
+            <div>
+              <p class="vf-eyebrow">Production overview</p>
+              <h2 id="overview-title">ASSY sub-lines</h2>
+              <p>Choose a sub-line to inspect its current WIP, quality and station state.</p>
             </div>
+            <div class="vf-overview-kpis" aria-label="Production totals">
+              <div><span>Created</span><strong id="vf-overview-created">0</strong></div>
+              <div><span>Released</span><strong id="vf-overview-released">0</strong></div>
+              <div><span>On line</span><strong id="vf-overview-wip">0</strong></div>
+              <div><span>Holds</span><strong id="vf-overview-holds">0</strong></div>
+            </div>
+            <span id="vf-overview-sim-state" class="vf-simulation-state" role="status" aria-live="polite">Simulation: PAUSED</span>
+            <details class="vf-legend">
+              <summary>Line key</summary>
+              <div class="vf-legend-panel"><span><i class="vf-legend-dot pass"></i>Operating</span><span><i class="vf-legend-dot hold"></i>Quality hold</span><span><i class="vf-legend-dot landmark"></i>Quality gate</span></div>
+            </details>
+          </div>
+          <section class="vf-overview-section" aria-labelledby="hyd-title">
+            <h3 id="hyd-title">Hydraulic input variant</h3>
+            <div id="vf-hyd-cards" class="vf-subline-cards"></div>
+          </section>
+          <section class="vf-overview-section" aria-labelledby="thm-title">
+            <h3 id="thm-title">Thermal input variant</h3>
+            <div id="vf-thm-cards" class="vf-subline-cards"></div>
+          </section>
+        </div>
+        <div id="vf-overview-command-bar" class="vf-command-bar vf-command-bar-overview" aria-label="All-line simulation controls">
+          <div class="vf-command-group">
+            <button class="vf-btn primary" type="button" data-sim-command="all-step" onclick="SimulationCoordinator.stepAll()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></svg>Step all</button>
+            <button class="vf-btn outline" type="button" data-sim-command="all-run" aria-pressed="false" onclick="SimulationCoordinator.toggleAll()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 4 14 8-14 8Zm0 0v16"/></svg>Run all</button>
+            <button class="vf-btn ghost" type="button" data-sim-command="all-pause" onclick="SimulationCoordinator.pauseAll()" disabled><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>Pause all</button>
+          </div>
+          <div class="vf-command-group vf-command-selects">
+            <label>Scenario <select class="vf-ft-select" data-sim-scenario onchange="SimulationCoordinator.setScenario(this.value, this)"><option value="HAPPY_PATH">Happy Path</option><option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option><option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option><option value="FAILED_FINAL">Failed Final</option></select></label>
+            <label>Speed <select class="vf-ft-select" data-sim-speed onchange="SimulationCoordinator.setSpeed(this.value, this)"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10">10×</option><option value="20">20×</option><option value="50">50×</option><option value="100" selected>100×</option><option value="200">200×</option></select></label>
+            <span class="vf-speed-note" data-sim-speed-note>100× · 1.2 s/step</span>
+          </div>
+          <button class="vf-btn danger" type="button" data-sim-command="reset" onclick="SimulationCoordinator.reset()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8m0-6v6h-6"/></svg>Reset all</button>
+        </div>
+        <svg id="overview-svg" viewBox="0 0 1920 820" preserveAspectRatio="xMidYMid meet" style="display:none"><g id="svg-lanes"></g></svg>
+      </section>
+
+      <section id="frame-b" aria-label="Assembly line simulation" style="display:none">
+        <div id="vf-line-context" class="vf-line-context" aria-live="polite">
+          <div class="vf-line-identity"><span class="vf-eyebrow">Line detail</span><strong id="vf-line-title">ASSY-SL01</strong></div>
+          <div class="vf-line-statuses">
+            <span id="fb-live-status" class="vf-live-status">Live</span>
+            <span id="vf-detail-sim-state" class="vf-simulation-state" role="status" aria-live="polite">Simulation: PAUSED</span>
+            <span id="fb-sim-time" class="vf-status-value vf-mono">t=0s</span>
+            <span id="fb-dwell" class="vf-status-value">Dwell 0</span>
+            <span id="fb-line-state" class="vf-line-state">Conveyor: stopped (post-index)</span>
+          </div>
+          <div class="vf-line-kpis">
+            <span>Created <b id="vf-created-inline">0</b></span>
+            <span>Released <b id="vf-released-inline">0</b></span>
+            <span>On line <b id="vf-wip-inline">0</b></span>
+            <span>Holds <b id="vf-holds-inline">0</b></span>
           </div>
         </div>
 
-        <!-- Event Strip (bottom-left) -->
-        <div id="vf-event-strip" onclick="this.classList.toggle('expanded')">
-          <h4 id="fb-event-title">Quality Events</h4>
+        <div id="vf-scene-wrap">
+          <svg id="fb-canvas-svg" viewBox="0 0 1920 820" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Assembly line simulation. Product flows from right to left.">
+            <defs>
+              <marker id="arrowLeft" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="10 0, 0 3.5, 10 7" fill="currentColor"/></marker>
+              <marker id="arrowRight" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="currentColor"/></marker>
+              <marker id="arrowJoin" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="8 0, 0 2.5, 8 5" fill="currentColor"/></marker>
+              <filter id="vf-soft-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity=".14"/></filter>
+            </defs>
+            <g id="vf-grid-bg"></g>
+            <g id="vf-zones"></g>
+            <g id="fb-context-sources"></g>
+            <g id="vf-conveyor-group"></g>
+            <g id="vf-flow-cue"></g>
+            <g id="fb-stations"></g>
+            <g id="fb-wips"></g>
+            <g id="fb-context-offline"></g>
+            <text id="fb-prod-text" x="20" y="30"></text>
+          </svg>
+
+          <button id="vf-proposed-flow-toggle" class="vf-proposed-toggle" type="button" aria-expanded="false" onclick="ctrlB.toggleProposedFlow()">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h11m-3-3 3 3-3 3M20 17H9m3-3-3 3 3 3"/></svg>
+            Proposed flow
+          </button>
+        </div>
+
+        <div id="vf-event-strip" aria-live="polite" onclick="this.classList.toggle('expanded')">
+          <span class="vf-event-heading">Quality events</span>
           <span class="vf-qe-inline" id="fb-event-inline"></span>
-          <div id="fb-event-list" style="display:none;"></div>
+          <div id="fb-event-list" hidden></div>
         </div>
 
-        <!-- Right panel (hidden, legacy compatibility) -->
-        <div id="fb-right-panel" style="display:none;">
-          <div id="fb-genealogy-context" style="display:none;">
-            <h4>AP04 JOIN Genealogy</h4>
-            <div id="fb-genealogy-text"></div>
+        <aside id="vf-popup" class="vf-detail-drawer" aria-label="Selected station or WIP details" aria-hidden="true">
+          <div id="vf-popup-header">
+            <div><span class="vf-eyebrow">Inspection</span><strong id="vf-popup-title">Station overview</strong></div>
+            <button id="vf-popup-close" class="vf-icon-button" type="button" aria-label="Close detail drawer" onclick="ctrlB.closeInspector()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
           </div>
+          <div id="vf-popup-tabs" role="tablist" aria-label="Detail views">
+            <button class="vf-popup-tab active" role="tab" aria-selected="true" data-tab="overview">Summary</button>
+            <button class="vf-popup-tab" role="tab" aria-selected="false" data-tab="quality">Quality</button>
+            <button class="vf-popup-tab" role="tab" aria-selected="false" data-tab="history">History</button>
+            <button class="vf-popup-tab" role="tab" aria-selected="false" data-tab="genealogy">Genealogy</button>
+          </div>
+          <div id="vf-popup-body" role="tabpanel"><div class="vf-popup-empty">Select a station or WIP to inspect.</div></div>
+        </aside>
+
+        <!-- Data rendering target preserved for current controller. The presentation is consolidated into vf-popup. -->
+        <aside id="vf-inspector" aria-hidden="true"><div id="vf-inspector-header"><span id="vf-inspector-title">Inspector</span><button id="vf-inspector-close" type="button" onclick="ctrlB.closeInspector()">×</button></div><div id="vf-inspector-body"><div id="fb-inspector"><div id="fb-insp-header"><span id="fb-insp-title">Inspector</span><button id="fb-insp-close" type="button" onclick="ctrlB.closeInspector()">×</button></div><div id="fb-insp-body"><section id="fb-insp-summary"><div id="fb-insp-summary-content"></div></section><section id="fb-insp-quality"><div id="fb-insp-quality-content"></div></section><section id="fb-insp-measurements"><div id="fb-insp-measurements-content"></div></section><section id="fb-insp-checklist"><div id="fb-insp-checklist-content"></div></section><section id="fb-insp-genealogy"><div id="fb-insp-genealogy-content"></div></section></div></div></div></aside>
+
+        <div id="fb-right-panel" style="display:none"><div id="fb-genealogy-context"><div id="fb-genealogy-text"></div></div></div>
+
+        <div id="vf-command-bar" class="vf-command-bar" aria-label="Simulation controls">
+          <div class="vf-command-group">
+            <button id="btn-step" class="vf-btn primary" type="button" data-sim-command="detail-step" onclick="SimulationCoordinator.stepLine(ctrlB._subLineId)"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></svg>Step line</button>
+            <button id="btn-auto" class="vf-btn outline" type="button" data-sim-command="detail-run" aria-pressed="false" onclick="SimulationCoordinator.toggleLine(ctrlB._subLineId)"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 4 14 8-14 8Zm0 0v16"/></svg>Run line</button>
+            <button id="btn-pause" class="vf-btn ghost" type="button" data-sim-command="detail-pause" onclick="SimulationCoordinator.pauseLine(ctrlB._subLineId)" disabled><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>Pause line</button>
+          </div>
+          <div class="vf-command-group vf-command-selects">
+            <label>Scenario <select class="vf-ft-select" id="fb-scenario-select" data-sim-scenario onchange="SimulationCoordinator.setScenario(this.value, this)"><option value="HAPPY_PATH">Happy Path</option><option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option><option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option><option value="FAILED_FINAL">Failed Final</option></select></label>
+            <label>Speed <select class="vf-ft-select" id="fb-speed-select" data-sim-speed onchange="SimulationCoordinator.setSpeed(this.value, this)"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10">10×</option><option value="20">20×</option><option value="50">50×</option><option value="100" selected>100×</option><option value="200">200×</option></select></label>
+            <span class="vf-speed-note" data-sim-speed-note>100× · 1.2 s/step</span>
+          </div>
+          <div class="vf-command-group vf-command-zoom" id="vf-zoom-group">
+            <button class="vf-icon-button" type="button" aria-label="Zoom in" title="Zoom in" onclick="ctrlB.zoomIn()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 21-4.3-4.3M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm0-12v8m-4-4h8"/></svg></button>
+            <button class="vf-icon-button" type="button" aria-label="Zoom out" title="Zoom out" onclick="ctrlB.zoomOut()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 21-4.3-4.3M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16ZM7 11h8"/></svg></button>
+            <button class="vf-icon-button" type="button" aria-label="Fit line in view" title="Fit line in view" onclick="ctrlB.zoomReset()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+            <span id="vf-zoom-label" class="vf-mono">100%</span>
+          </div>
+          <button id="btn-reset" class="vf-btn danger" type="button" data-sim-command="reset" onclick="SimulationCoordinator.reset()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8m0-6v6h-6"/></svg>Reset all</button>
         </div>
-      </div>
+      </section>
 
-      <!-- ═══════════════════════════════════════
-           S04 Fallback (single-line legacy)
-           ═══════════════════════════════════════ -->
-      <div id="frame-s04" style="display:none;">
-        <header>
-          <h1>ASSY Line Demo — Single Line S04</h1>
-          <div id="status-bar">
-            <span id="sim-time">t=0s</span>
-            <span id="line-state" class="state stopped">STOPPED</span>
-            <span id="dwell">DWELL 0</span>
-            <span id="scenario-display">HAPPY_PATH</span>
-          </div>
-        </header>
-        <main>
-          <div id="assy-line">
-            <div id="conveyor-track">
-              <div id="positions-container"></div>
-            </div>
-          </div>
-          <div id="side-panel">
-            <div class="panel-box">
-              <h3>Production</h3>
-              <div id="prod-summary">
-                <div><span>Motors Created</span><span id="motors-completed">0</span></div>
-                <div><span>Motors Released</span><span id="motors-released">0</span></div>
-                <div><span>WIPs On Line</span><span id="wips-on-line">0</span></div>
-                <div><span>Active Holds</span><span id="active-holds">0</span></div>
-                <div><span>RSO2 Buffer</span><span id="rso2-buf">0</span></div>
-              </div>
-            </div>
-            <div class="panel-box">
-              <h3>AP04 Genealogy</h3>
-              <div id="genealogy-list"></div>
-            </div>
-            <div class="panel-box">
-              <h3>Quality Events</h3>
-              <div id="quality-events"></div>
-            </div>
-          </div>
-        </main>
-        <footer>
-          <button id="btn-reset-s04" onclick="ctrlS04.reset()">↻ RESET</button>
-          <button id="btn-step-s04" onclick="ctrlS04.step()">▶ STEP</button>
-          <button id="btn-auto-s04" onclick="ctrlS04.toggleAuto()">▶▶ AUTO</button>
-          <button id="btn-pause-s04" onclick="ctrlS04.pause()" disabled>⏸ PAUSE</button>
-          <label>Speed:
-            <select id="speed-select-s04" onchange="ctrlS04.setSpeed(this.value)">
-              <option value="0.5">0.5x</option><option value="1" selected>1x</option>
-              <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
-            </select>
-          </label>
-          <label>Scenario:
-            <select id="scenario-select-s04" onchange="ctrlS04.setScenario(this.value)">
-              <option value="HAPPY_PATH">Happy Path</option>
-              <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
-              <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>
-              <option value="FAILED_FINAL">Failed Final</option>
-            </select>
-          </label>
-        </footer>
-      </div>
-    </div><!-- /vf-canvas-area -->
-  </div><!-- /vf-main -->
+      <section id="frame-s04" style="display:none">
+        <header><h2>TIPA ASSY simulation</h2><div id="status-bar"><span id="sim-time">t=0s</span><span id="line-state">STOPPED</span><span id="dwell">DWELL 0</span><span id="scenario-display">HAPPY_PATH</span></div></header>
+        <main><div id="assy-line"><div id="conveyor-track"><div id="positions-container"></div></div></div><div id="side-panel"><div id="prod-summary"><div><span>Motors Created</span><span id="motors-completed">0</span></div><div><span>Motors Released</span><span id="motors-released">0</span></div><div><span>WIPs On Line</span><span id="wips-on-line">0</span></div><div><span>Active Holds</span><span id="active-holds">0</span></div><div><span>RSO2 Buffer</span><span id="rso2-buf">0</span></div></div><div id="genealogy-list"></div><div id="quality-events"></div></div></main>
+        <footer class="vf-s04-controls"><button id="btn-reset-s04" type="button" onclick="ctrlS04.reset()">Reset</button><button id="btn-step-s04" type="button" onclick="ctrlS04.step()">Step</button><button id="btn-auto-s04" type="button" onclick="ctrlS04.toggleAuto()">Run</button><button id="btn-pause-s04" type="button" onclick="ctrlS04.pause()" disabled>Pause</button><label>Scenario <select id="scenario-select-s04" onchange="ctrlS04.setScenario(this.value)"><option value="HAPPY_PATH">Happy Path</option><option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option><option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option><option value="FAILED_FINAL">Failed Final</option></select></label><label>Speed <select id="speed-select-s04" onchange="ctrlS04.setSpeed(this.value)"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10">10×</option><option value="20">20×</option><option value="50">50×</option><option value="100" selected>100×</option><option value="200">200×</option></select></label></footer>
+      </section>
+    </main>
+  </div>
 
-  <!-- ═══════════════════════════════════════
-       SHARED FOOTER CONTROLS
-       ═══════════════════════════════════════ -->
   <footer id="vf-footer">
-    <div class="vf-ft-group">
-      <!-- Frame A scenario dropdown (hidden in Frame B) -->
-      <label class="vf-ft-label" id="vf-scenario-label-a">
-        Scenario:
-        <select class="vf-ft-select" id="scenario-select" onchange="ctrl.setScenario(this.value)">
-          <option value="HAPPY_PATH">Happy Path</option>
-          <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
-          <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>
-          <option value="FAILED_FINAL">Failed Final</option>
-        </select>
-      </label>
-      <!-- Frame B scenario dropdown (hidden in Frame A) -->
-      <label class="vf-ft-label" id="vf-scenario-label-b" style="display:none;">
-        Scenario:
-        <select class="vf-ft-select" id="fb-scenario-select" onchange="ctrlB.setScenario(this.value)">
-          <option value="HAPPY_PATH">Happy Path</option>
-          <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
-          <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>
-          <option value="FAILED_FINAL">Failed Final</option>
-        </select>
-      </label>
-    </div>
-    <div class="vf-ft-group">
-      <label class="vf-ft-label" id="vf-speed-label-a">
-        Speed:
-        <select class="vf-ft-select" id="speed-select" onchange="ctrl.setSpeed(this.value)">
-          <option value="0.1">0.1x</option>
-          <option value="0.25">0.25x</option>
-          <option value="0.5">0.5x</option><option value="1" selected>1x</option>
-          <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
-        </select>
-      </label>
-    </div>
-    <div class="vf-ft-group">
-      <!-- Frame B zoom controls -->
-      <span id="vf-zoom-group" style="display:none;">
-        <button class="vf-btn" onclick="ctrlB.zoomIn()">🔍+</button>
-        <button class="vf-btn" onclick="ctrlB.zoomOut()">🔍−</button>
-        <button class="vf-btn" onclick="ctrlB.zoomReset()">⊡</button>
-      </span>
-      <span class="vf-ft-label" id="vf-zoom-label" style="display:none;font-size:11px;color:var(--vf-text-muted);">100%</span>
-    </div>
+    <label id="vf-scenario-label-a">Scenario <select class="vf-ft-select" id="scenario-select" onchange="ctrl.setScenario(this.value)"><option value="HAPPY_PATH">Happy Path</option><option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option><option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option><option value="FAILED_FINAL">Failed Final</option></select></label>
+    <label id="vf-speed-label-a">Speed <select class="vf-ft-select" id="speed-select" onchange="ctrl.setSpeed(this.value)"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10">10×</option><option value="20">20×</option><option value="50">50×</option><option value="100" selected>100×</option><option value="200">200×</option></select></label>
   </footer>
-
-</div><!-- /app -->
-
+</div>
 <script src="/static/assy_demo.js"></script>
 </body>
 </html>

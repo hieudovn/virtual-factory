@@ -94,6 +94,19 @@ class DemoController:
         self._composition.step_all()
         return self.snapshot()
 
+    def step_sub_line(self, sub_line_id: str) -> AssyDemoSnapshot:
+        """Advance only the requested sub-line and return its snapshot."""
+        if self._composition is None:
+            return AssyDemoSnapshot()
+        self._composition.step_sub_line(sub_line_id)
+        return self.detail_for(sub_line_id)
+
+    def step_sub_lines(self, sub_line_ids: list[str]) -> None:
+        """Advance an explicit set of sub-lines on one composition tick."""
+        if self._composition is None:
+            return
+        self._composition.step_sub_lines(sub_line_ids)
+
     def snapshot(self) -> AssyDemoSnapshot:
         """Build detached snapshot for the currently selected context."""
         if self._composition is None:

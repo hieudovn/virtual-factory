@@ -309,4 +309,32 @@ def create_app(
                     content={"detail": f"Sub-line not found: {sub_line_id!r}"},
                 )
 
+        @app.post("/assy-demo/sub-line/{sub_line_id}/step")
+        def assy_demo_sub_line_step(sub_line_id: str) -> dict:
+            """Additive per-line control used by the detail simulation view."""
+            ctrl = _get_assy_controller()
+            try:
+                return ctrl.step_sub_line(sub_line_id).to_dict()
+            except ValueError:
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    status_code=404,
+                    content={"detail": f"Sub-line not found: {sub_line_id!r}"},
+                )
+
+        @app.post("/assy-demo/step-lines")
+        def assy_demo_step_lines(body: dict) -> dict:
+            """Advance selected sub-lines together; used when a line is paused."""
+            ctrl = _get_assy_controller()
+            sub_line_ids = (body or {}).get("sub_line_ids", [])
+            if not isinstance(sub_line_ids, list) or not all(isinstance(item, str) for item in sub_line_ids):
+                from fastapi.responses import JSONResponse
+                return JSONResponse(status_code=422, content={"detail": "sub_line_ids must be a list of strings"})
+            try:
+                ctrl.step_sub_lines(sub_line_ids)
+                return ctrl.overview().to_dict()
+            except ValueError as exc:
+                from fastapi.responses import JSONResponse
+                return JSONResponse(status_code=404, content={"detail": str(exc)})
+
     return app
