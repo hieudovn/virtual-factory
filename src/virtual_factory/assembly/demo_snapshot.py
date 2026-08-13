@@ -36,17 +36,17 @@ class StationPositionView:
     def labels() -> dict[str, str]:
         return {
             "PRE-ASSY": "PRE-ASSY — Stator prep",
-            "AP01": "AP01 — Fitting / preparation",
-            "AP02": "AP02 — Terminal box wiring",
-            "AP03": "AP03 — Mechanical prep + QC",
-            "AP04": "AP04 — Main assembly / JOIN",
-            "AP05": "AP05 — Assembly + painting + measurements",
-            "AP06": "AP06 — Electrical / functional test",
-            "AP07": "AP07 — Finishing / nameplate",
-            "AP08": "AP08 — Visual inspection",
+            "AP01": "AP01 — TBox Install",
+            "AP02": "AP02 — TBox Wiring",
+            "AP03": "AP03 — SSO2 & TBox QC",
+            "AP04": "AP04 — RSO2 & BB-LS",
+            "AP05": "AP05 — BB-OS, Fan & Cover",
+            "AP06": "AP06 — Electrical Test",
+            "AP07": "AP07 — Nameplate & Finish",
+            "AP08": "AP08 — Visual Inspection",
             "AP09": "AP09 — Boxing",
-            "AP10": "AP10 — Closing / labeling / palletizing",
-            "AP11": "AP11 — Final QC / release",
+            "AP10": "AP10 — Pack & Palletize",
+            "AP11": "AP11 — Packing QC",
         }
 
 
