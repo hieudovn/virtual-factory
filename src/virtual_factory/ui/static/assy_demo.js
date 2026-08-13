@@ -966,21 +966,23 @@ const ctrlB = {
     const sx = L.rawX + L.rawW / 2;   // zone center (~1810)
     html += `<text x="${sx}" y="${L.rawY+42}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">SSO2 INPUT</text>`;
     html += `<text x="${sx}" y="${L.rawY+56}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">STATOR + SHIELD SOURCE</text>`;
+    // 3 stator icons stacked vertically, 58px spacing (r=28 → 56px diameter, no overlap)
     for (let i = 0; i < 3; i++) {
-      const sy = L.rawY + 82 + i * 44;
+      const sy = L.rawY + 82 + i * 58;
       html += `<g transform="translate(${sx}, ${sy})" opacity="0.78">${VF.statorAssy(0, 0)}</g>`;
     }
     // light connector toward PRE-ASSY (flow RIGHT→LEFT entry)
-    html += `<line x1="${sx - 26}" y1="${L.rawY + 82 + 88 + 14}" x2="${L.preX + 6}" y2="${L.stationY - 26}" stroke="var(--vf-text-muted)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#arrowLeft)"/>`;
+    const sso2Bottom = L.rawY + 82 + 2 * 58;
+    html += `<line x1="${sx - 30}" y1="${sso2Bottom + 22}" x2="${L.preX + 6}" y2="${L.stationY - 26}" stroke="var(--vf-text-muted)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#arrowLeft)"/>`;
 
-    // ── RSO2 ROTOR FEED (above AP04 JOIN) ──
+    // ── RSO2 ROTOR FEED (above AP04 JOIN, vertical stack) ──
     const ax = L.ap04X;
-    const ry = L.rso2BranchTopY - 34;
-    html += `<text x="${ax}" y="${ry - 22}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">RSO2 ROTOR FEED</text>`;
-    html += `<text x="${ax}" y="${ry - 10}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">TO AP04 JOIN</text>`;
+    html += `<text x="${ax}" y="${L.rso2BranchTopY - 80}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">RSO2 ROTOR FEED</text>`;
+    html += `<text x="${ax}" y="${L.rso2BranchTopY - 68}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">TO AP04 JOIN</text>`;
+    // 3 rotor icons stacked vertically, 26px spacing (rotor height 16px, no overlap)
     for (let i = 0; i < 3; i++) {
-      const rx = ax - 44 + i * 44;
-      html += `<g transform="translate(${rx}, ${ry})" opacity="0.78">${VF.rotor(0, 0)}</g>`;
+      const ry = L.rso2BranchTopY - 54 + i * 26;
+      html += `<g transform="translate(${ax}, ${ry})" opacity="0.78">${VF.rotor(0, 0)}</g>`;
     }
 
     g.innerHTML = html;
