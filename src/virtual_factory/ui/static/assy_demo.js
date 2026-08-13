@@ -496,6 +496,7 @@ function openFrameB(subLineId) {
   // Toggle top bar elements: show Frame B context
   document.getElementById('demo-step').style.display = 'none';
   document.getElementById('global-scenario').style.display = 'none';
+  document.getElementById('live-status').style.display = 'none';  // I09-P06: panel owns live indicator in Frame B
   document.getElementById('fb-sim-time').style.display = '';
   document.getElementById('fb-dwell').style.display = '';
   document.getElementById('fb-sub-line-id').style.display = '';
@@ -508,6 +509,7 @@ function openFrameB(subLineId) {
   document.getElementById('vf-scenario-label-a').style.display = 'none';
   document.getElementById('vf-scenario-label-b').style.display = '';
   document.getElementById('speed-select').style.display = 'none';
+  document.getElementById('vf-speed-label-a').style.display = 'none';
   document.getElementById('fb-speed-select').style.display = '';
   document.getElementById('vf-zoom-group').style.display = '';
   document.getElementById('vf-zoom-label').style.display = '';
@@ -531,6 +533,7 @@ function closeFrameB() {
   // Toggle top bar elements: show Frame A context
   document.getElementById('demo-step').style.display = '';
   document.getElementById('global-scenario').style.display = '';
+  document.getElementById('live-status').style.display = '';  // I09-P06: restore Frame A live indicator
   document.getElementById('fb-sim-time').style.display = 'none';
   document.getElementById('fb-dwell').style.display = 'none';
   document.getElementById('fb-sub-line-id').style.display = 'none';
@@ -543,6 +546,7 @@ function closeFrameB() {
   document.getElementById('vf-scenario-label-a').style.display = '';
   document.getElementById('vf-scenario-label-b').style.display = 'none';
   document.getElementById('speed-select').style.display = '';
+  document.getElementById('vf-speed-label-a').style.display = '';
   document.getElementById('fb-speed-select').style.display = 'none';
   document.getElementById('vf-zoom-group').style.display = 'none';
   document.getElementById('vf-zoom-label').style.display = 'none';
