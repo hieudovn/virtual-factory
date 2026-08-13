@@ -98,6 +98,7 @@ class TestStationContractProjection:
         assert ap03["capabilities"]["quality_decision"] is False
         assert ap03["required_action"] == "CONFIRM_AND_COMPLETE"
         assert ap03["allowed_commands"] == ["CONFIRM_AND_COMPLETE"]
+        assert ap03["checklist_required_for_action"] == "CONFIRM_AND_COMPLETE"
         # neutral demo checklist templates only (no TIPA facts)
         assert ap03["checklist_items"] == [
             {"item_id": "demo_item_1", "completed": False},
@@ -109,6 +110,13 @@ class TestStationContractProjection:
         assert ap01["capabilities"]["checklist"] is False
         assert ap01["required_action"] == "DONE"
         assert ap01["checklist_items"] == []
+        assert ap01["checklist_required_for_action"] == ""
+        # AP11 has checklist CAPABILITY but is NOT gated by the AP03 demo checklist
+        ap11 = contracts["AP11"]
+        assert ap11["capabilities"]["checklist"] is True
+        assert ap11["required_action"] == "RELEASE"
+        assert ap11["checklist_items"] == []
+        assert ap11["checklist_required_for_action"] == ""
 
     def test_contract_view_has_only_renderer_fields(self):
         line = setup_line(make_fast_config())
@@ -117,7 +125,7 @@ class TestStationContractProjection:
             assert set(c.keys()) == {
                 "station_id", "capabilities", "default_mode",
                 "required_action", "normal_action", "allowed_commands",
-                "checklist_items",
+                "checklist_items", "checklist_required_for_action",
             }
             assert set(c["capabilities"].keys()) == {
                 "execution", "checklist", "measurement", "quality_decision",
@@ -222,6 +230,106 @@ class TestChecklistCommand:
         assert found[-1].operation_result == OperationResult.CONFIRMED
         assert found[-1].quality_result is None
         assert line.conveyor.is_position_complete("AP03") is True
+
+
+class TestChecklistRequiredSetValidation:
+    """OPS-03-C01: server validates the EXACT required set (authority)."""
+
+    def _awaiting_ap03(self):
+        line = setup_line(make_fast_config())
+        _, _, wip = to_awaiting(line, "AP03")
+        return line, wip
+
+    def _submit(self, line, wip, items):
+        line.submit_operation_command(
+            "AP03", wip, StationCommand.CONFIRM_AND_COMPLETE,
+            payload={"checklist": items},
+        )
+
+    def test_missing_checklist_rejected(self):
+        line, wip = self._awaiting_ap03()
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command("AP03", wip, StationCommand.CONFIRM_AND_COMPLETE)
+
+    def test_one_of_three_subset_rejected(self):
+        line, wip = self._awaiting_ap03()
+        with pytest.raises(AssyLineError):
+            self._submit(line, wip, [{"item_id": "demo_item_1", "completed": True}])
+        assert line.conveyor.is_position_complete("AP03") is False
+
+    def test_two_of_three_subset_rejected(self):
+        line, wip = self._awaiting_ap03()
+        with pytest.raises(AssyLineError):
+            self._submit(line, wip, [
+                {"item_id": "demo_item_1", "completed": True},
+                {"item_id": "demo_item_2", "completed": True},
+            ])
+        assert line.conveyor.is_position_complete("AP03") is False
+
+    def test_unknown_extra_item_rejected(self):
+        line, wip = self._awaiting_ap03()
+        with pytest.raises(AssyLineError):
+            self._submit(line, wip, [
+                {"item_id": "demo_item_1", "completed": True},
+                {"item_id": "demo_item_2", "completed": True},
+                {"item_id": "demo_item_3", "completed": True},
+                {"item_id": "not_a_real_item", "completed": True},
+            ])
+
+    def test_duplicate_required_item_rejected(self):
+        line, wip = self._awaiting_ap03()
+        with pytest.raises(AssyLineError):
+            self._submit(line, wip, [
+                {"item_id": "demo_item_1", "completed": True},
+                {"item_id": "demo_item_1", "completed": True},
+                {"item_id": "demo_item_3", "completed": True},
+            ])
+
+    def test_required_item_incomplete_rejected(self):
+        line, wip = self._awaiting_ap03()
+        with pytest.raises(AssyLineError):
+            self._submit(line, wip, [
+                {"item_id": "demo_item_1", "completed": True},
+                {"item_id": "demo_item_2", "completed": False},
+                {"item_id": "demo_item_3", "completed": True},
+            ])
+
+    def test_malformed_item_rejected(self):
+        line, wip = self._awaiting_ap03()
+        with pytest.raises(AssyLineError):
+            self._submit(line, wip, [
+                {"item_id": "demo_item_1", "completed": True},
+                {"item_id": "demo_item_2", "completed": True},
+                "demo_item_3",
+            ])
+
+    def test_full_set_accepted(self):
+        line, wip = self._awaiting_ap03()
+        self._submit(line, wip, [
+            {"item_id": "demo_item_1", "completed": True},
+            {"item_id": "demo_item_2", "completed": True},
+            {"item_id": "demo_item_3", "completed": True},
+        ])
+        found = [o for o in line.operation_registry._operations.values()
+                 if o.station_id == "AP03" and o.wip_id == wip]
+        assert found[-1].operation_result == OperationResult.CONFIRMED
+        assert found[-1].quality_result is None
+        assert line.conveyor.is_position_complete("AP03") is True
+
+
+class TestAP11NoChecklistInherit:
+    def test_release_works_without_demo_checklist(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP11")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip = line.conveyor.wip_at("AP11")
+        # RELEASE does not require the AP03 demo checklist
+        line.submit_operation_command("AP11", wip, StationCommand.RELEASE)
+        found = [o for o in line.operation_registry._operations.values()
+                 if o.station_id == "AP11"]
+        assert found[-1].operation_result == OperationResult.RELEASED
+        assert line.get_wip(wip).lifecycle.value == "released"
 
 
 class TestQualityDecisionCommand:

@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from virtual_factory.assembly.line_runtime import (
-    AssyLineRuntime, ConveyorState, WipLifecycle, DEMO_CHECKLIST_ITEM_IDS,
+    AssyLineRuntime, ConveyorState, WipLifecycle,
 )
 from virtual_factory.assembly.quality_records import QualityStatus
 from virtual_factory.assembly.operation_execution import OperationExecution
@@ -166,6 +166,7 @@ class StationContractView:
     normal_action: str = ""
     allowed_commands: list = field(default_factory=list)
     checklist_items: list = field(default_factory=list)
+    checklist_required_for_action: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -176,6 +177,7 @@ class StationContractView:
             "normal_action": self.normal_action,
             "allowed_commands": self.allowed_commands,
             "checklist_items": self.checklist_items,
+            "checklist_required_for_action": self.checklist_required_for_action,
         }
 
 
@@ -381,11 +383,13 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
     # Station contracts — additive projection (OPS-03)
     station_contracts: list[StationContractView] = []
     for contract in runtime.station_contracts.values():
+        # OPS-03-C01: checklist items are exposed ONLY when the checklist is a
+        # completion gate for a specific action (capability alone is NOT a gate).
         checklist_items: list[dict] = []
-        if contract.capabilities.checklist:
+        if contract.checklist_required_for_action is not None:
             checklist_items = [
                 {"item_id": item_id, "completed": False}
-                for item_id in DEMO_CHECKLIST_ITEM_IDS
+                for item_id in contract.checklist_items
             ]
         station_contracts.append(StationContractView(
             station_id=contract.station_id,
@@ -403,6 +407,10 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
             normal_action=contract.normal_action.value if contract.normal_action else "",
             allowed_commands=[c.value for c in contract.allowed_commands],
             checklist_items=checklist_items,
+            checklist_required_for_action=(
+                contract.checklist_required_for_action.value
+                if contract.checklist_required_for_action else ""
+            ),
         ))
 
     # Production summary

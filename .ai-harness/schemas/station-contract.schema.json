@@ -64,6 +64,16 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "Station IDs whose contracts must be satisfied before this station may execute (e.g. AP04 requires AP03)."
+    },
+    "checklist_items": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Neutral required checklist item ids for the gated action (empty when checklist is not a completion gate)."
+    },
+    "checklist_required_for_action": {
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
+      "description": "The action gated by checklist completion. Null when checklist capability does not gate an action."
     }
   }
 }

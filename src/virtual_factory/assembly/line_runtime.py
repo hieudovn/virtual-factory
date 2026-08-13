@@ -228,33 +228,29 @@ _QUALITY_STATION_MAP: dict[str, tuple[str, "CheckType"]] = {
     "AP11": ("ap11", CheckType.FINAL_QC),
 }
 
-# DEMO_SYNTHETIC neutral checklist item ids — NOT TIPA process facts.
-# The runtime only knows item_id + completed (OPS-02-C02); names are neutral.
-DEMO_CHECKLIST_ITEM_IDS: tuple[str, ...] = (
-    "demo_item_1", "demo_item_2", "demo_item_3",
-)
 
-_AP03_SYNTHETIC_CHECKLIST: tuple[dict, ...] = tuple(
-    {"item_id": item_id, "completed": True} for item_id in DEMO_CHECKLIST_ITEM_IDS
-)
+def _validate_checklist_completion(
+    items, contract: StationContract,
+) -> list[dict]:
+    """OPS-03-C01: validate the COMPLETE required checklist set (fail-closed).
 
-
-def _validate_checklist_completion(items) -> list[dict]:
-    """OPS-02-C02: validate checklist COMPLETION, not mere presence.
-
-    Fail-closed gate:
-      - checklist is a non-empty list
-      - every item is a dict with a non-empty string ``item_id``
-      - ``completed`` is exactly ``True`` for every item
-        (item exists != item completed)
-    Returns the normalized completed items.
+    The authoritative required item set is ``contract.checklist_items``. The
+    submitted payload must contain exactly those ids (each once) with
+    ``completed == True``. Fails closed on missing / empty / partial subset /
+    unknown id / duplicate / malformed item / ``completed != True``.
     """
+    required = list(contract.checklist_items)
+    if not required:
+        raise AssyLineError(
+            "Checklist gate: action requires a checklist but the contract "
+            "defines no required items"
+        )
     if not isinstance(items, (list, tuple)) or not items:
         raise AssyLineError(
-            "Checklist gate: CONFIRM_AND_COMPLETE requires a non-empty "
-            "checklist (payload['checklist'] missing or empty)"
+            "Checklist gate: requires a non-empty checklist "
+            "(payload['checklist'] missing or empty)"
         )
-    normalized: list[dict] = []
+    seen: dict[str, bool] = {}
     for it in items:
         if not isinstance(it, dict):
             raise AssyLineError(
@@ -265,15 +261,29 @@ def _validate_checklist_completion(items) -> list[dict]:
         completed = it.get("completed")
         if not isinstance(item_id, str) or not item_id:
             raise AssyLineError(
-                "Checklist gate: checklist item is missing a non-empty 'item_id'"
+                "Checklist gate: checklist item missing a non-empty 'item_id'"
             )
         if completed is not True:
             raise AssyLineError(
                 f"Checklist gate: item '{item_id}' is not completed "
                 f"(completed={completed!r}) - item exists != item completed"
             )
-        normalized.append({"item_id": item_id, "completed": True})
-    return normalized
+        if item_id not in required:
+            raise AssyLineError(
+                f"Checklist gate: unknown checklist item '{item_id}' "
+                f"(required: {required})"
+            )
+        if item_id in seen:
+            raise AssyLineError(
+                f"Checklist gate: duplicate checklist item '{item_id}'"
+            )
+        seen[item_id] = True
+    missing = [rid for rid in required if rid not in seen]
+    if missing:
+        raise AssyLineError(
+            f"Checklist gate: incomplete checklist — missing {missing}"
+        )
+    return [{"item_id": rid, "completed": True} for rid in required]
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -579,8 +589,12 @@ class AssyLineRuntime:
             if self._should_auto_submit(contract, op.completion_mode):
                 command = contract.required_action or contract.normal_action or StationCommand.DONE
                 payload = None
-                if contract.capabilities.checklist and command == StationCommand.CONFIRM_AND_COMPLETE:
-                    payload = {"checklist": list(_AP03_SYNTHETIC_CHECKLIST)}
+                if (contract.checklist_required_for_action is not None
+                        and contract.checklist_required_for_action == command):
+                    payload = {"checklist": [
+                        {"item_id": item_id, "completed": True}
+                        for item_id in contract.checklist_items
+                    ]}
                 return self.submit_operation_command(pos, wip_id, command, payload)
             action = contract.required_action.value if contract.required_action else "?"
             return [self._make_event(
@@ -642,10 +656,11 @@ class AssyLineRuntime:
                 f"Operation {op.execution_id} not awaiting action "
                 f"(state={op.state.value})")
 
-        # C01-01 / C02: checklist gate — validate actual checklist COMPLETION.
-        if contract.capabilities.checklist and cmd == StationCommand.CONFIRM_AND_COMPLETE:
+        # OPS-03-C01: checklist gate — validate the COMPLETE required set.
+        if (contract.checklist_required_for_action is not None
+                and cmd == contract.checklist_required_for_action):
             checklist = (payload or {}).get("checklist", []) if payload else []
-            op.checklist = _validate_checklist_completion(checklist)
+            op.checklist = _validate_checklist_completion(checklist, contract)
 
         op.command = cmd
         if payload is not None:

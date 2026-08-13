@@ -81,3 +81,27 @@ Physical Canvas (positions[])
 - `tests/test_ops03_interaction.py` (22 tests): projection shape, command
   surface (DONE / checklist / CONFIRM / JOIN / RELEASE), stale rejection,
   AUTO/ASSISTED non-blocking, controller run-mode integration, API fail-closed.
+
+## OPS-03-C01 — Checklist interaction contract & server-side gate alignment
+
+- **Capability ≠ gate.** `StationContract` now carries explicit interaction
+  metadata: `checklist_items` (neutral required item ids) and
+  `checklist_required_for_action` (the action gated by that checklist). Only
+  AP03 currently sets both (`CONFIRM_AND_COMPLETE`); AP11 keeps `checklist`
+  capability but has no checklist gate (`checklist_items=()`,
+  `checklist_required_for_action=None`) — so RELEASE does not inherit the AP03
+  demo checklist.
+- **Server authority.** `_validate_checklist_completion(items, contract)`
+  validates the **exact required set** against `contract.checklist_items`:
+  fails closed on missing/empty, partial subset, unknown id, duplicate id,
+  malformed item, and `completed != True`. Frontend button-disable is
+  convenience only; the runtime is the authority.
+- **Single source of truth.** The AUTO synthetic checklist is derived from
+  `contract.checklist_items` (no duplicated id list). The snapshot projection
+  exposes `checklist_items`/`checklist_required_for_action` only for gated
+  actions; the renderer gates on `checklist_required_for_action ===
+  current action`, not `capabilities.checklist`.
+- **Distinction preserved.** `contract.checklist_items` = what is required;
+  `operation.checklist` = what was actually submitted/completed. The UI submits
+  the full required set.
+

@@ -170,12 +170,14 @@ def test_case3_ap03_structured_checklist(validator):
         payload={"checklist": [
             {"item_id": "demo_item_1", "completed": True},
             {"item_id": "demo_item_2", "completed": True},
+            {"item_id": "demo_item_3", "completed": True},
         ]},
     )
     payload = last_op(line, "AP03", "SSO2-0001").to_dict()
     assert payload["checklist"] == [
         {"item_id": "demo_item_1", "completed": True},
         {"item_id": "demo_item_2", "completed": True},
+        {"item_id": "demo_item_3", "completed": True},
     ]
     assert payload["operation_result"] == "CONFIRMED"
     assert payload["quality_result"] is None

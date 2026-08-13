@@ -290,6 +290,7 @@ class TestAP03Checklist:
             payload={"checklist": [
                 {"item_id": "demo_item_1", "completed": True},
                 {"item_id": "demo_item_2", "completed": True},
+                {"item_id": "demo_item_3", "completed": True},
             ]},
         )
         op2 = line.operation_registry.active_for("AP03", "SSO2-0001")
@@ -644,14 +645,15 @@ class TestAP03ChecklistGateC02:
             )
         assert line.conveyor.is_position_complete("AP03") is False
 
-    def test_partial_completion_rejected(self):
+    def test_partial_subset_complete_rejected(self):
         line = self._to_ap03_awaiting()
+        # 2 of 3 required items completed → still rejected (missing demo_item_3)
         with pytest.raises(AssyLineError):
             line.submit_operation_command(
                 "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
                 payload={"checklist": [
                     {"item_id": "demo_item_1", "completed": True},
-                    {"item_id": "demo_item_2", "completed": False},
+                    {"item_id": "demo_item_2", "completed": True},
                 ]},
             )
         assert line.conveyor.is_position_complete("AP03") is False
@@ -663,6 +665,7 @@ class TestAP03ChecklistGateC02:
             payload={"checklist": [
                 {"item_id": "demo_item_1", "completed": True},
                 {"item_id": "demo_item_2", "completed": True},
+                {"item_id": "demo_item_3", "completed": True},
             ]},
         )
         found = [o for o in line.operation_registry._operations.values()
@@ -672,6 +675,7 @@ class TestAP03ChecklistGateC02:
         assert found[-1].checklist == [
             {"item_id": "demo_item_1", "completed": True},
             {"item_id": "demo_item_2", "completed": True},
+            {"item_id": "demo_item_3", "completed": True},
         ]
         assert line.conveyor.is_position_complete("AP03")
 

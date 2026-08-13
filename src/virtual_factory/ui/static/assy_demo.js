@@ -1630,10 +1630,18 @@ const ctrlB = {
     return html;
   },
 
+  _isChecklistGate(contract, command) {
+    // OPS-03-C01: capability alone is NOT a gate. Gate only when the contract
+    // explicitly requires this checklist set before this exact action.
+    return !!(contract && contract.checklist_required_for_action
+      && contract.checklist_required_for_action === command
+      && Array.isArray(contract.checklist_items) && contract.checklist_items.length > 0);
+  },
+
   _renderActionControlsHtml(op, contract) {
-    const caps = (contract && contract.capabilities) || {};
+    const cmd = (contract && (contract.required_action || contract.normal_action)) || 'DONE';
     let html = '';
-    if (caps.checklist) {
+    if (this._isChecklistGate(contract, cmd)) {
       const items = this._checklistItems(op, contract);
       html += '<div class="vf-op-cl">';
       for (const it of items) {
@@ -1642,10 +1650,8 @@ const ctrlB = {
       }
       html += '</div>';
       const allDone = items.length > 0 && items.every(it => this._checklistChecked(op, it.item_id));
-      const cmd = (contract.required_action || contract.normal_action || 'CONFIRM_AND_COMPLETE');
       html += `<button class="vf-btn primary vf-op-btn" ${allDone ? '' : 'disabled'} onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}')">${this._commandLabel(cmd)}</button>`;
     } else {
-      const cmd = (contract && (contract.required_action || contract.normal_action)) || 'DONE';
       html += `<button class="vf-btn primary vf-op-btn" onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}')">${this._commandLabel(cmd)}</button>`;
     }
     return html;
@@ -1687,12 +1693,14 @@ const ctrlB = {
     const op = snap ? this._findOperation(snap) : null;
     const contract = snap ? this._contractFor(snap, stId) : null;
     const body = { station_id: stId, wip_id: wipId, command };
-    if (contract && contract.capabilities && contract.capabilities.checklist) {
-      const items = this._checklistItems(op, contract);
+    if (this._isChecklistGate(contract, command)) {
+      // OPS-03-C01: submit the FULL required item set; the server validates
+      // the exact required ids independently of the disabled-button convenience.
       body.payload = {
-        checklist: items
-          .filter(it => this._checklistChecked(op, it.item_id))
-          .map(it => ({ item_id: it.item_id, completed: true })),
+        checklist: (contract.checklist_items || []).map(it => ({
+          item_id: it.item_id,
+          completed: this._checklistChecked(op, it.item_id),
+        })),
       };
     }
     let resp;

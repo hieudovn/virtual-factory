@@ -39,6 +39,13 @@ class StationCommand(str, enum.Enum):
     RELEASE = "RELEASE"
 
 
+# DEMO_SYNTHETIC neutral checklist item ids — NOT TIPA process facts.
+# The runtime/contract only knows item_id; names are neutral placeholders.
+DEMO_CHECKLIST_ITEM_IDS: tuple[str, ...] = (
+    "demo_item_1", "demo_item_2", "demo_item_3",
+)
+
+
 @dataclass(frozen=True, slots=True)
 class Capabilities:
     """Generic station capability flags (additive in future)."""
@@ -64,6 +71,8 @@ class StationContract:
     required_action: Optional[StationCommand] = None
     work_duration_s: Optional[float] = None  # DEMO/ILLUSTRATIVE, not verified TIPA
     prerequisites: tuple[str, ...] = ()
+    checklist_items: tuple[str, ...] = ()  # required checklist ids (neutral); gate template
+    checklist_required_for_action: Optional[StationCommand] = None  # action gated by checklist
 
     @property
     def allowed_commands(self) -> tuple[StationCommand, ...]:
@@ -92,6 +101,11 @@ class StationContract:
             "required_action": self.required_action.value if self.required_action else None,
             "work_duration_s": self.work_duration_s,
             "prerequisites": list(self.prerequisites),
+            "checklist_items": list(self.checklist_items),
+            "checklist_required_for_action": (
+                self.checklist_required_for_action.value
+                if self.checklist_required_for_action else None
+            ),
         }
 
 
@@ -134,6 +148,8 @@ def build_default_assy_contracts(
             normal_action=StationCommand.CONFIRM_AND_COMPLETE,
             required_action=StationCommand.CONFIRM_AND_COMPLETE,
             work_duration_s=_duration("AP03", 45.0),
+            checklist_items=DEMO_CHECKLIST_ITEM_IDS,
+            checklist_required_for_action=StationCommand.CONFIRM_AND_COMPLETE,
         ),
         "AP04": StationContract(
             station_id="AP04",
