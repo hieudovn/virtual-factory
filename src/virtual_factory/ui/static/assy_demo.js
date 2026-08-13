@@ -791,6 +791,10 @@ const ctrlB = {
     this._selectedWipId = null;
     this._contextType = null;
     this._inspectorOpen = false;
+    // I09-P04-C01: close stale popup/inspector presentation immediately,
+    // BEFORE the async reset/refresh round-trip, so stale truth is never shown.
+    this.closePopup();
+    this._renderInspector(null);
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     this._lastSnapshot = null;  // I07: discard stale snapshot
     await this.call('reset', { scenario: this._scenario });
