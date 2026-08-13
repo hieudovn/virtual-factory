@@ -48,3 +48,15 @@
 - `_validate_checklist_completion()` enforces the gate **fail-closed**: checklist must be a non-empty list; every item must be an object with a non-empty string `item_id`; and `completed` must be exactly `True` for every item. A present-but-incomplete item (`completed: False`), a missing `item_id`, or a plain-string item is rejected — **item exists ≠ item completed**.
 - AUTO synthetic checklist is now fully neutral (`demo_item_1/2/3`, all `completed: true`) — simulation placeholders, not TIPA process facts.
 
+## OPS-02-C03 — Runtime / schema contract reconciliation
+
+- **Why.** The implemented `OperationExecution.to_dict()` had drifted from `.ai-harness/schemas/operation-execution.schema.json` (structured checklist, string `source`, `attempt_number`, `terminal`). This gate reconciles the schema to the runtime — **no runtime behavior changed**.
+- **Final checklist schema.** `checklist` is `array` of `$defs/checklistItem` — `{item_id: string (minLength 1), completed: boolean}`, `additionalProperties: false` on the item. Generic; no TIPA-specific fields.
+- **Final source representation.** `source` is a `string` enum `["simulated", "manual", "imported"]` (runtime emits `"simulated"`).
+- **`attempt_number`.** `integer`, `minimum: 0`.
+- **`terminal`.** `boolean` (true for no-recovery terminal state such as `FAILED + FAILED_FINAL`).
+- **Also removed.** `LINE_OUT`/`LINE_IN` from the `routing_action` enum (frozen ASSY scope has no Line-Out/In).
+- **Executable validation.** `tests/test_ops02_schema_contract.py` loads the authoritative schema and validates real runtime `to_dict()` payloads using `jsonschema` (`Draft202012Validator`): 9 positive runtime cases + 5 negative fail-closed cases, plus schema file-quality checks. Added `jsonschema>=4.0` to `[project.optional-dependencies].dev`.
+- `active_operations[]` (`ActiveOperationView`) is a UI read-model subset (empty-string enum defaults, no `checklist`/`source`) and is intentionally **not** validated against this full contract schema.
+
+
