@@ -611,6 +611,44 @@ html, body {
 .vf-insp-cl-item { font-size: 10px; color: var(--vf-text-muted); padding: 1px 0 1px 16px; }
 
 /* ═══════════════════════════════════════
+   OPS-03 — Operation Inspector binding
+   ═══════════════════════════════════════ */
+.vf-op-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--vf-accent); font-weight: 700; margin: 2px 0 4px 0;
+}
+.vf-op-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.vf-op-btn { align-self: flex-end; padding: 4px 14px; font-size: 12px; }
+.vf-op-note { font-size: 11px; color: var(--vf-text-muted); font-style: italic; padding: 4px 0; }
+.vf-op-error {
+  margin-top: 8px; padding: 6px 8px; border-radius: 6px;
+  background: #FDE8E8; color: var(--vf-state-fail);
+  font-size: 11px; font-weight: 600;
+}
+.vf-op-cl { display: flex; flex-direction: column; gap: 3px; }
+.vf-op-cl-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--vf-text-secondary); cursor: pointer;
+}
+.vf-op-meas { margin: 4px 0; }
+.vf-op-meas-row {
+  display: flex; gap: 8px; align-items: baseline; font-size: 10px;
+  padding: 1px 0; color: var(--vf-text-secondary);
+}
+.vf-op-meas-row b { color: #B8860B; font-family: monospace; font-weight: 600; }
+/* action-required station highlight */
+#fb-stations .vf-station-group.action-required rect {
+  stroke: var(--vf-state-hold);
+  stroke-width: 2.5;
+  stroke-dasharray: 4, 2;
+  filter: drop-shadow(0 0 5px rgba(224,161,26,0.45));
+}
+.vf-actions-required {
+  background: #FFF3CD; color: #856404; font-weight: 600;
+  font-size: 10px; padding: 2px 8px; border-radius: 10px;
+}
+
+/* ═══════════════════════════════════════
    I09-P06 — Floating Simulation Control Panel
    ═══════════════════════════════════════ */
 #vf-sim-panel {

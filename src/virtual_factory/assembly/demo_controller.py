@@ -20,6 +20,7 @@ from typing import Optional
 from virtual_factory.assembly.line_runtime import (
     AssyLineRuntime,
 )
+from virtual_factory.assembly.station_contracts import CompletionMode
 from virtual_factory.assembly.demo_snapshot import (
     AssyDemoSnapshot,
     AssyOverviewSnapshot,
@@ -195,3 +196,38 @@ class DemoController:
         snap.sub_line_id = ctx.identity.sub_line_id
         snap.variant = ctx.identity.variant
         return snap
+
+    # --- OPS-03: interaction binding (thin adapter — no domain logic) ---
+
+    def submit_operation_command(
+        self,
+        station_id: str,
+        wip_id: str,
+        command: str,
+        payload: Optional[dict] = None,
+    ) -> AssyDemoSnapshot:
+        """Submit an operation command to the selected context runtime.
+
+        Thin adapter: UI → controller → AssyLineRuntime.submit_operation_command.
+        Runtime decides; the returned snapshot is authoritative.
+        """
+        rt = self.runtime
+        if rt is None:
+            raise RuntimeError("Composition not initialized")
+        rt.submit_operation_command(station_id, wip_id, command, payload)
+        return self.snapshot()
+
+    @property
+    def run_mode(self) -> Optional[CompletionMode]:
+        """Effective global run mode of the selected context."""
+        if self._composition is None:
+            return None
+        ctx = self._composition.selected_context
+        return ctx.runtime.global_run_mode if ctx else None
+
+    def set_run_mode(self, mode: CompletionMode) -> AssyDemoSnapshot:
+        """Set global run mode on all contexts (additive, UI binding)."""
+        if self._composition is None:
+            raise RuntimeError("Composition not initialized")
+        self._composition.set_run_mode(mode)
+        return self.snapshot()

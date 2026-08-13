@@ -278,6 +278,50 @@ def create_app(
         return ctrl.snapshot().to_dict()
 
     # ═══════════════════════════════════════════════════
+    # OPS-03 — Station Interaction / Inspector Binding
+    # ═══════════════════════════════════════════════════
+
+    @app.post("/assy-demo/operation-command")
+    def assy_demo_operation_command(body: dict) -> dict:
+        """Submit an operation command. Runtime decides; snapshot is truth."""
+        from fastapi.responses import JSONResponse
+        from virtual_factory.assembly.line_runtime import AssyLineError
+        ctrl = _get_assy_controller()
+        station_id = body.get("station_id", "")
+        wip_id = body.get("wip_id", "")
+        command = body.get("command", "")
+        payload = body.get("payload")
+        if not station_id or not wip_id or not command:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "station_id, wip_id and command are required"},
+            )
+        try:
+            snap = ctrl.submit_operation_command(station_id, wip_id, command, payload)
+        except AssyLineError as exc:
+            return JSONResponse(
+                status_code=409,
+                content={"detail": str(exc), "status": "error"},
+            )
+        return snap.to_dict()
+
+    @app.post("/assy-demo/run-mode")
+    def assy_demo_run_mode(body: dict) -> dict:
+        """Set global run mode (MANUAL/AUTO/ASSISTED) for the demo contexts."""
+        from fastapi.responses import JSONResponse
+        from virtual_factory.assembly.station_contracts import CompletionMode
+        ctrl = _get_assy_controller()
+        mode = body.get("mode", "")
+        try:
+            parsed = CompletionMode(mode)
+        except ValueError:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": f"Invalid run mode: {mode!r}"},
+            )
+        return ctrl.set_run_mode(parsed).to_dict()
+
+    # ═══════════════════════════════════════════════════
     # M6-S04B-I03 — Additive S04B Overview / Detail Endpoints
     # ═══════════════════════════════════════════════════
 

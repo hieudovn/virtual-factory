@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from virtual_factory.assembly.line_runtime import (
-    AssyLineRuntime, ConveyorState, WipLifecycle,
+    AssyLineRuntime, ConveyorState, WipLifecycle, DEMO_CHECKLIST_ITEM_IDS,
 )
 from virtual_factory.assembly.quality_records import QualityStatus
 from virtual_factory.assembly.operation_execution import OperationExecution
@@ -133,6 +133,7 @@ class ActiveOperationView:
     routing_action: str = ""
     attempt_number: int = 0
     terminal: bool = False
+    checklist: list = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -147,6 +148,34 @@ class ActiveOperationView:
             "routing_action": self.routing_action,
             "attempt_number": self.attempt_number,
             "terminal": self.terminal,
+            "checklist": self.checklist,
+        }
+
+
+@dataclass
+class StationContractView:
+    """OPS-03 — Detached read model of one station capability contract.
+
+    Provides only what the interaction renderer needs: identity, capabilities,
+    allowed/required action metadata, and neutral demo checklist item templates.
+    """
+    station_id: str = ""
+    capabilities: dict = field(default_factory=dict)
+    default_mode: str = ""
+    required_action: str = ""
+    normal_action: str = ""
+    allowed_commands: list = field(default_factory=list)
+    checklist_items: list = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "station_id": self.station_id,
+            "capabilities": self.capabilities,
+            "default_mode": self.default_mode,
+            "required_action": self.required_action,
+            "normal_action": self.normal_action,
+            "allowed_commands": self.allowed_commands,
+            "checklist_items": self.checklist_items,
         }
 
 
@@ -172,6 +201,7 @@ class AssyDemoSnapshot:
     recent_quality_events: list[QualityEventView] = field(default_factory=list)
     quality_records: list[QualityRecordView] = field(default_factory=list)
     active_operations: list[ActiveOperationView] = field(default_factory=list)
+    station_contracts: list[StationContractView] = field(default_factory=list)
     production: ProductionSummary = field(default_factory=ProductionSummary)
     scenario: str = ""
 
@@ -237,6 +267,8 @@ class AssyDemoSnapshot:
             "quality_records": [qr.to_dict() for qr in self.quality_records],
             # OPS-02 — additive active operations
             "active_operations": [ao.to_dict() for ao in self.active_operations],
+            # OPS-03 — additive station contracts (renderer input)
+            "station_contracts": [sc.to_dict() for sc in self.station_contracts],
             # M6-S04B-I03 — additive identity
             "plant_id": self.plant_id,
             "production_line_id": self.production_line_id,
@@ -343,6 +375,34 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
             routing_action=op.routing_action or "",
             attempt_number=op.attempt_number,
             terminal=op.terminal,
+            checklist=list(op.checklist),
+        ))
+
+    # Station contracts — additive projection (OPS-03)
+    station_contracts: list[StationContractView] = []
+    for contract in runtime.station_contracts.values():
+        checklist_items: list[dict] = []
+        if contract.capabilities.checklist:
+            checklist_items = [
+                {"item_id": item_id, "completed": False}
+                for item_id in DEMO_CHECKLIST_ITEM_IDS
+            ]
+        station_contracts.append(StationContractView(
+            station_id=contract.station_id,
+            capabilities={
+                "execution": contract.capabilities.execution,
+                "checklist": contract.capabilities.checklist,
+                "measurement": contract.capabilities.measurement,
+                "quality_decision": contract.capabilities.quality_decision,
+                "exception": contract.capabilities.exception,
+                "identity_transformation": contract.capabilities.identity_transformation,
+                "final_disposition": contract.capabilities.final_disposition,
+            },
+            default_mode=contract.default_mode.value,
+            required_action=contract.required_action.value if contract.required_action else "",
+            normal_action=contract.normal_action.value if contract.normal_action else "",
+            allowed_commands=[c.value for c in contract.allowed_commands],
+            checklist_items=checklist_items,
         ))
 
     # Production summary
@@ -375,6 +435,7 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
         recent_quality_events=quality_events,
         quality_records=quality_records,
         active_operations=active_operations,
+        station_contracts=station_contracts,
         production=prod,
         scenario=scenario,
     )

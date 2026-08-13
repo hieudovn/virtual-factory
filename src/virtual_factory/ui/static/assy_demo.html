@@ -146,6 +146,7 @@
             <span id="fb-live-status" class="vf-status-item live">● LIVE</span>
             <span id="fb-sim-time" class="vf-status-time">t=0s</span>
             <span id="fb-dwell" class="vf-status-item">DWELL 0</span>
+            <span id="fb-actions-required" class="vf-actions-required" style="display:none;"></span>
           </div>
           <div id="fb-line-state" class="vf-sim-line-state">Conveyor: stopped (post-index)</div>
           <div class="vf-sim-panel-controls">
@@ -159,6 +160,13 @@
               <option value="0.5">0.5x</option><option value="1" selected>1x</option>
               <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
             </select>
+            <label class="vf-ft-label">Mode
+              <select class="vf-ft-select" id="fb-run-mode-select" onchange="ctrlB.setRunMode(this.value)">
+                <option value="AUTO" selected>AUTO</option>
+                <option value="MANUAL">MANUAL</option>
+                <option value="ASSISTED">ASSISTED</option>
+              </select>
+            </label>
           </div>
         </div>
 

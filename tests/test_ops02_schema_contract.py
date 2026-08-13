@@ -257,8 +257,8 @@ def test_case10_active_operations_projection_is_a_view():
     """active_operations[] is a UI read model subset, NOT the full contract.
 
     Its `ActiveOperationView` uses empty-string defaults for enum fields and
-    omits checklist/source/inputs/measurements, so it is intentionally NOT
-    validated against the full operation-execution schema.
+    omits source/inputs/measurements, so it is intentionally NOT validated
+    against the full operation-execution schema.
     """
     from virtual_factory.assembly.demo_snapshot import ActiveOperationView
 
@@ -270,9 +270,9 @@ def test_case10_active_operations_projection_is_a_view():
     assert set(d) == {
         "execution_id", "station_id", "wip_id", "state",
         "completion_mode", "command", "operation_result", "quality_result",
-        "routing_action", "attempt_number", "terminal",
+        "routing_action", "attempt_number", "terminal", "checklist",
     }
-    assert "checklist" not in d and "source" not in d
+    assert "source" not in d and "inputs" not in d and "measurements" not in d
 
 
 # ═══════════════════════════════════════════════════════════

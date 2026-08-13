@@ -261,7 +261,7 @@ class TestSnapshotCompatibility:
         expected_keys = {
             "simulation_time_s", "line_state", "dwell_number", "nominal_dwell_s",
             "positions", "genealogy", "recent_quality_events", "quality_records",
-            "active_operations",
+            "active_operations", "station_contracts",
             "production", "scenario", "plant_id", "production_line_id",
             "sub_line_id", "variant",
         }

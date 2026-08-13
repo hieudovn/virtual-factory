@@ -41,6 +41,7 @@ from virtual_factory.assembly.demo_snapshot import (
     build_snapshot,
 )
 from virtual_factory.assembly.quality_records import QualityStatus
+from virtual_factory.assembly.station_contracts import CompletionMode
 
 
 # ═══════════════════════════════════════════════════════════
@@ -366,3 +367,10 @@ class AssyDemoComposition:
     def set_scenario(self, scenario: DemoScenario) -> None:
         """Set scenario.  Takes effect on next reset()/initialize()."""
         self.scenario = scenario
+
+    # --- OPS-03: run mode ---
+
+    def set_run_mode(self, mode: CompletionMode) -> None:
+        """Set global run mode on all contexts (additive, UI binding)."""
+        for ctx in self.contexts.values():
+            ctx.runtime.global_run_mode = mode

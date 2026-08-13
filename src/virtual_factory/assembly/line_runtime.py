@@ -228,12 +228,14 @@ _QUALITY_STATION_MAP: dict[str, tuple[str, "CheckType"]] = {
     "AP11": ("ap11", CheckType.FINAL_QC),
 }
 
-# DEMO_SYNTHETIC neutral checklist placeholder for AP03 — NOT TIPA process facts.
+# DEMO_SYNTHETIC neutral checklist item ids — NOT TIPA process facts.
 # The runtime only knows item_id + completed (OPS-02-C02); names are neutral.
-_AP03_SYNTHETIC_CHECKLIST: tuple[dict, ...] = (
-    {"item_id": "demo_item_1", "completed": True},
-    {"item_id": "demo_item_2", "completed": True},
-    {"item_id": "demo_item_3", "completed": True},
+DEMO_CHECKLIST_ITEM_IDS: tuple[str, ...] = (
+    "demo_item_1", "demo_item_2", "demo_item_3",
+)
+
+_AP03_SYNTHETIC_CHECKLIST: tuple[dict, ...] = tuple(
+    {"item_id": item_id, "completed": True} for item_id in DEMO_CHECKLIST_ITEM_IDS
 )
 
 

@@ -767,6 +767,9 @@ const ctrlB = {
   _panY: 0,
   _stepLocked: false,  // I07: prevent overlapping step animations
   _snapVersion: 0,     // I07: increment per snapshot for tracking
+  _runMode: 'AUTO',          // OPS-03: global run mode binding
+  _pendingChecklist: {},     // OPS-03: station|wip → {item_id: bool}
+  _opError: '',              // OPS-03: compact command rejection message
 
   async init(subLineId) {
     this._subLineId = subLineId;
@@ -777,10 +780,14 @@ const ctrlB = {
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     this._stepLocked = false;
     this._snapVersion = 0;
+    this._pendingChecklist = {};
+    this._opError = '';
     MotionEngine.clearContext();
     this._lastSnapshot = null;  // I07: no cross-subline motion
     document.getElementById('fb-scenario-select').value = this._scenario || 'HAPPY_PATH';
     document.getElementById('fb-speed-select').value = String(this._speed);
+    const rmSel = document.getElementById('fb-run-mode-select');
+    if (rmSel) rmSel.value = this._runMode || 'AUTO';
     this._renderGridAndConveyor();
     await this.refresh();
   },
@@ -795,6 +802,8 @@ const ctrlB = {
     this._selectedWipId = null;
     this._contextType = null;
     this._inspectorOpen = false;
+    this._pendingChecklist = {};
+    this._opError = '';
     // I09-P04-C01: close stale popup/inspector presentation immediately,
     // BEFORE the async reset/refresh round-trip, so stale truth is never shown.
     this.closePopup();
@@ -844,6 +853,15 @@ const ctrlB = {
   setSpeed(val) { this._speed = parseFloat(val); if (this._autoTimer) { this.stopAuto(); this.startAuto(); } },
 
   setScenario(val) { this._scenario = val; ctrl._scenario = val; const selA = document.getElementById('scenario-select'); if (selA) selA.value = val; this.reset(); },
+
+  setRunMode(val) {
+    this._runMode = val;
+    const sel = document.getElementById('fb-run-mode-select');
+    if (sel) sel.value = val;
+    this.call('run-mode', { mode: val })
+      .then(() => this.refresh())
+      .catch(() => { this._liveStatus = 'STALE'; this.renderStatus(); });
+  },
 
   async call(action, body) {
     const opts = body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : { method:'POST' };
@@ -1055,6 +1073,7 @@ const ctrlB = {
     this._selectedStation = null;
     this._selectedWipId = null;
     this._inspectorOpen = true;
+    this._opError = '';
     const snap = this._lastSnapshot;
     if (snap) { this._applyHighlights(); this._renderContextPopup(snap); this._renderInspector(snap); }
   },
@@ -1171,6 +1190,7 @@ const ctrlB = {
 
     stationsG.innerHTML = html;
     this._applyHighlights();
+    this._applyActionRequired(snap);
     this._bindStationClicks();
     this._renderEventStrip(snap);
     this._renderGenealogyContext(snap);
@@ -1262,6 +1282,7 @@ const ctrlB = {
     this._selectedStation = stId;
     this._selectedWipId = null;
     this._contextType = null;
+    this._opError = '';
     const snap = this._lastSnapshot;
     if (snap) {
       const pos = (snap.positions||[]).find(p => p.position_id === stId);
@@ -1276,6 +1297,7 @@ const ctrlB = {
     this._selectedWipId = wipId;
     this._selectedStation = null;
     this._contextType = null;
+    this._opError = '';
     const snap = this._lastSnapshot;
     if (snap) {
       const pos = (snap.positions||[]).find(p => p.wip_id === wipId);
@@ -1304,6 +1326,7 @@ const ctrlB = {
     this._selectedStation = null;
     this._selectedWipId = null;
     this._contextType = null;
+    this._opError = '';
     this._applyHighlights();
     this._renderInspector(this._lastSnapshot);
     this.closePopup();
@@ -1369,6 +1392,11 @@ const ctrlB = {
       title.textContent = 'Inspector';
       body.innerHTML = '<div class="vf-popup-empty">Select a station or WIP</div>';
     }
+
+    // OPS-03: append current-operation block (execution mode) + compact error
+    const opHtml = this._operationBlockHtml(snap);
+    if (opHtml) body.insertAdjacentHTML('beforeend', opHtml);
+    if (this._opError) body.insertAdjacentHTML('beforeend', `<div class="vf-op-error">⚠ ${this._opError}</div>`);
 
     this.openPopup();
   },
@@ -1522,6 +1550,203 @@ const ctrlB = {
       html += `<div class="vf-insp-gen-row"><b style="color:#C8960E">${g.child_wip_id}</b> ← ${parents}<br><span style="font-size:10px;color:var(--vf-text-muted)">t=${(g.join_time_s||0).toFixed(0)}s @ ${g.join_station||'AP04'}</span></div>`;
     }
     el.innerHTML = html;
+  },
+
+  /* ── OPS-03: Operation Inspector binding (capability-driven, no AP hard-code) ── */
+
+  _findOperation(snap) {
+    if (!snap || !Array.isArray(snap.active_operations)) return null;
+    const stId = this._selectedStation, wipId = this._selectedWipId;
+    if (stId && wipId) return snap.active_operations.find(o => o.station_id === stId && o.wip_id === wipId) || null;
+    if (stId) return snap.active_operations.find(o => o.station_id === stId) || null;
+    if (wipId) return snap.active_operations.find(o => o.wip_id === wipId) || null;
+    return null;
+  },
+
+  _contractFor(snap, stId) {
+    if (!snap || !Array.isArray(snap.station_contracts) || !stId) return null;
+    return snap.station_contracts.find(c => c.station_id === stId) || null;
+  },
+
+  _isActionRequired(op) {
+    // Derived from projection truth (not _should_auto_submit): an operation that
+    // is STILL awaiting in a snapshot and is not AUTO requires a human command.
+    if (!op) return false;
+    const waiting = op.state === 'AWAITING_COMPLETION' || op.state === 'AWAITING_DECISION';
+    return waiting && op.completion_mode && op.completion_mode !== 'AUTO';
+  },
+
+  _commandLabel(cmd) {
+    const labels = {
+      DONE: 'DONE',
+      CONFIRM: 'CONFIRM',
+      CONFIRM_AND_COMPLETE: 'CONFIRM & COMPLETE',
+      JOIN_COMPLETE: 'JOIN COMPLETE',
+      RELEASE: 'RELEASE',
+    };
+    return labels[cmd] || cmd || 'ACTION';
+  },
+
+  _checklistItems(op, contract) {
+    if (op && Array.isArray(op.checklist) && op.checklist.length) {
+      return op.checklist.map(it => ({ item_id: it.item_id, completed: !!it.completed }));
+    }
+    if (contract && Array.isArray(contract.checklist_items) && contract.checklist_items.length) {
+      return contract.checklist_items.map(it => ({ item_id: it.item_id, completed: !!it.completed }));
+    }
+    return [];
+  },
+
+  _checklistChecked(op, itemId) {
+    const key = `${op.station_id}|${op.wip_id}`;
+    const pending = this._pendingChecklist[key];
+    if (pending && pending[itemId] !== undefined) return pending[itemId];
+    const inOp = (op.checklist || []).find(it => it.item_id === itemId);
+    if (inOp) return !!inOp.completed;
+    return false;
+  },
+
+  toggleChecklist(stId, wipId, itemId, checked) {
+    const key = `${stId}|${wipId}`;
+    if (!this._pendingChecklist[key]) this._pendingChecklist[key] = {};
+    this._pendingChecklist[key][itemId] = checked;
+    if (this._lastSnapshot) this._renderPopup(this._lastSnapshot);
+  },
+
+  _measurementRowsHtml(snap, op) {
+    const recs = (snap.quality_records || []).filter(qr => qr.wip_id === op.wip_id && qr.station_id === op.station_id && qr.measurements && qr.measurements.length);
+    if (!recs.length) return '';
+    const r = recs[recs.length - 1];
+    let html = '<div class="vf-op-meas">';
+    for (const m of (r.measurements || []).slice(0, 4)) {
+      const lo = m.expected_min, hi = m.expected_max, v = m.value;
+      let inRange = true;
+      if (lo !== undefined && v < lo) inRange = false;
+      if (hi !== undefined && v > hi) inRange = false;
+      const rc = inRange ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+      html += `<div class="vf-op-meas-row"><span>${m.name}</span><b>${v}${m.unit||''}</b><small style="color:${rc}">${inRange?'IN RANGE':'OUT'}</small></div>`;
+    }
+    html += '</div>';
+    return html;
+  },
+
+  _renderActionControlsHtml(op, contract) {
+    const caps = (contract && contract.capabilities) || {};
+    let html = '';
+    if (caps.checklist) {
+      const items = this._checklistItems(op, contract);
+      html += '<div class="vf-op-cl">';
+      for (const it of items) {
+        const checked = this._checklistChecked(op, it.item_id);
+        html += `<label class="vf-op-cl-item"><input type="checkbox" ${checked ? 'checked' : ''} onchange="ctrlB.toggleChecklist('${this._selectedStation}','${this._selectedWipId}','${it.item_id}',this.checked)"> ${it.item_id}</label>`;
+      }
+      html += '</div>';
+      const allDone = items.length > 0 && items.every(it => this._checklistChecked(op, it.item_id));
+      const cmd = (contract.required_action || contract.normal_action || 'CONFIRM_AND_COMPLETE');
+      html += `<button class="vf-btn primary vf-op-btn" ${allDone ? '' : 'disabled'} onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}')">${this._commandLabel(cmd)}</button>`;
+    } else {
+      const cmd = (contract && (contract.required_action || contract.normal_action)) || 'DONE';
+      html += `<button class="vf-btn primary vf-op-btn" onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}')">${this._commandLabel(cmd)}</button>`;
+    }
+    return html;
+  },
+
+  _operationBlockHtml(snap) {
+    const op = this._findOperation(snap);
+    if (!op) return '';
+    const stId = this._selectedStation || op.station_id;
+    const contract = this._contractFor(snap, stId);
+    let html = '<div class="vf-popup-sep"></div>';
+    html += '<div class="vf-op-title">CURRENT OPERATION</div>';
+    const waiting = op.state === 'AWAITING_COMPLETION' || op.state === 'AWAITING_DECISION';
+    const stateColor = waiting ? 'var(--vf-state-hold)' : 'var(--vf-text-secondary)';
+    html += `<div class="vf-popup-row"><span class="vf-popup-k">State</span><span class="vf-popup-v" style="color:${stateColor};font-weight:600">${op.state}</span></div>`;
+    html += `<div class="vf-popup-row"><span class="vf-popup-k">Mode</span><span class="vf-popup-v">${op.completion_mode || '—'}</span></div>`;
+    if (op.operation_result) html += `<div class="vf-popup-row"><span class="vf-popup-k">Result</span><span class="vf-popup-v">${op.operation_result}</span></div>`;
+    if (op.quality_result) {
+      const qc = op.quality_result === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+      html += `<div class="vf-popup-row"><span class="vf-popup-k">Quality</span><span class="vf-popup-v" style="color:${qc};font-weight:600">${op.quality_result}${op.attempt_number > 1 ? ' #' + op.attempt_number : ''}</span></div>`;
+    }
+    if (op.terminal) html += '<div class="vf-popup-row"><span class="vf-popup-k">Terminal</span><span class="vf-popup-v" style="color:var(--vf-state-fail);font-weight:600">FAILED — no recovery</span></div>';
+    if (contract && contract.capabilities && contract.capabilities.measurement) {
+      const mhtml = this._measurementRowsHtml(snap, op);
+      if (mhtml) html += mhtml;
+    }
+    if (this._isActionRequired(op)) {
+      html += '<div class="vf-op-actions">' + this._renderActionControlsHtml(op, contract) + '</div>';
+    } else if (op.state === 'WORKING') {
+      html += '<div class="vf-op-note">Working — no action required</div>';
+    } else if (op.completion_mode === 'AUTO' && waiting) {
+      html += '<div class="vf-op-note">AUTO — runtime will resolve on next step</div>';
+    }
+    return html;
+  },
+
+  async submitCommand(stId, wipId, command) {
+    const snap = this._lastSnapshot;
+    const op = snap ? this._findOperation(snap) : null;
+    const contract = snap ? this._contractFor(snap, stId) : null;
+    const body = { station_id: stId, wip_id: wipId, command };
+    if (contract && contract.capabilities && contract.capabilities.checklist) {
+      const items = this._checklistItems(op, contract);
+      body.payload = {
+        checklist: items
+          .filter(it => this._checklistChecked(op, it.item_id))
+          .map(it => ({ item_id: it.item_id, completed: true })),
+      };
+    }
+    let resp;
+    try {
+      resp = await fetch(`${API}/operation-command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      this._opError = 'Network error — command not submitted';
+      if (snap) this._renderPopup(snap);
+      return;
+    }
+    if (!resp.ok) {
+      let detail = `Command rejected (${resp.status})`;
+      try { const j = await resp.json(); if (j && j.detail) detail = j.detail; } catch (_) {}
+      this._opError = detail;
+      // Fail-closed: re-sync authoritative state; never locally complete.
+      await this.refresh();
+      this._renderPopup(this._lastSnapshot);
+      return;
+    }
+    const next = await resp.json();
+    this._pendingChecklist = {};
+    this._opError = '';
+    this._applyAuthoritativeSnapshot(next);
+  },
+
+  _applyAuthoritativeSnapshot(snap) {
+    this._lastSnapshot = snap;
+    this._snapVersion++;
+    this._liveStatus = 'LIVE';
+    this._renderStatic(snap);
+    this._renderWips(snap);
+    this._renderPopup(snap);
+    this.renderStatus();
+  },
+
+  _applyActionRequired(snap) {
+    const waiting = {};
+    for (const o of (snap && snap.active_operations) || []) {
+      if (this._isActionRequired(o)) waiting[o.station_id] = true;
+    }
+    document.querySelectorAll('#fb-stations .vf-station-group').forEach(el => {
+      const stId = el.getAttribute('data-station');
+      el.classList.toggle('action-required', !!waiting[stId]);
+    });
+    const count = Object.keys(waiting).length;
+    const el = document.getElementById('fb-actions-required');
+    if (el) {
+      if (count > 0) { el.textContent = `${count} action${count > 1 ? 's' : ''} required`; el.style.display = ''; }
+      else { el.style.display = 'none'; }
+    }
   },
 
   /* ── Event strip ── */
