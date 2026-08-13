@@ -54,15 +54,20 @@ def advance_to_before(line: AssyLineRuntime, position: str):
 
 class TestQ01:
     def test_ap03_checklist_on_parent(self):
+        """OPS-02-C01: AP03 is a checklist gate, NOT a quality-decision station."""
         line = setup_line(make_cfg())
         advance_to_before(line, "AP03")
         line.execute_dwell()
+        # No quality record is fabricated for AP03 checklist completion.
         h = line.get_quality_history("SSO2-0001")
-        assert h is not None and len(h) >= 1
-        r = h.records[0]
-        assert r.station_id == "AP03"
-        assert r.check_type == CheckType.CHECKLIST
-        assert r.disposition == "PASS"
+        assert h is None or len(h) == 0
+        # The operation completes via the checklist gate (CONFIRMED, quality_result null).
+        found = [o for o in line.operation_registry._operations.values()
+                 if o.station_id == "AP03" and o.wip_id == "SSO2-0001"]
+        assert len(found) == 1
+        assert found[0].operation_result.value == "CONFIRMED"
+        assert found[0].quality_result is None
+        assert line.conveyor.is_position_complete("AP03")
 
 
 # ═══════════════════════════════════════════════

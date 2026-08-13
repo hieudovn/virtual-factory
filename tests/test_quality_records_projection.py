@@ -81,24 +81,16 @@ class TestEmptyHistory:
 # ═══════════════════════════════════════
 
 class TestAP03Checklist:
-    def test_ap03_has_checklist_type(self):
+    def test_ap03_has_no_quality_record(self):
+        # OPS-02-C01: AP03 is a checklist gate, not a quality-decision station —
+        # its completion must NOT fabricate a quality record.
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml", scenario=DemoScenario.HAPPY_PATH)
         snap = ctrl.initialize()
         for _ in range(12):
             snap = ctrl.step()
         d = snap.to_dict()
         ap03_recs = [qr for qr in d["quality_records"] if qr["station_id"] == "AP03"]
-        assert len(ap03_recs) > 0, "Should have AP03 records after stepping"
-        for qr in ap03_recs:
-            assert qr["check_type"] == "CHECKLIST"
-            assert len(qr["checklist_items"]) == 3
-            assert "mechanical_prep_ok" in qr["checklist_items"]
-            assert "visual_check_ok" in qr["checklist_items"]
-            assert "measurement_subset_ok" in qr["checklist_items"]
-            # No per-item disposition invented
-            for item in qr["checklist_items"]:
-                assert isinstance(item, str)
-            assert qr["disposition"] == "PASS"
+        assert len(ap03_recs) == 0, "AP03 must not fabricate quality records"
 
     def test_ap03_no_measurements(self):
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml", scenario=DemoScenario.HAPPY_PATH)

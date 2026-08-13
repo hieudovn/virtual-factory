@@ -221,6 +221,18 @@ _QUALITY_OPERATION_RESULT: dict[str, "OperationResult"] = {
     "AP11": OperationResult.RELEASED,
 }
 
+# OPS-02 — station → (quality config key, check type) for quality-decision stations.
+_QUALITY_STATION_MAP: dict[str, tuple[str, "CheckType"]] = {
+    "AP06": ("ap06", CheckType.TEST),
+    "AP08": ("ap08", CheckType.VISUAL_INSPECTION),
+    "AP11": ("ap11", CheckType.FINAL_QC),
+}
+
+# DEMO_SYNTHETIC generic checklist placeholder for AP03 — NOT verified TIPA facts.
+_AP03_SYNTHETIC_CHECKLIST: tuple[str, ...] = (
+    "mechanical_prep_ok", "visual_check_ok", "measurement_subset_ok",
+)
+
 
 # ═══════════════════════════════════════════════════════════════
 # ASSY Line Runtime
@@ -453,6 +465,43 @@ class AssyLineRuntime:
         """Public: active (non-indexed) operation executions."""
         return self.operation_registry.active_operations()
 
+    def _should_auto_submit(
+        self, contract: StationContract, mode: CompletionMode,
+    ) -> bool:
+        """Whether the simulator may auto-issue the required command (C01-02).
+
+        AUTO → yes. MANUAL → no. ASSISTED → wait for explicit confirmation on
+        checklist / quality-decision / final-disposition / identity-transformation
+        contracts; pure execution may auto-submit. Fail-safe: wait if unclear.
+        """
+        if mode == CompletionMode.AUTO:
+            return True
+        if mode == CompletionMode.MANUAL:
+            return False
+        if mode == CompletionMode.ASSISTED:
+            if (contract.capabilities.checklist
+                    or contract.capabilities.quality_decision
+                    or contract.capabilities.final_disposition
+                    or contract.capabilities.identity_transformation):
+                return False
+            return True  # pure execution: system prepares/defaults
+        return False  # fail-safe
+
+    def _execute_ap03_checklist(
+        self, wip_id: str, checklist_items: list[str],
+    ) -> list[LineEvent]:
+        """AP03 checklist gate completion (C01-01). No quality record."""
+        events: list[LineEvent] = []
+        events.append(self._make_event("STATION_START", "AP03", wip_id, "checklist gate"))
+        ws = self._wips.get(wip_id)
+        if ws:
+            ws.station_count += 1
+            ws.lifecycle = WipLifecycle.COMPLETED_STATION
+        events.append(self._make_event(
+            "STATION_COMPLETE", "AP03", wip_id,
+            f"checklist complete items={len(checklist_items)}"))
+        return events
+
     def _advance_operation(
         self, pos: str, wip_id: str, required: float,
     ) -> list[LineEvent]:
@@ -464,11 +513,12 @@ class AssyLineRuntime:
                 normal_action=StationCommand.DONE,
                 required_action=StationCommand.DONE,
             )
-        mode = self._resolve_mode(contract)
         elapsed = self._station_elapsed.get(pos, 0.0)
 
         op = self.operation_registry.active_for(pos, wip_id)
         if op is None:
+            # C01-03: resolve effective mode ONCE at operation creation.
+            mode = self._resolve_mode(contract)
             op = self.operation_registry.start(pos, wip_id, contract, mode, self._simulation_time_s)
         if op.state == OperationState.READY:
             op.transition(OperationState.WORKING)
@@ -481,22 +531,18 @@ class AssyLineRuntime:
             else:
                 op.transition(OperationState.AWAITING_COMPLETION)
 
-        # MANUAL gating: waiting operations block until a command is supplied.
-        if mode == CompletionMode.MANUAL:
-            if op.state in (OperationState.AWAITING_COMPLETION, OperationState.AWAITING_DECISION):
-                action = contract.required_action.value if contract.required_action else "?"
-                return [self._make_event(
-                    "OPERATION_WAITING_COMMAND", pos, wip_id,
-                    f"mode=MANUAL state={op.state.value} action={action}")]
-            if op.state == OperationState.WORKING:
-                return [self._make_event(
-                    "STATION_PROGRESS", pos, wip_id,
-                    f"elapsed={elapsed:.0f}s / required={required:.0f}s")]
-
-        # AUTO / ASSISTED (or already-supplied command): advance waiting ops.
+        # Gating uses the FROZEN op.completion_mode (C01-03).
         if op.state in (OperationState.AWAITING_COMPLETION, OperationState.AWAITING_DECISION):
-            command = contract.required_action or contract.normal_action or StationCommand.DONE
-            return self.submit_operation_command(pos, wip_id, command)
+            if self._should_auto_submit(contract, op.completion_mode):
+                command = contract.required_action or contract.normal_action or StationCommand.DONE
+                payload = None
+                if contract.capabilities.checklist and command == StationCommand.CONFIRM_AND_COMPLETE:
+                    payload = {"checklist": list(_AP03_SYNTHETIC_CHECKLIST)}
+                return self.submit_operation_command(pos, wip_id, command, payload)
+            action = contract.required_action.value if contract.required_action else "?"
+            return [self._make_event(
+                "OPERATION_WAITING_COMMAND", pos, wip_id,
+                f"mode={op.completion_mode.value} state={op.state.value} action={action}")]
 
         # Post-outcome handling for carried-over states.
         events: list[LineEvent] = []
@@ -553,6 +599,15 @@ class AssyLineRuntime:
                 f"Operation {op.execution_id} not awaiting action "
                 f"(state={op.state.value})")
 
+        # C01-01: checklist gate — validate actual checklist completion.
+        if contract.capabilities.checklist and cmd == StationCommand.CONFIRM_AND_COMPLETE:
+            checklist = (payload or {}).get("checklist", []) if payload else []
+            if not checklist:
+                raise AssyLineError(
+                    f"AP03 checklist gate: {cmd.value} requires completed checklist "
+                    f"items (payload['checklist'] missing or empty)")
+            op.checklist = list(checklist)
+
         op.command = cmd
         if payload is not None:
             op.inputs.update(payload)
@@ -579,14 +634,19 @@ class AssyLineRuntime:
         op: OperationExecution,
         contract: StationContract,
     ) -> list[LineEvent]:
-        """Execute station domain work and map the outcome onto the operation."""
-        events = self._execute_station(pos, wip_id)
+        """Execute station domain work and map the outcome onto the operation.
 
+        Capability-driven dispatch (C01-01): identity transformation → quality
+        decision → checklist gate → pure execution.
+        """
         if contract.capabilities.identity_transformation:
+            events = self._execute_ap04_join(wip_id)
             op.operation_result = OperationResult.JOIN_COMPLETE
             op.quality_result = None
             op.transition(OperationState.COMPLETED)
         elif contract.capabilities.quality_decision:
+            station_key, check_type = _QUALITY_STATION_MAP[pos]
+            events = self._execute_quality_station(pos, wip_id, station_key, check_type)
             qstatus = self.get_current_quality_status(wip_id)
             qh = self.get_quality_history(wip_id)
             op.quality_result = qh.last_disposition(pos) if qh else None
@@ -600,10 +660,15 @@ class AssyLineRuntime:
                 op.transition(OperationState.FAILED)
             else:  # RETEST_PENDING / REINSPECT_PENDING
                 op.transition(OperationState.FAILED)
+        elif contract.capabilities.checklist:
+            # C01-01: AP03 checklist gate — no quality record, no PASS/FAIL/NG.
+            events = self._execute_ap03_checklist(wip_id, op.checklist)
+            op.operation_result = OperationResult.CONFIRMED
+            op.quality_result = None
+            op.transition(OperationState.COMPLETED)
         else:
-            op.operation_result = (
-                OperationResult.CONFIRMED if contract.capabilities.checklist
-                else OperationResult.DONE)
+            events = self._execute_station(pos, wip_id)
+            op.operation_result = OperationResult.DONE
             op.quality_result = None
             op.transition(OperationState.COMPLETED)
         return events
@@ -615,8 +680,9 @@ class AssyLineRuntime:
     def _execute_station(self, position: str, wip_id: str) -> list[LineEvent]:
         """Execute station logic. Returns events; caller owns trace append.
 
-        M6-S03: Quality stations (AP03, AP06, AP08, AP11) generate
-        quality records and may set HOLD preventing completion.
+        Pure-execution stations (PRE-ASSY, AP01, AP02, AP05, AP07, AP09, AP10)
+        are handled here. AP04 JOIN, AP06/AP08 quality, AP11 final QC, and
+        AP03 checklist are dispatched capability-first in `_run_operation_domain`.
         """
         events: list[LineEvent] = []
 
@@ -630,9 +696,6 @@ class AssyLineRuntime:
 
         elif position == "AP04":
             events.extend(self._execute_ap04_join(wip_id))
-
-        elif position == "AP03":
-            events.extend(self._execute_quality_station(position, wip_id, "ap03", CheckType.CHECKLIST))
 
         elif position == "AP06":
             events.extend(self._execute_quality_station(position, wip_id, "ap06", CheckType.TEST))

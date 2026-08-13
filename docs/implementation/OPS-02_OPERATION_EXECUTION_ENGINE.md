@@ -23,7 +23,7 @@
 - Mode resolution (`_resolve_mode`): `station.mode_override` → `global_run_mode` → `station.default_mode`.
 - `submit_operation_command(station_id, wip_id, command, payload?)` is the runtime command surface for OPS-03. Validates active operation, contract, state, and allowed command; fails closed.
 - `_run_operation_domain()` reuses the existing domain handlers (`_execute_station` → AP04 join / quality resolution / generic complete) and maps their outcome onto `operation_result` / `quality_result` / state.
-- MANUAL blocks waiting operations at `AWAITING_*`; AUTO auto-issues the contract's `required_action`; ASSISTED shares the same path.
+- MANUAL blocks waiting operations at `AWAITING_*`; AUTO auto-issues the contract's `required_action`; ASSISTED is distinct (see C01 below).
 
 ## Additive projection (`assembly/demo_snapshot.py`)
 
@@ -35,3 +35,9 @@
 - With global AUTO + default config, observable happy-path behavior is preserved (verified by the pre-existing ASSY/demo test suites).
 - `FAILED_FINAL` is terminal (`FAILED` + `terminal`, quality `FAILED_FINAL`); never `HELD`.
 - AP03 produces no `quality_result` (checklist is the gate).
+
+## OPS-02-C01 — Semantic corrections
+
+- **C01-01 (AP03 checklist gate).** AP03 is a checklist gate, not a quality-decision station. Completing AP03 runs `_execute_ap03_checklist` (emits `STATION_START`/`STATION_COMPLETE`, marks WIP `COMPLETED_STATION`) and produces `operation_result = CONFIRMED` with `quality_result = None`. **No quality record** is fabricated (nothing appears in the `quality_records` projection). `submit_operation_command` rejects `CONFIRM_AND_COMPLETE` at AP03 when `payload['checklist']` is missing or empty (no bypass).
+- **C01-02 (ASSISTED distinct from AUTO).** `_should_auto_submit` now distinguishes modes: `AUTO` auto-submits; `MANUAL` never auto-submits; `ASSISTED` waits for explicit confirmation on checklist / quality-decision / final-disposition / identity-transformation contracts, while pure execution may auto-submit. Fail-safe: wait if unclear.
+- **C01-03 (freeze effective mode).** The effective completion mode is resolved once at operation creation (`_resolve_mode` at `OperationRegistry.start`) and stored on `op.completion_mode`; all subsequent auto-submit gating reads the frozen value, so a mid-operation `global_run_mode` change does not retroactively alter an already-active operation.

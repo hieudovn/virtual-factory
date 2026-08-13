@@ -285,7 +285,10 @@ class TestAP03Checklist:
         line.execute_dwell()
         op = line.operation_registry.active_for("AP03", "SSO2-0001")
         assert op.state == OperationState.AWAITING_COMPLETION
-        line.submit_operation_command("AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE)
+        line.submit_operation_command(
+            "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
+            payload={"checklist": ["mech_check_done", "visual_check_done"]},
+        )
         op2 = line.operation_registry.active_for("AP03", "SSO2-0001")
         assert op2 is None
         assert line.conveyor.is_position_complete("AP03")
@@ -506,3 +509,123 @@ class TestContinuousAuto:
         # active operations projection exists and is additive
         assert hasattr(snap, "active_operations")
         assert "active_operations" in snap.to_dict()
+
+
+# ═══════════════════════════════════════════════════════════
+# OPS-02-C01 — Semantic corrections
+# ═══════════════════════════════════════════════════════════
+
+class TestAP03ChecklistGateC01:
+    def test_ap03_incomplete_checklist_blocks(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP03")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        op = line.operation_registry.active_for("AP03", "SSO2-0001")
+        assert op.state == OperationState.AWAITING_COMPLETION
+        assert op.quality_result is None
+        assert line.conveyor.is_position_complete("AP03") is False
+        # no fabricated AP03 quality record from normal checklist execution
+        h = line.get_quality_history("SSO2-0001")
+        assert h is None or len(h) == 0
+
+    def test_ap03_confirm_without_checklist_rejected(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP03")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command("AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE)
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command(
+                "AP03", "SSO2-0001", StationCommand.CONFIRM_AND_COMPLETE,
+                payload={"checklist": []},
+            )
+        # still not complete, still not eligible
+        op = line.operation_registry.active_for("AP03", "SSO2-0001")
+        assert op.state == OperationState.AWAITING_COMPLETION
+        assert line.conveyor.is_position_complete("AP03") is False
+
+
+class TestAssistedNotAuto:
+    def test_assisted_waits_for_checklist(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP03")
+        line.global_run_mode = CompletionMode.ASSISTED
+        line.execute_dwell()
+        op = line.operation_registry.active_for("AP03", "SSO2-0001")
+        assert op.state == OperationState.AWAITING_COMPLETION
+        assert line.conveyor.is_position_complete("AP03") is False
+
+    def test_assisted_waits_for_quality_decision(self):
+        line = setup_line(make_fast_config(ap06="PASS"))
+        advance_to_before(line, "AP06")
+        line.global_run_mode = CompletionMode.ASSISTED
+        line.execute_dwell()
+        op = line.operation_registry.active_for("AP06", CHILD)
+        assert op.state == OperationState.AWAITING_DECISION
+
+    def test_assisted_waits_for_release(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP11")
+        line.global_run_mode = CompletionMode.ASSISTED
+        line.execute_dwell()
+        op = line.operation_registry.active_for("AP11", CHILD)
+        assert op.state == OperationState.AWAITING_DECISION
+
+    def test_assisted_pure_execution_auto_submits(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP01")
+        line.global_run_mode = CompletionMode.ASSISTED
+        line.execute_dwell()
+        found = [o for o in line.operation_registry._operations.values()
+                 if o.station_id == "AP01"]
+        assert found[-1].state == OperationState.ELIGIBLE_TO_INDEX
+        assert line.conveyor.is_position_complete("AP01")
+
+    def test_auto_ap03_auto_submits_with_synthetic_checklist(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP03")
+        line.global_run_mode = CompletionMode.AUTO
+        line.execute_dwell()
+        found = [o for o in line.operation_registry._operations.values()
+                 if o.station_id == "AP03"]
+        assert found[-1].operation_result == OperationResult.CONFIRMED
+        assert found[-1].quality_result is None
+        assert found[-1].checklist  # synthetic checklist populated
+        assert line.conveyor.is_position_complete("AP03")
+
+
+class TestModeFreeze:
+    def test_mode_freeze_auto_remains_auto(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP02")
+        # Seed an active AP02 operation created under AUTO, held in AWAITING.
+        contract = line.station_contracts["AP02"]
+        op = line.operation_registry.start(
+            "AP02", "SSO2-0001", contract, CompletionMode.AUTO, 0.0)
+        op.transition(OperationState.WORKING)
+        op.transition(OperationState.AWAITING_COMPLETION)
+        assert op.completion_mode == CompletionMode.AUTO
+        # Change global mode while the operation is active — the operation's
+        # effective mode must remain frozen at creation (AUTO → auto-submit).
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        found = [o for o in line.operation_registry._operations.values()
+                 if o.station_id == "AP02"]
+        assert found[-1].completion_mode == CompletionMode.AUTO
+        assert found[-1].state == OperationState.ELIGIBLE_TO_INDEX
+        assert line.conveyor.is_position_complete("AP02")
+
+    def test_new_operations_use_new_mode(self):
+        line = setup_line(make_fast_config())
+        line.global_run_mode = CompletionMode.AUTO
+        advance_to_before(line, "AP01")
+        line.execute_dwell()   # AP01 auto-completes
+        line.index_line()      # move to AP02
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()   # AP02 op created with MANUAL → waits
+        op = line.operation_registry.active_for("AP02", "SSO2-0001")
+        assert op is not None
+        assert op.completion_mode == CompletionMode.MANUAL
+        assert op.state == OperationState.AWAITING_COMPLETION
