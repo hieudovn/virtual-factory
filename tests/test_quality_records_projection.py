@@ -260,7 +260,7 @@ class TestScenarioQualityHistory:
 
 class TestSnapshotCompatibility:
     def test_existing_keys_unchanged(self):
-        """quality_records is additive — all existing keys preserved."""
+        """quality_records/active_operations are additive — all existing keys preserved."""
         ctrl = DemoController(config_path="configs/plants/tipa_assy_demo.yaml", scenario=DemoScenario.HAPPY_PATH)
         snap = ctrl.initialize()
         for _ in range(10):
@@ -269,6 +269,7 @@ class TestSnapshotCompatibility:
         expected_keys = {
             "simulation_time_s", "line_state", "dwell_number", "nominal_dwell_s",
             "positions", "genealogy", "recent_quality_events", "quality_records",
+            "active_operations",
             "production", "scenario", "plant_id", "production_line_id",
             "sub_line_id", "variant",
         }

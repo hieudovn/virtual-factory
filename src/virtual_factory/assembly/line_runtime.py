@@ -52,6 +52,18 @@ from virtual_factory.assembly.quality_records import (
     MeasurementValue,
     resolve_quality_disposition,
 )
+from virtual_factory.assembly.station_contracts import (
+    CompletionMode,
+    StationCommand,
+    StationContract,
+    build_default_assy_contracts,
+)
+from virtual_factory.assembly.operation_execution import (
+    OperationExecution,
+    OperationRegistry,
+    OperationResult,
+    OperationState,
+)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -202,6 +214,14 @@ def load_assy_config_from_yaml(path: str) -> AssyLineConfig:
     return config
 
 
+# OPS-02 — normalized operation_result for quality-decision stations.
+_QUALITY_OPERATION_RESULT: dict[str, "OperationResult"] = {
+    "AP06": OperationResult.TEST_COMPLETE,
+    "AP08": OperationResult.INSPECTION_COMPLETE,
+    "AP11": OperationResult.RELEASED,
+}
+
+
 # ═══════════════════════════════════════════════════════════════
 # ASSY Line Runtime
 # ═══════════════════════════════════════════════════════════════
@@ -240,11 +260,20 @@ class AssyLineRuntime:
     _quality_histories: dict[str, QualityHistory] = field(default_factory=dict)
     _quality_seq: int = 0
 
+    # OPS-02 — OperationExecution foundation
+    station_contracts: dict[str, StationContract] = field(default_factory=dict)
+    operation_registry: OperationRegistry = field(default_factory=OperationRegistry)
+    global_run_mode: CompletionMode = CompletionMode.AUTO
+
     def __post_init__(self) -> None:
         self.conveyor = ConveyorLine(config=self.config.conveyor)
         self.upstream = UpstreamProducer(config=self.config.upstream)
         for pos in self.conveyor.positions:
             self._station_elapsed[pos] = 0.0
+        if not self.station_contracts:
+            self.station_contracts = build_default_assy_contracts(
+                dict(self.config.station_durations)
+            )
 
     # -- Properties --
 
@@ -386,29 +415,9 @@ class AssyLineRuntime:
 
             required = self.config.station_durations.get(pos, 60.0)
             self._station_elapsed[pos] = self._station_elapsed.get(pos, 0.0) + actual_dwell
-
             ws.current_position = pos
 
-            if self._station_elapsed[pos] >= required:
-                # Station timer completed
-                station_events = self._execute_station(pos, wip_id)
-                all_events.extend(station_events)
-
-                # M6-S03: quality HOLD prevents completion
-                qstatus = self.get_current_quality_status(wip_id)
-                if qstatus in (QualityStatus.RETEST_PENDING, QualityStatus.REINSPECT_PENDING,
-                               QualityStatus.FAILED_FINAL):
-                    # Keep station incomplete — line stays, retry next dwell
-                    self._station_elapsed[pos] = 0.0  # restart timer for retest
-                else:
-                    self.conveyor.mark_position_complete(pos)
-                    self._station_elapsed[pos] = 0.0
-            else:
-                all_events.append(self._make_event(
-                    "STATION_PROGRESS", pos, wip_id,
-                    f"elapsed={self._station_elapsed[pos]:.0f}s "
-                    f"/ required={required:.0f}s"
-                ))
+            all_events.extend(self._advance_operation(pos, wip_id, required))
 
         # C01-01: advance simulation time
         self._simulation_time_s += actual_dwell
@@ -423,6 +432,181 @@ class AssyLineRuntime:
 
         self._trace.extend(all_events)
         return all_events
+
+    # ═══════════════════════════════════════════════════════
+    # OPS-02 — OperationExecution foundation
+    # ═══════════════════════════════════════════════════════
+
+    def _resolve_mode(self, contract: StationContract) -> CompletionMode:
+        """Effective completion mode (OPS-01 §5 precedence).
+
+        station.mode_override (if configured) → global_run_mode (if set)
+        → station.default_mode.
+        """
+        if contract.mode_override is not None:
+            return contract.mode_override
+        if self.global_run_mode is not None:
+            return self.global_run_mode
+        return contract.default_mode
+
+    def active_operations(self) -> list[OperationExecution]:
+        """Public: active (non-indexed) operation executions."""
+        return self.operation_registry.active_operations()
+
+    def _advance_operation(
+        self, pos: str, wip_id: str, required: float,
+    ) -> list[LineEvent]:
+        """Advance the OperationExecution for one occupied station this dwell."""
+        contract = self.station_contracts.get(pos)
+        if contract is None:
+            contract = StationContract(
+                station_id=pos,
+                normal_action=StationCommand.DONE,
+                required_action=StationCommand.DONE,
+            )
+        mode = self._resolve_mode(contract)
+        elapsed = self._station_elapsed.get(pos, 0.0)
+
+        op = self.operation_registry.active_for(pos, wip_id)
+        if op is None:
+            op = self.operation_registry.start(pos, wip_id, contract, mode, self._simulation_time_s)
+        if op.state == OperationState.READY:
+            op.transition(OperationState.WORKING)
+
+        work_done = elapsed >= required
+
+        if op.state == OperationState.WORKING and work_done:
+            if contract.capabilities.quality_decision:
+                op.transition(OperationState.AWAITING_DECISION)
+            else:
+                op.transition(OperationState.AWAITING_COMPLETION)
+
+        # MANUAL gating: waiting operations block until a command is supplied.
+        if mode == CompletionMode.MANUAL:
+            if op.state in (OperationState.AWAITING_COMPLETION, OperationState.AWAITING_DECISION):
+                action = contract.required_action.value if contract.required_action else "?"
+                return [self._make_event(
+                    "OPERATION_WAITING_COMMAND", pos, wip_id,
+                    f"mode=MANUAL state={op.state.value} action={action}")]
+            if op.state == OperationState.WORKING:
+                return [self._make_event(
+                    "STATION_PROGRESS", pos, wip_id,
+                    f"elapsed={elapsed:.0f}s / required={required:.0f}s")]
+
+        # AUTO / ASSISTED (or already-supplied command): advance waiting ops.
+        if op.state in (OperationState.AWAITING_COMPLETION, OperationState.AWAITING_DECISION):
+            command = contract.required_action or contract.normal_action or StationCommand.DONE
+            return self.submit_operation_command(pos, wip_id, command)
+
+        # Post-outcome handling for carried-over states.
+        events: list[LineEvent] = []
+        if op.state == OperationState.COMPLETED:
+            op.transition(OperationState.ELIGIBLE_TO_INDEX)
+            self.conveyor.mark_position_complete(pos)
+            self._station_elapsed[pos] = 0.0
+        elif op.state == OperationState.FAILED:
+            self._station_elapsed[pos] = 0.0
+            if op.terminal:
+                events.append(self._make_event(
+                    "OPERATION_TERMINAL", pos, wip_id,
+                    "FAILED_FINAL — no recovery, not HELD"))
+            else:
+                op.transition(OperationState.AWAITING_DECISION)
+                events.append(self._make_event(
+                    "OPERATION_RETRY", pos, wip_id,
+                    f"attempt={op.attempt_number} new attempt pending"))
+        elif op.state == OperationState.WORKING:
+            events.append(self._make_event(
+                "STATION_PROGRESS", pos, wip_id,
+                f"elapsed={elapsed:.0f}s / required={required:.0f}s"))
+        return events
+
+    def submit_operation_command(
+        self,
+        station_id: str,
+        wip_id: str,
+        command: StationCommand | str,
+        payload: Optional[dict] = None,
+    ) -> list[LineEvent]:
+        """Runtime command surface (OPS-03 will bind UI to this).
+
+        Validates active-operation identity, station contract, current state,
+        and allowed command. Fails closed on invalid/stale command.
+        """
+        op = self.operation_registry.active_for(station_id, wip_id)
+        if op is None:
+            raise AssyLineError(
+                f"No active operation for station={station_id} wip={wip_id}")
+
+        contract = self.station_contracts.get(station_id)
+        if contract is None:
+            raise AssyLineError(f"No station contract for {station_id}")
+
+        cmd = command if isinstance(command, StationCommand) else StationCommand(str(command))
+        if cmd not in contract.allowed_commands:
+            raise AssyLineError(
+                f"Command {cmd.value} not allowed at {station_id} "
+                f"(allowed: {[c.value for c in contract.allowed_commands]})")
+
+        if op.state not in (OperationState.AWAITING_COMPLETION, OperationState.AWAITING_DECISION):
+            raise AssyLineError(
+                f"Operation {op.execution_id} not awaiting action "
+                f"(state={op.state.value})")
+
+        op.command = cmd
+        if payload is not None:
+            op.inputs.update(payload)
+
+        events = self._run_operation_domain(station_id, wip_id, op, contract)
+
+        # Resolve post-domain outcome
+        if op.state == OperationState.COMPLETED:
+            op.transition(OperationState.ELIGIBLE_TO_INDEX)
+            self.conveyor.mark_position_complete(station_id)
+            self._station_elapsed[station_id] = 0.0
+        elif op.state == OperationState.FAILED:
+            self._station_elapsed[station_id] = 0.0
+            if op.terminal:
+                pass  # FAILED + FAILED_FINAL: terminal, no recovery
+            else:
+                op.transition(OperationState.AWAITING_DECISION)  # new attempt next dwell
+        return events
+
+    def _run_operation_domain(
+        self,
+        pos: str,
+        wip_id: str,
+        op: OperationExecution,
+        contract: StationContract,
+    ) -> list[LineEvent]:
+        """Execute station domain work and map the outcome onto the operation."""
+        events = self._execute_station(pos, wip_id)
+
+        if contract.capabilities.identity_transformation:
+            op.operation_result = OperationResult.JOIN_COMPLETE
+            op.quality_result = None
+            op.transition(OperationState.COMPLETED)
+        elif contract.capabilities.quality_decision:
+            qstatus = self.get_current_quality_status(wip_id)
+            qh = self.get_quality_history(wip_id)
+            op.quality_result = qh.last_disposition(pos) if qh else None
+            op.attempt_number = qh.attempt_count(pos) if qh else 0
+            if qstatus == QualityStatus.CLEAR:
+                op.operation_result = _QUALITY_OPERATION_RESULT.get(
+                    pos, OperationResult.TEST_COMPLETE)
+                op.transition(OperationState.COMPLETED)
+            elif qstatus == QualityStatus.FAILED_FINAL:
+                op.terminal = True
+                op.transition(OperationState.FAILED)
+            else:  # RETEST_PENDING / REINSPECT_PENDING
+                op.transition(OperationState.FAILED)
+        else:
+            op.operation_result = (
+                OperationResult.CONFIRMED if contract.capabilities.checklist
+                else OperationResult.DONE)
+            op.quality_result = None
+            op.transition(OperationState.COMPLETED)
+        return events
 
     # ═══════════════════════════════════════════════════════
     # STATION EXECUTION (C01-03: authoritative lifecycle)
@@ -724,6 +908,7 @@ class AssyLineRuntime:
         self._station_elapsed = {p: 0.0 for p in self.conveyor.positions}
         self._quality_histories.clear()
         self._quality_seq = 0
+        self.operation_registry.clear()
 
 
 class AssyLineError(RuntimeError):

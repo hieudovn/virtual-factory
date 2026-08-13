@@ -14,6 +14,7 @@ from virtual_factory.assembly.line_runtime import (
     AssyLineRuntime, ConveyorState, WipLifecycle,
 )
 from virtual_factory.assembly.quality_records import QualityStatus
+from virtual_factory.assembly.operation_execution import OperationExecution
 
 
 @dataclass
@@ -115,6 +116,41 @@ class ProductionSummary:
 
 
 @dataclass
+class ActiveOperationView:
+    """OPS-02 — Detached read model of one active operation execution.
+
+    Additive projection. Built from OperationExecution only.
+    `positions[]` semantics are unchanged.
+    """
+    execution_id: str = ""
+    station_id: str = ""
+    wip_id: str = ""
+    state: str = ""
+    completion_mode: str = ""
+    command: str = ""
+    operation_result: str = ""
+    quality_result: str = ""
+    routing_action: str = ""
+    attempt_number: int = 0
+    terminal: bool = False
+
+    def to_dict(self) -> dict:
+        return {
+            "execution_id": self.execution_id,
+            "station_id": self.station_id,
+            "wip_id": self.wip_id,
+            "state": self.state,
+            "completion_mode": self.completion_mode,
+            "command": self.command,
+            "operation_result": self.operation_result,
+            "quality_result": self.quality_result,
+            "routing_action": self.routing_action,
+            "attempt_number": self.attempt_number,
+            "terminal": self.terminal,
+        }
+
+
+@dataclass
 class AssyDemoSnapshot:
     """Complete detached snapshot of the ASSY demo state.
 
@@ -124,6 +160,7 @@ class AssyDemoSnapshot:
     M6-S04B-I03: Additive identity fields — plant_id, production_line_id,
     sub_line_id, variant.  Existing S04 fields preserved.
     M6-S04B-I06-P01: Additive quality_records field.
+    OPS-02: Additive active_operations field.
     """
 
     simulation_time_s: float = 0.0
@@ -134,6 +171,7 @@ class AssyDemoSnapshot:
     genealogy: list[GenealogySummary] = field(default_factory=list)
     recent_quality_events: list[QualityEventView] = field(default_factory=list)
     quality_records: list[QualityRecordView] = field(default_factory=list)
+    active_operations: list[ActiveOperationView] = field(default_factory=list)
     production: ProductionSummary = field(default_factory=ProductionSummary)
     scenario: str = ""
 
@@ -197,6 +235,8 @@ class AssyDemoSnapshot:
             },
             "scenario": self.scenario,
             "quality_records": [qr.to_dict() for qr in self.quality_records],
+            # OPS-02 — additive active operations
+            "active_operations": [ao.to_dict() for ao in self.active_operations],
             # M6-S04B-I03 — additive identity
             "plant_id": self.plant_id,
             "production_line_id": self.production_line_id,
@@ -288,6 +328,23 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
                     reason_code=rec.reason_code,
                 ))
 
+    # Active operations — additive projection (OPS-02)
+    active_operations: list[ActiveOperationView] = []
+    for op in runtime.active_operations():
+        active_operations.append(ActiveOperationView(
+            execution_id=op.execution_id,
+            station_id=op.station_id,
+            wip_id=op.wip_id,
+            state=op.state.value if hasattr(op.state, "value") else str(op.state),
+            completion_mode=op.completion_mode.value if hasattr(op.completion_mode, "value") else str(op.completion_mode),
+            command=op.command.value if op.command and hasattr(op.command, "value") else (str(op.command) if op.command else ""),
+            operation_result=op.operation_result.value if op.operation_result and hasattr(op.operation_result, "value") else (str(op.operation_result) if op.operation_result else ""),
+            quality_result=op.quality_result or "",
+            routing_action=op.routing_action or "",
+            attempt_number=op.attempt_number,
+            terminal=op.terminal,
+        ))
+
     # Production summary
     holds = 0
     released = 0
@@ -317,6 +374,7 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
         genealogy=genealogy,
         recent_quality_events=quality_events,
         quality_records=quality_records,
+        active_operations=active_operations,
         production=prod,
         scenario=scenario,
     )
