@@ -26,10 +26,10 @@
       "additionalProperties": false,
       "properties": {
         "execution": { "type": "boolean", "description": "Station performs a physical/manufacturing operation." },
-        "checklist": { "type": "boolean", "description": "Operation requires checklist item confirmation." },
+        "checklist": { "type": "boolean", "description": "Operation supports checklist-based interaction/context. The completion gate (if any) is declared separately by checklist_required_for_action." },
         "measurement": { "type": "boolean", "description": "Operation produces measurable values." },
         "quality_decision": { "type": "boolean", "description": "Operation yields a PASS/FAIL/NG quality decision." },
-        "exception": { "type": "boolean", "description": "Operation may raise HOLD / LINE OUT / note." },
+        "exception": { "type": "boolean", "description": "Operation may raise a HOLD or exception note." },
         "identity_transformation": { "type": "boolean", "description": "Operation transforms WIP identity (e.g. AP04 JOIN)." },
         "final_disposition": { "type": "boolean", "description": "Operation disposes the WIP (release/hold/reject)." }
       }
@@ -41,22 +41,22 @@
       "description": "Default completion mode for this station contract (lowest precedence fallback)."
     },
     "mode_override": {
-      "type": "string",
-      "enum": ["MANUAL", "AUTO", "ASSISTED"],
+      "type": ["string", "null"],
+      "enum": ["MANUAL", "AUTO", "ASSISTED", null],
       "description": "Explicit per-station mode override. Highest precedence when configured; overrides the global run mode and the station default."
     },
     "normal_action": {
-      "type": "string",
-      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE"],
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
       "description": "Primary completion action exposed by the station."
     },
     "required_action": {
-      "type": "string",
-      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE"],
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
       "description": "Action required before the WIP is eligible to index."
     },
     "work_duration_s": {
-      "type": "number",
+      "type": ["number", "null"],
       "exclusiveMinimum": 0,
       "description": "Configured simulated operation duration, independent of visual animation timing."
     },

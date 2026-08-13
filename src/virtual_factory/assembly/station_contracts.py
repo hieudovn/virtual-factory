@@ -230,8 +230,12 @@ def load_station_contracts_from_yaml(path: str) -> dict[str, StationContract]:
             required_action=_cmd(entry.get("required_action")),
             work_duration_s=_maybe_float(entry.get("work_duration_s")),
             prerequisites=tuple(str(p) for p in entry.get("prerequisites", [])),
+            checklist_items=tuple(str(x) for x in entry.get("checklist_items", [])),
+            checklist_required_for_action=_cmd(entry.get("checklist_required_for_action")),
         )
         contracts[contract.station_id] = contract
+    for contract in contracts.values():
+        _validate_contract_invariants(contract)
     return contracts
 
 
@@ -245,3 +249,41 @@ def _maybe_float(value: object) -> Optional[float]:
     if value is None:
         return None
     return float(value)
+
+
+def _validate_contract_invariants(contract: StationContract) -> None:
+    """OPS-03-C01-R1: fail-closed coherence checks for checklist-gate metadata.
+
+    Raises ValueError on internally contradictory checklist-gate contracts.
+    A checklist capability WITHOUT a gate is valid (e.g. AP11); the gate is
+    declared separately by ``checklist_required_for_action``.
+    """
+    items = contract.checklist_items
+    if any(not isinstance(i, str) or not i for i in items):
+        raise ValueError(
+            f"Station contract {contract.station_id!r}: checklist_items must "
+            f"be non-empty strings"
+        )
+    if len(set(items)) != len(items):
+        raise ValueError(
+            f"Station contract {contract.station_id!r}: duplicate checklist_items"
+        )
+    gate = contract.checklist_required_for_action
+    if gate is not None:
+        if not contract.capabilities.checklist:
+            raise ValueError(
+                f"Station contract {contract.station_id!r}: "
+                f"checklist_required_for_action is set but "
+                f"capabilities.checklist is false"
+            )
+        if not items:
+            raise ValueError(
+                f"Station contract {contract.station_id!r}: "
+                f"checklist_required_for_action is set but checklist_items is empty"
+            )
+        if gate not in contract.allowed_commands:
+            raise ValueError(
+                f"Station contract {contract.station_id!r}: gated action "
+                f"{gate.value!r} is not an allowed command "
+                f"{[c.value for c in contract.allowed_commands]}"
+            )

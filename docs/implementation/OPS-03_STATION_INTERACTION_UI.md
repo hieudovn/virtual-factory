@@ -105,3 +105,24 @@ Physical Canvas (positions[])
   `operation.checklist` = what was actually submitted/completed. The UI submits
   the full required set.
 
+## OPS-03-C01-R1 — StationContract loader / schema coherence
+
+- **Loader parity.** `load_station_contracts_from_yaml()` now parses
+  `checklist_items` and `checklist_required_for_action`, so a YAML-loaded
+  contract preserves the same checklist-gate semantics as the in-code contract
+  (no silent loss of gate metadata).
+- **Fail-closed invariants.** `_validate_contract_invariants()` rejects
+  contradictory contracts: gate without `capabilities.checklist`, gate with
+  empty `checklist_items`, gated command not in `allowed_commands`, duplicate
+  or empty `checklist_items` ids. A checklist capability **without** a gate
+  remains valid (AP11).
+- **Schema coherence.** `station-contract.schema.json` now:
+  - uses neutral `checklist` wording ("supports checklist-based interaction"),
+  - removes the LINE OUT implication from `exception`,
+  - allows `null` for `mode_override` / `normal_action` / `required_action` /
+    `work_duration_s` to match runtime `to_dict()`.
+- **Example YAML.** `docs/design/station-contracts.example.yaml` AP03 now
+  demonstrates the generic gate fields; AP11 keeps `checklist=true` with no
+  demo checklist gate.
+
+

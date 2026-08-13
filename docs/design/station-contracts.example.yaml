@@ -62,6 +62,12 @@ stations:
     normal_action: CONFIRM_AND_COMPLETE
     required_action: CONFIRM_AND_COMPLETE
     work_duration_s: 45
+    # OPS-03-C01: checklist IS the completion gate for this action.
+    checklist_items:
+      - demo_item_1
+      - demo_item_2
+      - demo_item_3
+    checklist_required_for_action: CONFIRM_AND_COMPLETE
 
   - station_id: AP04
     default_mode: AUTO
