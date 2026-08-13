@@ -91,7 +91,7 @@ station_contract:
     execution: true
     checklist: true
     measurement: false
-    quality_decision: true
+    quality_decision: false   # checklist IS the gate; no separate PASS/FAIL decision
     exception: true
     identity_transformation: false
     final_disposition: false
@@ -132,8 +132,8 @@ ARRIVED → READY → WORKING → AWAITING_COMPLETION | AWAITING_DECISION → ou
 | `AWAITING_COMPLETION` | execution done; waiting for completion action (`DONE`/`CONFIRM_AND_COMPLETE`) |
 | `AWAITING_DECISION` | measurement/check produced; waiting for quality decision confirmation (`CONFIRM`) |
 | `COMPLETED` | operation successfully completed (`operation_result` recorded) |
-| `HELD` | quality/exception hold — retest/reinspect pending |
-| `FAILED` | quality FAIL/NG recorded (attempt pending or exhausted) |
+| `HELD` | recoverable hold (user/exception hold); **not** a `FAILED_FINAL` terminal |
+| `FAILED` | quality FAIL/NG recorded; pending retest (attempts remain) **or** terminal (attempts exhausted → `FAILED_FINAL`) |
 | `EXCEPTION_PENDING` | station/user raised an exception (HOLD / LINE OUT / note) |
 | `ELIGIBLE_TO_INDEX` | successful completion only; WIP may advance |
 
@@ -151,7 +151,7 @@ ARRIVED → READY → WORKING → AWAITING_COMPLETION | AWAITING_DECISION → ou
 | `AWAITING_DECISION` | `FAILED` | decision confirmed **and** `quality_result ∈ {FAIL, NG}` |
 | `COMPLETED` | `ELIGIBLE_TO_INDEX` | `operation_result` recorded |
 | `FAILED` | `AWAITING_DECISION` | retest/reinspect allowed (`attempt < max_attempts`) — new attempt |
-| `FAILED` | `HELD` | `max_attempts` exhausted → terminal `FAILED_FINAL` |
+| `FAILED` | (terminal) | `max_attempts` exhausted → `quality_status = FAILED_FINAL`; no recovery, **no transition to `HELD`** |
 | `HELD` | `AWAITING_DECISION` | explicit recovery to a new attempt where policy allows |
 | `COMPLETED` | `HELD` | post-completion exception raised (only if `exception` capability) |
 | `EXCEPTION_PENDING` | `READY` / `WORKING` / `COMPLETED` | exception resolved by configured recovery path |
@@ -163,8 +163,10 @@ ARRIVED → READY → WORKING → AWAITING_COMPLETION | AWAITING_DECISION → ou
 
 ### Recovery semantics
 
-- `FAILED` (quality FAIL/NG): if `attempt_number < max_attempts`, the operation returns to `AWAITING_DECISION` on a **new attempt** (same station, same WIP). If attempts are exhausted, transition to `HELD` with terminal quality `FAILED_FINAL`; no further automatic attempts.
-- `HELD`: recovery is explicit (user/system resolution) back to a working/decision state; never auto-indexed.
+- `FAILED` (quality FAIL/NG):
+  - if `attempt_number < max_attempts` → returns to `AWAITING_DECISION` on a **new attempt** (same station, same WIP).
+  - if `attempt_number >= max_attempts` → **terminal**: remains in `FAILED` with `quality_status = FAILED_FINAL`; no recovery, no automatic attempts, **not** moved to `HELD`.
+- `HELD`: recoverable hold (user/exception resolution) back to a working/decision state; never auto-indexed; never used to represent `FAILED_FINAL`.
 - `EXCEPTION_PENDING`: recovery is explicit; resolved back to the appropriate state per the configured exception path.
 
 ```yaml
@@ -279,7 +281,7 @@ Mapping:
 | `RELEASE` | AP11 | `RELEASED` |
 
 Unambiguity guarantees:
-- AP03 confirmation = `command=CONFIRM_AND_COMPLETE` → `operation_result=CONFIRMED`; `quality_result` stays `null` (AP03 has no PASS/FAIL decision in the current demo) unless a future config adds one.
+- AP03 confirmation = `command=CONFIRM_AND_COMPLETE` → `operation_result=CONFIRMED`; AP03 declares `quality_decision: false` (checklist is the gate), so `quality_result` stays `null` — no fabricated PASS/FAIL decision.
 - AP11 release = `command=RELEASE` → `operation_result=RELEASED`; `quality_result=PASS` carries the final-QC decision independently of routing.
 - `quality_result` and `routing_action` are never overloaded to carry AP03/AP11 completion semantics.
 
@@ -312,7 +314,7 @@ Full operation history belongs in an execution registry, not in `positions[]`. T
 | PRE-ASSY | execution (prep/buffer) | auto DONE | — | DONE |
 | AP01 | execution | DONE | — | DONE |
 | AP02 | execution | DONE | — | DONE |
-| AP03 | execution, checklist, quality_decision, exception | CONFIRM & COMPLETE | HOLD | checklist + confirm |
+| AP03 | execution, checklist, exception | CONFIRM & COMPLETE | HOLD (checklist incomplete) | checklist + confirm |
 | AP04 | execution, identity_transformation | JOIN COMPLETE | — (requires RSO2) | JOIN_COMPLETE |
 | AP05 | execution | DONE | — | DONE |
 | AP06 | execution, measurement, quality_decision | CONFIRM (PASS/FAIL) | FAIL → retest → FAILED_FINAL | TEST_COMPLETE + PASS |

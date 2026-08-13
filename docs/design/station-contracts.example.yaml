@@ -55,7 +55,7 @@ stations:
       execution: true
       checklist: true
       measurement: false
-      quality_decision: true
+      quality_decision: false   # checklist IS the gate; no separate PASS/FAIL decision
       exception: true
       identity_transformation: false
       final_disposition: false
