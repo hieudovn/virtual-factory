@@ -349,11 +349,11 @@ html, body {
 /* ═══════════════════════════════════════
    Frame B — Physical Canvas
    ═══════════════════════════════════════ */
-#vf-canvas-svg {
+#vf-canvas-svg, #fb-canvas-svg {
   width: 100%; height: 100%; display: block;
   cursor: grab;
 }
-#vf-canvas-svg:active { cursor: grabbing; }
+#vf-canvas-svg:active, #fb-canvas-svg:active { cursor: grabbing; }
 
 /* Grid background */
 .vf-grid-bg {

@@ -1106,7 +1106,7 @@ const ctrlB = {
   },
 
   _bindWipClicks() {
-    document.querySelectorAll('#fb-stations .vf-wip-group').forEach(el => {
+    document.querySelectorAll('#fb-wips .vf-wip-group').forEach(el => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         const wipId = el.getAttribute('data-wip');
