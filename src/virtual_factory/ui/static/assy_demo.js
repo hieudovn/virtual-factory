@@ -935,7 +935,7 @@ const ctrlB = {
     // Rendered ABOVE conveyor, BELOW stations — visible at low opacity
     const flowG = document.getElementById('vf-flow-cue');
     if (flowG) {
-      flowG.innerHTML = `<g opacity="0.09">
+      flowG.innerHTML = `<g opacity="0.14">
         <rect x="250" y="445" width="1500" height="65" rx="10" fill="var(--vf-accent)"/>
         <polygon points="250,445 160,477 250,510" fill="var(--vf-accent)"/>
       </g>`;
@@ -977,7 +977,7 @@ const ctrlB = {
     // 3 stator icons stacked vertically, 58px spacing (r=28 → 56px diameter, no overlap)
     for (let i = 0; i < 3; i++) {
       const sy = L.rawY + 82 + i * 58;
-      html += `<g transform="translate(${sx}, ${sy})" opacity="0.78">${VF.statorAssy(0, 0)}</g>`;
+      html += `<g transform="translate(${sx}, ${sy})" opacity="0.5">${VF.statorAssy(0, 0)}</g>`;
     }
     // light connector toward PRE-ASSY (flow RIGHT→LEFT entry)
     const sso2Bottom = L.rawY + 82 + 2 * 58;
@@ -992,7 +992,7 @@ const ctrlB = {
     // 3 rotor icons stacked vertically, 26px spacing (rotor height 16px, no overlap)
     for (let i = 0; i < 3; i++) {
       const ry = L.rso2BranchTopY - 54 + i * 26;
-      html += `<g transform="translate(${ax}, ${ry})" opacity="0.78">${VF.rotor(0, 0)}</g>`;
+      html += `<g transform="translate(${ax}, ${ry})" opacity="0.5">${VF.rotor(0, 0)}</g>`;
     }
     html += `</g>`;
 
@@ -1022,11 +1022,11 @@ const ctrlB = {
       if (it.type === 'stator') html += VF.statorAssy(it.x, itemY - 4);
       else if (it.type === 'mtr') html += VF.motorJoined(it.x, itemY - 4);
       else html += VF.packedGoods(it.x, itemY - 2);
-      html += `<text x="${it.x}" y="${itemY + 34}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" font-weight="600">${it.label}</text>`;
+      html += `<text x="${it.x}" y="${itemY + 34}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" font-weight="600">${it.label}</text>`;
       html += `</g>`;
     }
     // CONTEXT watermark
-    html += `<text x="${L.offLineX + L.offLineW - 14}" y="${L.offLineY + L.offLineH - 10}" fill="var(--vf-text-muted)" font-size="8" text-anchor="end" opacity="0.6">CONTEXT — not live WIP</text>`;
+    html += `<text x="${L.offLineX + L.offLineW - 14}" y="${L.offLineY + L.offLineH - 10}" fill="var(--vf-text-muted)" font-size="9" text-anchor="end" opacity="0.7">CONTEXT — not live WIP</text>`;
     html += `</g>`;
 
     g.innerHTML = html;
@@ -1195,6 +1195,8 @@ const ctrlB = {
       // I07: render WIP with unique ID for motion targeting
       const isSelWip = (p.wip_id === this._selectedWipId);
       html += `<g id="wip-${p.wip_id}" class="vf-wip-group${isSelWip?' selected':''}" data-wip="${p.wip_id}" style="cursor:pointer;">`;
+      // I09-P05: dedicated selection ring behind WIP (visible on .selected, no text blur)
+      html += `<rect class="vf-wip-sel-halo" x="${sx-56}" y="${sy+119}" width="112" height="92" rx="10"/>`;
       html += VF.pallet(sx, sy + 165);
       if (tokenType === 'STATOR') html += VF.statorAssy(sx, sy + 163);
       else if (tokenType === 'JOINED') html += VF.motorJoined(sx, sy + 163);
@@ -1204,7 +1206,7 @@ const ctrlB = {
       if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
         html += VF.stateOverlay(sx, sy + 165, isHeld ? 'HOLD' : qResult);
       }
-      html += `<text x="${sx}" y="${sy+181}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">${p.wip_id}</text>`;
+      html += `<text x="${sx}" y="${sy+181}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle">${p.wip_id}</text>`;
       html += `</g>`;
     });
 

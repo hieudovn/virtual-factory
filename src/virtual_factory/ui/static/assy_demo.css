@@ -527,8 +527,18 @@ html, body {
   font-weight: 600;
 }
 .vf-insp-link:hover { text-decoration: underline; }
-#fb-wips .vf-wip-group.selected > * {
-  filter: drop-shadow(0 0 5px rgba(47,111,219,0.65));
+/* I09-P05: dedicated selection ring (not an error glow, keeps text readable in motion) */
+.vf-wip-sel-halo {
+  display: none;
+  fill: rgba(47,111,219,0.06);
+  stroke: var(--vf-accent);
+  stroke-width: 2;
+  stroke-dasharray: 5, 3;
+  pointer-events: none;
+}
+#fb-wips .vf-wip-group.selected .vf-wip-sel-halo {
+  display: block;
+  filter: drop-shadow(0 0 3px rgba(47,111,219,0.35));
 }
 /* I09-P04: make whole context group clickable, incl. empty space */
 #fb-context-sources [data-context],
