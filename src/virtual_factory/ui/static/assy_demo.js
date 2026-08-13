@@ -909,10 +909,10 @@ const ctrlB = {
       <text x="${L.fgX+L.fgW/2}" y="${L.fgY+16}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">ASSY OUTPUT</text>
       <text x="${L.fgX+L.fgW/2}" y="${L.fgY+30}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">LINE END</text>
 
-      <!-- EXH-UI-01: OFF-LINE EXCEPTION HANDLING conceptual zone -->
+      <!-- UI-CTX-02: LINE-OUT / OFF-LINE ITEMS conceptual zone -->
       <rect x="${L.offLineX}" y="${L.offLineY}" width="${L.offLineW}" height="${L.offLineH}" rx="6" fill="#FAFBFD" stroke="var(--vf-text-muted)" stroke-width="1.2" stroke-dasharray="8,5" opacity="0.7"/>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">OFF-LINE EXCEPTION HANDLING</text>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+36}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">CONCEPTUAL — WIP FAIL/NG only · Inspect / Diagnose / Optional Rework / Verify</text>
+      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">LINE-OUT / OFF-LINE ITEMS</text>
+      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+34}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">INSPECT · VERIFY · OPTIONAL REWORK · CONTEXT</text>
 
       <!-- LINE OUT connector (RIGHT side: main line → off-line zone) -->
       <line x1="${L.lineOutConnX}" y1="${L.conveyorY+L.conveyorH}" x2="${L.lineOutConnX}" y2="${L.offLineY}" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
@@ -945,11 +945,75 @@ const ctrlB = {
     for (let rx = L.convStartX + 30; rx < L.convEndX; rx += 40) {
       ch += `<rect x="${rx}" y="${L.conveyorY+22}" width="16" height="106" rx="4" fill="var(--vf-conveyor-roller)" opacity="0.4"/>`;
     }
-    // RSO2 branch into AP04
-    ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
-    ch += `<text x="${L.ap04X+12}" y="${L.rso2BranchTopY+8}" fill="#C8960E" font-size="10" font-weight="700">RSO2</text>`;
+    // RSO2 branch into AP04 (light feed connector; queue rendered in context-sources)
+    ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
 
     convG.innerHTML = ch;
+
+    // UI-CTX-02: render contextual source cues + off-line representative items
+    this._renderContextSources();
+    this._renderContextOffline();
+  },
+
+  /* ── UI-CTX-02: SSO2/RSO2 contextual source cues (static, context-only) ── */
+  _renderContextSources() {
+    const g = document.getElementById('fb-context-sources');
+    if (!g) return;
+    const L = VF_LAYOUT;
+    let html = '';
+
+    // ── SSO2 INPUT source (near ASSY INPUT / PRE-ASSY, RIGHT side) ──
+    const sx = L.rawX + L.rawW / 2;   // zone center (~1810)
+    html += `<text x="${sx}" y="${L.rawY+42}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">SSO2 INPUT</text>`;
+    html += `<text x="${sx}" y="${L.rawY+56}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">STATOR + SHIELD SOURCE</text>`;
+    for (let i = 0; i < 3; i++) {
+      const sy = L.rawY + 82 + i * 44;
+      html += `<g transform="translate(${sx}, ${sy})" opacity="0.78">${VF.statorAssy(0, 0)}</g>`;
+    }
+    // light connector toward PRE-ASSY (flow RIGHT→LEFT entry)
+    html += `<line x1="${sx - 26}" y1="${L.rawY + 82 + 88 + 14}" x2="${L.preX + 6}" y2="${L.stationY - 26}" stroke="var(--vf-text-muted)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#arrowLeft)"/>`;
+
+    // ── RSO2 ROTOR FEED (above AP04 JOIN) ──
+    const ax = L.ap04X;
+    const ry = L.rso2BranchTopY - 34;
+    html += `<text x="${ax}" y="${ry - 22}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">RSO2 ROTOR FEED</text>`;
+    html += `<text x="${ax}" y="${ry - 10}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">TO AP04 JOIN</text>`;
+    for (let i = 0; i < 3; i++) {
+      const rx = ax - 44 + i * 44;
+      html += `<g transform="translate(${rx}, ${ry})" opacity="0.78">${VF.rotor(0, 0)}</g>`;
+    }
+
+    g.innerHTML = html;
+  },
+
+  /* ── UI-CTX-02: Off-line context tray (representative items, NOT runtime WIP) ── */
+  _renderContextOffline() {
+    const g = document.getElementById('fb-context-offline');
+    if (!g) return;
+    const L = VF_LAYOUT;
+    const cx = L.offLineX + L.offLineW / 2;   // ~850
+    const itemY = L.offLineY + 56;
+    let html = '';
+
+    // 3 representative ghost items (semi-finished / WIP / finished)
+    const items = [
+      { x: cx - 230, type: 'stator', label: 'WIP' },
+      { x: cx, type: 'mtr', label: 'MTR' },
+      { x: cx + 230, type: 'packed', label: 'PACKED' },
+    ];
+    for (const it of items) {
+      html += `<g opacity="0.45">`;
+      html += `<rect x="${it.x - 34}" y="${itemY - 26}" width="68" height="52" rx="6" fill="none" stroke="var(--vf-text-muted)" stroke-width="1" stroke-dasharray="4,3"/>`;
+      if (it.type === 'stator') html += VF.statorAssy(it.x, itemY - 4);
+      else if (it.type === 'mtr') html += VF.motorJoined(it.x, itemY - 4);
+      else html += VF.packedGoods(it.x, itemY - 2);
+      html += `<text x="${it.x}" y="${itemY + 34}" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" font-weight="600">${it.label}</text>`;
+      html += `</g>`;
+    }
+    // CONTEXT watermark
+    html += `<text x="${L.offLineX + L.offLineW - 14}" y="${L.offLineY + L.offLineH - 10}" fill="var(--vf-text-muted)" font-size="8" text-anchor="end" opacity="0.6">CONTEXT — not live WIP</text>`;
+
+    g.innerHTML = html;
   },
 
   /* ── I07: Static elements rendered once per snapshot (stations, context, zones) ── */
@@ -1021,17 +1085,8 @@ const ctrlB = {
       }
     });
 
-    // RSO2 rotor context (single active rotor at AP04 join feed)
-    const genealogy = snap.genealogy || [];
-    html += `<g transform="translate(${L.ap04X}, ${L.rso2BranchTopY+20})">`;
-    html += VF.rotor(0, -8);
-    html += `</g>`;
-
-    // Context zones (static, not live occupancy)
-    html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+220})">${VF.pallet(0, 0)}${VF.statorAssy(0, -2)}</g>`;
-    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+195}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">SSO2 LINE — source</text>`;
-    html += `<g transform="translate(${L.rawX+L.rawW/2}, ${L.rawY+150})">${VF.pallet(0, 0)}${VF.rotor(0, -2)}</g>`;
-    html += `<text x="${L.rawX+L.rawW/2}" y="${L.rawY+125}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">RSO2 LINE — buffer</text>`;
+    // UI-CTX-02: SSO2/RSO2 source cues moved to _renderContextSources.
+    // Only PACKED GOODS contextual pallet remains in ASSY OUTPUT zone.
     html += `<g transform="translate(${L.fgX+L.fgW/2}, ${L.fgY+220})">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
     html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">PACKED GOODS</text>`;
 
