@@ -11,6 +11,11 @@ submit_operation_command, check_ready, index_line). No direct state mutation.
 
 from __future__ import annotations
 
+import pytest
+
+import virtual_factory.assembly.line_runtime as _lr
+import virtual_factory.assembly.operation_execution as _oe
+
 from virtual_factory.assembly.line_runtime import (
     AssyLineConfig,
     AssyLineRuntime,
@@ -274,3 +279,248 @@ def test_acceptance_journey_uses_public_surfaces_only():
     # _operations mutation. This pins the full AUTO journey result.
     line = run_journey(setup_line(make_config()), CompletionMode.AUTO)
     assert line.get_wip(CHILD).lifecycle == WipLifecycle.RELEASED
+
+
+# ═══════════════════════════════════════════════════════════
+# R1 — Ordered lifecycle trace equivalence
+# ═══════════════════════════════════════════════════════════
+
+_QUALITY_EVENTS = ("QUALITY_OBSERVED", "QUALITY_START", "QUALITY_RESULT")
+
+
+def run_journey_lifecycle(line: AssyLineRuntime, mode: CompletionMode,
+                          quality_decision: str = "accept_proposal") -> list[dict]:
+    """Run the journey with read-only instrumentation and return the ORDERED
+    semantic lifecycle trace (state transitions + quality events, in order).
+
+    Instrumentation monkey-patches `OperationExecution.transition` and
+    `AssyLineRuntime._make_event` to OBSERVE the semantic path; it never
+    mutates production state and is restored in a `finally` block.
+    """
+    LOG: list[dict] = []
+
+    orig_transition = _oe.OperationExecution.transition
+
+    def logged_transition(self, new_state):
+        LOG.append({"kind": "STATE", "station": self.station_id,
+                    "wip": self.wip_id,
+                    "from": self.state.value, "to": new_state.value})
+        return orig_transition(self, new_state)
+
+    orig_make_event = _lr.AssyLineRuntime._make_event
+
+    def logged_make_event(self, event_type, position, wip_id, detail):
+        ev = orig_make_event(self, event_type, position, wip_id, detail)
+        if event_type in _QUALITY_EVENTS:
+            LOG.append({"kind": "EVENT", "event": event_type,
+                        "station": position, "wip": wip_id})
+        return ev
+
+    _oe.OperationExecution.transition = logged_transition
+    _lr.AssyLineRuntime._make_event = logged_make_event
+    try:
+        run_journey(line, mode, quality_decision)
+    finally:
+        _oe.OperationExecution.transition = orig_transition
+        _lr.AssyLineRuntime._make_event = orig_make_event
+    return LOG
+
+
+def _station_states(trace, station):
+    return [(t["from"], t["to"]) for t in trace
+            if t["kind"] == "STATE" and t["station"] == station]
+
+
+def _station_events(trace, station):
+    return [t["event"] for t in trace
+            if t["kind"] == "EVENT" and t["station"] == station]
+
+
+class TestLifecycleEquivalence:
+    def test_full_ordered_lifecycle_equivalent(self):
+        manual = run_journey_lifecycle(setup_line(make_config()),
+                                       CompletionMode.MANUAL, "PASS")
+        auto = run_journey_lifecycle(setup_line(make_config()),
+                                     CompletionMode.AUTO)
+        assert manual == auto
+
+    def test_pure_execution_lifecycle_equivalent(self):
+        for mode in (CompletionMode.MANUAL, CompletionMode.AUTO):
+            trace = run_journey_lifecycle(setup_line(make_config()), mode, "PASS")
+            assert _station_states(trace, "AP05") == [
+                ("ARRIVED", "READY"),
+                ("READY", "WORKING"),
+                ("WORKING", "AWAITING_COMPLETION"),
+                ("AWAITING_COMPLETION", "COMPLETED"),
+                ("COMPLETED", "ELIGIBLE_TO_INDEX"),
+            ]
+
+    def test_ap03_checklist_lifecycle_equivalent(self):
+        for mode in (CompletionMode.MANUAL, CompletionMode.AUTO):
+            trace = run_journey_lifecycle(setup_line(make_config()), mode, "PASS")
+            assert _station_states(trace, "AP03") == [
+                ("ARRIVED", "READY"),
+                ("READY", "WORKING"),
+                ("WORKING", "AWAITING_COMPLETION"),
+                ("AWAITING_COMPLETION", "COMPLETED"),
+                ("COMPLETED", "ELIGIBLE_TO_INDEX"),
+            ]
+
+    def test_ap04_join_lifecycle_equivalent(self):
+        for mode in (CompletionMode.MANUAL, CompletionMode.AUTO):
+            trace = run_journey_lifecycle(setup_line(make_config()), mode, "PASS")
+            assert _station_states(trace, "AP04") == [
+                ("ARRIVED", "READY"),
+                ("READY", "WORKING"),
+                ("WORKING", "AWAITING_COMPLETION"),
+                ("AWAITING_COMPLETION", "COMPLETED"),
+                ("COMPLETED", "ELIGIBLE_TO_INDEX"),
+            ]
+            # identity transition: AP04 operates on parent SSO2, AP05 on child MTR
+            ap04_wip = [t["wip"] for t in trace if t["station"] == "AP04"][0]
+            ap05_wip = [t["wip"] for t in trace if t["station"] == "AP05"][0]
+            assert ap04_wip == "SSO2-0001"
+            assert ap05_wip == "MTR-0001"
+
+    def test_ap06_observation_before_decision(self):
+        for mode in (CompletionMode.MANUAL, CompletionMode.AUTO):
+            trace = run_journey_lifecycle(setup_line(make_config()), mode, "PASS")
+            assert _station_events(trace, "AP06") == [
+                "QUALITY_OBSERVED", "QUALITY_START", "QUALITY_RESULT"]
+            # WORKING → AWAITING_DECISION occurs before the first quality event,
+            # and AWAITING_DECISION → COMPLETED after the last quality event.
+            ap06 = [t for t in trace if t["station"] == "AP06"]
+            idx_awaiting = next(i for i, t in enumerate(ap06)
+                                if t["kind"] == "STATE" and t["to"] == "AWAITING_DECISION")
+            idx_observed = next(i for i, t in enumerate(ap06)
+                                if t["kind"] == "EVENT" and t["event"] == "QUALITY_OBSERVED")
+            idx_completed = next(i for i, t in enumerate(ap06)
+                                 if t["kind"] == "STATE" and t["to"] == "COMPLETED")
+            assert idx_awaiting < idx_observed < idx_completed
+
+    def test_ap08_observation_before_decision(self):
+        for mode in (CompletionMode.MANUAL, CompletionMode.AUTO):
+            trace = run_journey_lifecycle(setup_line(make_config()), mode, "PASS")
+            assert _station_events(trace, "AP08") == [
+                "QUALITY_OBSERVED", "QUALITY_START", "QUALITY_RESULT"]
+
+    def test_ap11_qc_before_release_ordered(self):
+        for mode in (CompletionMode.MANUAL, CompletionMode.AUTO):
+            trace = run_journey_lifecycle(setup_line(make_config()), mode, "PASS")
+            states = _station_states(trace, "AP11")
+            assert states == [
+                ("ARRIVED", "READY"),
+                ("READY", "WORKING"),
+                ("WORKING", "AWAITING_DECISION"),
+                ("AWAITING_DECISION", "AWAITING_COMPLETION"),   # QC PASS
+                ("AWAITING_COMPLETION", "COMPLETED"),           # RELEASE
+                ("COMPLETED", "ELIGIBLE_TO_INDEX"),
+            ]
+            assert _station_events(trace, "AP11") == [
+                "QUALITY_OBSERVED", "QUALITY_START", "QUALITY_RESULT"]
+
+    def test_physical_station_order_equivalent(self):
+        def first_station_order(trace):
+            order = []
+            for t in trace:
+                if t["kind"] == "STATE" and t["to"] == "READY":
+                    if t["station"] not in order:
+                        order.append(t["station"])
+            return order
+        expected = ["PRE-ASSY", "AP01", "AP02", "AP03", "AP04", "AP05",
+                    "AP06", "AP07", "AP08", "AP09", "AP10", "AP11"]
+        manual = run_journey_lifecycle(setup_line(make_config()),
+                                       CompletionMode.MANUAL, "PASS")
+        auto = run_journey_lifecycle(setup_line(make_config()),
+                                     CompletionMode.AUTO)
+        assert first_station_order(manual) == expected
+        assert first_station_order(auto) == expected
+
+    def test_ap06_retry_lifecycle_equivalent(self):
+        cfg = make_config(ap06="FAIL_FIRST_THEN_PASS")
+        cfg.quality.ap06.max_attempts = 2
+        manual = run_journey_lifecycle(setup_line(cfg), CompletionMode.MANUAL)
+        auto = run_journey_lifecycle(setup_line(cfg), CompletionMode.AUTO)
+        assert manual == auto
+        states = _station_states(auto, "AP06")
+        # attempt boundary: FAILED → AWAITING_DECISION (retry) between attempts
+        assert ("AWAITING_DECISION", "FAILED") in states
+        assert ("FAILED", "AWAITING_DECISION") in states
+        assert _station_events(auto, "AP06") == [
+            "QUALITY_OBSERVED", "QUALITY_START", "QUALITY_RESULT",   # attempt 1
+            "QUALITY_OBSERVED", "QUALITY_START", "QUALITY_RESULT",   # attempt 2
+        ]
+
+    def test_ap08_reinspect_lifecycle_equivalent(self):
+        cfg = make_config(ap08="FAIL_FIRST_THEN_PASS")
+        cfg.quality.ap08.max_attempts = 2
+        manual = run_journey_lifecycle(setup_line(cfg), CompletionMode.MANUAL)
+        auto = run_journey_lifecycle(setup_line(cfg), CompletionMode.AUTO)
+        assert manual == auto
+        states = _station_states(auto, "AP08")
+        assert ("AWAITING_DECISION", "FAILED") in states
+        assert ("FAILED", "AWAITING_DECISION") in states
+
+    def test_held_remains_non_bypass_under_auto(self):
+        line = setup_line(make_config())
+        line.global_run_mode = CompletionMode.MANUAL
+        for _ in range(3):
+            line.execute_dwell()
+            resolve_awaiting(line, "PASS")
+            line.conveyor.check_ready()
+            if line.conveyor.state == ConveyorState.READY_TO_INDEX:
+                line.index_line()
+        line.execute_dwell()
+        wip = line.conveyor.wip_at("AP03")
+        op = line.operation_registry.active_for("AP03", wip)
+        line.submit_station_action("AP03", wip, "HOLD")
+        assert op.state == OperationState.HELD
+        line.global_run_mode = CompletionMode.AUTO
+        line.execute_dwell()
+        assert op.state == OperationState.HELD
+
+    def test_ap11_negative_fail_closed_unchanged(self):
+        from virtual_factory.assembly.line_runtime import AssyLineError
+        cfg = make_config()
+        cfg.quality.ap11.scenario = "ALWAYS_FAIL"
+        line = setup_line(cfg)
+        for _ in range(20):
+            line.execute_dwell()
+            if line.conveyor.state == ConveyorState.READY_TO_INDEX:
+                line.index_line()
+            if line.conveyor.wip_at("AP11") == CHILD:
+                break
+        with pytest.raises(AssyLineError):
+            line.execute_dwell()
+        qh = line.get_quality_history(CHILD)
+        assert qh is None or len(qh.records_for("AP11")) == 0
+
+    def test_speed_is_presentation_only(self):
+        # Case B: presentation speed is UI pacing only; it must not alter
+        # runtime step/dwell semantics.
+        from virtual_factory.assembly.demo_controller import DemoController, DemoScenario
+
+        def make():
+            c = DemoController(config_path="configs/plants/tipa_assy_demo.yaml",
+                               scenario=DemoScenario.HAPPY_PATH)
+            c.initialize()
+            return c
+
+        c1, c2 = make(), make()
+        c1.set_speed(0.1)
+        c2.set_speed(20.0)
+        assert c1.presentation_speed == 0.1
+        assert c2.presentation_speed == 20.0
+        for _ in range(10):
+            c1.step()
+            c2.step()
+        s1, s2 = c1.snapshot(), c2.snapshot()
+        assert s1.dwell_number == s2.dwell_number
+        assert s1.simulation_time_s == s2.simulation_time_s
+        assert normalized_trace(c1.runtime) == normalized_trace(c2.runtime)
+
+    def test_final_outcome_equality_remains(self):
+        manual = run_journey(setup_line(make_config()),
+                             CompletionMode.MANUAL, quality_decision="PASS")
+        auto = run_journey(setup_line(make_config()), CompletionMode.AUTO)
+        assert normalized_trace(manual) == normalized_trace(auto)

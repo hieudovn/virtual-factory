@@ -1,9 +1,31 @@
 # AUTO-EQUIV-01 — Automated Execution Semantic Equivalence (Acceptance)
 
-Status: **AUTO-EQUIV-01 — READY FOR SA REVIEW**
+Status: **AUTO-EQUIV-01-R1 — READY FOR SA REVIEW**
 
-Baseline: `ac38b42` (no production-code change was required — the current baseline
-already passes AUTO equivalence).
+Baseline: `d574faf` (no production-code change was required — the current baseline
+already passes AUTO equivalence, including ordered lifecycle equivalence).
+
+## R1 — Ordered lifecycle trace equivalence (added)
+
+R1 hardens the proof from "same final outcome" to "same ordered semantic
+lifecycle". A read-only instrumentation (monkey-patching
+`OperationExecution.transition` + `AssyLineRuntime._make_event` in tests, never
+in production) records the ordered sequence of state transitions and
+`QUALITY_OBSERVED → QUALITY_START → QUALITY_RESULT` events.
+
+Result: MANUAL and AUTO ordered lifecycle traces are **identical** for the happy
+path, AP06 fail/retest, and AP08 NG/reinspect. Evidence: `MANUAL_LIFECYCLE_TRACE.json`,
+`AUTO_LIFECYCLE_TRACE.json`, `LIFECYCLE_DIFF.md` (identical),
+`AP06_RETRY_LIFECYCLE.json`, `AP08_REINSPECT_LIFECYCLE.json`.
+
+Key ordered proofs:
+- AP06: `WORKING → AWAITING_DECISION → QUALITY_OBSERVED → QUALITY_START → QUALITY_RESULT → COMPLETED` (observation before decision before result).
+- AP11: `… → AWAITING_DECISION → QUALITY_OBSERVED → QUALITY_START → QUALITY_RESULT → AWAITING_COMPLETION (QC PASS) → COMPLETED (RELEASE) → ELIGIBLE` (two-stage, QC before RELEASE).
+- Retry boundary: `… → AWAITING_DECISION → QUALITY_RESULT(FAIL) → FAILED → AWAITING_DECISION (retry) → …`.
+- Physical station order: PRE-ASSY → AP01 → … → AP11; identity switch `SSO2-0001 → MTR-0001` at AP04.
+
+Speed: **Case B** — `presentation_speed` is UI pacing only; it does not alter
+runtime step/dwell semantics (`test_speed_is_presentation_only`).
 
 ## 1. Conclusion
 
