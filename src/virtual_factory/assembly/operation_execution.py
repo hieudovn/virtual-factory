@@ -61,10 +61,12 @@ _LEGAL_TRANSITIONS: dict[OperationState, set[OperationState]] = {
         OperationState.AWAITING_COMPLETION,
         OperationState.AWAITING_DECISION,
     },
-    OperationState.AWAITING_COMPLETION: {OperationState.COMPLETED},
+    OperationState.AWAITING_COMPLETION: {OperationState.COMPLETED, OperationState.HELD},
     OperationState.AWAITING_DECISION: {
         OperationState.COMPLETED,
         OperationState.FAILED,
+        OperationState.HELD,
+        OperationState.AWAITING_COMPLETION,  # OPS-04-C01: final QC PASS → await RELEASE
     },
     OperationState.COMPLETED: {
         OperationState.ELIGIBLE_TO_INDEX,
@@ -74,7 +76,7 @@ _LEGAL_TRANSITIONS: dict[OperationState, set[OperationState]] = {
         OperationState.AWAITING_DECISION,  # new attempt (attempt < max_attempts)
         # exhausted attempts → terminal (FAILED + FAILED_FINAL): NO transition.
     },
-    OperationState.HELD: {OperationState.AWAITING_DECISION},  # explicit recovery
+    OperationState.HELD: {OperationState.AWAITING_DECISION, OperationState.AWAITING_COMPLETION},  # explicit recovery
     OperationState.EXCEPTION_PENDING: {
         OperationState.READY,
         OperationState.WORKING,
@@ -106,7 +108,9 @@ class OperationExecution:
     measurements: list[dict] = field(default_factory=list)
     operation_result: Optional[OperationResult] = None
     quality_result: Optional[str] = None   # "PASS" | "FAIL" | "NG" | None
+    proposed_quality_result: Optional[str] = None  # OPS-04-C01: machine proposal before decision
     routing_action: Optional[str] = None   # "CONTINUE" | "STAY_AT_STATION" | None
+    pre_hold_state: Optional[OperationState] = None  # OPS-04-C01: state before HOLD (not serialized)
     source: str = "simulated"
     attempt_number: int = 0
     terminal: bool = False                 # FAILED + FAILED_FINAL ⇒ terminal (no recovery)
@@ -140,6 +144,7 @@ class OperationExecution:
             "measurements": list(self.measurements),
             "operation_result": self.operation_result.value if self.operation_result else None,
             "quality_result": self.quality_result,
+            "proposed_quality_result": self.proposed_quality_result,
             "routing_action": self.routing_action,
             "source": self.source,
             "attempt_number": self.attempt_number,

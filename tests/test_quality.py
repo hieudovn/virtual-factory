@@ -254,7 +254,8 @@ class TestQ12:
     def test_ap11_pass_released(self):
         line = setup_line(make_cfg())
         advance_to_before(line, "AP11")
-        line.execute_dwell()
+        line.execute_dwell()   # final QC decision
+        line.execute_dwell()   # RELEASE
         child = line.get_wip(CHILD)
         assert child.lifecycle == WipLifecycle.RELEASED
         h = line.get_quality_history(CHILD)
@@ -361,7 +362,8 @@ class TestQ16:
     def test_all_pass_released(self):
         line = setup_line(make_cfg(ap06="PASS", ap08="PASS"))
         advance_to_before(line, "AP11")
-        line.execute_dwell()
+        line.execute_dwell()   # final QC decision
+        line.execute_dwell()   # RELEASE
         assert line.get_wip(CHILD).lifecycle == WipLifecycle.RELEASED
 
 

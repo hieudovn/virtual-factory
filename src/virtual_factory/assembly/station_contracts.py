@@ -196,9 +196,12 @@ def build_default_assy_contracts(
                 exception=True,
             ),
             default_mode=CompletionMode.AUTO,
-            normal_action=StationCommand.RELEASE,
+            # OPS-04-C01 (F): final QC (CONFIRM + PASS/FAIL) is a distinct step
+            # from the final disposition (RELEASE). RELEASE only after QC PASS.
+            normal_action=StationCommand.CONFIRM,
             required_action=StationCommand.RELEASE,
             work_duration_s=_duration("AP11", 30.0),
+            decision_actions=("PASS", "FAIL"),
             final_disposition_actions=("RELEASE", "HOLD"),
             exception_actions=("HOLD",),
         ),

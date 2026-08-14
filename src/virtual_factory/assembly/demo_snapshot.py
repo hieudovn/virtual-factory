@@ -14,7 +14,7 @@ from virtual_factory.assembly.line_runtime import (
     AssyLineRuntime, ConveyorState, WipLifecycle,
 )
 from virtual_factory.assembly.quality_records import QualityStatus
-from virtual_factory.assembly.operation_execution import OperationExecution
+from virtual_factory.assembly.operation_execution import OperationExecution, OperationState
 
 
 @dataclass
@@ -110,7 +110,8 @@ class ProductionSummary:
     motors_created: int = 0     # AP04 joins completed
     motors_released: int = 0    # AP11 RELEASED
     wips_on_line: int = 0
-    active_quality_holds: int = 0
+    active_quality_holds: int = 0   # RETEST_PENDING / REINSPECT_PENDING / FAILED_FINAL
+    operator_holds: int = 0         # OPS-04-C01: HELD operations (operator/exception)
     sso2_buffer: int = 0
     rso2_buffer: int = 0
 
@@ -130,10 +131,12 @@ class ActiveOperationView:
     command: str = ""
     operation_result: str = ""
     quality_result: str = ""
+    proposed_quality_result: str = ""
     routing_action: str = ""
     attempt_number: int = 0
     terminal: bool = False
     checklist: list = field(default_factory=list)
+    measurements: list = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -145,10 +148,12 @@ class ActiveOperationView:
             "command": self.command,
             "operation_result": self.operation_result,
             "quality_result": self.quality_result,
+            "proposed_quality_result": self.proposed_quality_result,
             "routing_action": self.routing_action,
             "attempt_number": self.attempt_number,
             "terminal": self.terminal,
             "checklist": self.checklist,
+            "measurements": self.measurements,
         }
 
 
@@ -268,6 +273,7 @@ class AssyDemoSnapshot:
                 "motors_released": self.production.motors_released,
                 "wips_on_line": self.production.wips_on_line,
                 "active_quality_holds": self.production.active_quality_holds,
+                "operator_holds": self.production.operator_holds,
                 "sso2_buffer": self.production.sso2_buffer,
                 "rso2_buffer": self.production.rso2_buffer,
             },
@@ -380,10 +386,12 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
             command=op.command.value if op.command and hasattr(op.command, "value") else (str(op.command) if op.command else ""),
             operation_result=op.operation_result.value if op.operation_result and hasattr(op.operation_result, "value") else (str(op.operation_result) if op.operation_result else ""),
             quality_result=op.quality_result or "",
+            proposed_quality_result=op.proposed_quality_result or "",
             routing_action=op.routing_action or "",
             attempt_number=op.attempt_number,
             terminal=op.terminal,
             checklist=list(op.checklist),
+            measurements=list(op.measurements),
         ))
 
     # Station contracts — additive projection (OPS-03)
@@ -424,6 +432,7 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
 
     # Production summary
     holds = 0
+    operator_holds = 0
     released = 0
     for wip_id in runtime.wip_ids:
         ws = runtime.get_wip(wip_id)
@@ -433,12 +442,18 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
         if qs in (QualityStatus.RETEST_PENDING, QualityStatus.REINSPECT_PENDING,
                    QualityStatus.FAILED_FINAL):
             holds += 1
+    # OPS-04-C01 (B): operator/exception holds derived from OperationExecution.
+    operator_holds = sum(
+        1 for op in runtime.active_operations()
+        if op.state == OperationState.HELD
+    )
 
     prod = ProductionSummary(
         motors_created=runtime.motor_count,
         motors_released=released,
         wips_on_line=len(runtime.conveyor.occupied_positions()),
         active_quality_holds=holds,
+        operator_holds=operator_holds,
         rso2_buffer=runtime.rso2_buffer_size,
     )
 
@@ -499,6 +514,7 @@ class SubLineSummaryView:
     motors_released: int
 
     active_quality_holds: int
+    operator_holds: int
     held_station: str           # first blocking station, "" if none
     held_wip_id: str            # WIP at held station, "" if none
     is_exception: bool
@@ -518,6 +534,7 @@ class SubLineSummaryView:
             "motors_created": self.motors_created,
             "motors_released": self.motors_released,
             "active_quality_holds": self.active_quality_holds,
+            "operator_holds": self.operator_holds,
             "held_station": self.held_station,
             "held_wip_id": self.held_wip_id,
             "is_exception": self.is_exception,
@@ -562,19 +579,24 @@ def build_summary(ctx, plant_id: str) -> SubLineSummaryView:
     identity = ctx.identity
 
     # Derive held station — first occupied blocking station in canonical order
+    # OPS-04-C01 (B): operator HELD operations block just like quality holds.
+    held_ops = {(op.station_id, op.wip_id)
+                for op in runtime.active_operations()
+                if op.state == OperationState.HELD}
     held_station = ""
     held_wip_id = ""
     for pos in _CANONICAL_STATION_ORDER:
         wip_id = runtime.conveyor.wip_at(pos)
         if wip_id:
             qs = runtime.get_current_quality_status(wip_id)
-            if qs in _HOLD_STATUSES:
+            if qs in _HOLD_STATUSES or (pos, wip_id) in held_ops:
                 held_station = pos
                 held_wip_id = wip_id
                 break
 
-    # Count active quality holds
+    # Count active quality holds + operator holds
     holds = 0
+    operator_holds = 0
     released = 0
     for wip_id in runtime.wip_ids:
         ws = runtime.get_wip(wip_id)
@@ -583,6 +605,10 @@ def build_summary(ctx, plant_id: str) -> SubLineSummaryView:
         qs = runtime.get_current_quality_status(wip_id)
         if qs in _HOLD_STATUSES:
             holds += 1
+    operator_holds = sum(
+        1 for op in runtime.active_operations()
+        if op.state == OperationState.HELD
+    )
 
     occupied = runtime.conveyor.occupied_positions()
 
@@ -600,9 +626,10 @@ def build_summary(ctx, plant_id: str) -> SubLineSummaryView:
         motors_created=runtime.motor_count,
         motors_released=released,
         active_quality_holds=holds,
+        operator_holds=operator_holds,
         held_station=held_station,
         held_wip_id=held_wip_id,
-        is_exception=(holds > 0),
+        is_exception=(holds > 0 or operator_holds > 0),
     )
 
 
@@ -614,6 +641,7 @@ def build_overview(composition) -> AssyOverviewSnapshot:
     total_created = 0
     total_released = 0
     total_holds = 0
+    total_operator_holds = 0
 
     for ctx in composition.contexts.values():
         s = build_summary(ctx, plant_id)
@@ -621,6 +649,7 @@ def build_overview(composition) -> AssyOverviewSnapshot:
         total_created += s.motors_created
         total_released += s.motors_released
         total_holds += s.active_quality_holds
+        total_operator_holds += s.operator_holds
 
     return AssyOverviewSnapshot(
         demo_step_number=composition.demo_step_number,
@@ -629,6 +658,6 @@ def build_overview(composition) -> AssyOverviewSnapshot:
         selected_sub_line_id=composition.selected_sub_line_id,
         total_motors_created=total_created,
         total_motors_released=total_released,
-        total_active_holds=total_holds,
+        total_active_holds=total_holds + total_operator_holds,
         sub_lines=tuple(summaries),
     )

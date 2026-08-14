@@ -456,9 +456,12 @@ class AssyLineRuntime:
 
         nominal = self.config.conveyor.nominal_line_dwell_time_s
 
-        # Determine max remaining station time
+        # Determine max remaining station time (completed stations are done for
+        # this dwell and must not extend it).
         max_remaining = 0.0
         for pos in self.conveyor.occupied_positions():
+            if self.conveyor.is_position_complete(pos):
+                continue
             required = self.config.station_durations.get(pos, 60.0)
             elapsed = self._station_elapsed.get(pos, 0.0)
             remaining = max(0.0, required - elapsed)
@@ -469,6 +472,11 @@ class AssyLineRuntime:
 
         # Apply dwell time to all occupied stations
         for pos in self.conveyor.occupied_positions():
+            if self.conveyor.is_position_complete(pos):
+                # OPS-04-C01: a station already complete this dwell (e.g. AP04
+                # child waiting for the rest of the line) must NOT be
+                # re-processed before the next index.
+                continue
             wip_id = self.conveyor.wip_at(pos)
             if wip_id is None:
                 continue
@@ -584,10 +592,24 @@ class AssyLineRuntime:
             else:
                 op.transition(OperationState.AWAITING_COMPLETION)
 
+        # OPS-04-C01 (D): generate observations (measurements + proposal) the
+        # moment the operation enters AWAITING_DECISION — BEFORE any decision is
+        # applied. Idempotent per attempt.
+        obs_events: list[LineEvent] = []
+        if (op.state == OperationState.AWAITING_DECISION
+                and contract.capabilities.quality_decision
+                and op.proposed_quality_result is None):
+            obs_events = self._prepare_quality_observation(op, pos, wip_id, contract)
+
         # Gating uses the FROZEN op.completion_mode (C01-03).
         if op.state in (OperationState.AWAITING_COMPLETION, OperationState.AWAITING_DECISION):
             if self._should_auto_submit(contract, op.completion_mode):
-                command = contract.required_action or contract.normal_action or StationCommand.DONE
+                # OPS-04-C01 (F): state-aware command — quality decision first
+                # (normal action), final disposition afterwards (required action).
+                if op.state == OperationState.AWAITING_DECISION:
+                    command = contract.normal_action or contract.required_action or StationCommand.DONE
+                else:
+                    command = contract.required_action or contract.normal_action or StationCommand.DONE
                 payload = None
                 if (contract.checklist_required_for_action is not None
                         and contract.checklist_required_for_action == command):
@@ -595,9 +617,9 @@ class AssyLineRuntime:
                         {"item_id": item_id, "completed": True}
                         for item_id in contract.checklist_items
                     ]}
-                return self.submit_operation_command(pos, wip_id, command, payload)
+                return obs_events + self.submit_operation_command(pos, wip_id, command, payload)
             action = contract.required_action.value if contract.required_action else "?"
-            return [self._make_event(
+            return obs_events + [self._make_event(
                 "OPERATION_WAITING_COMMAND", pos, wip_id,
                 f"mode={op.completion_mode.value} state={op.state.value} action={action}")]
 
@@ -614,6 +636,8 @@ class AssyLineRuntime:
                     "OPERATION_TERMINAL", pos, wip_id,
                     "FAILED_FINAL — no recovery, not HELD"))
             else:
+                # OPS-04-C01: fresh observation for the next attempt.
+                self._reset_quality_observation(op)
                 op.transition(OperationState.AWAITING_DECISION)
                 events.append(self._make_event(
                     "OPERATION_RETRY", pos, wip_id,
@@ -662,23 +686,30 @@ class AssyLineRuntime:
             checklist = (payload or {}).get("checklist", []) if payload else []
             op.checklist = _validate_checklist_completion(checklist, contract)
 
-        # OPS-03-C02: operator-supplied quality decision (PASS/FAIL/NG).
+        # OPS-03-C02 / OPS-04-C01 (F): operator-supplied quality decision
+        # (PASS/FAIL/NG). Only applies to the quality-decision command (normal
+        # action); a distinct final-disposition command (RELEASE) must NOT
+        # require or accept a quality decision.
         decision = (payload or {}).get("decision") if payload else None
-        if contract.decision_actions:
-            if decision is not None and decision not in contract.decision_actions:
-                raise AssyLineError(
-                    f"Invalid quality decision {decision!r} at {station_id} "
-                    f"(allowed: {list(contract.decision_actions)})")
-            if op.completion_mode == CompletionMode.MANUAL and decision is None:
-                raise AssyLineError(
-                    f"Manual quality decision required at {station_id}: "
-                    f"choose one of {list(contract.decision_actions)}")
+        quality_command = (contract.normal_action or contract.required_action
+                           or StationCommand.DONE)
+        if contract.capabilities.quality_decision and cmd == quality_command:
+            if contract.decision_actions:
+                if decision is not None and decision not in contract.decision_actions:
+                    raise AssyLineError(
+                        f"Invalid quality decision {decision!r} at {station_id} "
+                        f"(allowed: {list(contract.decision_actions)})")
+                if op.completion_mode == CompletionMode.MANUAL and decision is None:
+                    raise AssyLineError(
+                        f"Manual quality decision required at {station_id}: "
+                        f"choose one of {list(contract.decision_actions)}")
 
         op.command = cmd
         if payload is not None:
             op.inputs.update(payload)
 
-        events = self._run_operation_domain(station_id, wip_id, op, contract, decision=decision)
+        events = self._run_operation_domain(
+            station_id, wip_id, op, contract, decision=decision, command=cmd)
 
         # Resolve post-domain outcome
         if op.state == OperationState.COMPLETED:
@@ -690,16 +721,18 @@ class AssyLineRuntime:
             if op.terminal:
                 pass  # FAILED + FAILED_FINAL: terminal, no recovery
             else:
+                # OPS-04-C01: fresh observation for the next attempt.
+                self._reset_quality_observation(op)
                 op.transition(OperationState.AWAITING_DECISION)  # new attempt next dwell
         return events
 
     def submit_station_action(
         self, station_id: str, wip_id: str, action: str,
     ) -> list[LineEvent]:
-        """OPS-03-C02: exception station action (non-completion, non-quality).
+        """OPS-03-C02 / OPS-04-C01 (A): station-level action surface.
 
-        HOLD → routing_action = STAY_AT_STATION (containment, non-eligible).
-        Does NOT touch operation_result / quality_result / operation state.
+        HOLD  → first-class HELD state + STAY_AT_STATION containment.
+        RESUME → generic recovery from HELD back to the pending action.
         Other actions fail closed until their physical semantics are confirmed.
         """
         op = self.operation_registry.active_for(station_id, wip_id)
@@ -709,19 +742,47 @@ class AssyLineRuntime:
         contract = self.station_contracts.get(station_id)
         if contract is None:
             raise AssyLineError(f"No station contract for {station_id}")
-        if action not in contract.exception_actions:
+
+        if action == "RESUME":
+            # OPS-04-C01 (A): generic recovery from HELD → the exact state that
+            # was held (AWAITING_DECISION or AWAITING_COMPLETION).
+            if op.state != OperationState.HELD:
+                raise AssyLineError(
+                    f"RESUME requires HELD operation (state={op.state.value})")
+            if op.pre_hold_state in (OperationState.AWAITING_DECISION,
+                                     OperationState.AWAITING_COMPLETION):
+                target = op.pre_hold_state
+            elif contract.capabilities.quality_decision:
+                target = OperationState.AWAITING_DECISION
+            else:
+                target = OperationState.AWAITING_COMPLETION
+            op.pre_hold_state = None
+            op.transition(target)
+            op.routing_action = None
+            return [self._make_event(
+                "STATION_ACTION", station_id, wip_id,
+                f"action=RESUME state={op.state.value}")]
+
+        allowed = (set(contract.exception_actions)
+                   | set(contract.final_disposition_actions))
+        if action not in allowed:
             raise AssyLineError(
-                f"Exception action {action!r} not allowed at {station_id} "
-                f"(allowed: {list(contract.exception_actions)})")
+                f"Station action {action!r} not allowed at {station_id} "
+                f"(allowed: {sorted(allowed)})")
         if action == "HOLD":
+            if op.state not in (OperationState.AWAITING_COMPLETION,
+                                OperationState.AWAITING_DECISION):
+                raise AssyLineError(
+                    f"HOLD requires an awaiting operation (state={op.state.value})")
             op.routing_action = "STAY_AT_STATION"
-        else:
-            raise AssyLineError(
-                f"Exception action {action!r} is not safely representable "
-                f"in the current runtime (no physical routing confirmed)")
-        return [self._make_event(
-            "STATION_ACTION", station_id, wip_id,
-            f"action={action} routing={op.routing_action}")]
+            op.pre_hold_state = op.state  # OPS-04-C01: remember for RESUME
+            op.transition(OperationState.HELD)
+            return [self._make_event(
+                "STATION_ACTION", station_id, wip_id,
+                f"action=HOLD state={op.state.value} routing={op.routing_action}")]
+        raise AssyLineError(
+            f"Station action {action!r} is not safely representable "
+            f"in the current runtime (no physical routing confirmed)")
 
     def _run_operation_domain(
         self,
@@ -730,47 +791,68 @@ class AssyLineRuntime:
         op: OperationExecution,
         contract: StationContract,
         decision: Optional[str] = None,
+        command: Optional[StationCommand] = None,
     ) -> list[LineEvent]:
         """Execute station domain work and map the outcome onto the operation.
 
-        Capability-driven dispatch (C01-01): identity transformation → quality
+        Capability-driven dispatch (C01-01), command-aware (OPS-04-C01):
+        identity transformation → final disposition (RELEASE) → quality
         decision → checklist gate → pure execution.
         """
+        cmd = command or contract.required_action or contract.normal_action or StationCommand.DONE
+
         if contract.capabilities.identity_transformation:
             events = self._execute_ap04_join(wip_id)
             op.operation_result = OperationResult.JOIN_COMPLETE
             op.quality_result = None
+            op.routing_action = "CONTINUE"
             op.transition(OperationState.COMPLETED)
+        elif (contract.capabilities.final_disposition
+                and cmd == StationCommand.RELEASE):
+            # OPS-04-C01 (F): RELEASE is a distinct final disposition, allowed
+            # only after final QC resolved PASS (CLEAR).
+            events = self._execute_release_disposition(pos, wip_id, op)
         elif contract.capabilities.quality_decision:
             station_key, check_type = _QUALITY_STATION_MAP[pos]
             # OPS-03-C02: in AUTO the simulator/scenario decides; operator
             # decision only overrides in MANUAL/ASSISTED.
             eff_decision = decision if op.completion_mode != CompletionMode.AUTO else None
-            events = self._execute_quality_station(
-                pos, wip_id, station_key, check_type, decision=eff_decision)
+            events = self._apply_quality_decision(
+                pos, wip_id, op, station_key, check_type, decision=eff_decision)
             qstatus = self.get_current_quality_status(wip_id)
             qh = self.get_quality_history(wip_id)
             op.quality_result = qh.last_disposition(pos) if qh else None
             op.attempt_number = qh.attempt_count(pos) if qh else 0
             if qstatus == QualityStatus.CLEAR:
-                op.operation_result = _QUALITY_OPERATION_RESULT.get(
-                    pos, OperationResult.TEST_COMPLETE)
-                op.transition(OperationState.COMPLETED)
+                if pos == "AP11":
+                    # OPS-04-C01 (F): final QC passed — now await RELEASE.
+                    op.operation_result = OperationResult.CONFIRMED
+                    op.transition(OperationState.AWAITING_COMPLETION)
+                else:
+                    op.operation_result = _QUALITY_OPERATION_RESULT.get(
+                        pos, OperationResult.TEST_COMPLETE)
+                    op.routing_action = "CONTINUE"
+                    self._mark_station_complete(wip_id, pos)
+                    op.transition(OperationState.COMPLETED)
             elif qstatus == QualityStatus.FAILED_FINAL:
                 op.terminal = True
+                op.routing_action = "STAY_AT_STATION"
                 op.transition(OperationState.FAILED)
             else:  # RETEST_PENDING / REINSPECT_PENDING
+                op.routing_action = "STAY_AT_STATION"
                 op.transition(OperationState.FAILED)
         elif contract.capabilities.checklist:
             # C01-01: AP03 checklist gate — no quality record, no PASS/FAIL/NG.
             events = self._execute_ap03_checklist(wip_id, op.checklist)
             op.operation_result = OperationResult.CONFIRMED
             op.quality_result = None
+            op.routing_action = "CONTINUE"
             op.transition(OperationState.COMPLETED)
         else:
             events = self._execute_station(pos, wip_id)
             op.operation_result = OperationResult.DONE
             op.quality_result = None
+            op.routing_action = "CONTINUE"
             op.transition(OperationState.COMPLETED)
         return events
 
@@ -798,15 +880,6 @@ class AssyLineRuntime:
         elif position == "AP04":
             events.extend(self._execute_ap04_join(wip_id))
 
-        elif position == "AP06":
-            events.extend(self._execute_quality_station(position, wip_id, "ap06", CheckType.TEST))
-
-        elif position == "AP08":
-            events.extend(self._execute_quality_station(position, wip_id, "ap08", CheckType.VISUAL_INSPECTION))
-
-        elif position == "AP11":
-            events.extend(self._execute_quality_station(position, wip_id, "ap11", CheckType.FINAL_QC))
-
         else:
             dur = self.config.station_durations.get(position, 60.0)
             events.append(self._make_event("STATION_START", position, wip_id,
@@ -820,132 +893,180 @@ class AssyLineRuntime:
         return events
 
     # ═══════════════════════════════════════════════════════
-    # QUALITY STATION (M6-S03)
+    # QUALITY STATION (M6-S03) — OPS-04-C01 observation/decision split
     # ═══════════════════════════════════════════════════════
 
-    def _execute_quality_station(
-        self, position: str, wip_id: str, station_key: str, check_type: CheckType,
-        decision: Optional[str] = None,
-    ) -> list[LineEvent]:
-        """Execute a quality station (AP03, AP06, AP08, AP11).
+    def _mark_station_complete(self, wip_id: str, position: str) -> None:
+        """OPS-04-C01: set WIP lifecycle + station count for a completed station."""
+        ws = self._wips.get(wip_id)
+        if ws:
+            ws.station_count += 1
+            ws.lifecycle = WipLifecycle.COMPLETED_STATION
 
-        FAILED_FINAL is terminal: no further attempts, no new records.
+    def _reset_quality_observation(self, op: OperationExecution) -> None:
+        """OPS-04-C01 (D): clear pending observation so the next attempt
+        regenerates fresh measurements + proposal."""
+        op.proposed_quality_result = None
+        op.measurements = []
+
+    def _quality_checklist(self, check_type: CheckType) -> list[str]:
+        """OPS-04-C01 (D): static DEMO_SYNTHETIC checklist placeholders for
+        non-TEST quality checks (recorded with the observed proposal)."""
+        if check_type == CheckType.VISUAL_INSPECTION:
+            return ["surface_quality", "label_presence", "assembly_alignment"]
+        if check_type == CheckType.FINAL_QC:
+            return ["packaging_integrity", "label_correct", "documentation_complete"]
+        if check_type == CheckType.CHECKLIST:
+            return ["mechanical_prep_ok", "visual_check_ok", "measurement_subset_ok"]
+        return []
+
+    def _prepare_quality_observation(
+        self,
+        op: OperationExecution,
+        pos: str,
+        wip_id: str,
+        contract: StationContract,
+    ) -> list[LineEvent]:
+        """OPS-04-C01 (C/D): observe BEFORE deciding.
+
+        Generates the synthetic measurements (TEST) and the scenario-derived
+        proposal, stored on the operation. No QualityRecord is created yet, and
+        measurements are NEVER rewritten based on the eventual disposition.
         """
         events: list[LineEvent] = []
+        history = self._ensure_quality_history(wip_id)
+        if history.current_status == QualityStatus.FAILED_FINAL:
+            return events  # idempotent terminal hold — no new observation
 
-        # M6-S03-C01.1: FAILED_FINAL is idempotent — no further processing
+        station_key, check_type = _QUALITY_STATION_MAP[pos]
+        qcfg = self.config.quality.get(station_key)
+        attempt = history.attempt_count(station_key) + 1
+
+        ws = self._wips.get(wip_id)
+        motor_seq = self._motor_seq
+        if ws and ws.is_child_of_join:
+            try:
+                motor_seq = int(wip_id.split("-")[-1])
+            except (ValueError, IndexError):
+                pass
+
+        proposal = resolve_quality_disposition(
+            station_key, motor_seq, attempt, qcfg, check_type)
+
+        measurements: list[MeasurementValue] = []
+        if check_type == CheckType.TEST:
+            # AP06: synthetic electrical measurements (DEMO_SYNTHETIC), in range.
+            measurements = [
+                MeasurementValue("R_U-V", 0.45 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
+                MeasurementValue("R_V-W", 0.47 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
+                MeasurementValue("R_W-U", 0.44 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
+            ]
+
+        op.measurements = [m.to_dict() for m in measurements]
+        op.proposed_quality_result = proposal
+        events.append(self._make_event(
+            "QUALITY_OBSERVED", pos, wip_id,
+            f"type={check_type.value} attempt={attempt} proposal={proposal}"))
+        return events
+
+    def _apply_quality_decision(
+        self,
+        pos: str,
+        wip_id: str,
+        op: OperationExecution,
+        station_key: str,
+        check_type: CheckType,
+        decision: Optional[str] = None,
+    ) -> list[LineEvent]:
+        """OPS-04-C01 (C): apply the FINAL disposition to the OBSERVED data.
+
+        Creates the QualityRecord from `op.measurements` (as observed) and the
+        final disposition (operator decision, or the stored proposal). No
+        backwards rewriting of measurements for FAIL/NG.
+        """
+        events: list[LineEvent] = []
         history = self._ensure_quality_history(wip_id)
         if history.current_status == QualityStatus.FAILED_FINAL:
             events.append(self._make_event(
-                "QUALITY_WAITING_DISPOSITION", position, wip_id,
+                "QUALITY_WAITING_DISPOSITION", pos, wip_id,
                 "FAILED_FINAL — awaiting disposition"))
             return events
 
         qcfg = self.config.quality.get(station_key)
         attempt = history.attempt_count(station_key) + 1
 
-        # Resolve disposition
-        ws = self._wips.get(wip_id)
-        motor_seq = self._motor_seq  # approximate: use current motor sequence
-        # For child WIPs, use their motor number
-        if ws and ws.is_child_of_join:
-            # Extract motor number from ID like MTR-0003
-            try:
-                motor_seq = int(wip_id.split("-")[-1])
-            except (ValueError, IndexError):
-                pass
-
-        disposition = resolve_quality_disposition(
-            station_key, motor_seq, attempt, qcfg, check_type)
-
-        # OPS-03-C02: operator-supplied quality decision overrides the scenario.
+        disposition = op.proposed_quality_result or "PASS"
         if decision is not None:
             disposition = decision
 
         events.append(self._make_event(
-            "QUALITY_START", position, wip_id,
+            "QUALITY_START", pos, wip_id,
             f"type={check_type.value} attempt={attempt}"))
 
-        # Build quality record
-        measurements: list[MeasurementValue] = []
-        checklist: list[str] = []
-
-        if check_type == CheckType.TEST:
-            # AP06: synthetic electrical measurements (DEMO_SYNTHETIC)
-            measurements = [
-                MeasurementValue("R_U-V", 0.45 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
-                MeasurementValue("R_V-W", 0.47 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
-                MeasurementValue("R_W-U", 0.44 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
-            ]
-        elif check_type == CheckType.CHECKLIST:
-            checklist = ["mechanical_prep_ok", "visual_check_ok", "measurement_subset_ok"]
-        elif check_type == CheckType.VISUAL_INSPECTION:
-            checklist = ["surface_quality", "label_presence", "assembly_alignment"]
-        elif check_type == CheckType.FINAL_QC:
-            checklist = ["packaging_integrity", "label_correct", "documentation_complete"]
-
-        # For FAIL/NG: measurement out of spec
-        if disposition in ("FAIL", "NG") and measurements:
-            # Make first measurement out of range (DEMO_SYNTHETIC)
-            measurements = [MeasurementValue(
-                m.name, m.expected_min - 0.1 if m.expected_min else 0.01,
-                m.unit, m.expected_min, m.expected_max
-            ) for m in measurements]
-
+        measurements = tuple(MeasurementValue(**m) for m in op.measurements)
+        checklist = self._quality_checklist(check_type)
         record = QualityRecord(
             record_id=self._next_quality_id(),
             wip_id=wip_id,
-            station_id=position,
+            station_id=pos,
             check_type=check_type,
             disposition=disposition,
             attempt_number=attempt,
-            simulation_time_s=self._simulation_time_s + self._station_elapsed.get(position, 0.0),
-            measurements=tuple(measurements),
+            simulation_time_s=self._simulation_time_s + self._station_elapsed.get(pos, 0.0),
+            measurements=measurements,
             checklist_items=tuple(checklist),
         )
         history.add_record(record)
 
         events.append(self._make_event(
-            "QUALITY_RESULT", position, wip_id,
+            "QUALITY_RESULT", pos, wip_id,
             f"disposition={disposition} attempt={attempt}"))
 
         if disposition in ("FAIL", "NG"):
-            # Quality HOLD — station NOT complete
             history.set_status(
                 QualityStatus.RETEST_PENDING if check_type == CheckType.TEST
                 else QualityStatus.REINSPECT_PENDING)
+            op.routing_action = "STAY_AT_STATION"
             events.append(self._make_event(
-                "QUALITY_HOLD", position, wip_id,
+                "QUALITY_HOLD", pos, wip_id,
                 f"status={history.current_status.value}"))
-
-            # Check max attempts
             if attempt >= qcfg.max_attempts:
                 history.set_status(QualityStatus.FAILED_FINAL)
                 events.append(self._make_event(
-                    "QUALITY_FAILED_FINAL", position, wip_id,
+                    "QUALITY_FAILED_FINAL", pos, wip_id,
                     f"max_attempts={qcfg.max_attempts} exhausted"))
-                # FAILED_FINAL: station NOT marked complete (C01: blocks progression)
-                # Conveyor stays stopped; WIP remains at this station
-
-            # Station NOT marked complete — line stays, quality HOLD
         else:
-            # PASS
             history.set_status(QualityStatus.CLEAR)
-            if position == "AP11":
-                ws = self._wips.get(wip_id)
-                if ws:
-                    ws.lifecycle = WipLifecycle.RELEASED
-                    ws.station_count += 1
-                events.append(self._make_event(
-                    "STATION_COMPLETE", position, wip_id, "RELEASED"))
-            else:
-                ws = self._wips.get(wip_id)
-                if ws:
-                    ws.station_count += 1
-                    ws.lifecycle = WipLifecycle.COMPLETED_STATION
-                events.append(self._make_event(
-                    "STATION_COMPLETE", position, wip_id, "PASS"))
+            op.routing_action = "CONTINUE"
+        return events
 
+    def _execute_release_disposition(
+        self, pos: str, wip_id: str, op: OperationExecution,
+    ) -> list[LineEvent]:
+        """OPS-04-C01 (F): RELEASE as a distinct final disposition.
+
+        Allowed ONLY after final QC resolved PASS (quality status CLEAR).
+        Fails closed otherwise; HELD blocks release.
+        """
+        events: list[LineEvent] = []
+        qstatus = self.get_current_quality_status(wip_id)
+        qh = self.get_quality_history(wip_id)
+        last = qh.last_disposition(pos) if qh else None
+        if op.state == OperationState.HELD:
+            raise AssyLineError("RELEASE blocked: operation is HELD (RESUME first)")
+        if qstatus != QualityStatus.CLEAR or last != "PASS":
+            raise AssyLineError(
+                f"RELEASE blocked at {pos}: final QC not PASS "
+                f"(status={qstatus.value}, disposition={last!r})")
+        ws = self._wips.get(wip_id)
+        if ws:
+            ws.lifecycle = WipLifecycle.RELEASED
+            ws.station_count += 1
+        events.append(self._make_event("STATION_START", pos, wip_id, "RELEASE"))
+        events.append(self._make_event("STATION_COMPLETE", pos, wip_id, "RELEASED"))
+        op.operation_result = OperationResult.RELEASED
+        op.routing_action = "CONTINUE"
+        op.transition(OperationState.COMPLETED)
         return events
 
     # ═══════════════════════════════════════════════════════

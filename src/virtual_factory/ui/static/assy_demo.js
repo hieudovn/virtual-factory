@@ -1136,13 +1136,14 @@ const ctrlB = {
     else { lsEl.textContent = ls.toUpperCase(); lsEl.style.background = '#EEF0F3'; lsEl.style.color = 'var(--vf-text-muted)'; }
 
     const prod = snap.production || {};
+    const totalHolds = (prod.active_quality_holds||0) + (prod.operator_holds||0);
     document.getElementById('fb-prod-text').textContent =
-      `Created: ${prod.motors_created||0}  Released: ${prod.motors_released||0}  On Line: ${prod.wips_on_line||0}  Holds: ${prod.active_quality_holds||0}`;
+      `Created: ${prod.motors_created||0}  Released: ${prod.motors_released||0}  On Line: ${prod.wips_on_line||0}  Holds: ${totalHolds}`;
 
     const wipEl = document.getElementById('vf-sb-wip'); if (wipEl) wipEl.textContent = prod.wips_on_line||0;
     document.getElementById('total-created').textContent = prod.motors_created||0;
     document.getElementById('total-released').textContent = prod.motors_released||0;
-    document.getElementById('total-holds').textContent = prod.active_quality_holds||0;
+    document.getElementById('total-holds').textContent = totalHolds;
 
     if (this._inspectorOpen && this._selectedWipId) {
       const pos = (snap.positions||[]).find(p => p.wip_id === this._selectedWipId);
@@ -1630,6 +1631,21 @@ const ctrlB = {
     return html;
   },
 
+  _pendingMeasurementRowsHtml(op) {
+    // OPS-04-C01 (D): OBSERVED measurements, generated BEFORE the decision.
+    let html = '<div class="vf-op-meas">';
+    for (const m of (op.measurements || []).slice(0, 4)) {
+      const lo = m.expected_min, hi = m.expected_max, v = m.value;
+      let inRange = true;
+      if (lo !== undefined && v < lo) inRange = false;
+      if (hi !== undefined && v > hi) inRange = false;
+      const rc = inRange ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+      html += `<div class="vf-op-meas-row"><span>${m.name}</span><b>${v}${m.unit||''}</b><small style="color:${rc}">${inRange?'IN RANGE':'OUT'}</small></div>`;
+    }
+    html += '</div>';
+    return html;
+  },
+
   _isChecklistGate(contract, command) {
     // OPS-03-C01: capability alone is NOT a gate. Gate only when the contract
     // explicitly requires this checklist set before this exact action.
@@ -1639,7 +1655,12 @@ const ctrlB = {
   },
 
   _renderActionControlsHtml(op, contract) {
-    const cmd = (contract && (contract.required_action || contract.normal_action)) || 'DONE';
+    // OPS-04-C01 (F): state-aware command — quality decision (normal action)
+    // when AWAITING_DECISION; final disposition/completion (required action)
+    // once AWAITING_COMPLETION.
+    const cmd = op.state === 'AWAITING_DECISION'
+      ? ((contract && (contract.normal_action || contract.required_action)) || 'DONE')
+      : ((contract && (contract.required_action || contract.normal_action)) || 'DONE');
     let html = '';
     if (this._isChecklistGate(contract, cmd)) {
       const items = this._checklistItems(op, contract);
@@ -1651,7 +1672,8 @@ const ctrlB = {
       html += '</div>';
       const allDone = items.length > 0 && items.every(it => this._checklistChecked(op, it.item_id));
       html += `<button class="vf-btn primary vf-op-btn" ${allDone ? '' : 'disabled'} onclick="ctrlB.submitCommand('${this._selectedStation}','${this._selectedWipId}','${cmd}')">${this._commandLabel(cmd)}</button>`;
-    } else if (contract && Array.isArray(contract.decision_actions) && contract.decision_actions.length
+    } else if (op.state === 'AWAITING_DECISION'
+        && contract && Array.isArray(contract.decision_actions) && contract.decision_actions.length
         && op.completion_mode && op.completion_mode !== 'AUTO') {
       // OPS-03-C02: operator-owned quality decision surface (MANUAL/ASSISTED)
       html += '<div class="vf-op-decisions">';
@@ -1699,13 +1721,26 @@ const ctrlB = {
     if (op.routing_action) {
       html += `<div class="vf-popup-row"><span class="vf-popup-k">Routing</span><span class="vf-popup-v" style="color:var(--vf-state-hold);font-weight:600">${op.routing_action}</span></div>`;
     }
+    if (op.state === 'AWAITING_DECISION' && op.proposed_quality_result) {
+      // OPS-04-C01 (D): machine proposal observed BEFORE the decision.
+      const pc = op.proposed_quality_result === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-hold)';
+      html += `<div class="vf-popup-row"><span class="vf-popup-k">Proposal</span><span class="vf-popup-v" style="color:${pc};font-weight:600">${op.proposed_quality_result}</span></div>`;
+    }
     if (op.terminal) html += '<div class="vf-popup-row"><span class="vf-popup-k">Terminal</span><span class="vf-popup-v" style="color:var(--vf-state-fail);font-weight:600">FAILED — no recovery</span></div>';
+    if (op.state === 'AWAITING_DECISION' && Array.isArray(op.measurements) && op.measurements.length) {
+      const pm = this._pendingMeasurementRowsHtml(op);
+      if (pm) html += pm;
+    }
     if (contract && contract.capabilities && contract.capabilities.measurement) {
       const mhtml = this._measurementRowsHtml(snap, op);
       if (mhtml) html += mhtml;
     }
     if (this._isActionRequired(op)) {
       html += '<div class="vf-op-actions">' + this._renderActionControlsHtml(op, contract) + '</div>';
+    } else if (op.state === 'HELD') {
+      // OPS-04-C01 (A): HELD is a first-class state; recovery is explicit.
+      html += '<div class="vf-op-note" style="color:var(--vf-state-hold);font-weight:600">HELD — progression blocked</div>';
+      html += '<div class="vf-op-actions"><button class="vf-btn primary vf-op-btn" onclick="ctrlB.submitStationAction(\'' + op.station_id + '\',\'' + op.wip_id + '\',\'RESUME\')">RESUME</button></div>';
     } else if (op.state === 'WORKING') {
       html += '<div class="vf-op-note">Working — no action required</div>';
     } else if (op.completion_mode === 'AUTO' && waiting) {

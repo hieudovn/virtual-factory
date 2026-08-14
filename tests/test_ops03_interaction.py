@@ -326,7 +326,10 @@ class TestAP11NoChecklistInherit:
         line.global_run_mode = CompletionMode.MANUAL
         line.execute_dwell()
         wip = line.conveyor.wip_at("AP11")
-        # RELEASE does not require the AP03 demo checklist
+        # Step 1: final QC decision (no demo checklist required)
+        line.submit_operation_command("AP11", wip, StationCommand.CONFIRM,
+                                      payload={"decision": "PASS"})
+        # Step 2: RELEASE — distinct final disposition, no checklist
         line.submit_operation_command("AP11", wip, StationCommand.RELEASE)
         found = [o for o in line.operation_registry._operations.values()
                  if o.station_id == "AP11"]
@@ -340,7 +343,7 @@ class TestStationActionException:
         _, op, wip = to_awaiting(line, "AP03")
         line.submit_station_action("AP03", wip, "HOLD")
         assert op.routing_action == "STAY_AT_STATION"
-        assert op.state == OperationState.AWAITING_COMPLETION
+        assert op.state == OperationState.HELD
         assert op.operation_result is None
         assert op.quality_result is None
         assert line.conveyor.is_position_complete("AP03") is False
@@ -443,6 +446,12 @@ class TestReleaseCommand:
         line.global_run_mode = CompletionMode.MANUAL
         line.execute_dwell()
         wip = line.conveyor.wip_at("AP11")
+        # RELEASE before final QC is blocked
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command("AP11", wip, StationCommand.RELEASE)
+        # Final QC PASS then RELEASE
+        line.submit_operation_command("AP11", wip, StationCommand.CONFIRM,
+                                      payload={"decision": "PASS"})
         line.submit_operation_command("AP11", wip, StationCommand.RELEASE)
         found = [o for o in line.operation_registry._operations.values()
                  if o.station_id == "AP11"]

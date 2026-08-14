@@ -416,7 +416,8 @@ class TestAP11:
     def test_release(self):
         line = setup_line(make_fast_config())
         advance_to_before(line, "AP11")
-        line.execute_dwell()
+        line.execute_dwell()   # final QC decision (AUTO → PASS)
+        line.execute_dwell()   # RELEASE — distinct final disposition
         found = [o for o in line.operation_registry._operations.values()
                  if o.station_id == "AP11"]
         assert found and found[-1].operation_result == OperationResult.RELEASED

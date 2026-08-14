@@ -19,6 +19,7 @@
     "measurements",
     "operation_result",
     "quality_result",
+    "proposed_quality_result",
     "routing_action",
     "source",
     "attempt_number",
@@ -82,6 +83,11 @@
     "quality_result": {
       "type": ["string", "null"],
       "enum": ["PASS", "FAIL", "NG", null]
+    },
+    "proposed_quality_result": {
+      "type": ["string", "null"],
+      "enum": ["PASS", "FAIL", "NG", null],
+      "description": "OPS-04-C01: machine/scenario-derived proposal observed BEFORE the operator decision is applied."
     },
     "routing_action": {
       "type": ["string", "null"],

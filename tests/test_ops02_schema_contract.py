@@ -238,7 +238,8 @@ def test_case8_ap11_released(validator):
     line = setup_line(make_fast_config())
     line.global_run_mode = CompletionMode.AUTO
     advance_to_before(line, "AP11")
-    line.execute_dwell()
+    line.execute_dwell()   # final QC decision
+    line.execute_dwell()   # RELEASE
     payload = last_op(line, "AP11", "MTR-0001").to_dict()
     assert payload["operation_result"] == "RELEASED"
     assert_valid(validator, payload)
@@ -259,8 +260,9 @@ def test_case10_active_operations_projection_is_a_view():
     """active_operations[] is a UI read model subset, NOT the full contract.
 
     Its `ActiveOperationView` uses empty-string defaults for enum fields and
-    omits source/inputs/measurements, so it is intentionally NOT validated
-    against the full operation-execution schema.
+    omits source/inputs, so it is intentionally NOT validated against the full
+    operation-execution schema. OPS-04-C01 additively exposes
+    `proposed_quality_result` and pending `measurements` (observed-before-decision).
     """
     from virtual_factory.assembly.demo_snapshot import ActiveOperationView
 
@@ -272,9 +274,10 @@ def test_case10_active_operations_projection_is_a_view():
     assert set(d) == {
         "execution_id", "station_id", "wip_id", "state",
         "completion_mode", "command", "operation_result", "quality_result",
-        "routing_action", "attempt_number", "terminal", "checklist",
+        "proposed_quality_result", "routing_action", "attempt_number",
+        "terminal", "checklist", "measurements",
     }
-    assert "source" not in d and "inputs" not in d and "measurements" not in d
+    assert "source" not in d and "inputs" not in d
 
 
 # ═══════════════════════════════════════════════════════════

@@ -189,10 +189,13 @@ stations:
       exception: true
       identity_transformation: false
       final_disposition: true
-    normal_action: RELEASE
+    # OPS-04-C01: final QC (CONFIRM + PASS/FAIL) is distinct from RELEASE.
+    normal_action: CONFIRM
     required_action: RELEASE
     work_duration_s: 30
-    # OPS-03-C02: final disposition + exception (HOLD = containment only)
+    decision_actions:
+      - PASS
+      - FAIL
     final_disposition_actions:
       - RELEASE
       - HOLD
@@ -213,6 +216,7 @@ operation_execution_example:
   inputs: {}
   checklist: []
   measurements: []
+  proposed_quality_result: null
   operation_result: null
   quality_result: null
   routing_action: null
