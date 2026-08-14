@@ -109,6 +109,8 @@ class OperationExecution:
     operation_result: Optional[OperationResult] = None
     quality_result: Optional[str] = None   # "PASS" | "FAIL" | "NG" | None
     proposed_quality_result: Optional[str] = None  # OPS-04-C01: machine proposal before decision
+    proposed_quality_reason: Optional[dict] = None  # OPS-04-C01-R1: generic reason {code, source}
+    observations: list[dict] = field(default_factory=list)  # OPS-04-C01-R1: neutral pre-decision observations
     routing_action: Optional[str] = None   # "CONTINUE" | "STAY_AT_STATION" | None
     pre_hold_state: Optional[OperationState] = None  # OPS-04-C01: state before HOLD (not serialized)
     source: str = "simulated"
@@ -145,6 +147,8 @@ class OperationExecution:
             "operation_result": self.operation_result.value if self.operation_result else None,
             "quality_result": self.quality_result,
             "proposed_quality_result": self.proposed_quality_result,
+            "proposed_quality_reason": self.proposed_quality_reason,
+            "observations": list(self.observations),
             "routing_action": self.routing_action,
             "source": self.source,
             "attempt_number": self.attempt_number,

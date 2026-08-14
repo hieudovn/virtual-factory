@@ -207,15 +207,27 @@ class TestAP06Causality:
         assert op.state == OperationState.AWAITING_DECISION
         assert op.proposed_quality_result == "PASS"
         assert len(op.measurements) == 3
+        assert op.proposed_quality_reason is not None
 
-    def test_observed_measurements_in_range(self):
+    def test_pass_proposal_has_coherent_evidence(self):
+        line = setup_line(make_fast_config(ap06="PASS"))
+        _, op, _ = to_awaiting(line, "AP06")
+        assert op.proposed_quality_result == "PASS"
+        assert op.proposed_quality_reason == {
+            "code": "DEMO_IN_RANGE", "source": "simulated_test"}
+        assert all(MeasurementValue(**m).in_range for m in op.measurements)
+
+    def test_fail_proposal_has_coherent_anomaly(self):
         cfg = make_fast_config(ap06="FAIL_FIRST_THEN_PASS")
         cfg.quality.ap06.max_attempts = 2
         line = setup_line(cfg)
         _, op, _ = to_awaiting(line, "AP06")
-        for m in op.measurements:
-            mv = MeasurementValue(**m)
-            assert mv.in_range is True
+        assert op.proposed_quality_result == "FAIL"
+        assert op.proposed_quality_reason == {
+            "code": "DEMO_OUT_OF_RANGE", "source": "simulated_test"}
+        mvs = [MeasurementValue(**m) for m in op.measurements]
+        assert not mvs[0].in_range and mvs[0].name == "R_U-V"
+        assert mvs[1].in_range and mvs[2].in_range
 
     def test_fail_does_not_rewrite_measurements(self):
         cfg = make_fast_config(ap06="FAIL_FIRST_THEN_PASS")
@@ -226,8 +238,28 @@ class TestAP06Causality:
         line.submit_operation_command(
             "AP06", wip, StationCommand.CONFIRM, payload={"decision": "FAIL"})
         rec = line.get_quality_history(wip).records_for("AP06")[0]
+        assert [m.to_dict() for m in rec.measurements] == observed  # frozen evidence
+        assert not rec.measurements[0].in_range
+        assert rec.measurements[1].in_range and rec.measurements[2].in_range
+
+    def test_override_preserves_evidence_and_proposal(self):
+        cfg = make_fast_config(ap06="FAIL_FIRST_THEN_PASS")
+        cfg.quality.ap06.max_attempts = 2
+        line = setup_line(cfg)
+        _, op, wip = to_awaiting(line, "AP06")
+        assert op.proposed_quality_result == "FAIL"
+        observed = [dict(m) for m in op.measurements]
+        reason = dict(op.proposed_quality_reason)
+        line.submit_operation_command(
+            "AP06", wip, StationCommand.CONFIRM, payload={"decision": "PASS"})
+        assert line.get_current_quality_status(wip) == QualityStatus.CLEAR
+        rec = line.get_quality_history(wip).records_for("AP06")[0]
+        # operator override recorded, but evidence and proposal stay frozen
+        assert rec.disposition == "PASS"
         assert [m.to_dict() for m in rec.measurements] == observed
-        assert all(m.in_range for m in rec.measurements)
+        assert not rec.measurements[0].in_range
+        assert op.proposed_quality_result == "FAIL"
+        assert op.proposed_quality_reason == reason
 
     def test_quality_record_matches_observation_on_fail(self):
         cfg = make_fast_config(ap06="FAIL_FIRST_THEN_PASS")
@@ -291,6 +323,37 @@ class TestAP08Causality:
         assert op.state == OperationState.AWAITING_DECISION
         assert op.proposed_quality_result == "NG"
 
+    def test_ng_proposal_has_neutral_observation(self):
+        cfg = make_fast_config(ap08="FAIL_FIRST_THEN_PASS")
+        cfg.quality.ap08.max_attempts = 2
+        line = setup_line(cfg)
+        _, op, _ = to_awaiting(line, "AP08")
+        assert op.proposed_quality_result == "NG"
+        assert op.proposed_quality_reason == {
+            "code": "demo_visual_rule_1", "source": "simulated_vision"}
+        assert any(o["result"] == "anomaly" for o in op.observations)
+        assert all(o["observation_id"].startswith("demo_visual_observation_")
+                   for o in op.observations)
+
+    def test_pass_proposal_has_neutral_observation(self):
+        cfg = make_fast_config(ap08="PASS")
+        line = setup_line(cfg)
+        _, op, _ = to_awaiting(line, "AP08")
+        assert op.proposed_quality_result == "PASS"
+        assert all(o["result"] == "ok" for o in op.observations)
+
+    def test_override_does_not_rewrite_observation(self):
+        cfg = make_fast_config(ap08="FAIL_FIRST_THEN_PASS")
+        cfg.quality.ap08.max_attempts = 2
+        line = setup_line(cfg)
+        _, op, wip = to_awaiting(line, "AP08")
+        observed = [dict(o) for o in op.observations]
+        line.submit_operation_command(
+            "AP08", wip, StationCommand.CONFIRM, payload={"decision": "PASS"})
+        assert line.get_current_quality_status(wip) == QualityStatus.CLEAR
+        assert op.observations == observed  # frozen pre-decision evidence
+        assert op.proposed_quality_result == "NG"
+
     def test_ng_decision_reinspects(self):
         cfg = make_fast_config(ap08="FAIL_FIRST_THEN_PASS")
         cfg.quality.ap08.max_attempts = 2
@@ -331,7 +394,9 @@ class TestAP08Causality:
             "AP08", wip, StationCommand.CONFIRM, payload={"decision": "NG"})
         # After NG, op → FAILED → retry scheduled; fresh observation next dwell.
         assert op.proposed_quality_result is None
+        assert op.proposed_quality_reason is None
         assert op.measurements == []
+        assert op.observations == []
 
 
 # ═══════════════════════════════════════════════════════════
@@ -366,22 +431,36 @@ class TestAP11Separation:
         with pytest.raises(AssyLineError):
             line.submit_operation_command("AP11", wip, StationCommand.RELEASE)
 
-    def test_release_blocked_on_qc_fail(self):
-        cfg = make_fast_config()
-        cfg.quality.ap11.max_attempts = 2
-        line = setup_line(cfg)
+    def test_negative_qc_fails_closed(self):
+        # AP11 decision surface is PASS-only; FAIL must not become REINSPECT.
+        line = setup_line(make_fast_config())
         advance_to_before(line, "AP11")
         line.global_run_mode = CompletionMode.MANUAL
         line.execute_dwell()
         wip = line.conveyor.wip_at("AP11")
-        line.submit_operation_command(
-            "AP11", wip, StationCommand.CONFIRM, payload={"decision": "FAIL"})
-        assert line.get_wip(wip).lifecycle != WipLifecycle.RELEASED
-        # After FAIL the op is FAILED (retry scheduled), not AWAITING_COMPLETION.
-        op = line.operation_registry.active_for("AP11", wip)
-        assert op.state == OperationState.AWAITING_DECISION
         with pytest.raises(AssyLineError):
-            line.submit_operation_command("AP11", wip, StationCommand.RELEASE)
+            line.submit_operation_command(
+                "AP11", wip, StationCommand.CONFIRM, payload={"decision": "FAIL"})
+        assert line.get_wip(wip).lifecycle != WipLifecycle.RELEASED
+        assert line.get_current_quality_status(wip) == QualityStatus.CLEAR
+        assert line.conveyor.is_position_complete("AP11") is False
+
+    def test_negative_proposal_fails_closed(self):
+        # Scenario-derived FAIL at final QC must not silently route to
+        # REINSPECT_PENDING; it fails closed.
+        cfg = make_fast_config()
+        cfg.quality.ap11.scenario = "ALWAYS_FAIL"
+        line = setup_line(cfg)
+        advance_to_before(line, "AP11")
+        line.global_run_mode = CompletionMode.ASSISTED
+        line.execute_dwell()
+        wip = line.conveyor.wip_at("AP11")
+        op = line.operation_registry.active_for("AP11", wip)
+        assert op.proposed_quality_result == "FAIL"
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command("AP11", wip, StationCommand.CONFIRM)
+        assert line.get_current_quality_status(wip) == QualityStatus.CLEAR
+        assert line.get_wip(wip).lifecycle != WipLifecycle.RELEASED
 
     def test_hold_blocks_release(self):
         line = setup_line(make_fast_config())
@@ -398,20 +477,23 @@ class TestAP11Separation:
             line.submit_operation_command("AP11", wip, StationCommand.RELEASE)
         assert line.get_wip(wip).lifecycle != WipLifecycle.RELEASED
 
-    def test_qc_fail_final_becomes_terminal(self):
+    def test_qc_fail_is_rejected_not_terminal(self):
+        # Negative QC at final QC is rejected (fail closed), never mapped to
+        # FAILED_FINAL / REINSPECT_PENDING by the generic quality mapping.
         cfg = make_fast_config()
-        cfg.quality.ap11.max_attempts = 1  # exhausted on first FAIL
+        cfg.quality.ap11.max_attempts = 1
         line = setup_line(cfg)
         advance_to_before(line, "AP11")
         line.global_run_mode = CompletionMode.MANUAL
         line.execute_dwell()
         wip = line.conveyor.wip_at("AP11")
-        line.submit_operation_command(
-            "AP11", wip, StationCommand.CONFIRM, payload={"decision": "FAIL"})
-        assert line.get_current_quality_status(wip) == QualityStatus.FAILED_FINAL
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command(
+                "AP11", wip, StationCommand.CONFIRM, payload={"decision": "FAIL"})
+        assert line.get_current_quality_status(wip) == QualityStatus.CLEAR
         op = line.operation_registry.active_for("AP11", wip)
-        assert op.state == OperationState.FAILED
-        assert op.terminal is True
+        assert op.state == OperationState.AWAITING_DECISION
+        assert op.terminal is False
 
     def test_release_marks_released_and_continue(self):
         line = setup_line(make_fast_config())
@@ -427,3 +509,110 @@ class TestAP11Separation:
         assert found[-1].operation_result == OperationResult.RELEASED
         assert found[-1].routing_action == "CONTINUE"
         assert line.get_wip(wip).lifecycle == WipLifecycle.RELEASED
+
+
+# ═══════════════════════════════════════════════════════════
+# Dwell regression — completed positions must not re-execute
+# ═══════════════════════════════════════════════════════════
+
+class TestCompletedPositionDwellFix:
+    def test_ap04_cannot_join_twice_while_blocked(self):
+        line = setup_line(make_fast_config())
+        line.produce_sso2_wip()   # SSO2-0002
+        line.produce_rso2_wip()   # RSO2-0002
+        advance_to_before(line, "AP04")   # SSO2-0001 at AP04
+        line.introduce_to_assy("SSO2-0002", "PAL-002")  # blocks PRE-ASSY
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip04 = line.conveyor.wip_at("AP04")
+        line.submit_operation_command("AP04", wip04, StationCommand.JOIN_COMPLETE)
+        assert line.conveyor.state != ConveyorState.READY_TO_INDEX
+        # Extra dwell while blocked must NOT re-JOIN the child at AP04.
+        line.execute_dwell()
+        records = list(line.genealogy.all_records())
+        assert len(records) == 1
+        assert records[0].child_wip_id == "MTR-0001"
+
+    def test_completed_pure_execution_station_count_not_repeated(self):
+        line = setup_line(make_fast_config())
+        line.produce_sso2_wip()   # SSO2-0002
+        line.produce_rso2_wip()   # RSO2-0002
+        advance_to_before(line, "AP01")   # SSO2-0001 at AP01
+        line.introduce_to_assy("SSO2-0002", "PAL-002")  # blocks PRE-ASSY
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip01 = line.conveyor.wip_at("AP01")
+        line.submit_operation_command("AP01", wip01, StationCommand.DONE)
+        assert line.conveyor.state != ConveyorState.READY_TO_INDEX
+        before = line.get_wip(wip01).station_count
+        line.execute_dwell()
+        assert line.get_wip(wip01).station_count == before
+
+    def test_completed_quality_station_no_duplicate_records(self):
+        line = setup_line(make_fast_config())
+        line.produce_sso2_wip()   # SSO2-0002 (blocker)
+        line.produce_rso2_wip()   # RSO2-0002
+        advance_to_before(line, "AP06")   # AUTO: MTR-0001 at AP06
+        line.introduce_to_assy("SSO2-0002", "PAL-002")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip06 = line.conveyor.wip_at("AP06")
+        line.submit_operation_command(
+            "AP06", wip06, StationCommand.CONFIRM, payload={"decision": "PASS"})
+        assert line.conveyor.state != ConveyorState.READY_TO_INDEX
+        before = len(line.get_quality_history(wip06).records_for("AP06"))
+        line.execute_dwell()
+        after = len(line.get_quality_history(wip06).records_for("AP06"))
+        assert after == before == 1
+
+    def test_next_index_proceeds_normally(self):
+        line = setup_line(make_fast_config())
+        line.produce_sso2_wip()
+        line.produce_rso2_wip()
+        advance_to_before(line, "AP01")
+        line.introduce_to_assy("SSO2-0002", "PAL-002")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip01 = line.conveyor.wip_at("AP01")
+        line.submit_operation_command("AP01", wip01, StationCommand.DONE)
+        # Unblock PRE-ASSY → all complete → index proceeds normally.
+        wip_pre = line.conveyor.wip_at("PRE-ASSY")
+        line.submit_operation_command("PRE-ASSY", wip_pre, StationCommand.DONE)
+        assert line.conveyor.all_occupied_complete() is True
+        line.execute_dwell()
+        assert line.conveyor.state == ConveyorState.READY_TO_INDEX
+
+    def test_incomplete_stations_are_never_skipped(self):
+        line = setup_line(make_fast_config())
+        line.produce_sso2_wip()
+        line.produce_rso2_wip()
+        advance_to_before(line, "AP01")
+        line.introduce_to_assy("SSO2-0002", "PAL-002")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip01 = line.conveyor.wip_at("AP01")
+        line.submit_operation_command("AP01", wip01, StationCommand.DONE)
+        # PRE-ASSY is still incomplete; an extra dwell must keep it waiting,
+        # never skip it.
+        assert line.conveyor.is_position_complete("PRE-ASSY") is False
+        line.execute_dwell()
+        wip_pre = line.conveyor.wip_at("PRE-ASSY")
+        op = line.operation_registry.active_for("PRE-ASSY", wip_pre)
+        assert op is not None
+        assert op.state == OperationState.AWAITING_COMPLETION
+
+
+# ═══════════════════════════════════════════════════════════
+# Synthetic-fact hygiene
+# ═══════════════════════════════════════════════════════════
+
+def test_no_unconfirmed_tipa_checklist_facts_in_runtime():
+    """No TIPA-looking domain facts may be hard-coded in the runtime."""
+    import inspect
+    import virtual_factory.assembly.line_runtime as lr
+    src = inspect.getsource(lr)
+    for fact in ("surface_quality", "label_presence", "assembly_alignment",
+                 "packaging_integrity", "label_correct",
+                 "documentation_complete", "mechanical_prep_ok",
+                 "visual_check_ok", "measurement_subset_ok"):
+        assert fact not in src, f"unconfirmed TIPA-looking fact {fact!r} in runtime"

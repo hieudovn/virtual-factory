@@ -905,19 +905,26 @@ class AssyLineRuntime:
 
     def _reset_quality_observation(self, op: OperationExecution) -> None:
         """OPS-04-C01 (D): clear pending observation so the next attempt
-        regenerates fresh measurements + proposal."""
+        regenerates fresh measurements + proposal + reason."""
         op.proposed_quality_result = None
+        op.proposed_quality_reason = None
         op.measurements = []
+        op.observations = []
 
     def _quality_checklist(self, check_type: CheckType) -> list[str]:
-        """OPS-04-C01 (D): static DEMO_SYNTHETIC checklist placeholders for
-        non-TEST quality checks (recorded with the observed proposal)."""
+        """OPS-04-C01-R1: neutral DEMO_SYNTHETIC observation identifiers.
+
+        No unconfirmed TIPA domain facts are hard-coded in the runtime.
+        """
         if check_type == CheckType.VISUAL_INSPECTION:
-            return ["surface_quality", "label_presence", "assembly_alignment"]
+            return ["demo_visual_observation_1", "demo_visual_observation_2",
+                    "demo_visual_observation_3"]
         if check_type == CheckType.FINAL_QC:
-            return ["packaging_integrity", "label_correct", "documentation_complete"]
+            return ["demo_final_qc_observation_1", "demo_final_qc_observation_2",
+                    "demo_final_qc_observation_3"]
         if check_type == CheckType.CHECKLIST:
-            return ["mechanical_prep_ok", "visual_check_ok", "measurement_subset_ok"]
+            return ["demo_checklist_observation_1", "demo_checklist_observation_2",
+                    "demo_checklist_observation_3"]
         return []
 
     def _prepare_quality_observation(
@@ -954,16 +961,50 @@ class AssyLineRuntime:
             station_key, motor_seq, attempt, qcfg, check_type)
 
         measurements: list[MeasurementValue] = []
+        observations: list[dict] = []
+        reason: Optional[dict] = None
+
         if check_type == CheckType.TEST:
-            # AP06: synthetic electrical measurements (DEMO_SYNTHETIC), in range.
+            # AP06: synthetic electrical measurements (DEMO_SYNTHETIC).
             measurements = [
                 MeasurementValue("R_U-V", 0.45 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
                 MeasurementValue("R_V-W", 0.47 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
                 MeasurementValue("R_W-U", 0.44 + (motor_seq * 0.01), "Ω", 0.30, 0.60),
             ]
+            if proposal in ("FAIL", "NG"):
+                # OPS-04-C01-R1: deterministic synthetic anomaly BEFORE decision.
+                measurements[0] = MeasurementValue("R_U-V", 0.29, "Ω", 0.30, 0.60)
+                reason = {"code": "DEMO_OUT_OF_RANGE", "source": "simulated_test"}
+            else:
+                reason = {"code": "DEMO_IN_RANGE", "source": "simulated_test"}
+        elif check_type == CheckType.VISUAL_INSPECTION:
+            anomaly = proposal in ("FAIL", "NG")
+            observations = [
+                {"observation_id": "demo_visual_observation_1",
+                 "result": "anomaly" if anomaly else "ok"},
+                {"observation_id": "demo_visual_observation_2", "result": "ok"},
+                {"observation_id": "demo_visual_observation_3", "result": "ok"},
+            ]
+            reason = {"code": "demo_visual_rule_1", "source": "simulated_vision"}
+        elif check_type == CheckType.FINAL_QC:
+            observations = [
+                {"observation_id": "demo_final_qc_observation_1", "result": "ok"},
+                {"observation_id": "demo_final_qc_observation_2", "result": "ok"},
+                {"observation_id": "demo_final_qc_observation_3", "result": "ok"},
+            ]
+            reason = {"code": "demo_final_qc_rule_1", "source": "simulated_final_qc"}
+        elif check_type == CheckType.CHECKLIST:
+            observations = [
+                {"observation_id": "demo_checklist_observation_1", "result": "ok"},
+                {"observation_id": "demo_checklist_observation_2", "result": "ok"},
+                {"observation_id": "demo_checklist_observation_3", "result": "ok"},
+            ]
+            reason = {"code": "demo_checklist_rule_1", "source": "simulated_checklist"}
 
         op.measurements = [m.to_dict() for m in measurements]
+        op.observations = observations
         op.proposed_quality_result = proposal
+        op.proposed_quality_reason = reason
         events.append(self._make_event(
             "QUALITY_OBSERVED", pos, wip_id,
             f"type={check_type.value} attempt={attempt} proposal={proposal}"))
@@ -1023,6 +1064,12 @@ class AssyLineRuntime:
             f"disposition={disposition} attempt={attempt}"))
 
         if disposition in ("FAIL", "NG"):
+            if check_type == CheckType.FINAL_QC:
+                # OPS-04-C01-R1: AP11 negative routing is unconfirmed — fail
+                # closed; never silently map to REINSPECT/REWORK/SCRAP.
+                raise AssyLineError(
+                    f"Final QC negative disposition {disposition!r} is unconfirmed; "
+                    f"fails closed (no REINSPECT/REWORK/SCRAP routing)")
             history.set_status(
                 QualityStatus.RETEST_PENDING if check_type == CheckType.TEST
                 else QualityStatus.REINSPECT_PENDING)

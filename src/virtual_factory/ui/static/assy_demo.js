@@ -1725,6 +1725,19 @@ const ctrlB = {
       // OPS-04-C01 (D): machine proposal observed BEFORE the decision.
       const pc = op.proposed_quality_result === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-hold)';
       html += `<div class="vf-popup-row"><span class="vf-popup-k">Proposal</span><span class="vf-popup-v" style="color:${pc};font-weight:600">${op.proposed_quality_result}</span></div>`;
+      if (op.proposed_quality_reason && op.proposed_quality_reason.code) {
+        html += `<div class="vf-popup-row"><span class="vf-popup-k">Reason</span><span class="vf-popup-v">${op.proposed_quality_reason.code}</span></div>`;
+      }
+    }
+    if (op.state === 'AWAITING_DECISION' && Array.isArray(op.observations) && op.observations.length) {
+      // OPS-04-C01-R1: neutral pre-decision observation basis.
+      html += '<div class="vf-op-meas">';
+      for (const ob of op.observations) {
+        const bad = ob.result === 'anomaly';
+        const rc = bad ? 'var(--vf-state-fail)' : 'var(--vf-state-pass)';
+        html += `<div class="vf-op-meas-row"><span>${ob.observation_id}</span><b>${ob.result}</b><small style="color:${rc}">${bad ? 'ANOMALY' : 'OK'}</small></div>`;
+      }
+      html += '</div>';
     }
     if (op.terminal) html += '<div class="vf-popup-row"><span class="vf-popup-k">Terminal</span><span class="vf-popup-v" style="color:var(--vf-state-fail);font-weight:600">FAILED — no recovery</span></div>';
     if (op.state === 'AWAITING_DECISION' && Array.isArray(op.measurements) && op.measurements.length) {

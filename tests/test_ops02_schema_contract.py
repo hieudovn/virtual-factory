@@ -274,7 +274,8 @@ def test_case10_active_operations_projection_is_a_view():
     assert set(d) == {
         "execution_id", "station_id", "wip_id", "state",
         "completion_mode", "command", "operation_result", "quality_result",
-        "proposed_quality_result", "routing_action", "attempt_number",
+        "proposed_quality_result", "proposed_quality_reason", "observations",
+        "routing_action", "attempt_number",
         "terminal", "checklist", "measurements",
     }
     assert "source" not in d and "inputs" not in d

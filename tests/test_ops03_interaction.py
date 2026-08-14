@@ -548,3 +548,12 @@ class TestOperationApi:
         )
         assert resp.status_code == 409
         assert "detail" in resp.json()
+
+    def test_select_sub_line_endpoint(self):
+        client = TestClient(create_app(config_path="configs/plants/continuous_mvp_01.yaml", dt_s=1.0))
+        client.post("/assy-demo/reset", json={"scenario": "HAPPY_PATH"})
+        resp = client.post("/assy-demo/select", json={"sub_line_id": "ASSY-SL02"})
+        assert resp.status_code == 200
+        assert resp.json()["sub_line_id"] == "ASSY-SL02"
+        assert client.post("/assy-demo/select", json={"sub_line_id": "NOPE"}).status_code == 404
+        assert client.post("/assy-demo/select", json={}).status_code == 400

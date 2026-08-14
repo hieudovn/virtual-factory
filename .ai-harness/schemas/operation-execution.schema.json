@@ -20,6 +20,8 @@
     "operation_result",
     "quality_result",
     "proposed_quality_result",
+    "proposed_quality_reason",
+    "observations",
     "routing_action",
     "source",
     "attempt_number",
@@ -88,6 +90,15 @@
       "type": ["string", "null"],
       "enum": ["PASS", "FAIL", "NG", null],
       "description": "OPS-04-C01: machine/scenario-derived proposal observed BEFORE the operator decision is applied."
+    },
+    "proposed_quality_reason": {
+      "type": ["object", "null"],
+      "description": "OPS-04-C01-R1: generic pre-decision reason (e.g. {code, source}); never TIPA-specific."
+    },
+    "observations": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "OPS-04-C01-R1: neutral pre-decision observations (non-measurement quality stations)."
     },
     "routing_action": {
       "type": ["string", "null"],

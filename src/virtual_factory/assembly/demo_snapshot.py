@@ -132,6 +132,8 @@ class ActiveOperationView:
     operation_result: str = ""
     quality_result: str = ""
     proposed_quality_result: str = ""
+    proposed_quality_reason: dict = field(default_factory=dict)
+    observations: list = field(default_factory=list)
     routing_action: str = ""
     attempt_number: int = 0
     terminal: bool = False
@@ -149,6 +151,8 @@ class ActiveOperationView:
             "operation_result": self.operation_result,
             "quality_result": self.quality_result,
             "proposed_quality_result": self.proposed_quality_result,
+            "proposed_quality_reason": self.proposed_quality_reason,
+            "observations": self.observations,
             "routing_action": self.routing_action,
             "attempt_number": self.attempt_number,
             "terminal": self.terminal,
@@ -387,6 +391,8 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
             operation_result=op.operation_result.value if op.operation_result and hasattr(op.operation_result, "value") else (str(op.operation_result) if op.operation_result else ""),
             quality_result=op.quality_result or "",
             proposed_quality_result=op.proposed_quality_result or "",
+            proposed_quality_reason=op.proposed_quality_reason or {},
+            observations=list(op.observations),
             routing_action=op.routing_action or "",
             attempt_number=op.attempt_number,
             terminal=op.terminal,

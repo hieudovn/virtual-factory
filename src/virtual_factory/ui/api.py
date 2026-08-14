@@ -344,6 +344,32 @@ def create_app(
             )
         return ctrl.set_run_mode(parsed).to_dict()
 
+    @app.post("/assy-demo/select")
+    def assy_demo_select(body: dict) -> dict:
+        """Select the active sub-line context for step/command endpoints.
+
+        Additive M6-S04B binding: the detail view can render any sub-line, but
+        step/command endpoints operate on the selected context. This exposes the
+        existing DemoController.select_sub_line surface so operators can target
+        a specific sub-line in MANUAL E2E.
+        """
+        from fastapi.responses import JSONResponse
+        ctrl = _get_assy_controller()
+        sub_line_id = body.get("sub_line_id", "")
+        if not sub_line_id:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "sub_line_id is required"},
+            )
+        try:
+            ctrl.select_sub_line(sub_line_id)
+        except ValueError as exc:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": str(exc)},
+            )
+        return ctrl.snapshot().to_dict()
+
     # ═══════════════════════════════════════════════════
     # M6-S04B-I03 — Additive S04B Overview / Detail Endpoints
     # ═══════════════════════════════════════════════════

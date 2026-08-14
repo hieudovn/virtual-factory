@@ -189,13 +189,13 @@ stations:
       exception: true
       identity_transformation: false
       final_disposition: true
-    # OPS-04-C01: final QC (CONFIRM + PASS/FAIL) is distinct from RELEASE.
+    # OPS-04-C01-R1: final QC (CONFIRM + PASS) is distinct from RELEASE.
+    # AP11 negative routing is unconfirmed → PASS-only decision surface.
     normal_action: CONFIRM
     required_action: RELEASE
     work_duration_s: 30
     decision_actions:
       - PASS
-      - FAIL
     final_disposition_actions:
       - RELEASE
       - HOLD

@@ -1,12 +1,14 @@
 # OPS-04-C01 — Production Decision Semantics & Manual E2E Readiness
 
-Status: **READY FOR SA REVIEW** (machine-derived status follows below)
+Status: **OPS-04-C01-R1 — READY FOR SA REVIEW** (machine-derived status follows below)
 
-Baseline: `24d8be7`
+Baseline: `f9d8a01` (R1 supersedes `24d8be7`)
 Branch: `docs/m6-s01-tipa-baseline`
 
 This slice closes six blockers (A–F) in the ASSY production-decision
-semantics so that the Manual E2E run is physically consistent.
+semantics so that the Manual E2E run is physically consistent. R1 adds
+evidence/proposal coherence, a generic proposal reason, AP11 fail-closed
+negative QC, synthetic-fact hygiene, and dwell-fix regression coverage.
 
 ---
 
@@ -98,13 +100,58 @@ longer re-processed in a subsequent dwell. `execute_dwell` skips positions
 already marked complete until the next synchronized index. This prevents a
 stalled line from re-executing AP04 JOIN on its own child.
 
-## 8. Tests
+## 8. R1 — Evidence/proposal coherence (causality)
 
-`tests/test_ops04_c01.py` — 29 tests: HOLD lifecycle (10), AP06 causality (8),
-AP08 causality (5), AP11 separation (6). Existing OPS-02/OPS-03/quality tests
-updated to the new AP11 two-step and HOLD→HELD semantics.
+`operation executes → observation/evidence → proposal (with reason) → operator
+sees evidence → operator decides → QualityRecord finalized → status → routing
+→ eligibility`. The operator decision never retroactively generates or rewrites
+evidence.
 
-## 9. Files changed
+- `OperationExecution.proposed_quality_reason` — generic `{code, source}`.
+- `OperationExecution.observations[]` — neutral pre-decision observations for
+  non-measurement quality stations.
+
+AP06 (TEST): PASS scenario → in-range synthetic measurements, reason
+`DEMO_IN_RANGE`; FAIL scenario → deterministic synthetic anomaly (first
+measurement out of range) generated BEFORE the decision, reason
+`DEMO_OUT_OF_RANGE`. Operator override FAIL→PASS keeps the anomaly and the
+proposal frozen (auditable).
+
+AP08 (VISION): neutral observations `demo_visual_observation_1..3` with
+`ok`/`anomaly`, reason `demo_visual_rule_1`.
+
+## 9. R1 — AP11 negative QC fails closed
+
+AP11 decision surface is `PASS`-only (`decision_actions = ("PASS",)`).
+Negative disposition (operator FAIL, or a scenario-derived FAIL) is rejected
+(`AssyLineError`) — never silently mapped to `REINSPECT_PENDING` /
+`FAILED_FINAL` / REWORK / SCRAP. Known-safe path remains:
+
+```text
+WORKING → final-QC observation → AWAITING_DECISION → PASS → CONFIRMED/CLEAR
+→ AWAITING_COMPLETION → RELEASE → RELEASED → CONTINUE
+```
+
+## 10. R1 — Synthetic-fact hygiene
+
+Unconfirmed TIPA-looking checklist strings (`surface_quality`, `label_presence`,
+`packaging_integrity`, …) are removed from `line_runtime.py`. Quality
+checklists/observations now use neutral `DEMO_SYNTHETIC` IDs.
+
+## 11. R1 — Dwell regression coverage
+
+`TestCompletedPositionDwellFix`: (1) AP04 cannot JOIN twice while blocked;
+(2) completed pure-execution station does not repeat `station_count`;
+(3) completed quality station creates no duplicate records; (4) next index
+proceeds normally; (5) incomplete stations are never skipped.
+
+## 12. Tests
+
+`tests/test_ops04_c01.py` — 42 tests: HOLD lifecycle, AP06 causality/coherence,
+AP08 neutral observations, AP11 two-step + fail-closed, dwell regression, and
+synthetic-fact hygiene.
+
+## 13. Files changed
 
 - `src/virtual_factory/assembly/operation_execution.py` — `proposed_quality_result`
   field; `AWAITING_DECISION → AWAITING_COMPLETION` transition; HELD transitions.

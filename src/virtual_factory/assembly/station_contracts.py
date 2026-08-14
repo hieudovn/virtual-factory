@@ -201,7 +201,7 @@ def build_default_assy_contracts(
             normal_action=StationCommand.CONFIRM,
             required_action=StationCommand.RELEASE,
             work_duration_s=_duration("AP11", 30.0),
-            decision_actions=("PASS", "FAIL"),
+            decision_actions=("PASS",),
             final_disposition_actions=("RELEASE", "HOLD"),
             exception_actions=("HOLD",),
         ),
