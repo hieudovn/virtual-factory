@@ -616,3 +616,150 @@ def test_no_unconfirmed_tipa_checklist_facts_in_runtime():
                  "documentation_complete", "mechanical_prep_ok",
                  "visual_check_ok", "measurement_subset_ok"):
         assert fact not in src, f"unconfirmed TIPA-looking fact {fact!r} in runtime"
+
+
+# ═══════════════════════════════════════════════════════════
+# R2 — Atomic fail-closed AP11 negative final QC
+# ═══════════════════════════════════════════════════════════
+
+class TestAP11AtomicRejection:
+    def test_manual_fail_decision_is_atomic(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP11")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip = line.conveyor.wip_at("AP11")
+        op = line.operation_registry.active_for("AP11", wip)
+        qh = line.get_quality_history(wip)
+        records_before = list(qh.records) if qh else []
+        status_before = line.get_current_quality_status(wip)
+        state_before = op.state
+        command_before = op.command
+        inputs_before = dict(op.inputs)
+        attempt_before = op.attempt_number
+        lifecycle_before = line.get_wip(wip).lifecycle
+
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command(
+                "AP11", wip, StationCommand.CONFIRM, payload={"decision": "FAIL"})
+
+        # zero partial mutation
+        assert list(qh.records) == records_before
+        assert line.get_current_quality_status(wip) == status_before
+        assert op.state == state_before
+        assert op.command == command_before
+        assert op.inputs == inputs_before
+        assert op.attempt_number == attempt_before
+        assert line.get_wip(wip).lifecycle == lifecycle_before
+        assert line.conveyor.is_position_complete("AP11") is False
+
+    def test_assisted_negative_proposal_is_atomic(self):
+        cfg = make_fast_config()
+        cfg.quality.ap11.scenario = "ALWAYS_FAIL"
+        line = setup_line(cfg)
+        advance_to_before(line, "AP11")
+        line.global_run_mode = CompletionMode.ASSISTED
+        line.execute_dwell()
+        wip = line.conveyor.wip_at("AP11")
+        op = line.operation_registry.active_for("AP11", wip)
+        assert op.proposed_quality_result == "FAIL"
+        proposal_before = op.proposed_quality_result
+        reason_before = dict(op.proposed_quality_reason or {})
+        observations_before = [dict(o) for o in op.observations]
+        qh = line.get_quality_history(wip)
+        records_before = list(qh.records) if qh else []
+        command_before = op.command
+        inputs_before = dict(op.inputs)
+
+        # ACCEPT PROPOSED → reject BEFORE mutation
+        with pytest.raises(AssyLineError):
+            line.submit_operation_command("AP11", wip, StationCommand.CONFIRM)
+
+        assert list(qh.records) == records_before
+        assert op.proposed_quality_result == proposal_before
+        assert op.proposed_quality_reason == reason_before
+        assert op.observations == observations_before
+        assert op.state == OperationState.AWAITING_DECISION
+        assert op.command == command_before
+        assert op.inputs == inputs_before
+        assert line.conveyor.is_position_complete("AP11") is False
+
+    def test_auto_negative_proposal_fails_closed_without_record(self):
+        cfg = make_fast_config()
+        cfg.quality.ap11.scenario = "ALWAYS_FAIL"
+        line = setup_line(cfg)
+        advance_to_before(line, "AP11")
+        with pytest.raises(AssyLineError):
+            line.execute_dwell()  # AUTO resolution of negative final QC
+        qh = line.get_quality_history(CHILD)
+        assert qh is None or len(qh.records_for("AP11")) == 0
+        assert line.get_current_quality_status(CHILD) == QualityStatus.CLEAR
+
+    def test_auto_negative_retry_does_not_accumulate(self):
+        cfg = make_fast_config()
+        cfg.quality.ap11.scenario = "ALWAYS_FAIL"
+        line = setup_line(cfg)
+        advance_to_before(line, "AP11")
+        for _ in range(3):
+            with pytest.raises(AssyLineError):
+                line.execute_dwell()
+        qh = line.get_quality_history(CHILD)
+        assert qh is None or len(qh.records_for("AP11")) == 0
+        op = line.operation_registry.active_for("AP11", CHILD)
+        assert op.attempt_number == 0
+        assert op.state == OperationState.AWAITING_DECISION
+
+    def test_positive_regression_pass_records_once_and_releases(self):
+        line = setup_line(make_fast_config())
+        advance_to_before(line, "AP11")
+        line.global_run_mode = CompletionMode.MANUAL
+        line.execute_dwell()
+        wip = line.conveyor.wip_at("AP11")
+        line.submit_operation_command(
+            "AP11", wip, StationCommand.CONFIRM, payload={"decision": "PASS"})
+        qh = line.get_quality_history(wip)
+        assert len(qh.records_for("AP11")) == 1
+        op = line.operation_registry.active_for("AP11", wip)
+        assert op.state == OperationState.AWAITING_COMPLETION
+        assert op.command == StationCommand.CONFIRM
+        assert op.inputs.get("decision") == "PASS"
+        line.submit_operation_command("AP11", wip, StationCommand.RELEASE)
+        assert line.get_wip(wip).lifecycle == WipLifecycle.RELEASED
+
+
+# ═══════════════════════════════════════════════════════════
+# R2 — /assy-demo/select non-mutation
+# ═══════════════════════════════════════════════════════════
+
+fastapi = pytest.importorskip("fastapi")
+pytest.importorskip("httpx")
+from fastapi.testclient import TestClient  # noqa: E402
+from virtual_factory.ui.api import create_app  # noqa: E402
+
+
+class TestSelectEndpointNonMutation:
+    def test_select_does_not_mutate_runtime_state(self):
+        client = TestClient(create_app(config_path="configs/plants/continuous_mvp_01.yaml", dt_s=1.0))
+        client.post("/assy-demo/reset", json={"scenario": "HAPPY_PATH"})
+        client.post("/assy-demo/step")
+        before_sl01 = client.get("/assy-demo/sub-line/ASSY-SL01").json()
+        before_sl02 = client.get("/assy-demo/sub-line/ASSY-SL02").json()
+        # select SL02 then back to SL01
+        assert client.post("/assy-demo/select", json={"sub_line_id": "ASSY-SL02"}).status_code == 200
+        assert client.post("/assy-demo/select", json={"sub_line_id": "ASSY-SL01"}).status_code == 200
+        after_sl01 = client.get("/assy-demo/sub-line/ASSY-SL01").json()
+        after_sl02 = client.get("/assy-demo/sub-line/ASSY-SL02").json()
+        assert after_sl01["dwell_number"] == before_sl01["dwell_number"]
+        assert after_sl01["simulation_time_s"] == before_sl01["simulation_time_s"]
+        assert after_sl02["dwell_number"] == before_sl02["dwell_number"]
+        assert after_sl02["simulation_time_s"] == before_sl02["simulation_time_s"]
+        assert ([p["wip_id"] for p in before_sl01["positions"]]
+                == [p["wip_id"] for p in after_sl01["positions"]])
+        assert ([p["wip_id"] for p in before_sl02["positions"]]
+                == [p["wip_id"] for p in after_sl02["positions"]])
+
+    def test_invalid_select_rejected(self):
+        client = TestClient(create_app(config_path="configs/plants/continuous_mvp_01.yaml", dt_s=1.0))
+        client.post("/assy-demo/reset", json={"scenario": "HAPPY_PATH"})
+        assert client.post("/assy-demo/select", json={"sub_line_id": "NOPE"}).status_code == 404
+        assert client.post("/assy-demo/select", json={}).status_code == 400

@@ -704,12 +704,14 @@ class AssyLineRuntime:
                         f"Manual quality decision required at {station_id}: "
                         f"choose one of {list(contract.decision_actions)}")
 
+        events = self._run_operation_domain(
+            station_id, wip_id, op, contract, decision=decision, command=cmd)
+
+        # OPS-04-C01-R2: commit accepted command/input only after the domain
+        # resolves. A rejected action must not look accepted.
         op.command = cmd
         if payload is not None:
             op.inputs.update(payload)
-
-        events = self._run_operation_domain(
-            station_id, wip_id, op, contract, decision=decision, command=cmd)
 
         # Resolve post-domain outcome
         if op.state == OperationState.COMPLETED:
@@ -1040,6 +1042,14 @@ class AssyLineRuntime:
         if decision is not None:
             disposition = decision
 
+        # OPS-04-C01-R2: reject unrepresentable final-QC negative BEFORE any
+        # authoritative mutation — no QualityRecord, no status change, no
+        # attempt increment, no events.
+        if check_type == CheckType.FINAL_QC and disposition in ("FAIL", "NG"):
+            raise AssyLineError(
+                f"Final QC negative disposition {disposition!r} is unconfirmed; "
+                f"fails closed (no REINSPECT/REWORK/SCRAP routing)")
+
         events.append(self._make_event(
             "QUALITY_START", pos, wip_id,
             f"type={check_type.value} attempt={attempt}"))
@@ -1064,12 +1074,6 @@ class AssyLineRuntime:
             f"disposition={disposition} attempt={attempt}"))
 
         if disposition in ("FAIL", "NG"):
-            if check_type == CheckType.FINAL_QC:
-                # OPS-04-C01-R1: AP11 negative routing is unconfirmed — fail
-                # closed; never silently map to REINSPECT/REWORK/SCRAP.
-                raise AssyLineError(
-                    f"Final QC negative disposition {disposition!r} is unconfirmed; "
-                    f"fails closed (no REINSPECT/REWORK/SCRAP routing)")
             history.set_status(
                 QualityStatus.RETEST_PENDING if check_type == CheckType.TEST
                 else QualityStatus.REINSPECT_PENDING)
