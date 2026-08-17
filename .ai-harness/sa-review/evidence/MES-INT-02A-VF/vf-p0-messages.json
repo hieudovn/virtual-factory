@@ -1,0 +1,309 @@
+{
+  "envelope_example": {
+    "message_key": "ASSY-SL01:R1|EXEC-00001|assy.operation_completion|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.execution_event",
+    "schema_name": "vf.mes.execution_event",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "f8fe26ce-de9c-4788-93a0-5c21e42d53e9",
+      "idempotency_key": "ASSY-SL01:R1|EXEC-00001|assy.operation_completion|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 120.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "SSO2-0001",
+      "station_id": "PRE-ASSY",
+      "event_type": "OPERATION_COMPLETED",
+      "execution_id": "EXEC-00001",
+      "wip_id": "SSO2-0001",
+      "operation_result": "DONE",
+      "completion_mode": "AUTO",
+      "attempt_number": 0,
+      "source": "simulated"
+    }
+  },
+  "operation_completion": {
+    "message_key": "ASSY-SL01:R1|EXEC-00001|assy.operation_completion|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.execution_event",
+    "schema_name": "vf.mes.execution_event",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "f8fe26ce-de9c-4788-93a0-5c21e42d53e9",
+      "idempotency_key": "ASSY-SL01:R1|EXEC-00001|assy.operation_completion|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 120.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "SSO2-0001",
+      "station_id": "PRE-ASSY",
+      "event_type": "OPERATION_COMPLETED",
+      "execution_id": "EXEC-00001",
+      "wip_id": "SSO2-0001",
+      "operation_result": "DONE",
+      "completion_mode": "AUTO",
+      "attempt_number": 0,
+      "source": "simulated"
+    }
+  },
+  "ap04_genealogy": {
+    "message_key": "ASSY-SL01:R1|MTR-0001|assy.ap04_genealogy|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.genealogy_relationship",
+    "schema_name": "vf.mes.genealogy_relationship",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "7800d086-07cd-4018-96ba-5bf9275569fd",
+      "idempotency_key": "ASSY-SL01:R1|MTR-0001|assy.ap04_genealogy|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 480.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0001",
+      "station_id": "AP04",
+      "event_type": "AP04_JOIN",
+      "child_wip_id": "MTR-0001",
+      "parent_wip_ids": [
+        "SSO2-0001",
+        "RSO2-0001"
+      ],
+      "component_ids": [],
+      "join_station": "AP04",
+      "join_time_s": 480.0,
+      "relationship_type": "assembly_join",
+      "wip_id": "MTR-0001"
+    }
+  },
+  "ap06_pass": {
+    "message_key": "ASSY-SL01:R1|QR-0001|assy.quality_result|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.quality_result",
+    "schema_name": "vf.mes.quality_result",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "53358662-b57d-45f2-82e2-e96fc0e48f38",
+      "idempotency_key": "ASSY-SL01:R1|QR-0001|assy.quality_result|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 840.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0001",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0001",
+      "wip_id": "MTR-0001",
+      "check_type": "TEST",
+      "disposition": "PASS",
+      "attempt_number": 1,
+      "reason_code": ""
+    }
+  },
+  "ap08_pass": {
+    "message_key": "ASSY-SL01:R1|QR-0004|assy.quality_result|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.quality_result",
+    "schema_name": "vf.mes.quality_result",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "f4727773-40e2-4d58-84a0-90596303d05f",
+      "idempotency_key": "ASSY-SL01:R1|QR-0004|assy.quality_result|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 1080.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0001",
+      "station_id": "AP08",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0004",
+      "wip_id": "MTR-0001",
+      "check_type": "VISUAL_INSPECTION",
+      "disposition": "PASS",
+      "attempt_number": 1,
+      "reason_code": ""
+    }
+  },
+  "ap11_final_qc_pass": {
+    "message_key": "ASSY-SL01:R1|QR-0011|assy.ap11_final_qc|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.quality_result",
+    "schema_name": "vf.mes.quality_result",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "088e52ab-b1cb-4643-b231-dc949c18af43",
+      "idempotency_key": "ASSY-SL01:R1|QR-0011|assy.ap11_final_qc|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 1440.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0001",
+      "station_id": "AP11",
+      "event_type": "AP11_FINAL_QC_PASS",
+      "record_id": "QR-0011",
+      "wip_id": "MTR-0001",
+      "check_type": "FINAL_QC",
+      "disposition": "PASS",
+      "attempt_number": 1
+    }
+  },
+  "ap11_release": {
+    "message_key": "ASSY-SL01:R1|release:MTR-0001|assy.ap11_release|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.release",
+    "schema_name": "vf.mes.release",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "91d9e446-161a-4b1d-99f4-bc5cd6f1f356",
+      "idempotency_key": "ASSY-SL01:R1|release:MTR-0001|assy.ap11_release|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 1680.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0001",
+      "station_id": "AP11",
+      "event_type": "AP11_RELEASE",
+      "wip_id": "MTR-0001",
+      "release_time_s": 1680.0
+    }
+  },
+  "ap06_fail_attempt1": {
+    "message_key": "ASSY-SL03:R1|QR-0002|assy.quality_result|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.quality_result",
+    "schema_name": "vf.mes.quality_result",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "e21dc961-d7e0-4412-84e3-8f0fbc602cda",
+      "idempotency_key": "ASSY-SL03:R1|QR-0002|assy.quality_result|1.0",
+      "run_id": "ASSY-SL03:R1",
+      "simulation_time_s": 960.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0002",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0002",
+      "wip_id": "MTR-0002",
+      "check_type": "TEST",
+      "disposition": "FAIL",
+      "attempt_number": 1,
+      "reason_code": ""
+    }
+  },
+  "ap06_pass_attempt2": {
+    "message_key": "ASSY-SL03:R1|QR-0003|assy.quality_result|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.quality_result",
+    "schema_name": "vf.mes.quality_result",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "edb5f9fb-38b6-4f20-9849-b8899f947834",
+      "idempotency_key": "ASSY-SL03:R1|QR-0003|assy.quality_result|1.0",
+      "run_id": "ASSY-SL03:R1",
+      "simulation_time_s": 1080.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0002",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0003",
+      "wip_id": "MTR-0002",
+      "check_type": "TEST",
+      "disposition": "PASS",
+      "attempt_number": 2,
+      "reason_code": ""
+    }
+  },
+  "ap08_ng_attempt1": {
+    "message_key": "ASSY-SL02:R1|QR-0006|assy.quality_result|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.quality_result",
+    "schema_name": "vf.mes.quality_result",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "4030585e-9a70-4002-9d13-3b88975b7797",
+      "idempotency_key": "ASSY-SL02:R1|QR-0006|assy.quality_result|1.0",
+      "run_id": "ASSY-SL02:R1",
+      "simulation_time_s": 1200.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0002",
+      "station_id": "AP08",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0006",
+      "wip_id": "MTR-0002",
+      "check_type": "VISUAL_INSPECTION",
+      "disposition": "NG",
+      "attempt_number": 1,
+      "reason_code": ""
+    }
+  },
+  "ap08_pass_attempt2": {
+    "message_key": "ASSY-SL02:R1|QR-0007|assy.quality_result|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.quality_result",
+    "schema_name": "vf.mes.quality_result",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "82e99bba-90a6-4fd4-845f-e0b2b5e4a628",
+      "idempotency_key": "ASSY-SL02:R1|QR-0007|assy.quality_result|1.0",
+      "run_id": "ASSY-SL02:R1",
+      "simulation_time_s": 1320.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0002",
+      "station_id": "AP08",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0007",
+      "wip_id": "MTR-0002",
+      "check_type": "VISUAL_INSPECTION",
+      "disposition": "PASS",
+      "attempt_number": 2,
+      "reason_code": ""
+    }
+  }
+}
