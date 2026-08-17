@@ -1,0 +1,68 @@
+# VF-DEPLOY-01 — TIPA ASSY Docker Runtime
+#
+# Independent ASSY deployment for the ACCEPTED TIPA ASSY demo/runtime
+# (VF Accepted Demo Build 494c12e, contract f72cc95).
+#
+# Design (Option A — separate compose file, preferred by VF-DEPLOY-01 §3):
+#   * The root Dockerfile stays a GENERIC VF runtime image (unchanged).
+#   * ASSY-specific launch behavior lives entirely in this file.
+#   * Existing compose services (mqtt, virtual-factory-api, vf2-simulator)
+#     are preserved untouched — `docker compose up` in the root file is
+#     unaffected, and ASSY starts independently.
+#   * P0 ASSY runtime is dependency-light: FastAPI + uvicorn only (api extra).
+#
+# Usage:
+#   docker compose -f docker-compose.assy.yml up --build -d
+#   curl http://127.0.0.1:8000/health
+#   open http://127.0.0.1:8000/assy-demo
+#
+# Future MES E2E shared network — the EXACT one-line change (see
+# docs/deployment/assy-docker.md §"Shared network for MES E2E"):
+#
+#   After `docker network create manufacturing-demo`, uncomment:
+#     networks:
+#       default:
+#         name: manufacturing-demo
+#         external: true
+#
+# No MES URL, MES credentials, Odoo IDs or host paths are configured here.
+
+name: vf-assy
+
+services:
+  vf-assy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vf-assy:latest
+    command:
+      - virtual-factory
+      - serve
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    environment:
+      # Required feature flag for M6-S04B Frame A/B + ASSY overview endpoints.
+      VF_ENABLE_S04B_OVERVIEW: "1"
+      # Container path of the accepted TIPA ASSY config (host-independent).
+      TIPA_ASSY_CONFIG: /app/configs/plants/tipa_assy_demo.yaml
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request, json; s=json.load(urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)); raise SystemExit(0 if s.get('status')=='ok' else 1)"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+# Future MES E2E: attach the service to a shared external Docker network.
+# networks:
+#   default:
+#     name: manufacturing-demo
+#     external: true

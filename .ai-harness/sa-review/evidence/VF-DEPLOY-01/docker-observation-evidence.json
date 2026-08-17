@@ -1,0 +1,154 @@
+{
+  "observation_count": 16749,
+  "message_type_counts": {
+    "mes.execution_event": 10626,
+    "mes.genealogy_relationship": 1347,
+    "mes.quality_result": 3655,
+    "mes.release": 1121
+  },
+  "ap06_fail_attempt1_sample": [
+    {
+      "message_key": "ASSY-SL03:R2|QR-0002|assy.quality_result|1.0",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "run_id": "ASSY-SL03:R2",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0002",
+      "disposition": "FAIL",
+      "attempt_number": 1,
+      "subject_id": "MTR-0002",
+      "simulation_time_s": 960.0,
+      "release_time_s": null,
+      "child_wip_id": null,
+      "parent_wip_ids": null
+    }
+  ],
+  "ap06_pass_attempt2_sample": [
+    {
+      "message_key": "ASSY-SL03:R2|QR-0003|assy.quality_result|1.0",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "run_id": "ASSY-SL03:R2",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0003",
+      "disposition": "PASS",
+      "attempt_number": 2,
+      "subject_id": "MTR-0002",
+      "simulation_time_s": 1080.0,
+      "release_time_s": null,
+      "child_wip_id": null,
+      "parent_wip_ids": null
+    }
+  ],
+  "ap08_ng_attempt1_sample": [
+    {
+      "message_key": "ASSY-SL02:R3|QR-0006|assy.quality_result|1.0",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "run_id": "ASSY-SL02:R3",
+      "station_id": "AP08",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0006",
+      "disposition": "NG",
+      "attempt_number": 1,
+      "subject_id": "MTR-0002",
+      "simulation_time_s": 1200.0,
+      "release_time_s": null,
+      "child_wip_id": null,
+      "parent_wip_ids": null
+    }
+  ],
+  "ap08_pass_attempt2_sample": [
+    {
+      "message_key": "ASSY-SL02:R3|QR-0007|assy.quality_result|1.0",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "run_id": "ASSY-SL02:R3",
+      "station_id": "AP08",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0007",
+      "disposition": "PASS",
+      "attempt_number": 2,
+      "subject_id": "MTR-0002",
+      "simulation_time_s": 1320.0,
+      "release_time_s": null,
+      "child_wip_id": null,
+      "parent_wip_ids": null
+    }
+  ],
+  "ap11_final_qc_pass_sample": [
+    {
+      "message_key": "ASSY-SL01:R1|QR-0011|assy.ap11_final_qc|1.0",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "run_id": "ASSY-SL01:R1",
+      "station_id": "AP11",
+      "event_type": "AP11_FINAL_QC_PASS",
+      "record_id": "QR-0011",
+      "disposition": "PASS",
+      "attempt_number": 1,
+      "subject_id": "MTR-0001",
+      "simulation_time_s": 1440.0,
+      "release_time_s": null,
+      "child_wip_id": null,
+      "parent_wip_ids": null
+    }
+  ],
+  "ap11_release_sample": {
+    "message_key": "ASSY-SL01:R1|release:MTR-0001|assy.ap11_release|1.0",
+    "message_type": "mes.release",
+    "schema_name": "vf.mes.release",
+    "run_id": "ASSY-SL01:R1",
+    "station_id": "AP11",
+    "event_type": "AP11_RELEASE",
+    "record_id": null,
+    "disposition": null,
+    "attempt_number": null,
+    "subject_id": "MTR-0001",
+    "simulation_time_s": 1680.0,
+    "release_time_s": 1680.0,
+    "child_wip_id": null,
+    "parent_wip_ids": null
+  },
+  "sample_execution_event": {
+    "message_key": "ASSY-SL01:R1|EXEC-00001|assy.operation_completion|1.0",
+    "message_type": "mes.execution_event",
+    "schema_name": "vf.mes.execution_event",
+    "run_id": "ASSY-SL01:R1",
+    "station_id": "PRE-ASSY",
+    "event_type": "OPERATION_COMPLETED",
+    "record_id": null,
+    "disposition": null,
+    "attempt_number": 0,
+    "subject_id": "SSO2-0001",
+    "simulation_time_s": 120.0,
+    "release_time_s": null,
+    "child_wip_id": null,
+    "parent_wip_ids": null
+  },
+  "sample_genealogy_relationship": {
+    "message_key": "ASSY-SL01:R1|MTR-0001|assy.ap04_genealogy|1.0",
+    "message_type": "mes.genealogy_relationship",
+    "schema_name": "vf.mes.genealogy_relationship",
+    "run_id": "ASSY-SL01:R1",
+    "station_id": "AP04",
+    "event_type": "AP04_JOIN",
+    "record_id": null,
+    "disposition": null,
+    "attempt_number": null,
+    "subject_id": "MTR-0001",
+    "simulation_time_s": 480.0,
+    "release_time_s": null,
+    "child_wip_id": "MTR-0001",
+    "parent_wip_ids": [
+      "SSO2-0001",
+      "RSO2-0001"
+    ]
+  },
+  "ap06_attempt1_keys_unique": 2,
+  "ap06_attempt2_keys_unique": 2,
+  "ap08_attempt1_keys_unique": 2,
+  "ap08_attempt2_keys_unique": 2
+}
