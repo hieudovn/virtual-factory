@@ -37,6 +37,43 @@
         "item_id": { "type": "string", "minLength": 1 },
         "completed": { "type": "boolean" }
       }
+    },
+    "timingSample": {
+      "type": "object",
+      "required": [
+        "profile_id",
+        "timing_behavior",
+        "nominal_duration_s",
+        "effective_duration_s",
+        "sub_actions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "profile_id": { "type": "string", "minLength": 1 },
+        "timing_behavior": { "type": "string", "enum": ["DETERMINISTIC", "VARIABLE"] },
+        "nominal_duration_s": { "type": "number" },
+        "effective_duration_s": { "type": "number" },
+        "sub_actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/timingSubActionSample" }
+        }
+      }
+    },
+    "timingSubActionSample": {
+      "type": "object",
+      "required": ["id", "policy", "nominal_duration_s", "effective_duration_s"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "policy": { "type": "string", "enum": ["fixed", "normal"] },
+        "nominal_duration_s": { "type": "number" },
+        "effective_duration_s": { "type": "number" },
+        "seconds": { "type": ["number", "null"] },
+        "mean_s": { "type": ["number", "null"] },
+        "stddev_s": { "type": ["number", "null"] },
+        "min_s": { "type": ["number", "null"] },
+        "max_s": { "type": ["number", "null"] }
+      }
     }
   },
   "properties": {
@@ -118,6 +155,13 @@
     "terminal": {
       "type": "boolean",
       "description": "True when the execution reached a no-recovery terminal state (e.g. FAILED + FAILED_FINAL)."
+    },
+    "timing": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/timingSample" }
+      ],
+      "description": "AUTO-TIME-01C: frozen AUTO timing sample (null for MANUAL/ASSISTED or AUTO fallback without profile)."
     }
   }
 }

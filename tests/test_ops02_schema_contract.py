@@ -116,6 +116,7 @@ def base_payload() -> dict:
         "source": "simulated",
         "attempt_number": 0,
         "terminal": False,
+        "timing": None,
     }
 
 
@@ -277,6 +278,7 @@ def test_case10_active_operations_projection_is_a_view():
         "proposed_quality_result", "proposed_quality_reason", "observations",
         "routing_action", "attempt_number",
         "terminal", "checklist", "measurements",
+        "work_duration_s", "timing",
     }
     assert "source" not in d and "inputs" not in d
 

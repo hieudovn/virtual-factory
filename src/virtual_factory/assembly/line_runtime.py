@@ -123,6 +123,16 @@ class AssyLineConfig:
     auto_timing_profiles: dict[str, AutoTimingProfile] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class DwellPerformance:
+    """AUTO-TIME-01C — immutable last-executed-dwell performance metrics."""
+
+    actual_dwell_s: float = 0.0
+    dwell_overrun_s: float = 0.0
+    bottleneck_station_id: str = ""
+    bottleneck_duration_s: float = 0.0
+
+
 # ═══════════════════════════════════════════════════════════════
 # Trace / Event
 # ═══════════════════════════════════════════════════════════════
@@ -350,6 +360,10 @@ class AssyLineRuntime:
     # AUTO-TIME-01B — isolated timing resolver (seeded, no global random)
     _timing_resolver: Optional[TimingResolver] = field(init=False, default=None)
 
+    # AUTO-TIME-01C — last executed dwell performance metrics
+    _dwell_performance: DwellPerformance = field(
+        init=False, default_factory=DwellPerformance)
+
     def __post_init__(self) -> None:
         self.conveyor = ConveyorLine(config=self.config.conveyor)
         self.upstream = UpstreamProducer(config=self.config.upstream)
@@ -366,6 +380,11 @@ class AssyLineRuntime:
     @property
     def simulation_time_s(self) -> float:
         return self._simulation_time_s
+
+    @property
+    def dwell_performance(self) -> DwellPerformance:
+        """AUTO-TIME-01C: last executed dwell performance (immutable)."""
+        return self._dwell_performance
 
     @property
     def trace(self) -> tuple[LineEvent, ...]:
@@ -491,11 +510,16 @@ class AssyLineRuntime:
                 continue
             self._ensure_operation_for_position(pos, wip_id)
 
-        # Determine max remaining station time from FROZEN op duration
-        # (completed stations are done for this dwell and must not extend it).
+        # Determine max remaining station time from FROZEN op duration,
+        # scanning in configured conveyor position order so tie-breaking is
+        # deterministic (first position with the max remaining drives).
+        # (completed stations are done for this dwell and must not extend it.)
         max_remaining = 0.0
-        for pos in self.conveyor.occupied_positions():
-            if self.conveyor.is_position_complete(pos):
+        driver_pos = ""
+        driver_duration = 0.0
+        occupied = set(self.conveyor.occupied_positions())
+        for pos in self.conveyor.positions:
+            if pos not in occupied or self.conveyor.is_position_complete(pos):
                 continue
             wip_id = self.conveyor.wip_at(pos)
             if wip_id is None:
@@ -510,8 +534,25 @@ class AssyLineRuntime:
             remaining = max(0.0, required - elapsed)
             if remaining > max_remaining:
                 max_remaining = remaining
+                driver_pos = pos
+                driver_duration = required
 
         actual_dwell = max(nominal, max_remaining)
+
+        # AUTO-TIME-01C — persist last-dwell performance metrics.
+        overrun = max(0.0, actual_dwell - nominal)
+        if max_remaining > nominal:
+            bottleneck_station_id = driver_pos
+            bottleneck_duration_s = driver_duration
+        else:
+            bottleneck_station_id = ""
+            bottleneck_duration_s = 0.0
+        self._dwell_performance = DwellPerformance(
+            actual_dwell_s=actual_dwell,
+            dwell_overrun_s=overrun,
+            bottleneck_station_id=bottleneck_station_id,
+            bottleneck_duration_s=bottleneck_duration_s,
+        )
 
         # Apply dwell time to all occupied stations
         for pos in self.conveyor.occupied_positions():
@@ -1344,6 +1385,8 @@ class AssyLineRuntime:
         self.operation_registry.clear()
         # AUTO-TIME-01B: restore deterministic timing stream on reset.
         self._timing_resolver = TimingResolver(seed=self.config.random_seed)
+        # AUTO-TIME-01C: restore neutral dwell metrics on reset.
+        self._dwell_performance = DwellPerformance()
 
 
 class AssyLineError(RuntimeError):

@@ -139,6 +139,9 @@ class ActiveOperationView:
     terminal: bool = False
     checklist: list = field(default_factory=list)
     measurements: list = field(default_factory=list)
+    # AUTO-TIME-01C — timing provenance (detached; no mutable runtime ref)
+    work_duration_s: float = 0.0
+    timing: Optional[dict] = None
 
     def to_dict(self) -> dict:
         return {
@@ -158,6 +161,8 @@ class ActiveOperationView:
             "terminal": self.terminal,
             "checklist": self.checklist,
             "measurements": self.measurements,
+            "work_duration_s": self.work_duration_s,
+            "timing": self.timing,
         }
 
 
@@ -228,6 +233,12 @@ class AssyDemoSnapshot:
     sub_line_id: str = ""
     variant: str = ""
 
+    # AUTO-TIME-01C — last-dwell performance metrics
+    actual_dwell_s: float = 0.0
+    dwell_overrun_s: float = 0.0
+    bottleneck_station_id: str = ""
+    bottleneck_duration_s: float = 0.0
+
     def to_dict(self) -> dict:
         return {
             "simulation_time_s": self.simulation_time_s,
@@ -292,6 +303,10 @@ class AssyDemoSnapshot:
             "production_line_id": self.production_line_id,
             "sub_line_id": self.sub_line_id,
             "variant": self.variant,
+            "actual_dwell_s": self.actual_dwell_s,
+            "dwell_overrun_s": self.dwell_overrun_s,
+            "bottleneck_station_id": self.bottleneck_station_id,
+            "bottleneck_duration_s": self.bottleneck_duration_s,
         }
 
 
@@ -398,6 +413,8 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
             terminal=op.terminal,
             checklist=list(op.checklist),
             measurements=list(op.measurements),
+            work_duration_s=op.work_duration_s,
+            timing=op.timing.to_dict() if op.timing else None,
         ))
 
     # Station contracts — additive projection (OPS-03)
@@ -476,6 +493,10 @@ def build_snapshot(runtime: AssyLineRuntime, scenario: str = "") -> AssyDemoSnap
         station_contracts=station_contracts,
         production=prod,
         scenario=scenario,
+        actual_dwell_s=runtime.dwell_performance.actual_dwell_s,
+        dwell_overrun_s=runtime.dwell_performance.dwell_overrun_s,
+        bottleneck_station_id=runtime.dwell_performance.bottleneck_station_id,
+        bottleneck_duration_s=runtime.dwell_performance.bottleneck_duration_s,
     )
 
 

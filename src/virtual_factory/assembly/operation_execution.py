@@ -155,6 +155,9 @@ class OperationExecution:
             "source": self.source,
             "attempt_number": self.attempt_number,
             "terminal": self.terminal,
+            # AUTO-TIME-01C: frozen AUTO timing provenance (null for
+            # MANUAL/ASSISTED or AUTO fallback without profile).
+            "timing": self.timing.to_dict() if self.timing is not None else None,
         }
 
 

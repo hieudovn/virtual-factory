@@ -264,6 +264,9 @@ class TestSnapshotCompatibility:
             "active_operations", "station_contracts",
             "production", "scenario", "plant_id", "production_line_id",
             "sub_line_id", "variant",
+            # AUTO-TIME-01C — additive last-dwell performance metrics
+            "actual_dwell_s", "dwell_overrun_s",
+            "bottleneck_station_id", "bottleneck_duration_s",
         }
         assert set(d.keys()) == expected_keys
 
