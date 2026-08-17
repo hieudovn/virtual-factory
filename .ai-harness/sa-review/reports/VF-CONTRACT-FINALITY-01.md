@@ -12,7 +12,7 @@
 | Docker Baseline | `6e68ec957a925c32999644f315fcd234245bef50` |
 | MES Blocker | `b9cc69a1321766334acea2e69eb1be6036d0acac` |
 | Baseline (tip before work) | `e3c3807` |
-| Head | `<set at commit>` |
+| Head | `5b2a766` |
 | Production code changed | **YES** (additive only) |
 | Runtime transition semantics changed | **NO** |
 | Existing payload fields removed/renamed | **NO** |
