@@ -6,7 +6,7 @@ Status: READY FOR SA REVIEW
 VF Accepted Contract Baseline: f72cc9564b251c3812c2b6070bddd37e479d5ea5
 VF Accepted Demo Build: 494c12e265d297a389e4463848b9c0b6aafed0b1
 Baseline: 18d253d632ee9c939a206e28c27fcebdea61af50
-Head: f1493e6 (deployment implementation/evidence head)
+Head: 6e68ec9 (deployment implementation/evidence head)
 
 Report:
 .ai-harness/sa-review/reports/VF-DEPLOY-01.md
