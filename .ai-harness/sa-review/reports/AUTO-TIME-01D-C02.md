@@ -8,7 +8,7 @@
 | Repository | `hieudovn/virtual-factory` |
 | Branch | `docs/m6-s01-tipa-baseline` |
 | Baseline (prior correction head) | `32c53259d6d4d991aaa5d06796ad653c66699c1b` |
-| Head (this correction) | `<exact SHA>` (descends from C01 commit `3410fd4`, which descends from `32c5325`) |
+| Head (this correction) | `83dae4fb3712091d59055b86e37f3034b2bbae8d` (evidence + report commit; descends from C01 commit `3410fd4`, which descends from `32c5325`) |
 | Local HEAD at execution | `3410fd4556cf6c4071b5a9cd1ce68fc8e09ac227` |
 | `origin/main` at execution | `17a1d9ecafb170fa94e8d01a1f12d84e79982773` (unchanged by this gate) |
 
