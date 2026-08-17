@@ -44,6 +44,7 @@ from virtual_factory.assembly.line_runtime import (
     WipLifecycle,
 )
 from virtual_factory.assembly.operation_execution import OperationState
+from virtual_factory.assembly.quality_records import QualityStatus
 from virtual_factory.integration.gateway import (
     DeliveryResult,
     DeliveryStatus,
@@ -157,6 +158,9 @@ def build_assy_observation_points() -> list[ObservationPoint]:
                 "event_type", "record_id", "wip_id", "station_id",
                 "check_type", "disposition", "attempt_number",
                 "simulation_time_s", "reason_code",
+                # VF-CONTRACT-FINALITY-01 (additive): authoritative terminal
+                # quality outcome on the final attempt.
+                "is_terminal", "terminal_state",
             ),
         ),
         _point(
@@ -406,6 +410,13 @@ class AssyObservationBridge:
     def _quality_fact(
         self, rec: Any, ctx: Any, run_id: str, station_order: dict,
     ) -> dict:
+        # VF-CONTRACT-FINALITY-01 (additive): authoritative terminal quality
+        # outcome stamped by the runtime on the final attempt's record.  Never
+        # reconstructed here — read from runtime truth only.
+        is_terminal = bool(rec.terminal)
+        terminal_state = (
+            QualityStatus.FAILED_FINAL.value if is_terminal else ""
+        )
         reality = RealityInput(
             run_id=run_id,
             model_id=self.model_id,
@@ -426,6 +437,8 @@ class AssyObservationBridge:
                 "attempt_number": rec.attempt_number,
                 "simulation_time_s": rec.simulation_time_s,
                 "reason_code": rec.reason_code,
+                "is_terminal": is_terminal,
+                "terminal_state": terminal_state,
             },
             subject_type="wip",
             subject_id=rec.wip_id,

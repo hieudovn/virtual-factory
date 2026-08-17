@@ -91,6 +91,11 @@ class QualityRecord:
     measurements: tuple[MeasurementValue, ...] = ()
     checklist_items: tuple[str, ...] = ()
     reason_code: str = ""
+    # VF-CONTRACT-FINALITY-01 — additive: authoritative terminal quality outcome.
+    # True only when this record exhausted the accepted retry attempts and the
+    # WIP transitioned to QualityStatus.FAILED_FINAL.  Never reconstructed;
+    # stamped by the runtime at the exact transition decision.
+    terminal: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -104,6 +109,7 @@ class QualityRecord:
             "measurements": [m.to_dict() for m in self.measurements],
             "checklist_items": list(self.checklist_items),
             "reason_code": self.reason_code,
+            "terminal": self.terminal,
         }
 
 

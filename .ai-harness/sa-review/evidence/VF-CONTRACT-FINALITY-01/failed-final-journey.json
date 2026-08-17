@@ -1,0 +1,60 @@
+{
+  "scenario": "FAILED_FINAL",
+  "target_sub_line": "ASSY-SL03",
+  "quality_records_ap06": [
+    {
+      "message_key": "ASSY-SL03:R1|QR-0001|assy.quality_result|1.0",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "run_id": "ASSY-SL03:R1",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0001",
+      "wip_id": "MTR-0001",
+      "disposition": "FAIL",
+      "attempt_number": 1,
+      "is_terminal": false,
+      "terminal_state": "",
+      "simulation_time_s": 840.0,
+      "release_time_s": null,
+      "subject_id": "MTR-0001"
+    },
+    {
+      "message_key": "ASSY-SL03:R1|QR-0002|assy.quality_result|1.0",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "run_id": "ASSY-SL03:R1",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0002",
+      "wip_id": "MTR-0001",
+      "disposition": "FAIL",
+      "attempt_number": 2,
+      "is_terminal": true,
+      "terminal_state": "failed_final",
+      "simulation_time_s": 960.0,
+      "release_time_s": null,
+      "subject_id": "MTR-0001"
+    }
+  ],
+  "releases": [],
+  "terminal_facts": [
+    {
+      "message_key": "ASSY-SL03:R1|QR-0002|assy.quality_result|1.0",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "run_id": "ASSY-SL03:R1",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0002",
+      "wip_id": "MTR-0001",
+      "disposition": "FAIL",
+      "attempt_number": 2,
+      "is_terminal": true,
+      "terminal_state": "failed_final",
+      "simulation_time_s": 960.0,
+      "release_time_s": null,
+      "subject_id": "MTR-0001"
+    }
+  ]
+}

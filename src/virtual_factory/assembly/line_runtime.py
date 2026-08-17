@@ -1199,6 +1199,11 @@ class AssyLineRuntime:
 
         measurements = tuple(MeasurementValue(**m) for m in op.measurements)
         checklist = self._quality_checklist(check_type)
+        # VF-CONTRACT-FINALITY-01: stamp the authoritative terminal decision
+        # (attempts exhausted -> FAILED_FINAL) on this record, using the SAME
+        # condition as the existing FAILED_FINAL transition below.  Additive,
+        # atomic, never reconstructed downstream; no transition-logic change.
+        terminal = disposition in ("FAIL", "NG") and attempt >= qcfg.max_attempts
         record = QualityRecord(
             record_id=self._next_quality_id(),
             wip_id=wip_id,
@@ -1209,6 +1214,7 @@ class AssyLineRuntime:
             simulation_time_s=self._simulation_time_s + self._station_elapsed.get(pos, 0.0),
             measurements=measurements,
             checklist_items=tuple(checklist),
+            terminal=terminal,
         )
         history.add_record(record)
 

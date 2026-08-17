@@ -1,37 +1,37 @@
 # SA REVIEW INBOX
 
-Task: VF-DEPLOY-01
+Task: VF-CONTRACT-FINALITY-01
 Status: READY FOR SA REVIEW
 
-VF Accepted Contract Baseline: f72cc9564b251c3812c2b6070bddd37e479d5ea5
-VF Accepted Demo Build: 494c12e265d297a389e4463848b9c0b6aafed0b1
-Baseline: 18d253d632ee9c939a206e28c27fcebdea61af50
-Head: 6e68ec9 (deployment implementation/evidence head)
+Producer Baseline: f72cc9564b251c3812c2b6070bddd37e479d5ea5
+Demo Baseline: 494c12e265d297a389e4463848b9c0b6aafed0b1
+Docker Baseline: 6e68ec957a925c32999644f315fcd234245bef50
+MES Blocker: b9cc69a1321766334acea2e69eb1be6036d0acac
+
+Head: <head>
+
+Production code changed: YES
+Runtime transition semantics changed: NO
+Existing payload fields removed/renamed: NO
+MES/Odoo IDs introduced: NO
+FAILED_FINAL authoritative evidence exposed: YES
+Contract evolution: ADDITIVE
 
 Report:
-.ai-harness/sa-review/reports/VF-DEPLOY-01.md
+.ai-harness/sa-review/reports/VF-CONTRACT-FINALITY-01.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-DEPLOY-01/
-
-Production code changed: NO
-Simulation semantics changed: NO
-VF producer contract changed: NO
-MES integration added: NO
-Docker result: PASS
+.ai-harness/sa-review/evidence/VF-CONTRACT-FINALITY-01/
 
 Summary:
-Added docker-compose.assy.yml (Option A — separate file, generic Dockerfile
-reused unchanged) running `virtual-factory serve --host 0.0.0.0 --port 8000`
-with VF_ENABLE_S04B_OVERVIEW=1 and TIPA_ASSY_CONFIG container path. Real
-healthcheck on /health; container reaches healthy; all 6 required ASSY
-endpoints 200; 6 sub-lines (SL01-SL06) exposed; runtime control
-(reset/step/mode/select/scenario) 200. Native vs Docker equivalence
-E1-E4: fingerprints EQUIVALENT (all PASS) including full ordered message_keys
-(1254/2335/3494). Restart and down/up return clean healthy state (ephemeral).
-Regression: 1554 passed + 2 pre-existing failures (unchanged); targeted
-ASSY/observation/timing 496 passed + 1 pre-existing. Existing compose intact.
-Docs: docs/deployment/assy-docker.md. Future MES E2E shared network
-documented (one-line external network change), not connected. No MES
-integration added.
+Enriched the final attempt's mes.quality_result with generic additive fields
+is_terminal (bool) and terminal_state ("failed_final" when terminal, else "").
+Terminal flag is stamped on the QualityRecord at the exact existing
+QUALITY_FAILED_FINAL transition (same attempt>=max_attempts condition, no
+logic change); bridge emits it through the existing allow-list + MESProjection
+pass-through. FAILED_FINAL: attempt1 FAIL non-terminal, attempt2 FAIL terminal
+failed_final, RELEASE absent. AP06 FAIL->PASS, AP08 NG->PASS, HAPPY_PATH: no
+terminal marker. Six-line isolation preserved; idempotency preserved.
+16 new tests pass; full suite 1570 passed + 2 pre-existing failures.
+Docker/native enriched equivalence verified. MES untouched.
 
