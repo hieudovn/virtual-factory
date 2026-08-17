@@ -26,6 +26,7 @@ from virtual_factory.assembly.station_contracts import (
     StationCommand,
     StationContract,
 )
+from virtual_factory.assembly.auto_timing import TimingSample
 
 
 class OperationState(str, enum.Enum):
@@ -116,6 +117,7 @@ class OperationExecution:
     source: str = "simulated"
     attempt_number: int = 0
     terminal: bool = False                 # FAILED + FAILED_FINAL ⇒ terminal (no recovery)
+    timing: Optional[TimingSample] = None  # AUTO-TIME-01B: frozen sample (not serialized until 01C)
 
     @property
     def is_eligible(self) -> bool:

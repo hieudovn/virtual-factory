@@ -1,0 +1,97 @@
+{
+  "task_id": "AUTO-TIME-01B",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "AUTO-TIME-01B — Runtime timing resolution & dwell semantics (slice B only). Wire AUTO timing into ASSY runtime with smallest safe change: load timing behavior/seed/profiles into runtime config; create/freeze OperationExecution before dwell sizing; AUTO profile resolution only; sample once per OperationExecution; MANUAL/ASSISTED remain fixed legacy duration; dwell uses frozen op duration when active; reset restores deterministic timing stream; per-sub-line derived seeds.",
+  "explicit_non_objectives": [
+    "snapshot bottleneck metrics (01C)",
+    "large schema/view/UI expansion",
+    "MES",
+    "human wait time",
+    "first-class sub-action state machine",
+    "timing for RELEASE",
+    "retry/reinspect redesign",
+    "quality-vs-speed logic",
+    "presentation-speed changes",
+    "simulation_time_multiplier activation",
+    "wall clock / sleep / frontend timers"
+  ],
+  "required_branch": "docs/m6-s01-tipa-baseline",
+  "expected_base_sha": "68cd7f1990cbe93a88338568e4474bb90520413a",
+  "allowed_paths": [
+    "src/virtual_factory/assembly/auto_timing.py",
+    "src/virtual_factory/assembly/operation_execution.py",
+    "src/virtual_factory/assembly/line_runtime.py",
+    "src/virtual_factory/assembly/demo_composition.py",
+    "tests/test_auto_timing_runtime.py",
+    ".ai-harness/tasks/AUTO-TIME-01B.json",
+    ".ai-harness/sa-review/"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/assembly/demo_snapshot.py",
+    "src/virtual_factory/assembly/station_contracts.py",
+    ".ai-harness/schemas/",
+    "configs/plants/tipa_assy_demo.yaml"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/assembly/auto_timing.py — parse_timing_config (single parse path)",
+    "src/virtual_factory/assembly/operation_execution.py — frozen timing provenance field",
+    "src/virtual_factory/assembly/line_runtime.py — timing config + ensure-op-before-sizing + frozen-duration dwell",
+    "src/virtual_factory/assembly/demo_composition.py — per-sub-line derived seeds",
+    "tests/test_auto_timing_runtime.py — focused runtime tests",
+    ".ai-harness/sa-review/CURRENT.md + reports/AUTO-TIME-01B.md"
+  ],
+  "required_tests": [
+    "AUTO deterministic profile freezes nominal mean sum",
+    "AUTO VARIABLE samples once per OperationExecution",
+    "repeated dwell/advance does not re-sample",
+    "active op duration used by max_remaining",
+    "AP05 sampled 135 with nominal 120 -> first dwell 135",
+    "all effective <120 -> dwell exactly 120",
+    "AUTO no-profile fallback = legacy contract duration",
+    "MANUAL ignores AUTO profile",
+    "ASSISTED ignores AUTO profile",
+    "same seed + reset -> same sequence",
+    "different seed -> different VARIABLE sequence",
+    "sub-line streams deterministic and uncoupled",
+    "DETERMINISTIC does not depend on RNG draw state",
+    "retry/reinspect does not re-sample",
+    "AP11 QC/RELEASE semantics unchanged",
+    "station_durations + StationContract backward-compatible"
+  ],
+  "required_smoke_checks": [
+    "pytest tests/test_auto_timing_runtime.py"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_change_demo_snapshot",
+    "do_not_change_schemas",
+    "do_not_self_certify_complete"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "domain_action_before_dwell_sizing_required",
+    "lifecycle_semantics_change",
+    "manual_auto_equivalence_break_beyond_timing",
+    "reset_not_reproducible",
+    "sub_line_streams_not_deterministic",
+    "broad_schema_change_required"
+  ],
+  "acceptance_criteria": [
+    {"id": "B1", "description": "Baseline is 68cd7f1 on docs/m6-s01-tipa-baseline"},
+    {"id": "B2", "description": "OperationExecution created before max_remaining calculation"},
+    {"id": "B3", "description": "Dwell uses frozen op.work_duration_s"},
+    {"id": "B4", "description": "New runtime timing tests pass"},
+    {"id": "B5", "description": "Core suites remain green except documented pre-existing failures"},
+    {"id": "B6", "description": "Reset reproduces timing sequence"}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

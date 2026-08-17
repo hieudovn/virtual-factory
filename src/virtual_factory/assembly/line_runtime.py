@@ -58,6 +58,13 @@ from virtual_factory.assembly.station_contracts import (
     StationContract,
     build_default_assy_contracts,
 )
+from virtual_factory.assembly.auto_timing import (
+    AutoTimingProfile,
+    TimingBehavior,
+    TimingResolver,
+    TimingSample,
+    parse_timing_config,
+)
 from virtual_factory.assembly.operation_execution import (
     OperationExecution,
     OperationRegistry,
@@ -110,6 +117,10 @@ class AssyLineConfig:
     motor_wip_prefix: str = "MTR"
     simulation_time_multiplier: float = 1.0
     quality: QualityConfig = field(default_factory=QualityConfig)
+    # AUTO-TIME-01B — runtime timing configuration (single source of truth)
+    timing_behavior: TimingBehavior = TimingBehavior.DETERMINISTIC
+    random_seed: int = 42
+    auto_timing_profiles: dict[str, AutoTimingProfile] = field(default_factory=dict)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -210,6 +221,13 @@ def load_assy_config_from_yaml(path: str) -> AssyLineConfig:
                 if overrides:
                     sqc.overrides = {int(k): list(v) for k, v in overrides.items()}
                 setattr(config.quality, station_key, sqc)
+
+    # AUTO-TIME-01B: single runtime timing config path (uses validated parsing
+    # from auto_timing.py — do not duplicate parsing logic here).
+    timing_behavior, random_seed, profiles = parse_timing_config(data)
+    config.timing_behavior = timing_behavior
+    config.random_seed = random_seed
+    config.auto_timing_profiles = profiles
 
     return config
 
@@ -329,6 +347,9 @@ class AssyLineRuntime:
     operation_registry: OperationRegistry = field(default_factory=OperationRegistry)
     global_run_mode: CompletionMode = CompletionMode.AUTO
 
+    # AUTO-TIME-01B — isolated timing resolver (seeded, no global random)
+    _timing_resolver: Optional[TimingResolver] = field(init=False, default=None)
+
     def __post_init__(self) -> None:
         self.conveyor = ConveyorLine(config=self.config.conveyor)
         self.upstream = UpstreamProducer(config=self.config.upstream)
@@ -338,6 +359,7 @@ class AssyLineRuntime:
             self.station_contracts = build_default_assy_contracts(
                 dict(self.config.station_durations)
             )
+        self._timing_resolver = TimingResolver(seed=self.config.random_seed)
 
     # -- Properties --
 
@@ -456,13 +478,34 @@ class AssyLineRuntime:
 
         nominal = self.config.conveyor.nominal_line_dwell_time_s
 
-        # Determine max remaining station time (completed stations are done for
-        # this dwell and must not extend it).
+        # AUTO-TIME-01B (SA invariant): the active OperationExecution and its
+        # frozen effective timing MUST exist before max_remaining / actual_dwell
+        # is calculated. No domain action executes here.
+        for pos in self.conveyor.occupied_positions():
+            if self.conveyor.is_position_complete(pos):
+                continue
+            wip_id = self.conveyor.wip_at(pos)
+            if wip_id is None:
+                continue
+            if self._wips.get(wip_id) is None:
+                continue
+            self._ensure_operation_for_position(pos, wip_id)
+
+        # Determine max remaining station time from FROZEN op duration
+        # (completed stations are done for this dwell and must not extend it).
         max_remaining = 0.0
         for pos in self.conveyor.occupied_positions():
             if self.conveyor.is_position_complete(pos):
                 continue
-            required = self.config.station_durations.get(pos, 60.0)
+            wip_id = self.conveyor.wip_at(pos)
+            if wip_id is None:
+                continue
+            op = self.operation_registry.active_for(pos, wip_id)
+            required = (
+                op.work_duration_s
+                if op is not None
+                else self.config.station_durations.get(pos, 60.0)
+            )
             elapsed = self._station_elapsed.get(pos, 0.0)
             remaining = max(0.0, required - elapsed)
             if remaining > max_remaining:
@@ -485,11 +528,10 @@ class AssyLineRuntime:
             if ws is None:
                 continue
 
-            required = self.config.station_durations.get(pos, 60.0)
             self._station_elapsed[pos] = self._station_elapsed.get(pos, 0.0) + actual_dwell
             ws.current_position = pos
 
-            all_events.extend(self._advance_operation(pos, wip_id, required))
+            all_events.extend(self._advance_operation(pos, wip_id))
 
         # C01-01: advance simulation time
         self._simulation_time_s += actual_dwell
@@ -563,8 +605,59 @@ class AssyLineRuntime:
             f"checklist complete items={completed}"))
         return events
 
+    def _ensure_operation_for_position(
+        self, pos: str, wip_id: str,
+    ) -> OperationExecution:
+        """Ensure an active OperationExecution exists BEFORE dwell sizing.
+
+        AUTO-TIME-01B (SA invariant): the active OperationExecution and its
+        frozen effective timing must exist before ``max_remaining`` /
+        ``actual_dwell`` is calculated.
+
+        - resolves effective completion mode exactly once;
+        - for AUTO, resolves the station timing profile exactly once and
+          freezes the ``TimingSample`` + effective ``work_duration_s``;
+        - for MANUAL / ASSISTED (and AUTO without a profile), freezes the
+          legacy fixed contract duration;
+        - performs NO domain action; state stays READY until
+          ``_advance_operation``.
+        """
+        contract = self.station_contracts.get(pos)
+        if contract is None:
+            contract = StationContract(
+                station_id=pos,
+                normal_action=StationCommand.DONE,
+                required_action=StationCommand.DONE,
+            )
+
+        op = self.operation_registry.active_for(pos, wip_id)
+        if op is not None:
+            return op
+
+        mode = self._resolve_mode(contract)
+        legacy = (
+            contract.work_duration_s
+            if contract.work_duration_s is not None
+            else self.config.station_durations.get(pos, 60.0)
+        )
+
+        timing: Optional[TimingSample] = None
+        effective = legacy
+        if mode == CompletionMode.AUTO:
+            profile = self.config.auto_timing_profiles.get(pos)
+            if profile is not None:
+                timing = self._timing_resolver.resolve(
+                    profile, self.config.timing_behavior)
+                effective = timing.effective_duration_s
+
+        op = self.operation_registry.start(
+            pos, wip_id, contract, mode, self._simulation_time_s)
+        op.work_duration_s = effective
+        op.timing = timing
+        return op
+
     def _advance_operation(
-        self, pos: str, wip_id: str, required: float,
+        self, pos: str, wip_id: str,
     ) -> list[LineEvent]:
         """Advance the OperationExecution for one occupied station this dwell."""
         contract = self.station_contracts.get(pos)
@@ -576,14 +669,13 @@ class AssyLineRuntime:
             )
         elapsed = self._station_elapsed.get(pos, 0.0)
 
-        op = self.operation_registry.active_for(pos, wip_id)
-        if op is None:
-            # C01-03: resolve effective mode ONCE at operation creation.
-            mode = self._resolve_mode(contract)
-            op = self.operation_registry.start(pos, wip_id, contract, mode, self._simulation_time_s)
+        # AUTO-TIME-01B: op already exists (created before dwell sizing) with
+        # frozen effective timing. Single source of truth = op.work_duration_s.
+        op = self._ensure_operation_for_position(pos, wip_id)
         if op.state == OperationState.READY:
             op.transition(OperationState.WORKING)
 
+        required = op.work_duration_s
         work_done = elapsed >= required
 
         if op.state == OperationState.WORKING and work_done:
@@ -1250,6 +1342,8 @@ class AssyLineRuntime:
         self._quality_histories.clear()
         self._quality_seq = 0
         self.operation_registry.clear()
+        # AUTO-TIME-01B: restore deterministic timing stream on reset.
+        self._timing_resolver = TimingResolver(seed=self.config.random_seed)
 
 
 class AssyLineError(RuntimeError):

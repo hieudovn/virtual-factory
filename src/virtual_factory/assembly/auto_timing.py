@@ -464,10 +464,10 @@ def check_profiles_against_positions(
             )
 
 
-def load_auto_timing_config(
-    path: str,
+def parse_timing_config(
+    data: dict,
 ) -> tuple[TimingBehavior, int, dict[str, AutoTimingProfile]]:
-    """Load simulation timing config + profiles from a TIPA ASSY YAML file.
+    """Parse timing config from an already-loaded YAML mapping.
 
     Reads (additive, all optional):
       simulation.timing_behavior  (default DETERMINISTIC)
@@ -477,8 +477,10 @@ def load_auto_timing_config(
     Cross-checks profile keys against conveyor.positions when present.
     Returns (timing_behavior, random_seed, profiles).
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
+    if not isinstance(data, dict):
+        raise TimingConfigError(
+            f"timing config must be a mapping, got {type(data).__name__}"
+        )
 
     simulation = data.get("simulation") or {}
     behavior = parse_timing_behavior(simulation.get("timing_behavior"))
@@ -490,3 +492,12 @@ def load_auto_timing_config(
     check_profiles_against_positions(profiles, positions)
 
     return behavior, seed, profiles
+
+
+def load_auto_timing_config(
+    path: str,
+) -> tuple[TimingBehavior, int, dict[str, AutoTimingProfile]]:
+    """Load simulation timing config + profiles from a TIPA ASSY YAML file."""
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    return parse_timing_config(data)

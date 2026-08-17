@@ -223,8 +223,12 @@ class AssyDemoComposition:
         target_id = self._resolve_target()
         self._resolved_target_id = target_id
 
-        for sl_identity in self.identity.sub_lines:
+        for ordinal, sl_identity in enumerate(self.identity.sub_lines):
             ctx_config = copy.deepcopy(base_config)
+
+            # AUTO-TIME-01B: derive a stable, uncoupled timing seed per
+            # sub-line (base seed + stable ordinal). Never rely on hash().
+            ctx_config.random_seed = base_config.random_seed + ordinal
 
             # Determine scenario for this context
             is_target = (sl_identity.sub_line_id == target_id)
