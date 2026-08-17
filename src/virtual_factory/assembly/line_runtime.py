@@ -96,6 +96,8 @@ class AssyWipState:
     station_count: int = 0
     is_child_of_join: bool = False
     parent_wip_ids: tuple[str, ...] = field(default_factory=tuple)
+    # M6-INT-01-C01: authoritative release occurrence time (set at RELEASE).
+    released_at_sim_s: float = 0.0
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1254,6 +1256,10 @@ class AssyLineRuntime:
         if ws:
             ws.lifecycle = WipLifecycle.RELEASED
             ws.station_count += 1
+            # M6-INT-01-C01: capture the authoritative release occurrence time
+            # (consistent with QualityRecord timestamp convention).
+            ws.released_at_sim_s = (
+                self._simulation_time_s + self._station_elapsed.get(pos, 0.0))
         events.append(self._make_event("STATION_START", pos, wip_id, "RELEASE"))
         events.append(self._make_event("STATION_COMPLETE", pos, wip_id, "RELEASED"))
         op.operation_result = OperationResult.RELEASED

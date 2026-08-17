@@ -569,3 +569,187 @@ class TestJsonlGateway:
         finally:
             if out.exists():
                 out.unlink()
+
+
+# ═══════════════════════════════════════════════════════════
+# M6-INT-01-C01 — A: reset/run generation stability
+# ═══════════════════════════════════════════════════════════
+
+class TestRunGenerationStability:
+    def _high_time_line(self) -> AssyLineRuntime:
+        c = make_config()
+        c.conveyor.nominal_line_dwell_time_s = 100.0
+        line = AssyLineRuntime(config=c)
+        line.global_run_mode = CompletionMode.AUTO
+        line.produce_sso2_wip()
+        line.produce_rso2_wip()
+        line.introduce_to_assy("SSO2-0001", "PAL-001")
+        return line
+
+    def _advance(self, line: AssyLineRuntime, n: int) -> None:
+        for _ in range(n):
+            line.execute_dwell()
+            if line.conveyor.state == ConveyorState.READY_TO_INDEX:
+                line.index_line()
+
+    def test_reset_generation_bumps_exactly_once(self):
+        line = self._high_time_line()
+        bridge, _ = make_bridge()
+        comp = ctx_for(line)
+
+        self._advance(line, 60)          # high sim time
+        bridge.poll(comp)
+        assert bridge.run_id_for("ASSY-SL01") == "ASSY-SL01:R1"
+
+        line.reset()                     # sim time → 0
+        bridge.poll(comp)                # immediate post-reset poll
+        assert bridge.run_id_for("ASSY-SL01") == "ASSY-SL01:R2"
+
+        for _ in range(5):               # A1: stays R2 on every post-reset poll
+            self._advance(line, 1)
+            bridge.poll(comp)
+            assert bridge.run_id_for("ASSY-SL01") == "ASSY-SL01:R2"
+
+        line.reset()                     # A2: second actual reset → R3
+        bridge.poll(comp)
+        assert bridge.run_id_for("ASSY-SL01") == "ASSY-SL01:R3"
+
+    def test_same_record_id_distinct_key_across_runs(self):
+        comp = AssyDemoComposition(
+            config_path=TIPA_YAML, scenario=DemoScenario.HAPPY_PATH)
+        comp.initialize()
+        bridge, _ = make_bridge()
+
+        drive_composition(comp, "ASSY-SL01")
+        bridge.poll(comp)
+        r1_qr = {t["message_key"] for t in bridge.outbound_trace
+                 if "R1|QR-0001|" in t["message_key"]}
+        assert len(r1_qr) == 1
+
+        comp.initialize()
+        bridge.poll(comp)                # register the reset
+        drive_composition(comp, "ASSY-SL01")
+        bridge.poll(comp)
+        r2_qr = {t["message_key"] for t in bridge.outbound_trace
+                 if "R2|QR-0001|" in t["message_key"]}
+        assert len(r2_qr) == 1
+
+        # A3: same record id in R1/R2 → distinct idempotency keys
+        assert r1_qr != r2_qr
+
+
+# ═══════════════════════════════════════════════════════════
+# M6-INT-01-C01 — B: per-gateway delivery / retry
+# ═══════════════════════════════════════════════════════════
+
+class TestPerGatewayDelivery:
+    def test_failed_gateway_retried_other_not_duplicated(self):
+        ga = InMemoryObsGateway(gateway_id="ga")
+        gb = InMemoryObsGateway(gateway_id="gb")
+        bridge, _ = make_bridge(gateways=[ga, gb])
+        line = setup_line(make_config())
+        drive(line)
+        comp = ctx_for(line)
+
+        sim_before = line.simulation_time_s
+        gb.set_fail_next(999)            # B fails everything on first poll
+        r1 = bridge.poll(comp)
+        assert any(r.gateway_id == "ga" and r.status == DeliveryStatus.DELIVERED
+                   for r in r1)
+        assert any(r.gateway_id == "gb" and r.status == DeliveryStatus.FAILED
+                   for r in r1)
+        a_count = len(ga.messages)
+        assert a_count > 0
+        assert len(gb.messages) == 0
+        assert line.simulation_time_s == sim_before   # B3: truth unchanged
+
+        gb.set_fail_next(0)              # B recovers
+        r2 = bridge.poll(comp)
+        # B1: only B is retried; A count unchanged (no duplicate to A)
+        assert len(ga.messages) == a_count
+        assert len(gb.messages) == a_count
+        assert all(r.gateway_id == "gb" for r in r2)
+        assert any(r.status == DeliveryStatus.DELIVERED for r in r2)
+
+        # B2: after both delivered, further polls emit zero
+        assert bridge.poll(comp) == []
+        assert len(ga.messages) == a_count
+        assert len(gb.messages) == a_count
+
+    def test_single_gateway_backward_compatible(self):
+        gw = InMemoryObsGateway()
+        bridge, _ = make_bridge(gateways=[gw])
+        line = setup_line(make_config())
+        drive(line)
+        comp = ctx_for(line)
+        bridge.poll(comp)
+        n = len(gw.messages)
+        assert n > 0
+        assert bridge.poll(comp) == []   # B4: second poll emits nothing
+        assert len(gw.messages) == n
+
+
+# ═══════════════════════════════════════════════════════════
+# M6-INT-01-C01 — C: authoritative AP11 RELEASE occurrence time
+# ═══════════════════════════════════════════════════════════
+
+class TestReleaseOccurrenceTime:
+    def test_release_time_is_occurrence_not_poll_time(self):
+        line = setup_line(make_config())
+        bridge, _ = make_bridge()
+        comp = ctx_for(line)
+
+        drive(line)                      # motor released at authoritative time T
+        ws = line.get_wip(CHILD)
+        assert ws is not None and ws.lifecycle == WipLifecycle.RELEASED
+        T = ws.released_at_sim_s
+        assert T > 0
+
+        # advance far without polling the bridge (late-start discovery)
+        for _ in range(30):
+            line.execute_dwell()
+            if line.conveyor.state == ConveyorState.READY_TO_INDEX:
+                line.index_line()
+        assert line.simulation_time_s > T + 1
+
+        bridge.poll(comp)
+        rel = [t for t in bridge.outbound_trace
+               if t["payload"].get("event_type") == EVENT_AP11_RELEASE]
+        assert len(rel) == 1
+        # C1: emitted release time equals occurrence time T, not poll time
+        assert rel[0]["payload"]["release_time_s"] == T
+        assert rel[0]["simulation_time_s"] == T
+
+    def test_qc_pass_and_release_are_distinct_facts(self):
+        line = setup_line(make_config())
+        bridge, _ = make_bridge()
+        comp = ctx_for(line)
+        drive(line)
+        bridge.poll(comp)
+
+        qc = [t for t in bridge.outbound_trace
+              if t["payload"].get("event_type") == EVENT_AP11_FINAL_QC_PASS]
+        rel = [t for t in bridge.outbound_trace
+               if t["payload"].get("event_type") == EVENT_AP11_RELEASE]
+        assert len(qc) == 1 and len(rel) == 1
+        qc_time = qc[0]["payload"]["simulation_time_s"]
+        rel_time = rel[0]["payload"]["release_time_s"]
+        assert qc_time > 0 and rel_time > 0
+        assert rel_time >= qc_time          # C2: release at-or-after QC pass
+        assert qc[0]["source_event_id"] != rel[0]["source_event_id"]
+
+    def test_release_time_capture_consistent_with_runtime(self):
+        line = setup_line(make_config())
+        drive(line)
+        ws = line.get_wip(CHILD)
+        assert ws is not None and ws.lifecycle == WipLifecycle.RELEASED
+        assert ws.released_at_sim_s > 0
+        # C3: no simulation behavior change; WIP timestamp is consistent with
+        # the authoritative AP11 RELEASE operation completion timestamp.
+        ap11 = [op for op in line.operation_registry.all_operations()
+                if op.station_id == "AP11"
+                and op.operation_result is not None
+                and op.operation_result.value == "RELEASED"]
+        assert len(ap11) == 1
+        assert ap11[0].completed_at_sim_s is not None
+        assert ws.released_at_sim_s == ap11[0].completed_at_sim_s

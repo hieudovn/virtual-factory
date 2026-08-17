@@ -190,7 +190,7 @@ class AssyObservationBridge:
 
     Polls all composition contexts, reads authoritative facts, and delivers
     them through ObservationService → ObservationRouter → gateways exactly
-    once per (run_id, source_event_id).
+    once per (run_id, source_event_id, gateway_id).
 
     The bridge is strictly downstream: it never mutates runtime state and
     never creates timing samples.
@@ -204,8 +204,9 @@ class AssyObservationBridge:
     # run tracking (sub_line_id → current generation)
     _run_generation: dict[str, int] = field(default_factory=dict)
     _last_sim_time: dict[str, float] = field(default_factory=dict)
-    # seen facts: run_id → set[source_event_id]
-    _seen: dict[str, set[str]] = field(default_factory=dict)
+    # per-gateway delivery checkpoint:
+    #   run_id → set[(source_event_id, gateway_id)] already DELIVERED
+    _delivered: dict[str, set[tuple[str, str]]] = field(default_factory=dict)
     # ordered outbound delivery trace (evidence, read-only consumers)
     _outbound: list[dict] = field(default_factory=list)
 
@@ -222,26 +223,21 @@ class AssyObservationBridge:
         """Emit any not-yet-emitted authoritative facts across all contexts.
 
         Returns the DeliveryResults for this poll.  Idempotent: repeated polls
-        do not re-emit already-projected facts.  A fact is marked projected
-        only after at least one gateway DELIVERED it; a failed delivery is
-        retried on the next poll (at-least-once, never duplicated).
+        do not re-emit facts already DELIVERED to a given gateway.  Delivery
+        checkpoint is per (run_id, source_event_id, gateway_id): a gateway
+        that already delivered a fact is never re-sent; a gateway that failed
+        is retried on the next poll (at-least-once per gateway, never dup).
         """
         results: list[DeliveryResult] = []
         for sub_line_id, ctx in composition.contexts.items():
             runtime = ctx.runtime
             run_id = self._resolve_run(sub_line_id, runtime)
-            seen = self._seen.setdefault(run_id, set())
             facts = self._collect_facts(runtime, ctx, run_id)
             facts.sort(key=lambda f: (
                 f["station_order"], f["kind_order"], f["attempt"]))
             for fact in facts:
-                key = (run_id, fact["source_event_id"])
-                if key in seen:
-                    continue
-                delivered, fact_results = self._deliver(fact["reality"])
-                results.extend(fact_results)
-                if delivered:
-                    seen.add(key)
+                results.extend(self._deliver(
+                    run_id, fact["source_event_id"], fact["reality"]))
         return results
 
     @property
@@ -261,15 +257,22 @@ class AssyObservationBridge:
     # ── Reset detection ──
 
     def _resolve_run(self, sub_line_id: str, runtime: AssyLineRuntime) -> str:
-        """Detect runtime reset via simulation-time regression (monotonic)."""
+        """Detect runtime reset via simulation-time regression (monotonic).
+
+        A reset produces exactly ONE generation transition: after detecting
+        regression the stored last time is re-baselined to the current time,
+        so subsequent steps within the new run stay on the new generation.
+        """
         sim_time = runtime.simulation_time_s
         last = self._last_sim_time.get(sub_line_id)
         if last is not None and sim_time < last:
-            # time moved backwards → the runtime was reset → new run generation
+            # time moved backwards → runtime reset → exactly one bump
             self._run_generation[sub_line_id] = (
                 self._run_generation.get(sub_line_id, 1) + 1)
-        self._last_sim_time[sub_line_id] = max(
-            sim_time, last if last is not None else sim_time)
+            self._last_sim_time[sub_line_id] = sim_time
+        else:
+            self._last_sim_time[sub_line_id] = max(
+                sim_time, last if last is not None else sim_time)
         return self.run_id_for(sub_line_id)
 
     # ── Fact collection (authoritative sources) ──
@@ -314,7 +317,7 @@ class AssyObservationBridge:
             ws = runtime.get_wip(wip_id)
             if ws is not None and ws.lifecycle == WipLifecycle.RELEASED:
                 facts.append(self._release_fact(
-                    runtime, ws, ctx, run_id, station_order))
+                    ws, ctx, run_id, station_order))
         return facts
 
     # ── Fact → RealityInput builders ──
@@ -476,10 +479,10 @@ class AssyObservationBridge:
         }
 
     def _release_fact(
-        self, runtime: AssyLineRuntime, ws: Any, ctx: Any, run_id: str,
-        station_order: dict,
+        self, ws: Any, ctx: Any, run_id: str, station_order: dict,
     ) -> dict:
         release_event_id = f"release:{ws.wip_id}"
+        release_time_s = ws.released_at_sim_s
         reality = RealityInput(
             run_id=run_id,
             model_id=self.model_id,
@@ -487,14 +490,14 @@ class AssyObservationBridge:
             source_type=SOURCE_TYPE,
             source_domain=SOURCE_DOMAIN,
             source_path="AP11",
-            simulation_time_s=runtime.simulation_time_s,
+            simulation_time_s=release_time_s,
             category=CATEGORY,
             source_data={
                 "event_type": EVENT_AP11_RELEASE,
                 "target_id": ws.wip_id,
                 "wip_id": ws.wip_id,
                 "station_id": "AP11",
-                "release_time_s": runtime.simulation_time_s,
+                "release_time_s": release_time_s,
             },
             subject_type="wip",
             subject_id=ws.wip_id,
@@ -526,24 +529,30 @@ class AssyObservationBridge:
     # ── Delivery ──
 
     def _deliver(
-        self, reality: RealityInput,
-    ) -> tuple[bool, list[DeliveryResult]]:
+        self,
+        run_id: str,
+        source_event_id: str,
+        reality: RealityInput,
+    ) -> list[DeliveryResult]:
         """ObservationService → ObservationRouter → gateways. Never mutates truth.
 
-        Returns (delivered_any, results).  ``delivered_any`` is True when at
-        least one gateway returned DELIVERED for this fact.
+        Per-gateway idempotency: a (source_event_id, gateway_id) pair already
+        DELIVERED is skipped; a FAILED gateway is retried on the next poll.
         """
         results: list[DeliveryResult] = []
-        delivered_any = False
+        delivered = self._delivered.setdefault(run_id, set())
         envelopes = self.service.collect(reality)
         for envelope in envelopes:
             messages = self.router.route(envelope)
             for gateway in self.gateways:
                 for msg in messages:
+                    key = (source_event_id, gateway.gateway_id)
+                    if key in delivered:
+                        continue  # already delivered to this gateway
                     result = gateway.send(msg)
                     results.append(result)
                     if result.status == DeliveryStatus.DELIVERED:
-                        delivered_any = True
+                        delivered.add(key)
                         self._outbound.append({
                             "gateway_id": gateway.gateway_id,
                             "message_key": msg.key,
@@ -555,7 +564,7 @@ class AssyObservationBridge:
                             "subject_id": reality.subject_id,
                             "payload": dict(msg.payload),
                         })
-        return delivered_any, results
+        return results
 
 
 # ═══════════════════════════════════════════════════════════
