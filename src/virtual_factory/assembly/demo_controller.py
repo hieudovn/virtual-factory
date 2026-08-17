@@ -32,6 +32,9 @@ from virtual_factory.assembly.demo_composition import (
     DemoScenario,
     SCENARIO_QUALITY_OVERRIDES,
 )
+from virtual_factory.assembly.observation_bridge import (
+    AssyObservationBridge,
+)
 
 
 # Re-export for backward compatibility
@@ -66,6 +69,9 @@ class DemoController:
     _auto_running: bool = False
     _last_step_time: float = 0.0
 
+    # M6-INT-01 — optional downstream observation bridge (never mutates runtime)
+    observation_bridge: Optional[AssyObservationBridge] = None
+
     # --- Initialization ---
 
     def initialize(self) -> AssyDemoSnapshot:
@@ -82,7 +88,9 @@ class DemoController:
 
     def reset(self) -> AssyDemoSnapshot:
         """Full reset: rebuild all 6 contexts from scratch."""
-        return self.initialize()
+        result = self.initialize()
+        self._poll_bridge()
+        return result
 
     def step(self) -> AssyDemoSnapshot:
         """Execute one demo cycle across all contexts.
@@ -93,6 +101,7 @@ class DemoController:
             return AssyDemoSnapshot()
 
         self._composition.step_all()
+        self._poll_bridge()
         return self.snapshot()
 
     def snapshot(self) -> AssyDemoSnapshot:
@@ -215,6 +224,7 @@ class DemoController:
         if rt is None:
             raise RuntimeError("Composition not initialized")
         rt.submit_operation_command(station_id, wip_id, command, payload)
+        self._poll_bridge()
         return self.snapshot()
 
     @property
@@ -240,4 +250,25 @@ class DemoController:
         if rt is None:
             raise RuntimeError("Composition not initialized")
         rt.submit_station_action(station_id, wip_id, action)
+        self._poll_bridge()
         return self.snapshot()
+
+    # --- M6-INT-01: downstream observation bridge (additive) ---
+
+    def attach_observation_bridge(self, bridge: AssyObservationBridge) -> None:
+        """Attach the outbound observation bridge (read-only consumer)."""
+        self.observation_bridge = bridge
+        # Capture any pre-existing authoritative facts (late-start discovery).
+        self._poll_bridge()
+
+    def _poll_bridge(self) -> None:
+        """Poll the observation bridge after any runtime mutation surface."""
+        if self.observation_bridge is not None and self._composition is not None:
+            self.observation_bridge.poll(self._composition)
+
+    @property
+    def outbound_trace(self) -> list[dict]:
+        """Ordered outbound observation trace (M6-INT-01 evidence view)."""
+        if self.observation_bridge is None:
+            return []
+        return list(self.observation_bridge.outbound_trace)

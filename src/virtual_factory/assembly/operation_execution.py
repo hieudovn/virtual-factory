@@ -230,6 +230,14 @@ class OperationRegistry:
             if op.state != OperationState.ELIGIBLE_TO_INDEX
         ]
 
+    def all_operations(self) -> list[OperationExecution]:
+        """All operations (including completed/indexed), in creation order.
+
+        M6-INT-01: read-only authoritative enumeration of OperationExecution
+        lifecycle facts for the observation bridge.  Never mutates state.
+        """
+        return list(self._operations.values())
+
     def clear(self) -> None:
         self._operations.clear()
         self._index.clear()

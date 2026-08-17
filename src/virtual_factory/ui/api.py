@@ -240,12 +240,18 @@ def create_app(
     def _get_assy_controller():
         if _assy_controller["instance"] is None:
             from virtual_factory.assembly.demo_controller import DemoController
+            from virtual_factory.assembly.observation_bridge import (
+                build_assy_observation_pipeline,
+            )
             assy_config = os.environ.get(
                 "TIPA_ASSY_CONFIG",
                 str(Path(__file__).resolve().parent.parent.parent.parent / "configs" / "plants" / "tipa_assy_demo.yaml")
             )
             ctrl = DemoController(config_path=assy_config)
             ctrl.initialize()
+            # M6-INT-01: attach the downstream observation pipeline (read-only).
+            pipeline = build_assy_observation_pipeline()
+            ctrl.attach_observation_bridge(pipeline.bridge)
             _assy_controller["instance"] = ctrl
         return _assy_controller["instance"]
 
@@ -271,6 +277,13 @@ def create_app(
         ctrl = _get_assy_controller()
         snap = ctrl.step()
         return snap.to_dict()
+
+    @app.get("/assy-demo/observations")
+    def assy_demo_observations() -> dict:
+        """M6-INT-01: ordered P0 outbound observation trace (read-only)."""
+        ctrl = _get_assy_controller()
+        trace = ctrl.outbound_trace
+        return {"count": len(trace), "observations": trace}
 
     @app.post("/assy-demo/snapshot")
     def assy_demo_snapshot() -> dict:

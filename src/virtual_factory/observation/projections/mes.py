@@ -38,6 +38,9 @@ _SEMANTIC_TYPE_TO_MES: dict[str, str] = {
     "genealogy_relationship": "mes.genealogy_relationship",
     "run_status": "mes.run_status",
     "issue": "mes.issue",
+    # M6-INT-01 — P0 outbound (additive): AP11 RELEASE is a distinct
+    # manufacturing fact from AP11 final-QC PASS (which maps to quality_result).
+    "release": "mes.release",
 }
 
 _SCHEMA_PREFIX = "vf.mes"

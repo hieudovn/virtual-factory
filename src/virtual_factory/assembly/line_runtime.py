@@ -759,6 +759,10 @@ class AssyLineRuntime:
         # Post-outcome handling for carried-over states.
         events: list[LineEvent] = []
         if op.state == OperationState.COMPLETED:
+            # M6-INT-01: capture authoritative completion timestamp (domain truth).
+            if op.completed_at_sim_s is None:
+                op.completed_at_sim_s = (
+                    self._simulation_time_s + self._station_elapsed.get(pos, 0.0))
             op.transition(OperationState.ELIGIBLE_TO_INDEX)
             self.conveyor.mark_position_complete(pos)
             self._station_elapsed[pos] = 0.0
@@ -848,6 +852,10 @@ class AssyLineRuntime:
 
         # Resolve post-domain outcome
         if op.state == OperationState.COMPLETED:
+            # M6-INT-01: capture authoritative completion timestamp (domain truth).
+            if op.completed_at_sim_s is None:
+                op.completed_at_sim_s = (
+                    self._simulation_time_s + self._station_elapsed.get(station_id, 0.0))
             op.transition(OperationState.ELIGIBLE_TO_INDEX)
             self.conveyor.mark_position_complete(station_id)
             self._station_elapsed[station_id] = 0.0
