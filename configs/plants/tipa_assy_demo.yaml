@@ -68,6 +68,8 @@ identity:
 # --- Simulation ---
 simulation:
   time_multiplier: 1.0
+  timing_behavior: DETERMINISTIC
+  random_seed: 42
 
 # --- Quality (M6-S03) ---
 # All numeric limits are DEMO_SYNTHETIC — not TIPA-confirmed.
@@ -90,6 +92,67 @@ quality:
   AP11:
     max_attempts: 1
     scenario: PASS   # final QC always PASS for demo
+
+# --- AUTO Timing Profiles (AUTO-TIME-01A) ---
+# DEMO_SYNTHETIC — NOT TIPA-CONFIRMED. Illustrative sub-action timing for AUTO
+# mode. Nominal profile sums align with station_durations above so future
+# AUTO fallback equivalence is clean. Runtime wiring is NOT enabled in 01A.
+auto_timing_profiles:
+  AP03:
+    profile_id: AP03_AUTO_V1
+    sub_actions:
+      - id: mechanical_check
+        duration: { type: fixed, seconds: 25 }
+      - id: checklist_execution
+        duration: { type: normal, mean_s: 15, stddev_s: 3, min_s: 10, max_s: 25 }
+      - id: confirmation
+        duration: { type: fixed, seconds: 5 }
+
+  AP04:
+    profile_id: AP04_AUTO_V1
+    sub_actions:
+      - id: positioning
+        duration: { type: fixed, seconds: 10 }
+      - id: alignment
+        duration: { type: normal, mean_s: 12, stddev_s: 2, min_s: 8, max_s: 18 }
+      - id: join
+        duration: { type: fixed, seconds: 28 }
+      - id: verification
+        duration: { type: fixed, seconds: 10 }
+
+  AP05:
+    profile_id: AP05_AUTO_V1
+    sub_actions:
+      - id: mechanical_assembly
+        duration: { type: normal, mean_s: 60, stddev_s: 6, min_s: 48, max_s: 78 }
+      - id: verification
+        duration: { type: fixed, seconds: 30 }
+
+  AP06:
+    profile_id: AP06_AUTO_V1
+    sub_actions:
+      - id: fixture
+        duration: { type: fixed, seconds: 10 }
+      - id: test
+        duration: { type: normal, mean_s: 40, stddev_s: 5, min_s: 30, max_s: 55 }
+      - id: evaluation
+        duration: { type: fixed, seconds: 10 }
+
+  AP08:
+    profile_id: AP08_AUTO_V1
+    sub_actions:
+      - id: vision_acquisition
+        duration: { type: fixed, seconds: 8 }
+      - id: analysis
+        duration: { type: normal, mean_s: 16, stddev_s: 2, min_s: 10, max_s: 22 }
+      - id: decision
+        duration: { type: fixed, seconds: 6 }
+
+  AP11:
+    profile_id: AP11_AUTO_V1
+    sub_actions:
+      - id: final_qc
+        duration: { type: normal, mean_s: 30, stddev_s: 4, min_s: 20, max_s: 40 }
 
 # ═══════════════════════════════════════════════════════════
 # M6-S04B-I01 — Production Line Deployment Identity (ADDITIVE)

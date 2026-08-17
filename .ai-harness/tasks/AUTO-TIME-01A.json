@@ -1,0 +1,92 @@
+{
+  "task_id": "AUTO-TIME-01A",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "AUTO-TIME-01A — AUTO timing domain model & config (slice A only). Implement generic config-driven AUTO timing domain: TimingBehavior, DurationPolicyType, DurationPolicy, SubActionTiming, AutoTimingProfile, TimingSubActionSample, TimingSample, TimingResolver. Config parsing for optional auto_timing_profiles, simulation.timing_behavior, simulation.random_seed, deterministic seeded RNG, and focused tests. ASSY runtime behavior unchanged; no dwell/operation timing integration.",
+  "explicit_non_objectives": [
+    "execute_dwell() changes",
+    "_advance_operation() timing integration",
+    "OperationRegistry.start() behavior change",
+    "OperationExecution.work_duration_s change",
+    "schema / snapshot / bottleneck changes",
+    "UI / MES",
+    "MANUAL / ASSISTED timing change",
+    "retry / AP11 lifecycle change",
+    "wall-clock / sleep / frontend timing"
+  ],
+  "required_branch": "docs/m6-s01-tipa-baseline",
+  "expected_base_sha": "33cb2b7bc6f68f8ff0d8700aacd32165ebf98578",
+  "allowed_paths": [
+    "src/virtual_factory/assembly/auto_timing.py",
+    "configs/plants/tipa_assy_demo.yaml",
+    "tests/test_auto_timing.py",
+    ".ai-harness/tasks/AUTO-TIME-01A.json",
+    ".ai-harness/sa-review/"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/assembly/line_runtime.py",
+    "src/virtual_factory/assembly/operation_execution.py",
+    "src/virtual_factory/assembly/station_contracts.py",
+    "src/virtual_factory/assembly/demo_snapshot.py",
+    ".ai-harness/schemas/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/assembly/auto_timing.py — timing domain + resolver + config parsing",
+    "configs/plants/tipa_assy_demo.yaml — additive simulation.timing_behavior/random_seed + auto_timing_profiles",
+    "tests/test_auto_timing.py — focused tests",
+    ".ai-harness/tasks/AUTO-TIME-01A.json — this contract",
+    ".ai-harness/sa-review/CURRENT.md + reports/AUTO-TIME-01A.md"
+  ],
+  "required_tests": [
+    "FIXED deterministic",
+    "FIXED variable remains fixed",
+    "NORMAL deterministic = mean",
+    "NORMAL seeded reproducibility",
+    "different seed changes NORMAL realization",
+    "min clamp",
+    "max clamp",
+    "invalid zero/negative fixed rejected",
+    "invalid normal bounds rejected",
+    "mean outside bounds rejected",
+    "duplicate sub-action id rejected",
+    "empty profile rejected",
+    "effective duration equals sum",
+    "YAML with no profiles remains backward-compatible",
+    "timing_behavior/random_seed parse",
+    "invalid behavior rejected",
+    "invalid policy type rejected",
+    "TIPA YAML profiles load"
+  ],
+  "required_smoke_checks": [
+    "pytest tests/test_auto_timing.py"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_change_line_runtime",
+    "do_not_change_operation_execution",
+    "do_not_self_certify_complete"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "runtime_semantic_change_required",
+    "backward_compatibility_loss",
+    "deterministic_sampling_not_reproducible",
+    "malformed_config_not_fail_closed"
+  ],
+  "acceptance_criteria": [
+    {"id": "A1", "description": "Baseline is 33cb2b7 on docs/m6-s01-tipa-baseline"},
+    {"id": "A2", "description": "No line_runtime/operation_execution/station_contracts modified"},
+    {"id": "A3", "description": "New timing tests pass"},
+    {"id": "A4", "description": "Existing ASSY/config/station-contract/OperationExecution tests remain green"},
+    {"id": "A5", "description": "Profiles parse and resolve deterministically in isolation"}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
