@@ -8,7 +8,7 @@
 | Repository | `hieudovn/virtual-factory` |
 | Branch | `docs/m6-s01-tipa-baseline` |
 | Baseline | `83dae4fb3712091d59055b86e37f3034b2bbae8d` (authorized) |
-| Head | `<exact SHA>` (this gate) |
+| Head | `2380f54c099dd93f4b2f9c81b3db67ddd60a9ff9` (this gate) |
 | Production code changed | **YES** (additive; no existing runtime semantics changed) |
 
 ## 2. Architecture
