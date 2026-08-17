@@ -1,19 +1,26 @@
 # SA REVIEW INBOX
 
-Task: M6-INT-01-C01
+Task: DEMO-CANDIDATE-01
 Status: READY FOR SA REVIEW
-Baseline: b5d0bc22de2c5c8afa23c1ef5cf55189f558bf65
-Head: 6ccd6a53970f860c1f2bdc44ed2c8c7b66ed0de6
+Baseline: 494c12e265d297a389e4463848b9c0b6aafed0b1
+Head: 59d560766647e23683e2b9b3b53880223412a301
 
 Report:
-.ai-harness/sa-review/reports/M6-INT-01-C01.md
+.ai-harness/sa-review/reports/DEMO-CANDIDATE-01.md
 
 Evidence:
-.ai-harness/sa-review/evidence/M6-INT-01-C01/
+.ai-harness/sa-review/evidence/DEMO-CANDIDATE-01/
 
-Production code changed: YES
+Production code changed: NO
 
 Summary:
-Corrected reset run-generation stability, per-gateway retry/idempotency,
-and authoritative AP11 RELEASE occurrence timestamp.
+DEMO-CANDIDATE PASS. Integrated rehearsal on one frozen build: R1 HAPPY_PATH
+(release 1680s), R2 AP06 FAIL→PASS, R3 AP08 NG→PASS, R4 FAILED_FINAL (no false
+release), R5 MANUAL sanity; timing T1/T2/T3 (AP05 bottleneck 135/overrun 15);
+MES outbound no duplicates (672/672 unique by run_id|source_event_id|gateway_id);
+3x repeatability identical; process restart clean; UI↔runtime↔observation sync
+verified in-browser (9 screenshots). Full suite 1554 passed + 2 documented
+pre-existing failures unchanged. No BLOCKER-21AUG / HIGH; POLISH P1 reload
+auto-reset (clean start by design), P2 high 6-sub-line observation volume;
+POST-DEMO D1 resume/confirm, D2 external MES receiver.
 

@@ -8,7 +8,7 @@
 | Repository | `hieudovn/virtual-factory` |
 | Branch | `docs/m6-s01-tipa-baseline` |
 | Baseline | `494c12e265d297a389e4463848b9c0b6aafed0b1` (current branch tip) |
-| Head | `<exact SHA>` (this gate) |
+| Head | `59d560766647e23683e2b9b3b53880223412a301` (this gate) |
 | Production code changed | **NO** (rehearsal / validation / evidence only) |
 
 ## Demo candidate summary
