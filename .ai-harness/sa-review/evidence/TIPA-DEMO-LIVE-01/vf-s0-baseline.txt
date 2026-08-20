@@ -1,0 +1,51 @@
+﻿=== VF-S0 baseline verification 2026-08-18T16:03:19.5764171+07:00 ===
+=== git status --short ===
+=== git branch --show-current ===
+docs/m6-s01-tipa-baseline
+=== git rev-parse HEAD ===
+cbdc19f8ce80e2f93cbf93995d3ada2b9463f42a
+=== git log -1 --oneline ===
+cbdc19f chore: commit stray I09 visual-review evidence screenshot (housekeeping)
+=== merge-base is-ancestor 5b2a766 (finality) ===
+exit=0
+=== merge-base is-ancestor 6e68ec9 (docker) ===
+exit=0
+=== docker compose -f docker-compose.assy.yml config ===
+name: vf-assy
+services:
+  vf-assy:
+    build:
+      context: d:\Project\Github\virtual-factory
+      dockerfile: Dockerfile
+    command:
+      - virtual-factory
+      - serve
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    environment:
+      TIPA_ASSY_CONFIG: /app/configs/plants/tipa_assy_demo.yaml
+      VF_ENABLE_S04B_OVERVIEW: "1"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request, json; s=json.load(urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)); raise SystemExit(0 if s.get('status')=='ok' else 1)
+      timeout: 3s
+      interval: 10s
+      retries: 5
+      start_period: 10s
+    image: vf-assy:latest
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8000
+        published: "8000"
+        protocol: tcp
+    restart: unless-stopped
+networks:
+  default:
+    name: vf-assy_default

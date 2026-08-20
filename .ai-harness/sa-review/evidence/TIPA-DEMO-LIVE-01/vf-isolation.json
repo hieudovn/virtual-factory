@@ -1,0 +1,195 @@
+{
+  "producer": "virtual_factory",
+  "evidence": "VF-S10 producer isolation",
+  "sub_lines": [
+    "ASSY-SL01",
+    "ASSY-SL02",
+    "ASSY-SL03",
+    "ASSY-SL04",
+    "ASSY-SL05",
+    "ASSY-SL06"
+  ],
+  "run_ids_by_line": {
+    "ASSY-SL01": [
+      "ASSY-SL01:R1",
+      "ASSY-SL01:R2",
+      "ASSY-SL01:R3",
+      "ASSY-SL01:R4",
+      "ASSY-SL01:R5"
+    ],
+    "ASSY-SL02": [
+      "ASSY-SL02:R1",
+      "ASSY-SL02:R2",
+      "ASSY-SL02:R3",
+      "ASSY-SL02:R4",
+      "ASSY-SL02:R5"
+    ],
+    "ASSY-SL03": [
+      "ASSY-SL03:R1",
+      "ASSY-SL03:R2",
+      "ASSY-SL03:R3",
+      "ASSY-SL03:R4",
+      "ASSY-SL03:R5"
+    ],
+    "ASSY-SL04": [
+      "ASSY-SL04:R1",
+      "ASSY-SL04:R2",
+      "ASSY-SL04:R3",
+      "ASSY-SL04:R4",
+      "ASSY-SL04:R5"
+    ],
+    "ASSY-SL05": [
+      "ASSY-SL05:R1",
+      "ASSY-SL05:R2",
+      "ASSY-SL05:R3",
+      "ASSY-SL05:R4",
+      "ASSY-SL05:R5"
+    ],
+    "ASSY-SL06": [
+      "ASSY-SL06:R1",
+      "ASSY-SL06:R2",
+      "ASSY-SL06:R3",
+      "ASSY-SL06:R4",
+      "ASSY-SL06:R5"
+    ]
+  },
+  "station_token_context_separation": {
+    "AP06": {
+      "ASSY-SL01": {
+        "count": 24,
+        "sample_keys": [
+          "ASSY-SL01:R1|QR-0001|assy.quality_result|1.0",
+          "ASSY-SL01:R1|QR-0002|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL02": {
+        "count": 23,
+        "sample_keys": [
+          "ASSY-SL02:R1|QR-0001|assy.quality_result|1.0",
+          "ASSY-SL02:R1|QR-0002|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL03": {
+        "count": 24,
+        "sample_keys": [
+          "ASSY-SL03:R1|QR-0001|assy.quality_result|1.0",
+          "ASSY-SL03:R1|QR-0002|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL04": {
+        "count": 24,
+        "sample_keys": [
+          "ASSY-SL04:R1|QR-0001|assy.quality_result|1.0",
+          "ASSY-SL04:R1|QR-0002|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL05": {
+        "count": 24,
+        "sample_keys": [
+          "ASSY-SL05:R1|QR-0001|assy.quality_result|1.0",
+          "ASSY-SL05:R1|QR-0002|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL06": {
+        "count": 24,
+        "sample_keys": [
+          "ASSY-SL06:R1|QR-0001|assy.quality_result|1.0",
+          "ASSY-SL06:R1|QR-0002|assy.quality_result|1.0"
+        ]
+      }
+    },
+    "AP08": {
+      "ASSY-SL01": {
+        "count": 16,
+        "sample_keys": [
+          "ASSY-SL01:R1|QR-0004|assy.quality_result|1.0",
+          "ASSY-SL01:R1|QR-0006|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL02": {
+        "count": 16,
+        "sample_keys": [
+          "ASSY-SL02:R1|QR-0004|assy.quality_result|1.0",
+          "ASSY-SL02:R1|QR-0006|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL03": {
+        "count": 15,
+        "sample_keys": [
+          "ASSY-SL03:R1|QR-0004|assy.quality_result|1.0",
+          "ASSY-SL03:R1|QR-0006|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL04": {
+        "count": 16,
+        "sample_keys": [
+          "ASSY-SL04:R1|QR-0004|assy.quality_result|1.0",
+          "ASSY-SL04:R1|QR-0006|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL05": {
+        "count": 16,
+        "sample_keys": [
+          "ASSY-SL05:R1|QR-0004|assy.quality_result|1.0",
+          "ASSY-SL05:R1|QR-0006|assy.quality_result|1.0"
+        ]
+      },
+      "ASSY-SL06": {
+        "count": 16,
+        "sample_keys": [
+          "ASSY-SL06:R1|QR-0004|assy.quality_result|1.0",
+          "ASSY-SL06:R1|QR-0006|assy.quality_result|1.0"
+        ]
+      }
+    }
+  },
+  "wip_facts_scoped_by_line": {
+    "ASSY-SL01": {
+      "mtr_0001_release_keys": [
+        "ASSY-SL01:R1|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL01:R3|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL01:R5|release:MTR-0001|assy.ap11_release|1.0"
+      ]
+    },
+    "ASSY-SL02": {
+      "mtr_0001_release_keys": [
+        "ASSY-SL02:R1|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL02:R3|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL02:R5|release:MTR-0001|assy.ap11_release|1.0"
+      ]
+    },
+    "ASSY-SL03": {
+      "mtr_0001_release_keys": [
+        "ASSY-SL03:R1|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL03:R3|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL03:R5|release:MTR-0001|assy.ap11_release|1.0"
+      ]
+    },
+    "ASSY-SL04": {
+      "mtr_0001_release_keys": [
+        "ASSY-SL04:R1|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL04:R3|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL04:R5|release:MTR-0001|assy.ap11_release|1.0"
+      ]
+    },
+    "ASSY-SL05": {
+      "mtr_0001_release_keys": [
+        "ASSY-SL05:R1|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL05:R3|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL05:R5|release:MTR-0001|assy.ap11_release|1.0"
+      ]
+    },
+    "ASSY-SL06": {
+      "mtr_0001_release_keys": [
+        "ASSY-SL06:R1|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL06:R3|release:MTR-0001|assy.ap11_release|1.0",
+        "ASSY-SL06:R5|release:MTR-0001|assy.ap11_release|1.0"
+      ]
+    }
+  },
+  "notes": [
+    "run_id embeds sub_line_id:R<generation>; a station token (AP06/AP08) is NOT globally unique — it repeats on every sub-line, separated only by run_id prefix.",
+    "WIP ids (e.g. MTR-0001) also repeat per sub-line and are context-separated by run_id.",
+    "Each scenario reset bumps generation (R1 HAPPY, R3 retest, R4 failed-final, R5 reinspection observed)."
+  ]
+}
