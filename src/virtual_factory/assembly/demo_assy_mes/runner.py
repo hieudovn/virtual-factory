@@ -112,29 +112,35 @@ class DemoRunner:
     def trigger_jam(self) -> None:
         """Deterministically advance the scenario to the AP05 jam.
 
-        Emits facts one at a time until the line enters FAULT, then one more
-        fact to STOPPED, so the jam is observable via the snapshot.
+        Emits facts until the line enters FAULT, then STOPPED, then the
+        DOWNTIME_START marker (downtime begins), so a subsequent Recover
+        emits the resolution sequence (EXCEPTION_RESOLVED → RUNNING →
+        DOWNTIME_END) and nothing more.
         """
         self._running = True
         while self._cursor < len(self._facts) and self._line_state != LineState.FAULT:
             self._step_once()
         if self._line_state == LineState.FAULT and self._cursor < len(self._facts):
             self._step_once()  # FAULT → STOPPED
+        if self._cursor < len(self._facts):
+            self._step_once()  # STOPPED → DOWNTIME_START
 
     def recover(self) -> None:
         """Resume after fault/stop.  Only effective once the jam has occurred.
 
-        Advances through the recovery facts (EXCEPTION_RESOLVED,
-        LINE_STATE_CHANGED→running, DOWNTIME_END) until the line is RUNNING.
+        Emits the recovery sequence (EXCEPTION_RESOLVED, LINE_STATE_CHANGED→
+        running, DOWNTIME_END) and stops immediately after DOWNTIME_END,
+        without running into the next production fact.
         """
         if not self._fault_triggered:
             return
         if self._line_state not in (LineState.FAULT, LineState.STOPPED):
             return
         self._running = True
-        while (self._cursor < len(self._facts)
-               and self._line_state != LineState.RUNNING):
+        while self._cursor < len(self._facts):
             self._step_once()
+            if self._facts[self._cursor - 1].event_type == "DOWNTIME_END":
+                break
 
     # ── stepping ──
 

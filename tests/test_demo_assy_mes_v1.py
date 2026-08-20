@@ -345,6 +345,73 @@ class TestControlSemanticsC02:
         assert runner.oee is None
 
 
+class TestRecoverEmitsDowntimeEnd:
+    """One Recover() after Jam() must emit the full recovery sequence
+    (EXCEPTION_RESOLVED → LINE_STATE_CHANGED(running) → DOWNTIME_END) and
+    stop, without requiring an extra Step or running into production."""
+
+    def test_recover_emits_full_recovery_sequence(self):
+        """Line RUNNING; recovery messages in order: RESOLVED, RUNNING, END."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        runner.trigger_jam()
+        before_keys = {m.key for m in runner.delivered_messages()}
+        runner.recover()
+        assert runner.line_state == LineState.RUNNING
+        new = [m for m in serialized(runner.delivered_messages())
+               if m["message_key"] not in before_keys]
+        types = [m["payload"]["event_type"] for m in new]
+        assert types == ["EXCEPTION_RESOLVED", "LINE_STATE_CHANGED", "DOWNTIME_END"]
+        lsc = [m for m in new if m["payload"]["event_type"] == "LINE_STATE_CHANGED"]
+        assert len(lsc) == 1
+        assert lsc[0]["payload"]["line_state"] == "running"
+        ends = [m for m in new if m["payload"]["event_type"] == "DOWNTIME_END"]
+        assert len(ends) == 1
+        assert ends[0]["payload"]["downtime_s"] == 120.0
+
+    def test_recover_stops_after_downtime_end(self):
+        """Cursor right after DOWNTIME_END; next production fact not emitted."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        runner.trigger_jam()
+        runner.recover()
+        facts = build_scenario_facts()
+        dt_end_idx = next(i for i, f in enumerate(facts) if f.event_type == "DOWNTIME_END")
+        assert runner.snapshot()["cursor"] == dt_end_idx + 1
+        msgs = serialized(runner.delivered_messages())
+        prod = [m for m in msgs
+                if m["payload"].get("event_type") == "OPERATION_COMPLETED"
+                and m["payload"].get("station_id") == "AP05"
+                and m["payload"].get("simulation_time_s") == 740.0]
+        assert prod == []
+
+    def test_recover_again_is_noop(self):
+        """Repeated recover() after recovery emits nothing / keeps cursor."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        runner.trigger_jam()
+        runner.recover()
+        c1 = runner.snapshot()["cursor"]
+        m1 = len(runner.delivered_messages())
+        runner.recover()
+        assert runner.snapshot()["cursor"] == c1
+        assert len(runner.delivered_messages()) == m1
+        assert runner.line_state == LineState.RUNNING
+
+    def test_recover_before_fault_is_noop(self):
+        """Recover before any fault emits nothing."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        before = len(runner.delivered_messages())
+        runner.recover()
+        assert len(runner.delivered_messages()) == before
+        assert runner.snapshot()["cursor"] == 0
+
+
 class TestQualityFinalityC02:
     def test_ap11_reject_has_terminal_markers(self):
         """MTR-DEMO-004 AP11 final failure: is_terminal=true, terminal_state=failed_final."""
