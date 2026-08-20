@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 CONTRACT_VERSION = "tipa-assy-demo-v1"
@@ -19,6 +20,15 @@ SUB_LINE_ID = "ASSY-SL01"
 PRODUCTION_LINE_ID = "ASSY"
 PLANT_ID = "TIPA"
 MODEL_ID = "tipa-assy-demo-v1"
+
+# Fixed demo epoch: deterministic `occurred_at` = epoch + simulation_time_s.
+# This gives MES a stable wall-clock timeline independent of ingest time.
+DEMO_EPOCH = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+
+def occurred_at_for(simulation_time_s: float) -> str:
+    """Deterministic ISO-8601 (UTC) timestamp for a simulated time."""
+    return (DEMO_EPOCH + timedelta(seconds=simulation_time_s)).isoformat()
 
 
 class LineState(str, enum.Enum):
@@ -101,6 +111,9 @@ class DemoFact:
     disposition: str = ""
     attempt_number: int = 0
     reason_code: str = ""
+    # VF-DM-DEMO-ASSY-MES-01-C02 — explicit quality finality markers.
+    is_terminal: bool = False
+    terminal_state: str = ""
     detail: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -115,6 +128,8 @@ class DemoFact:
             "disposition": self.disposition,
             "attempt_number": self.attempt_number,
             "reason_code": self.reason_code,
+            "is_terminal": self.is_terminal,
+            "terminal_state": self.terminal_state,
         }
         d.update(self.detail)
         return d

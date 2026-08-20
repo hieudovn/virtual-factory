@@ -10,11 +10,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "825409cf-53c4-48eb-b238-a18f5fa39366",
+      "observation_id": "9fbd7da7-d6c3-4aab-acd5-50b3883d1f49",
       "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-001:AP04|assy.genealogy|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 80.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:01:20+00:00",
       "subject_type": "wip",
       "subject_id": "MTR-DEMO-001",
       "station_id": "AP04",

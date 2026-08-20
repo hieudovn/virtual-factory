@@ -10,11 +10,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "6d9fe919-8fc9-41e5-aff5-5dedd6cf3bcd",
+      "observation_id": "7ec4f5a6-a97d-4504-968e-13e1f025773e",
       "idempotency_key": "ASSY-SL01:R1|OEE:SUMMARY|assy.oee_summary|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 1200.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:20:00+00:00",
       "station_id": "ASSY-SL01",
       "contract_version": "tipa-assy-demo-v1",
       "subline_id": "ASSY-SL01",

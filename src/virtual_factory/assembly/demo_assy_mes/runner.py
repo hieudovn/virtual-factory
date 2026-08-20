@@ -43,6 +43,7 @@ class DemoRunner:
     _cursor: int = field(default=0, init=False)
     _line_state: LineState = field(default=LineState.STOPPED, init=False)
     _running: bool = field(default=False, init=False)
+    _fault_triggered: bool = field(default=False, init=False)
     _sim_time_s: float = field(default=0.0, init=False)
     _oee: OeeSummary | None = field(default=None, init=False)
     _delivered: list[ProjectedMessage] = field(default_factory=list, init=False)
@@ -90,6 +91,7 @@ class DemoRunner:
         self._cursor = 0
         self._line_state = LineState.STOPPED
         self._running = False
+        self._fault_triggered = False
         self._sim_time_s = 0.0
         self._oee = None
         self._recent_events = []
@@ -99,21 +101,40 @@ class DemoRunner:
                 gw._messages = []
 
     def start(self) -> None:
+        """Begin the run.  Does NOT process the timeline synchronously —
+        advancement happens one fact at a time via step()."""
         self._running = True
 
     def pause(self) -> None:
+        """Stop advancement.  Prevents the next step()."""
         self._running = False
 
     def trigger_jam(self) -> None:
-        """Expose the AP05 jam trigger (no-op in the scripted run, which
-        auto-triggers the jam for MTR-DEMO-003; retained for the control
-        surface contract)."""
+        """Deterministically advance the scenario to the AP05 jam.
+
+        Emits facts one at a time until the line enters FAULT, then one more
+        fact to STOPPED, so the jam is observable via the snapshot.
+        """
         self._running = True
+        while self._cursor < len(self._facts) and self._line_state != LineState.FAULT:
+            self._step_once()
+        if self._line_state == LineState.FAULT and self._cursor < len(self._facts):
+            self._step_once()  # FAULT → STOPPED
 
     def recover(self) -> None:
-        """Expose line recovery (the scripted run auto-recovers)."""
-        if self._line_state == LineState.FAULT:
-            self._line_state = LineState.RUNNING
+        """Resume after fault/stop.  Only effective once the jam has occurred.
+
+        Advances through the recovery facts (EXCEPTION_RESOLVED,
+        LINE_STATE_CHANGED→running, DOWNTIME_END) until the line is RUNNING.
+        """
+        if not self._fault_triggered:
+            return
+        if self._line_state not in (LineState.FAULT, LineState.STOPPED):
+            return
+        self._running = True
+        while (self._cursor < len(self._facts)
+               and self._line_state != LineState.RUNNING):
+            self._step_once()
 
     # ── stepping ──
 
@@ -122,22 +143,29 @@ class DemoRunner:
         self._sim_time_s = fact.simulation_time_s
         if fact.fact_kind == FactKind.RUN_STATUS:
             self._line_state = LineState(fact.detail.get("line_state", "running"))
+            if self._line_state == LineState.FAULT:
+                self._fault_triggered = True
         self._recent_events.append(fact.to_dict())
         return results
 
-    def step(self) -> list[DeliveryResult]:
-        """Advance by one fact.  Returns the DeliveryResults."""
+    def _step_once(self) -> list[DeliveryResult]:
+        """Emit the next fact (internal; does not check _running)."""
         if self._cursor < len(self._facts):
             fact = self._facts[self._cursor]
             self._cursor += 1
             return self._emit_fact(fact)
-        # past the end: emit OEE once
         if self._oee is None:
             return self._emit_fact(self._oee_fact())
         return []
 
+    def step(self) -> list[DeliveryResult]:
+        """Advance exactly one fact (only while running).  Returns DeliveryResults."""
+        if not self._running:
+            return []
+        return self._step_once()
+
     def run(self) -> list[DeliveryResult]:
-        """Run the full scenario to completion (including OEE summary)."""
+        """Run the full scenario to completion (batch mode; includes OEE)."""
         results: list[DeliveryResult] = []
         self._running = True
         while self._cursor < len(self._facts):

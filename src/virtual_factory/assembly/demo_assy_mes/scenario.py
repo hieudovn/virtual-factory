@@ -125,6 +125,8 @@ def _op_fact(wip: str, t: float, station: str, event: str,
             disposition=disposition,
             attempt_number=attempt,
             reason_code=reason,
+            is_terminal=False,
+            terminal_state="",
             detail={"check_type": station_kind},
         )
     if event == "REWORK_TRIGGERED":
@@ -139,6 +141,8 @@ def _op_fact(wip: str, t: float, station: str, event: str,
             attempt_number=attempt,
         )
     if event in ("AP11_FINAL_QC_PASS", "AP11_FINAL_QC_FAIL"):
+        is_terminal = event == "AP11_FINAL_QC_FAIL"
+        terminal_state = "failed_final" if is_terminal else ""
         return DemoFact(
             fact_kind=FactKind.QUALITY_RESULT,
             source_event_id=f"{wip}:AP11:{attempt}",
@@ -150,6 +154,8 @@ def _op_fact(wip: str, t: float, station: str, event: str,
             disposition=disposition,
             attempt_number=attempt,
             reason_code=reason,
+            is_terminal=is_terminal,
+            terminal_state=terminal_state,
             detail={"check_type": "FINAL_QC"},
         )
     return DemoFact(
@@ -225,9 +231,10 @@ def build_scenario_facts() -> list[DemoFact]:
         station_id="AP05", wip_id="MTR-DEMO-003", subject_id="MTR-DEMO-003",
         reason_code="AP05_JAM",
     ))
+    # C02: FAULT and STOPPED must have DISTINCT timestamps.
     facts.append(DemoFact(
         fact_kind=FactKind.RUN_STATUS, source_event_id="LINE:FAULT",
-        simulation_time_s=600.0, event_type="LINE_STATE_CHANGED",
+        simulation_time_s=590.0, event_type="LINE_STATE_CHANGED",
         station_id=SUB_LINE_ID, detail={"line_state": "fault"},
     ))
     facts.append(DemoFact(

@@ -50,24 +50,35 @@ The control surface is also available through the existing `serve` app:
 
 | Endpoint | Action |
 |---|---|
-| `POST /demo-assy-mes/reset` | Reset demo |
-| `POST /demo-assy-mes/start` | Start (run to completion) |
-| `POST /demo-assy-mes/pause` | Pause |
-| `POST /demo-assy-mes/step` | Single-fact step |
-| `POST /demo-assy-mes/jam` | Trigger AP05 jam |
-| `POST /demo-assy-mes/recover` | Recover line |
+| `GET /demo-assy-mes` | Customer-facing demo page |
+| `POST /demo-assy-mes/reset` | Reset demo (new generation, clears state) |
+| `POST /demo-assy-mes/start` | Start (enable stepping; does NOT auto-run) |
+| `POST /demo-assy-mes/pause` | Pause (blocks the next step) |
+| `POST /demo-assy-mes/step` | Advance exactly one fact (only while running) |
+| `POST /demo-assy-mes/jam` | Advance deterministically to the AP05 jam (FAULT → STOPPED) |
+| `POST /demo-assy-mes/recover` | Resume after fault/stop → RUNNING |
 | `GET /demo-assy-mes/snapshot` | line state, WIP tokens, recent events, OEE |
 | `GET /demo-assy-mes/messages` | Delivered ProjectedMessages |
 
+Control semantics: `start` only enables advancement (the timeline is not
+processed synchronously); `pause` prevents the next `step`; `jam` deterministically
+emits facts up to and including the FAULT→STOPPED transition; `recover` only
+resumes after the jam and emits the recovery facts until the line is RUNNING.
+
 ```bash
-python -m virtual_factory.main serve   # then curl the endpoints above
+python -m virtual_factory.main serve   # then open /demo-assy-mes or curl the endpoints
 ```
 
 ## Message contract
 
 Every message carries: stable idempotency key, `contract_version`
 (`tipa-assy-demo-v1`), `run_id` (`ASSY-SL01:R<n>`), `subline_id` (`ASSY-SL01`),
-station identity, WIP identity, and `simulation_time_s`.
+station identity, WIP identity, `simulation_time_s`, and a deterministic
+ISO-8601 `occurred_at` (fixed demo epoch + `simulation_time_s`).
+
+Quality facts carry finality markers: `is_terminal` (false except the
+terminal AP11 final-QC FAIL) and `terminal_state` (`"failed_final"` for the
+terminal reject, `""` otherwise).
 
 Message types emitted:
 

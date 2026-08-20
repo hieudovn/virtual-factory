@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TIPA ASSY Demo — ASSY-SL01</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1rem; background: #f6f7f9; color: #1a1a2e; }
+    h1 { font-size: 1.2rem; margin: 0 0 .25rem; }
+    .sub { color: #555; font-size: .85rem; margin-bottom: 1rem; }
+    .panel { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: .75rem; margin-bottom: .75rem; }
+    .controls button { margin-right: .4rem; padding: .4rem .7rem; font-size: .9rem; cursor: pointer; }
+    #lineState { font-weight: 700; }
+    .state-running { color: #15803d; }
+    .state-fault { color: #b91c1c; }
+    .state-stopped { color: #b45309; }
+    .stations { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .station { border: 1px solid #cbd5e1; border-radius: 6px; padding: .25rem .5rem; font-size: .8rem; position: relative; min-width: 64px; text-align: center; }
+    .station.occupied { border-color: #2563eb; background: #eff6ff; }
+    .station .tok { display: block; font-size: .65rem; color: #2563eb; }
+    #events { max-height: 220px; overflow-y: auto; font-size: .8rem; font-family: ui-monospace, monospace; }
+    #events div { padding: .1rem 0; border-bottom: 1px solid #eee; }
+    #oee { font-size: .85rem; }
+    #oee .big { font-size: 1.5rem; font-weight: 800; }
+    table.oee { border-collapse: collapse; font-size: .8rem; }
+    table.oee td, table.oee th { border: 1px solid #ddd; padding: .2rem .4rem; text-align: right; }
+  </style>
+</head>
+<body>
+  <h1>TIPA ASSY Customer Demo — <span id="subline">ASSY-SL01</span></h1>
+  <div class="sub">contract <code>tipa-assy-demo-v1</code> · SSO2 + RSO2 → AP04 join → MTR</div>
+
+  <div class="panel">
+    <div>Line state: <span id="lineState">stopped</span>
+      · Current WIP: <span id="currentWip">—</span>
+      · sim t: <span id="simTime">0.0</span>s
+      · Run: <span id="runId">—</span></div>
+  </div>
+
+  <div class="panel controls">
+    <button onclick="act('reset')">↻ Reset</button>
+    <button onclick="act('start')">▶ Start</button>
+    <button onclick="act('pause')">⏸ Pause</button>
+    <button onclick="act('step')">⏭ Step</button>
+    <button onclick="act('jam')">⚠ Trigger Jam</button>
+    <button onclick="act('recover')">↩ Recover</button>
+  </div>
+
+  <div class="panel">
+    <div class="stations" id="stations"></div>
+  </div>
+
+  <div class="panel">
+    <strong>Recent events</strong>
+    <div id="events">—</div>
+  </div>
+
+  <div class="panel">
+    <strong>OEE</strong>
+    <div id="oee">run to end to see OEE summary</div>
+  </div>
+
+  <script>
+    const STATIONS = ["PRE-ASSY","AP01","AP02","AP03","AP04","AP05","AP06","AP07","AP08","AP09","AP10","AP11","LINE_OUT"];
+    const stationsEl = document.getElementById("stations");
+    for (const s of STATIONS) {
+      const d = document.createElement("div");
+      d.className = "station"; d.id = "st-" + s;
+      d.innerHTML = s + '<span class="tok"></span>';
+      stationsEl.appendChild(d);
+    }
+
+    async function act(name) {
+      await fetch("/demo-assy-mes/" + name, {method: "POST"});
+      refresh();
+    }
+
+    function refresh() {
+      fetch("/demo-assy-mes/snapshot")
+        .then(r => r.json())
+        .then(s => render(s));
+    }
+
+    function render(s) {
+      const st = s.line_state;
+      const ls = document.getElementById("lineState");
+      ls.textContent = st;
+      ls.className = "state-" + st;
+      document.getElementById("simTime").textContent = s.simulation_time_s;
+      document.getElementById("runId").textContent = s.run_id;
+
+      // WIP tokens → station occupancy
+      for (const id of STATIONS) document.getElementById("st-" + id).classList.remove("occupied");
+      for (const id of STATIONS) document.getElementById("st-" + id).querySelector(".tok").textContent = "";
+      let currentWip = "—";
+      for (const [wip, station] of Object.entries(s.wip_tokens || {})) {
+        const el = document.getElementById("st-" + station);
+        if (el) {
+          el.classList.add("occupied");
+          el.querySelector(".tok").textContent = wip;
+        }
+        currentWip = wip;
+      }
+      document.getElementById("currentWip").textContent = currentWip;
+
+      // recent events
+      const ev = document.getElementById("events");
+      ev.innerHTML = "";
+      for (const e of (s.recent_events || []).slice(-25)) {
+        const d = document.createElement("div");
+        d.textContent = `t=${e.simulation_time_s}s ${e.event_type} ${e.station_id || ""} ${e.wip_id || ""} ${e.disposition || ""} ${e.is_terminal ? "TERMINAL" : ""}`;
+        ev.appendChild(d);
+      }
+      if (!(s.recent_events || []).length) ev.textContent = "—";
+
+      // OEE
+      const oee = document.getElementById("oee");
+      if (s.oee) {
+        const o = s.oee;
+        oee.innerHTML = `<span class="big">${(o.oee * 100).toFixed(1)}%</span>` +
+          ` <span>(A ${o.availability.toFixed(2)} · P ${o.performance.toFixed(4)} · Q ${o.quality.toFixed(2)})</span>` +
+          `<table class="oee"><tr><th>planned</th><th>downtime</th><th>run</th><th>actual</th><th>good</th><th>reject</th></tr>` +
+          `<tr><td>${o.planned_s}</td><td>${o.downtime_s}</td><td>${o.run_s}</td><td>${o.actual_count}</td><td>${o.good_count}</td><td>${o.reject_count}</td></tr></table>`;
+      } else {
+        oee.textContent = "run to end to see OEE summary";
+      }
+    }
+
+    refresh();
+  </script>
+</body>
+</html>

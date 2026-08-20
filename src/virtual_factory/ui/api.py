@@ -236,6 +236,11 @@ def create_app(
             _demo_controller["instance"] = DemoController(DemoRunner())
         return _demo_controller["instance"]
 
+    @app.get("/demo-assy-mes", include_in_schema=False)
+    def demo_asssy_page() -> FileResponse:
+        """Customer-facing TIPA ASSY demo page (VF-DM-DEMO-ASSY-MES-01-C02)."""
+        return FileResponse(static_dir / "demo_assy_mes.html")
+
     @app.post("/demo-assy-mes/reset")
     def demo_reset() -> dict:
         return _get_demo_controller().reset()

@@ -10,11 +10,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "077e178f-dc9a-416f-bb83-ea41c6955d85",
+      "observation_id": "b7a3f751-7a44-407e-b247-bdfb317f4fd2",
       "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-003:AP05:JAM:RAISED|assy.issue|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 580.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:09:40+00:00",
       "subject_type": "wip",
       "subject_id": "MTR-DEMO-003",
       "station_id": "AP05",
@@ -38,11 +38,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "61a32064-6d80-4e60-b7b6-a128d619778c",
+      "observation_id": "3e2f7634-18bc-456b-b8fd-4038f38fc013",
       "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-003:AP05:JAM:RESOLVED|assy.issue|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 720.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:12:00+00:00",
       "subject_type": "wip",
       "subject_id": "MTR-DEMO-003",
       "station_id": "AP05",

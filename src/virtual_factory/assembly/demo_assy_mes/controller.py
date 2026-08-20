@@ -22,8 +22,9 @@ class DemoController:
         return self.runner.snapshot()
 
     def start(self) -> dict:
+        # C02: start must NOT process the whole timeline synchronously;
+        # it only enables stepping. Advancement happens via step().
         self.runner.start()
-        self.runner.run()
         return self.runner.snapshot()
 
     def pause(self) -> dict:

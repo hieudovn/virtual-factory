@@ -269,7 +269,160 @@ class TestControlSurface:
     def test_step_advances_cursor(self):
         runner = make_runner()
         runner.reset()
+        runner.start()
         before = runner.snapshot()["cursor"]
         runner.step()
         after = runner.snapshot()["cursor"]
         assert after == before + 1
+
+
+class TestControlSemanticsC02:
+    def test_start_does_not_process_timeline(self):
+        """Start must NOT run the whole timeline synchronously."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        snap = runner.snapshot()
+        assert snap["cursor"] == 0
+        assert snap["simulation_time_s"] == 0.0
+
+    def test_pause_prevents_next_step(self):
+        """Pause prevents the next step."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        runner.step()          # emits fact 1
+        runner.pause()
+        before = runner.snapshot()["cursor"]
+        runner.step()          # should be a no-op
+        assert runner.snapshot()["cursor"] == before
+
+    def test_step_emits_exactly_one_fact(self):
+        """Step emits exactly one fact."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        runner.step()
+        assert runner.snapshot()["cursor"] == 1
+        runner.step()
+        assert runner.snapshot()["cursor"] == 2
+
+    def test_trigger_jam_brings_to_fault(self):
+        """Trigger Jam deterministically brings the line to FAULT (then STOPPED)."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        runner.trigger_jam()
+        assert runner.line_state == LineState.STOPPED  # advanced through FAULT → STOPPED
+        # the recent event log contains the exception + fault
+        events = [e["event_type"] for e in runner.snapshot()["recent_events"]]
+        assert "EXCEPTION_RAISED" in events
+        assert "LINE_STATE_CHANGED" in events
+
+    def test_recover_only_after_fault_and_continues(self):
+        """Recover only works after fault/stop and resumes to RUNNING."""
+        runner = make_runner()
+        runner.reset()
+        runner.start()
+        # recover before any fault is a no-op
+        runner.recover()
+        assert runner.line_state == LineState.STOPPED
+        # trigger jam → STOPPED, then recover → RUNNING
+        runner.trigger_jam()
+        assert runner.line_state == LineState.STOPPED
+        runner.recover()
+        assert runner.line_state == LineState.RUNNING
+
+    def test_reset_clears_state_and_bumps_generation(self):
+        runner = make_runner()
+        runner.run_to_completion()
+        g1 = runner.generation
+        runner.reset()
+        assert runner.generation == g1 + 1
+        assert runner.delivered_messages() == []
+        assert runner.line_state == LineState.STOPPED
+        assert runner.simulation_time_s == 0.0
+        assert runner.oee is None
+
+
+class TestQualityFinalityC02:
+    def test_ap11_reject_has_terminal_markers(self):
+        """MTR-DEMO-004 AP11 final failure: is_terminal=true, terminal_state=failed_final."""
+        runner = make_runner()
+        msgs = serialized(runner.run_to_completion())
+        ap11_fail = [m for m in msgs
+                     if m["payload"].get("event_type") == "AP11_FINAL_QC_FAIL"]
+        assert len(ap11_fail) == 1
+        p = ap11_fail[0]["payload"]
+        assert p["is_terminal"] is True
+        assert p["terminal_state"] == "failed_final"
+
+    def test_non_terminal_ap06_fail_not_terminal(self):
+        """MTR-DEMO-002 AP06 FAIL attempt 1: is_terminal=false, terminal_state=''."""
+        runner = make_runner()
+        msgs = serialized(runner.run_to_completion())
+        ap06_fail = [m for m in msgs
+                     if m["payload"].get("station_id") == "AP06"
+                     and m["payload"].get("disposition") == "FAIL"]
+        assert ap06_fail, "no AP06 FAIL"
+        for m in ap06_fail:
+            assert m["payload"]["is_terminal"] is False
+            assert m["payload"]["terminal_state"] == ""
+
+    def test_line_out_reject_independent_of_final_qc(self):
+        """LINE_OUT reject is a distinct fact from the terminal final-QC."""
+        runner = make_runner()
+        msgs = serialized(runner.run_to_completion())
+        line_out_reject = [m for m in msgs
+                           if m["payload"].get("event_type") == "LINE_OUT"
+                           and m["payload"].get("disposition") == "reject"]
+        ap11_fail = [m for m in msgs
+                     if m["payload"].get("event_type") == "AP11_FINAL_QC_FAIL"]
+        assert len(line_out_reject) == 1 and len(ap11_fail) == 1
+        assert line_out_reject[0]["message_key"] != ap11_fail[0]["message_key"]
+
+
+class TestStateOrderingC02:
+    def test_fault_and_stopped_distinct_timestamps(self):
+        """FAULT and STOPPED must have different simulated timestamps."""
+        runner = make_runner()
+        msgs = serialized(runner.run_to_completion())
+        states = [(m["payload"].get("line_state"), m["payload"]["simulation_time_s"])
+                  for m in msgs if m["payload"].get("event_type") == "LINE_STATE_CHANGED"]
+        assert [s for s, _ in states] == ["running", "fault", "stopped", "running"]
+        fault_t = dict([(s, t) for s, t in states])["fault"]
+        stopped_t = dict([(s, t) for s, t in states])["stopped"]
+        assert fault_t != stopped_t
+        assert fault_t < stopped_t
+
+    def test_downtime_still_120s(self):
+        runner = make_runner()
+        runner.run_to_completion()
+        assert runner.oee.downtime_s == 120.0
+
+    def test_occurred_at_deterministic_iso8601(self):
+        """occurred_at is deterministic ISO-8601 (fixed epoch + simulation_time_s)."""
+        from virtual_factory.assembly.demo_assy_mes.model import occurred_at_for
+        assert occurred_at_for(0.0) == "2026-01-01T00:00:00+00:00"
+        assert occurred_at_for(120.0) == "2026-01-01T00:02:00+00:00"
+        r1 = make_runner()
+        r1.run_to_completion()
+        msgs1 = serialized(r1.delivered_messages())
+        r1.reset()
+        msgs2 = serialized(r1.run_to_completion())
+        for a, b in zip(msgs1, msgs2):
+            # occurred_at deterministic regardless of wall-clock ingest time
+            assert a["payload"]["occurred_at"] == b["payload"]["occurred_at"]
+            assert a["payload"]["occurred_at"] is not None
+
+
+class TestCustomerPage:
+    def test_customer_page_route_renders(self):
+        """GET /demo-assy-mes returns the customer-facing HTML page."""
+        from fastapi.testclient import TestClient
+        from virtual_factory.ui.api import create_app
+        client = TestClient(create_app(config_path="configs/plants/continuous_mvp_01.yaml", dt_s=1.0))
+        resp = client.get("/demo-assy-mes")
+        assert resp.status_code == 200
+        assert "TIPA ASSY" in resp.text
+        assert "PRE-ASSY" in resp.text

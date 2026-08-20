@@ -21,6 +21,7 @@ from virtual_factory.assembly.demo_assy_mes.model import (
     SUB_LINE_ID,
     FactKind,
     DemoFact,
+    occurred_at_for,
 )
 from virtual_factory.integration.gateway import DeliveryResult
 from virtual_factory.integration.gateways.memory import InMemoryObsGateway
@@ -94,7 +95,8 @@ def build_observation_points() -> list[ObservationPoint]:
         _point("assy.quality_result", "ASSY quality result",
                ("QUALITY_RESULT", "AP11_FINAL_QC_PASS", "AP11_FINAL_QC_FAIL"),
                ("event_type", "station_id", "wip_id", "disposition",
-                "attempt_number", "reason_code", "check_type")),
+                "attempt_number", "reason_code", "check_type",
+                "is_terminal", "terminal_state")),
         _point("assy.genealogy", "AP04 assembly join genealogy",
                ("AP04_JOIN",),
                ("event_type", "child_wip_id", "parent_wip_ids",
@@ -153,6 +155,8 @@ def fact_to_reality(fact: DemoFact, run_id: str) -> RealityInput:
         "disposition": fact.disposition,
         "attempt_number": fact.attempt_number,
         "reason_code": fact.reason_code,
+        "is_terminal": fact.is_terminal,
+        "terminal_state": fact.terminal_state,
         "contract_version": CONTRACT_VERSION,
         "subline_id": SUB_LINE_ID,
         "production_line_id": PRODUCTION_LINE_ID,
@@ -181,6 +185,7 @@ def fact_to_reality(fact: DemoFact, run_id: str) -> RealityInput:
         source_path=fact.station_id or SUB_LINE_ID,
         simulation_time_s=fact.simulation_time_s,
         category="industrial_event",
+        occurred_at=occurred_at_for(fact.simulation_time_s),
         source_data=source_data,
         subject_type=subject_type,
         subject_id=subject_id,

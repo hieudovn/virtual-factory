@@ -10,11 +10,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "b8897a0f-5701-4e63-b1fd-d0d6b698cd23",
+      "observation_id": "715fba94-a290-43ee-86be-bb11b45582ed",
       "idempotency_key": "ASSY-SL01:R1|LINE:RUNNING:0|assy.run_status|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 0.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:00:00+00:00",
       "station_id": "ASSY-SL01",
       "contract_version": "tipa-assy-demo-v1",
       "subline_id": "ASSY-SL01",
@@ -36,11 +36,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "31f7f78a-4520-43ad-a335-d3a4d03ef307",
+      "observation_id": "d27084bf-2e99-466b-a37a-ab7c0185c53f",
       "idempotency_key": "ASSY-SL01:R1|LINE:FAULT|assy.run_status|1.0",
       "run_id": "ASSY-SL01:R1",
-      "simulation_time_s": 600.0,
-      "occurred_at": null,
+      "simulation_time_s": 590.0,
+      "occurred_at": "2026-01-01T00:09:50+00:00",
       "station_id": "ASSY-SL01",
       "contract_version": "tipa-assy-demo-v1",
       "subline_id": "ASSY-SL01",
@@ -62,11 +62,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "bce2566d-9581-4801-a2dd-15d154457818",
+      "observation_id": "c7a12108-829e-41bb-b26e-1606dcbba57e",
       "idempotency_key": "ASSY-SL01:R1|LINE:STOPPED|assy.run_status|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 600.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:10:00+00:00",
       "station_id": "ASSY-SL01",
       "contract_version": "tipa-assy-demo-v1",
       "subline_id": "ASSY-SL01",
@@ -88,11 +88,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "d3c9e81e-11ef-4dfe-a7c1-9c4cc0930aa6",
+      "observation_id": "4078ccf4-a02e-4b4e-aabb-a6e3df8e5f68",
       "idempotency_key": "ASSY-SL01:R1|LINE:RUNNING:1|assy.run_status|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 720.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:12:00+00:00",
       "station_id": "ASSY-SL01",
       "contract_version": "tipa-assy-demo-v1",
       "subline_id": "ASSY-SL01",

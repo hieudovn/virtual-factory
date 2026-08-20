@@ -10,11 +10,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "bf9d39b0-d6c6-4c25-b498-e97a6c9fa7a9",
+      "observation_id": "d254aa72-b161-4e20-b2a6-8fe833b5bfba",
       "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-001:LINE_OUT|assy.execution_event|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 240.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:04:00+00:00",
       "subject_type": "wip",
       "subject_id": "MTR-DEMO-001",
       "station_id": "LINE_OUT",
@@ -40,11 +40,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "2858e8b0-77ac-4dfb-96f6-188d50298727",
+      "observation_id": "33f4dc02-cb12-4b01-8c6a-1a660113a3cd",
       "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-002:LINE_OUT|assy.execution_event|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 480.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:08:00+00:00",
       "subject_type": "wip",
       "subject_id": "MTR-DEMO-002",
       "station_id": "LINE_OUT",
@@ -70,11 +70,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "4f388c95-9cf3-4ea6-a17d-f3ac13ec4ce6",
+      "observation_id": "06b1cc4d-3a7c-43c8-9a08-97478f9561d8",
       "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-003:LINE_OUT|assy.execution_event|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 880.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:14:40+00:00",
       "subject_type": "wip",
       "subject_id": "MTR-DEMO-003",
       "station_id": "LINE_OUT",
@@ -100,11 +100,11 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "8877423f-c19c-4689-9b80-f902adcbeca9",
+      "observation_id": "4f560cd8-8777-4000-b56a-b6dacf9c4c26",
       "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-004:LINE_OUT|assy.execution_event|1.0",
       "run_id": "ASSY-SL01:R1",
       "simulation_time_s": 1200.0,
-      "occurred_at": null,
+      "occurred_at": "2026-01-01T00:20:00+00:00",
       "subject_type": "wip",
       "subject_id": "MTR-DEMO-004",
       "station_id": "LINE_OUT",
