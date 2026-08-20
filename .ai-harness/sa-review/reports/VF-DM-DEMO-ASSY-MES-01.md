@@ -8,6 +8,8 @@
 | Repository | `hieudovn/virtual-factory` |
 | Branch | `feature/dm-demo-assy-mes-01` |
 | Baseline (origin/main) | `17a1d9ecafb170fa94e8d01a1f12d84e79982773` |
+| Candidate SHA | `7c285d3` |
+| Review head SHA | `7c285d32b153…` (remote `origin/feature/dm-demo-assy-mes-01`) |
 | Contract version | `tipa-assy-demo-v1` |
 | Production code changed | YES (additive only) |
 | Simulation engine redesigned | NO |
@@ -105,19 +107,45 @@ Emitted types (63 messages/run): `mes.run_status` ×4, `mes.issue` ×2,
 `preflight.json`, `demo-run.jsonl` (63 real messages), `fixtures/` (9 fixture
 files), `regression-full.txt`.
 
-## 10. Changed files
+## 10. Machine-derived gate status
 
-- `src/virtual_factory/assembly/demo_assy_mes/` (new)
-- `src/virtual_factory/observation/projections/mes.py` (additive)
-- `src/virtual_factory/ui/api.py` (minimal control surface)
-- `tests/test_demo_assy_mes_v1.py` (new)
-- `docs/deployment/demo-assy-mes.md` (new)
+Harness gate (`run_task_gate.py --report-only`), local steps:
+
+- P03 Preflight — PASS (baseline match, clean tree, correct branch)
+- P04 Changed files — PASS
+- P06 Tests — PASS (1086 passed, 0 failed)
+- P07 Smoke (`python -m virtual_factory.assembly.demo_assy_mes`) — PASS
+- P13 Acceptance — 4/4 PASS
+
+Open findings (remote verification blocked in this environment):
+
+- P08/P09/P10 (PR metadata + exact-head CI): **UNVERIFIED** — no GitHub token and
+  `gh` CLI not authenticated. The branch is pushed
+  (`origin/feature/dm-demo-assy-mes-01` = `7c285d3`), but a PR could not be
+  opened programmatically and CI could not be triggered/verified.
+
+Machine-derived status: **IMPLEMENTED (pushed, tests green); NOT READY — PR/CI
+UNVERIFIED** (requires SA/operator credentials to open the PR and run CI).
+
+## 11. Changed files
+
+- `src/virtual_factory/assembly/demo_assy_mes/` (new package: model, scenario, oee, bridge, runner, controller, fixtures, __main__)
+- `src/virtual_factory/observation/projections/mes.py` (additive: `mes.oee_summary` + LINE_OUT/WIP_ENTERED/DOWNTIME_* event mappings)
+- `src/virtual_factory/ui/api.py` (minimal control surface: `/demo-assy-mes/*` endpoints)
+- `tests/test_demo_assy_mes_v1.py` (new, 19 tests)
+- `docs/deployment/demo-assy-mes.md` (new demo guide)
 - `.ai-harness/tasks/VF-DM-DEMO-ASSY-MES-01.json` (task contract)
+- `.ai-harness/sa-review/` (report, inbox, evidence, fixtures)
 
-No change to `discrete/`, observation pipeline core, or gateways.
+No change to `discrete/`, observation pipeline core (`envelope/point/service/router/policy`), or gateways.
 
-## 11. Recommendation
+## 12. Recommendation
 
 ```text
-VF-DM-DEMO-ASSY-MES-01 — READY FOR SA REVIEW
+VF-DM-DEMO-ASSY-MES-01 — IMPLEMENTED — PR OPEN PENDING (READY FOR SA REVIEW)
+Candidate SHA: 7c285d3
+Open findings: PR not opened / CI not run (no GitHub credentials in environment)
 ```
+
+The PM does not self-certify COMPLETE or CLOSED. Merge and next-slice
+authorization remain with the SA.

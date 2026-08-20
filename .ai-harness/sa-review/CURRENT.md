@@ -1,10 +1,11 @@
 # SA REVIEW INBOX
 
 Task: VF-DM-DEMO-ASSY-MES-01
-Status: READY FOR SA REVIEW
+Status: IMPLEMENTED — PR OPEN PENDING (READY FOR SA REVIEW)
 
 Baseline (origin/main): 17a1d9ecafb170fa94e8d01a1f12d84e79982773
 Branch: feature/dm-demo-assy-mes-01
+Head: 7c285d3 (candidate/review head, pushed to origin/feature/dm-demo-assy-mes-01)
 Contract version: tipa-assy-demo-v1
 
 Report:
@@ -28,3 +29,8 @@ GOOD/REJECT, and a reconciled OEE summary (60%). Additive projection:
 mes.oee_summary + LINE_OUT execution_event. Minimal control surface in
 ui/api.py. 19 new tests pass; full suite 1086 passed. Fixtures + JSONL evidence
 under evidence/. Demo: python -m virtual_factory.assembly.demo_assy_mes.
+
+Open findings: PR not opened and CI not run (no GitHub token / gh CLI in this
+environment). Branch is pushed (7c285d3). SA/operator credentials required to
+open the PR and trigger CI.
+
