@@ -5,7 +5,7 @@ Status: IMPLEMENTED — PR OPEN PENDING (READY FOR SA REVIEW)
 
 Baseline (origin/main): 17a1d9ecafb170fa94e8d01a1f12d84e79982773
 Branch: feature/dm-demo-assy-mes-01
-Head: 7c285d3 (candidate/review head, pushed to origin/feature/dm-demo-assy-mes-01)
+Head: 720ba8b (candidate/review head, pushed to origin/feature/dm-demo-assy-mes-01)
 Contract version: tipa-assy-demo-v1
 
 Report:

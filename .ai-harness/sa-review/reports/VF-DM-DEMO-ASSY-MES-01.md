@@ -8,8 +8,9 @@
 | Repository | `hieudovn/virtual-factory` |
 | Branch | `feature/dm-demo-assy-mes-01` |
 | Baseline (origin/main) | `17a1d9ecafb170fa94e8d01a1f12d84e79982773` |
-| Candidate SHA | `7c285d3` |
-| Review head SHA | `7c285d32b153…` (remote `origin/feature/dm-demo-assy-mes-01`) |
+| Candidate SHA | `720ba8b` (final branch head) |
+| Review head SHA | `720ba8b` (`origin/feature/dm-demo-assy-mes-01`) |
+| Implementation commit | `7c285d3` |
 | Contract version | `tipa-assy-demo-v1` |
 | Production code changed | YES (additive only) |
 | Simulation engine redesigned | NO |
@@ -143,7 +144,7 @@ No change to `discrete/`, observation pipeline core (`envelope/point/service/rou
 
 ```text
 VF-DM-DEMO-ASSY-MES-01 — IMPLEMENTED — PR OPEN PENDING (READY FOR SA REVIEW)
-Candidate SHA: 7c285d3
+Candidate SHA: 720ba8b
 Open findings: PR not opened / CI not run (no GitHub credentials in environment)
 ```
 
