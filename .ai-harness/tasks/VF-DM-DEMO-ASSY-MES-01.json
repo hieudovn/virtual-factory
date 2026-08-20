@@ -1,0 +1,93 @@
+{
+  "task_id": "VF-DM-DEMO-ASSY-MES-01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "TIPA ASSY Customer Demo Scenario v1 (contract_version=tipa-assy-demo-v1). Build a deterministic, resettable single-sub-line (ASSY-SL01) VF→MES demo: SSO2+RSO2 → PRE-ASSY → AP01..AP11 → LINE_OUT, with 4 deterministic WIPs (MTR-DEMO-001 happy good, MTR-DEMO-002 AP06 fail/retest/pass good, MTR-DEMO-003 AP05 jam fault→recover good, MTR-DEMO-004 terminal quality fail reject), independent line-state/exception/downtime/LINE_OUT/quality/genealogy events, and an OEE summary that reconciles (planned=run+downtime, actual=good+reject, A/P/Q). Route through the existing M5 pipeline (RealityInput → ObservationService → ObservationRouter → MESProjection → JSONL/MQTT gateways). Keep the accepted envelope; add minimal additive projection (mes.oee_summary + LINE_OUT execution_event). Add a minimal control surface (reset/start/pause/jam/recover) and contract fixtures. Do NOT redesign the simulation engine, observation pipeline, or MQTT gateway.",
+  "explicit_non_objectives": [
+    "No six sub-lines running live",
+    "No MES → VF inbound",
+    "No robot/PLC control",
+    "No full physics model",
+    "No full SCADA redesign",
+    "No new historian or OEE analytics platform",
+    "No redesign of the discrete simulation engine, observation pipeline core, or MQTT gateway",
+    "No change to frozen simulation/observation/gateway semantics"
+  ],
+  "required_branch": "feature/dm-demo-assy-mes-01",
+  "expected_base_sha": "17a1d9ecafb170fa94e8d01a1f12d84e79982773",
+  "allowed_paths": [
+    "src/virtual_factory/assembly/demo_assy_mes/",
+    "src/virtual_factory/observation/projections/mes.py",
+    "src/virtual_factory/ui/api.py",
+    "src/virtual_factory/ui/static/",
+    "configs/demo/",
+    "tests/test_demo_assy_mes_v1.py",
+    "tests/test_demo_assy_mes_v1_fixtures.py",
+    ".ai-harness/tasks/VF-DM-DEMO-ASSY-MES-01.json",
+    ".ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-01/",
+    "docs/deployment/demo-assy-mes.md"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/observation/envelope.py",
+    "src/virtual_factory/observation/point.py",
+    "src/virtual_factory/observation/service.py",
+    "src/virtual_factory/observation/router.py",
+    "src/virtual_factory/observation/policy.py",
+    "src/virtual_factory/integration/gateway.py",
+    "src/virtual_factory/integration/gateways/mqtt.py",
+    "src/virtual_factory/protocols/",
+    "src/virtual_factory/core/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/assembly/demo_assy_mes/ (scenario model, OEE, deterministic runner, M5 bridge, controller, fixtures)",
+    "src/virtual_factory/observation/projections/mes.py (additive mes.oee_summary + LINE_OUT)",
+    "tests/test_demo_assy_mes_v1.py + fixtures test",
+    "contract fixtures JSON under .ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-01/",
+    "docs/deployment/demo-assy-mes.md (end-to-end demo command)"
+  ],
+  "required_tests": [
+    "Topology ASSY-SL01 has PRE-ASSY + AP01..AP11 + LINE_OUT",
+    "Four deterministic WIPs produce the correct journeys (good/reject)",
+    "AP05 jam fault → STOPPED → RUNNING recovery",
+    "LINE_OUT GOOD vs REJECT dispositions",
+    "OEE reconciliation (A/P/Q from simulated data)",
+    "Reset leaves no runtime state; repeated run yields identical output/order",
+    "No duplicate events on retry (stable idempotency keys)",
+    "MESProjection emits mes.oee_summary + LINE_OUT execution_event",
+    "JSONL/MQTT serialization compatible (gateway envelope keys)",
+    "Existing VF test suite does not regress"
+  ],
+  "required_smoke_checks": [
+    "Demo runner produces a full scenario end-to-end via JSONL gateway",
+    "OEE summary emitted as mes.oee_summary with reconciled counters"
+  ],
+  "required_remote_evidence": [
+    "Pushed feature branch HEAD",
+    "CI on exact feature-branch HEAD"
+  ],
+  "forbidden_actions": [
+    "Push directly to main",
+    "Merge without SA authorization for the exact head SHA",
+    "Start the next milestone slice",
+    "Self-certify COMPLETE or CLOSED",
+    "Modify files outside allowed_paths"
+  ],
+  "stop_conditions": [
+    "Baseline mismatch",
+    "Redesign of the discrete engine, observation pipeline core, or MQTT gateway would be required",
+    "Existing VF test suite regresses",
+    "Required fixture/event cannot be produced deterministically"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "description": "Scenario runs repeatedly with identical output/order (deterministic)"},
+    {"id": "A02", "description": "Reset leaves no runtime state"},
+    {"id": "A03", "description": "No duplicate events on retry (stable idempotency keys)"},
+    {"id": "A04", "description": "JSONL and MQTT serialization compatible"},
+    {"id": "A05", "description": "OEE and counters reconcile (planned=run+downtime, actual=good+reject)"},
+    {"id": "A06", "description": "Existing VF test suite does not regress"},
+    {"id": "A07", "description": "Tests cover topology AP01-AP11, four units, fault/recovery, LINE_OUT, and message fixtures"},
+    {"id": "A08", "description": "A command or short guide runs the demo end-to-end"}
+  ],
+  "authorization": {"may_open_pr": true, "may_merge": false, "may_start_next_task": false}
+}
