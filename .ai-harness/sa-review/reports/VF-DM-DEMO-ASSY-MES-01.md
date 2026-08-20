@@ -10,8 +10,8 @@
 | Repository | `hieudovn/virtual-factory` |
 | Branch | `feature/dm-demo-assy-mes-01` |
 | Baseline (origin/main) | `17a1d9ecafb170fa94e8d01a1f12d84e79982773` |
-| Candidate SHA | `3b70688f6c6bcb342e9186a762727ff6e639b799` (C02 head) |
-| Review head | `origin/feature/dm-demo-assy-mes-01` = `3b70688f6c6bcb342e9186a762727ff6e639b799` (pushed) |
+| Candidate SHA | `3b70688f6c6bcb342e9186a762727ff6e639b799` (C02 implementation head) |
+| Review head | `origin/feature/dm-demo-assy-mes-01` (pushed; exact tip SHA in final SA-ready message) |
 | Contract version | `tipa-assy-demo-v1` |
 | Production code changed | YES (additive only) |
 | Simulation engine redesigned | NO |
@@ -199,8 +199,8 @@ redesigning the discrete engine, observation pipeline, MQTT gateway, or OEE:
 
 ```text
 VF-DM-DEMO-ASSY-MES-01-C02 — READY FOR SA REVIEW
-Candidate SHA: 3b70688f6c6bcb342e9186a762727ff6e639b799
-Review head: origin/feature/dm-demo-assy-mes-01 (pushed)
+Candidate SHA (implementation head): 3b70688f6c6bcb342e9186a762727ff6e639b799
+Review head: origin/feature/dm-demo-assy-mes-01 (pushed; exact tip SHA in final SA-ready message)
 Tests: 32 demo tests; 1099 full suite (0 failed)
 Open findings: PR not opened / CI not run (no GitHub credentials in environment)
 ```
