@@ -1,0 +1,61 @@
+[
+  {
+    "message_key": "ASSY-SL01:R1|DOWNTIME:AP05_JAM:START|assy.execution_event|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.execution_event",
+    "schema_name": "vf.mes.execution_event",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "63b38f48-3fcd-4688-bab1-50723ea1a706",
+      "idempotency_key": "ASSY-SL01:R1|DOWNTIME:AP05_JAM:START|assy.execution_event|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 600.0,
+      "occurred_at": null,
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "DOWNTIME_START",
+      "wip_id": "",
+      "disposition": "",
+      "attempt_number": 0,
+      "reason_code": "AP05_JAM",
+      "downtime_start_s": 600.0
+    }
+  },
+  {
+    "message_key": "ASSY-SL01:R1|DOWNTIME:AP05_JAM:END|assy.execution_event|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.execution_event",
+    "schema_name": "vf.mes.execution_event",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "6fdc56f1-d84a-47b6-ab52-cb7e1cb058a9",
+      "idempotency_key": "ASSY-SL01:R1|DOWNTIME:AP05_JAM:END|assy.execution_event|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 720.0,
+      "occurred_at": null,
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "DOWNTIME_END",
+      "wip_id": "",
+      "disposition": "",
+      "attempt_number": 0,
+      "reason_code": "AP05_JAM",
+      "downtime_end_s": 720.0,
+      "downtime_s": 120.0
+    }
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "current_branch": "feature/dm-demo-assy-mes-01",
+  "working_tree_clean": true,
+  "local_head": "383b8e217da0f8099c5d811d60a4d356f9b62f84",
+  "remote_branch_head": "383b8e217da0f8099c5d811d60a4d356f9b62f84",
+  "remote_main_head": "17a1d9ecafb170fa94e8d01a1f12d84e79982773",
+  "expected_base_sha": "17a1d9ecafb170fa94e8d01a1f12d84e79982773",
+  "baseline_match": true
+}

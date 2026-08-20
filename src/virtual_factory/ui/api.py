@@ -222,4 +222,50 @@ def create_app(
         result = await service.reload_config(config_path)
         return {"status": "ok", "config": config_path, **result}
 
+    # ═══════════════════════════════════════════════════
+    # VF-DM-DEMO-ASSY-MES-01 — TIPA ASSY Customer Demo Scenario v1
+    # Minimal control surface: reset / start / pause / step / jam / recover.
+    # ═══════════════════════════════════════════════════
+
+    _demo_controller: dict = {"instance": None}
+
+    def _get_demo_controller():
+        if _demo_controller["instance"] is None:
+            from virtual_factory.assembly.demo_assy_mes.controller import DemoController
+            from virtual_factory.assembly.demo_assy_mes.runner import DemoRunner
+            _demo_controller["instance"] = DemoController(DemoRunner())
+        return _demo_controller["instance"]
+
+    @app.post("/demo-assy-mes/reset")
+    def demo_reset() -> dict:
+        return _get_demo_controller().reset()
+
+    @app.post("/demo-assy-mes/start")
+    def demo_start() -> dict:
+        return _get_demo_controller().start()
+
+    @app.post("/demo-assy-mes/pause")
+    def demo_pause() -> dict:
+        return _get_demo_controller().pause()
+
+    @app.post("/demo-assy-mes/step")
+    def demo_step() -> dict:
+        return _get_demo_controller().step()
+
+    @app.post("/demo-assy-mes/jam")
+    def demo_jam() -> dict:
+        return _get_demo_controller().trigger_jam()
+
+    @app.post("/demo-assy-mes/recover")
+    def demo_recover() -> dict:
+        return _get_demo_controller().recover()
+
+    @app.get("/demo-assy-mes/snapshot")
+    def demo_snapshot() -> dict:
+        return _get_demo_controller().snapshot()
+
+    @app.get("/demo-assy-mes/messages")
+    def demo_messages() -> list[dict]:
+        return _get_demo_controller().messages()
+
     return app

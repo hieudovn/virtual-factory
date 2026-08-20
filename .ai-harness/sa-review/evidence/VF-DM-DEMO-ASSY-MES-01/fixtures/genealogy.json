@@ -1,0 +1,35 @@
+[
+  {
+    "message_key": "ASSY-SL01:R1|MTR-DEMO-001:AP04|assy.genealogy|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.genealogy_relationship",
+    "schema_name": "vf.mes.genealogy_relationship",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "825409cf-53c4-48eb-b238-a18f5fa39366",
+      "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-001:AP04|assy.genealogy|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 80.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-DEMO-001",
+      "station_id": "AP04",
+      "contract_version": "tipa-assy-demo-v1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "AP04_JOIN",
+      "child_wip_id": "MTR-DEMO-001",
+      "parent_wip_ids": [
+        "SSO2-001",
+        "RSO2-001"
+      ],
+      "relationship_type": "assembly_join",
+      "wip_id": "MTR-DEMO-001"
+    }
+  }
+]

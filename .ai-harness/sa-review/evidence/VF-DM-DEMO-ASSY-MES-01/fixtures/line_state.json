@@ -1,0 +1,106 @@
+[
+  {
+    "message_key": "ASSY-SL01:R1|LINE:RUNNING:0|assy.run_status|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.run_status",
+    "schema_name": "vf.mes.run_status",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "b8897a0f-5701-4e63-b1fd-d0d6b698cd23",
+      "idempotency_key": "ASSY-SL01:R1|LINE:RUNNING:0|assy.run_status|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 0.0,
+      "occurred_at": null,
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "LINE_STATE_CHANGED",
+      "line_state": "running",
+      "reason_code": ""
+    }
+  },
+  {
+    "message_key": "ASSY-SL01:R1|LINE:FAULT|assy.run_status|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.run_status",
+    "schema_name": "vf.mes.run_status",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "31f7f78a-4520-43ad-a335-d3a4d03ef307",
+      "idempotency_key": "ASSY-SL01:R1|LINE:FAULT|assy.run_status|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 600.0,
+      "occurred_at": null,
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "LINE_STATE_CHANGED",
+      "line_state": "fault",
+      "reason_code": ""
+    }
+  },
+  {
+    "message_key": "ASSY-SL01:R1|LINE:STOPPED|assy.run_status|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.run_status",
+    "schema_name": "vf.mes.run_status",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "bce2566d-9581-4801-a2dd-15d154457818",
+      "idempotency_key": "ASSY-SL01:R1|LINE:STOPPED|assy.run_status|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 600.0,
+      "occurred_at": null,
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "LINE_STATE_CHANGED",
+      "line_state": "stopped",
+      "reason_code": ""
+    }
+  },
+  {
+    "message_key": "ASSY-SL01:R1|LINE:RUNNING:1|assy.run_status|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.run_status",
+    "schema_name": "vf.mes.run_status",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "d3c9e81e-11ef-4dfe-a7c1-9c4cc0930aa6",
+      "idempotency_key": "ASSY-SL01:R1|LINE:RUNNING:1|assy.run_status|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 720.0,
+      "occurred_at": null,
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "LINE_STATE_CHANGED",
+      "line_state": "running",
+      "reason_code": ""
+    }
+  }
+]

@@ -1,0 +1,68 @@
+{
+  "ap06_fail_attempt1": [
+    {
+      "message_key": "ASSY-SL01:R1|MTR-DEMO-002:AP06:1|assy.quality_result|1.0",
+      "projection_id": "mes",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "schema_version": "1.0",
+      "headers": {
+        "correlation_id": "",
+        "causation_id": ""
+      },
+      "payload": {
+        "observation_id": "cc30f327-18a4-4385-aba3-b8995274ced6",
+        "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-002:AP06:1|assy.quality_result|1.0",
+        "run_id": "ASSY-SL01:R1",
+        "simulation_time_s": 360.0,
+        "occurred_at": null,
+        "subject_type": "wip",
+        "subject_id": "MTR-DEMO-002",
+        "station_id": "AP06",
+        "contract_version": "tipa-assy-demo-v1",
+        "subline_id": "ASSY-SL01",
+        "production_line_id": "ASSY",
+        "plant_id": "TIPA",
+        "event_type": "QUALITY_RESULT",
+        "wip_id": "MTR-DEMO-002",
+        "disposition": "FAIL",
+        "attempt_number": 1,
+        "reason_code": "",
+        "check_type": "TEST"
+      }
+    }
+  ],
+  "ap06_pass_attempt2": [
+    {
+      "message_key": "ASSY-SL01:R1|MTR-DEMO-002:AP06:2|assy.quality_result|1.0",
+      "projection_id": "mes",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "schema_version": "1.0",
+      "headers": {
+        "correlation_id": "",
+        "causation_id": ""
+      },
+      "payload": {
+        "observation_id": "66e554cf-333d-4ff7-9dec-5c49857dadfc",
+        "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-002:AP06:2|assy.quality_result|1.0",
+        "run_id": "ASSY-SL01:R1",
+        "simulation_time_s": 390.0,
+        "occurred_at": null,
+        "subject_type": "wip",
+        "subject_id": "MTR-DEMO-002",
+        "station_id": "AP06",
+        "contract_version": "tipa-assy-demo-v1",
+        "subline_id": "ASSY-SL01",
+        "production_line_id": "ASSY",
+        "plant_id": "TIPA",
+        "event_type": "QUALITY_RESULT",
+        "wip_id": "MTR-DEMO-002",
+        "disposition": "PASS",
+        "attempt_number": 2,
+        "reason_code": "",
+        "check_type": "TEST"
+      }
+    }
+  ]
+}
