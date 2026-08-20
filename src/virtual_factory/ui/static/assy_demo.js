@@ -9,6 +9,8 @@ const LANDMARK_LABELS = { AP04:'JOIN', AP06:'TEST', AP08:'VISION', AP11:'FINAL' 
 const STATIONS = ['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
 const FB_STATIONS = STATIONS;
 const FB_LANDMARKS = LANDMARK_LABELS;
+// Presentation-only station naming. Runtime/API identity remains PRE-ASSY.
+const displayStationId = (stationId) => stationId === 'PRE-ASSY' ? 'PRE' : stationId;
 // EXH-UI-01-C02: canvasH 820 (cropped from 1080), pallet 100×80, off-line zone
 const VF_LAYOUT = {
   canvasW: 1920, canvasH: 820,
@@ -39,13 +41,20 @@ const VF_TOKEN = {
   'AP05':'JOINED','AP06':'PRETEST','AP07':'TESTED','AP08':'TESTED','AP09':'TESTED',
   'AP10':'PACKED','AP11':'PACKED'
 };
+// Presentation-only asset mapping. These files never participate in runtime
+// token/state selection; station identity and VF_TOKEN remain the source of truth.
+const VF_PROCESS_SYMBOL = Object.freeze({
+  AP01:'AP01.svg', AP02:'AP02.svg', AP03:'AP03.svg', AP04:'AP04.svg',
+  AP05:'AP05.svg', AP06:'AP06.svg', AP07:'AP07.svg', AP08:'AP08.svg',
+  AP09:'AP09.svg', AP10:'AP10.svg', AP11:'AP11.svg'
+});
 const VF_TOKEN_LABEL = {STATOR:'STATOR',JOINED:'JOINED',PRETEST:'PRE-TEST',TESTED:'TESTED',PACKED:'PACKED'};
 
 // Station operation names (C03R canonical)
 const STATION_OPS = {
-  'PRE-ASSY':'Prep','AP01':'Stator Assy','AP02':'Term. Box','AP03':'Mech. Check',
-  'AP04':'JOIN','AP05':'Mech. Assy','AP06':'EOL Test','AP07':'Finish',
-  'AP08':'Vision','AP09':'Boxing','AP10':'Pack / Label','AP11':'Final QC'
+  'PRE-ASSY':'Prep','AP01':'TBox fit','AP02':'TBox wire','AP03':'SSO2 QC',
+  'AP04':'Rotor join','AP05':'Motor fit','AP06':'E-Test','AP07':'Finish',
+  'AP08':'Visual QC','AP09':'Box','AP10':'Pack','AP11':'Final QC'
 };
 
 /* ═══════════════════════════════════════
@@ -99,77 +108,71 @@ const VF_ICON = {
    VF Visual Primitive Library (C03R Enhanced)
    ═══════════════════════════════════════ */
 const VF = {
-  // ── Wooden pallet — EXH-UI-01: 100×80 ──
+  // Local SVG assets are strictly visual. Pointer events stay on the existing
+  // WIP/context group so click targets, selection, and motion remain unchanged.
+  symbolAsset(filename, x, y, width, height, label) {
+    if (!filename) return '';
+    return `<image class="vf-product-symbol" href="/static/assets/assy_symbols/${filename}" x="${x-width/2}" y="${y-height/2}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet" pointer-events="none" aria-label="${label || filename}"/>`;
+  },
+
+  processSymbol(stationId, x, y) {
+    const filename = VF_PROCESS_SYMBOL[stationId];
+    return this.symbolAsset(filename, x, y, 96, 76, `${stationId} process symbol`);
+  },
+
+  sourceSymbol(sourceId, x, y) {
+    if (sourceId === 'SSO2') return this.symbolAsset('SSO2.svg', x, y, 58, 50, 'SSO2 source symbol');
+    if (sourceId === 'RSO2') return this.symbolAsset('RSO2.svg', x, y, 86, 66, 'RSO2 source symbol');
+    return '';
+  },
+
+  // ── Carrier pallet — neutral carrier, visually separate from the WIP. ──
   pallet(x, y) {
-    const w=100, h=80;
-    return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="var(--vf-pallet-wood)" stroke="#8B7355" stroke-width="1.5"/>
-      <rect x="${x-w/2-2}" y="${y-h/2+2}" width="${w+4}" height="6" rx="3" fill="var(--vf-pallet-dark)" opacity="0.15"/>
-      <line x1="${x-w/2+7}" y1="${y-16}" x2="${x+w/2-7}" y2="${y-16}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
-      <line x1="${x-w/2+7}" y1="${y}" x2="${x+w/2-7}" y2="${y}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
-      <line x1="${x-w/2+7}" y1="${y+16}" x2="${x+w/2-7}" y2="${y+16}" stroke="var(--vf-pallet-dark)" stroke-width="1.8" opacity="0.3"/>
-      <rect x="${x-24}" y="${y-h/2-4}" width="48" height="5" rx="2" fill="rgba(0,0,0,0.04)"/>`;
+    const w=104, h=48;
+    return `<g class="vf-pallet-shell">
+      <rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="5" fill="var(--vf-pallet-wood)" stroke="#5C4E3F" stroke-width="1.5"/>
+      <rect x="${x-w/2+7}" y="${y-h/2+7}" width="${w-14}" height="9" rx="2" fill="var(--vf-pallet-light)" opacity=".85"/>
+      <rect x="${x-w/2+7}" y="${y-2}" width="${w-14}" height="4" rx="2" fill="#5C4E3F" opacity=".65"/>
+      <rect x="${x-w/2+7}" y="${y+h/2-13}" width="${w-14}" height="6" rx="2" fill="var(--vf-pallet-light)" opacity=".78"/>
+      <path d="M${x-38} ${y+24}v8M${x-12} ${y+24}v8M${x+12} ${y+24}v8M${x+38} ${y+24}v8" stroke="#5C4E3F" stroke-width="5" stroke-linecap="round"/>
+    </g>`;
   },
 
-  // ── STATOR ASSY — metallic ring (C02-C01: 1.5x for wider conveyor) ──
+  // ── Product visuals are presentation-only; runtime token mapping stays frozen. ──
   statorAssy(x, y) {
-    const r=28;
-    return `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--vf-obj-stator)" stroke="#1E8090" stroke-width="1.8"/>
-      <circle cx="${x}" cy="${y}" r="14" fill="var(--vf-bg-canvas)" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="8" fill="none" stroke="#1E8090" stroke-width="0.9" opacity="0.4"/>
-      <circle cx="${x-15}" cy="${y-11}" r="3" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x+15}" cy="${y-11}" r="3" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x-15}" cy="${y+11}" r="3" fill="#1E8090" opacity="0.5"/>
-      <circle cx="${x+15}" cy="${y+11}" r="3" fill="#1E8090" opacity="0.5"/>`;
+    return `<g aria-label="Stator assembly">
+      <circle cx="${x}" cy="${y-8}" r="27" fill="var(--vf-obj-stator)" stroke="#334155" stroke-width="2"/>
+      <circle cx="${x}" cy="${y-8}" r="18" fill="#E2E8F0" stroke="#475569" stroke-width="2"/>
+      <circle cx="${x}" cy="${y-8}" r="10" fill="#334155"/>
+      <path d="M${x-25} ${y-8}h50M${x} ${y-33}v50M${x-18} ${y-26}l36 36M${x+18} ${y-26}l-36 36" stroke="#94A3B8" stroke-width="2" opacity=".85"/>
+      <rect x="${x+16}" y="${y-35}" width="22" height="15" rx="3" fill="#475569" stroke="#334155"/>
+      <path d="M${x+21} ${y-20}v8m5-8v8m5-8v8" stroke="#FBBF24" stroke-width="2"/>
+    </g>`;
   },
 
-  // ── ROTOR — shaft (C02-C01: 1.5x for wider conveyor) ──
+  // ── ROTOR source ──
   rotor(x, y) {
-    return `<rect x="${x-32}" y="${y-8}" width="64" height="16" rx="8" fill="var(--vf-obj-rotor)" stroke="#C88020" stroke-width="1.5"/>
-      <rect x="${x-5}" y="${y-10}" width="10" height="20" rx="5" fill="#D09030"/>
-      <rect x="${x-26}" y="${y-4}" width="52" height="8" rx="4" fill="#D09030" opacity="0.4"/>
-      <line x1="${x-26}" y1="${y}" x2="${x+26}" y2="${y}" stroke="#C08028" stroke-width="0.9" opacity="0.4"/>`;
+    return `<g aria-label="Rotor component"><rect x="${x-34}" y="${y-7}" width="68" height="14" rx="7" fill="#64748B" stroke="#334155" stroke-width="1.5"/><circle cx="${x-17}" cy="${y}" r="13" fill="var(--vf-obj-rotor)" stroke="#475569" stroke-width="1.5"/><circle cx="${x+17}" cy="${y}" r="13" fill="var(--vf-obj-rotor)" stroke="#475569" stroke-width="1.5"/><path d="M${x-40} ${y}h80" stroke="#E2E8F0" stroke-width="3"/></g>`;
   },
 
-  // ── MTR JOINED — assembled motor (C02-C01: 1.5x for wider conveyor) ──
+  // ── MTR JOINED — assembled motor ──
   motorJoined(x, y) {
-    return `<rect x="${x-28}" y="${y-16}" width="56" height="32" rx="10" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1.6"/>
-      <rect x="${x-10}" y="${y-20}" width="20" height="6" rx="3" fill="#308A72" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="7" fill="#308A72" opacity="0.5"/>
-      <circle cx="${x}" cy="${y}" r="3" fill="#fff" opacity="0.3"/>
-      <rect x="${x-30}" y="${y+6}" width="8" height="7" rx="2" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1"/>
-      <rect x="${x+22}" y="${y+6}" width="8" height="7" rx="2" fill="var(--vf-obj-joined)" stroke="#308A72" stroke-width="1"/>`;
+    return `<g aria-label="Joined motor"><rect x="${x-34}" y="${y-22}" width="68" height="36" rx="14" fill="var(--vf-obj-joined)" stroke="#1E293B" stroke-width="2"/><circle cx="${x-25}" cy="${y-4}" r="17" fill="#64748B" stroke="#1E293B" stroke-width="2"/><circle cx="${x-25}" cy="${y-4}" r="7" fill="#CBD5E1"/><path d="M${x+34} ${y-4}h20" stroke="#94A3B8" stroke-width="7" stroke-linecap="round"/><rect x="${x-8}" y="${y-35}" width="22" height="13" rx="3" fill="#64748B" stroke="#1E293B"/><path d="M${x-10} ${y+14}v8m26-8v8" stroke="#1E293B" stroke-width="5" stroke-linecap="round"/><path d="M${x-8} ${y-12}h32m-32 8h32" stroke="#94A3B8" stroke-width="1.4" opacity=".9"/></g>`;
   },
 
-  // ── MTR PRE-TEST — complete motor (C02-C01: 1.5x for wider conveyor) ──
+  // ── MTR PRE-TEST ──
   motorPreTest(x, y) {
-    return `<rect x="${x-30}" y="${y-16}" width="60" height="32" rx="10" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.6"/>
-      <circle cx="${x}" cy="${y}" r="7" fill="#2E7098" opacity="0.4"/>
-      <circle cx="${x}" cy="${y}" r="3" fill="#fff" opacity="0.2"/>
-      <rect x="${x-32}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
-      <rect x="${x+26}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
-      <rect x="${x-26}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <rect x="${x+17}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>`;
+    return `${this.motorJoined(x, y)}<g aria-label="Pre-test motor"><circle cx="${x-25}" cy="${y-4}" r="22" fill="none" stroke="var(--vf-obj-pretest)" stroke-width="5"/><path d="M${x-44} ${y-4}h8" stroke="var(--vf-obj-pretest)" stroke-width="4" stroke-linecap="round"/></g>`;
   },
 
-  // ── TESTED MTR — blue T marker (C02-C01: 1.5x for wider conveyor) ──
+  // ── TESTED MTR ──
   motorTested(x, y) {
-    return `<rect x="${x-30}" y="${y-16}" width="60" height="32" rx="10" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1.6"/>
-      <circle cx="${x}" cy="${y}" r="7" fill="#2E7098" opacity="0.4"/>
-      <rect x="${x-32}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
-      <rect x="${x+26}" y="${y-10}" width="6" height="20" rx="3" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="1"/>
-      <rect x="${x-26}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <rect x="${x+17}" y="${y+8}" width="9" height="7" rx="2.5" fill="var(--vf-obj-pretest)" stroke="#2E7098" stroke-width="0.8"/>
-      <circle cx="${x+24}" cy="${y-14}" r="8" fill="none" stroke="var(--vf-accent)" stroke-width="1.5"/>
-      <text x="${x+24}" y="${y-9}" fill="var(--vf-accent)" font-size="10" text-anchor="middle" font-weight="bold">T</text>`;
+    return `${this.motorPreTest(x, y)}<g aria-label="Tested motor"><rect x="${x-3}" y="${y-18}" width="22" height="11" rx="2" fill="#E2E8F0" stroke="var(--vf-obj-pretest)"/><path d="m${x+2} ${y-12} 3 3 7-7" fill="none" stroke="#15803D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
   },
 
-  // ── PACKED GOODS — carton (C02-C01: 1.5x for wider conveyor) ──
+  // ── PACKED GOODS ──
   packedGoods(x, y) {
-    return `<rect x="${x-30}" y="${y-18}" width="60" height="36" rx="6" fill="var(--vf-obj-packed)" stroke="#9A6838" stroke-width="1.6"/>
-      <line x1="${x}" y1="${y-18}" x2="${x}" y2="${y+18}" stroke="#9A6838" stroke-width="1.2" opacity="0.35"/>
-      <line x1="${x-30}" y1="${y}" x2="${x+30}" y2="${y}" stroke="#9A6838" stroke-width="1.2" opacity="0.35"/>
-      <rect x="${x-16}" y="${y-19}" width="10" height="4" rx="2" fill="#9A6838" opacity="0.5"/>
-      <rect x="${x+6}" y="${y-19}" width="10" height="4" rx="2" fill="#9A6838" opacity="0.5"/>`;
+    return `<g aria-label="Packed goods"><path d="M${x-34} ${y-18}h68v42h-68z" fill="var(--vf-obj-packed)" stroke="#475569" stroke-width="2"/><path d="M${x-34} ${y-18}v-10h68v10M${x} ${y-28}v52M${x-34} ${y-2}h68" fill="none" stroke="#64748B" stroke-width="1.5"/><rect x="${x-18}" y="${y-12}" width="22" height="10" rx="2" fill="#F8FAFC"/><path d="M${x-14} ${y-7}h14" stroke="#94A3B8" stroke-width="1.5"/></g>`;
   },
 
   // ── Quality state overlay ──
@@ -196,6 +199,31 @@ const VF = {
     // Base machine footprint with shadow
     body += `<rect x="${cx-bw/2+1}" y="${cy-bh/2+1}" width="${bw}" height="${bh}" rx="6" fill="rgba(0,0,0,0.05)"/>`;
     body += `<rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" rx="6" fill="#F5F6F8" stroke="var(--vf-border)" stroke-width="1.2"/>`;
+
+    // Port only the operation glyph paths from localhost:8000.  The current
+    // 8011 station shell, selection behaviour and runtime wiring stay intact.
+    const source8000Icons = {
+      'PRE-ASSY': '<path d="M-16 7h32M-11 7V-8h22V7M-7-3h14"/>',
+      'AP01': '<rect x="-14" y="-10" width="28" height="20" rx="3"/><path d="M-6-10v-6m6 6v-6m6 6v-6"/>',
+      'AP02': '<path d="M-16-10c10 0 2 20 12 20S2-10 16-10M-16 9h32"/>',
+      'AP03': '<path d="M-14-10h28M-10-10v20m20-20v20M-16 10h32"/><circle cx="0" cy="0" r="4"/>',
+      'AP04': '<circle cx="-10" cy="0" r="8"/><circle cx="10" cy="0" r="8"/><path d="M-2 0h4M0-15v7"/>',
+      'AP05': '<circle cx="0" cy="0" r="13"/><path d="M0-13v26M-13 0h26M-9-9l18 18M9-9-9 9"/>',
+      'AP06': '<rect x="-14" y="-11" width="28" height="22" rx="3"/><path d="M-9 5 0-4l5 5 4-7"/>',
+      'AP07': '<rect x="-13" y="-10" width="26" height="20" rx="2"/><path d="M-8-4h16M-8 1h11M-8 6h8"/>',
+      'AP08': '<rect x="-14" y="-9" width="28" height="18" rx="3"/><circle cx="-3" cy="0" r="5"/><path d="M10-5h4v10h-4"/>',
+      'AP09': '<path d="M-14-8 0-15 14-8v16L0 15-14 8Z M-14-8 0 0l14-8M0 0v15"/>',
+      'AP10': '<path d="M-14-4h28v12h-28zM-10 8v6m10-6v6m10-6v6M-10-10h20"/>',
+      'AP11': '<rect x="-13" y="-12" width="26" height="24" rx="3"/><path d="m-7 1 5 5 9-11M-7-6h8"/>',
+    };
+    const source8000Icon = source8000Icons[stId];
+    if (source8000Icon) {
+      const isJoin = stId === 'AP04';
+      const isCritical = ['AP06', 'AP08', 'AP11'].includes(stId);
+      const stroke = isJoin ? '#b45309' : isCritical ? 'var(--vf-accent)' : '#64748b';
+      body += `<g transform="translate(${cx} ${cy})" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${source8000Icon}</g>`;
+      return body;
+    }
 
     if (archetype === 'INPUT') {
       body += `<rect x="${cx-30}" y="${cy-18}" width="60" height="36" rx="4" fill="#E9ECF2" stroke="#D0D5E0" stroke-width="1"/>`;
@@ -252,17 +280,49 @@ const VF = {
   apBadge(x, y, stId) {
     const cy = y - 46;
     return `<rect x="${x-24}" y="${cy-11}" width="48" height="22" rx="5" fill="var(--vf-bg-surface)" stroke="var(--vf-accent)" stroke-width="1.4"/>
-      <text x="${x}" y="${cy+6}" fill="var(--vf-accent)" font-size="14" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${stId}</text>`;
+      <text x="${x}" y="${cy+6}" fill="var(--vf-accent)" font-size="14" font-weight="700" text-anchor="middle" font-family="Consolas,monospace">${displayStationId(stId)}</text>`;
   },
 
   opName(x, y, stId) {
-    const cy = y - 24;
+    const cy = y - 15;
     const name = STATION_OPS[stId] || stId;
-    return `<text x="${x}" y="${cy}" fill="var(--vf-text)" font-size="13" font-weight="600" text-anchor="middle">${name}</text>`;
+    return VF.safeLabel(x, cy, name, { fontSize: 11, fontWeight: 600 });
+  },
+
+  // A clean, opaque plate for labels that sit directly on the technical canvas.
+  // It intentionally covers the grid/connectors below the text rather than adding
+  // a text stroke, so the operational drawing remains readable at every zoom.
+  safeLabel(x, y, text, options = {}) {
+    const {
+      fontSize = 12,
+      fontWeight = 600,
+      fill = 'var(--vf-text)',
+      background = 'var(--vf-bg-canvas)',
+      anchor = 'middle',
+      padX = 5,
+      padY = 4,
+      minWidth = 0,
+      className = '',
+    } = options;
+    const label = String(text || '');
+    const width = Math.max(minWidth, Math.ceil(label.length * fontSize * 0.64 + padX * 2));
+    // SVG's actual glyph box is taller than the nominal font-size in the
+    // browser.  Reserve from the real ascent so no grid pixel can sit under
+    // the rendered letters or their descenders.
+    const glyphHeight = Math.ceil(fontSize * 1.34);
+    const height = glyphHeight + padY * 2;
+    const rectX = anchor === 'start' ? x - padX : anchor === 'end' ? x - width + padX : x - width / 2;
+    const rectY = y - glyphHeight - padY;
+    return `<g class="vf-safe-label ${className}" data-safe-label="true" pointer-events="none">
+      <rect class="vf-safe-label-bg" x="${rectX}" y="${rectY}" width="${width}" height="${height}" rx="3" fill="${background}"/>
+      <text x="${x}" y="${y}" fill="${fill}" font-size="${fontSize}" font-weight="${fontWeight}" text-anchor="${anchor}">${label}</text>
+    </g>`;
   },
 
   badgeConnector(x, y) {
-    return `<line x1="${x}" y1="${y-54}" x2="${x}" y2="${y-34}" stroke="var(--vf-accent-light)" stroke-width="1" stroke-dasharray="2,4"/>`;
+    // Leave an uninterrupted clearance band around the operation-name plate.
+    return `<line x1="${x}" y1="${y-54}" x2="${x}" y2="${y-52}" stroke="var(--vf-accent-light)" stroke-width="1"/>
+      <line x1="${x}" y1="${y-6}" x2="${x}" y2="${y-4}" stroke="var(--vf-accent-light)" stroke-width="1"/>`;
   },
 
   conveyorRoller(x, y) {
@@ -273,7 +333,7 @@ const VF = {
   station(x, y, stId, archetype, isLandmark, isSel, isHeld) {
     let html = '';
     const cy = y + 24;
-    html += VF.badgeConnector(x, cy);
+    html += VF.badgeConnector(x, y);
     html += `<g class="vf-station-group" data-station="${stId}" style="cursor:pointer;">`;
     html += VF.stationBody(x, cy, archetype, stId);
     html += VF.conveyorRoller(x, y);
@@ -283,7 +343,7 @@ const VF = {
       const lmName = LANDMARK_LABELS[stId];
       if (lmName) {
         const lc = archetype==='JOIN'?'#C8960E':'var(--vf-accent)';
-        html += `<text x="${x}" y="${y+64}" fill="${lc}" font-size="12" font-weight="700" text-anchor="middle">${lmName}</text>`;
+        html += VF.safeLabel(x, y + 64, lmName, { fontSize: 12, fontWeight: 700, fill: lc });
       }
     }
     html += `</g>`;
@@ -303,8 +363,8 @@ const VF = {
     if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
       html += VF.stateOverlay(x, ty, isHeld ? 'HOLD' : qResult);
     }
-    // Only show WIP ID (readable)
-    html += `<text x="${x}" y="${ty+16}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">${wipId}</text>`;
+    html += `<rect class="vf-wip-label-plate" x="${x-46}" y="${ty-61}" width="92" height="20" rx="5"/>`;
+    html += `<text x="${x}" y="${ty-47}" class="vf-wip-label" text-anchor="middle">${wipId}</text>`;
     html += `</g>`;
     return html;
   }
@@ -441,7 +501,7 @@ const ctrl = {
       else bg = '#A0C4A0';
       const dc = isLandmark ? ' landmark' : '';
       const dh = isHeld ? ' held' : '';
-      dots += `<span class="vf-sc-dot${dc}${dh}" style="background:${bg};" title="${stId}${isLandmark?' ('+LANDMARK_LABELS[stId]+')':''}"></span>`;
+      dots += `<span class="vf-sc-dot${dc}${dh}" style="background:${bg};" title="${displayStationId(stId)}${isLandmark?' ('+LANDMARK_LABELS[stId]+')':''}"></span>`;
     });
 
     return `<div class="${cls}" data-sl="${sl.sub_line_id}" data-variant="${sl.variant}">
@@ -927,9 +987,12 @@ const ctrlB = {
     const zonesG = document.getElementById('vf-zones');
     if (!zonesG) return;
     const L = VF_LAYOUT;
+    const inputPortY = L.stationY - 64;
+    const inputPortRight = L.preX + 58;
     zonesG.innerHTML = `
       <!-- ASSY INPUT / LINE START (RIGHT) -->
-      <rect x="${L.rawX}" y="${L.rawY}" width="${L.rawW}" height="${L.rawH}" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/>
+      <rect x="${L.rawX}" y="${L.rawY}" width="${L.rawW}" height="${L.rawH}" rx="5" fill="#FBFCFD"/>
+      <path d="M ${L.rawX} ${inputPortY} V ${L.rawY} H ${L.rawX+L.rawW} V ${L.rawY+L.rawH} H ${inputPortRight}" fill="none" stroke="var(--vf-border)" stroke-width="1.6" stroke-dasharray="6,4"/>
       <text x="${L.rawX+L.rawW/2}" y="${L.rawY+16}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">ASSY INPUT</text>
       <text x="${L.rawX+L.rawW/2}" y="${L.rawY+30}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">LINE START</text>
 
@@ -939,19 +1002,18 @@ const ctrlB = {
       <text x="${L.fgX+L.fgW/2}" y="${L.fgY+30}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">LINE END</text>
 
       <!-- UI-CTX-02: LINE-OUT / OFF-LINE ITEMS conceptual zone -->
-      <rect x="${L.offLineX}" y="${L.offLineY}" width="${L.offLineW}" height="${L.offLineH}" rx="6" fill="#FAFBFD" stroke="var(--vf-text-muted)" stroke-width="1.2" stroke-dasharray="8,5" opacity="0.7"/>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+18}" fill="var(--vf-text)" font-size="12" text-anchor="middle" font-weight="600">LINE-OUT / OFF-LINE ITEMS</text>
-      <text x="${L.offLineX+L.offLineW/2}" y="${L.offLineY+34}" fill="var(--vf-text-secondary)" font-size="10" text-anchor="middle">INSPECT · VERIFY · OPTIONAL REWORK · CONTEXT</text>
+      <rect x="${L.offLineX}" y="${L.offLineY}" width="${L.offLineW}" height="${L.offLineH}" rx="6" fill="#FAFBFD" stroke="var(--vf-text-muted)" stroke-width="1.6" stroke-dasharray="8,5" opacity="0.8"/>
+      ${VF.safeLabel(L.offLineX+L.offLineW/2, L.offLineY+18, 'LINE-OUT / OFF-LINE ITEMS', { fontSize: 12, fontWeight: 600, background: '#FAFBFD' })}
 
       <!-- LINE OUT connector (RIGHT side: main line → off-line zone) -->
       <line x1="${L.lineOutConnX}" y1="${L.conveyorY+L.conveyorH}" x2="${L.lineOutConnX}" y2="${L.offLineY}" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
-      <text x="${L.lineOutConnX+8}" y="${L.conveyorY+L.conveyorH+18}" fill="var(--vf-state-hold)" font-size="11" font-weight="700">LINE OUT</text>
+      ${VF.safeLabel(L.lineOutConnX+16, L.conveyorY+L.conveyorH+18, 'LINE OUT', { fontSize: 11, fontWeight: 700, fill: 'var(--vf-state-hold)', anchor: 'start' })}
       <polygon points="${L.lineOutConnX-4},${L.offLineY} ${L.lineOutConnX+4},${L.offLineY} ${L.lineOutConnX},${L.offLineY+8}" fill="var(--vf-state-hold)" opacity="0.55"/>
 
       <!-- LINE IN connector (LEFT side: off-line zone → main line) -->
-      <line x1="${L.lineInConnX}" y1="${L.offLineY}" x2="${L.lineInConnX}" y2="${L.conveyorY+L.conveyorH}" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
-      <text x="${L.lineInConnX+8}" y="${L.offLineY-8}" fill="var(--vf-state-pass)" font-size="11" font-weight="700">LINE IN</text>
-      <polygon points="${L.lineInConnX-4},${L.conveyorY+L.conveyorH} ${L.lineInConnX+4},${L.conveyorY+L.conveyorH} ${L.lineInConnX},${L.conveyorY+L.conveyorH-8}" fill="var(--vf-state-pass)" opacity="0.55"/>`;
+      <line x1="${L.lineInConnX}" y1="${L.offLineY}" x2="${L.lineInConnX}" y2="${L.conveyorY+L.conveyorH+8}" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/>
+      ${VF.safeLabel(L.lineInConnX+16, L.offLineY-8, 'LINE IN', { fontSize: 11, fontWeight: 700, fill: 'var(--vf-state-pass)', anchor: 'start' })}
+      <polygon points="${L.lineInConnX-4},${L.conveyorY+L.conveyorH+16} ${L.lineInConnX+4},${L.conveyorY+L.conveyorH+16} ${L.lineInConnX},${L.conveyorY+L.conveyorH+8}" fill="var(--vf-state-pass)" opacity="0.65"/>`;
 
     // EXH-UI-01-C01: Global RIGHT→LEFT product-flow arrow in dedicated flow-cue layer
     // Rendered ABOVE conveyor, BELOW stations — visible at low opacity
@@ -974,9 +1036,6 @@ const ctrlB = {
     for (let rx = L.convStartX + 30; rx < L.convEndX; rx += 40) {
       ch += `<rect x="${rx}" y="${L.conveyorY+22}" width="16" height="106" rx="4" fill="var(--vf-conveyor-roller)" opacity="0.4"/>`;
     }
-    // RSO2 branch into AP04 (light feed connector; queue rendered in context-sources)
-    ch += `<line x1="${L.ap04X}" y1="${L.rso2BranchTopY}" x2="${L.ap04X}" y2="${L.conveyorY}" stroke="#C8960E" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowLeft)"/>`;
-
     convG.innerHTML = ch;
 
     // UI-CTX-02: render contextual source cues + off-line representative items
@@ -994,28 +1053,37 @@ const ctrlB = {
     // ── SSO2 INPUT source (near ASSY INPUT / PRE-ASSY, RIGHT side) ──
     const sx = L.rawX + L.rawW / 2;   // zone center (~1810)
     html += `<g data-context="sso2" style="cursor:pointer;">`;
-    html += `<text x="${sx}" y="${L.rawY+42}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">SSO2 INPUT</text>`;
-    html += `<text x="${sx}" y="${L.rawY+56}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">STATOR + SHIELD SOURCE</text>`;
+    html += VF.safeLabel(sx, L.rawY+42, 'SSO2 INPUT', { fontSize: 11, fontWeight: 700, background: '#FBFCFD' });
     // 3 stator icons stacked vertically, 58px spacing (r=28 → 56px diameter, no overlap)
     for (let i = 0; i < 3; i++) {
       const sy = L.rawY + 82 + i * 58;
-      html += `<g transform="translate(${sx}, ${sy})" opacity="0.5">${VF.statorAssy(0, 0)}</g>`;
+      html += `<g transform="translate(${sx}, ${sy})" opacity="0.5">${VF.sourceSymbol('SSO2', 0, 0)}</g>`;
     }
-    // light connector toward PRE-ASSY (flow RIGHT→LEFT entry)
+    // Orthogonal context connector toward the right edge of PRE-ASSY.
     const sso2Bottom = L.rawY + 82 + 2 * 58;
-    html += `<line x1="${sx - 30}" y1="${sso2Bottom + 22}" x2="${L.preX + 6}" y2="${L.stationY - 26}" stroke="var(--vf-text-muted)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#arrowLeft)"/>`;
+    const preRight = L.preX + 48;
+    const preCorridor = preRight + 16;
+    const preTargetY = L.stationY + 24;
+    const sso2ExitY = sso2Bottom + 28;
+    html += `<polyline points="${sx-30},${sso2ExitY} ${preCorridor},${sso2ExitY} ${preCorridor},${preTargetY} ${preRight},${preTargetY}" fill="none" stroke="var(--vf-text-muted)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#arrowLeft)"/>`;
     html += `</g>`;
 
     // ── RSO2 ROTOR FEED (above AP04 JOIN, vertical stack) ──
     const ax = L.ap04X;
     html += `<g data-context="rso2" style="cursor:pointer;">`;
-    html += `<text x="${ax}" y="${L.rso2BranchTopY - 80}" fill="var(--vf-text)" font-size="11" font-weight="700" text-anchor="middle">RSO2 ROTOR FEED</text>`;
-    html += `<text x="${ax}" y="${L.rso2BranchTopY - 68}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">TO AP04 JOIN</text>`;
-    // 3 rotor icons stacked vertically, 26px spacing (rotor height 16px, no overlap)
+    html += `<rect x="${ax-68}" y="${L.rso2BranchTopY-112}" width="128" height="176" rx="6" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.6" stroke-dasharray="6,4"/>`;
+    html += VF.safeLabel(ax, L.rso2BranchTopY - 80, 'RSO2 ROTOR FEED', { fontSize: 11, fontWeight: 700 });
+    // New rotor visual is taller; preserve the same source and connector, with clear spacing.
     for (let i = 0; i < 3; i++) {
-      const ry = L.rso2BranchTopY - 54 + i * 26;
-      html += `<g transform="translate(${ax}, ${ry})" opacity="0.5">${VF.rotor(0, 0)}</g>`;
+      const ry = L.rso2BranchTopY - 48 + i * 32;
+      html += `<g transform="translate(${ax}, ${ry})" opacity="0.5">${VF.sourceSymbol('RSO2', 0, 0)}</g>`;
     }
+    // Route through the corridor immediately right of AP04, then enter its body.
+    const ap04Right = L.ap04X + 48;
+    const ap04Corridor = ap04Right + 18;
+    const ap04TargetY = L.stationY + 24;
+    const rso2ExitY = L.rso2BranchTopY + 56;
+    html += `<polyline points="${ax},${rso2ExitY} ${ap04Corridor},${rso2ExitY} ${ap04Corridor},${ap04TargetY} ${ap04Right},${ap04TargetY}" fill="none" stroke="#C8960E" stroke-width="2" stroke-dasharray="6,3" opacity="0.8" marker-end="url(#arrowLeft)"/>`;
     html += `</g>`;
 
     g.innerHTML = html;
@@ -1028,7 +1096,7 @@ const ctrlB = {
     if (!g) return;
     const L = VF_LAYOUT;
     const cx = L.offLineX + L.offLineW / 2;   // ~850
-    const itemY = L.offLineY + 56;
+    const itemY = L.offLineY + 74;
     let html = '';
 
     // 3 representative ghost items (semi-finished / WIP / finished)
@@ -1040,15 +1108,13 @@ const ctrlB = {
     ];
     for (const it of items) {
       html += `<g opacity="0.45">`;
-      html += `<rect x="${it.x - 34}" y="${itemY - 26}" width="68" height="52" rx="6" fill="none" stroke="var(--vf-text-muted)" stroke-width="1" stroke-dasharray="4,3"/>`;
+      html += `<rect x="${it.x - 58}" y="${itemY - 34}" width="116" height="64" rx="6" fill="none" stroke="var(--vf-text-muted)" stroke-width="1" stroke-dasharray="4,3"/>`;
       if (it.type === 'stator') html += VF.statorAssy(it.x, itemY - 4);
       else if (it.type === 'mtr') html += VF.motorJoined(it.x, itemY - 4);
       else html += VF.packedGoods(it.x, itemY - 2);
-      html += `<text x="${it.x}" y="${itemY + 34}" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle" font-weight="600">${it.label}</text>`;
+      html += VF.safeLabel(it.x, itemY + 48, it.label, { fontSize: 9, fontWeight: 600, fill: 'var(--vf-text-muted)', background: '#FAFBFD' });
       html += `</g>`;
     }
-    // CONTEXT watermark
-    html += `<text x="${L.offLineX + L.offLineW - 14}" y="${L.offLineY + L.offLineH - 10}" fill="var(--vf-text-muted)" font-size="9" text-anchor="end" opacity="0.7">CONTEXT — not live WIP</text>`;
     html += `</g>`;
 
     g.innerHTML = html;
@@ -1090,7 +1156,7 @@ const ctrlB = {
     if (this._contextType === 'sso2') {
       title.textContent = 'SSO2 INPUT';
       body.innerHTML = `
-        <div class="vf-context-note">Upstream stator + shield source feeding ASSY start / PRE-ASSY.</div>
+        <div class="vf-context-note">Upstream stator + shield source feeding ASSY start / PRE.</div>
         <div class="vf-popup-row"><span class="vf-popup-k">Context</span><span class="vf-popup-v">source</span></div>
         <div class="vf-popup-row"><span class="vf-popup-k">SSO2 buffer</span><span class="vf-popup-v">${prod.sso2_buffer !== undefined ? prod.sso2_buffer : 'not exposed'}</span></div>
         <div class="vf-context-tag">Context source — upstream line not simulated</div>`;
@@ -1180,14 +1246,19 @@ const ctrlB = {
 
       html += VF.station(sx, sy, stId, archetype, isLandmark, isSel, isHeld);
       if (isHeld && p.held_reason) {
-        html += `<text x="${sx}" y="${sy+96}" fill="var(--vf-state-fail)" font-size="9" text-anchor="middle">${p.held_reason}</text>`;
+        html += VF.safeLabel(sx, sy + 96, p.held_reason, {
+          fontSize: 9,
+          fontWeight: 600,
+          fill: 'var(--vf-state-fail)',
+          background: 'var(--vf-conveyor-body)',
+        });
       }
     });
 
     // UI-CTX-02: SSO2/RSO2 source cues moved to _renderContextSources.
     // Only PACKED GOODS contextual pallet remains in ASSY OUTPUT zone.
     html += `<g transform="translate(${L.fgX+L.fgW/2}, ${L.fgY+220})">${VF.pallet(0, 0)}${VF.packedGoods(0, -2)}</g>`;
-    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+195}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">PACKED GOODS</text>`;
+    html += `<text x="${L.fgX+L.fgW/2}" y="${L.fgY+178}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle" font-weight="600">PACKED GOODS</text>`;
 
     stationsG.innerHTML = html;
     this._applyHighlights();
@@ -1223,15 +1294,13 @@ const ctrlB = {
       // I09-P05: dedicated selection ring behind WIP (visible on .selected, no text blur)
       html += `<rect class="vf-wip-sel-halo" x="${sx-56}" y="${sy+119}" width="112" height="92" rx="10"/>`;
       html += VF.pallet(sx, sy + 165);
-      if (tokenType === 'STATOR') html += VF.statorAssy(sx, sy + 163);
-      else if (tokenType === 'JOINED') html += VF.motorJoined(sx, sy + 163);
-      else if (tokenType === 'PRETEST') html += VF.motorPreTest(sx, sy + 163);
-      else if (tokenType === 'TESTED') html += VF.motorTested(sx, sy + 163);
-      else if (tokenType === 'PACKED') html += VF.packedGoods(sx, sy + 163);
+      if (stId === 'PRE-ASSY') { /* preparation carrier intentionally empty */ }
+      else html += VF.processSymbol(stId, sx, sy + 163);
       if (isHeld || qResult === 'FAIL' || qResult === 'NG') {
         html += VF.stateOverlay(sx, sy + 165, isHeld ? 'HOLD' : qResult);
       }
-      html += `<text x="${sx}" y="${sy+181}" fill="var(--vf-text-secondary)" font-size="11" text-anchor="middle">${p.wip_id}</text>`;
+      html += `<rect class="vf-wip-label-plate" x="${sx-46}" y="${sy+104}" width="92" height="20" rx="5"/>`;
+      html += `<text x="${sx}" y="${sy+118}" class="vf-wip-label" text-anchor="middle">${p.wip_id}</text>`;
       html += `</g>`;
     });
 
@@ -1353,10 +1422,10 @@ const ctrlB = {
     const pos = stId ? (posMap[stId] || null) : null;
 
     if (pos && pos.is_occupied && pos.wip_id) {
-      title.textContent = `${stId} — ${pos.wip_id}`;
+      title.textContent = `${displayStationId(stId)} — ${pos.wip_id}`;
       const qColor = pos.latest_quality_result === 'PASS' ? 'var(--vf-state-pass)' : pos.latest_quality_result ? 'var(--vf-state-fail)' : 'var(--vf-text-muted)';
       let html = '';
-      html += `<div class="vf-popup-row"><span class="vf-popup-k">Station</span><span class="vf-popup-v">${pos.position_id} — ${pos.station_label||pos.position_id}</span></div>`;
+      html += `<div class="vf-popup-row"><span class="vf-popup-k">Station</span><span class="vf-popup-v">${displayStationId(pos.position_id)} — ${pos.station_label||displayStationId(pos.position_id)}</span></div>`;
       html += `<div class="vf-popup-row"><span class="vf-popup-k">WIP</span><span class="vf-popup-v">${pos.wip_id}</span></div>`;
       html += `<div class="vf-popup-row"><span class="vf-popup-k">Product</span><span class="vf-popup-v">${pos.wip_type||'MTR'}</span></div>`;
       if (pos.carrier_id) html += `<div class="vf-popup-row"><span class="vf-popup-k">Carrier</span><span class="vf-popup-v">${pos.carrier_id}</span></div>`;
@@ -1367,11 +1436,11 @@ const ctrlB = {
       const childGenealogy = (snap.genealogy||[]).filter(g => g.child_wip_id === pos.wip_id);
       if (childGenealogy.length) {
         const g = childGenealogy[childGenealogy.length-1];
-        html += `<div class="vf-popup-sep"></div><div class="vf-popup-row"><span class="vf-popup-k">Joined</span><span class="vf-popup-v">← ${(g.parent_wip_ids||[]).join(' + ')} @ ${g.join_station||'AP04'}</span></div>`;
+        html += `<div class="vf-popup-sep"></div><div class="vf-popup-row"><span class="vf-popup-k">Joined</span><span class="vf-popup-v">← ${(g.parent_wip_ids||[]).join(' + ')} @ ${displayStationId(g.join_station||'AP04')}</span></div>`;
       }
       body.innerHTML = html;
     } else if (pos && !pos.is_occupied) {
-      title.textContent = `${stId} — Empty`;
+      title.textContent = `${displayStationId(stId)} — Empty`;
       body.innerHTML = `<div class="vf-popup-empty">No WIP at this station</div>`;
     } else if (wipId) {
       title.textContent = `WIP ${wipId}`;
@@ -1382,7 +1451,7 @@ const ctrlB = {
       const asParent = (snap.genealogy||[]).filter(g => (g.parent_wip_ids||[]).includes(wipId));
       if (!onLine && asParent.length) {
         const g = asParent[asParent.length-1];
-        html += `<div class="vf-context-note">Consumed at ${g.join_station||'AP04'} — this identity is now the parent of a new motor.</div>`;
+        html += `<div class="vf-context-note">Consumed at ${displayStationId(g.join_station||'AP04')} — this identity is now the parent of a new motor.</div>`;
         html += `<div class="vf-popup-row"><span class="vf-popup-k">Child MTR</span><span class="vf-popup-v" style="cursor:pointer;color:var(--vf-accent);font-weight:600" onclick="ctrlB.selectWip('${g.child_wip_id}')">${g.child_wip_id} ↗</span></div>`;
       } else if (!onLine) {
         html += `<div class="vf-insp-historical">HISTORICAL — Exited line</div>`;
@@ -1424,7 +1493,7 @@ const ctrlB = {
       : this._contextType === 'offline' ? 'LINE-OUT / OFF-LINE'
       : null;
     document.getElementById('vf-inspector-title').textContent =
-      ctxTitle || (stId ? `${stId}${pos&&pos.station_label?': '+pos.station_label:''}` : (wipId||'Inspector'));
+      ctxTitle || (stId ? `${displayStationId(stId)}${pos&&pos.station_label?': '+pos.station_label:''}` : (wipId||'Inspector'));
 
     this._renderSummary(pos, wipId, snap);
     this._renderQualityHistory(wipId, snap);
@@ -1448,7 +1517,7 @@ const ctrlB = {
     if (this._contextType) {
       // I09-P04: context selection — show semantic context in legacy inspector too
       if (this._contextType === 'sso2') {
-        el.innerHTML = `<div class="vf-insp-row"><span class="vf-insp-k">Context</span><span class="vf-insp-v">SSO2 INPUT — upstream stator + shield source feeding ASSY start / PRE-ASSY.</span></div><div class="vf-insp-empty">Context source — upstream line not simulated</div>`;
+        el.innerHTML = `<div class="vf-insp-row"><span class="vf-insp-k">Context</span><span class="vf-insp-v">SSO2 INPUT — upstream stator + shield source feeding ASSY start / PRE.</span></div><div class="vf-insp-empty">Context source — upstream line not simulated</div>`;
       } else if (this._contextType === 'rso2') {
         el.innerHTML = `<div class="vf-insp-row"><span class="vf-insp-k">Context</span><span class="vf-insp-v">RSO2 ROTOR FEED — rotor source feeding AP04 JOIN.</span></div><div class="vf-insp-empty">Feeds AP04 JOIN — upstream line not simulated</div>`;
       } else {
@@ -1458,7 +1527,7 @@ const ctrlB = {
     }
     if (pos && pos.is_occupied && pos.wip_id) {
       const qColor = pos.latest_quality_result === 'PASS' ? 'var(--vf-state-pass)' : pos.latest_quality_result ? 'var(--vf-state-fail)' : 'var(--vf-text-muted)';
-      let html = `<div class="vf-insp-row"><span class="vf-insp-k">Station</span><span class="vf-insp-v">${pos.position_id} — ${pos.station_label||pos.position_id}</span></div>`;
+      let html = `<div class="vf-insp-row"><span class="vf-insp-k">Station</span><span class="vf-insp-v">${displayStationId(pos.position_id)} — ${pos.station_label||displayStationId(pos.position_id)}</span></div>`;
       html += `<div class="vf-insp-row"><span class="vf-insp-k">WIP</span><span class="vf-insp-v" style="font-weight:600">${pos.wip_id}</span></div>`;
       html += `<div class="vf-insp-row"><span class="vf-insp-k">Type</span><span class="vf-insp-v">${pos.wip_type||'—'}</span></div>`;
       if (pos.carrier_id) html += `<div class="vf-insp-row"><span class="vf-insp-k">Carrier</span><span class="vf-insp-v">${pos.carrier_id}</span></div>`;
@@ -1467,7 +1536,7 @@ const ctrlB = {
       if (pos.is_quality_hold) html += `<div class="vf-insp-row"><span class="vf-insp-k">HOLD</span><span class="vf-insp-v" style="color:var(--vf-state-fail);font-weight:600">${pos.held_reason||'Active'}</span></div>`;
       el.innerHTML = html;
     } else if (pos && !pos.is_occupied) {
-      el.innerHTML = `<div class="vf-insp-row"><span class="vf-insp-k">Station</span><span class="vf-insp-v">${pos.position_id}</span></div><div class="vf-insp-empty">EMPTY — no WIP at this station</div>`;
+      el.innerHTML = `<div class="vf-insp-row"><span class="vf-insp-k">Station</span><span class="vf-insp-v">${displayStationId(pos.position_id)}</span></div><div class="vf-insp-empty">EMPTY — no WIP at this station</div>`;
     } else if (wipId) {
       const histRecs = (snap.quality_records||[]).filter(qr => qr.wip_id === wipId);
       const onLine = (snap.positions||[]).some(p => p.wip_id === wipId);
@@ -1486,7 +1555,7 @@ const ctrlB = {
     let html = '';
     for (const r of recs) {
       const dColor = r.disposition === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
-      html += `<div class="vf-insp-qr"><div class="vf-insp-qr-head"><span class="vf-insp-qr-station">${r.station_id}</span><span style="color:${dColor};font-weight:600">${r.disposition}</span><span style="color:var(--vf-text-muted)">#${r.attempt_number}</span><span style="color:var(--vf-text-muted);font-size:10px">t=${(r.simulation_time_s||0).toFixed(0)}s</span></div><div class="vf-insp-qr-type">${r.check_type||'?'}</div>${r.reason_code?`<div class="vf-insp-qr-reason">Reason: ${r.reason_code}</div>`:''}</div>`;
+      html += `<div class="vf-insp-qr"><div class="vf-insp-qr-head"><span class="vf-insp-qr-station">${displayStationId(r.station_id)}</span><span style="color:${dColor};font-weight:600">${r.disposition}</span><span style="color:var(--vf-text-muted)">#${r.attempt_number}</span><span style="color:var(--vf-text-muted);font-size:10px">t=${(r.simulation_time_s||0).toFixed(0)}s</span></div><div class="vf-insp-qr-type">${r.check_type||'?'}</div>${r.reason_code?`<div class="vf-insp-qr-reason">Reason: ${r.reason_code}</div>`:''}</div>`;
     }
     el.innerHTML = html;
   },
@@ -1501,7 +1570,7 @@ const ctrlB = {
     section.style.display = '';
     let html = '';
     for (const r of recs) {
-      html += `<div class="vf-insp-meas-group"><div class="vf-insp-meas-station">${r.station_id} — ${r.check_type} #${r.attempt_number} <small>t=${(r.simulation_time_s||0).toFixed(0)}s</small></div>`;
+      html += `<div class="vf-insp-meas-group"><div class="vf-insp-meas-station">${displayStationId(r.station_id)} — ${r.check_type} #${r.attempt_number} <small>t=${(r.simulation_time_s||0).toFixed(0)}s</small></div>`;
       for (const m of (r.measurements||[])) {
         const v=m.value, lo=m.expected_min, hi=m.expected_max;
         let inRange = true;
@@ -1525,7 +1594,7 @@ const ctrlB = {
     section.style.display = '';
     let html = '';
     for (const r of recs) {
-      html += `<div class="vf-insp-cl-group"><div class="vf-insp-cl-head">${r.station_id} — ${r.check_type} #${r.attempt_number}</div><div class="vf-insp-cl-items">`;
+      html += `<div class="vf-insp-cl-group"><div class="vf-insp-cl-head">${displayStationId(r.station_id)} — ${r.check_type} #${r.attempt_number}</div><div class="vf-insp-cl-items">`;
       for (const item of (r.checklist||[])) {
         html += `<div class="vf-insp-cl-item">${item.passed?'✓':'✕'} ${item.name}</div>`;
       }
@@ -1548,7 +1617,7 @@ const ctrlB = {
       const parents = (g.parent_wip_ids||[]).map(p =>
         `<span class="vf-insp-link" onclick="ctrlB.selectWip('${p}')" title="Inspect parent">${p}</span>`
       ).join(' + ');
-      html += `<div class="vf-insp-gen-row"><b style="color:#C8960E">${g.child_wip_id}</b> ← ${parents}<br><span style="font-size:10px;color:var(--vf-text-muted)">t=${(g.join_time_s||0).toFixed(0)}s @ ${g.join_station||'AP04'}</span></div>`;
+      html += `<div class="vf-insp-gen-row"><b style="color:#C8960E">${g.child_wip_id}</b> ← ${parents}<br><span style="font-size:10px;color:var(--vf-text-muted)">t=${(g.join_time_s||0).toFixed(0)}s @ ${displayStationId(g.join_station||'AP04')}</span></div>`;
     }
     el.innerHTML = html;
   },
@@ -1873,14 +1942,14 @@ const ctrlB = {
     // Compact 1-line inline summary (C01)
     if (inline) {
       const latest = events.slice(-3).map(e =>
-        `${e.disposition} ${e.wip_id} @ ${e.station_id}`
+        `${e.disposition} ${e.wip_id} @ ${displayStationId(e.station_id)}`
       ).join('  ·  ');
       inline.textContent = latest;
     }
     if (list) {
       list.innerHTML = events.slice(-10).map(e => {
         const dc = e.disposition === 'PASS' ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
-        return `<div class="vf-qe-item" onclick="ctrlB.selectEvent('${e.station_id}','${e.wip_id}')"><span style="color:${dc};font-weight:600">${e.disposition}</span> ${e.wip_id} @ ${e.station_id} #${e.attempt} <small>t=${(e.simulation_time_s||0).toFixed(0)}s</small></div>`;
+        return `<div class="vf-qe-item" onclick="ctrlB.selectEvent('${e.station_id}','${e.wip_id}')"><span style="color:${dc};font-weight:600">${e.disposition}</span> ${e.wip_id} @ ${displayStationId(e.station_id)} #${e.attempt} <small>t=${(e.simulation_time_s||0).toFixed(0)}s</small></div>`;
       }).join('');
     }
   },

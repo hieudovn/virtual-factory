@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="970" viewBox="0 0 1254 970">
+
+  <g stroke="#1f2b3d" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">
+    <!-- shaft -->
+    <rect x="82" y="434" width="1090" height="104" rx="42" fill="#aebdd0"/>
+    <rect x="96" y="448" width="1062" height="40" rx="20" fill="#d5dde8" stroke="none" opacity=".75"/>
+    <!-- stepped shaft ends -->
+    <rect x="70" y="448" width="168" height="76" rx="30" fill="#a7b6c9"/>
+    <rect x="1016" y="448" width="168" height="76" rx="30" fill="#a7b6c9"/>
+    <!-- end rings -->
+    <rect x="292" y="365" width="88" height="242" rx="32" fill="#b8c4d2"/>
+    <rect x="874" y="365" width="88" height="242" rx="32" fill="#b8c4d2"/>
+    <rect x="314" y="383" width="44" height="206" rx="18" fill="#d9e0e8" stroke="none" opacity=".72"/>
+    <rect x="896" y="383" width="44" height="206" rx="18" fill="#d9e0e8" stroke="none" opacity=".72"/>
+    <!-- rotor lamination body -->
+    <rect x="360" y="330" width="534" height="312" rx="70" fill="#bcc7d5"/>
+    <rect x="384" y="350" width="486" height="272" rx="54" fill="#cbd5e1" stroke="none"/>
+    <!-- lamination lines -->
+    <g stroke="#8d9bad" stroke-width="8" opacity=".75">
+      <line x1="414" y1="382" x2="840" y2="382"/>
+      <line x1="406" y1="418" x2="848" y2="418"/>
+      <line x1="402" y1="454" x2="852" y2="454"/>
+      <line x1="402" y1="490" x2="852" y2="490"/>
+      <line x1="402" y1="526" x2="852" y2="526"/>
+      <line x1="406" y1="562" x2="848" y2="562"/>
+      <line x1="414" y1="598" x2="840" y2="598"/>
+    </g>
+    <!-- slight center highlight -->
+    <rect x="414" y="362" width="120" height="238" rx="40" fill="#e5ebf2" stroke="none" opacity=".28"/>
+  </g>
+</svg>
