@@ -1,0 +1,72 @@
+{
+  "ap06_fail_attempt1": [
+    {
+      "message_key": "ASSY-SL01:R1|MTR-DEMO-002:AP06:1|assy.quality_result|1.0",
+      "projection_id": "mes",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "schema_version": "1.0",
+      "headers": {
+        "correlation_id": "",
+        "causation_id": ""
+      },
+      "payload": {
+        "observation_id": "64b9b710-6254-4f38-99bc-acb3c6dc7212",
+        "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-002:AP06:1|assy.quality_result|1.0",
+        "run_id": "ASSY-SL01:R1",
+        "simulation_time_s": 360.0,
+        "occurred_at": "2026-01-01T00:06:00+00:00",
+        "subject_type": "wip",
+        "subject_id": "MTR-DEMO-002",
+        "station_id": "AP06",
+        "contract_version": "tipa-assy-demo-v1",
+        "subline_id": "ASSY-SL01",
+        "production_line_id": "ASSY",
+        "plant_id": "TIPA",
+        "event_type": "QUALITY_RESULT",
+        "wip_id": "MTR-DEMO-002",
+        "disposition": "FAIL",
+        "attempt_number": 1,
+        "reason_code": "",
+        "check_type": "TEST",
+        "is_terminal": false,
+        "terminal_state": ""
+      }
+    }
+  ],
+  "ap06_pass_attempt2": [
+    {
+      "message_key": "ASSY-SL01:R1|MTR-DEMO-002:AP06:2|assy.quality_result|1.0",
+      "projection_id": "mes",
+      "message_type": "mes.quality_result",
+      "schema_name": "vf.mes.quality_result",
+      "schema_version": "1.0",
+      "headers": {
+        "correlation_id": "",
+        "causation_id": ""
+      },
+      "payload": {
+        "observation_id": "a5572ab7-ee1f-4fe7-9727-9a4005612eb9",
+        "idempotency_key": "ASSY-SL01:R1|MTR-DEMO-002:AP06:2|assy.quality_result|1.0",
+        "run_id": "ASSY-SL01:R1",
+        "simulation_time_s": 390.0,
+        "occurred_at": "2026-01-01T00:06:30+00:00",
+        "subject_type": "wip",
+        "subject_id": "MTR-DEMO-002",
+        "station_id": "AP06",
+        "contract_version": "tipa-assy-demo-v1",
+        "subline_id": "ASSY-SL01",
+        "production_line_id": "ASSY",
+        "plant_id": "TIPA",
+        "event_type": "QUALITY_RESULT",
+        "wip_id": "MTR-DEMO-002",
+        "disposition": "PASS",
+        "attempt_number": 2,
+        "reason_code": "",
+        "check_type": "TEST",
+        "is_terminal": false,
+        "terminal_state": ""
+      }
+    }
+  ]
+}

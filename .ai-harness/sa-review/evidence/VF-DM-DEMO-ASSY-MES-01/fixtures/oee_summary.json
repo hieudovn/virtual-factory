@@ -1,0 +1,37 @@
+[
+  {
+    "message_key": "ASSY-SL01:R1|OEE:SUMMARY|assy.oee_summary|1.0",
+    "projection_id": "mes",
+    "message_type": "mes.oee_summary",
+    "schema_name": "vf.mes.oee_summary",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "7ec4f5a6-a97d-4504-968e-13e1f025773e",
+      "idempotency_key": "ASSY-SL01:R1|OEE:SUMMARY|assy.oee_summary|1.0",
+      "run_id": "ASSY-SL01:R1",
+      "simulation_time_s": 1200.0,
+      "occurred_at": "2026-01-01T00:20:00+00:00",
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "OEE_SUMMARY",
+      "planned_s": 1200.0,
+      "downtime_s": 120.0,
+      "run_s": 1080.0,
+      "ideal_cycle_s": 240.0,
+      "actual_count": 4,
+      "good_count": 3,
+      "reject_count": 1,
+      "availability": 0.9,
+      "performance": 0.888889,
+      "quality": 0.75,
+      "oee": 0.6
+    }
+  }
+]

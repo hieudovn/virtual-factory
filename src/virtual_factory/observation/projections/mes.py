@@ -26,6 +26,11 @@ _EVENT_TYPE_TO_MES: dict[str, str] = {
     "REWORK_TRIGGERED": "mes.execution_event",
     "SCRAP_TRIGGERED": "mes.execution_event",
     "OPERATOR_CHECK": "mes.checklist_result",
+    # VF-DM-DEMO-ASSY-MES-01 (additive): physical LINE_OUT as an execution event.
+    "LINE_OUT": "mes.execution_event",
+    "WIP_ENTERED": "mes.execution_event",
+    "DOWNTIME_START": "mes.execution_event",
+    "DOWNTIME_END": "mes.execution_event",
 }
 
 # Envelope payload or context.semantic_type → MES message_type
@@ -38,6 +43,8 @@ _SEMANTIC_TYPE_TO_MES: dict[str, str] = {
     "genealogy_relationship": "mes.genealogy_relationship",
     "run_status": "mes.run_status",
     "issue": "mes.issue",
+    # VF-DM-DEMO-ASSY-MES-01 (additive): end-of-run OEE summary.
+    "oee_summary": "mes.oee_summary",
 }
 
 _SCHEMA_PREFIX = "vf.mes"

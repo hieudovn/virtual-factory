@@ -1,0 +1,16 @@
+{
+  "contract_version": "tipa-assy-demo-v1",
+  "run_id": "ASSY-SL01:R1",
+  "subline_id": "ASSY-SL01",
+  "total_message_count": 63,
+  "fixture_names": [
+    "downtime",
+    "exception_raised_resolved",
+    "genealogy",
+    "happy_completion",
+    "line_out_good_reject",
+    "line_state",
+    "oee_summary",
+    "quality_fail_retest_pass"
+  ]
+}
