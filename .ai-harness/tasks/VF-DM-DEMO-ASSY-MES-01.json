@@ -81,14 +81,11 @@
     "Required fixture/event cannot be produced deterministically"
   ],
   "acceptance_criteria": [
-    {"id": "A01", "description": "Scenario runs repeatedly with identical output/order (deterministic)"},
-    {"id": "A02", "description": "Reset leaves no runtime state"},
-    {"id": "A03", "description": "No duplicate events on retry (stable idempotency keys)"},
-    {"id": "A04", "description": "JSONL and MQTT serialization compatible"},
-    {"id": "A05", "description": "OEE and counters reconcile (planned=run+downtime, actual=good+reject)"},
-    {"id": "A06", "description": "Existing VF test suite does not regress"},
-    {"id": "A07", "description": "Tests cover topology AP01-AP11, four units, fault/recovery, LINE_OUT, and message fixtures"},
-    {"id": "A08", "description": "A command or short guide runs the demo end-to-end"}
+    {"id": "A01", "phase": "pre_status", "description": "Full test suite passes (deterministic scenario, 4 WIPs, fault/recovery, LINE_OUT, OEE, fixtures)", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "A02", "phase": "pre_status", "description": "Zero test failures (no regression)", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "A03", "phase": "pre_status", "description": "Baseline matches expected SHA", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "pre_status", "description": "Working tree clean", "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}},
+    {"id": "F01", "phase": "final", "description": "All required pipeline steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}}
   ],
   "authorization": {"may_open_pr": true, "may_merge": false, "may_start_next_task": false}
 }
