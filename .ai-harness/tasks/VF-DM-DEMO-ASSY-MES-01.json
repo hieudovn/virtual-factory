@@ -24,6 +24,8 @@
     "tests/test_demo_assy_mes_v1.py",
     "tests/test_demo_assy_mes_v1_fixtures.py",
     ".ai-harness/tasks/VF-DM-DEMO-ASSY-MES-01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-DM-DEMO-ASSY-MES-01.md",
     ".ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-01/",
     "docs/deployment/demo-assy-mes.md"
   ],
@@ -59,8 +61,7 @@
     "Existing VF test suite does not regress"
   ],
   "required_smoke_checks": [
-    "Demo runner produces a full scenario end-to-end via JSONL gateway",
-    "OEE summary emitted as mes.oee_summary with reconciled counters"
+    {"id": "SMOKE-DEMO", "command": ["python", "-m", "virtual_factory.assembly.demo_assy_mes"], "execution_policy": "local_or_ci", "required": true}
   ],
   "required_remote_evidence": [
     "Pushed feature branch HEAD",
