@@ -8,7 +8,7 @@
     "execution_id": "EXEC-00009",
     "idempotency_key": "ASSY-SL01:R1|QR-0002|assy2.quality_result|1.0",
     "is_terminal": false,
-    "observation_id": "e1e32a36-7692-43b5-922a-e6ce7e7916fd",
+    "observation_id": "82b1c4f8-00cd-47d2-8815-be409f978311",
     "observations": [
       {
         "observation_id": "demo_visual_observation_1",
@@ -54,7 +54,7 @@
     "execution_id": "EXEC-00009",
     "idempotency_key": "ASSY-SL01:R1|QR-0003|assy2.quality_result|1.0",
     "is_terminal": false,
-    "observation_id": "76b3d5cc-184b-456b-bbd0-f675dfed7ad3",
+    "observation_id": "1848cc93-876f-4094-8066-1072cd2541b1",
     "observations": [
       {
         "observation_id": "demo_visual_observation_1",

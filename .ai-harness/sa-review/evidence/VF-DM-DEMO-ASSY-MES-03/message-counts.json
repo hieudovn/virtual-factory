@@ -10,7 +10,7 @@
     "in_spec": false,
     "lower_limit": 0.3,
     "measurement_code": "R_U-V",
-    "observation_id": "d4012db0-f8a2-49a1-829c-c03757e38e73",
+    "observation_id": "95a83f65-2684-4788-a034-005ec2eb73b9",
     "occurred_at": "2026-01-01T00:14:00+00:00",
     "plant_id": "TIPA",
     "production_line_id": "ASSY",
@@ -36,7 +36,7 @@
     "in_spec": true,
     "lower_limit": 0.3,
     "measurement_code": "R_U-V",
-    "observation_id": "ee4af9b5-a3b4-4fe8-bcfd-2973606569d2",
+    "observation_id": "c6752b46-6967-4735-af0d-7be9366ae53c",
     "occurred_at": "2026-01-01T00:14:00+00:00",
     "plant_id": "TIPA",
     "production_line_id": "ASSY",
@@ -61,7 +61,7 @@
     "execution_id": "EXEC-00045",
     "idempotency_key": "ASSY-SL01:R1|QR-0004|assy2.quality_result|1.0",
     "is_terminal": false,
-    "observation_id": "536b8881-87ba-4535-835e-f75c56f40e24",
+    "observation_id": "89500dba-441f-4635-bbdf-58f17fe89fe0",
     "observations": [
       {
         "observation_id": "demo_visual_observation_1",
@@ -96,7 +96,50 @@
     "terminal_state": "",
     "wip_id": "MTR-0001"
   },
-  "ap11_observation_sample": null,
+  "ap11_observation_sample": {
+    "attempt_number": 1,
+    "check_type": "FINAL_QC",
+    "contract_version": "tipa-assy-demo-v1.1",
+    "disposition": "PASS",
+    "event_type": "AP11_FINAL_QC_PASS",
+    "execution_id": "EXEC-00078",
+    "idempotency_key": "ASSY-SL01:R1|QR-0011|assy2.quality_result|1.0",
+    "is_terminal": false,
+    "observation_id": "b883fa32-5cd7-460c-b483-63f15f935202",
+    "observations": [
+      {
+        "observation_id": "demo_final_qc_observation_1",
+        "result": "ok"
+      },
+      {
+        "observation_id": "demo_final_qc_observation_2",
+        "result": "ok"
+      },
+      {
+        "observation_id": "demo_final_qc_observation_3",
+        "result": "ok"
+      }
+    ],
+    "occurred_at": "2026-01-01T00:24:00+00:00",
+    "plant_id": "TIPA",
+    "production_line_id": "ASSY",
+    "proposed_quality_reason": {
+      "code": "demo_final_qc_rule_1",
+      "source": "simulated_final_qc"
+    },
+    "proposed_quality_result": "PASS",
+    "reason_code": "demo_final_qc_rule_1",
+    "reason_source": "simulated_final_qc",
+    "record_id": "QR-0011",
+    "run_id": "ASSY-SL01:R1",
+    "simulation_time_s": 1440.0,
+    "station_id": "AP11",
+    "subject_id": "MTR-0001",
+    "subject_type": "wip",
+    "subline_id": "ASSY-SL01",
+    "terminal_state": "",
+    "wip_id": "MTR-0001"
+  },
   "checklist_result_count": 49,
   "checklist_sample": {
     "attempt_number": 0,
@@ -122,7 +165,7 @@
         "required": true
       }
     ],
-    "observation_id": "c03dc159-b58c-4040-bf13-2de0e8985e7b",
+    "observation_id": "ed1daa0e-a8ec-4983-b4ee-102970743d00",
     "occurred_at": "2026-01-01T00:08:00+00:00",
     "plant_id": "TIPA",
     "production_line_id": "ASSY",

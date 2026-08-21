@@ -140,7 +140,10 @@ def main() -> int:
     quality_ng = [p for p in quality if p.get("disposition") == "NG"]
     quality_with_obs = [p for p in quality if p.get("observations")]
     ap08_obs = [p for p in quality_with_obs if p.get("check_type") == "VISUAL_INSPECTION"]
-    ap11_obs = [p for p in quality_with_obs if p.get("check_type") == "FINAL_QC"]
+    ap11_obs = [
+        p for p in payloads
+        if p.get("check_type") == "FINAL_QC" and p.get("observations")
+    ]
     ap06_fail = [
         p for p in measurements
         if p.get("measurement_code") == "R_U-V" and p.get("in_spec") is False
