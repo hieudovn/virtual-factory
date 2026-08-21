@@ -35,6 +35,10 @@ from virtual_factory.assembly.demo_composition import (
 from virtual_factory.assembly.observation_bridge import (
     AssyObservationBridge,
 )
+from virtual_factory.assembly.assy_mes_bridge import (
+    AssyMesBridge,
+    demo_terminal,
+)
 
 
 # Re-export for backward compatibility
@@ -72,6 +76,9 @@ class DemoController:
     # M6-INT-01 — optional downstream observation bridge (never mutates runtime)
     observation_bridge: Optional[AssyObservationBridge] = None
 
+    # VF-DM-DEMO-ASSY-MES-02 — optional six-sub-line MES contract bridge
+    mes_bridge: Optional[AssyMesBridge] = None
+
     # --- Initialization ---
 
     def initialize(self) -> AssyDemoSnapshot:
@@ -87,20 +94,30 @@ class DemoController:
     # --- Control Actions ---
 
     def reset(self) -> AssyDemoSnapshot:
-        """Full reset: rebuild all 6 contexts from scratch."""
+        """Full reset: rebuild all 6 contexts from scratch.
+
+        VF-DM-DEMO-ASSY-MES-02: also bumps the MES bridge generation so new
+        runs never reuse idempotency keys.
+        """
         result = self.initialize()
+        if self.mes_bridge is not None:
+            self.mes_bridge.reset_all()
         self._poll_bridge()
         return result
 
     def step(self) -> AssyDemoSnapshot:
-        """Execute one demo cycle across all contexts.
+        """Execute one demo cycle across all contexts, excluding any
+        AP05_JAM-faulted sub-line (frozen while the fault is active).
 
         Returns snapshot for the currently selected context.
         """
         if self._composition is None:
             return AssyDemoSnapshot()
 
-        self._composition.step_all()
+        excluded: set[str] = set()
+        if self.mes_bridge is not None:
+            excluded = self.mes_bridge.jammed_sub_lines()
+        self._composition.step_all(exclude_sub_line_ids=excluded)
         self._poll_bridge()
         return self.snapshot()
 
@@ -261,10 +278,62 @@ class DemoController:
         # Capture any pre-existing authoritative facts (late-start discovery).
         self._poll_bridge()
 
+    # --- VF-DM-DEMO-ASSY-MES-02: MES contract bridge (additive) ---
+
+    def attach_mes_bridge(self, bridge: AssyMesBridge) -> None:
+        """Attach the six-sub-line MES contract bridge (read-only consumer)."""
+        self.mes_bridge = bridge
+        self._poll_bridge()
+
+    def trigger_jam(
+        self, sub_line_id: Optional[str] = None,
+    ) -> AssyDemoSnapshot:
+        """Deterministic AP05_JAM on the exception target sub-line."""
+        target = sub_line_id or (
+            self._composition.target_sub_line_id if self._composition else "ASSY-SL03"
+        )
+        if self.mes_bridge is not None:
+            self.mes_bridge.trigger_jam(target)
+        self._poll_bridge()
+        return self.snapshot()
+
+    def recover(
+        self, sub_line_id: Optional[str] = None,
+    ) -> AssyDemoSnapshot:
+        """Resolve the AP05_JAM after the deterministic 120 s downtime."""
+        target = sub_line_id or (
+            self._composition.target_sub_line_id if self._composition else "ASSY-SL03"
+        )
+        if self.mes_bridge is not None:
+            self.mes_bridge.recover(target)
+        self._poll_bridge()
+        return self.snapshot()
+
+    def run_to_terminal(self, max_steps: int = 24) -> AssyDemoSnapshot:
+        """Bounded execution: step (respecting the fault freeze) until the
+        exception target sub-line has a terminal REJECT and every non-target
+        sub-line has released at least one GOOD motor, then emit the six
+        per-sub-line OEE summaries.  Hard cap <= 24 composition steps."""
+        if self._composition is None:
+            return AssyDemoSnapshot()
+        for _ in range(max_steps):
+            if demo_terminal(self._composition):
+                break
+            self.step()
+        if self.mes_bridge is not None:
+            for sl, ctx in self._composition.contexts.items():
+                self.mes_bridge.emit_oee(sl, ctx.runtime)
+            self._poll_bridge()
+        return self.snapshot()
+
     def _poll_bridge(self) -> None:
-        """Poll the observation bridge after any runtime mutation surface."""
-        if self.observation_bridge is not None and self._composition is not None:
+        """Poll any attached observation / MES bridges after a runtime mutation."""
+        if self._composition is None:
+            return
+        if self.observation_bridge is not None:
             self.observation_bridge.poll(self._composition)
+        if self.mes_bridge is not None:
+            self.mes_bridge.poll(self._composition)
 
     @property
     def outbound_trace(self) -> list[dict]:
@@ -272,3 +341,27 @@ class DemoController:
         if self.observation_bridge is None:
             return []
         return list(self.observation_bridge.outbound_trace)
+
+    @property
+    def mes_outbound_trace(self) -> list[dict]:
+        """Ordered MES contract bridge trace (VF-DM-DEMO-ASSY-MES-02)."""
+        if self.mes_bridge is None:
+            return []
+        return list(self.mes_bridge.outbound_trace)
+
+    @property
+    def mes_messages(self) -> list[dict]:
+        """Delivered MES-compatible ProjectedMessages (evidence view)."""
+        if self.mes_bridge is None:
+            return []
+        return [
+            {
+                "message_key": m.key,
+                "message_type": m.message_type,
+                "schema_name": m.schema_name,
+                "schema_version": m.schema_version,
+                "headers": dict(m.headers),
+                "payload": dict(m.payload),
+            }
+            for m in self.mes_bridge.projected_messages
+        ]

@@ -319,8 +319,11 @@ class AssyDemoComposition:
 
     # --- Step ---
 
-    def step_all(self) -> None:
-        """Execute one demo cycle for all contexts.
+    def step_all(
+        self,
+        exclude_sub_line_ids: Optional[set[str]] = None,
+    ) -> None:
+        """Execute one demo cycle for all (non-excluded) contexts.
 
         DEMO_EXECUTION_POLICY: COMMON_DEMO_CLOCK.
         Each context advances independently via step_context().
@@ -330,13 +333,22 @@ class AssyDemoComposition:
         SIM-VAL-01-C01: applies continuous feed policy (when enabled)
         BEFORE each context steps, so upstream inventory is available
         for introduce_next_sso2() during index.
-        """
-        if self.continuous_feed_enabled:
-            for ctx in self.contexts.values():
-                self.feed_policy.replenish(ctx)
 
-        for ctx in self.contexts.values():
-            ctx.step_context()
+        VF-DM-DEMO-ASSY-MES-02-C02: excluded sub-lines (e.g. the AP05_JAM
+        faulted target) are fully frozen — no feed replenish and no
+        step_context — so their simulation time, dwell, WIP position,
+        operations, quality, genealogy, release and LINE_OUT do not advance
+        while the fault is active.
+        """
+        excluded = exclude_sub_line_ids or set()
+        if self.continuous_feed_enabled:
+            for sub_line_id, ctx in self.contexts.items():
+                if sub_line_id not in excluded:
+                    self.feed_policy.replenish(ctx)
+
+        for sub_line_id, ctx in self.contexts.items():
+            if sub_line_id not in excluded:
+                ctx.step_context()
         self.demo_step_number += 1
 
     # --- Snapshot ---
