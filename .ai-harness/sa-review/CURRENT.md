@@ -1,39 +1,49 @@
 # SA REVIEW INBOX
 
-Task: VF-DM-DEMO-ASSY-MES-02
-Status: IMPLEMENTED — READY FOR SA REVIEW (six-sub-line MES contract bridge)
+Task: VF-DM-DEMO-ASSY-MES-03
+Status: IMPLEMENTED — READY FOR SA REVIEW (detailed operation evidence contract)
 
-Baseline (accepted six-sub-line): 248e70dd4dd327a104e00d200e51608ac017a301
+Baseline (accepted six-sub-line): c3c8bb60e587f2ef4464975ab359362100fa7730
 Remote baseline branch: origin/docs/m6-s01-tipa-baseline (no newer commit)
-Branch: feature/dm-demo-assy-mes-02
-Contract version: tipa-assy-demo-v1
+Branch: feature/dm-demo-assy-mes-03-evidence
+Contract version: tipa-assy-demo-v1.1
 
 Report:
-.ai-harness/sa-review/reports/VF-DM-DEMO-ASSY-MES-02.md
+.ai-harness/sa-review/reports/VF-DM-DEMO-ASSY-MES-03.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-02/
+.ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-03/
 
 Production code changed: YES (additive)
 Six-sub-line runtime / discrete engine / observation core / MQTT redesigned: NO
 
 Summary:
-Additive six-sub-line MES contract bridge (assy_mes_bridge.py) projects the
-authoritative /assy-demo runtime to MES-compatible messages via the existing
-M5 pipeline. Operational line state (mes.run_status) separated from
-conveyor_state (RUNNING → FAULT → STOPPED → RUNNING); deterministic AP05_JAM
-(mes.issue raised/resolved); one DOWNTIME_START → DOWNTIME_END (120 s);
-LINE_OUT GOOD|REJECT derived from authoritative state; mes.oee_summary per
-sub-line/run reconciled (below 100%, at least one reject); contract provenance
-on every message (message_key==idempotency_key, contract_version, run_id,
-subline_id, occurred_at). Control surface /assy-demo/{jam,recover,
-run-to-terminal,mes-messages,version}; reset bumps generation. Docker bakes
-SOURCE_SHA → VF_SOURCE_SHA exposed at /assy-demo/version. 18 new bridge tests;
-full suite 1588 passed.
+Additive VF→MES evidence contract (assy_mes_bridge.py) projects authoritative
+runtime/operation-execution evidence via the existing M5 pipeline:
+- mes.checklist_result (AP03 CHECKLIST_CONFIRMED): item_id/required/completed,
+  required_count, completed_count, status=confirmed; no fabricated disposition.
+- mes.measurement_result (AP06 MEASUREMENT_RESULT): per-attempt R_U-V/R_V-W/
+  R_W-U with value/unit/lower_limit/upper_limit/in_spec (inclusive),
+  evidence_source=DEMO_SYNTHETIC.
+- mes.quality_result observations[] + proposed_quality_result/
+  proposed_quality_reason for AP08 (VISUAL_INSPECTION) and AP11 (FINAL_QC).
+Contract bumped to tipa-assy-demo-v1.1 on every message and at
+/assy-demo/version.
+
+Justified additive runtime change: QualityRecord gains frozen per-attempt
+observations/proposed_quality_result/proposed_quality_reason fields (populated
+at decision time in line_runtime._apply_quality_decision) because the per-attempt
+observation result/proposal was not otherwise exposed (op fields are overwritten
+on re-observation). No behavior/transition/scheduling change.
+
+Machine-derived: 666 messages, 666 unique keys, 0 duplicates; checklist_result
+49; measurement_result 96; quality_result 57 (observations on AP08 + AP11).
+16 new focused tests; full suite 1611 passed.
 
 Open findings:
-- Two pre-existing baseline test failures (test_assy_demo.py::test_scenario_switch_resets_state,
-  test_ops04_c01.py::test_select_does_not_mutate_runtime_state) — unrelated to
-  this gate; outside allowed paths.
-- Docker smoke + exact-head CI pending (see SA-ready message for CI URLs).
+- PR not opened yet (no gh CLI / GitHub token in this environment).
+- Preflight baseline check is main-centric (compares against origin/main); this
+  gate's authorized baseline is docs/m6-s01-tipa-baseline = c3c8bb6 (exact).
+- Docker exact-head smoke + exact-head CI pending (see SA-ready message).
+
 
