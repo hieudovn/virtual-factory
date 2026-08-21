@@ -109,9 +109,25 @@ parallel simulation and without rewriting the runtime/topology.
 
 ## 8. Open findings
 
-- Two pre-existing baseline test failures (outside this gate's allowed paths):
-  `test_scenario_switch_resets_state` and `test_select_does_not_mutate_runtime_state`.
-- Docker smoke and exact-head CI pending (see SA-ready message).
+- **Exact-head CI RED** (`https://github.com/hieudovn/virtual-factory/actions/runs/32458867950`,
+  run #158, commit `e38cc13`) — the `test` job fails on **2 pre-existing
+  baseline test failures**, both reproduced on the clean accepted baseline
+  `248e70dd` (stash-verified, not introduced by this gate):
+  - `tests/test_assy_demo.py::test_scenario_switch_resets_state` — stale
+    assertion (multi-sub-line targeting: the selected SL01 stays HAPPY while
+    the scenario targets SL03).
+  - `tests/test_ops04_c01.py::test_select_does_not_mutate_runtime_state` —
+    `KeyError: 'dwell_number'` (S04B detail endpoint gated behind
+    `VF_ENABLE_S04B_OVERVIEW`, not set in the test).
+  - These were fixed later on `main` (main CI is green), but merging `main`
+    into this gate is explicitly out of scope. All other tests pass
+    (**1588 passed**), including the 18 new bridge tests.
+- **PR not opened** — no `gh` CLI / GitHub token in this environment. Proposed
+  base `docs/m6-s01-tipa-baseline`, head `feature/dm-demo-assy-mes-02`.
+- **Preflight baseline check** compares `expected_base_sha` against
+  `origin/main` (harness is main-centric); this gate's authorized baseline is
+  `docs/m6-s01-tipa-baseline` = `248e70dd…` (verified exact via
+  `git ls-remote`, no newer commit).
 
 ## 9. Changed files
 
@@ -123,10 +139,12 @@ parallel simulation and without rewriting the runtime/topology.
 ## 10. Recommendation
 
 ```text
-VF-DM-DEMO-ASSY-MES-02 — READY FOR SA REVIEW
-Candidate SHA: (implementation head — see SA-ready message)
-Review head: origin/feature/dm-demo-assy-mes-02 (pushed)
-Tests: 18 bridge tests; 1588 passed full suite (2 pre-existing baseline failures)
+VF-DM-DEMO-ASSY-MES-02 — IMPLEMENTED (pushed) — READY FOR SA REVIEW (blocked:
+exact-head CI red due to 2 pre-existing baseline test failures; PR requires
+operator credentials; base docs/m6-s01-tipa-baseline)
+Candidate SHA (implementation head): 313bc84
+Review head: origin/feature/dm-demo-assy-mes-02 (pushed; exact tip SHA in final SA-ready message)
+Tests: 18 new bridge tests PASS; full suite 1588 PASS / 2 pre-existing FAIL
 ```
 
 The PM does not self-certify COMPLETE or CLOSED. Merge and next-slice
