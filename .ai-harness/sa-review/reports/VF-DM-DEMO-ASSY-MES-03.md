@@ -118,21 +118,29 @@ its `anomaly` observation and `NG` proposal even after a later PASS
 
 ## 8. Open findings
 
-- **PR not opened yet** — no `gh` CLI / GitHub token in this environment;
-  proposed base `docs/m6-s01-tipa-baseline`, head
-  `feature/dm-demo-assy-mes-03-evidence`.
-- **Preflight baseline check is main-centric** — the harness compares
-  `expected_base_sha` against `origin/main` (`fda1db4…`), but this gate's
-  authorized baseline is `docs/m6-s01-tipa-baseline` = `c3c8bb6…` (verified
+- **PR #24 opened** — base `docs/m6-s01-tipa-baseline`, head
+  `feature/dm-demo-assy-mes-03-evidence`, state OPEN, not draft.
+  URL: https://github.com/hieudovn/virtual-factory/pull/24
+- **Exact-head CI green** — VF-DM CI run #161
+  (https://github.com/hieudovn/virtual-factory/actions/runs/32470931545),
+  conclusion `success`, 0 annotations, head
+  `edfb5e9cf3a64da7ba61a6bd1f3b843378a9fc51` (== remote branch head == PR head).
+- **Harness is main-centric (baseline + derive_status)** — `preflight.py` and
+  `derive_status.py` compare `expected_base_sha` against `origin/main`
+  (`fda1db4…`), so the raw machine outputs are `PRECHECK FAILED — baseline
+  mismatch` and `STOPPED — BASELINE MISMATCH` respectively. This gate's
+  SA-authorized baseline is `docs/m6-s01-tipa-baseline` = `c3c8bb6…` (verified
   exact via `git rev-parse origin/docs/m6-s01-tipa-baseline`, no newer commit).
-  Same documented limitation as MES-02.
-- **Docker exact-head smoke** — DONE: image rebuilt on `05d0154`,
+  Same documented limitation as MES-02. Applying the `derive_status` decision
+  logic against the authorized baseline branch yields
+  `IMPLEMENTED — PR OPEN — READY FOR SA REVIEW`.
+- **Docker exact-head smoke** — DONE: image rebuilt on the implementation head
+  `05d0154` (all production code committed at/before this head),
   `/health` ok, `/assy-demo` 200, `/assy-demo/version.source_sha == 05d0154`,
   `contract_version == tipa-assy-demo-v1.1`, 6 sub-lines,
   reset→jam→recover→run-to-terminal→mes-messages produces the evidence surface
   (checklist_result 49, measurement_result 96, quality_result 57) with 0
   duplicate keys (see `docker-smoke.md`).
-- **Exact-head CI** pending (see SA-ready message for CI URL).
 
 ## 9. Changed files
 
@@ -146,9 +154,11 @@ its `anomaly` observation and `NG` proposal even after a later PASS
 ## 10. Recommendation
 
 ```text
-VF-DM-DEMO-ASSY-MES-03 — READY FOR SA REVIEW
-Candidate SHA (implementation head): 05d0154
-Review head: origin/feature/dm-demo-assy-mes-03-evidence (pushed; exact tip SHA in final SA-ready message)
+VF-DM-DEMO-ASSY-MES-03 — IMPLEMENTED — PR OPEN — READY FOR SA REVIEW
+Implementation head: 05d0154 (production code)
+Review head: origin/feature/dm-demo-assy-mes-03-evidence = edfb5e9cf3a64da7ba61a6bd1f3b843378a9fc51
+PR: #24 (OPEN, base docs/m6-s01-tipa-baseline, head feature/dm-demo-assy-mes-03-evidence)
+CI: VF-DM CI #161 SUCCESS on edfb5e9 (0 annotations) — https://github.com/hieudovn/virtual-factory/actions/runs/32470931545
 Tests: 16 focused PASS; full suite 1611 PASS / 0 FAIL
 Evidence: 666 messages, 0 duplicate keys, checklist_result 49, measurement_result 96, quality_result 57 (observations on AP08/AP11)
 Docker: exact-head image smoke PASS (source_sha == 05d0154, contract v1.1)

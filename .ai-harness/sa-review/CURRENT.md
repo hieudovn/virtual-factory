@@ -41,10 +41,15 @@ Machine-derived: 666 messages, 666 unique keys, 0 duplicates; checklist_result
 16 new focused tests; full suite 1611 passed.
 
 Open findings:
-- PR not opened yet (no gh CLI / GitHub token in this environment).
-- Preflight baseline check is main-centric (compares against origin/main); this
-  gate's authorized baseline is docs/m6-s01-tipa-baseline = c3c8bb6 (exact).
-- Docker exact-head smoke: DONE (source_sha == final head, contract v1.1,
-  evidence surface present, 0 duplicate keys). Exact-head CI pending.
+- PR #24 OPEN (base docs/m6-s01-tipa-baseline, head
+  feature/dm-demo-assy-mes-03-evidence). CI VF-DM CI #161 SUCCESS on exact head
+  edfb5e9 (0 annotations).
+- Harness is main-centric: preflight.py/derive_status.py compare against
+  origin/main, so raw outputs are PRECHECK FAILED / STOPPED — BASELINE
+  MISMATCH. This gate's authorized baseline is docs/m6-s01-tipa-baseline =
+  c3c8bb6 (exact). Against the authorized baseline, the derivation is
+  IMPLEMENTED — PR OPEN — READY FOR SA REVIEW.
+- Docker exact-head smoke DONE (source_sha == implementation head, contract
+  v1.1, evidence surface present, 0 duplicate keys).
 
 
