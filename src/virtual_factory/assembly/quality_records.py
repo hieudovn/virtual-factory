@@ -96,6 +96,17 @@ class QualityRecord:
     # WIP transitioned to QualityStatus.FAILED_FINAL.  Never reconstructed;
     # stamped by the runtime at the exact transition decision.
     terminal: bool = False
+    # VF-DM-DEMO-ASSY-MES-03 — additive: per-attempt structured observation
+    # evidence captured at decision time (immutable).  `op.observations` is
+    # rewritten on every re-observation, so the authoritative observation
+    # result for a retested attempt only survives if frozen here.
+    observations: tuple[dict, ...] = ()
+    # VF-DM-DEMO-ASSY-MES-03 — additive: the machine proposal + reason as
+    # observed for THIS attempt, frozen at decision time.  `op` is reused and
+    # its proposal is rewritten on retest, so the per-attempt proposal must
+    # survive on the record (kept separate from the final `disposition`).
+    proposed_quality_result: str = ""
+    proposed_quality_reason: Optional[dict] = None
 
     def to_dict(self) -> dict:
         return {
@@ -110,6 +121,10 @@ class QualityRecord:
             "checklist_items": list(self.checklist_items),
             "reason_code": self.reason_code,
             "terminal": self.terminal,
+            "observations": list(self.observations),
+            "proposed_quality_result": self.proposed_quality_result,
+            "proposed_quality_reason": dict(self.proposed_quality_reason)
+            if self.proposed_quality_reason else None,
         }
 
 

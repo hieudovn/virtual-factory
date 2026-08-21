@@ -338,7 +338,7 @@ class TestContractProvenance:
         for m in demo["messages"]:
             p = m["payload"]
             assert m["message_key"] == p.get("idempotency_key")
-            assert p.get("contract_version") == "tipa-assy-demo-v1"
+            assert p.get("contract_version") == "tipa-assy-demo-v1.1"
             assert RUN_ID_RE.match(p.get("run_id", ""))
             assert p.get("subline_id") in SUB_LINE_IDS
             assert p.get("occurred_at") is not None

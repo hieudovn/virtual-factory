@@ -32,6 +32,8 @@ _EVENT_TYPE_TO_MES: dict[str, str] = {
     "WIP_ENTERED": "mes.execution_event",
     "DOWNTIME_START": "mes.execution_event",
     "DOWNTIME_END": "mes.execution_event",
+    # VF-DM-DEMO-ASSY-MES-03 (additive): confirmed checklist evidence.
+    "CHECKLIST_CONFIRMED": "mes.checklist_result",
 }
 
 # Envelope payload or context.semantic_type → MES message_type
@@ -49,6 +51,9 @@ _SEMANTIC_TYPE_TO_MES: dict[str, str] = {
     "release": "mes.release",
     # VF-DM-DEMO-ASSY-MES-02 (additive): end-of-run OEE summary per sub-line.
     "oee_summary": "mes.oee_summary",
+    # VF-DM-DEMO-ASSY-MES-03 (additive): per-attempt numerical measurement
+    # evidence (AP06 electrical test R_U-V / R_V-W / R_W-U).
+    "measurement_result": "mes.measurement_result",
 }
 
 _SCHEMA_PREFIX = "vf.mes"

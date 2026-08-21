@@ -1,0 +1,119 @@
+{
+  "task_id": "VF-DM-DEMO-ASSY-MES-03",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "Detailed Operation Evidence Contract. Complete the one-way VF→MES contract (tipa-assy-demo-v1 → v1.1) by additively projecting authoritative runtime/operation-execution evidence into MES-compatible ProjectedMessages via the existing M5 pipeline: (1) AP03 checklist evidence — mes.checklist_result (CHECKLIST_CONFIRMED) with item_id/required/completed, required_count, completed_count, status=confirmed, no quality disposition fabricated; (2) AP06 numerical measurement evidence — mes.measurement_result (MEASUREMENT_RESULT) for every R_U-V / R_V-W / R_W-U resistance measurement per attempt with value/unit/lower_limit/upper_limit/in_spec (inclusive limits), evidence_source=DEMO_SYNTHETIC, linked to execution_id/record_id/attempt_number; (3) AP08 (VISUAL_INSPECTION) and AP11 (FINAL_QC) structured inspection observations — extend mes.quality_result with observations[] (observation_id + result ok|anomaly) plus separate proposed_quality_result and proposed_quality_reason fields; observations must NOT be rewritten after the decision is recorded (per-attempt immutability). All evidence derives from authoritative runtime data; the bridge must NOT fabricate values. No MES implementation in this gate. Contract version v1.1 must be returned by /assy-demo/version and stamped on every message.",
+  "explicit_non_objectives": [
+    "No MES implementation (this is VF→MES contract only)",
+    "No MES → VF inbound",
+    "No MQTT or new broker",
+    "No parallel simulation",
+    "No redesign of the observation pipeline core (envelope/point/service/router/policy/gateway)",
+    "No rewrite of the six-sub-line runtime/topology",
+    "No change to operation_execution.py or station_contracts.py",
+    "No full rework routing",
+    "No UI redesign"
+  ],
+  "required_branch": "feature/dm-demo-assy-mes-03-evidence",
+  "expected_base_sha": "c3c8bb60e587f2ef4464975ab359362100fa7730",
+  "allowed_paths": [
+    "src/virtual_factory/assembly/assy_mes_bridge.py",
+    "src/virtual_factory/assembly/quality_records.py",
+    "src/virtual_factory/assembly/line_runtime.py",
+    "src/virtual_factory/observation/projections/mes.py",
+    "src/virtual_factory/ui/api.py",
+    "tests/test_assy_mes_bridge_v1.py",
+    "tests/test_assy_mes_03_evidence.py",
+    ".ai-harness/tasks/VF-DM-DEMO-ASSY-MES-03.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-DM-DEMO-ASSY-MES-03.md",
+    ".ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-03/",
+    "docs/deployment/demo-assy-mes-03.md"
+  ],
+  "allowed_paths_additive_justified": [
+    {
+      "path": "src/virtual_factory/assembly/quality_records.py",
+      "reason": "Per-attempt structured observation results and the machine proposal/reason are NOT exposed in a stable form: QualityRecord.checklist_items stores only observation-id strings (no result), and op.observations/op.proposed_quality_result are overwritten on every re-observation, so a retested attempt's NG evidence is lost. To satisfy the gate requirement that observations must not be rewritten after the decision is recorded, the immutable QualityRecord gains additive default-valued fields observations/proposed_quality_result/proposed_quality_reason frozen at decision time. No existing field is changed and no behavior is altered."
+    },
+    {
+      "path": "src/virtual_factory/assembly/line_runtime.py",
+      "reason": "Single additive constructor call in _apply_quality_decision passes the already-observed op.observations/op.proposed_quality_result/op.proposed_quality_reason into the new QualityRecord fields. This is the only place the authoritative per-attempt observation/proposal exists at decision time. No transition logic, scheduling, or business behavior is changed."
+    }
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/observation/envelope.py",
+    "src/virtual_factory/observation/point.py",
+    "src/virtual_factory/observation/service.py",
+    "src/virtual_factory/observation/router.py",
+    "src/virtual_factory/observation/policy.py",
+    "src/virtual_factory/integration/gateway.py",
+    "src/virtual_factory/integration/gateways/mqtt.py",
+    "src/virtual_factory/protocols/",
+    "src/virtual_factory/core/",
+    "src/virtual_factory/assembly/demo_snapshot.py",
+    "src/virtual_factory/assembly/operation_execution.py",
+    "src/virtual_factory/assembly/genealogy.py",
+    "src/virtual_factory/assembly/observation_bridge.py",
+    "src/virtual_factory/assembly/demo_assy_mes/",
+    "src/virtual_factory/assembly/station_contracts.py"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/assembly/assy_mes_bridge.py (additive CHECKLIST_CONFIRMED + MEASUREMENT_RESULT facts, observations[]/proposed_quality_result/proposed_quality_reason on quality facts, contract v1.1)",
+    "src/virtual_factory/observation/projections/mes.py (additive mes.checklist_result + mes.measurement_result mappings)",
+    "src/virtual_factory/ui/api.py (/assy-demo/version returns tipa-assy-demo-v1.1)",
+    "src/virtual_factory/assembly/quality_records.py + line_runtime.py (justified additive per-attempt observation/proposal freezing)",
+    "tests/test_assy_mes_03_evidence.py (new focused contract tests)",
+    "tests/test_assy_mes_bridge_v1.py (contract version updated to v1.1)",
+    "docs/deployment/demo-assy-mes-03.md",
+    "evidence under .ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-03/"
+  ],
+  "required_tests": [
+    "AP03 confirmed emits exactly one mes.checklist_result with status=confirmed and no fabricated disposition",
+    "AP03 incomplete (before confirmation) emits no checklist_result",
+    "AP03 checklist item ids and counts match DEMO_CHECKLIST_ITEM_IDS (demo_item_1..3, required, completed)",
+    "AP06 emits exactly three mes.measurement_result per attempt (R_U-V, R_V-W, R_W-U)",
+    "AP06 measurement carries value/unit/lower_limit/upper_limit/in_spec with inclusive limits",
+    "AP06 FAIL measurement (R_U-V=0.29 below lower limit) preserved after retest",
+    "AP06 measurement linked to quality attempt (execution_id/record_id/attempt_number)",
+    "AP08 observations + proposal are separate fields; NG attempt carries an anomaly observation",
+    "AP11 observations emitted on quality_result; not conflated with release or line-out",
+    "Contract version tipa-assy-demo-v1.1 on every message",
+    "Repeated poll produces no duplicate message keys",
+    "Reset produces a new run generation without reusing idempotency keys",
+    "Full VF test suite stays green",
+    "MES-02 scenario (run_status/issue/downtime/LINE_OUT/OEE) does not regress"
+  ],
+  "required_smoke_checks": [
+    {"id": "SMOKE-ASSY-BRIDGE", "command": ["python", "-m", "virtual_factory.assembly.assy_mes_bridge"], "execution_policy": "local_or_ci", "required": true},
+    {"id": "SMOKE-ASSY-VERSION", "command": ["python", "-c", "import urllib.request,json; print(json.load(urllib.request.urlopen('http://127.0.0.1:8000/assy-demo/version',timeout=3)).get('contract_version'))"], "execution_policy": "ci_required", "required": true}
+  ],
+  "required_remote_evidence": [
+    "Pushed feature branch HEAD",
+    "PR on base docs/m6-s01-tipa-baseline with exact head",
+    "CI on exact feature-branch HEAD"
+  ],
+  "forbidden_actions": [
+    "Push directly to main",
+    "Merge without SA authorization for the exact head SHA",
+    "Start the next milestone slice",
+    "Self-certify COMPLETE or CLOSED",
+    "Modify files outside allowed_paths / allowed_paths_additive_justified",
+    "Fabricate checklist/measurement/observation values in the bridge",
+    "Rewrite six-sub-line runtime semantics"
+  ],
+  "stop_conditions": [
+    "Baseline mismatch or remote branch advanced",
+    "Redesign of the discrete engine, observation pipeline core, MQTT gateway, or six-sub-line runtime would be required",
+    "Existing VF test suite regresses",
+    "Required checklist/measurement/observation data cannot be produced from authoritative runtime truth without fabrication"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "pre_status", "description": "Full test suite passes (focused + existing VF suite)", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "A02", "phase": "pre_status", "description": "Zero test failures (no regression)", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "A03", "phase": "pre_status", "description": "Baseline matches expected SHA", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "pre_status", "description": "Contract version v1.1 on every message", "rule": {"field": "contract.version_all_v1_1", "operator": "is_true", "expected": null}},
+    {"id": "F01", "phase": "final", "description": "All required pipeline steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": true, "may_merge": false, "may_start_next_task": false}
+}
