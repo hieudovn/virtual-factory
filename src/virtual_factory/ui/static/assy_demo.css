@@ -43,13 +43,14 @@
   --vf-state-historical: #9BA5B5;
 
   /* Objects */
-  --vf-obj-stator: #33C4D4;
-  --vf-obj-rotor: #E8A23A;
-  --vf-obj-joined: #42A58A;
-  --vf-obj-pretest: #3E8FB0;
-  --vf-obj-packed: #B68B57;
-  --vf-pallet-wood: #C4A882;
-  --vf-pallet-dark: #8B7355;
+  --vf-obj-stator: #64748B;
+  --vf-obj-rotor: #94A3B8;
+  --vf-obj-joined: #475569;
+  --vf-obj-pretest: #0F766E;
+  --vf-obj-packed: #CBD5E1;
+  --vf-pallet-wood: #7C6B55;
+  --vf-pallet-light: #A39179;
+  --vf-pallet-dark: #5C4E3F;
 
   /* Conveyor */
   --vf-conveyor-body: #8B95A3;
@@ -252,6 +253,34 @@ html, body {
 .vf-sb-actions .vf-btn {
   justify-content: center; font-size: 11px; padding: 5px 8px;
 }
+
+/* Project attribution, anchored at the bottom of the shared sidebar. */
+.vf-company-lockup {
+  margin-top: auto; padding: 14px 16px 16px;
+  display: flex; flex-direction: column; align-items: flex-start;
+  background: #F8FAFC; border-top: 1px solid var(--vf-border-light);
+  flex-shrink: 0;
+}
+.vf-company-kicker {
+  width: 100%; color: var(--vf-text-secondary); font-size: 9px; font-weight: 700;
+  letter-spacing: .1em; line-height: 1; text-transform: uppercase;
+  padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--vf-border-light);
+}
+.vf-company-role {
+  color: var(--vf-text-muted); font-size: 8px; font-weight: 700;
+  letter-spacing: .12em; line-height: 1; text-transform: uppercase;
+  margin: 0 0 7px;
+}
+.vf-company-role-for { margin-top: 12px; }
+.vf-company-mark {
+  width: 100%; min-height: 18px;
+  display: flex; align-items: center; justify-content: flex-start;
+}
+.vf-company-logo {
+  display: block; width: auto; max-width: 104px; object-fit: contain; object-position: left center;
+}
+.vf-company-logo-avenue { max-height: 22px; }
+.vf-company-logo-toshiba { max-height: 16px; }
 
 /* Canvas Area */
 #vf-canvas-area {
@@ -540,6 +569,15 @@ html, body {
   display: block;
   filter: drop-shadow(0 0 3px rgba(47,111,219,0.35));
 }
+.vf-wip-label-plate {
+  fill: rgba(255,255,255,0.96);
+  stroke: #CBD5E1;
+  stroke-width: 1;
+}
+.vf-wip-label {
+  fill: #334155;
+  font: 700 11px 'Cascadia Mono', Consolas, monospace;
+}
 /* I09-P04: make whole context group clickable, incl. empty space */
 #fb-context-sources [data-context],
 #fb-context-offline [data-context] {
@@ -784,6 +822,9 @@ html, body {
   #vf-popup { width: 320px; }
   #vf-inspector { width: 220px; }
   #vf-event-strip { right: 230px; left: 296px; }
+  .vf-company-lockup { padding: 10px; }
+  .vf-company-kicker { padding-bottom: 8px; margin-bottom: 8px; }
+  .vf-company-logo { max-width: 88px; }
 }
 
 /* ═══════════════════════════════════════
@@ -845,3 +886,7 @@ html, body {
     transition: none !important;
   }
 }
+
+/* Clean label plates are part of the SVG presentation layer. */
+.vf-safe-label { pointer-events: none; }
+.vf-safe-label-bg { shape-rendering: geometricPrecision; }
