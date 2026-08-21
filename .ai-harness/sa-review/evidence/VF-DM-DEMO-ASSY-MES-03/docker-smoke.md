@@ -1,8 +1,11 @@
 # VF-DM-DEMO-ASSY-MES-03 — Docker exact-head smoke
 
 Image: `vf-assy:latest` rebuilt on exact source SHA
-(`SOURCE_SHA=05d0154d8b02942b2c14dc41015dfb192218b8fd`, the final feature-branch
-HEAD at the time of the smoke). Compose: `docker-compose.assy.yml`.
+(`SOURCE_SHA=05d0154d8b02942b2c14dc41015dfb192218b8fd`, the implementation head).
+All production code (`src/`, `configs/`, `docs/`) was committed at or before
+this head; later commits in this branch are documentation/evidence-only and do
+not affect the image's runtime code (the Dockerfile copies `src`, `configs`,
+`docs`, `pyproject.toml`, `README.md` only). Compose: `docker-compose.assy.yml`.
 
 ## Endpoints (all from the container at 127.0.0.1:8000)
 
