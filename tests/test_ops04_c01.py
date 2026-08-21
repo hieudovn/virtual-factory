@@ -738,7 +738,10 @@ from virtual_factory.ui.api import create_app  # noqa: E402
 
 
 class TestSelectEndpointNonMutation:
-    def test_select_does_not_mutate_runtime_state(self):
+    def test_select_does_not_mutate_runtime_state(self, monkeypatch):
+        # VF-DM-DEMO-ASSY-MES-02-C02: the S04B sub-line detail endpoint is
+        # feature-flagged; enable it so /assy-demo/sub-line/{id} is registered.
+        monkeypatch.setenv("VF_ENABLE_S04B_OVERVIEW", "1")
         client = TestClient(create_app(config_path="configs/plants/continuous_mvp_01.yaml", dt_s=1.0))
         client.post("/assy-demo/reset", json={"scenario": "HAPPY_PATH"})
         client.post("/assy-demo/step")

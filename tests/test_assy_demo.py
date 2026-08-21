@@ -328,7 +328,12 @@ class TestVScenarioSwitch:
 
         c1.set_scenario(DemoScenario.AP06_FAIL_RETEST_PASS)
         s2 = c1.reset()
-        assert s2.scenario == "AP06_FAIL_RETEST_PASS"
-        # Verify scenario config applied
-        assert c1.runtime.config.quality.ap06.scenario == "PASS"
-        assert c1.runtime.config.quality.ap06.overrides == {1: ["PASS"], 2: ["FAIL", "PASS"]}
+        # Six-sub-line targeting policy: the selected SL01 is allowed to keep
+        # HAPPY_PATH; the exception scenario is applied to the target SL03.
+        assert s2.scenario == "HAPPY_PATH"
+        target = c1.detail_for("ASSY-SL03")
+        assert target.scenario == "AP06_FAIL_RETEST_PASS"
+        # Verify scenario config applied to the target sub-line
+        target_ctx = c1.composition.get_context("ASSY-SL03")
+        assert target_ctx.runtime.config.quality.ap06.scenario == "PASS"
+        assert target_ctx.runtime.config.quality.ap06.overrides == {1: ["PASS"], 2: ["FAIL", "PASS"]}

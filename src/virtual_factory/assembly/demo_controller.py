@@ -37,6 +37,7 @@ from virtual_factory.assembly.observation_bridge import (
 )
 from virtual_factory.assembly.assy_mes_bridge import (
     AssyMesBridge,
+    demo_terminal,
 )
 
 
@@ -105,14 +106,18 @@ class DemoController:
         return result
 
     def step(self) -> AssyDemoSnapshot:
-        """Execute one demo cycle across all contexts.
+        """Execute one demo cycle across all contexts, excluding any
+        AP05_JAM-faulted sub-line (frozen while the fault is active).
 
         Returns snapshot for the currently selected context.
         """
         if self._composition is None:
             return AssyDemoSnapshot()
 
-        self._composition.step_all()
+        excluded: set[str] = set()
+        if self.mes_bridge is not None:
+            excluded = self.mes_bridge.jammed_sub_lines()
+        self._composition.step_all(exclude_sub_line_ids=excluded)
         self._poll_bridge()
         return self.snapshot()
 
@@ -304,14 +309,17 @@ class DemoController:
         self._poll_bridge()
         return self.snapshot()
 
-    def run_to_terminal(self, max_steps: int = 80) -> AssyDemoSnapshot:
-        """Run the demo to its terminal outcome (fixed deterministic horizon),
-        then emit the per-sub-line OEE summary."""
+    def run_to_terminal(self, max_steps: int = 24) -> AssyDemoSnapshot:
+        """Bounded execution: step (respecting the fault freeze) until the
+        exception target sub-line has a terminal REJECT and every non-target
+        sub-line has released at least one GOOD motor, then emit the six
+        per-sub-line OEE summaries.  Hard cap <= 24 composition steps."""
         if self._composition is None:
             return AssyDemoSnapshot()
         for _ in range(max_steps):
-            self._composition.step_all()
-            self._poll_bridge()
+            if demo_terminal(self._composition):
+                break
+            self.step()
         if self.mes_bridge is not None:
             for sl, ctx in self._composition.contexts.items():
                 self.mes_bridge.emit_oee(sl, ctx.runtime)

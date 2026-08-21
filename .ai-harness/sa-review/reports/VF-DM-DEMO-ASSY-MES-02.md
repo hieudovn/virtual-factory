@@ -70,27 +70,25 @@ parallel simulation and without rewriting the runtime/topology.
 8. **Docker** — rebuild on exact head; image bakes `SOURCE_SHA`; runtime
    exposes it via `/assy-demo/version`.
 
-## 5. Machine-derived evidence (local)
+## 5. Machine-derived evidence (local, bounded demo)
 
-`message-counts.json` (2846 messages, 6 sub-lines, run `R1`):
+`message-counts.json` (bounded demo, 13 composition steps, 6 sub-lines, run `R1`):
 
-- `mes.run_status`: 9 (6 baseline RUNNING + SL03 fault/stopped/running)
-- `mes.issue`: 2 (AP05_JAM raised/resolved)
-- `mes.oee_summary`: 6 (one per sub-line)
-- `mes.execution_event`: 1949 (incl. WIP_ENTERED, OPERATION_COMPLETED, LINE_OUT, DOWNTIME_*)
-- `mes.quality_result`: 522 · `mes.genealogy_relationship`: 198 · `mes.release`: 160
-- `LINE_OUT`: good + reject both present
+- **total 521 messages; 521 unique message keys; 0 duplicate keys**
+- `mes.execution_event`: 399 (incl. WIP_ENTERED, OPERATION_COMPLETED, LINE_OUT, DOWNTIME_*)
+- `mes.quality_result`: 57 · `mes.genealogy_relationship`: 43 · `mes.release`: 5
+- `mes.run_status`: 9 · `mes.issue`: 2 · `mes.oee_summary`: 6 (one per sub-line)
+- `LINE_OUT`: 5 GOOD + 1 REJECT
 - SL03 run_status sequence: `running → fault → stopped → running`
+- Evidence integrity: raw JSONL lines == unique message keys == 521 (no duplicate keys)
 
 ## 6. Tests
 
-- `tests/test_assy_mes_bridge_v1.py`: **18 passed** (identity, operational
-  state, exception lifecycle, downtime, LINE_OUT, OEE reconciliation,
-  contract provenance, idempotency, reset generation, no-regression).
-- Full suite: **1588 passed, 2 failed** — the 2 failures are pre-existing on
-  the baseline (`test_assy_demo.py::test_scenario_switch_resets_state`,
-  `test_ops04_c01.py::test_select_does_not_mutate_runtime_state`) and are
-  unrelated to this change (verified by re-running on the clean baseline).
+- `tests/test_assy_mes_bridge_v1.py`: **23 passed** (identity, operational
+  state incl. conveyor/operational separation, exception lifecycle, downtime,
+  LINE_OUT, OEE reconciliation, contract provenance, idempotency, reset
+  generation, no-regression, fault-freeze consistency, deferred recovery).
+- Full suite: **1595 passed, 0 failed, 0 errors** (green).
 
 ## 7. Acceptance criteria
 
@@ -105,46 +103,56 @@ parallel simulation and without rewriting the runtime/topology.
 | A07 | OEE reconcile + below 100 % + reject | PASS |
 | A08 | No regression of quality/retest/reinspection/genealogy/release | PASS |
 | A09 | Duplicate poll no new keys; reset new generation | PASS |
-| A10 | Full VF suite green | PARTIAL — 2 pre-existing baseline failures (unrelated) |
+| A10 | Full VF suite green | PASS (1595 passed, 0 failed) |
 
 ## 8. Open findings
 
-- **Exact-head CI RED** (`https://github.com/hieudovn/virtual-factory/actions/runs/32458867950`,
-  run #158, commit `e38cc13`) — the `test` job fails on **2 pre-existing
-  baseline test failures**, both reproduced on the clean accepted baseline
-  `248e70dd` (stash-verified, not introduced by this gate):
-  - `tests/test_assy_demo.py::test_scenario_switch_resets_state` — stale
-    assertion (multi-sub-line targeting: the selected SL01 stays HAPPY while
-    the scenario targets SL03).
-  - `tests/test_ops04_c01.py::test_select_does_not_mutate_runtime_state` —
-    `KeyError: 'dwell_number'` (S04B detail endpoint gated behind
-    `VF_ENABLE_S04B_OVERVIEW`, not set in the test).
-  - These were fixed later on `main` (main CI is green), but merging `main`
-    into this gate is explicitly out of scope. All other tests pass
-    (**1588 passed**), including the 18 new bridge tests.
 - **PR not opened** — no `gh` CLI / GitHub token in this environment. Proposed
   base `docs/m6-s01-tipa-baseline`, head `feature/dm-demo-assy-mes-02`.
 - **Preflight baseline check** compares `expected_base_sha` against
   `origin/main` (harness is main-centric); this gate's authorized baseline is
   `docs/m6-s01-tipa-baseline` = `248e70dd…` (verified exact via
   `git ls-remote`, no newer commit).
+- **Two baseline tests were defective pre-existing on the accepted six-sub-line
+  baseline and are fixed tests-only in C02 per SA authorization**
+  (`test_assy_demo.py::test_scenario_switch_resets_state`,
+  `test_ops04_c01.py::test_select_does_not_mutate_runtime_state`). Remote
+  `main` does not contain these six-sub-line tests; no main merge/cherry-pick
+  was performed and no production code was changed to satisfy the tests.
 
 ## 9. Changed files
 
-`assy_mes_bridge.py` (new), `mes.py`, `demo_controller.py`, `ui/api.py`,
-`ui/static/assy_demo.{html,js}`, `Dockerfile`, `docker-compose.assy.yml`,
-`tests/test_assy_mes_bridge_v1.py` (new), `docs/deployment/demo-assy-mes-02.md`
-(new), `.ai-harness/tasks/VF-DM-DEMO-ASSY-MES-02.json` (new), evidence.
+`assy_mes_bridge.py` (new), `demo_composition.py` (additive selective-step),
+`mes.py`, `demo_controller.py`, `ui/api.py`, `ui/static/assy_demo.{html,js}`,
+`Dockerfile`, `docker-compose.assy.yml`, `tests/test_assy_mes_bridge_v1.py`
+(new), `tests/test_assy_demo.py` (tests-only fix), `tests/test_ops04_c01.py`
+(tests-only fix), `docs/deployment/demo-assy-mes-02.md` (new),
+`.ai-harness/tasks/VF-DM-DEMO-ASSY-MES-02.json` (new), evidence.
 
-## 10. Recommendation
+## 10. C02 corrections (final corrective)
+
+- **Runtime-consistent fault/downtime** — while `AP05_JAM` is active, the
+  faulted target sub-line is frozen (excluded from `step_all` via the new
+  `exclude_sub_line_ids` argument): no sim-time/dwell/WIP/operation/quality/
+  genealogy/release/LINE_OUT advance. The five siblings advance normally.
+  Recovery is emitted only after the 120 s downtime interval (≥1 excluded
+  step); the target resumes afterwards. `line_runtime.py` is untouched.
+- **Vacuous test removed** — conveyor-state separation asserted precisely.
+- **Bounded demo** — `run_to_terminal` is condition-based (target terminal
+  REJECT + each non-target ≥1 GOOD) with a 24-step hard cap; the bounded demo
+  emits **521 messages** (< 1,000), 5 GOOD + 1 REJECT, 6 OEE summaries.
+- **Clean evidence** — `demo-run.jsonl` regenerated by overwrite; raw lines ==
+  unique message keys == 521; 0 duplicate keys.
+- **Two defective baseline tests fixed tests-only** (see §8).
+
+## 11. Recommendation
 
 ```text
-VF-DM-DEMO-ASSY-MES-02 — IMPLEMENTED (pushed) — READY FOR SA REVIEW (blocked:
-exact-head CI red due to 2 pre-existing baseline test failures; PR requires
-operator credentials; base docs/m6-s01-tipa-baseline)
+VF-DM-DEMO-ASSY-MES-02-C02 — READY FOR SA REVIEW
 Candidate SHA (implementation head): 313bc84
 Review head: origin/feature/dm-demo-assy-mes-02 (pushed; exact tip SHA in final SA-ready message)
-Tests: 18 new bridge tests PASS; full suite 1588 PASS / 2 pre-existing FAIL
+Tests: 23 bridge tests PASS; full suite 1595 PASS / 0 FAIL
+Evidence: 521 messages, 0 duplicate keys, 13 composition steps
 ```
 
 The PM does not self-certify COMPLETE or CLOSED. Merge and next-slice

@@ -283,9 +283,17 @@ class AssyMesBridge:
         self._jam_pending.add(sub_line_id)
 
     def recover(self, sub_line_id: str) -> None:
-        """Resolve the AP05_JAM after the deterministic 120 s downtime."""
+        """Resolve the AP05_JAM — deferred until the 120 s downtime interval
+        has elapsed (>= 1 composition step with the faulted sub-line frozen)."""
         if sub_line_id in self._fault:
             self._recover_pending.add(sub_line_id)
+
+    def jammed_sub_lines(self) -> set[str]:
+        """Sub-lines currently in an active AP05_JAM fault (frozen)."""
+        return {
+            sl for sl, f in self._fault.items()
+            if f is not None and f.get("resolved_at") is None
+        }
 
     def emit_oee(self, sub_line_id: str, runtime: AssyLineRuntime) -> None:
         """Emit the end-of-run mes.oee_summary once per (sub-line, run)."""
@@ -312,7 +320,10 @@ class AssyMesBridge:
         for sub_line_id, ctx in composition.contexts.items():
             runtime = ctx.runtime
             run_id = self._resolve_run(sub_line_id, runtime)
-            self._emit_demo_lifecycle(sub_line_id, runtime, run_id, results)
+            self._emit_demo_lifecycle(
+                sub_line_id, runtime, run_id, results,
+                demo_step_number=composition.demo_step_number,
+            )
             facts = self._collect_facts(runtime, ctx, run_id)
             facts.sort(key=lambda f: (
                 f["station_order"], f["kind_order"], f["attempt"]))
@@ -358,9 +369,14 @@ class AssyMesBridge:
         runtime: AssyLineRuntime,
         run_id: str,
         results: list[DeliveryResult],
+        demo_step_number: int = 0,
     ) -> None:
         """Emit operational run_status baseline + deterministic AP05_JAM
         exception/downtime lifecycle.  Quality HOLD never becomes a line fault.
+
+        The faulted sub-line is frozen (the controller excludes it from
+        stepping) and recovery is emitted only after the deterministic 120 s
+        downtime interval (>= 1 composition step since the jam).
         """
         station_order = {pos: i for i, pos in enumerate(runtime.conveyor.positions)}
 
@@ -382,6 +398,7 @@ class AssyMesBridge:
         if sub_line_id in self._jam_pending and fault is None:
             fault = {
                 "jam_time_s": runtime.simulation_time_s,
+                "jam_step": demo_step_number,
                 "raised": False,
                 "resolved_at": None,
             }
@@ -420,8 +437,12 @@ class AssyMesBridge:
             fault["raised"] = True
 
         if sub_line_id in self._recover_pending and fault is not None:
-            fault["resolved_at"] = fault["jam_time_s"] + DEMO_DOWNTIME_S
-            self._recover_pending.discard(sub_line_id)
+            # Recovery only after the 120 s downtime interval has elapsed:
+            # >= 1 composition step with the faulted sub-line excluded.
+            if demo_step_number >= fault["jam_step"] + 1:
+                fault["resolved_at"] = fault["jam_time_s"] + DEMO_DOWNTIME_S
+                self._recover_pending.discard(sub_line_id)
+            # else: defer — keep recover pending until the interval elapses
 
         if fault is not None and fault["resolved_at"] is not None:
             resolve_t = fault["resolved_at"]
@@ -995,9 +1016,41 @@ def build_assy_mes_pipeline(
 # Deterministic demo smoke (python -m ...assy_mes_bridge)
 # ═══════════════════════════════════════════════════════════
 
-def _demo_run(config_path: str, steps: int = 60) -> tuple[AssyMesBridge, dict]:
-    """Run the deterministic demo on the six-sub-line composition and return
-    (bridge, message-type counts).  Used by the smoke command and evidence."""
+def demo_terminal(composition: Any) -> bool:
+    """True when the demo has reached its bounded endpoint:
+    the exception target sub-line has at least one terminal REJECT and every
+    non-target sub-line has released at least one GOOD motor."""
+    from virtual_factory.assembly.line_runtime import WipLifecycle
+    from virtual_factory.assembly.quality_records import QualityStatus
+
+    target = composition.target_sub_line_id
+    target_ctx = composition.get_context(target)
+    if target_ctx is None:
+        return True
+    has_reject = any(
+        target_ctx.runtime.get_current_quality_status(w) == QualityStatus.FAILED_FINAL
+        for w in target_ctx.runtime.wip_ids
+    )
+    if not has_reject:
+        return False
+    for sl, ctx in composition.contexts.items():
+        if sl == target:
+            continue
+        has_good = any(
+            (ctx.runtime.get_wip(w) is not None
+             and ctx.runtime.get_wip(w).lifecycle == WipLifecycle.RELEASED)
+            for w in ctx.runtime.wip_ids
+        )
+        if not has_good:
+            return False
+    return True
+
+
+def _demo_run(config_path: str, max_steps: int = 24) -> tuple[AssyMesBridge, dict]:
+    """Run the deterministic bounded demo on the six-sub-line composition and
+    return (bridge, message-type counts).  Used by the smoke command and
+    evidence.  The faulted target sub-line is frozen while AP05_JAM is active;
+    recovery is emitted after the 120 s downtime interval."""
     from virtual_factory.assembly.demo_composition import (
         AssyDemoComposition,
         DemoScenario,
@@ -1013,23 +1066,28 @@ def _demo_run(config_path: str, steps: int = 60) -> tuple[AssyMesBridge, dict]:
     target = composition.target_sub_line_id
 
     bridge.poll(composition)          # baseline RUNNING per sub-line
-    for _ in range(steps):
+    # healthy production (target advancing)
+    for _ in range(6):
         composition.step_all()
         bridge.poll(composition)
-        # deterministic demo: jam once when the target line is healthy-running,
-        # then recover to drive the AP05_JAM → downtime → resolve sequence.
-        if bridge._fault.get(target) is None and target not in bridge._jam_pending \
-                and composition.demo_step_number == 20:
-            bridge.trigger_jam(target)
-        if bridge._fault.get(target) is not None \
-                and target not in bridge._recover_pending \
-                and composition.demo_step_number == 30:
-            bridge.recover(target)
+    # deterministic AP05_JAM → target frozen
+    bridge.trigger_jam(target)
+    bridge.poll(composition)
+    # one excluded step → 120 s downtime on target, siblings advance
+    composition.step_all(exclude_sub_line_ids={target})
+    bridge.poll(composition)
+    # recover (emitted after the downtime interval)
+    bridge.recover(target)
+    bridge.poll(composition)
+    # bounded run to terminal (respecting any active fault freeze)
+    for _ in range(max_steps):
+        if demo_terminal(composition):
+            break
+        composition.step_all(exclude_sub_line_ids=bridge.jammed_sub_lines())
+        bridge.poll(composition)
 
-    target_ctx = composition.get_context(target)
-    if target_ctx is not None:
-        for sl, ctx in composition.contexts.items():
-            bridge.emit_oee(sl, ctx.runtime)
+    for sl, ctx in composition.contexts.items():
+        bridge.emit_oee(sl, ctx.runtime)
     bridge.poll(composition)
 
     counts: dict[str, int] = {}
@@ -1049,14 +1107,18 @@ def main(argv: Optional[list[str]] = None) -> int:
         str(Path(__file__).resolve().parent.parent.parent.parent
             / "configs" / "plants" / "tipa_assy_demo.yaml"),
     )
-    steps = int(os.environ.get("ASSY_MES_DEMO_STEPS", "60"))
-    bridge, counts = _demo_run(config_path, steps=steps)
+    max_steps = int(os.environ.get("ASSY_MES_DEMO_STEPS", "24"))
+    bridge, counts = _demo_run(config_path, max_steps=max_steps)
+    keys = [m.key for m in bridge.projected_messages]
     print(json.dumps({
         "run_ids": sorted({m.payload.get("run_id") for m in bridge.projected_messages}),
         "message_counts": counts,
         "total": sum(counts.values()),
+        "unique_message_keys": len(set(keys)),
+        "duplicate_message_keys": len(keys) - len(set(keys)),
         "sub_lines": len({m.payload.get("subline_id") for m in bridge.projected_messages}),
     }, indent=2, ensure_ascii=False))
+    return 0
     return 0
 
 
