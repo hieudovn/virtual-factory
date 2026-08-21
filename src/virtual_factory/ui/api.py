@@ -337,8 +337,10 @@ def create_app(
 
     @app.get("/assy-demo/version")
     def assy_demo_version() -> dict:
-        """VF-DM-DEMO-ASSY-MES-02: exact source SHA recorded/exposed."""
+        """VF-DM-DEMO-ASSY-MES-02/03: exact source SHA recorded/exposed and the
+        active additive MES contract version."""
         import subprocess
+        from virtual_factory.assembly.assy_mes_bridge import CONTRACT_VERSION
         sha = os.environ.get("VF_SOURCE_SHA", "")
         if not sha:
             try:
@@ -351,7 +353,7 @@ def create_app(
                 sha = ""
         return {
             "source_sha": sha,
-            "contract_version": "tipa-assy-demo-v1",
+            "contract_version": CONTRACT_VERSION,
             "runtime": "assy-demo",
         }
 

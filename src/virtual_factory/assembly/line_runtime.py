@@ -1215,6 +1215,10 @@ class AssyLineRuntime:
             measurements=measurements,
             checklist_items=tuple(checklist),
             terminal=terminal,
+            observations=tuple(op.observations),
+            proposed_quality_result=op.proposed_quality_result or "",
+            proposed_quality_reason=dict(op.proposed_quality_reason)
+            if op.proposed_quality_reason else None,
         )
         history.add_record(record)
 

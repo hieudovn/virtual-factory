@@ -44,7 +44,10 @@ from virtual_factory.assembly.line_runtime import (
     AssyLineRuntime,
     WipLifecycle,
 )
-from virtual_factory.assembly.operation_execution import OperationState
+from virtual_factory.assembly.operation_execution import (
+    OperationResult,
+    OperationState,
+)
 from virtual_factory.assembly.quality_records import QualityStatus
 from virtual_factory.integration.gateway import (
     DeliveryResult,
@@ -75,7 +78,7 @@ from virtual_factory.observation.service import (
 # Contract / provenance vocabulary
 # ═══════════════════════════════════════════════════════════
 
-CONTRACT_VERSION = "tipa-assy-demo-v1"
+CONTRACT_VERSION = "tipa-assy-demo-v1.1"
 SOURCE_TYPE = "assy_runtime"
 SOURCE_DOMAIN = "assy"
 CATEGORY = "industrial_event"
@@ -108,6 +111,8 @@ EVENT_EXCEPTION_RESOLVED = "EXCEPTION_RESOLVED"
 EVENT_DOWNTIME_START = "DOWNTIME_START"
 EVENT_DOWNTIME_END = "DOWNTIME_END"
 EVENT_OEE_SUMMARY = "OEE_SUMMARY"
+EVENT_CHECKLIST_CONFIRMED = "CHECKLIST_CONFIRMED"
+EVENT_MEASUREMENT_RESULT = "MEASUREMENT_RESULT"
 
 # Stations whose authoritative outbound fact is NOT a generic operation
 # completion (they emit genealogy / quality / final-QC / release instead).
@@ -184,8 +189,28 @@ def build_assy_mes_observation_points() -> list[ObservationPoint]:
             (EVENT_QUALITY_RESULT, EVENT_AP11_FINAL_QC_PASS,
              EVENT_AP11_FINAL_QC_FAIL),
             ("event_type", "station_id", "wip_id", "disposition",
-             "attempt_number", "reason_code", "check_type",
-             "is_terminal", "terminal_state", "simulation_time_s"),
+             "attempt_number", "reason_code", "reason_source", "check_type",
+             "is_terminal", "terminal_state",
+             "execution_id", "record_id",
+             "observations", "proposed_quality_result",
+             "proposed_quality_reason", "simulation_time_s"),
+        ),
+        _point(
+            "assy2.checklist_result",
+            "AP03 checklist confirmed (checklist ≠ quality)",
+            (EVENT_CHECKLIST_CONFIRMED,),
+            ("event_type", "execution_id", "attempt_number", "status",
+             "required_count", "completed_count", "items",
+             "station_id", "wip_id", "source", "simulation_time_s"),
+        ),
+        _point(
+            "assy2.measurement_result",
+            "AP06 numerical measurement evidence per attempt",
+            (EVENT_MEASUREMENT_RESULT,),
+            ("event_type", "execution_id", "record_id", "attempt_number",
+             "measurement_code", "value", "unit", "lower_limit",
+             "upper_limit", "in_spec", "evidence_source",
+             "station_id", "wip_id", "simulation_time_s"),
         ),
         _point(
             "assy2.genealogy",
@@ -493,32 +518,54 @@ class AssyMesBridge:
             if ev.event_type == "LINE_ENTRY" and ev.wip_id:
                 facts.append(self._wip_entered_fact(ev, ctx, run_id))
 
-        # 2. Operation completion (pure-execution stations only).
+        # 2. Operation completion (pure-execution stations only) + AP03
+        # checklist evidence.
         for op in runtime.operation_registry.all_operations():
             if op.state != OperationState.ELIGIBLE_TO_INDEX:
                 continue
             if op.station_id in _SPECIALIZED_STATIONS:
                 continue
             facts.append(self._op_completion_fact(op, ctx, run_id, station_order))
+            # AP03 checklist: emit a confirmed checklist_result only when the
+            # authoritative operation result is CONFIRMED (checklist complete),
+            # never a quality PASS/FAIL.
+            if (op.station_id == "AP03"
+                    and op.operation_result == OperationResult.CONFIRMED):
+                facts.append(self._checklist_fact(op, ctx, run_id, station_order))
 
         # 3. AP04 genealogy — authoritative GenealogyStore join records.
         for rec in runtime.genealogy.all_records():
             facts.append(self._genealogy_fact(rec, ctx, run_id, station_order))
 
-        # 4. AP06/AP08 quality results + AP11 final-QC per attempt.
+        # Operation index for evidence correlation (station, wip) → operation.
+        op_map = {
+            (op.station_id, op.wip_id): op
+            for op in runtime.operation_registry.all_operations()
+        }
+
+        # 4. AP06/AP08 quality results + AP11 final-QC per attempt, plus AP06
+        # per-attempt numerical measurement evidence.
         for wip_id in runtime.wip_ids:
             qh = runtime.get_quality_history(wip_id)
             if qh is None:
                 continue
             for rec in qh.records:
+                op = op_map.get((rec.station_id, rec.wip_id))
                 if rec.station_id == "AP11" and rec.disposition == "PASS":
                     facts.append(self._ap11_qc_fact(
-                        rec, ctx, run_id, station_order, is_fail=False))
+                        rec, op, ctx, run_id, station_order, is_fail=False))
                 elif rec.station_id == "AP11" and rec.disposition == "FAIL":
                     facts.append(self._ap11_qc_fact(
-                        rec, ctx, run_id, station_order, is_fail=True))
+                        rec, op, ctx, run_id, station_order, is_fail=True))
                 elif rec.station_id in ("AP06", "AP08"):
-                    facts.append(self._quality_fact(rec, ctx, run_id, station_order))
+                    facts.append(self._quality_fact(
+                        rec, op, ctx, run_id, station_order))
+                    # AP06 numerical measurements (one message per point per
+                    # attempt; FAIL attempt values are never rewritten).
+                    if rec.station_id == "AP06":
+                        for m in rec.measurements:
+                            facts.append(self._measurement_fact(
+                                rec, m, op, ctx, run_id, station_order))
 
         # 5. LINE_OUT — derived from authoritative WIP/terminal quality state.
         for wip_id in runtime.wip_ids:
@@ -721,12 +768,62 @@ class AssyMesBridge:
             "attempt": 1,
         }
 
+    def _quality_evidence(self, op: Any, rec: Any = None) -> dict[str, Any]:
+        """Authoritative per-attempt evidence fields (never fabricated):
+        structured observations, machine proposal and reason code/source.
+
+        Observations are taken from the immutable QualityRecord when present
+        (`rec.observations`, frozen at decision time) so a retested attempt's
+        NG observations are never overwritten by a later PASS re-observation.
+        The live operation is used only as a fallback for the current attempt.
+        """
+        if op is None and rec is None:
+            return {
+                "execution_id": "",
+                "observations": [],
+                "proposed_quality_result": None,
+                "proposed_quality_reason": None,
+                "reason_source": "",
+            }
+        raw_observations = []
+        if rec is not None:
+            raw_observations = getattr(rec, "observations", ()) or ()
+        if not raw_observations:
+            raw_observations = getattr(op, "observations", []) or []
+        observations = [
+            {"observation_id": o.get("observation_id", ""), "result": o.get("result", "")}
+            for o in raw_observations
+        ]
+        # Prefer the record's frozen per-attempt proposal/reason; fall back to
+        # the live operation for the current attempt.
+        proposal = getattr(op, "proposed_quality_result", None)
+        reason = getattr(op, "proposed_quality_reason", None) or {}
+        if rec is not None:
+            rec_proposal = getattr(rec, "proposed_quality_result", "")
+            rec_reason = getattr(rec, "proposed_quality_reason", None)
+            if rec_proposal:
+                proposal = rec_proposal
+            if rec_reason:
+                reason = dict(rec_reason)
+        return {
+            "execution_id": getattr(op, "execution_id", ""),
+            "observations": observations,
+            "proposed_quality_result": proposal,
+            "proposed_quality_reason": dict(reason) if reason else None,
+            "reason_source": reason.get("source", ""),
+        }
+
     def _quality_fact(
-        self, rec: Any, ctx: Any, run_id: str, station_order: dict,
+        self, rec: Any, op: Any, ctx: Any, run_id: str, station_order: dict,
     ) -> dict:
         sub_line_id = ctx.identity.sub_line_id
         is_terminal = bool(rec.terminal)
         terminal_state = QualityStatus.FAILED_FINAL.value if is_terminal else ""
+        ev = self._quality_evidence(op, rec)
+        reason_code = rec.reason_code
+        reason = ev["proposed_quality_reason"] or {}
+        if reason.get("code"):
+            reason_code = reason["code"]
         data = self._with_common(sub_line_id, {
             "event_type": EVENT_QUALITY_RESULT,
             "target_id": rec.wip_id,
@@ -734,10 +831,16 @@ class AssyMesBridge:
             "wip_id": rec.wip_id,
             "disposition": rec.disposition,
             "attempt_number": rec.attempt_number,
-            "reason_code": rec.reason_code,
+            "reason_code": reason_code,
+            "reason_source": ev["reason_source"],
             "check_type": rec.check_type.value,
             "is_terminal": is_terminal,
             "terminal_state": terminal_state,
+            "execution_id": ev["execution_id"],
+            "record_id": rec.record_id,
+            "observations": ev["observations"],
+            "proposed_quality_result": ev["proposed_quality_result"],
+            "proposed_quality_reason": ev["proposed_quality_reason"],
             "simulation_time_s": rec.simulation_time_s,
         })
         reality = self._base_reality(
@@ -753,11 +856,16 @@ class AssyMesBridge:
         }
 
     def _ap11_qc_fact(
-        self, rec: Any, ctx: Any, run_id: str, station_order: dict,
+        self, rec: Any, op: Any, ctx: Any, run_id: str, station_order: dict,
         is_fail: bool,
     ) -> dict:
         sub_line_id = ctx.identity.sub_line_id
         event_type = EVENT_AP11_FINAL_QC_FAIL if is_fail else EVENT_AP11_FINAL_QC_PASS
+        ev = self._quality_evidence(op, rec)
+        reason_code = rec.reason_code
+        reason = ev["proposed_quality_reason"] or {}
+        if reason.get("code"):
+            reason_code = reason["code"]
         data = self._with_common(sub_line_id, {
             "event_type": event_type,
             "target_id": rec.wip_id,
@@ -765,10 +873,16 @@ class AssyMesBridge:
             "wip_id": rec.wip_id,
             "disposition": rec.disposition,
             "attempt_number": rec.attempt_number,
-            "reason_code": rec.reason_code,
+            "reason_code": reason_code,
+            "reason_source": ev["reason_source"],
             "check_type": rec.check_type.value,
             "is_terminal": is_fail,
             "terminal_state": QualityStatus.FAILED_FINAL.value if is_fail else "",
+            "execution_id": ev["execution_id"],
+            "record_id": rec.record_id,
+            "observations": ev["observations"],
+            "proposed_quality_result": ev["proposed_quality_result"],
+            "proposed_quality_reason": ev["proposed_quality_reason"],
             "simulation_time_s": rec.simulation_time_s,
         })
         reality = self._base_reality(
@@ -780,6 +894,90 @@ class AssyMesBridge:
             "source_event_id": rec.record_id,
             "station_order": station_order.get(rec.station_id, 999),
             "kind_order": _KIND_FINAL_QC,
+            "attempt": rec.attempt_number,
+        }
+
+    def _checklist_fact(
+        self, op: Any, ctx: Any, run_id: str, station_order: dict,
+    ) -> dict:
+        """AP03 checklist confirmed (DEMO_SYNTHETIC item ids from the station
+        contract).  Checklist completion is NOT a quality PASS/FAIL."""
+        sub_line_id = ctx.identity.sub_line_id
+        items = [
+            {
+                "item_id": item.get("item_id", ""),
+                "required": True,
+                "completed": bool(item.get("completed", False)),
+            }
+            for item in (op.checklist or [])
+        ]
+        event_id = f"checklist:{op.execution_id}:{op.attempt_number}"
+        sim_t = op.completed_at_sim_s if op.completed_at_sim_s is not None else 0.0
+        data = self._with_common(sub_line_id, {
+            "event_type": EVENT_CHECKLIST_CONFIRMED,
+            "target_id": op.wip_id,
+            "execution_id": op.execution_id,
+            "attempt_number": op.attempt_number,
+            "status": "confirmed",
+            "required_count": len(items),
+            "completed_count": sum(1 for i in items if i["completed"]),
+            "items": items,
+            "station_id": op.station_id,
+            "wip_id": op.wip_id,
+            "source": "DEMO_SYNTHETIC",
+            "simulation_time_s": sim_t,
+        })
+        reality = self._base_reality(
+            ctx.runtime, sub_line_id, run_id, event_id, op.station_id, sim_t,
+            data, "checklist_result", op.station_id,
+            subject_type="wip", subject_id=op.wip_id)
+        return {
+            "reality": reality,
+            "source_event_id": event_id,
+            "station_order": station_order.get(op.station_id, 999),
+            "kind_order": _KIND_OPERATION,
+            "attempt": op.attempt_number,
+        }
+
+    def _measurement_fact(
+        self, rec: Any, m: Any, op: Any, ctx: Any, run_id: str,
+        station_order: dict,
+    ) -> dict:
+        """One AP06 numerical measurement per point per attempt.
+
+        Limits are the authoritative expected_min/expected_max; in_spec is
+        derived (inclusive).  FAIL attempt values are never rewritten."""
+        sub_line_id = ctx.identity.sub_line_id
+        lo = m.expected_min
+        hi = m.expected_max
+        in_spec = (lo is None or lo <= m.value) and (hi is None or m.value <= hi)
+        event_id = f"measurement:{rec.record_id}:{m.name}"
+        data = self._with_common(sub_line_id, {
+            "event_type": EVENT_MEASUREMENT_RESULT,
+            "target_id": rec.wip_id,
+            "execution_id": op.execution_id if op is not None else "",
+            "record_id": rec.record_id,
+            "attempt_number": rec.attempt_number,
+            "measurement_code": m.name,
+            "value": m.value,
+            "unit": m.unit,
+            "lower_limit": lo,
+            "upper_limit": hi,
+            "in_spec": in_spec,
+            "evidence_source": "DEMO_SYNTHETIC",
+            "station_id": rec.station_id,
+            "wip_id": rec.wip_id,
+            "simulation_time_s": rec.simulation_time_s,
+        })
+        reality = self._base_reality(
+            ctx.runtime, sub_line_id, run_id, event_id, rec.station_id,
+            rec.simulation_time_s, data, "measurement_result", rec.station_id,
+            subject_type="wip", subject_id=rec.wip_id)
+        return {
+            "reality": reality,
+            "source_event_id": event_id,
+            "station_order": station_order.get(rec.station_id, 999),
+            "kind_order": _KIND_QUALITY,
             "attempt": rec.attempt_number,
         }
 
