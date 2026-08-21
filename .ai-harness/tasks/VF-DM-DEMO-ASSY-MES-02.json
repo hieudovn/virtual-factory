@@ -1,0 +1,112 @@
+{
+  "task_id": "VF-DM-DEMO-ASSY-MES-02",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "Six-subline MES contract bridge. Use the authoritative six-subline Docker runtime at /assy-demo (TIPA ASSY, contract tipa-assy-demo-v1) as the VF source for the customer VF→MES demo. Additively project authoritative runtime facts into MES-compatible ProjectedMessages: keep mes.execution_event / mes.quality_result / mes.genealogy_relationship / mes.release compatible and ADD mes.run_status, mes.issue, mes.oee_summary, DOWNTIME_START, DOWNTIME_END, LINE_OUT and (where the runtime has an authoritative entry fact) WIP_ENTERED. Do NOT create a parallel simulation and do NOT rewrite the six-subline topology. Findings: (1) separate conveyor_state from operational_state; operational state supports RUNNING → FAULT → STOPPED → RUNNING and only operational state is projected as mes.run_status; (2) one deterministic AP05_JAM exception emitting EXCEPTION_RAISED and EXCEPTION_RESOLVED under mes.issue with shared correlation context; quality HOLD must NOT become a line fault/downtime; (3) one physical downtime lifecycle DOWNTIME_START → DOWNTIME_END per incident (deterministic 120s) derived from simulation time; (4) LINE_OUT fact distinct from AP11 final QC and RELEASE, disposition GOOD|REJECT derived from authoritative WIP/terminal quality state; (5) mes.oee_summary per subline/run with planned_s/run_s/downtime_s/ideal_cycle_s/actual_count/good_count/reject_count/availability/performance/quality/oee, reconciling planned_s=run_s+downtime_s and actual_count=good_count+reject_count, OEE below 100% with at least one reject or terminal failure; (6) contract/provenance: message_key, payload.idempotency_key==message_key, contract_version=tipa-assy-demo-v1, run_id=ASSY-SLxx:R<n>, explicit subline_id, station_id where applicable, simulation_time_s, deterministic non-null occurred_at, stable source event identity; (7) customer control surface continues on /assy-demo: reset bumps run generation and does not reuse idempotency keys; minimal control reset → healthy production → jam → recover → run-to-terminal; no new customer page; change UI labels so conveyor STOPPED is not misread as production line STOPPED; (8) docker/reproducibility: rebuild docker-compose.assy.yml on the exact candidate/review HEAD, image/runtime records or exposes the exact source SHA, prove /assy-demo endpoints run from that image.",
+  "explicit_non_objectives": [
+    "No MQTT or new broker",
+    "No MES → VF inbound",
+    "No robot/line control",
+    "No full rework routing",
+    "No measurement/checklist outbound contract",
+    "No UI redesign",
+    "No rewrite of the six-subline runtime",
+    "No deletion of the single-subline demo_assy_mes runner before SA approves the migration",
+    "No merge/consolidation of the whole branch history into main",
+    "No repository MES modification in this gate"
+  ],
+  "required_branch": "feature/dm-demo-assy-mes-02",
+  "expected_base_sha": "248e70dd4dd327a104e00d200e51608ac017a301",
+  "allowed_paths": [
+    "src/virtual_factory/assembly/assy_mes_bridge.py",
+    "src/virtual_factory/assembly/demo_controller.py",
+    "src/virtual_factory/observation/projections/mes.py",
+    "src/virtual_factory/ui/api.py",
+    "src/virtual_factory/ui/static/assy_demo.html",
+    "src/virtual_factory/ui/static/assy_demo.js",
+    "src/virtual_factory/ui/static/assy_demo.css",
+    "Dockerfile",
+    "docker-compose.assy.yml",
+    "tests/test_assy_mes_bridge_v1.py",
+    ".ai-harness/tasks/VF-DM-DEMO-ASSY-MES-02.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-DM-DEMO-ASSY-MES-02.md",
+    ".ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-02/",
+    "docs/deployment/demo-assy-mes-02.md"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/observation/envelope.py",
+    "src/virtual_factory/observation/point.py",
+    "src/virtual_factory/observation/service.py",
+    "src/virtual_factory/observation/router.py",
+    "src/virtual_factory/observation/policy.py",
+    "src/virtual_factory/integration/gateway.py",
+    "src/virtual_factory/integration/gateways/mqtt.py",
+    "src/virtual_factory/protocols/",
+    "src/virtual_factory/core/",
+    "src/virtual_factory/assembly/line_runtime.py",
+    "src/virtual_factory/assembly/demo_composition.py",
+    "src/virtual_factory/assembly/demo_snapshot.py",
+    "src/virtual_factory/assembly/operation_execution.py",
+    "src/virtual_factory/assembly/quality_records.py",
+    "src/virtual_factory/assembly/genealogy.py",
+    "src/virtual_factory/assembly/observation_bridge.py",
+    "src/virtual_factory/assembly/demo_assy_mes/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/assembly/assy_mes_bridge.py (additive six-subline MES contract bridge: run_status/issue/oee_summary/downtime/LINE_OUT/WIP_ENTERED + contract provenance)",
+    "src/virtual_factory/observation/projections/mes.py (additive oee_summary + LINE_OUT/WIP_ENTERED/DOWNTIME_* event mappings)",
+    "src/virtual_factory/assembly/demo_controller.py + ui/api.py (jam/recover/run-to-terminal control + /assy-demo/mes-messages)",
+    "src/virtual_factory/ui/static/* (label change: operational vs conveyor state)",
+    "Dockerfile + docker-compose.assy.yml (source SHA bake/expose)",
+    "tests/test_assy_mes_bridge_v1.py",
+    "docs/deployment/demo-assy-mes-02.md",
+    "contract fixtures/evidence under .ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-02/"
+  ],
+  "required_tests": [
+    "Runtime still has exactly 6 sub-lines with PRE-ASSY/AP01..AP11",
+    "All 6 sub-lines have distinct run identity (ASSY-SLxx:R<n>)",
+    "Target sub-line runs RUNNING → FAULT → STOPPED → RUNNING",
+    "One exception raised/resolved (AP05_JAM) with correlated context",
+    "Exactly one confirmed downtime lifecycle (DOWNTIME_START → DOWNTIME_END, 120s)",
+    "LINE_OUT includes GOOD and REJECT",
+    "OEE reconciles (planned=run+downtime; actual=good+reject; A/P/Q recomputable) and is below 100%",
+    "Quality/retest/reinspection/final-failure/genealogy/release existing facts do not regress",
+    "Duplicate poll/replay does not create new message keys",
+    "Reset creates a new run generation without reusing idempotency keys",
+    "Full VF test suite stays green",
+    "Focused contract tests validate MES-compatible payload fields"
+  ],
+  "required_smoke_checks": [
+    {"id": "SMOKE-ASSY-SERVE", "command": ["python", "-c", "import urllib.request,json; print(json.load(urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)).get('status'))"], "execution_policy": "ci_required", "required": true},
+    {"id": "SMOKE-ASSY-BRIDGE", "command": ["python", "-m", "virtual_factory.assembly.assy_mes_bridge"], "execution_policy": "local_or_ci", "required": true}
+  ],
+  "required_remote_evidence": [
+    "Pushed feature branch HEAD",
+    "PR on base main (or accepted baseline) with exact head",
+    "CI on exact feature-branch HEAD"
+  ],
+  "forbidden_actions": [
+    "Push directly to main",
+    "Merge without SA authorization for the exact head SHA",
+    "Start the next milestone slice",
+    "Self-certify COMPLETE or CLOSED",
+    "Modify files outside allowed_paths",
+    "Rewrite six-subline runtime semantics"
+  ],
+  "stop_conditions": [
+    "Baseline mismatch or remote branch advanced",
+    "Redesign of the discrete engine, observation pipeline core, MQTT gateway, or six-subline runtime would be required",
+    "Existing VF test suite regresses",
+    "Required deterministic fact/event cannot be produced from authoritative runtime truth"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "pre_status", "description": "Full test suite passes (bridge + existing VF suite)", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "A02", "phase": "pre_status", "description": "Zero test failures (no regression)", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "A03", "phase": "pre_status", "description": "Baseline matches expected SHA", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "pre_status", "description": "Working tree clean", "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}},
+    {"id": "F01", "phase": "final", "description": "All required pipeline steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": true, "may_merge": false, "may_start_next_task": false}
+}

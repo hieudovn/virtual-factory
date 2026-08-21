@@ -425,10 +425,13 @@ const ctrl = {
     if (isSel) cls += ' selected';
     if (isExc) cls += ' exception';
 
-    let stateCls = 'operating', stateLabel = sl.line_state.toUpperCase();
+    // VF-DM-DEMO-ASSY-MES-02: never present conveyor STOPPED as production
+    // line STOPPED — label conveyor mechanics distinctly from operational state.
+    let stateCls = 'operating', stateLabel = 'RUNNING';
     if (isExc) { stateCls = 'hold'; stateLabel = 'QUALITY HOLD'; }
-    else if (sl.line_state === 'stopped') { stateCls = 'stopped'; }
-    else if (sl.line_state === 'ready_to_index') { stateCls = 'ready'; }
+    else if (sl.line_state === 'stopped') { stateCls = 'stopped'; stateLabel = 'CONVEYOR PAUSED'; }
+    else if (sl.line_state === 'ready_to_index') { stateCls = 'ready'; stateLabel = 'READY TO INDEX'; }
+    else if (sl.line_state === 'indexing') { stateCls = 'indexing'; stateLabel = 'INDEXING'; }
 
     // Mini process strip
     let dots = '';
@@ -1978,7 +1981,12 @@ const ctrlS04 = {
   render(snap) {
     if (!snap||!snap.positions) return;
     document.getElementById('sim-time').textContent = `t=${snap.simulation_time_s.toFixed(0)}s`;
-    const ls=document.getElementById('line-state'); ls.textContent=snap.line_state.toUpperCase(); ls.className='state '+snap.line_state;
+    // VF-DM-DEMO-ASSY-MES-02: conveyor state ≠ production line state — never
+    // show bare STOPPED; label it as a conveyor pause.
+    const ls=document.getElementById('line-state');
+    const rawLs = snap.line_state || 'stopped';
+    const label = rawLs === 'stopped' ? 'CONVEYOR PAUSED' : rawLs.toUpperCase();
+    ls.textContent = label; ls.className='state '+(rawLs==='stopped'?'stopped':rawLs);
     document.getElementById('dwell').textContent=`Dwell ${snap.dwell_number}`;
     const c=document.getElementById('positions-container'); c.innerHTML='';
     for(const p of snap.positions){

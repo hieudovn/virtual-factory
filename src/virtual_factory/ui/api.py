@@ -243,6 +243,9 @@ def create_app(
             from virtual_factory.assembly.observation_bridge import (
                 build_assy_observation_pipeline,
             )
+            from virtual_factory.assembly.assy_mes_bridge import (
+                build_assy_mes_pipeline,
+            )
             assy_config = os.environ.get(
                 "TIPA_ASSY_CONFIG",
                 str(Path(__file__).resolve().parent.parent.parent.parent / "configs" / "plants" / "tipa_assy_demo.yaml")
@@ -252,6 +255,9 @@ def create_app(
             # M6-INT-01: attach the downstream observation pipeline (read-only).
             pipeline = build_assy_observation_pipeline()
             ctrl.attach_observation_bridge(pipeline.bridge)
+            # VF-DM-DEMO-ASSY-MES-02: attach the six-sub-line MES contract bridge.
+            mes_pipeline = build_assy_mes_pipeline()
+            ctrl.attach_mes_bridge(mes_pipeline.bridge)
             _assy_controller["instance"] = ctrl
         return _assy_controller["instance"]
 
@@ -289,6 +295,65 @@ def create_app(
     def assy_demo_snapshot() -> dict:
         ctrl = _get_assy_controller()
         return ctrl.snapshot().to_dict()
+
+    # ═══════════════════════════════════════════════════
+    # VF-DM-DEMO-ASSY-MES-02 — MES contract bridge endpoints
+    # ═══════════════════════════════════════════════════
+
+    @app.post("/assy-demo/jam")
+    def assy_demo_jam(body: dict | None = None) -> dict:
+        """Deterministic AP05_JAM on the exception target sub-line."""
+        ctrl = _get_assy_controller()
+        sub_line_id = (body or {}).get("sub_line_id") or None
+        return ctrl.trigger_jam(sub_line_id).to_dict()
+
+    @app.post("/assy-demo/recover")
+    def assy_demo_recover(body: dict | None = None) -> dict:
+        """Resolve the AP05_JAM after the deterministic 120 s downtime."""
+        ctrl = _get_assy_controller()
+        sub_line_id = (body or {}).get("sub_line_id") or None
+        return ctrl.recover(sub_line_id).to_dict()
+
+    @app.post("/assy-demo/run-to-terminal")
+    def assy_demo_run_to_terminal() -> dict:
+        """Run the demo until the exception target sub-line is terminal, then
+        emit per-sub-line OEE summaries."""
+        ctrl = _get_assy_controller()
+        return ctrl.run_to_terminal().to_dict()
+
+    @app.get("/assy-demo/mes-messages")
+    def assy_demo_mes_messages() -> dict:
+        """VF-DM-DEMO-ASSY-MES-02: delivered MES-compatible messages."""
+        ctrl = _get_assy_controller()
+        msgs = ctrl.mes_messages
+        return {"count": len(msgs), "messages": msgs}
+
+    @app.get("/assy-demo/mes-trace")
+    def assy_demo_mes_trace() -> dict:
+        """VF-DM-DEMO-ASSY-MES-02: ordered MES bridge delivery trace."""
+        ctrl = _get_assy_controller()
+        trace = ctrl.mes_outbound_trace
+        return {"count": len(trace), "observations": trace}
+
+    @app.get("/assy-demo/version")
+    def assy_demo_version() -> dict:
+        """VF-DM-DEMO-ASSY-MES-02: exact source SHA recorded/exposed."""
+        import subprocess
+        sha = os.environ.get("VF_SOURCE_SHA", "")
+        if not sha:
+            try:
+                repo = Path(__file__).resolve().parent.parent.parent.parent
+                sha = subprocess.run(
+                    ["git", "-C", str(repo), "rev-parse", "HEAD"],
+                    capture_output=True, text=True, timeout=5,
+                ).stdout.strip()
+            except Exception:
+                sha = ""
+        return {
+            "source_sha": sha,
+            "contract_version": "tipa-assy-demo-v1",
+            "runtime": "assy-demo",
+        }
 
     # ═══════════════════════════════════════════════════
     # OPS-03 — Station Interaction / Inspector Binding

@@ -34,6 +34,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # VF-DM-DEMO-ASSY-MES-02: bake the exact source SHA into the image.
+      #   PowerShell: $env:SOURCE_SHA=(git rev-parse HEAD); docker compose -f docker-compose.assy.yml up --build -d
+      args:
+        SOURCE_SHA: ${SOURCE_SHA:-unknown}
     image: vf-assy:latest
     command:
       - virtual-factory
