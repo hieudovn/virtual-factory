@@ -121,10 +121,12 @@ its `anomaly` observation and `NG` proposal even after a later PASS
 - **PR #24 opened** — base `docs/m6-s01-tipa-baseline`, head
   `feature/dm-demo-assy-mes-03-evidence`, state OPEN, not draft.
   URL: https://github.com/hieudovn/virtual-factory/pull/24
-- **Exact-head CI green** — VF-DM CI run #161
-  (https://github.com/hieudovn/virtual-factory/actions/runs/32470931545),
+- **Exact-head CI green** — VF-DM CI run #162
+  (https://github.com/hieudovn/virtual-factory/actions/runs/32471288187),
   conclusion `success`, 0 annotations, head
-  `edfb5e9cf3a64da7ba61a6bd1f3b843378a9fc51` (== remote branch head == PR head).
+  `988e17d1d7f0736a9ebf4b8975e450cebbca828a` (== remote branch head == PR head).
+  Any subsequent docs-only commit is re-verified by its own CI run (exact
+  current tip + run URL in the SA-ready message).
 - **Harness is main-centric (baseline + derive_status)** — `preflight.py` and
   `derive_status.py` compare `expected_base_sha` against `origin/main`
   (`fda1db4…`), so the raw machine outputs are `PRECHECK FAILED — baseline
@@ -156,9 +158,9 @@ its `anomaly` observation and `NG` proposal even after a later PASS
 ```text
 VF-DM-DEMO-ASSY-MES-03 — IMPLEMENTED — PR OPEN — READY FOR SA REVIEW
 Implementation head: 05d0154 (production code)
-Review head: origin/feature/dm-demo-assy-mes-03-evidence = edfb5e9cf3a64da7ba61a6bd1f3b843378a9fc51
+Review head: origin/feature/dm-demo-assy-mes-03-evidence (exact tip SHA in final SA-ready message)
 PR: #24 (OPEN, base docs/m6-s01-tipa-baseline, head feature/dm-demo-assy-mes-03-evidence)
-CI: VF-DM CI #161 SUCCESS on edfb5e9 (0 annotations) — https://github.com/hieudovn/virtual-factory/actions/runs/32470931545
+CI: VF-DM CI SUCCESS on exact head (0 annotations); latest run + URL in final SA-ready message
 Tests: 16 focused PASS; full suite 1611 PASS / 0 FAIL
 Evidence: 666 messages, 0 duplicate keys, checklist_result 49, measurement_result 96, quality_result 57 (observations on AP08/AP11)
 Docker: exact-head image smoke PASS (source_sha == 05d0154, contract v1.1)
