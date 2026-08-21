@@ -126,7 +126,13 @@ its `anomaly` observation and `NG` proposal even after a later PASS
   authorized baseline is `docs/m6-s01-tipa-baseline` = `c3c8bb6…` (verified
   exact via `git rev-parse origin/docs/m6-s01-tipa-baseline`, no newer commit).
   Same documented limitation as MES-02.
-- **Docker exact-head smoke + exact-head CI** pending (see SA-ready message).
+- **Docker exact-head smoke** — DONE: image rebuilt on `05d0154`,
+  `/health` ok, `/assy-demo` 200, `/assy-demo/version.source_sha == 05d0154`,
+  `contract_version == tipa-assy-demo-v1.1`, 6 sub-lines,
+  reset→jam→recover→run-to-terminal→mes-messages produces the evidence surface
+  (checklist_result 49, measurement_result 96, quality_result 57) with 0
+  duplicate keys (see `docker-smoke.md`).
+- **Exact-head CI** pending (see SA-ready message for CI URL).
 
 ## 9. Changed files
 
@@ -141,10 +147,11 @@ its `anomaly` observation and `NG` proposal even after a later PASS
 
 ```text
 VF-DM-DEMO-ASSY-MES-03 — READY FOR SA REVIEW
-Candidate SHA (implementation head): 0474e6b
+Candidate SHA (implementation head): 05d0154
 Review head: origin/feature/dm-demo-assy-mes-03-evidence (pushed; exact tip SHA in final SA-ready message)
 Tests: 16 focused PASS; full suite 1611 PASS / 0 FAIL
 Evidence: 666 messages, 0 duplicate keys, checklist_result 49, measurement_result 96, quality_result 57 (observations on AP08/AP11)
+Docker: exact-head image smoke PASS (source_sha == 05d0154, contract v1.1)
 Contract: tipa-assy-demo-v1.1
 ```
 

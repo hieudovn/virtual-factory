@@ -44,6 +44,7 @@ Open findings:
 - PR not opened yet (no gh CLI / GitHub token in this environment).
 - Preflight baseline check is main-centric (compares against origin/main); this
   gate's authorized baseline is docs/m6-s01-tipa-baseline = c3c8bb6 (exact).
-- Docker exact-head smoke + exact-head CI pending (see SA-ready message).
+- Docker exact-head smoke: DONE (source_sha == final head, contract v1.1,
+  evidence surface present, 0 duplicate keys). Exact-head CI pending.
 
 
