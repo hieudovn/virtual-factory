@@ -1,0 +1,88 @@
+{
+  "task_id": "SHW-VF-PH00",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "READ-ONLY / ARCHITECTURE PREFLIGHT",
+  "objective": "Workspace & Multi-Simulation Architecture Preflight for the Song Hong Water Treatment Plant (SH WTP). READ-ONLY: audit how the repo currently organizes its multiple simulation families (TIPA ASSY, Continuous MVP, Compressor benchmark, Generic demo, plus the standalone simulators/wtp VF-1 and simulators/vf2 VF-2), map the shared-vs-workspace boundary, and propose (NOT implement) a minimum viable workspace contract so SH WTP becomes a workspace of the existing VF platform rather than another independent mini-simulator. Production code change is FORBIDDEN.",
+  "explicit_non_objectives": [
+    "No SH WTP runtime implementation",
+    "No new water-treatment simulation engine",
+    "No repo-wide refactor",
+    "No moving ASSY code",
+    "No breaking existing runtime entrypoints",
+    "No renaming public contracts",
+    "No core promotion",
+    "No PIM ontology modification",
+    "No PlantOS/MES work",
+    "No modification of src/, configs/, simulators/, tests/, docs/, deploy/, pyproject.toml"
+  ],
+  "required_branch": "",
+  "expected_base_sha": "240d8db5eff481f1d4d8810d275214077031e72a",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/SHW-VF-PH00.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/SHW-VF-PH00.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/01-current-simulation-inventory.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/02-runtime-entrypoints.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/03-shared-vs-workspace-classification.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/04-assy-packaging-analysis.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/05-continuous-compressor-analysis.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/06-workspace-contract-proposal.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/07-workspace-isolation-test-plan.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/08-core-change-governance.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/09-fidelity-governance.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/10-output-provenance-contract.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/11-shw-placement-options.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/12-pim-consumption-boundary.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/13-recommended-target-architecture.md",
+    ".ai-harness/sa-review/evidence/SHW-VF-PH00/14-risks-and-open-questions.md",
+    ".ai-harness/sa-review/reports/SHW-VF-PH00.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Modify production code (src/, configs/, simulators/)",
+    "Start SHW-VF-PH01",
+    "Rename or move existing packages",
+    "Change core architecture",
+    "Modify PIM ontology or PlantOS/MES"
+  ],
+  "stop_conditions": [
+    "ASSY architecture conflicts irreconcilably with VF architecture rules",
+    "Incompatible workspace mechanisms already exist",
+    "SHW requires shared-core change before workspace design can close",
+    "Repo restructure is required before PH01",
+    "Existing simulation entrypoints cannot be isolated safely",
+    "PIM contract shape is required to decide a VF core API",
+    "Workspace isolation cannot be achieved without breaking existing demos"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "No production code changed", "rule": {"field": "production_code_changed", "operator": "is_false", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Existing simulations inventoried", "rule": {"field": "inventory.complete", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Shared-vs-workspace boundary mapped", "rule": {"field": "classification.complete", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Workspace contract proposed", "rule": {"field": "workspace_contract.proposed", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Isolation test plan defined", "rule": {"field": "isolation_plan.defined", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "SHW placement recommendation produced", "rule": {"field": "placement.recommended", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "PIM immutable-consumption boundary defined", "rule": {"field": "pim_boundary.defined", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "No SHW runtime implemented", "rule": {"field": "shw_runtime_implemented", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}
