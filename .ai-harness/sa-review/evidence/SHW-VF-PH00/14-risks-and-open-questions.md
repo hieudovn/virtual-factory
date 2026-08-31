@@ -6,7 +6,7 @@
 |---|---|---|---|
 | R1 | **Duplicate mini-engine recurrence** — SH WTP re-implemented as a third standalone simulator like `simulators/wtp`/`vf2` | HIGH (exactly the failure this gate prevents) | Workspace contract (§06) forces `runtime.engine: continuous_process`; core-change governance (§08) forbids new engines; placement (§11) forbids a new top-level simulator |
 | R2 | **Shared-core → domain coupling** (`core/simulation_engine.py` imports `equipment/balance`) | MEDIUM (blocks clean multi-engine) | Flagged (§03); do NOT fix in PH00; schedule a CORE gate only if a second continuous-like engine is actually needed |
-| R3 | **No workspace id in output today** — isolation is by CLI args only | MEDIUM | Output provenance contract (§10) adds `workspace_id`; threading it is a small additive CORE gate, not PH00 |
+| R3 | **No workspace id in output today** — isolation is by CLI args only | MEDIUM | Output provenance contract (§10) adds `workspace_id`; threading it requires a dedicated CORE gate (B8) — NOT folded into PH01 |
 | R4 | **Scenario format divergence** (`compressor_benchmark_scenarios.yaml` `inject_fault` unloadable) | MEDIUM | Flagged (§02/§03); SHW scenarios must use the supported action set; `inject_fault` unification is a separate gate |
 | R5 | **ASSY hard-coded topology** could be mistaken for the workspace pattern | LOW | §04 explicitly documents ASSY as project-specific and NOT the template for SH WTP |
 | R6 | **PIM contract shape instability** (stub is empty) | MEDIUM | PIM boundary (§12) pins artifact+version+sha and requires compatibility review on change; empty stub means `review_required` until populated |

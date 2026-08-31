@@ -1,40 +1,41 @@
 # SA REVIEW INBOX
 
-Task: SHW-VF-PH00-C02
-Status: READY FOR SA REVIEW (canonical-main re-audit + SA contract corrections)
+Task: SHW-VF-PH00-C03
+Status: READY FOR SA REVIEW (governance consistency corrections)
 
 Gate type:
-READ-ONLY / ARCHITECTURE PREFLIGHT correction (.ai-harness/ only)
+Narrow documentation/evidence correction only (.ai-harness/ only)
 
-Canonical audit baseline:
-main @ 25a02a520f8371345242879954d7822553e9d004 (VF-REPO-LINEAGE-01 CLOSED)
+Logical review baseline:
+PH00 C02 evidence state @ 81c90d496b5192caf9cfcfc883e2f6e26a7adcac
+Authoritative production baseline:
+main @ 25a02a520f8371345242879954d7822553e9d004
 
-Re-audit result:
-PH00 findings previously marked materially-changed in C01 are now CONSISTENT on
-canonical main (six-sub-line ASSY + demo_assy_mes + MES v1.1 + continuous/
-compressor + simulators all present). No new material contradiction.
+Corrections applied:
+1. §07 now fully consistent with B8: namespace/provenance threading across
+   shared runtime-output infrastructure (runtime assembly, telemetry,
+   observation, file outputs, MQTT, OPC UA, Sparkplug, tests) REQUIRES a
+   dedicated CORE gate and MUST NOT be folded into PH01; "small" wording removed
+   from 07/08/14.
+2. Deterministic workspace-resolution invariant added (test item #11):
+   same manifest/version + semantic contract SHA + scenario_id + model/dependency
+   versions => same resolved workspace composition (plant/config refs, model
+   bindings, scenario selection, semantic artifact refs, output namespace
+   binding, runtime engine/fidelity), absent explicitly changed dependencies.
 
-SA contract corrections applied (B1–B10):
-B1 PIM owns canonical object/signal IDs (VF read-only, uses runtime_signal_id)
-B2 workspace_id ≠ canonical_signal_id ≠ outputs.namespace
-B3 runtime.engine: continuous_process (not vf-core)
-B4 semantic_binding.mode: required (fail-closed)
-B5 compatibility owned by VF/PIM integration review
-B6 origin_kind: simulation; data_status synthetic|simulated_ground_truth
-B7 simulators/wtp + vf2 = LEGACY/REFERENCE
-B8 dedicated CORE gate for provenance threading
-B9 workspace root configs/workspaces/ (SH WTP: configs/workspaces/shw-wtp/)
-B10 fidelity_ceiling: logical_only
+Full-set search: no remaining wording implies provenance threading can be
+silently implemented inside PH01.
 
 Production code changed: NO
-SHW runtime implemented: NO
-SHW-VF-PH01: NOT STARTED
+PH01 started: NO
+Dedicated CORE gate started: NO
+B1–B10 reopened: NO (contradictory wording only removed)
 PH00: NOT CLOSED (pending SA final decision)
 
 Report:
 .ai-harness/sa-review/reports/SHW-VF-PH00.md
 
 Evidence:
-.ai-harness/sa-review/evidence/SHW-VF-PH00/ (16 files; §16 = C02 re-audit + corrections)
+.ai-harness/sa-review/evidence/SHW-VF-PH00/ (17 files; §17 = C03 corrections)
 
 

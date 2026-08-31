@@ -57,7 +57,10 @@ restructure, no promotion, no PlantOS/MES work.
   (`synthetic`/`simulated_ground_truth`), `semantic_contract_*` to the
   telemetry frame/envelope (evidence §10). `canonical_signal_id` is PIM-owned
   and consumed read-only; VF uses `runtime_signal_id` as its internal key.
-- **Isolation:** namespace threading + 10-item test plan (evidence §07).
+- **Isolation:** namespace threading + **11-item test plan** (evidence §07),
+  including the deterministic workspace-resolution invariant (C03). Namespace
+  threading requires a dedicated CORE gate (B8); no PH01 slice depends on it
+  before that gate.
 - **Fidelity:** `LogicalOnly` / `SyntheticReference` / `FirstOrder`; SH WTP
   starts at `logical_only` (evidence §09).
 - **PIM:** immutable, versioned, content-hash-pinned references (evidence §12).
@@ -120,7 +123,7 @@ flowchart TB
 |---|---|
 | ASSY architecture conflicts irreconcilably | NO — ASSY is a separate SA-accepted family; no conflict blocks the workspace design |
 | Incompatible workspace mechanisms already exist | NO — no workspace mechanism exists to conflict with |
-| SHW requires shared-core change before design closes | NO — design closes without core change; only the *implementation* of `workspace_id` threading needs a future CORE gate |
+| SHW requires shared-core change before design closes | NO — design closes without core change; only the *implementation* of `workspace_id` threading needs a dedicated CORE gate (B8), not PH01 |
 | Repo restructure required before PH01 | NO — `configs/workspaces/` is additive |
 | Existing entrypoints cannot be isolated safely | NO — isolation plan (§07) is additive |
 | PIM contract shape required to decide a VF core API | NO — VF core API already fixed; PIM affects mapping/config only |

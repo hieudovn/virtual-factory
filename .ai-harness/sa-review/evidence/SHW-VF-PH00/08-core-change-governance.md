@@ -22,7 +22,7 @@ Workspace need
 | New model types (`clarifier_v1`, `rapid_filter_v1`, `ozone_contactor_v1`, `chemical_doser_v1`, `clearwell_v1`) | **reusable water-treatment domain model** | implement in `equipment/` + `configs/model_types/*.yaml`; dedicated DOMAIN-MODEL gate before promotion |
 | Reuse of existing `tank_v1`, `centrifugal_pump_v1`, `control_valve_v1`, `pipe_v1`, transmitters | existing generic core/domain | no change |
 | `engine_factory` dispatch extension (`discrete_assembly`, `discrete_generic`) | **shared-core change** | dedicated CORE gate; NOT part of PH00/PH01 |
-| Threading `workspace_id` through telemetry/observation provenance | **shared-core/telemetry change** | dedicated CORE gate (small, additive) |
+| Threading `workspace_id` through telemetry/observation provenance | **shared-core/telemetry change** | dedicated CORE gate (B8, frozen in C02) — NOT “small”, NOT folded into PH01 |
 | New solver physics (coagulation kinetics, disinfection CT) | **domain model** (FirstOrder at most) | DOMAIN-MODEL gate; requires documented parameters (§09) |
 
 ## 8.2 Promotion criteria (frozen)
