@@ -1,33 +1,30 @@
 # SA REVIEW INBOX
 
 Task: VF-REPO-LINEAGE-01
-Status: IN PROGRESS — reconciling accepted ASSY lineage into canonical main
+Status: READY FOR SA REVIEW (reconciliation candidate head proven safe)
 
-Reconciliation objective:
-Merge the accepted six-sub-line ASSY + MES v1.1 lineage
-(origin/docs/m6-s01-tipa-baseline) back into canonical main, preserving BOTH:
-- main's single-sub-line MES-01 customer demo (assembly/demo_assy_mes/,
-  /demo-assy-mes/* endpoints, demo_assy_mes.html) — PRESERVED;
-- the six-sub-line TIPA ASSY + MES v1.1 evidence contract
-  (assembly/{line_runtime,demo_controller,assy_mes_bridge,...},
-  /assy-demo/* endpoints, tipa_assy_demo.yaml, docker-compose.assy.yml) — PRESERVED.
+Reconciliation result:
+- merge commit: 43365214144cbf623252158cbbb7ff0dc3ef59ae
+- parents: fda1db44 (main) + 240d8db (accepted ASSY lineage)
+- branch: feature/vf-repo-lineage-01 (base main)
+- method: normal non-force 3-way merge (no rebase/squash/force-push)
 
-Refs:
-- current main: fda1db44b17a7f61da2393e00cdf20bb7998b7ea
-- accepted ASSY lineage: 240d8db5eff481f1d4d8810d275214077031e72a
-- merge-base: 17a1d9ecafb170fa94e8d01a1f12d84e79982773
-- reconciliation branch: feature/vf-repo-lineage-01
+Preserved BOTH lineages:
+- main single-sub-line MES-01 demo_assy_mes (/demo-assy-mes/*) — PRESERVED
+- six-sub-line TIPA ASSY + MES v1.1 (/assy-demo/*, tipa_assy_demo.yaml,
+  docker-compose.assy.yml) — PRESERVED
 
-Conflict classification (3-way merge):
-- .ai-harness/sa-review/CURRENT.md — add/add (governance artifact; combined)
-- observation/projections/mes.py — mechanical; baseline is a strict superset
-  (MES-01 mappings ⊆ MES-02/03 + M6-INT-01 + MES-03 mappings)
-- ui/api.py — mechanical; disjoint endpoint blocks (/demo-assy-mes/* ∪ /assy-demo/*)
+Conflicts (all mechanical, resolved by union/superset):
+- observation/projections/mes.py — baseline superset
+- ui/api.py — disjoint endpoint blocks union
+- .ai-harness/sa-review/CURRENT.md — combined inbox
 
-Production code changed: YES (reconciliation merge only; both lineages preserved)
-No accepted ASSY/MES behavior removed.
+Regression on reconciled head: 1647 passed / 0 failed
+Targeted (both lineages): 96 passed
 
-Related (not started): SHW-VF-PH00 remains BLOCKED pending this reconciliation.
+Advancing canonical main is the SA-authorized PR merge (no force-push).
+
+Related: SHW-VF-PH00 remains BLOCKED pending this gate; SHW-VF-PH01 not started.
 
 Report:
 .ai-harness/sa-review/reports/VF-REPO-LINEAGE-01.md
