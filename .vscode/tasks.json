@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Fix JS duplicate",
+			"type": "shell",
+			"command": "python d:/Project/Github/virtual-factory/fix_js_final.py"
+		},
+		{
+			"label": "Git commit C01",
+			"type": "shell",
+			"command": "cd d:/Project/Github/virtual-factory; Remove-Item fix_js.py,fix_js2.py,fix_js_final.py -Force -ErrorAction SilentlyContinue; git add src/virtual_factory/ui/static/assy_demo.css src/virtual_factory/ui/static/assy_demo.html src/virtual_factory/ui/static/assy_demo.js; git status --short"
+		},
+		{
+			"label": "Git commit C01",
+			"type": "shell",
+			"command": "cd d:/Project/Github/virtual-factory; git commit -m \"M6-S04B-I09-P02-C03R-C01: physical fidelity + visual hierarchy correction\" -m \"Button hierarchy: STEP=primary blue, RESET=danger-outline, AUTO=blue-outline, PAUSE=neutral.\" -m \"Physical scale: stations 96x68px, pallets 96x32px, WIP objects scaled up 25-40%.\" -m \"Station bodies: stronger silhouettes, machine-dominant with badge as annotation.\" -m \"AP04 JOIN: two-input arrows, ROTOR->AP04 label, amber identity accent.\" -m \"Zones: RAW MATERIAL + FINISHED GOODS with contextual STATOR/ROTOR/PACKED pallets.\" -m \"Event strip: collapsed 1-line tray, click to expand.\" -m \"WIP: no permanent carrier microtext, WIP ID only.\" -m \"Frame A: tighter card spacing, directional landmarks.\" -m \"1228 clean lines, no JS errors, all controllers intact.\" -m \"Scope: I09-P03/P04/P05 NOT AUTHORIZED.\"; git push"
+		},
+		{
+			"label": "Commit C01",
+			"type": "shell",
+			"command": "cd d:/Project/Github/virtual-factory &amp;&amp; git commit -m \"M6-S04B-I09-P02-C03R-C01: physical fidelity + visual hierarchy correction\" -m \"Button hierarchy: STEP=primary blue, RESET=danger-outline, AUTO=blue-outline.\" -m \"Physical scale: stations 96x68px, pallets 96x32px, WIP 25-40% larger.\" -m \"Station bodies: stronger silhouettes, machine-dominant.\" -m \"AP04 JOIN: two-input arrows with ROTOR-AP04 label.\" -m \"Zones: RAW MATERIAL + FINISHED GOODS with contextual pallets.\" -m \"Event strip: collapsed 1-line tray, click to expand.\" -m \"1228 clean lines, no duplicates, all controllers intact.\" -m \"Scope: I09-P03/P04/P05 NOT AUTHORIZED.\" &amp;&amp; git push"
+		},
+		{
+			"label": "Git commit push",
+			"type": "shell",
+			"command": "cd d:/Project/Github/virtual-factory; git commit -m \"M6-S04B-I09-P02-C03R-C01: physical fidelity + visual hierarchy correction\" -m \"Buttons: STEP primary blue, RESET danger-outline, AUTO blue-outline, PAUSE neutral.\" -m \"Scale: stations 96x68px, pallets 96x32px, WIP 25-40% larger, conveyor 64px.\" -m \"Stations: stronger silhouettes, machine-dominant with badge annotation.\" -m \"AP04: two-input arrows, ROTOR label, amber identity accent.\" -m \"Zones: RAW MATERIAL+FINISHED GOODS with contextual pallets.\" -m \"Event strip: collapsed 1-line tray, click to expand.\" -m \"WIP: no permanent carrier text, WIP ID only.\" -m \"Frame A: tighter spacing, directional landmarks.\" -m \"1228 clean lines, 0 JS errors, all controllers intact.\" -m \"Scope: I09-P03/P04/P05 NOT AUTHORIZED.\"; git push"
+		},
+		{
+			"label": "Git log",
+			"type": "shell",
+			"command": "git -C d:/Project/Github/virtual-factory log --oneline -3"
+		}
+	]
+}

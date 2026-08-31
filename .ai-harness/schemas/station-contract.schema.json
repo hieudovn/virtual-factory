@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtual-factory.ai-harness/schemas/station-contract.schema.json",
+  "title": "Station Contract",
+  "description": "Generic capability-based contract for one ASSY station. OPS-01 design/contract only — no runtime implementation at this gate.",
+  "type": "object",
+  "required": ["station_id", "capabilities"],
+  "additionalProperties": false,
+  "properties": {
+    "station_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Position/station identifier, e.g. AP03."
+    },
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "execution",
+        "checklist",
+        "measurement",
+        "quality_decision",
+        "exception",
+        "identity_transformation",
+        "final_disposition"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "execution": { "type": "boolean", "description": "Station performs a physical/manufacturing operation." },
+        "checklist": { "type": "boolean", "description": "Operation supports checklist-based interaction/context. The completion gate (if any) is declared separately by checklist_required_for_action." },
+        "measurement": { "type": "boolean", "description": "Operation produces measurable values." },
+        "quality_decision": { "type": "boolean", "description": "Operation yields a PASS/FAIL/NG quality decision." },
+        "exception": { "type": "boolean", "description": "Operation may raise a HOLD or exception note." },
+        "identity_transformation": { "type": "boolean", "description": "Operation transforms WIP identity (e.g. AP04 JOIN)." },
+        "final_disposition": { "type": "boolean", "description": "Operation disposes the WIP (release/hold/reject)." }
+      }
+    },
+    "default_mode": {
+      "type": "string",
+      "enum": ["MANUAL", "AUTO", "ASSISTED"],
+      "default": "AUTO",
+      "description": "Default completion mode for this station contract (lowest precedence fallback)."
+    },
+    "mode_override": {
+      "type": ["string", "null"],
+      "enum": ["MANUAL", "AUTO", "ASSISTED", null],
+      "description": "Explicit per-station mode override. Highest precedence when configured; overrides the global run mode and the station default."
+    },
+    "normal_action": {
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
+      "description": "Primary completion action exposed by the station."
+    },
+    "required_action": {
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
+      "description": "Action required before the WIP is eligible to index."
+    },
+    "work_duration_s": {
+      "type": ["number", "null"],
+      "exclusiveMinimum": 0,
+      "description": "Configured simulated operation duration, independent of visual animation timing."
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Station IDs whose contracts must be satisfied before this station may execute (e.g. AP04 requires AP03)."
+    },
+    "checklist_items": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Neutral required checklist item ids for the gated action (empty when checklist is not a completion gate)."
+    },
+    "checklist_required_for_action": {
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
+      "description": "The action gated by checklist completion. Null when checklist capability does not gate an action."
+    },
+    "decision_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Quality decisions the operator may supply (e.g. PASS, FAIL, NG)."
+    },
+    "exception_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Exception actions allowed at this station (e.g. HOLD)."
+    },
+    "final_disposition_actions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Final disposition actions (e.g. RELEASE, HOLD)."
+    }
+  }
+}

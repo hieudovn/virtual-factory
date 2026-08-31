@@ -1,0 +1,67 @@
+mes.execution_event          EXEC-00001             OPERATION_COMPLETED    PRE-ASSY result=DONE
+mes.execution_event          EXEC-00002             OPERATION_COMPLETED    PRE-ASSY result=DONE
+mes.execution_event          EXEC-00004             OPERATION_COMPLETED    PRE-ASSY result=DONE
+mes.execution_event          EXEC-00007             OPERATION_COMPLETED    PRE-ASSY result=DONE
+mes.execution_event          EXEC-00011             OPERATION_COMPLETED    PRE-ASSY result=DONE
+mes.execution_event          EXEC-00016             OPERATION_COMPLETED    PRE-ASSY result=DONE
+mes.execution_event          EXEC-00022             OPERATION_COMPLETED    PRE-ASSY result=DONE
+mes.execution_event          EXEC-00003             OPERATION_COMPLETED    AP01     result=DONE
+mes.execution_event          EXEC-00005             OPERATION_COMPLETED    AP01     result=DONE
+mes.execution_event          EXEC-00008             OPERATION_COMPLETED    AP01     result=DONE
+mes.execution_event          EXEC-00012             OPERATION_COMPLETED    AP01     result=DONE
+mes.execution_event          EXEC-00017             OPERATION_COMPLETED    AP01     result=DONE
+mes.execution_event          EXEC-00023             OPERATION_COMPLETED    AP01     result=DONE
+mes.execution_event          EXEC-00029             OPERATION_COMPLETED    AP01     result=DONE
+mes.execution_event          EXEC-00006             OPERATION_COMPLETED    AP02     result=DONE
+mes.execution_event          EXEC-00009             OPERATION_COMPLETED    AP02     result=DONE
+mes.execution_event          EXEC-00013             OPERATION_COMPLETED    AP02     result=DONE
+mes.execution_event          EXEC-00018             OPERATION_COMPLETED    AP02     result=DONE
+mes.execution_event          EXEC-00024             OPERATION_COMPLETED    AP02     result=DONE
+mes.execution_event          EXEC-00030             OPERATION_COMPLETED    AP02     result=DONE
+mes.execution_event          EXEC-00036             OPERATION_COMPLETED    AP02     result=DONE
+mes.execution_event          EXEC-00010             OPERATION_COMPLETED    AP03     result=CONFIRMED
+mes.execution_event          EXEC-00014             OPERATION_COMPLETED    AP03     result=CONFIRMED
+mes.execution_event          EXEC-00019             OPERATION_COMPLETED    AP03     result=CONFIRMED
+mes.execution_event          EXEC-00025             OPERATION_COMPLETED    AP03     result=CONFIRMED
+mes.execution_event          EXEC-00031             OPERATION_COMPLETED    AP03     result=CONFIRMED
+mes.execution_event          EXEC-00037             OPERATION_COMPLETED    AP03     result=CONFIRMED
+mes.execution_event          EXEC-00043             OPERATION_COMPLETED    AP03     result=CONFIRMED
+mes.genealogy_relationship   MTR-0001               AP04_JOIN              AP04     child=MTR-0001 parents=['RSO2-0001', 'SSO2-0001']
+mes.genealogy_relationship   MTR-0002               AP04_JOIN              AP04     child=MTR-0002 parents=['RSO2-0002', 'SSO2-0002']
+mes.genealogy_relationship   MTR-0003               AP04_JOIN              AP04     child=MTR-0003 parents=['RSO2-0003', 'SSO2-0003']
+mes.genealogy_relationship   MTR-0004               AP04_JOIN              AP04     child=MTR-0004 parents=['RSO2-0004', 'SSO2-0004']
+mes.genealogy_relationship   MTR-0005               AP04_JOIN              AP04     child=MTR-0005 parents=['RSO2-0005', 'SSO2-0005']
+mes.genealogy_relationship   MTR-0006               AP04_JOIN              AP04     child=MTR-0006 parents=['RSO2-0006', 'SSO2-0006']
+mes.genealogy_relationship   MTR-0007               AP04_JOIN              AP04     child=MTR-0007 parents=['RSO2-0007', 'SSO2-0007']
+mes.execution_event          EXEC-00021             OPERATION_COMPLETED    AP05     result=DONE
+mes.execution_event          EXEC-00027             OPERATION_COMPLETED    AP05     result=DONE
+mes.execution_event          EXEC-00033             OPERATION_COMPLETED    AP05     result=DONE
+mes.execution_event          EXEC-00039             OPERATION_COMPLETED    AP05     result=DONE
+mes.execution_event          EXEC-00045             OPERATION_COMPLETED    AP05     result=DONE
+mes.execution_event          EXEC-00051             OPERATION_COMPLETED    AP05     result=DONE
+mes.execution_event          EXEC-00057             OPERATION_COMPLETED    AP05     result=DONE
+mes.quality_result           QR-0001                QUALITY_RESULT         AP06     attempt=1 disposition=PASS
+mes.quality_result           QR-0002                QUALITY_RESULT         AP06     attempt=1 disposition=PASS
+mes.quality_result           QR-0003                QUALITY_RESULT         AP06     attempt=1 disposition=PASS
+mes.quality_result           QR-0005                QUALITY_RESULT         AP06     attempt=1 disposition=PASS
+mes.quality_result           QR-0007                QUALITY_RESULT         AP06     attempt=1 disposition=PASS
+mes.quality_result           QR-0009                QUALITY_RESULT         AP06     attempt=1 disposition=PASS
+mes.execution_event          EXEC-00035             OPERATION_COMPLETED    AP07     result=DONE
+mes.execution_event          EXEC-00041             OPERATION_COMPLETED    AP07     result=DONE
+mes.execution_event          EXEC-00047             OPERATION_COMPLETED    AP07     result=DONE
+mes.execution_event          EXEC-00053             OPERATION_COMPLETED    AP07     result=DONE
+mes.execution_event          EXEC-00059             OPERATION_COMPLETED    AP07     result=DONE
+mes.quality_result           QR-0004                QUALITY_RESULT         AP08     attempt=1 disposition=PASS
+mes.quality_result           QR-0006                QUALITY_RESULT         AP08     attempt=1 disposition=PASS
+mes.quality_result           QR-0008                QUALITY_RESULT         AP08     attempt=1 disposition=PASS
+mes.quality_result           QR-0010                QUALITY_RESULT         AP08     attempt=1 disposition=PASS
+mes.execution_event          EXEC-00049             OPERATION_COMPLETED    AP09     result=DONE
+mes.execution_event          EXEC-00055             OPERATION_COMPLETED    AP09     result=DONE
+mes.execution_event          EXEC-00061             OPERATION_COMPLETED    AP09     result=DONE
+mes.execution_event          EXEC-00056             OPERATION_COMPLETED    AP10     result=DONE
+mes.execution_event          EXEC-00062             OPERATION_COMPLETED    AP10     result=DONE
+mes.quality_result           QR-0011                AP11_FINAL_QC_PASS     AP11     attempt=1 disposition=PASS
+mes.release                  release:MTR-0001       AP11_RELEASE           AP11     
+
+[second poll: 0 new deliveries — idempotent]
+

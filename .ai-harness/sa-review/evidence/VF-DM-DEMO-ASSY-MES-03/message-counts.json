@@ -1,0 +1,275 @@
+{
+  "ap06_fail_measurements": 2,
+  "ap06_fail_sample": {
+    "attempt_number": 1,
+    "contract_version": "tipa-assy-demo-v1.1",
+    "event_type": "MEASUREMENT_RESULT",
+    "evidence_source": "DEMO_SYNTHETIC",
+    "execution_id": "EXEC-00028",
+    "idempotency_key": "ASSY-SL03:R1|measurement:QR-0001:R_U-V|assy2.measurement_result|1.0",
+    "in_spec": false,
+    "lower_limit": 0.3,
+    "measurement_code": "R_U-V",
+    "observation_id": "95a83f65-2684-4788-a034-005ec2eb73b9",
+    "occurred_at": "2026-01-01T00:14:00+00:00",
+    "plant_id": "TIPA",
+    "production_line_id": "ASSY",
+    "record_id": "QR-0001",
+    "run_id": "ASSY-SL03:R1",
+    "simulation_time_s": 840.0,
+    "station_id": "AP06",
+    "subject_id": "MTR-0001",
+    "subject_type": "wip",
+    "subline_id": "ASSY-SL03",
+    "unit": "Ω",
+    "upper_limit": 0.6,
+    "value": 0.29,
+    "wip_id": "MTR-0001"
+  },
+  "ap06_pass_sample": {
+    "attempt_number": 1,
+    "contract_version": "tipa-assy-demo-v1.1",
+    "event_type": "MEASUREMENT_RESULT",
+    "evidence_source": "DEMO_SYNTHETIC",
+    "execution_id": "EXEC-00028",
+    "idempotency_key": "ASSY-SL01:R1|measurement:QR-0001:R_U-V|assy2.measurement_result|1.0",
+    "in_spec": true,
+    "lower_limit": 0.3,
+    "measurement_code": "R_U-V",
+    "observation_id": "c6752b46-6967-4735-af0d-7be9366ae53c",
+    "occurred_at": "2026-01-01T00:14:00+00:00",
+    "plant_id": "TIPA",
+    "production_line_id": "ASSY",
+    "record_id": "QR-0001",
+    "run_id": "ASSY-SL01:R1",
+    "simulation_time_s": 840.0,
+    "station_id": "AP06",
+    "subject_id": "MTR-0001",
+    "subject_type": "wip",
+    "subline_id": "ASSY-SL01",
+    "unit": "Ω",
+    "upper_limit": 0.6,
+    "value": 0.46,
+    "wip_id": "MTR-0001"
+  },
+  "ap08_observation_sample": {
+    "attempt_number": 1,
+    "check_type": "VISUAL_INSPECTION",
+    "contract_version": "tipa-assy-demo-v1.1",
+    "disposition": "PASS",
+    "event_type": "QUALITY_RESULT",
+    "execution_id": "EXEC-00045",
+    "idempotency_key": "ASSY-SL01:R1|QR-0004|assy2.quality_result|1.0",
+    "is_terminal": false,
+    "observation_id": "89500dba-441f-4635-bbdf-58f17fe89fe0",
+    "observations": [
+      {
+        "observation_id": "demo_visual_observation_1",
+        "result": "ok"
+      },
+      {
+        "observation_id": "demo_visual_observation_2",
+        "result": "ok"
+      },
+      {
+        "observation_id": "demo_visual_observation_3",
+        "result": "ok"
+      }
+    ],
+    "occurred_at": "2026-01-01T00:18:00+00:00",
+    "plant_id": "TIPA",
+    "production_line_id": "ASSY",
+    "proposed_quality_reason": {
+      "code": "demo_visual_rule_1",
+      "source": "simulated_vision"
+    },
+    "proposed_quality_result": "PASS",
+    "reason_code": "demo_visual_rule_1",
+    "reason_source": "simulated_vision",
+    "record_id": "QR-0004",
+    "run_id": "ASSY-SL01:R1",
+    "simulation_time_s": 1080.0,
+    "station_id": "AP08",
+    "subject_id": "MTR-0001",
+    "subject_type": "wip",
+    "subline_id": "ASSY-SL01",
+    "terminal_state": "",
+    "wip_id": "MTR-0001"
+  },
+  "ap11_observation_sample": {
+    "attempt_number": 1,
+    "check_type": "FINAL_QC",
+    "contract_version": "tipa-assy-demo-v1.1",
+    "disposition": "PASS",
+    "event_type": "AP11_FINAL_QC_PASS",
+    "execution_id": "EXEC-00078",
+    "idempotency_key": "ASSY-SL01:R1|QR-0011|assy2.quality_result|1.0",
+    "is_terminal": false,
+    "observation_id": "b883fa32-5cd7-460c-b483-63f15f935202",
+    "observations": [
+      {
+        "observation_id": "demo_final_qc_observation_1",
+        "result": "ok"
+      },
+      {
+        "observation_id": "demo_final_qc_observation_2",
+        "result": "ok"
+      },
+      {
+        "observation_id": "demo_final_qc_observation_3",
+        "result": "ok"
+      }
+    ],
+    "occurred_at": "2026-01-01T00:24:00+00:00",
+    "plant_id": "TIPA",
+    "production_line_id": "ASSY",
+    "proposed_quality_reason": {
+      "code": "demo_final_qc_rule_1",
+      "source": "simulated_final_qc"
+    },
+    "proposed_quality_result": "PASS",
+    "reason_code": "demo_final_qc_rule_1",
+    "reason_source": "simulated_final_qc",
+    "record_id": "QR-0011",
+    "run_id": "ASSY-SL01:R1",
+    "simulation_time_s": 1440.0,
+    "station_id": "AP11",
+    "subject_id": "MTR-0001",
+    "subject_type": "wip",
+    "subline_id": "ASSY-SL01",
+    "terminal_state": "",
+    "wip_id": "MTR-0001"
+  },
+  "checklist_result_count": 49,
+  "checklist_sample": {
+    "attempt_number": 0,
+    "completed_count": 3,
+    "contract_version": "tipa-assy-demo-v1.1",
+    "event_type": "CHECKLIST_CONFIRMED",
+    "execution_id": "EXEC-00010",
+    "idempotency_key": "ASSY-SL01:R1|checklist:EXEC-00010:0|assy2.checklist_result|1.0",
+    "items": [
+      {
+        "completed": true,
+        "item_id": "demo_item_1",
+        "required": true
+      },
+      {
+        "completed": true,
+        "item_id": "demo_item_2",
+        "required": true
+      },
+      {
+        "completed": true,
+        "item_id": "demo_item_3",
+        "required": true
+      }
+    ],
+    "observation_id": "ed1daa0e-a8ec-4983-b4ee-102970743d00",
+    "occurred_at": "2026-01-01T00:08:00+00:00",
+    "plant_id": "TIPA",
+    "production_line_id": "ASSY",
+    "required_count": 3,
+    "run_id": "ASSY-SL01:R1",
+    "simulation_time_s": 480.0,
+    "source": "DEMO_SYNTHETIC",
+    "station_id": "AP03",
+    "status": "confirmed",
+    "subject_id": "SSO2-0001",
+    "subject_type": "wip",
+    "subline_id": "ASSY-SL01",
+    "wip_id": "SSO2-0001"
+  },
+  "contract_version": "tipa-assy-demo-v1.1",
+  "counts_by_message_type": {
+    "mes.checklist_result": 49,
+    "mes.execution_event": 399,
+    "mes.genealogy_relationship": 43,
+    "mes.issue": 2,
+    "mes.measurement_result": 96,
+    "mes.oee_summary": 6,
+    "mes.quality_result": 57,
+    "mes.release": 5,
+    "mes.run_status": 9
+  },
+  "counts_by_subline_run": {
+    "ASSY-SL01|ASSY-SL01:R1": {
+      "mes.checklist_result": 9,
+      "mes.execution_event": 73,
+      "mes.genealogy_relationship": 8,
+      "mes.measurement_result": 18,
+      "mes.oee_summary": 1,
+      "mes.quality_result": 11,
+      "mes.release": 1,
+      "mes.run_status": 1
+    },
+    "ASSY-SL02|ASSY-SL02:R1": {
+      "mes.checklist_result": 9,
+      "mes.execution_event": 73,
+      "mes.genealogy_relationship": 8,
+      "mes.measurement_result": 18,
+      "mes.oee_summary": 1,
+      "mes.quality_result": 11,
+      "mes.release": 1,
+      "mes.run_status": 1
+    },
+    "ASSY-SL03|ASSY-SL03:R1": {
+      "mes.checklist_result": 4,
+      "mes.execution_event": 34,
+      "mes.genealogy_relationship": 3,
+      "mes.issue": 2,
+      "mes.measurement_result": 6,
+      "mes.oee_summary": 1,
+      "mes.quality_result": 2,
+      "mes.run_status": 4
+    },
+    "ASSY-SL04|ASSY-SL04:R1": {
+      "mes.checklist_result": 9,
+      "mes.execution_event": 73,
+      "mes.genealogy_relationship": 8,
+      "mes.measurement_result": 18,
+      "mes.oee_summary": 1,
+      "mes.quality_result": 11,
+      "mes.release": 1,
+      "mes.run_status": 1
+    },
+    "ASSY-SL05|ASSY-SL05:R1": {
+      "mes.checklist_result": 9,
+      "mes.execution_event": 73,
+      "mes.genealogy_relationship": 8,
+      "mes.measurement_result": 18,
+      "mes.oee_summary": 1,
+      "mes.quality_result": 11,
+      "mes.release": 1,
+      "mes.run_status": 1
+    },
+    "ASSY-SL06|ASSY-SL06:R1": {
+      "mes.checklist_result": 9,
+      "mes.execution_event": 73,
+      "mes.genealogy_relationship": 8,
+      "mes.measurement_result": 18,
+      "mes.oee_summary": 1,
+      "mes.quality_result": 11,
+      "mes.release": 1,
+      "mes.run_status": 1
+    }
+  },
+  "duplicate_message_keys": 0,
+  "integrity_ok": true,
+  "measurement_result_count": 96,
+  "quality_ng_sample": null,
+  "quality_result_count": 52,
+  "quality_result_with_observations": 20,
+  "raw_jsonl_lines": 666,
+  "run_ids": [
+    "ASSY-SL01:R1",
+    "ASSY-SL02:R1",
+    "ASSY-SL03:R1",
+    "ASSY-SL04:R1",
+    "ASSY-SL05:R1",
+    "ASSY-SL06:R1"
+  ],
+  "sub_line_count": 6,
+  "total_messages": 666,
+  "unique_message_keys": 666
+}

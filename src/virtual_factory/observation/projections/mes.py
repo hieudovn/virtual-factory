@@ -26,11 +26,14 @@ _EVENT_TYPE_TO_MES: dict[str, str] = {
     "REWORK_TRIGGERED": "mes.execution_event",
     "SCRAP_TRIGGERED": "mes.execution_event",
     "OPERATOR_CHECK": "mes.checklist_result",
-    # VF-DM-DEMO-ASSY-MES-01 (additive): physical LINE_OUT as an execution event.
+    # VF-DM-DEMO-ASSY-MES-02 (additive): physical LINE_OUT / WIP entry /
+    # downtime lifecycle as execution events.
     "LINE_OUT": "mes.execution_event",
     "WIP_ENTERED": "mes.execution_event",
     "DOWNTIME_START": "mes.execution_event",
     "DOWNTIME_END": "mes.execution_event",
+    # VF-DM-DEMO-ASSY-MES-03 (additive): confirmed checklist evidence.
+    "CHECKLIST_CONFIRMED": "mes.checklist_result",
 }
 
 # Envelope payload or context.semantic_type → MES message_type
@@ -43,8 +46,14 @@ _SEMANTIC_TYPE_TO_MES: dict[str, str] = {
     "genealogy_relationship": "mes.genealogy_relationship",
     "run_status": "mes.run_status",
     "issue": "mes.issue",
-    # VF-DM-DEMO-ASSY-MES-01 (additive): end-of-run OEE summary.
+    # M6-INT-01 — P0 outbound (additive): AP11 RELEASE is a distinct
+    # manufacturing fact from AP11 final-QC PASS (which maps to quality_result).
+    "release": "mes.release",
+    # VF-DM-DEMO-ASSY-MES-02 (additive): end-of-run OEE summary per sub-line.
     "oee_summary": "mes.oee_summary",
+    # VF-DM-DEMO-ASSY-MES-03 (additive): per-attempt numerical measurement
+    # evidence (AP06 electrical test R_U-V / R_V-W / R_W-U).
+    "measurement_result": "mes.measurement_result",
 }
 
 _SCHEMA_PREFIX = "vf.mes"

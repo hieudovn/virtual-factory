@@ -1,0 +1,291 @@
+<!DOCTYPE html><html lang="en">
+<head><meta charset="UTF-8"><title>DG03-C01 Frame B — ASSY Sub-line Detail (HOLD + States)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;padding:20px}
+h2{color:#8899bb;margin:24px 0 8px 0;font-size:16px}
+h2:first-child{margin-top:0}
+.artboard{background:#0f1a2e;border:1px solid #1e3a5f;border-radius:6px;margin-bottom:20px;overflow:hidden}
+.artboard svg{display:block}
+.artboard-label{padding:8px 16px;background:#1a2332;font-size:12px;color:#8899bb;border-bottom:1px solid #1e3a5f}
+</style></head>
+<body>
+
+<!-- ====== ARTBOARD 1: NORMAL SHARED DWELL (STOP/WORK) ====== -->
+<div class="artboard">
+<div class="artboard-label">Frame B — ASSY-SL01 Detail: NORMAL Shared Dwell (STOP/WORK — Concurrent Station Processing)</div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 800" width="1920">
+<defs><linearGradient id="hdrN" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1a2332"/><stop offset="100%" stop-color="#0f1a2e"/></linearGradient></defs>
+<rect width="1920" height="800" fill="#0d1117"/>
+<rect x="0" y="0" width="1920" height="48" fill="url(#hdrN)"/>
+<line x1="0" y1="48" x2="1920" y2="48" stroke="#1e3a5f" stroke-width="2"/>
+<text x="20" y="32" fill="#e0e0e0" font-size="18" font-weight="600">ASSY LINE / ASSY-SL01 — HYDRAULIC — NORMAL DWELL</text>
+<rect x="500" y="16" width="110" height="22" rx="3" fill="#1b4332" stroke="#4ecca3"/>
+<text x="555" y="33" fill="#4ecca3" font-size="12" text-anchor="middle" font-weight="600">STOP / WORK</text>
+<text x="650" y="33" fill="#4ecca3" font-size="11">NO QUALITY HOLD — CONCURRENT STATION PROCESSING</text>
+<text x="1050" y="33" fill="#888" font-size="11" font-family="monospace">t=320s</text>
+<text x="1180" y="33" fill="#888" font-size="11">DWELL 6</text>
+
+<!-- Conveyor (stationary — no motion indicators) -->
+<rect x="40" y="350" width="1840" height="10" rx="5" fill="#1a2740"/>
+<!-- STOP indicator on conveyor -->
+<text x="960" y="338" fill="#4ecca3" font-size="10" text-anchor="middle">⏹ CONVEYOR STATIONARY — MULTIPLE STATIONS ACTIVE CONCURRENTLY</text>
+
+<!-- 12 Stations — multiple active simultaneously -->
+<g font-size="10" text-anchor="middle">
+  <!-- PRE-ASSY: idled (already passed) -->
+  <g transform="translate(40,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#4ecca3" font-weight="600">PRE-ASSY</text><text y="32" fill="#666" font-size="9">Stator prep</text><rect x="-32" y="42" width="64" height="14" rx="2" fill="#1b4332"/><text y="53" fill="#4ecca3" font-size="9">COMPLETE</text></g>
+
+  <!-- AP01: ACTIVE — occupied, concurrent work -->
+  <g transform="translate(170,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP01</text><text y="32" fill="#888" font-size="9">Fitting</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">PAL-001</text><text y="96" fill="#4ecca3" font-size="9">✓ WORK</text></g>
+
+  <!-- AP02: ACTIVE — occupied, concurrent work -->
+  <g transform="translate(300,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP02</text><text y="32" fill="#888" font-size="9">Terminal box</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">PAL-002</text><text y="96" fill="#4ecca3" font-size="9">✓ WORK</text></g>
+
+  <!-- AP03: ACTIVE — checklist in progress -->
+  <g transform="translate(430,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP03</text><text y="32" fill="#888" font-size="9">Mech+QC</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">PAL-003</text><text y="96" fill="#ffc107" font-size="9">📋 CHECKLIST</text></g>
+
+  <!-- AP04 JOIN: ACTIVE — concurrent work, parents visible -->
+  <g transform="translate(560,225)"><rect x="-52" y="0" width="104" height="120" rx="5" fill="#1a2330" stroke="#ffc107" stroke-width="2"/><text y="18" fill="#ffc107" font-weight="600">AP04 JOIN</text><text y="34" fill="#888" font-size="9">Main assembly</text><rect x="-42" y="44" width="84" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-42" y="64" width="84" height="12" rx="2" fill="#3d2e00"/><text y="73" fill="#ffc107" font-size="8">MTR-0008</text><line x1="0" y1="80" x2="0" y2="96" stroke="#ffc107" stroke-dasharray="3"/><text y="108" fill="#ffc107" font-size="8">← SSO2+RSO2</text></g>
+
+  <!-- AP05: ACTIVE — concurrent work -->
+  <g transform="translate(700,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP05</text><text y="32" fill="#888" font-size="9">Assy+paint</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">MTR-0005</text><text y="96" fill="#4ecca3" font-size="9">✓ WORK</text></g>
+
+  <!-- AP06: ACTIVE — concurrent work, no quality issue -->
+  <g transform="translate(830,235)"><rect x="-44" y="0" width="88" height="100" rx="5" fill="#111d30" stroke="#4ecca3" stroke-width="2"/><text y="18" fill="#4ecca3" font-weight="600">AP06</text><text y="32" fill="#888" font-size="9">Electrical</text><rect x="-34" y="44" width="68" height="14" rx="2" fill="#1b4332"/><text y="55" fill="#4ecca3" font-size="9">ACTIVE</text><rect x="-34" y="64" width="68" height="12" rx="2" fill="#1e3a5f"/><text y="73" fill="#aaa" font-size="8">MTR-0002</text><text y="96" fill="#4ecca3" font-size="9">⏳ TESTING</text></g>
+
+  <!-- AP07: IDLE — not occupied -->
+  <g transform="translate(970,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP07</text><text y="32" fill="#555" font-size="9">Finishing</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+
+  <!-- AP08: IDLE — not occupied -->
+  <g transform="translate(1100,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP08</text><text y="32" fill="#555" font-size="9">Visual</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+
+  <!-- AP09: IDLE -->
+  <g transform="translate(1220,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP09</text><text y="32" fill="#555" font-size="9">Boxing</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+
+  <!-- AP10: IDLE -->
+  <g transform="translate(1340,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP10</text><text y="32" fill="#555" font-size="9">Label</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+
+  <!-- AP11: IDLE — no release yet -->
+  <g transform="translate(1460,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f" stroke-dasharray="4,2"/><text y="18" fill="#555" font-weight="600">AP11</text><text y="32" fill="#555" font-size="9">Final QC</text><text y="58" fill="#444" font-size="9">IDLE</text></g>
+</g>
+
+<!-- Right Inspector — normal WIP detail -->
+<g transform="translate(1580,70)">
+  <rect x="0" y="0" width="310" height="680" rx="5" fill="#0f1a2e" stroke="#1e3a5f"/>
+  <text x="14" y="24" fill="#4ecca3" font-size="13" font-weight="600">WIP: MTR-0008</text>
+  <text x="14" y="50" fill="#888" font-size="10">Station: AP04 JOIN | Carrier: PAL-004</text>
+  <text x="14" y="68" fill="#4ecca3" font-size="10">Quality: CLEAR</text>
+  <line x1="14" y1="80" x2="296" y2="80" stroke="#1e3a5f"/>
+  <text x="14" y="100" fill="#8899bb" font-size="11" font-weight="600">Genealogy</text>
+  <text x="14" y="118" fill="#4ecca3" font-size="10">SSO2-0008 + RSO2-0008 → MTR-0008</text>
+  <text x="14" y="134" fill="#555" font-size="9">JOIN @ AP04 | t=310s</text>
+  <text x="14" y="158" fill="#8899bb" font-size="11" font-weight="600">Active Stations (this dwell)</text>
+  <text x="14" y="176" fill="#4ecca3" font-size="10">AP01 PAL-001 Fitting</text>
+  <text x="14" y="194" fill="#4ecca3" font-size="10">AP02 PAL-002 Terminal box</text>
+  <text x="14" y="212" fill="#4ecca3" font-size="10">AP03 PAL-003 Checklist</text>
+  <text x="14" y="230" fill="#4ecca3" font-size="10">AP04 MTR-0008 JOIN</text>
+  <text x="14" y="248" fill="#4ecca3" font-size="10">AP05 MTR-0005 Assy+paint</text>
+  <text x="14" y="266" fill="#4ecca3" font-size="10">AP06 MTR-0002 Testing</text>
+  <text x="14" y="290" fill="#8899bb" font-size="11" font-weight="600">Conveyor</text>
+  <text x="14" y="308" fill="#4ecca3" font-size="10">State: STOPPED</text>
+  <text x="14" y="326" fill="#888" font-size="9">6 stations occupied, 6 idle</text>
+  <text x="14" y="348" fill="#888" font-size="9">No quality hold active</text>
+  <text x="14" y="372" fill="#555" font-size="8">DEMO / SYNTHETIC DATA</text>
+  <text x="14" y="396" fill="#8899bb" font-size="11" font-weight="600">Events</text>
+  <text x="14" y="414" fill="#4ecca3" font-size="9">12:03 DWELL 6 STARTED</text>
+  <text x="14" y="430" fill="#4ecca3" font-size="9">12:03 CONVEYOR STOPPED</text>
+  <text x="14" y="446" fill="#4ecca3" font-size="9">12:03 STATIONS ACTIVE (×6)</text>
+  <text x="14" y="462" fill="#555" font-size="9">12:04 AP04 MTR-0008 CREATED</text>
+</g>
+
+<!-- Controls -->
+<g transform="translate(40,480)">
+  <rect x="0" y="0" width="1520" height="32" rx="4" fill="#0f1a2e" stroke="#1e3a5f"/>
+  <rect x="8" y="6" width="60" height="20" rx="3" fill="#e94560"/><text x="38" y="20" fill="#fff" font-size="9" text-anchor="middle">RESET</text>
+  <rect x="76" y="6" width="60" height="20" rx="3" fill="#4ecca3"/><text x="106" y="20" fill="#0d1117" font-size="9" text-anchor="middle">STEP</text>
+  <rect x="144" y="6" width="60" height="20" rx="3" fill="#17a2b8"/><text x="174" y="20" fill="#fff" font-size="9" text-anchor="middle">AUTO</text>
+  <text x="260" y="20" fill="#888" font-size="10">1x | HAPPY_PATH</text>
+</g>
+
+<!-- Semantic rule -->
+<text x="40" y="550" fill="#555" font-size="10">STOP → multiple eligible occupied stations process concurrently → READY → INDEX. No sequential execution implied. No HOLD active.</text>
+</svg>
+</div>
+
+<!-- ====== ARTBOARD 2: AP06 HOLD ====== -->
+<div class="artboard">
+<div class="artboard-label">Frame B — ASSY-SL03 Detail: AP06 QUALITY HOLD</div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 800" width="1920">
+<defs><linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1a2332"/><stop offset="100%" stop-color="#0f1a2e"/></linearGradient></defs>
+<rect width="1920" height="800" fill="#0d1117"/>
+<rect x="0" y="0" width="1920" height="48" fill="url(#hdr)"/>
+<line x1="0" y1="48" x2="1920" y2="48" stroke="#1e3a5f" stroke-width="2"/>
+<text x="20" y="32" fill="#e0e0e0" font-size="18" font-weight="600">ASSY LINE / ASSY-SL03 — HYDRAULIC</text>
+<rect x="380" y="16" width="120" height="22" rx="3" fill="#4a1a1a" stroke="#e94560"/>
+<text x="440" y="33" fill="#e94560" font-size="12" text-anchor="middle" font-weight="600">QUALITY HOLD</text>
+<text x="540" y="33" fill="#e94560" font-size="11">AP06 / MTR-0015 / FAIL #1</text>
+<text x="800" y="33" fill="#888" font-size="11" font-family="monospace">t=480s</text>
+<text x="930" y="33" fill="#888" font-size="11">DWELL 8</text>
+
+<!-- Conveyor -->
+<rect x="40" y="350" width="1840" height="10" rx="5" fill="#1a2740"/>
+
+<!-- 12 Stations -->
+<g font-size="10" text-anchor="middle">
+  <g transform="translate(40,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#4ecca3" font-weight="600">PRE-ASSY</text><text y="32" fill="#666" font-size="9">Stator prep</text><rect x="-32" y="42" width="64" height="14" rx="2" fill="#1b4332"/><text y="53" fill="#4ecca3" font-size="9">COMPLETE</text></g>
+  <g transform="translate(170,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#4ecca3" font-weight="600">AP01</text><text y="32" fill="#666" font-size="9">Fitting</text><rect x="-32" y="42" width="64" height="14" rx="2" fill="#1b4332"/><text y="53" fill="#4ecca3" font-size="9">PASS</text></g>
+  <g transform="translate(300,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#4ecca3" font-weight="600">AP02</text><text y="32" fill="#666" font-size="9">Terminal box</text><rect x="-32" y="42" width="64" height="14" rx="2" fill="#1b4332"/><text y="53" fill="#4ecca3" font-size="9">PASS</text></g>
+  <g transform="translate(430,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#4ecca3" font-weight="600">AP03</text><text y="32" fill="#666" font-size="9">Mech+QC</text><rect x="-32" y="42" width="64" height="14" rx="2" fill="#1b4332"/><text y="53" fill="#4ecca3" font-size="9">PASS</text></g>
+  <!-- AP04 JOIN -->
+  <g transform="translate(560,230)"><rect x="-50" y="0" width="100" height="110" rx="5" fill="#1a2330" stroke="#ffc107" stroke-width="2"/><text y="18" fill="#ffc107" font-weight="600">AP04 JOIN</text><text y="34" fill="#888" font-size="9">Main assembly</text><rect x="-40" y="42" width="80" height="14" rx="2" fill="#3d2e00"/><text y="53" fill="#ffc107" font-size="9">MTR-0015</text><line x1="0" y1="60" x2="0" y2="80" stroke="#ffc107" stroke-dasharray="3"/><rect x="-35" y="80" width="70" height="14" rx="2" fill="#3d2e00"/><text y="91" fill="#ffc107" font-size="9">← RSO2-0003</text></g>
+  <g transform="translate(700,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#4ecca3" font-weight="600">AP05</text><text y="32" fill="#666" font-size="9">Assy+paint</text><rect x="-32" y="42" width="64" height="14" rx="2" fill="#1b4332"/><text y="53" fill="#4ecca3" font-size="9">PASS</text></g>
+  <!-- AP06 HOLD -->
+  <g transform="translate(830,230)"><rect x="-50" y="0" width="100" height="110" rx="5" fill="#1a1010" stroke="#e94560" stroke-width="2"/><text y="18" fill="#e94560" font-weight="600">AP06 TEST</text><text y="34" fill="#888" font-size="9">Electrical</text><rect x="-40" y="42" width="80" height="14" rx="2" fill="#4a1a1a"/><text y="53" fill="#e94560" font-size="9">FAIL #1</text><rect x="-35" y="62" width="70" height="14" rx="2" fill="#5c4700"/><text y="73" fill="#ffc107" font-size="9">HOLD</text><text y="95" fill="#e94560" font-size="8">MTR-0015</text></g>
+  <g transform="translate(970,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#555" font-weight="600">AP07</text><text y="32" fill="#555" font-size="9">Finishing</text><text y="55" fill="#444" font-size="9">—</text></g>
+  <g transform="translate(1100,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#555" font-weight="600">AP08</text><text y="32" fill="#555" font-size="9">Visual</text><text y="55" fill="#444" font-size="9">—</text></g>
+  <g transform="translate(1220,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#555" font-weight="600">AP09</text><text y="32" fill="#555" font-size="9">Boxing</text></g>
+  <g transform="translate(1340,240)"><rect x="-35" y="0" width="70" height="90" rx="5" fill="#111d30" stroke="#1e3a5f"/><text y="18" fill="#555" font-weight="600">AP10</text><text y="32" fill="#555" font-size="9">Label</text></g>
+  <g transform="translate(1460,240)"><rect x="-42" y="0" width="84" height="90" rx="5" fill="#0d2b1a" stroke="#17a2b8"/><text y="18" fill="#17a2b8" font-weight="600">AP11</text><text y="32" fill="#666" font-size="9">Final QC</text><rect x="-32" y="42" width="64" height="14" rx="2" fill="#0d2b3e"/><text y="53" fill="#17a2b8" font-size="9">RELEASED</text></g>
+</g>
+
+<!-- Right Inspector (compact) -->
+<g transform="translate(1580,70)">
+  <rect x="0" y="0" width="310" height="680" rx="5" fill="#0f1a2e" stroke="#1e3a5f"/>
+  <text x="14" y="24" fill="#e94560" font-size="13" font-weight="600">WIP: MTR-0015</text>
+  <text x="14" y="50" fill="#888" font-size="10">Station: AP06 | Carrier: PAL-003</text>
+  <text x="14" y="68" fill="#e94560" font-size="10">Quality: RETEST PENDING</text>
+  <line x1="14" y1="80" x2="296" y2="80" stroke="#1e3a5f"/>
+  <text x="14" y="100" fill="#8899bb" font-size="11" font-weight="600">Genealogy</text>
+  <text x="14" y="118" fill="#4ecca3" font-size="10">SSO2-0003 + RSO2-0003 → MTR-0015</text>
+  <text x="14" y="134" fill="#555" font-size="9">JOIN @ AP04 | t=240s</text>
+  <text x="14" y="158" fill="#8899bb" font-size="11" font-weight="600">Quality — AP06</text>
+  <text x="14" y="176" fill="#e94560" font-size="10">Attempt 1: FAIL</text>
+  <text x="14" y="194" fill="#888" font-size="9">R_U-V:0.19Ω R_V-W:0.21Ω R_W-U:0.18Ω</text>
+  <text x="14" y="210" fill="#555" font-size="8">DEMO / SYNTHETIC DATA</text>
+  <text x="14" y="232" fill="#8899bb" font-size="11" font-weight="600">Events</text>
+  <text x="14" y="250" fill="#ffc107" font-size="9">12:04 AP04 MTR-0015 CREATED</text>
+  <text x="14" y="266" fill="#e94560" font-size="9">12:06 AP06 FAIL #1</text>
+  <text x="14" y="282" fill="#ffc107" font-size="9">12:06 LINE BLOCKED — HOLD</text>
+</g>
+
+<!-- Controls -->
+<g transform="translate(40,480)">
+  <rect x="0" y="0" width="1520" height="32" rx="4" fill="#0f1a2e" stroke="#1e3a5f"/>
+  <rect x="8" y="6" width="60" height="20" rx="3" fill="#e94560"/><text x="38" y="20" fill="#fff" font-size="9" text-anchor="middle">RESET</text>
+  <rect x="76" y="6" width="60" height="20" rx="3" fill="#4ecca3"/><text x="106" y="20" fill="#0d1117" font-size="9" text-anchor="middle">STEP</text>
+  <rect x="144" y="6" width="60" height="20" rx="3" fill="#17a2b8"/><text x="174" y="20" fill="#fff" font-size="9" text-anchor="middle">AUTO</text>
+  <text x="260" y="20" fill="#888" font-size="10">1x | AP06_FAIL_RETEST_PASS</text>
+</g>
+</svg>
+</div>
+
+<!-- ====== ARTBOARD 3: INDEX_SHIFT ====== -->
+<div class="artboard">
+<div class="artboard-label">Frame C — INDEX_SHIFT: Before → Transition → After</div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 360" width="1920">
+<rect width="1920" height="360" fill="#0d1117"/>
+<text x="20" y="30" fill="#e0e0e0" font-size="15" font-weight="600">INDEX_SHIFT — Synchronized Sub-line Movement</text>
+
+<!-- BEFORE -->
+<text x="60" y="70" fill="#888" font-size="12">BEFORE (STOP/READY)</text>
+<rect x="30" y="85" width="580" height="10" rx="5" fill="#1a2740"/>
+<g font-size="9" text-anchor="middle">
+  <rect x="40" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="70" y="56" fill="#aaa">AP04</text><text x="70" y="68" fill="#ffc107">MTR-A</text>
+  <rect x="140" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="170" y="56" fill="#aaa">AP05</text><text x="170" y="68" fill="#4ecca3">PAL-02</text>
+  <rect x="240" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="270" y="56" fill="#aaa">AP06</text><text x="270" y="68" fill="#4ecca3">MTR-B</text>
+  <rect x="340" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="370" y="56" fill="#aaa">AP07</text><text x="370" y="68" fill="#555">—</text>
+  <rect x="440" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="470" y="56" fill="#aaa">AP08</text><text x="470" y="68" fill="#555">—</text>
+</g>
+<text x="270" y="120" fill="#ffc107" font-size="10" text-anchor="middle">READY_TO_INDEX</text>
+
+<!-- ARROW -->
+<text x="680" y="70" fill="#aaa" font-size="28" text-anchor="middle">→</text>
+<text x="680" y="90" fill="#888" font-size="10" text-anchor="middle">~500ms</text>
+<text x="680" y="105" fill="#888" font-size="9" text-anchor="middle">simultaneous</text>
+
+<!-- AFTER -->
+<text x="800" y="70" fill="#888" font-size="12">AFTER (STOPPED)</text>
+<rect x="770" y="85" width="580" height="10" rx="5" fill="#1a2740"/>
+<g font-size="9" text-anchor="middle">
+  <rect x="780" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="810" y="56" fill="#aaa">AP04</text><text x="810" y="68" fill="#555">—</text>
+  <rect x="880" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="910" y="56" fill="#aaa">AP05</text><text x="910" y="68" fill="#ffc107">MTR-A</text>
+  <rect x="980" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="1010" y="56" fill="#aaa">AP06</text><text x="1010" y="68" fill="#4ecca3">PAL-02</text>
+  <rect x="1080" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="1110" y="56" fill="#aaa">AP07</text><text x="1110" y="68" fill="#4ecca3">MTR-B</text>
+  <rect x="1180" y="40" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="1210" y="56" fill="#aaa">AP08</text><text x="1210" y="68" fill="#555">—</text>
+</g>
+<text x="1010" y="120" fill="#4ecca3" font-size="10" text-anchor="middle">STOPPED (next dwell)</text>
+
+<!-- Rule -->
+<text x="20" y="170" fill="#555" font-size="10">All carriers move together. No sequential per-pallet animation. No continuous conveyor movement during work.</text>
+
+<!-- ===== AP11 RELEASE + LINE_OUT ===== -->
+<text x="20" y="220" fill="#e0e0e0" font-size="15" font-weight="600">AP11 — RELEASED / LINE_OUT</text>
+<rect x="30" y="240" width="580" height="10" rx="5" fill="#1a2740"/>
+<g font-size="9" text-anchor="middle">
+  <rect x="400" y="210" width="60" height="35" rx="3" fill="#111d30" stroke="#1e3a5f"/><text x="430" y="226" fill="#aaa">AP10</text><text x="430" y="238" fill="#4ecca3">MTR-B</text>
+  <rect x="500" y="210" width="60" height="35" rx="3" fill="#0d2b1a" stroke="#17a2b8"/><text x="530" y="226" fill="#17a2b8">AP11</text><text x="530" y="238" fill="#17a2b8">RELEASED</text>
+  <line x1="560" y1="228" x2="620" y2="228" stroke="#17a2b8" stroke-width="2"/>
+  <rect x="620" y="218" width="70" height="20" rx="3" fill="#0d2b3e"/><text x="655" y="232" fill="#17a2b8">MOTOR</text>
+</g>
+
+<!-- ===== AP04 JOIN ===== -->
+<text x="800" y="220" fill="#e0e0e0" font-size="15" font-weight="600">AP04 JOIN</text>
+<g transform="translate(800,240)" font-size="9" text-anchor="middle">
+  <rect x="0" y="0" width="70" height="24" rx="3" fill="#111d30" stroke="#4ecca3"/><text x="35" y="16" fill="#4ecca3">SSO2-0003</text>
+  <line x1="70" y1="12" x2="120" y2="12" stroke="#4ecca3" stroke-width="1"/>
+  <rect x="120" y="0" width="70" height="24" rx="3" fill="#111d30" stroke="#9988bb"/><text x="155" y="16" fill="#9988bb">RSO2-0003</text>
+  <line x1="190" y1="12" x2="240" y2="12" stroke="#9988bb" stroke-width="1"/>
+  <rect x="120" y="40" width="120" height="30" rx="5" fill="#1a2330" stroke="#ffc107" stroke-width="2"/><text x="180" y="60" fill="#ffc107" font-weight="600">AP04 JOIN</text>
+  <line x1="180" y1="70" x2="180" y2="90" stroke="#ffc107" stroke-width="2"/>
+  <rect x="120" y="90" width="120" height="24" rx="3" fill="#3d2e00"/><text x="180" y="107" fill="#ffc107">MTR-0015</text>
+  <text x="180" y="130" fill="#555" font-size="8">genealogy preserved</text>
+</g>
+</svg>
+</div>
+
+<!-- ====== ARTBOARD 4: 1366×768 ====== -->
+<div class="artboard">
+<div class="artboard-label">Frame L — 1366×768 Readability Check</div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1366 768" width="1366">
+<rect width="1366" height="768" fill="#0d1117"/>
+<rect x="0" y="0" width="1366" height="40" fill="#1a2332"/>
+<line x1="0" y1="40" x2="1366" y2="40" stroke="#1e3a5f"/>
+<text x="16" y="28" fill="#e0e0e0" font-size="16" font-weight="600">ASSY LINE / ASSY-SL03 — HYDRAULIC — QUALITY HOLD</text>
+<!-- Compressed conveyor -->
+<rect x="20" y="250" width="1326" height="8" rx="4" fill="#1a2740"/>
+<!-- Compressed stations (8px smaller, fewer details) -->
+<g font-size="8" text-anchor="middle">
+  <g transform="translate(20,170)"><rect x="-36" y="0" width="72" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#4ecca3" font-weight="600">PRE</text><text y="26" fill="#666">Stator</text><rect x="-26" y="32" width="52" height="10" rx="2" fill="#1b4332"/><text y="40" fill="#4ecca3" font-size="7">OK</text></g>
+  <g transform="translate(130,170)"><rect x="-36" y="0" width="72" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#4ecca3" font-weight="600">AP01</text><text y="26" fill="#666">Fit</text><rect x="-26" y="32" width="52" height="10" rx="2" fill="#1b4332"/><text y="40" fill="#4ecca3" font-size="7">OK</text></g>
+  <g transform="translate(240,170)"><rect x="-36" y="0" width="72" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#4ecca3" font-weight="600">AP02</text><text y="26" fill="#666">Wire</text><rect x="-26" y="32" width="52" height="10" rx="2" fill="#1b4332"/><text y="40" fill="#4ecca3" font-size="7">OK</text></g>
+  <g transform="translate(350,170)"><rect x="-36" y="0" width="72" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#4ecca3" font-weight="600">AP03</text><text y="26" fill="#666">QC</text><rect x="-26" y="32" width="52" height="10" rx="2" fill="#1b4332"/><text y="40" fill="#4ecca3" font-size="7">OK</text></g>
+  <g transform="translate(460,165)"><rect x="-40" y="0" width="80" height="74" rx="4" fill="#1a2330" stroke="#ffc107"/><text y="14" fill="#ffc107" font-weight="600">AP04</text><text y="26" fill="#888">JOIN</text><rect x="-30" y="32" width="60" height="10" rx="2" fill="#3d2e00"/><text y="40" fill="#ffc107" font-size="7">MTR-0015</text><text y="56" fill="#ffc107" font-size="7">←RSO2</text></g>
+  <g transform="translate(570,170)"><rect x="-36" y="0" width="72" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#4ecca3" font-weight="600">AP05</text><text y="26" fill="#666">Paint</text><rect x="-26" y="32" width="52" height="10" rx="2" fill="#1b4332"/><text y="40" fill="#4ecca3" font-size="7">OK</text></g>
+  <g transform="translate(680,165)"><rect x="-40" y="0" width="80" height="74" rx="4" fill="#1a1010" stroke="#e94560" stroke-width="2"/><text y="14" fill="#e94560" font-weight="600">AP06</text><text y="26" fill="#888">TEST</text><rect x="-30" y="32" width="60" height="10" rx="2" fill="#4a1a1a"/><text y="40" fill="#e94560" font-size="7">FAIL #1</text><rect x="-30" y="46" width="60" height="10" rx="2" fill="#5c4700"/><text y="55" fill="#ffc107" font-size="7">HOLD</text></g>
+  <g transform="translate(790,170)"><rect x="-30" y="0" width="60" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#555" font-weight="600">AP07</text><text y="26" fill="#555">Finish</text></g>
+  <g transform="translate(880,170)"><rect x="-30" y="0" width="60" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#555" font-weight="600">AP08</text><text y="26" fill="#555">Visual</text></g>
+  <g transform="translate(970,170)"><rect x="-30" y="0" width="60" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#555" font-weight="600">AP09</text></g>
+  <g transform="translate(1060,170)"><rect x="-30" y="0" width="60" height="64" rx="4" fill="#111d30" stroke="#1e3a5f"/><text y="14" fill="#555" font-weight="600">AP10</text></g>
+  <g transform="translate(1150,170)"><rect x="-36" y="0" width="72" height="64" rx="4" fill="#0d2b1a" stroke="#17a2b8"/><text y="14" fill="#17a2b8" font-weight="600">AP11</text><text y="26" fill="#666">Final</text><rect x="-26" y="32" width="52" height="10" rx="2" fill="#0d2b3e"/><text y="40" fill="#17a2b8" font-size="7">RELEASED</text></g>
+</g>
+<!-- Compact inspector -->
+<g transform="translate(1280,50)">
+  <rect x="0" y="0" width="70" height="220" rx="4" fill="#0f1a2e" stroke="#1e3a5f"/>
+  <text x="8" y="18" fill="#e94560" font-size="9" font-weight="600">MTR-0015</text>
+  <text x="8" y="32" fill="#888" font-size="8">AP06 HOLD</text>
+  <text x="8" y="48" fill="#e94560" font-size="8">FAIL #1</text>
+  <text x="8" y="64" fill="#555" font-size="7">SSO2+RSO2→MTR</text>
+</g>
+<text x="16" y="360" fill="#4ecca3" font-size="11">✔ Station IDs readable | ✔ Physical flow visible | ✔ Inspector compact but usable | ✔ No critical overlap</text>
+<g transform="translate(16,390)">
+  <rect x="0" y="0" width="1340" height="24" rx="3" fill="#0f1a2e"/>
+  <rect x="8" y="5" width="50" height="14" rx="2" fill="#e94560"/><text x="33" y="16" fill="#fff" font-size="8" text-anchor="middle">RESET</text>
+  <rect x="66" y="5" width="50" height="14" rx="2" fill="#4ecca3"/><text x="91" y="16" fill="#0d1117" font-size="8" text-anchor="middle">STEP</text>
+  <rect x="124" y="5" width="50" height="14" rx="2" fill="#17a2b8"/><text x="149" y="16" fill="#fff" font-size="8" text-anchor="middle">AUTO</text>
+  <text x="220" y="16" fill="#888" font-size="8">1x | AP06_FAIL_RETEST_PASS</text>
+</g>
+</svg>
+</div>
+
+</body></html>

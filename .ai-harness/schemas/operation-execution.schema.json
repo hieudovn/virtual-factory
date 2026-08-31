@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtual-factory.ai-harness/schemas/operation-execution.schema.json",
+  "title": "Operation Execution",
+  "description": "State model for one operation execution at a station. OPS-01 design/contract, reconciled with OPS-02 runtime serialization (C03). Additive to positions[]; does not alter occupancy truth.",
+  "type": "object",
+  "required": [
+    "execution_id",
+    "station_id",
+    "wip_id",
+    "state",
+    "started_at_sim_s",
+    "completed_at_sim_s",
+    "work_duration_s",
+    "completion_mode",
+    "command",
+    "inputs",
+    "checklist",
+    "measurements",
+    "operation_result",
+    "quality_result",
+    "proposed_quality_result",
+    "proposed_quality_reason",
+    "observations",
+    "routing_action",
+    "source",
+    "attempt_number",
+    "terminal"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "checklistItem": {
+      "type": "object",
+      "required": ["item_id", "completed"],
+      "additionalProperties": false,
+      "properties": {
+        "item_id": { "type": "string", "minLength": 1 },
+        "completed": { "type": "boolean" }
+      }
+    },
+    "timingSample": {
+      "type": "object",
+      "required": [
+        "profile_id",
+        "timing_behavior",
+        "nominal_duration_s",
+        "effective_duration_s",
+        "sub_actions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "profile_id": { "type": "string", "minLength": 1 },
+        "timing_behavior": { "type": "string", "enum": ["DETERMINISTIC", "VARIABLE"] },
+        "nominal_duration_s": { "type": "number" },
+        "effective_duration_s": { "type": "number" },
+        "sub_actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/timingSubActionSample" }
+        }
+      }
+    },
+    "timingSubActionSample": {
+      "type": "object",
+      "required": ["id", "policy", "nominal_duration_s", "effective_duration_s"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "policy": { "type": "string", "enum": ["fixed", "normal"] },
+        "nominal_duration_s": { "type": "number" },
+        "effective_duration_s": { "type": "number" },
+        "seconds": { "type": ["number", "null"] },
+        "mean_s": { "type": ["number", "null"] },
+        "stddev_s": { "type": ["number", "null"] },
+        "min_s": { "type": ["number", "null"] },
+        "max_s": { "type": ["number", "null"] }
+      }
+    }
+  },
+  "properties": {
+    "execution_id": { "type": "string", "minLength": 1 },
+    "station_id": { "type": "string", "minLength": 1 },
+    "wip_id": { "type": "string", "minLength": 1 },
+    "state": {
+      "type": "string",
+      "enum": [
+        "ARRIVED",
+        "READY",
+        "WORKING",
+        "AWAITING_COMPLETION",
+        "AWAITING_DECISION",
+        "COMPLETED",
+        "HELD",
+        "FAILED",
+        "EXCEPTION_PENDING",
+        "ELIGIBLE_TO_INDEX"
+      ]
+    },
+    "started_at_sim_s": { "type": ["number", "null"] },
+    "completed_at_sim_s": { "type": ["number", "null"] },
+    "work_duration_s": { "type": "number" },
+    "completion_mode": {
+      "type": "string",
+      "enum": ["MANUAL", "AUTO", "ASSISTED"]
+    },
+    "command": {
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRM", "CONFIRM_AND_COMPLETE", "JOIN_COMPLETE", "RELEASE", null],
+      "description": "User/system-invoked action (separate from normalized operation_result)."
+    },
+    "inputs": { "type": "object" },
+    "checklist": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/checklistItem" },
+      "description": "Structured checklist items {item_id, completed}. Generic; no TIPA-specific fields."
+    },
+    "measurements": { "type": "array", "items": { "type": "object" } },
+    "operation_result": {
+      "type": ["string", "null"],
+      "enum": ["DONE", "CONFIRMED", "JOIN_COMPLETE", "TEST_COMPLETE", "INSPECTION_COMPLETE", "RELEASED", null],
+      "description": "Normalized result of a successful completion. Distinct from command and from quality_result."
+    },
+    "quality_result": {
+      "type": ["string", "null"],
+      "enum": ["PASS", "FAIL", "NG", null]
+    },
+    "proposed_quality_result": {
+      "type": ["string", "null"],
+      "enum": ["PASS", "FAIL", "NG", null],
+      "description": "OPS-04-C01: machine/scenario-derived proposal observed BEFORE the operator decision is applied."
+    },
+    "proposed_quality_reason": {
+      "type": ["object", "null"],
+      "description": "OPS-04-C01-R1: generic pre-decision reason (e.g. {code, source}); never TIPA-specific."
+    },
+    "observations": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "OPS-04-C01-R1: neutral pre-decision observations (non-measurement quality stations)."
+    },
+    "routing_action": {
+      "type": ["string", "null"],
+      "enum": ["CONTINUE", "STAY_AT_STATION", null],
+      "description": "Routing outcome. LINE_OUT/LINE_IN removed — no Line-Out/In in frozen ASSY scope."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["simulated", "manual", "imported"],
+      "description": "Origin of the operation execution. Runtime emits the string 'simulated'."
+    },
+    "attempt_number": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Attempt counter for retryable quality operations."
+    },
+    "terminal": {
+      "type": "boolean",
+      "description": "True when the execution reached a no-recovery terminal state (e.g. FAILED + FAILED_FINAL)."
+    },
+    "timing": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/timingSample" }
+      ],
+      "description": "AUTO-TIME-01C: frozen AUTO timing sample (null for MANUAL/ASSISTED or AUTO fallback without profile)."
+    }
+  }
+}

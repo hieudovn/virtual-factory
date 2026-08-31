@@ -1,0 +1,2 @@
+mes.quality_result           QR-0002                QUALITY_RESULT AP06     attempt=1 disposition=FAIL
+mes.quality_result           QR-0003                QUALITY_RESULT AP06     attempt=2 disposition=PASS

@@ -1,0 +1,1033 @@
+{
+  "manual": [
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_DECISION"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_OBSERVED",
+      "station": "AP06",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_START",
+      "station": "AP06",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_RESULT",
+      "station": "AP06",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "AWAITING_DECISION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_DECISION"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_OBSERVED",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_START",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_RESULT",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "AWAITING_DECISION",
+      "to": "FAILED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "FAILED",
+      "to": "AWAITING_DECISION"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_OBSERVED",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_START",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_RESULT",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "AWAITING_DECISION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_DECISION"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_OBSERVED",
+      "station": "AP11",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_START",
+      "station": "AP11",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_RESULT",
+      "station": "AP11",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "AWAITING_DECISION",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    }
+  ],
+  "auto": [
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "PRE-ASSY",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP01",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP02",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP03",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP04",
+      "wip": "SSO2-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP05",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_DECISION"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_OBSERVED",
+      "station": "AP06",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_START",
+      "station": "AP06",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_RESULT",
+      "station": "AP06",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "AWAITING_DECISION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP06",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP07",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_DECISION"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_OBSERVED",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_START",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_RESULT",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "AWAITING_DECISION",
+      "to": "FAILED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "FAILED",
+      "to": "AWAITING_DECISION"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_OBSERVED",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_START",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_RESULT",
+      "station": "AP08",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "AWAITING_DECISION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP08",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP09",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP10",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "ARRIVED",
+      "to": "READY"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "READY",
+      "to": "WORKING"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "WORKING",
+      "to": "AWAITING_DECISION"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_OBSERVED",
+      "station": "AP11",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_START",
+      "station": "AP11",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "EVENT",
+      "event": "QUALITY_RESULT",
+      "station": "AP11",
+      "wip": "MTR-0001"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "AWAITING_DECISION",
+      "to": "AWAITING_COMPLETION"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "AWAITING_COMPLETION",
+      "to": "COMPLETED"
+    },
+    {
+      "kind": "STATE",
+      "station": "AP11",
+      "wip": "MTR-0001",
+      "from": "COMPLETED",
+      "to": "ELIGIBLE_TO_INDEX"
+    }
+  ],
+  "equivalent": true
+}

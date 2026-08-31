@@ -1,0 +1,193 @@
+plant:
+  id: tipa_assy_demo
+  name: TIPA ASSY Demo
+  type: discrete_assembly
+conveyor:
+  nominal_line_dwell_time_s: 120.0
+  index_movement_duration_s: 0.0
+  positions:
+  - PRE-ASSY
+  - AP01
+  - AP02
+  - AP03
+  - AP04
+  - AP05
+  - AP06
+  - AP07
+  - AP08
+  - AP09
+  - AP10
+  - AP11
+upstream:
+  sso2_wip_prefix: SSO2
+  rso2_wip_prefix: RSO2
+  sso2_production_interval_s: 120.0
+  rso2_production_interval_s: 120.0
+  sso2_operation_type: shrink_fit
+  rso2_operation_type: rotor_assembly
+station_durations:
+  PRE-ASSY: 30.0
+  AP01: 60.0
+  AP02: 75.0
+  AP03: 45.0
+  AP04: 60.0
+  AP05: 90.0
+  AP06: 60.0
+  AP07: 30.0
+  AP08: 30.0
+  AP09: 45.0
+  AP10: 45.0
+  AP11: 30.0
+ap04:
+  required_parent_sources:
+  - SSO2
+  - RSO2
+  component_list: []
+identity:
+  motor_wip_prefix: MTR
+simulation:
+  time_multiplier: 1.0
+  timing_behavior: DETERMINISTIC
+  random_seed: 42
+quality:
+  AP03:
+    max_attempts: 1
+    scenario: PASS
+  AP06:
+    max_attempts: 2
+    scenario: FAIL_FIRST_THEN_PASS
+    overrides:
+      1:
+      - PASS
+      2:
+      - FAIL
+      - PASS
+  AP08:
+    max_attempts: 2
+    scenario: PASS
+    overrides:
+      2:
+      - NG
+      - PASS
+  AP11:
+    max_attempts: 1
+    scenario: PASS
+auto_timing_profiles:
+  AP03:
+    profile_id: AP03_AUTO_V1
+    sub_actions:
+    - id: mechanical_check
+      duration:
+        type: fixed
+        seconds: 25
+    - id: checklist_execution
+      duration:
+        type: normal
+        mean_s: 15
+        stddev_s: 3
+        min_s: 10
+        max_s: 25
+    - id: confirmation
+      duration:
+        type: fixed
+        seconds: 5
+  AP04:
+    profile_id: AP04_AUTO_V1
+    sub_actions:
+    - id: positioning
+      duration:
+        type: fixed
+        seconds: 10
+    - id: alignment
+      duration:
+        type: normal
+        mean_s: 12
+        stddev_s: 2
+        min_s: 8
+        max_s: 18
+    - id: join
+      duration:
+        type: fixed
+        seconds: 28
+    - id: verification
+      duration:
+        type: fixed
+        seconds: 10
+  AP05:
+    profile_id: AP05_FIXTURE_135
+    sub_actions:
+    - id: fixture
+      duration:
+        type: fixed
+        seconds: 135.0
+  AP06:
+    profile_id: AP06_AUTO_V1
+    sub_actions:
+    - id: fixture
+      duration:
+        type: fixed
+        seconds: 10
+    - id: test
+      duration:
+        type: normal
+        mean_s: 40
+        stddev_s: 5
+        min_s: 30
+        max_s: 55
+    - id: evaluation
+      duration:
+        type: fixed
+        seconds: 10
+  AP08:
+    profile_id: AP08_AUTO_V1
+    sub_actions:
+    - id: vision_acquisition
+      duration:
+        type: fixed
+        seconds: 8
+    - id: analysis
+      duration:
+        type: normal
+        mean_s: 16
+        stddev_s: 2
+        min_s: 10
+        max_s: 22
+    - id: decision
+      duration:
+        type: fixed
+        seconds: 6
+  AP11:
+    profile_id: AP11_AUTO_V1
+    sub_actions:
+    - id: final_qc
+      duration:
+        type: normal
+        mean_s: 30
+        stddev_s: 4
+        min_s: 20
+        max_s: 40
+production_line:
+  plant_id: TIPA
+  id: ASSY
+  label: ASSY Line
+  sub_lines:
+  - id: ASSY-SL01
+    variant: hydraulic
+    label: "ASSY-SL01 \u2014 Hydraulic"
+  - id: ASSY-SL02
+    variant: hydraulic
+    label: "ASSY-SL02 \u2014 Hydraulic"
+  - id: ASSY-SL03
+    variant: hydraulic
+    label: "ASSY-SL03 \u2014 Hydraulic"
+  - id: ASSY-SL04
+    variant: thermal
+    label: "ASSY-SL04 \u2014 Thermal"
+  - id: ASSY-SL05
+    variant: thermal
+    label: "ASSY-SL05 \u2014 Thermal"
+  - id: ASSY-SL06
+    variant: thermal
+    label: "ASSY-SL06 \u2014 Thermal"
+  demo:
+    target_sub_line_for_exception: ASSY-SL03
