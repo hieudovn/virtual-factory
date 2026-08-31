@@ -1,0 +1,96 @@
+{
+  "task_id": "AUTO-TIME-01C",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "AUTO-TIME-01C — Snapshot timing provenance & bottleneck metrics (slice C only). Expose authoritative timing data: persist last-dwell metrics in runtime (actual_dwell_s, dwell_overrun_s, bottleneck_station_id, bottleneck_duration_s); deterministic bottleneck; serialize OperationExecution.timing; extend AssyDemoSnapshot and ActiveOperationView; update operation-execution JSON schema.",
+  "explicit_non_objectives": [
+    "MES outbound integration",
+    "charts/dashboard redesign",
+    "Monte Carlo analytics",
+    "historical KPI aggregation",
+    "p50/p95 statistics",
+    "bottleneck frequency over many cycles",
+    "human timing",
+    "retry timing redesign",
+    "quality-vs-speed model",
+    "simulation_time_multiplier activation"
+  ],
+  "required_branch": "docs/m6-s01-tipa-baseline",
+  "expected_base_sha": "52d3fb9171eb4d97d561ff8ddcc071554e0acab9",
+  "allowed_paths": [
+    "src/virtual_factory/assembly/line_runtime.py",
+    "src/virtual_factory/assembly/operation_execution.py",
+    "src/virtual_factory/assembly/demo_snapshot.py",
+    ".ai-harness/schemas/operation-execution.schema.json",
+    "tests/test_ops02_schema_contract.py",
+    "tests/test_quality_records_projection.py",
+    "tests/test_auto_timing_snapshot.py",
+    ".ai-harness/tasks/AUTO-TIME-01C.json",
+    ".ai-harness/sa-review/"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/assembly/station_contracts.py",
+    "src/virtual_factory/assembly/demo_composition.py",
+    "src/virtual_factory/assembly/auto_timing.py",
+    "configs/plants/tipa_assy_demo.yaml"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/assembly/line_runtime.py — DwellPerformance + persist metrics + reset neutral",
+    "src/virtual_factory/assembly/operation_execution.py — to_dict timing serialization",
+    "src/virtual_factory/assembly/demo_snapshot.py — snapshot + ActiveOperationView fields",
+    ".ai-harness/schemas/operation-execution.schema.json — additive optional/nullable timing",
+    "tests/test_auto_timing_snapshot.py — focused snapshot/bottleneck tests",
+    ".ai-harness/sa-review/CURRENT.md + reports/AUTO-TIME-01C.md"
+  ],
+  "required_tests": [
+    "OperationExecution to_dict serializes timing",
+    "timing schema valid positive case",
+    "invalid timing schema rejected",
+    "MANUAL timing null accepted",
+    "AUTO fallback timing null accepted",
+    "active operation view carries work_duration_s",
+    "active operation view carries timing",
+    "snapshot exposes actual dwell",
+    "no-overrun returns zero/empty bottleneck",
+    "AP05=135 produces 15s overrun and AP05 bottleneck",
+    "deterministic tie handling",
+    "reset clears dwell metrics",
+    "snapshot refresh does not change sample",
+    "timing effective equals op work duration",
+    "retry same timing provenance",
+    "AP11 semantics unchanged"
+  ],
+  "required_smoke_checks": [
+    "pytest tests/test_auto_timing_snapshot.py"
+  ],
+  "required_remote_evidence": [
+    "remote_commit_exists"
+  ],
+  "forbidden_actions": [
+    "do_not_merge",
+    "do_not_push_to_main",
+    "do_not_change_dwell_semantics",
+    "do_not_begin_mes",
+    "do_not_self_certify_complete"
+  ],
+  "stop_conditions": [
+    "baseline_mismatch",
+    "metric_computation_requires_dwell_semantics_change",
+    "snapshot_construction_mutates_runtime",
+    "broad_unrelated_schema_change",
+    "new_regression_outside_documented_pre_existing"
+  ],
+  "acceptance_criteria": [
+    {"id": "C1", "description": "Baseline is 52d3fb9 on docs/m6-s01-tipa-baseline"},
+    {"id": "C2", "description": "Last-dwell metrics persisted and exposed in snapshot"},
+    {"id": "C3", "description": "Deterministic bottleneck tie handling (earlier position wins)"},
+    {"id": "C4", "description": "OperationExecution.timing serialized and schema-validated"},
+    {"id": "C5", "description": "New snapshot tests pass"},
+    {"id": "C6", "description": "Core suites remain green except documented pre-existing failures"}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

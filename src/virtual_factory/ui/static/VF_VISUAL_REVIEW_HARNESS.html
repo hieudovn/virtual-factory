@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VF Visual Review Harness — EXH-UI-01-C03 / Physical Composition Freeze</title>
+<link rel="stylesheet" href="/static/assy_demo.css">
+<style>
+  body { overflow-y: auto; background: var(--vf-bg-page); }
+  .h-banner { background: #FFF3CD; border-bottom: 2px solid #E8A23A; padding: 8px 24px; font-size: 11px; color: #856404; font-weight: 600; display: flex; gap: 24px; }
+  .h-banner span { opacity: 0.85; }
+  .h-section { padding: 24px; border-bottom: 1px solid var(--vf-border); }
+  .h-section h2 { font-size: 16px; margin-bottom: 16px; color: var(--vf-text); }
+  .h-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .h-item { background: var(--vf-bg-surface); border: 1px solid var(--vf-border); border-radius: var(--vf-radius-md); padding: 16px; }
+  .h-item h3 { font-size: 12px; color: var(--vf-text-muted); margin-bottom: 8px; text-transform: uppercase; }
+  .h-svg { width: 100%; height: 160px; background: var(--vf-bg-canvas); border-radius: var(--vf-radius-sm); }
+  .h-error { color: var(--vf-state-fail); font-size: 14px; padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="h-banner"><span>HARNESS: VISUAL PRIMITIVES ONLY</span><span>|</span><span>PRODUCTION APP BOOT: DISABLED</span></div>
+<div id="harness-root"><div class="h-error">Loading VF primitives from production module...</div></div>
+<script src="/static/assy_demo.js"></script>
+<script>
+function build() {
+  if (typeof VF === 'undefined') { document.getElementById('harness-root').innerHTML='<div class="h-error">ERROR: VF not loaded</div>'; return; }
+  var SX=[1720,1600,1485,1370,1240,1115,985,865,735,615,495,365];
+  var SN=['PRE-ASSY','AP01','AP02','AP03','AP04','AP05','AP06','AP07','AP08','AP09','AP10','AP11'];
+  var AR={PRE_ASSY:'INPUT',AP03:'CHECK',AP04:'JOIN',AP06:'TEST',AP08:'VISION',AP09:'PACK',AP10:'PACK',AP11:'FINAL'};
+  var LM={AP04:'JOIN',AP06:'TEST',AP08:'VISION',AP11:'FINAL'};
+  var h='';
+
+  // 1. Full Line
+  var sh='';
+  SN.forEach(function(s,i){sh+=VF.station(SX[i],230,s,AR[s]||'MANUAL',!!LM[s],false,false);});
+  sh+=VF.wipToken(1600,230,'SSO2-X','STATOR',false,'');
+  sh+=VF.wipToken(1240,230,'MTR-X1','JOINED',false,'');
+  sh+=VF.wipToken(1115,230,'MTR-X2','PRETEST',false,'');
+  sh+=VF.wipToken(985,230,'MTR-X3','TESTED',false,'');
+  sh+=VF.wipToken(735,230,'MTR-X4','PACKED',false,'');
+  sh+=VF.wipToken(865,230,'MTR-H1','PRETEST',true,'FAIL');
+
+  h+='<div class="h-section"><h2>1. Full Line + Global Arrow + Off-Line Zone</h2><svg viewBox="0 0 1920 820" style="width:100%;height:620px;background:var(--vf-bg-canvas);">';
+  for(var gx=0;gx<=1920;gx+=40)h+='<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="820" stroke="var(--vf-grid-minor)" stroke-width="0.5"/>';
+  for(var gy=0;gy<=820;gy+=40)h+='<line x1="0" y1="'+gy+'" x2="1920" y2="'+gy+'" stroke="var(--vf-grid-minor)" stroke-width="0.5"/>';
+  h+='<g opacity="0.09"><rect x="250" y="435" width="1500" height="65" rx="10" fill="var(--vf-accent)"/><polygon points="250,435 160,467 250,500" fill="var(--vf-accent)"/></g>';
+  h+='<rect x="1720" y="50" width="180" height="300" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/><text x="1810" y="66" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">ASSY INPUT</text><text x="1810" y="80" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.6">LINE START</text>';
+  h+='<rect x="30" y="50" width="180" height="300" rx="5" fill="#FBFCFD" stroke="var(--vf-border)" stroke-width="1.2" stroke-dasharray="6,4"/><text x="120" y="66" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">ASSY OUTPUT</text><text x="120" y="80" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.6">LINE END</text>';
+  h+='<rect x="500" y="620" width="700" height="130" rx="6" fill="#FAFBFD" stroke="var(--vf-text-muted)" stroke-width="1.2" stroke-dasharray="8,5" opacity="0.7"/><text x="850" y="638" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle" font-weight="600">OFF-LINE EXCEPTION HANDLING</text><text x="850" y="654" fill="var(--vf-text-muted)" font-size="8" text-anchor="middle" opacity="0.5">CONCEPTUAL</text>';
+  h+='<line x1="1050" y1="570" x2="1050" y2="620" stroke="var(--vf-state-hold)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/><text x="1058" y="590" fill="var(--vf-state-hold)" font-size="9" font-weight="600">LINE OUT</text><polygon points="1046,620 1054,620 1050,628" fill="var(--vf-state-hold)" opacity="0.55"/>';
+  h+='<line x1="650" y1="620" x2="650" y2="570" stroke="var(--vf-state-pass)" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.55"/><text x="658" y="612" fill="var(--vf-state-pass)" font-size="9" font-weight="600">LINE IN</text><polygon points="646,570 654,570 650,562" fill="var(--vf-state-pass)" opacity="0.55"/>';
+  h+='<rect x="110" y="420" width="1720" height="10" rx="4" fill="var(--vf-conveyor-frame)"/><rect x="110" y="430" width="1720" height="130" rx="8" fill="var(--vf-conveyor-body)"/><rect x="110" y="560" width="1720" height="10" rx="4" fill="var(--vf-conveyor-frame)"/>';
+  for(var rx=140;rx<1830;rx+=40)h+='<rect x="'+rx+'" y="442" width="16" height="106" rx="4" fill="var(--vf-conveyor-roller)" opacity="0.4"/>';
+  h+='<line x1="1240" y1="230" x2="1240" y2="420" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#ha1)"/><text x="1250" y="240" fill="#C8960E" font-size="9" font-weight="600">RSO2 ROTOR</text>';
+  h+=sh;
+  h+='<g transform="translate(1810,335)">'+VF.pallet(0,0)+VF.statorAssy(0,-2)+'</g><g transform="translate(1810,275)">'+VF.pallet(0,0)+VF.rotor(0,-2)+'</g><g transform="translate(120,335)">'+VF.pallet(0,0)+VF.packedGoods(0,-2)+'</g>';
+  h+='<g transform="translate(1240,250)">'+VF.rotor(0,0)+'</g>';
+  h+='<defs><marker id="ha1" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#C8960E"/></marker></defs></svg></div>';
+
+  // 2. Object Catalog
+  h+='<div class="h-section"><h2>2. Object Catalog (pallet 100x80)</h2><div class="h-grid">';
+  [{l:'STATOR ASSY',f:'statorAssy'},{l:'ROTOR',f:'rotor'},{l:'MTR JOINED',f:'motorJoined'},{l:'MTR PRE-TEST',f:'motorPreTest'},{l:'TESTED MTR',f:'motorTested'},{l:'PACKED GOODS',f:'packedGoods'}].forEach(function(o){
+    h+='<div class="h-item"><h3>'+o.l+'</h3><svg class="h-svg" viewBox="0 0 200 120"><rect width="200" height="120" fill="var(--vf-bg-canvas)"/>'+VF.pallet(100,100)+VF[o.f](100,78)+'</svg></div>';
+  });
+  h+='</div></div>';
+
+  // 3. Station Archetypes
+  h+='<div class="h-section"><h2>3. Station Archetypes</h2><div class="h-grid">';
+  [{a:'INPUT',s:'PRE-ASSY',l:'Input/Prep'},{a:'MANUAL',s:'AP01',l:'Manual Assy'},{a:'CHECK',s:'AP03',l:'Mech Check'},{a:'JOIN',s:'AP04',l:'JOIN'},{a:'TEST',s:'AP06',l:'EOL Test'},{a:'VISION',s:'AP08',l:'Vision'},{a:'PACK',s:'AP09',l:'Boxing/Pack'},{a:'FINAL',s:'AP11',l:'Final QC'}].forEach(function(x){
+    h+='<div class="h-item"><h3>'+x.l+'</h3><svg class="h-svg" viewBox="0 0 200 120"><rect width="200" height="120" fill="var(--vf-bg-canvas)"/>'+VF.stationBody(100,50,x.a,x.s)+'</svg></div>';
+  });
+  h+='</div></div>';
+
+  // 4. AP04 JOIN
+  h+='<div class="h-section"><h2>4. AP04 JOIN</h2><svg viewBox="0 0 500 350" style="width:100%;height:310px;background:var(--vf-bg-canvas);">';
+  h+='<rect x="80" y="240" width="340" height="44" rx="5" fill="var(--vf-conveyor-body)"/><rect x="80" y="234" width="340" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>';
+  h+='<g transform="translate(300,250)">'+VF.pallet(0,0)+VF.statorAssy(0,-5)+'</g><text x="300" y="228" fill="var(--vf-obj-stator)" font-size="9" text-anchor="middle">STATOR</text>';
+  h+='<g transform="translate(250,160)">'+VF.pallet(0,0)+VF.rotor(0,-5)+'</g><text x="250" y="145" fill="var(--vf-obj-rotor)" font-size="9" text-anchor="middle">RSO2 ROTOR</text>';
+  h+='<line x1="250" y1="195" x2="250" y2="234" stroke="#C8960E" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#ha2)"/>';
+  h+=VF.station(250,240,'AP04','JOIN',true,false,false);
+  h+='<g transform="translate(180,250)">'+VF.pallet(0,0)+VF.motorJoined(0,-5)+'</g><text x="180" y="228" fill="var(--vf-obj-joined)" font-size="9" text-anchor="middle">JOINED</text>';
+  h+='<defs><marker id="ha2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--vf-flow-product)"/></marker></defs></svg></div>';
+
+  // 5. FAIL retest (same-station, no LINE OUT)
+  h+='<div class="h-section"><h2>5. AP06 FAIL -> RETEST_PENDING (stays at AP06)</h2><svg viewBox="0 0 500 280" style="width:100%;height:260px;background:var(--vf-bg-canvas);">';
+  h+='<rect x="80" y="220" width="340" height="44" rx="5" fill="var(--vf-conveyor-body)"/>';
+  h+=VF.station(250,230,'AP06','TEST',true,false,true);
+  h+='<g transform="translate(250,270)">'+VF.pallet(0,0)+VF.motorPreTest(0,-5)+'</g>'+VF.stateOverlay(250,278,'HOLD');
+  h+='<text x="250" y="215" fill="var(--vf-state-fail)" font-size="10" text-anchor="middle" font-weight="600">FAIL -> retest (same station)</text></svg></div>';
+
+  // 6. NG reinspect (same-station, no LINE IN)
+  h+='<div class="h-section"><h2>6. AP08 NG -> REINSPECT_PENDING (stays at AP08)</h2><svg viewBox="0 0 500 280" style="width:100%;height:260px;background:var(--vf-bg-canvas);">';
+  h+='<rect x="80" y="220" width="340" height="44" rx="5" fill="var(--vf-conveyor-body)"/>';
+  h+=VF.station(250,230,'AP08','VISION',true,false,false);
+  h+='<g transform="translate(250,270)">'+VF.pallet(0,0)+VF.motorTested(0,-5)+'</g>'+VF.stateOverlay(250,278,'NG');
+  h+='<text x="250" y="215" fill="var(--vf-state-fail)" font-size="10" text-anchor="middle" font-weight="600">NG -> reinspect (same station)</text></svg></div>';
+
+  // 7. Adjacent Occupancy Stress Test
+  h+='<div class="h-section"><h2>7. Stress Test: AP01-AP06 populated (pallet gap 15-30px)</h2><svg viewBox="0 0 1000 480" style="width:100%;height:400px;background:var(--vf-bg-canvas);">';
+  h+='<rect x="20" y="360" width="960" height="44" rx="5" fill="var(--vf-conveyor-body)"/><rect x="20" y="354" width="960" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>';
+  var sX=[880,760,645,530,400,275];
+  var sS=['AP01','AP02','AP03','AP04','AP05','AP06'];
+  var sA=['MANUAL','MANUAL','CHECK','JOIN','MANUAL','TEST'];
+  var sW=[{t:'STATOR',f:'statorAssy'},{t:'STATOR',f:'statorAssy'},{t:'STATOR',f:'statorAssy'},{t:'JOINED',f:'motorJoined'},{t:'PRETEST',f:'motorPreTest'},{t:'PRETEST',f:'motorPreTest'}];
+  sS.forEach(function(s,i){
+    h+=VF.station(sX[i],360,s,sA[i],!!LM[s],false,false);
+    h+='<g transform="translate('+sX[i]+',405)">'+VF.pallet(0,0)+VF[sW[i].f](0,-5)+'</g>';
+  });
+  h+='<text x="20" y="345" fill="var(--vf-text-muted)" font-size="10">Pallet 100px at 115-130px station gaps = 15-30px visible between pallets. No overlap.</text></svg></div>';
+
+  // 8. Conveyor close-up
+  h+='<div class="h-section"><h2>8. Conveyor + Pallet (150px conveyor, 100x80 pallet)</h2><svg viewBox="0 0 400 280" style="width:100%;height:240px;background:var(--vf-bg-canvas);">';
+  h+='<rect x="40" y="70" width="320" height="10" rx="4" fill="var(--vf-conveyor-frame)"/><rect x="40" y="80" width="320" height="130" rx="8" fill="var(--vf-conveyor-body)"/><rect x="40" y="210" width="320" height="10" rx="4" fill="var(--vf-conveyor-frame)"/>';
+  for(var rx=70;rx<350;rx+=30)h+='<rect x="'+rx+'" y="92" width="14" height="106" rx="3" fill="var(--vf-conveyor-roller)" opacity="0.4"/>';
+  h+='<g transform="translate(200,170)">'+VF.pallet(0,0)+VF.motorPreTest(0,-5)+'</g>';
+  h+='<text x="200" y="235" fill="var(--vf-text-muted)" font-size="10" text-anchor="middle">100x80 pallet on 150px conveyor</text></svg></div>';
+
+  h+='<div class="h-section"><h2>9. Responsive Notes</h2><p style="font-size:12px;color:var(--vf-text-secondary);">1920/1600/1366 supported. Global RIGHT->LEFT arrow 9% opacity. OFF-LINE EXCEPTION HANDLING conceptual zone below conveyor. LINE OUT/LINE IN are conceptual only. No hardcoded AP06->AP08 repair route. AP06/AP08 are quality stations on main line.</p></div>';
+
+  // 10. Controlled Motion Contract
+  h+='<div class="h-section"><h2>10. Controlled Motion Contract</h2>';
+  h+='<p style="font-size:12px;color:var(--vf-text-secondary);margin-bottom:12px;">Uses shared production MotionEngine from assy_demo.js. No second motion engine. Deterministic tests below.</p>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap03to04\')">Forward AP03\u2192AP04</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'reverse\')">Reverse AP05\u2192AP04</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'hold\')">Generic HOLD adjacent</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap06fail\')">AP06 FAIL/HOLD adversarial</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap08ng\')">AP08 NG/HOLD adversarial</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'ap04join\')">AP04 JOIN boundary</button>';
+  h+='<button class="vf-btn accent-outline" onclick="harnessMotionTest(\'failedfinal\')">FAILED_FINAL status adjacent</button>';
+  h+='<button class="vf-btn" onclick="harnessMotionTest(\'reduced\')">Reduced Motion</button>';
+  h+='<button class="vf-btn" onclick="harnessMotionTest(\'stepblock\')">STEP while animating</button>';
+  h+='</div>';
+  h+='<svg id="motion-svg" viewBox="0 0 700 320" style="width:100%;height:280px;background:var(--vf-bg-canvas);">';
+  h+='<rect x="60" y="220" width="580" height="44" rx="5" fill="var(--vf-conveyor-body)"/><rect x="60" y="214" width="580" height="8" rx="3" fill="var(--vf-conveyor-frame)"/>';
+  h+='<text id="motion-label1" x="640" y="190" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">AP03</text>';
+  h+='<text id="motion-label2" x="480" y="190" fill="var(--vf-text-muted)" font-size="9" text-anchor="middle">AP04</text>';
+  h+=VF.station(640,220,'AP03','CHECK',false,false,false);
+  h+=VF.station(480,220,'AP04','JOIN',true,false,false);
+  h+='<g id="wip-W1" transform="translate(640,265)">'+VF.pallet(0,0)+VF.statorAssy(0,-5)+'</g>';
+  h+='</svg>';
+  h+='<div id="motion-status" style="font-size:12px;color:var(--vf-state-pass);margin-top:8px;">Ready. Click a test button.</div>';
+  h+='</div>';
+
+  document.getElementById('harness-root').innerHTML = h;
+
+  // Wire motion harness controls (uses production MotionEngine)
+  window.harnessMotionTest = function(kind) {
+    var status = document.getElementById('motion-status');
+    if (typeof MotionEngine === 'undefined') {
+      status.textContent = 'MotionEngine not loaded'; status.style.color = 'var(--vf-state-fail)';
+      return;
+    }
+    function report(name, plans) {
+      status.textContent = name + ': ' + plans.length + ' plan(s)';
+      status.style.color = 'var(--vf-state-pass)';
+    }
+    if (kind === 'ap03to04') {
+      var prev = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };
+      var next = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var plans = MotionEngine.detect(prev, next);
+      status.textContent = 'Forward AP03\u2192AP04: ' + plans.length + ' plan(s). Animating 450ms.';
+      status.style.color = plans.length === 1 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+      MotionEngine.animate(plans, function(){ status.textContent = 'Settled: W1 at AP04 (authoritative).'; });
+    } else if (kind === 'reverse') {
+      var prevR = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP05'}] };
+      var nextR = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var plansR = MotionEngine.detect(prevR, nextR);
+      status.textContent = 'Reverse AP05\u2192AP04: ' + plansR.length + ' plan(s) \u2014 REJECTED (forward-only).';
+      status.style.color = plansR.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'hold') {
+      var prevH = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP05'}] };
+      var nextH = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP06', is_quality_hold:true}] };
+      var plansH = MotionEngine.detect(prevH, nextH);
+      status.textContent = 'Generic HOLD adjacent: ' + plansH.length + ' plan(s) \u2014 REJECTED.';
+      status.style.color = plansH.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'ap06fail') {
+      var prev6 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP06'}] };
+      var next6 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP07', is_quality_hold:true, latest_quality_result:'FAIL'}] };
+      var plans6 = MotionEngine.detect(prev6, next6);
+      status.textContent = 'AP06 FAIL/HOLD adversarial: ' + plans6.length + ' plan(s) \u2014 REJECTED.';
+      status.style.color = plans6.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'ap08ng') {
+      var prev8 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP08'}] };
+      var next8 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP09', is_quality_hold:true, latest_quality_result:'NG'}] };
+      var plans8 = MotionEngine.detect(prev8, next8);
+      status.textContent = 'AP08 NG/HOLD adversarial: ' + plans8.length + ' plan(s) \u2014 REJECTED.';
+      status.style.color = plans8.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'ap04join') {
+      var prevJ = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var nextJ = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP05'}] };
+      var plansJ = MotionEngine.detect(prevJ, nextJ);
+      status.textContent = 'AP04 JOIN boundary: ' + plansJ.length + ' plan(s) \u2014 DIRECT SETTLE (new MTR child identity).';
+      status.style.color = plansJ.length === 0 ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'failedfinal') {
+      // FAILED_FINAL with FAIL result (quality_status is terminal, independent of result)
+      var prevF1 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP06'}] };
+      var nextF1 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP07', latest_quality_result:'FAIL', quality_status:'FAILED_FINAL', is_quality_hold:false}] };
+      var plansF1 = MotionEngine.detect(prevF1, nextF1);
+      // FAILED_FINAL with PASS result (proves status is independent)
+      var nextF2 = { sub_line_id:'X', positions:[{wip_id:'M1', position_id:'AP07', latest_quality_result:'PASS', quality_status:'FAILED_FINAL', is_quality_hold:false}] };
+      var plansF2 = MotionEngine.detect(prevF1, nextF2);
+      status.textContent = 'FAILED_FINAL (FAIL result): ' + plansF1.length + ' plan(s); (PASS result): ' + plansF2.length + ' plan(s) \u2014 REJECTED.';
+      status.style.color = (plansF1.length === 0 && plansF2.length === 0) ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    } else if (kind === 'reduced') {
+      MotionEngine._prefersReduced = true;
+      var prev5 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };
+      var next5 = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var plans5 = MotionEngine.detect(prev5, next5);
+      status.textContent = 'Reduced motion: direct settle, ' + plans5.length + ' plan(s) skipped interpolation.';
+      status.style.color = 'var(--vf-state-pass)';
+      MotionEngine.animate(plans5, function(){ MotionEngine._prefersReduced = false; status.textContent = 'Settled instantly (reduced motion).'; });
+    } else if (kind === 'stepblock') {
+      var prevS = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP03'}] };
+      var nextS = { sub_line_id:'X', positions:[{wip_id:'W1', position_id:'AP04'}] };
+      var plansS = MotionEngine.detect(prevS, nextS);
+      MotionEngine.animate(plansS);
+      var blocked = MotionEngine.isAnimating;
+      status.textContent = 'STEP while animating: isAnimating=' + blocked + ' \u2014 STEP would be blocked until settle.';
+      status.style.color = blocked ? 'var(--vf-state-pass)' : 'var(--vf-state-fail)';
+    }
+  };
+}
+setTimeout(build,100);
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+{
+  "run1": {
+    "operations": [
+      {
+        "station": "AP01",
+        "wip": "SSO2-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP02",
+        "wip": "SSO2-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP03",
+        "wip": "SSO2-0001",
+        "result": "CONFIRMED",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP04",
+        "wip": "SSO2-0001",
+        "result": "JOIN_COMPLETE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP05",
+        "wip": "MTR-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP06",
+        "wip": "MTR-0001",
+        "result": "TEST_COMPLETE",
+        "quality": "PASS",
+        "routing": "CONTINUE",
+        "attempt": 1
+      },
+      {
+        "station": "AP07",
+        "wip": "MTR-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP08",
+        "wip": "MTR-0001",
+        "result": "INSPECTION_COMPLETE",
+        "quality": "PASS",
+        "routing": "CONTINUE",
+        "attempt": 1
+      },
+      {
+        "station": "AP09",
+        "wip": "MTR-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP10",
+        "wip": "MTR-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP11",
+        "wip": "MTR-0001",
+        "result": "RELEASED",
+        "quality": "PASS",
+        "routing": "CONTINUE",
+        "attempt": 1
+      },
+      {
+        "station": "PRE-ASSY",
+        "wip": "SSO2-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      }
+    ],
+    "genealogy": [
+      [
+        "MTR-0001",
+        [
+          "RSO2-0001",
+          "SSO2-0001"
+        ],
+        "AP04"
+      ]
+    ],
+    "quality": [
+      [
+        "AP06",
+        "PASS",
+        1
+      ],
+      [
+        "AP08",
+        "PASS",
+        1
+      ],
+      [
+        "AP11",
+        "PASS",
+        1
+      ]
+    ],
+    "released": 1
+  },
+  "run2": {
+    "operations": [
+      {
+        "station": "AP01",
+        "wip": "SSO2-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP02",
+        "wip": "SSO2-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP03",
+        "wip": "SSO2-0001",
+        "result": "CONFIRMED",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP04",
+        "wip": "SSO2-0001",
+        "result": "JOIN_COMPLETE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP05",
+        "wip": "MTR-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP06",
+        "wip": "MTR-0001",
+        "result": "TEST_COMPLETE",
+        "quality": "PASS",
+        "routing": "CONTINUE",
+        "attempt": 1
+      },
+      {
+        "station": "AP07",
+        "wip": "MTR-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP08",
+        "wip": "MTR-0001",
+        "result": "INSPECTION_COMPLETE",
+        "quality": "PASS",
+        "routing": "CONTINUE",
+        "attempt": 1
+      },
+      {
+        "station": "AP09",
+        "wip": "MTR-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP10",
+        "wip": "MTR-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      },
+      {
+        "station": "AP11",
+        "wip": "MTR-0001",
+        "result": "RELEASED",
+        "quality": "PASS",
+        "routing": "CONTINUE",
+        "attempt": 1
+      },
+      {
+        "station": "PRE-ASSY",
+        "wip": "SSO2-0001",
+        "result": "DONE",
+        "quality": "",
+        "routing": "CONTINUE",
+        "attempt": 0
+      }
+    ],
+    "genealogy": [
+      [
+        "MTR-0001",
+        [
+          "RSO2-0001",
+          "SSO2-0001"
+        ],
+        "AP04"
+      ]
+    ],
+    "quality": [
+      [
+        "AP06",
+        "PASS",
+        1
+      ],
+      [
+        "AP08",
+        "PASS",
+        1
+      ],
+      [
+        "AP11",
+        "PASS",
+        1
+      ]
+    ],
+    "released": 1
+  },
+  "equivalent": true
+}

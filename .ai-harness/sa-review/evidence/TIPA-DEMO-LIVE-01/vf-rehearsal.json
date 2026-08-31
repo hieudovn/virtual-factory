@@ -1,0 +1,83 @@
+{
+  "producer": "virtual_factory",
+  "rehearsal": "VF-S12 customer-style",
+  "sequence": [
+    "HAPPY_PATH",
+    "AP06_FAIL_RETEST_PASS",
+    "FAILED_FINAL",
+    "AP08_NG_REINSPECT_PASS"
+  ],
+  "overall_seconds": 1.59,
+  "results": [
+    {
+      "scenario": "HAPPY_PATH",
+      "reset_ms": 27.7,
+      "steps_to_evidence": 13,
+      "step_phase_s": 0.38,
+      "health_ms": 3.3,
+      "new_run_ids": [
+        "ASSY-SL01:R1",
+        "ASSY-SL02:R1",
+        "ASSY-SL03:R1",
+        "ASSY-SL04:R1",
+        "ASSY-SL05:R1",
+        "ASSY-SL06:R1"
+      ],
+      "status": "OK"
+    },
+    {
+      "scenario": "AP06_FAIL_RETEST_PASS",
+      "reset_ms": 27.0,
+      "steps_to_evidence": 9,
+      "step_phase_s": 0.29,
+      "health_ms": 25.2,
+      "new_run_ids": [
+        "ASSY-SL01:R2",
+        "ASSY-SL02:R2",
+        "ASSY-SL03:R2",
+        "ASSY-SL04:R2",
+        "ASSY-SL05:R2",
+        "ASSY-SL06:R2"
+      ],
+      "status": "OK"
+    },
+    {
+      "scenario": "FAILED_FINAL",
+      "reset_ms": 35.2,
+      "steps_to_evidence": 8,
+      "step_phase_s": 0.26,
+      "health_ms": 3.9,
+      "new_run_ids": [
+        "ASSY-SL01:R3",
+        "ASSY-SL02:R3",
+        "ASSY-SL03:R3",
+        "ASSY-SL04:R3",
+        "ASSY-SL05:R3",
+        "ASSY-SL06:R3"
+      ],
+      "status": "OK"
+    },
+    {
+      "scenario": "AP08_NG_REINSPECT_PASS",
+      "reset_ms": 26.8,
+      "steps_to_evidence": 11,
+      "step_phase_s": 0.4,
+      "health_ms": 3.3,
+      "new_run_ids": [
+        "ASSY-SL01:R4",
+        "ASSY-SL02:R4",
+        "ASSY-SL03:R4",
+        "ASSY-SL04:R4",
+        "ASSY-SL05:R4",
+        "ASSY-SL06:R4"
+      ],
+      "status": "OK"
+    }
+  ],
+  "issues": [
+    {
+      "severity": "NONE",
+      "detail": "no VF runtime instability observed"
+    }
+  ]
+}

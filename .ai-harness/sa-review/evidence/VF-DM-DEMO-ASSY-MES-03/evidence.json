@@ -1,0 +1,132 @@
+{
+  "task_id": "VF-DM-DEMO-ASSY-MES-03",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "interpretation": {
+    "objective": "Detailed Operation Evidence Contract: AP03 checklist evidence (mes.checklist_result), AP06 numerical measurement evidence (mes.measurement_result), AP08/AP11 structured observations on mes.quality_result, contract tipa-assy-demo-v1.1.",
+    "deliverables": [
+      "assy_mes_bridge.py (CHECKLIST_CONFIRMED + MEASUREMENT_RESULT + observations/proposal on quality facts)",
+      "mes.py (mes.checklist_result + mes.measurement_result mappings)",
+      "ui/api.py (/assy-demo/version returns v1.1)",
+      "quality_records.py + line_runtime.py (justified additive per-attempt observation freeze)",
+      "tests/test_assy_mes_03_evidence.py",
+      "docs/deployment/demo-assy-mes-03.md",
+      "evidence under .ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-03/"
+    ],
+    "non_deliverables": [
+      "No MES implementation", "No MES->VF", "No MQTT", "No parallel simulation",
+      "No observation core redesign", "No operation_execution.py / station_contracts.py change"
+    ],
+    "forbidden_actions": [
+      "Push directly to main", "Merge without SA authorization",
+      "Self-certify COMPLETE/CLOSED", "Modify outside allowed_paths"
+    ],
+    "stop_conditions": ["Baseline mismatch", "Test suite regression", "Fabrication required"]
+  },
+  "preflight": {
+    "current_branch": "feature/dm-demo-assy-mes-03-evidence",
+    "working_tree_clean": true,
+    "local_head": "988e17d1d7f0736a9ebf4b8975e450cebbca828a",
+    "remote_branch_head": "988e17d1d7f0736a9ebf4b8975e450cebbca828a",
+    "remote_main_head": "fda1db44b17a7f61da2393e00cdf20bb7998b7ea",
+    "expected_base_sha": "c3c8bb60e587f2ef4464975ab359362100fa7730",
+    "baseline_match": false,
+    "authorized_baseline_branch": "docs/m6-s01-tipa-baseline",
+    "authorized_baseline_sha": "c3c8bb60e587f2ef4464975ab359362100fa7730",
+    "authorized_baseline_match": true
+  },
+  "implementation": {
+    "post_execution_local_head": "988e17d1d7f0736a9ebf4b8975e450cebbca828a",
+    "commit_sha": "988e17d1d7f0736a9ebf4b8975e450cebbca828a",
+    "commit_exists_locally": true,
+    "commit_exists_remotely": true,
+    "changed_files": [
+      "src/virtual_factory/assembly/assy_mes_bridge.py",
+      "src/virtual_factory/assembly/quality_records.py",
+      "src/virtual_factory/assembly/line_runtime.py",
+      "src/virtual_factory/observation/projections/mes.py",
+      "src/virtual_factory/ui/api.py",
+      "tests/test_assy_mes_bridge_v1.py",
+      "tests/test_assy_mes_03_evidence.py",
+      "docs/deployment/demo-assy-mes-03.md",
+      ".ai-harness/tasks/VF-DM-DEMO-ASSY-MES-03.json",
+      ".ai-harness/sa-review/CURRENT.md",
+      ".ai-harness/sa-review/reports/VF-DM-DEMO-ASSY-MES-03.md",
+      ".ai-harness/sa-review/evidence/VF-DM-DEMO-ASSY-MES-03/"
+    ],
+    "remote_branch_head": "988e17d1d7f0736a9ebf4b8975e450cebbca828a"
+  },
+  "pull_request": {
+    "number": 24,
+    "state": "OPEN",
+    "base_branch": "docs/m6-s01-tipa-baseline",
+    "base_sha": "c3c8bb60e587f2ef4464975ab359362100fa7730",
+    "head_branch": "feature/dm-demo-assy-mes-03-evidence",
+    "head_sha": "988e17d1d7f0736a9ebf4b8975e450cebbca828a",
+    "draft": false,
+    "merged": false,
+    "merged_at": null,
+    "merge_commit_sha": "",
+    "url": "https://github.com/hieudovn/virtual-factory/pull/24"
+  },
+  "tests": {
+    "collected": 1611,
+    "passed": 1611,
+    "failed": 0,
+    "warnings": 0,
+    "commands": [
+      "python -m pytest tests/test_assy_mes_03_evidence.py -q -p no:cacheprovider (16 passed)",
+      "python -m pytest tests -q -p no:cacheprovider (1611 passed, 0 failed)"
+    ]
+  },
+  "ci": {
+    "run_id": "32471288187",
+    "event": "push",
+    "workflow": "VF-DM CI",
+    "branch": "feature/dm-demo-assy-mes-03-evidence",
+    "head_sha": "988e17d1d7f0736a9ebf4b8975e450cebbca828a",
+    "conclusion": "success",
+    "annotations": 0,
+    "url": "https://github.com/hieudovn/virtual-factory/actions/runs/32471288187",
+    "required_steps": []
+  },
+  "post_merge": {
+    "required": false,
+    "new_main_sha": "",
+    "main_contains_change": null,
+    "ci_run_id": null,
+    "ci_head_sha": "",
+    "ci_conclusion": "",
+    "regression_passed": null
+  },
+  "platform_controls": {
+    "required_policy": ["main branch protection"],
+    "actual_state": ["baseline branch docs/m6-s01-tipa-baseline used per SA authorization (harness is main-centric)"],
+    "evidence": ["git rev-parse origin/docs/m6-s01-tipa-baseline == c3c8bb60e587f2ef4464975ab359362100fa7730"],
+    "residual_gaps": ["derive_status.py and preflight.py compare against origin/main; this gate's authorized baseline is docs/m6-s01-tipa-baseline"],
+    "compensating_controls": ["exact baseline SHA verified via git rev-parse on the authorized branch"],
+    "revisit_triggers": ["SA decision to rebase onto main"]
+  },
+  "authorization": {
+    "sa_review_present": false,
+    "merge_authorized": false,
+    "authorized_head_sha": "",
+    "next_task_authorized": false
+  },
+  "forbidden_actions": {
+    "performed": false,
+    "details": []
+  },
+  "acceptance": [
+    {"id": "A01", "description": "Full test suite passes", "result": "PASS"},
+    {"id": "A02", "description": "Zero test failures", "result": "PASS"},
+    {"id": "A03", "description": "Baseline matches authorized branch SHA", "result": "PASS"},
+    {"id": "A04", "description": "Contract v1.1 on every message", "result": "PASS"},
+    {"id": "A05", "description": "Docker exact-head smoke (source_sha + v1.1)", "result": "PASS"},
+    {"id": "A06", "description": "CI green on exact head", "result": "PASS"}
+  ],
+  "unknown_evidence": [],
+  "tool_failures": [],
+  "contradictions": [],
+  "derived_status": "NOT STARTED"
+}
