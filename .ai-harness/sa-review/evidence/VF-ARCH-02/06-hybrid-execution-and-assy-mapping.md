@@ -38,8 +38,11 @@ site-specific SH WTP process truth is invented.
 **Future fit (not implemented here):** `TIPA Workspace → ASSY Scope →
 ASSY-SL01..06 child Scopes` fits the frozen contract without rewriting
 `AssyLineRuntime`: each sub-line becomes an executable scope wrapping the same
-runtime; the ASSY scope is a parent scope (or coordinator) supplying composition
-context. `AssyLineRuntime` is **not rewritten**.
+runtime; the ASSY scope is a parent/container/executable scope per the frozen
+structural model. The **Composition Coordinator is a distinct platform
+composition service/runtime role — NOT a scope type**; it may coordinate the
+scopes associated with ASSY/TIPA, but ASSY itself is **not retyped as a
+coordinator**. `AssyLineRuntime` is **not rewritten**.
 
 > No TIPA federation implementation is performed in this gate.
 
@@ -50,7 +53,7 @@ context. `AssyLineRuntime` is **not rewritten**.
 - Forcing identical timesteps → prevented (time invariant §04).
 - Wall-clock/UI speed vs synchronization → separated (§04).
 - Direct cross-scope mutation → prevented (§05.4).
-- Ports duplicating PIM semantic authority → prevented (boundary uses structural identity).
+- Ports duplicating PIM semantic authority → prevented (structural identity is the runtime key; PIM semantic binding metadata is optional read-only; PIM is never replaced/invented — §05.3).
 - Ports coupled to UI routes/labels → prevented (§05.3).
 - Nondeterministic ordering (dict/set/hash/time-of-day) → prevented (§04.2).
 - ASSY demo orchestration treated as plant truth → prevented (§06.2).

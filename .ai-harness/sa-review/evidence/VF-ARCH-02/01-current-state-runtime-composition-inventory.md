@@ -8,7 +8,7 @@ runtime seam vs domain-specific behavior vs demo-only orchestration vs legacy.
 
 | File | Current behavior | Classification |
 |---|---|---|
-| `src/virtual_factory/assembly/demo_composition.py` `AssyDemoComposition.step_all()` | Steps each non-excluded `AssyDemoContext` via `step_context()`; `demo_step_number += 1` once per composition step. Policy documented as **COMMON_DEMO_CLOCK**. **No assertion of equal `simulation_time_s`** across contexts. Excluded (faulted) sub-lines are fully frozen (no feed, no step). | **Demo-only orchestration** (not plant synchronization truth). Reusable precedent for "coordinate N independent executable scopes on a common advance". |
+| `src/virtual_factory/assembly/demo_composition.py` `AssyDemoComposition.step_all()` | Steps each non-excluded `AssyDemoContext` via `step_context()`; `demo_step_number += 1` once per composition step. Policy documented as **COMMON_DEMO_CLOCK**. **No assertion of equal `simulation_time_s`** across contexts. Excluded (faulted) sub-lines are fully frozen (no feed, no step) — **demo-only orchestration policy, not platform failure semantics**. | **Demo-only orchestration** (not plant synchronization truth). Reusable precedent for "coordinate N independent executable scopes on a common advance". |
 | `AssyDemoContext.step_context()` | on-demand RSO2 → `execute_dwell()` → `index_line()` if `READY_TO_INDEX` → `introduce_next_sso2()`. | **Demo orchestration policy** over one runtime. |
 | `AssyDemoComposition.reset()` / `initialize()` | Rebuilds all 6 isolated contexts from config. | **Lifecycle seam** (create/reset). |
 | `AssyDemoComposition.snapshot()` | Detached snapshot of the selected context. | **Inspection seam**. |

@@ -1,8 +1,20 @@
 # VF-ARCH-02 — Freeze runtime composition contract
 
+> **C01 revision (Issue #41 SA review):** (1) inter-scope boundary authority
+> corrected — no direct cross-scope mutation; producer publishes/consumer
+> consumes into its own state; coupling may be directional/bidirectional/resolved
+> at a boundary (not forced source→sink); (2) structural identity is the runtime
+> key, PIM semantic binding metadata is optional read-only (never "never");
+> (3) Simulation Scope ≠ Composition Coordinator (coordinator is a platform
+> role, not a scope type); (4) failure/exclusion is declared policy, not ASSY
+> demo fault-exclusion semantics; (5) exchange-barrier determinism: bounded
+> coordinator-authorized window/horizon, no free-running; wall-clock concurrency
+> must not change semantics; (6) reset state vs restart/new-attempt vs replay
+> (distinct run/attempt identity after executed history).
+
 | Field | Value |
 |---|---|
-| Task ID | `VF-ARCH-02` (GitHub Issue #41) |
+| Task ID | `VF-ARCH-02` (GitHub Issue #41) + C01 |
 | Parent | Issue #39 `VF-vNEXT-ARCH` (umbrella architecture program) |
 | Prerequisite | ARCH-01 / Issue #40 CLOSED by SA as `completed` |
 | Repository | `hieudovn/virtual-factory` |
@@ -48,8 +60,9 @@ Verified seams at the ARCH-01 baseline:
 5. **Coordinator** (evidence 05): owns composition only; anti-responsibilities
    fixed (no AP/WIP/quality, physics, recipe, control logic, PIM, monitoring).
 6. **Boundaries** (evidence 05): material / utility-energy / information-observation /
-   coordination-event categories; structural identity (not PIM canonical);
-   boundary exchange is the only cross-scope data path; direct mutation forbidden.
+   coordination-event categories; structural identity = runtime key (PIM semantic
+   binding metadata optional/read-only); boundary exchange is the only cross-scope
+   data path; direct mutation forbidden.
 7. **Hybrid archetypes** (evidence 06): C+C, D+D, C+D, Batch+C compose without a
    shared engine.
 8. **ASSY mapping** (evidence 06): six executable sub-line scopes over existing
@@ -62,8 +75,8 @@ Verified seams at the ARCH-01 baseline:
 None triggered (evidence 07 §7.2): composition does not require rewriting
 `AssyLineRuntime`; hybrid composition needs no forced global engine; no breaking
 contract conflict; `runtime.engine` reconciled without schema change; determinism
-is mechanism-agnostic; boundaries use structural identity; ARCH-03 concerns
-deferred.
+is mechanism-agnostic; structural identity is the runtime key (PIM semantic
+binding metadata optional/read-only); ARCH-03 concerns deferred.
 
 **Conclusion: no STOP condition triggered.**
 
@@ -92,7 +105,7 @@ deferred.
 ## 7. Final status
 
 ```text
-VF-ARCH-02 — READY FOR SA REVIEW
+VF-ARCH-02-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. ARCH-03 is NOT started; all

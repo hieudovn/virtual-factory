@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-ARCH-02
-Status: READY FOR SA REVIEW (runtime composition contract frozen)
+Task: VF-ARCH-02-C01
+Status: READY FOR SA REVIEW (C01: runtime-composition corrections applied)
 Parent: Issue #39 VF-vNEXT-ARCH (prerequisite: ARCH-01 #40 CLOSED as completed)
 
 Gate type:
@@ -25,13 +25,27 @@ Frozen runtime-composition contract:
 - Determinism: stable ordering key; explicit inputs/version/seed; no
   dict/set/hash/time-of-day ordering; replay != snapshot restore.
 - Boundaries: material / utility-energy / information-observation /
-  coordination-event categories; structural identity (NOT PIM canonical);
-  boundary exchange = only cross-scope data path; direct mutation forbidden.
+  coordination-event categories; structural identity = runtime key (PIM semantic
+  binding metadata optional/read-only); boundary exchange = only cross-scope
+  data path; direct mutation forbidden.
 - Hybrid archetypes (C+C, D+D, C+D, Batch+C) compose without one shared engine.
 - ASSY maps as six executable sub-line scopes over existing AssyLineRuntime
   (not rewritten); demo policy != plant truth.
 - PH00 runtime.engine = compatibility/default/profile descriptor; not
   one-engine-per-workspace; no schema change.
+
+C01 corrections applied:
+- Boundary authority: no direct cross-scope mutation; producer publishes /
+  consumer consumes into its own state; coupling directional/bidirectional/
+  resolved-at-boundary (not forced source->sink).
+- Identity: structural identity = runtime key; PIM semantic binding metadata
+  optional read-only (never replaced/invented by VF).
+- Simulation Scope != Composition Coordinator (coordinator = platform role).
+- Failure/exclusion = declared policy (not ASSY demo fault-exclusion).
+- Exchange-barrier determinism: bounded coordinator-authorized window/horizon;
+  no free-running; wall-clock concurrency must not change semantics.
+- reset state vs restart/new-attempt vs replay (distinct run/attempt identity
+  after executed history).
 
 Non-decisions deferred to ARCH-03+: production coordinator classes; final port
 payload/schema; Observation/Event/Alarm schema (ARCH-03); capability registry

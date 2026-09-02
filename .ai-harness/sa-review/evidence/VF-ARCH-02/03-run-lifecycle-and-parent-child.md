@@ -45,8 +45,9 @@ scope-execution actions, `create`/`start`/`stop` are orchestration commands.
 | step | Scope execution | One advancement of an executable scope (tick / event / dwell-index). |
 | pause / resume | Scope execution | Suspends/resumes a scope's advancement. |
 | stop / end | Workspace orchestration | Terminal; policy-driven (success / failure / abort). |
-| reset/restart | Workspace orchestration | Returns to baseline; new run identity optional. |
-| replay | Contract-level | Deterministic re-execution of the same explicit inputs → same ordered results (distinct from reset/snapshot restore; storage deferred). |
+| reset state | Workspace orchestration | Return the current executable runtime/composition to its defined initial/baseline state (explicit whether it remains inside an unstarted/current run context). |
+| restart / new attempt | Workspace orchestration | After a run has produced execution history/results, a restart/new attempt requires a **distinct run identity or versioned child attempt identity**; provenance histories must remain distinguishable. |
+| replay | Contract-level | A new deterministic execution derived from pinned prior inputs — **not** a mutation of the historical run record (distinct from reset/snapshot restore; storage deferred). |
 | failure/degraded/abort | Boundary | Policy at contract level; implementation deferred. |
 
 No persistence/history warehouse is designed here.
@@ -57,9 +58,14 @@ No persistence/history warehouse is designed here.
    `run_id`; each participating executable scope has a child run context with a
    **child run identity** (`scope_id` + `run_id` scoped), independently
    addressable while participating.
-2. **Child join/leave/start/stop** follow the parent lifecycle; a child may be
-   excluded (e.g. a faulted sub-line in ASSY demo) and is then fully frozen — it
-   neither advances nor receives boundary exchanges.
+2. **Child join/leave/start/stop** follow the parent lifecycle. Participation,
+   isolation, degraded operation, quarantine, fail-fast, and fail-continue are
+   **declared run/composition policies**. A failed/degraded/excluded scope may
+   stop advancing its domain runtime while still receiving/emitting required
+   status/coordination/physical/information boundary data per declared policy.
+   No universal rule says a faulted scope receives zero boundary exchanges;
+   `AssyDemoComposition` fault-exclusion remains demo evidence only, not
+   platform failure semantics.
 3. **Container-only scopes** participate structurally (grouping) but have no run
    context of their own and no simulation runtime state.
 4. **Failure propagation policy** is declared at contract level: a child failure

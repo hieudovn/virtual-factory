@@ -32,7 +32,7 @@ Reconciliation (no schema change):
 | Existing accepted runtime contracts conflict materially (breaking decision) | NOT triggered — `core/` and `discrete/` are separate, composable seams; no conflict. |
 | PH00 `runtime.engine` cannot be reconciled without schema-breaking change | NOT triggered — reconciled as default/profile (§7.1). |
 | Deterministic composition requires site/domain-specific numerical behavior | NOT triggered — deterministic ordering is mechanism-agnostic (§04). |
-| Typed boundary semantics cannot be separated from PIM canonical ownership | NOT triggered — boundaries use structural identity; PIM stays semantic (§05.3). |
+| Typed boundary semantics cannot be separated from PIM canonical semantic ownership | NOT triggered — structural identity is the runtime key; PIM canonical identity stays semantic and is only optionally carried as read-only binding metadata (§05.3). |
 | Requires deciding ARCH-03 Observation/Event/Capability semantics prematurely | NOT triggered — all deferred (§7.4). |
 
 **Conclusion: no STOP condition triggered.**

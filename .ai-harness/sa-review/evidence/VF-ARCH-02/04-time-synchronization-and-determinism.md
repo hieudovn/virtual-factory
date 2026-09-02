@@ -20,7 +20,7 @@ synchronized only at declared exchange points.
 | Mode | Semantics |
 |---|---|
 | `common_advance` | Coordinator advances all participating scopes by one composition step per cycle (ASSY `COMMON_DEMO_CLOCK` precedent). No equal-sim-time requirement. |
-| `exchange_barrier` | Scopes advance freely; exchange/commit only at declared boundaries. |
+| `exchange_barrier` | Each participating scope advances **only within a coordinator-authorized deterministic coordination window/horizon** toward the next declared exchange boundary (different internal timesteps/schedulers/cadences allowed inside that bounded window); **no free-running advancement**. Exchange/commit order remains declared and deterministic. |
 | `event_coordination` | Coordinator sequences declared inter-scope events at coordination points. |
 
 These are categories of the contract; choosing numerical solvers (Continuous) or
@@ -42,6 +42,8 @@ event-scheduling internals (Discrete) is deferred to implementation gates.
 5. **Replay vs snapshot restore distinction:** replay = deterministic
    re-execution from explicit inputs; snapshot restore = restoring captured
    state. Storage/checkpoint implementation is deferred.
+6. **Wall-clock concurrency must not change semantics:** parallel or wall-clock
+   execution may not alter simulation semantics or ordering.
 
 ## 4.3 Conformance with repo evidence
 
