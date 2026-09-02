@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-ARCH-02-C01
-Status: READY FOR SA REVIEW (C01: runtime-composition corrections applied)
+Task: VF-ARCH-02-C02
+Status: READY FOR SA REVIEW (C02: lifecycle diagram aligned with reset/restart/replay semantics)
 Parent: Issue #39 VF-vNEXT-ARCH (prerequisite: ARCH-01 #40 CLOSED as completed)
 
 Gate type:
@@ -16,9 +16,11 @@ Frozen runtime-composition contract:
 - Coordinator = composition service; NOT a domain engine (anti-responsibilities:
   no AP/WIP/quality, physics, recipe, control logic, PIM, monitoring).
 - Common run lifecycle: validate -> create -> start -> step/pause/resume ->
-  stop -> reset; replay distinct from reset; one workspace run owns child run
-  contexts; child run identity scope-scoped; container-only scopes have no run
-  context.
+  stop (terminal). Post-terminal actions are distinct: reset state (in-context
+  only, no history erasure), restart/new attempt (distinct run/attempt
+  identity), replay (new deterministic execution from pinned inputs). One
+  workspace run owns child run contexts; child run identity scope-scoped;
+  container-only scopes have no run context.
 - Time/sync: composition time vs scope-local time vs sync boundary vs internal
   cadence vs wall-clock. Invariant: synchronized composition does NOT require
   identical timestep/scheduler (C/D/Batch mixed cadences compose).
@@ -46,6 +48,15 @@ C01 corrections applied:
   no free-running; wall-clock concurrency must not change semantics.
 - reset state vs restart/new-attempt vs replay (distinct run/attempt identity
   after executed history).
+
+C02 correction applied:
+- Lifecycle diagram aligned with frozen reset/restart/replay semantics:
+  reset state = in-context state operation only where the run contract permits
+  (never silently erases an established historical execution identity);
+  restart / new attempt after execution history = distinct run identity or
+  versioned attempt identity; replay = new deterministic execution from pinned
+  inputs (never mutates the historical run). Reset and restart shown as
+  distinct, not interchangeable, after a terminal run.
 
 Non-decisions deferred to ARCH-03+: production coordinator classes; final port
 payload/schema; Observation/Event/Alarm schema (ARCH-03); capability registry

@@ -40,7 +40,10 @@ Reconciliation (no schema change):
 ## 7.3 Frozen decisions (ARCH-02)
 
 1. Coordinator = composition service; **not** a domain engine; anti-responsibilities fixed (§05).
-2. Common platform run lifecycle: validate → create → start → step/pause/resume → stop → reset (replay distinct) (§03).
+2. Common platform run lifecycle: validate → create → start → step/pause/resume
+   → stop (terminal). Post-terminal actions are distinct: reset state
+   (in-context only, no history erasure), restart/new attempt (distinct
+   run/attempt identity), replay (new deterministic execution) (§03).
 3. One workspace run owns/contains child run contexts; child run identity = scope-scoped; container-only scopes have no run context (§03).
 4. Synchronized composition does **not** require identical timestep/scheduler; three cadences already coexist (§04).
 5. Deterministic ordering: declared stable key; explicit inputs/version/seed; no dict/set/hash/time-of-day ordering (§04).

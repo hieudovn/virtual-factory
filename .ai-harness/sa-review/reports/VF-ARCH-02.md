@@ -11,10 +11,19 @@
 > coordinator-authorized window/horizon, no free-running; wall-clock concurrency
 > must not change semantics; (6) reset state vs restart/new-attempt vs replay
 > (distinct run/attempt identity after executed history).
+>
+> **C02 revision (Issue #41 SA review):** lifecycle diagram aligned with the
+> frozen reset/restart/replay semantics — reset state is an in-context state
+> operation only where the run contract permits (never silently erases an
+> established historical execution identity); restart / new attempt after
+> execution history creates a distinct run identity or versioned attempt
+> identity; replay is a new deterministic execution from pinned inputs (never
+> mutates the historical run). Reset and restart are shown as distinct, not
+> interchangeable, after a terminal run.
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-ARCH-02` (GitHub Issue #41) + C01 |
+| Task ID | `VF-ARCH-02` (GitHub Issue #41) + C01/C02 |
 | Parent | Issue #39 `VF-vNEXT-ARCH` (umbrella architecture program) |
 | Prerequisite | ARCH-01 / Issue #40 CLOSED by SA as `completed` |
 | Repository | `hieudovn/virtual-factory` |
@@ -50,8 +59,10 @@ Verified seams at the ARCH-01 baseline:
    container-only scope, coordinator, domain engine, run context, scenario
    context — non-overlapping may/may-not-mutate.
 2. **Run lifecycle** (evidence 03): validate → create → start → step/pause/resume
-   → stop → reset; replay distinct from reset. One workspace run owns child run
-   contexts.
+   → stop (terminal). Post-terminal actions are distinct: reset state (in-context
+   only, no history erasure), restart/new attempt (distinct run/attempt
+   identity), replay (new deterministic execution from pinned inputs). One
+   workspace run owns child run contexts.
 3. **Time & synchronization** (evidence 04): composition time vs scope-local
    time vs sync boundary vs internal cadence vs wall-clock. **Invariant:
    synchronized composition does NOT require identical timestep/scheduler.**
@@ -105,7 +116,7 @@ binding metadata optional/read-only); ARCH-03 concerns deferred.
 ## 7. Final status
 
 ```text
-VF-ARCH-02-C01 — READY FOR SA REVIEW
+VF-ARCH-02-C02 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. ARCH-03 is NOT started; all

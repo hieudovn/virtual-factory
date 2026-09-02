@@ -26,14 +26,33 @@ scope-execution actions, `create`/`start`/`stop` are orchestration commands.
         └──────┬──────┘      └──────────────┘
                ▼
         ┌─────────────┐
-        │ stop / end  │  terminal success/failure/abort
+        │ stop / end  │  terminal success/failure/abort → run record is final
         └──────┬──────┘
                ▼
-        ┌─────────────┐
-        │    reset /  │  discard run state; return to validated/config baseline
-        │   restart   │  (replay = deterministic re-execution, NOT reset)
-        └─────────────┘
+        ┌───────────────────────────────────────────────┐
+        │ POST-TERMINAL ACTIONS — DISTINCT, NOT          │
+        │ INTERCHANGEABLE (they never erase or mutate an │
+        │ established historical run record):           │
+        │  • reset state  — in-context state operation, │
+        │    ONLY where the run contract explicitly     │
+        │    permits it; does NOT silently erase an     │
+        │    already-established historical execution   │
+        │    identity;                                  │
+        │  • restart / new attempt — creates a DISTINCT │
+        │    run identity or versioned child attempt    │
+        │    identity so histories remain distinguishable│
+        │  • replay — NEW deterministic execution from  │
+        │    pinned prior inputs; does NOT mutate/      │
+        │    overwrite the historical run.              │
+        └───────────────────────────────────────────────┘
 ```
+
+Reset state and restart / new attempt are **not interchangeable** after a
+terminal run (see operation table): reset state is an in-context state
+operation and does not erase an already-established historical execution
+identity; restart / new attempt after execution history requires a distinct run
+identity or versioned child attempt identity; replay is a new deterministic
+execution that never mutates or overwrites the historical run.
 
 ### Lifecycle operation classification
 
