@@ -1,0 +1,77 @@
+{
+  "task_id": "SHW-PIM-VF-COMPAT-01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "CROSS-PROJECT PIM<->VF COMPATIBILITY REVIEW / DOCUMENTATION-EVIDENCE ONLY",
+  "objective": "Decide whether the exact PIM export SHW-PIM-VF-EXPORT-v0.1 (source model SHW-PH03-v0.1) is semantically compatible with the exact VF consumer/binding contract frozen in ALIGN-01. Review compatibility only; MUST NOT implement runtime binding. End in exactly one decision: compatible | compatible_with_constraints | correction_required | incompatible.",
+  "explicit_non_objectives": [
+    "Do not modify VF production code/config/tests",
+    "Do not modify the PIM repo",
+    "Do not implement loader/binding/provenance",
+    "Do not invent canonical IDs or PIM vocabularies",
+    "Do not reinterpret PIM gaps as resolved",
+    "Do not start PH01",
+    "Do not authorize runtime"
+  ],
+  "required_branch": "",
+  "expected_base_sha": "b0affc99b5eae175bf2558ad6072afab8cb8960a",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/SHW-PIM-VF-COMPAT-01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/SHW-PIM-VF-COMPAT-01.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/01-pim-handoff-verification.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/02-authority-and-identity-compatibility.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/03-mapping-feasibility.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/04-state-evidence-compatibility.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/05-gap-impact-matrix.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/06-compatibility-decision.md",
+    ".ai-harness/sa-review/reports/SHW-PIM-VF-COMPAT-01.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Modify VF production code (src/, configs/, simulators/, tests/)",
+    "Modify the PIM repo",
+    "Implement loader/binding/provenance",
+    "Invent canonical IDs or PIM vocabularies",
+    "Reinterpret PIM gaps as resolved",
+    "Start PH01",
+    "Authorize runtime"
+  ],
+  "stop_conditions": [
+    "PIM SHA/package/hash cannot be verified",
+    "Exact export identity is ambiguous",
+    "A compatibility decision would require changing PIM semantics or VF authority boundaries",
+    "Draft PIM hints are the only source for a required canonical semantic guarantee",
+    "Compatibility cannot be decided without implementation"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Exact PIM export is verified", "rule": {"field": "export.verified", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Authority/identity compatibility is explicit", "rule": {"field": "authority_identity.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Required mapping feasibility is assessed", "rule": {"field": "mapping_feasibility.assessed", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "State/evidence compatibility is assessed", "rule": {"field": "state_evidence.assessed", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Gaps are classified by impact", "rule": {"field": "gaps.classified", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "One compatibility result stated with rationale", "rule": {"field": "decision.single_result", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "No production code changed", "rule": {"field": "production_code_changed", "operator": "is_false", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Runtime remains NOT_AUTHORIZED", "rule": {"field": "runtime_authorized", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}
