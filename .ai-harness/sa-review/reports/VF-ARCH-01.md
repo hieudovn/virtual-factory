@@ -10,10 +10,17 @@
 > pattern/precedent (vNext TIPA→ASSY federation remains an implementation
 > target). (4) Migration dispositions are candidate directions only; final
 > disposition deferred to later gates.
+>
+> **C02 revision (Issue #40 correction):** final wording consistency — runtime
+> state isolation is stated for **executable scopes** only; container-only scopes
+> own no simulation runtime state (structural/configuration/composition state is
+> not runtime state); no fake runtime is created for a container-only scope; all
+> runtime-execution wording (standalone/federated, runtime-state isolation, scope
+> runtime/execution) is limited to executable(-capable) scopes.
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-ARCH-01` (GitHub Issue #40) + C01 |
+| Task ID | `VF-ARCH-01` (GitHub Issue #40) + C01/C02 |
 | Parent | Issue #39 `VF-vNEXT-ARCH` (umbrella architecture program) |
 | Repository | `hieudovn/virtual-factory` |
 | Gate type | Architecture / design gate — documentation & evidence only (no production implementation) |
@@ -30,7 +37,7 @@ VF Platform → Workspace → Simulation Scope → Simulation Object
 ```
 
 with tree-like management/navigation hierarchy, graph-based connectivity, and
-standalone/federated execution of a scope.
+standalone/federated execution of an **executable scope**.
 
 ## 2. Repo-first discovery (evidence 01)
 
@@ -134,7 +141,7 @@ retained as legacy/reference. No refactor here.
 ## 9. Final status
 
 ```text
-VF-ARCH-01-C01 — READY FOR SA REVIEW
+VF-ARCH-01-C02 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. ARCH-02 is NOT started; all

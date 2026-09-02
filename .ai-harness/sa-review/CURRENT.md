@@ -1,12 +1,13 @@
 # SA REVIEW INBOX
 
-Task: VF-ARCH-01-C01
-Status: READY FOR SA REVIEW (C01: structural-contract contradictions + overclaims corrected)
+Task: VF-ARCH-01-C02
+Status: READY FOR SA REVIEW (C02: final wording consistency for executable vs
+container-only scopes)
 Parent: Issue #39 VF-vNEXT-ARCH
 
 Gate type:
 Architecture / design gate — documentation & evidence only (no production
-implementation). C01 correction gate for Issue #40.
+implementation). C02 correction gate for Issue #40 (narrow wording/consistency).
 
 Canonical baseline:
 main @ f5261c8ca18cd4e01779c0274b55270ba028b4e5
@@ -48,6 +49,14 @@ C01 corrections applied:
   vNext TIPA->ASSY federation remains an implementation target.
 - Migration dispositions expressed as candidate directions; final disposition
   deferred to later gates.
+
+C02 corrections applied:
+- Runtime state isolation stated for executable scopes ONLY; container-only
+  scopes own no simulation runtime state (structural/config/composition state
+  is not runtime state).
+- No fake runtime for container-only scopes.
+- All runtime-execution wording (standalone/federated execution, runtime state
+  per scope, scope runtime/execution) limited to executable(-capable) scopes.
 
 Non-decisions deferred to ARCH-02+: clock sync, port payloads, coordinator
 scheduling, observation/event schema, provenance impl, capability registry,

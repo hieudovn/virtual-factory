@@ -11,8 +11,9 @@ The repo's `AssyDemoComposition` + `AssyLineRuntime` provide a strong existing
 federation, which remains an architecture target to be implemented and
 regression-proven in later implementation/migration gates:
 
-1. **Same domain/runtime semantics in both modes.** A scope's domain behavior
-   does not change when it is hosted standalone vs federated under a parent.
+1. **Same domain/runtime semantics in both modes.** An **executable scope's**
+   domain behavior does not change when it is hosted standalone vs federated
+   under a parent.
    In the repo, `AssyLineRuntime` is the same class and semantics whether one
    sub-line is run alone or six are composed.
 2. **Parent supplies host/composition context, not business-logic rewrite.**
@@ -54,9 +55,9 @@ Frozen rules:
 
 ## 4.3 Runtime-state isolation by scope (Issue #40 frozen intent)
 
-- Internal runtime state is isolated per scope (per `AssyDemoContext` today),
-  for executable scopes; container-only scopes have no runtime state of their
-own.
+- Internal runtime state is isolated per **executable scope** (per
+  `AssyDemoContext` today); container-only scopes own no simulation runtime
+  state (any structural/configuration/composition state is not runtime state).
 - Cross-scope interaction will later occur **only through declared
   contracts/ports**; this gate defines the structural boundary (scope isolation)
   but does **not** implement ports or synchronization.

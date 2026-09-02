@@ -31,8 +31,9 @@ No refactor or implementation is performed in this gate.
 5. An **executable-capable scope** may be run **standalone or federated** with
    identical domain semantics; federation only adds host/composition context.
    Container-only scopes are not subject to this contract.
-6. Runtime state is **isolated per scope**; cross-scope interaction is only
-   through future declared contracts/ports (not implemented here).
+6. Runtime state is **isolated per executable scope**; container-only scopes
+   have no simulation runtime state of their own. Cross-scope interaction is
+   only through future declared contracts/ports (not implemented here).
 7. Archetypes `continuous`/`batch`/`discrete` are **labels**, not mandatory
    engines; execution mechanisms (tick solver, discrete-event, state-machine)
    are composable.
