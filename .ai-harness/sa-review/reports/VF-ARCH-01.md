@@ -1,8 +1,19 @@
 # VF-ARCH-01 — Freeze platform structural model
 
+> **C01 revision (Issue #40 correction):** (1) `Simulation Scope` semantics made
+> consistent — every scope is a structural/addressable boundary; `executability`
+> is a capability, not a type default; container-only scopes are valid; the
+> standalone/federated contract applies only to executable-capable scopes.
+> (2) `Workspace` no longer implies a single engine — deployment/identity/config/
+> composition boundary; legacy `runtime.engine` is a compatibility/default/profile
+> field. (3) `AssyDemoComposition` downgraded to a reusable composition
+> pattern/precedent (vNext TIPA→ASSY federation remains an implementation
+> target). (4) Migration dispositions are candidate directions only; final
+> disposition deferred to later gates.
+
 | Field | Value |
 |---|---|
-| Task ID | `VF-ARCH-01` (GitHub Issue #40) |
+| Task ID | `VF-ARCH-01` (GitHub Issue #40) + C01 |
 | Parent | Issue #39 `VF-vNEXT-ARCH` (umbrella architecture program) |
 | Repository | `hieudovn/virtual-factory` |
 | Gate type | Architecture / design gate — documentation & evidence only (no production implementation) |
@@ -48,9 +59,12 @@ Definitions are mutually exclusive with anti-definitions (evidence 02):
 
 - **Platform** — the product: shared kernels + domain models + gateways + the
   structural contract.
-- **Workspace** — top-level identity/config grouping (TIPA, SH-WTP, …).
-- **Simulation Scope** — nested unit with an execution/runtime boundary; may
-  contain child scopes and/or objects; may be container-only (no runtime).
+- **Workspace** — top-level deployment/identity/configuration/composition
+  boundary (TIPA, SH-WTP, …); no single-engine implication (child scopes may
+  use different mechanisms; legacy `runtime.engine` = compatibility/default/profile).
+- **Simulation Scope** — nested structural/addressable simulation boundary; may
+  be **executable** (runtime/execution boundary) or **container-only** (groups
+  child scopes/objects); executability is a capability, not a default.
 - **Simulation Object** — leaf runtime entity (station, WIP, carrier, pump,
   valve, tank, …).
 - **Archetype** (`continuous`/`batch`/`discrete`) is a label, not an engine;
@@ -65,10 +79,11 @@ Hierarchy vs graph (evidence 04): containment is a **tree** (one parent);
 connectivity/dependency is a **graph** (many edges). A scope has one containment
 parent and many graph relationships.
 
-Standalone vs federated (evidence 04): same domain runtime in both modes; parent
-supplies host/composition context only; child keeps its own runtime/config
-boundary; parent is not child domain authority. `AssyLineRuntime` is **not
-redesigned**.
+Standalone vs federated (evidence 04): for **executable scopes**, same domain
+runtime in both modes; parent supplies host/composition context only; child
+keeps its own runtime/config boundary; parent is not child domain authority.
+`AssyLineRuntime` is **not redesigned**. `AssyDemoComposition` is a reusable
+composition pattern/precedent, not a completed vNext TIPA→ASSY federation.
 
 ## 4. Reference mappings (evidence 05)
 
@@ -80,9 +95,11 @@ redesigned**.
 
 ## 5. Migration impact (evidence 06)
 
-`AssyLineRuntime` reused directly; `sub_line_identity` + `AssyDemoComposition`
-adapted/wrapped; `core/` + `discrete/` reused; `build_tipa_topology()` and
-`simulators/wtp`/`vf2` retained as legacy/reference. No refactor here.
+Candidate directions only (final disposition deferred): `AssyLineRuntime` is a
+reuse target (not redesigned — frozen intent); `sub_line_identity` + `core/` +
+`discrete/` are candidates for reuse; `AssyDemoComposition` is a reference
+pattern/precedent; `build_tipa_topology()` and `simulators/wtp`/`vf2` are
+retained as legacy/reference. No refactor here.
 
 ## 6. STOP-condition assessment
 
@@ -91,7 +108,7 @@ adapted/wrapped; `core/` + `discrete/` reused; `build_tipa_topology()` and
 | ASSY semantics cannot map without breaking domain behavior | NOT triggered (lossless) |
 | Competing generic hierarchy abstraction in repo | NOT triggered (none in `src/`) |
 | Scope identity not separable from PIM id / output namespace | NOT triggered (3 axes) |
-| Standalone/federated requires domain-runtime rewrite | NOT triggered (already demonstrated) |
+| Standalone/federated requires domain-runtime rewrite | NOT triggered (reusable composition pattern exists; no rewrite required) |
 | Requires ARCH-02 runtime sync/port semantics prematurely | NOT triggered (deferred) |
 
 **Conclusion: no STOP condition triggered.**
@@ -117,7 +134,7 @@ adapted/wrapped; `core/` + `discrete/` reused; `build_tipa_topology()` and
 ## 9. Final status
 
 ```text
-VF-ARCH-01 — READY FOR SA REVIEW
+VF-ARCH-01-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. ARCH-02 is NOT started; all

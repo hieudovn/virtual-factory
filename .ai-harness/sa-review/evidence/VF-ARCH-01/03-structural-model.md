@@ -45,7 +45,7 @@ is a graph (many edges, independent of the tree) — see evidence 04.
 | `workspace_id` vs `scope_id` | `workspace_id` is top-level; `scope_id` is nested under a workspace (or another scope). A scope path `workspace_id/…scope_id…` is unique. |
 | Child scope uniqueness | A `scope_id` is unique **within its parent scope/workspace boundary**, not necessarily globally. |
 | Object identity boundary | Object/runtime keys are unique **within their owning scope**; the same object id may repeat in different scopes without collision. |
-| Standalone vs federated | Identity semantics are identical in both modes; federation only adds parent/composition context (evidence 04). |
+| Standalone vs federated | Identity semantics are identical in both modes for **executable-capable scopes**; federation only adds parent/composition context (evidence 04). Container-only scopes are addressable/grouping nodes and are not subject to the standalone/federated runtime contract. |
 | `outputs.namespace` separation | `outputs.namespace` is a protocol token bound to `workspace_id`; NOT equal to scope path; NOT a canonical id. |
 | PIM canonical separation | VF `workspace_id`/`scope_id`/object id are VF structural identity; PIM canonical ids are semantic identity. Neither silently replaces the other. |
 | Provenance readiness | Identities are stable and independent of UI labels, so future provenance threading can reference them without re-keying. |
@@ -76,3 +76,9 @@ No concrete class/API is frozen here — semantics first (Issue #40 §B).
    inspectable (navigation, snapshot, config read) WITHOUT being independently
    executable. Executability is an orthogonal capability, not implied by
    existence.
+8. **Executability is a capability, not a type default (C01):** `executability`
+   is a characteristic of a Simulation Scope, not a consequence of the node
+   type. A scope is **executable** (owns a runtime/execution boundary) or
+   **container-only** (groups child scopes and/or objects only). The
+   standalone/federated contract (evidence 04) applies only to executable-capable
+   scopes.

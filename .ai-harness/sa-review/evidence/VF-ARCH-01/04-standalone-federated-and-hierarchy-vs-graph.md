@@ -2,8 +2,14 @@
 
 ## 4.1 Standalone vs federated scope (Issue #40 §D)
 
-The contract for a reusable subsystem such as ASSY, already demonstrated by
-`AssyDemoComposition` + `AssyLineRuntime`:
+> This contract applies to **executable-capable scopes** only (evidence 02 §2.4,
+> evidence 03 §3.3 rule 8).
+
+The repo's `AssyDemoComposition` + `AssyLineRuntime` provide a strong existing
+**precedent / reusable composition pattern** for this contract — they are
+**not** a completed proof of the full vNext `TIPA Workspace → ASSY Scope`
+federation, which remains an architecture target to be implemented and
+regression-proven in later implementation/migration gates:
 
 1. **Same domain/runtime semantics in both modes.** A scope's domain behavior
    does not change when it is hosted standalone vs federated under a parent.
@@ -21,9 +27,10 @@ The contract for a reusable subsystem such as ASSY, already demonstrated by
    authority over AP/WIP/quality semantics (which stay in the runtime +
    station contracts).
 
-Frozen consequence: **standalone and federated execution of a scope MUST be the
-same domain runtime**, differing only in hosting context. No second runtime /
-composition engine may be introduced to make a scope federate.
+Frozen consequence: **standalone and federated execution of an executable scope
+MUST be the same domain runtime**, differing only in hosting context. No second
+runtime / composition engine may be introduced to make a scope federate.
+`AssyLineRuntime` is **not** rewritten merely to fit the vNext hierarchy.
 
 ## 4.2 Hierarchy vs graph (Issue #40 §E)
 
@@ -47,7 +54,9 @@ Frozen rules:
 
 ## 4.3 Runtime-state isolation by scope (Issue #40 frozen intent)
 
-- Internal runtime state is isolated per scope (per `AssyDemoContext` today).
+- Internal runtime state is isolated per scope (per `AssyDemoContext` today),
+  for executable scopes; container-only scopes have no runtime state of their
+own.
 - Cross-scope interaction will later occur **only through declared
   contracts/ports**; this gate defines the structural boundary (scope isolation)
   but does **not** implement ports or synchronization.

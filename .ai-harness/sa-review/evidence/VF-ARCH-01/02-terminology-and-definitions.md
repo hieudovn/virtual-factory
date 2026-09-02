@@ -8,8 +8,8 @@ Precise, non-overlapping definitions with explicit anti-definitions
 | Term | Definition | Anti-definition (what it is NOT) |
 |---|---|---|
 | **Platform** | The Virtual Factory product: shared kernels (`core/`, `discrete/`), reusable domain models (`equipment/`, `control/`, `instrumentation/`, `telemetry/`, `protocols/`, `observation/`), gateway/integration layers, and the workspace/scope structural contract. A single runtime product that hosts many workspaces. | NOT a workspace. NOT a plant. NOT a simulation. NOT an engine. NOT a PIM semantic authority. |
-| **Workspace** | A top-level, independently addressable deployment/identity container that groups related simulation scopes and carries the workspace manifest (identity, engine selection, config references, scenarios, output namespace, semantic sources). Examples: `TIPA`, `SH-WTP`, compressor-benchmark, continuous-mvp. | NOT a plant (a plant is semantic/physical; a workspace is a VF runtime grouping). NOT a simulation scope (a scope executes; a workspace is the top-level grouping). NOT a canonical semantic ID. NOT a UI route. |
-| **Simulation Scope** | A structurally addressable unit of simulation within a workspace that has an execution/runtime boundary and may itself contain child scopes and/or objects. It is the unit of standalone or federated execution and of runtime-state isolation. Examples: `ASSY` (child scope of TIPA), `ASSY-SL01..06` (child scopes of ASSY), a process area/unit in SH WTP. | NOT a workspace (it is nested under one). NOT a physical object. NOT a station. NOT a scenario. NOT a UI view. |
+| **Workspace** | A top-level VF deployment/identity/configuration/composition boundary that groups related simulation scopes and carries the workspace manifest (identity, config references, scenarios, output namespace, semantic sources). A workspace does **NOT** imply a single engine: in a hybrid workspace, child scopes may use different execution mechanisms, and engine/execution selection may sit at scope or runtime-composition level. Where a legacy workspace-level `runtime.engine` field exists (PH00 §06), it is a **compatibility/default/profile field**, not a single-engine mandate; ARCH-02 decides detailed runtime-composition semantics. Examples: `TIPA`, `SH-WTP`, compressor-benchmark, continuous-mvp. | NOT a plant (a plant is semantic/physical; a workspace is a VF runtime grouping). NOT a simulation scope (a scope is a nested structural boundary; a workspace is the top-level grouping). NOT a canonical semantic ID. NOT a UI route. NOT a single-engine owner. |
+| **Simulation Scope** | A structurally addressable simulation boundary within a workspace that may contain child scopes and/or objects. A scope MAY be **executable** (owns a runtime/execution boundary) or **container-only** (only groups/composes child scopes and objects). **Executability is a separate capability/characteristic — NOT a default implied by being a Simulation Scope.** The standalone/federated contract applies only to executable-capable scopes. Runtime state is isolated per scope regardless of executability. Examples: `ASSY` (child scope of TIPA), `ASSY-SL01..06` (child scopes of ASSY), a process area/unit in SH WTP. | NOT a workspace (it is nested under one). NOT a physical object. NOT a station. NOT a scenario. NOT a UI view. NOT necessarily executable (container-only scopes are valid). |
 | **Simulation Object** | A leaf runtime entity that participates in simulation: equipment, station, WIP, carrier, sensor, controller, actuator, source, buffer, gate, sink. An object belongs to exactly one scope (containment) but may have many graph relationships. | NOT a scope (it cannot contain child scopes). NOT a workspace. NOT a process area. |
 | **Archetype** | A classification of the dominant simulation semantics of a scope/workspace: `continuous`, `batch`, `discrete` (hybrid allowed). A declarative label, not an engine. | NOT an engine. NOT a scheduler. NOT an execution mechanism. NOT a fidelity level. |
 | **Execution paradigm / mechanism** | The actual computation used to advance a scope: continuous dynamics (tick solver), state-machine/procedure, discrete-event scheduling — possibly multiple within one scope. | NOT an archetype label. NOT a mandatory per-archetype engine. |
@@ -33,3 +33,18 @@ These definitions cover the Issue #40 §A list (Platform, Workspace, Simulation
 Scope, Simulation Object, Archetype, Execution paradigm, Composition relation,
 Connectivity/dependency relation) with mutually exclusive semantics and
 explicit anti-definitions. No term is a synonym for another.
+
+## 2.4 Executability clarification (C01)
+
+`executability` is a capability/characteristic of a Simulation Scope, **not** a
+consequence of the node type:
+
+- **executable scope** — owns a runtime/execution boundary; may be run
+  standalone or federated (evidence 04 applies).
+- **container-only scope** — groups/composes child scopes and/or objects; has
+  no runtime of its own; is addressable/inspectable but not independently
+  executable.
+
+No statement in this package implies that every Simulation Scope is executable.
+Every Simulation Scope is a structural/addressable simulation boundary; only a
+subset carry executability.
