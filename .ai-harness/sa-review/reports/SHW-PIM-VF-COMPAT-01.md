@@ -1,14 +1,21 @@
 # SHW-PIM-VF-COMPAT-01 — Review PIM export v0.1 against VF semantic binding contract
 
+> **C01 revision (Issue #36):** gap-impact semantics refined to scope-precise
+> distinctions — synthetic `LogicalOnly` simulation (S1) vs source-mapped /
+> site-integrated runtime (S2) vs site-faithful control/interlock (S3) vs
+> FirstOrder/parameterized execution (S4). PIM package/SHA/hash unchanged;
+> `0 blocks_binding` unchanged; decision `compatible_with_constraints` unchanged;
+> runtime authorization `NOT_AUTHORIZED` unchanged.
+
 | Field | Value |
 |---|---|
-| Task ID | `SHW-PIM-VF-COMPAT-01` (GitHub Issue #35) |
+| Task ID | `SHW-PIM-VF-COMPAT-01` (GitHub Issue #35) + C01 (Issue #36) |
 | Repository | `hieudovn/virtual-factory` |
 | Gate type | Cross-project PIM↔VF compatibility review / documentation-evidence only |
 | Canonical VF baseline | `main` @ `b0affc99b5eae175bf2558ad6072afab8cb8960a` (post PR #34; recorded at task start) |
 | Reviewed PIM handoff | `hieudovn/plant-intelligence-model` @ `main` `ec7f1266…` — package `SHW-PIM-VF-EXPORT-v0.1` (v0.1, source model `SHW-PH03-v0.1`) |
 | Production code changed | **NO** (only `.ai-harness/`) |
-| Runtime authorization | **NOT_AUTHORIZED** (unchanged) |
+| Runtime authorization | **NOT_AUTHORIZED** (unchanged — governance state of this gate) |
 
 ## 1. Objective
 
@@ -39,16 +46,26 @@ One reading-precision nuance recorded: manifest `final_pim_main_sha` =
 | B. Authority boundary | COMPATIBLE — PIM owns IDs + vocabularies; VF read-only (evidence 02) |
 | C. Required mapping feasibility | FEASIBLE — canonical identity complete/unambiguous; no in-principle blocker (evidence 03) |
 | D. State / evidence compatibility | COMPATIBLE — no flattening; SourceMapped ≠ SiteVerified; gaps explicit (evidence 04) |
-| E. Gap impact | Classified — 2 blocks_runtime, 7 compatible_with_gap, 3 out_of_scope, 0 blocks_binding (evidence 05) |
+| E. Gap impact | Classified (C01 scope-precise) — 0 blocks_binding; GAP-001→S2, GAP-002→S3; 7 compatible_with_gap; 3 out_of_scope (evidence 05) |
 | F. VF readiness hints | Non-authoritative drafts — consumable as planning/reference only (evidence 06) |
 
-## 4. Gap impact summary
+## 4. Gap impact summary (C01 scope-precise)
 
-- `blocks_runtime`: GAP-SHW-001 (SourceTags), GAP-SHW-002 (ControlLogic) — both HIGH/OPEN.
+Runtime scopes: **S1** synthetic LogicalOnly simulation · **S2** source-mapped /
+site-integrated runtime · **S3** site-faithful control/interlock · **S4**
+FirstOrder/parameterized execution.
+
+- `blocks_runtime` (scope-precise):
+  - GAP-SHW-001 → **S2** (source-mapped/site-integrated binding + source-truth claims) — HIGH/OPEN;
+  - GAP-SHW-002 → **S3** (site-faithful control/interlock behavior) — HIGH/OPEN.
+  - Neither blocks **S1 synthetic LogicalOnly simulation**.
 - `compatible_with_gap`: GAP-SHW-003, 004, 006, 007, 009, 010, 011.
+  - GAP-SHW-010 scopes **S4**: FirstOrder/parameterized execution of affected
+    models blocked while parameters are missing; LogicalOnly composition remains feasible.
 - `out_of_scope_for_v0.1`: GAP-SHW-005, 008, 012.
-- `blocks_binding`: none — canonical identity is complete and unambiguous for
-  the first slice; no gap prevents exact-one canonical binding in principle.
+- `blocks_binding`: **none** (unchanged) — canonical identity is complete and
+  unambiguous for the first slice; no gap prevents exact-one canonical binding
+  in principle.
 
 ## 5. STOP-condition assessment
 
@@ -70,12 +87,20 @@ The export `SHW-PIM-VF-EXPORT-v0.1` is semantically compatible with the frozen
 VF consumer/binding contract, with explicit constraints that must remain
 fail-closed for later implementation:
 
-1. Runtime remains `NOT_AUTHORIZED` (no VF loader / binding validation / CORE
-   provenance / PH01 / simulation / calibration).
-2. GAP-SHW-001 / GAP-SHW-002 (HIGH, OPEN) = `blocks_runtime`.
-3. Draft VF readiness hints are non-authoritative (planning/reference only).
-4. Pin-reading precision: canonical main = `ec7f1266…`.
-5. No SourceMapped / no SiteVerified; 30 signals `PendingSourceMapping`.
+1. Runtime remains `NOT_AUTHORIZED` — governance state of this gate; not a
+   semantic impossibility. A later SA may authorize a separate synthetic
+   LogicalOnly runtime gate without contradicting this record.
+2. GAP-SHW-001 (HIGH, OPEN) blocks **source-mapped/site-integrated runtime
+   binding and source-truth claims**; does NOT block synthetic LogicalOnly
+   simulation with clearly synthetic provenance.
+3. GAP-SHW-002 (HIGH, OPEN) blocks **site-faithful control/interlock behavior**;
+   does NOT block a simulation-owned logical controller/scenario model clearly
+   labeled non-site-authoritative.
+4. GAP-SHW-010 may block **FirstOrder/parameterized execution for affected
+   models**; LogicalOnly composition remains feasible.
+5. Draft VF readiness hints are non-authoritative (planning/reference only).
+6. Pin-reading precision: canonical main = `ec7f1266…`.
+7. No SourceMapped / no SiteVerified; 30 signals `PendingSourceMapping`.
 
 This result does **not** authorize runtime by itself.
 
@@ -95,13 +120,14 @@ This result does **not** authorize runtime by itself.
 ## 8. Evidence
 
 `.ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/` — 6 files (01…06).
+Evidence 05/06 revised at C01 (scope-precise gap semantics).
 
 ## 9. Final status
 
 ```text
-SHW-PIM-VF-COMPAT-01 — READY FOR SA REVIEW
+SHW-PIM-VF-COMPAT-01-C01 — READY FOR SA REVIEW
 ```
 
-Decision: **`compatible_with_constraints`**. PM does not self-certify
-COMPLETE/CLOSED. Runtime, VF loader/binding, CORE provenance, and SHW-VF-PH01
-remain NOT AUTHORIZED.
+Decision: **`compatible_with_constraints`** (unchanged; evidence-backed). PM does
+not self-certify COMPLETE/CLOSED. Runtime, VF loader/binding, CORE provenance,
+and SHW-VF-PH01 remain NOT AUTHORIZED.
