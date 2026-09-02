@@ -1,50 +1,49 @@
 # SA REVIEW INBOX
 
-Task: SHW-PIM-VF-ALIGN-01-C01
-Status: READY FOR SA REVIEW (ALIGN-01 C01 corrections applied: semantic
-overreach removed, fail-closed mapping ambiguity closed)
+Task: SHW-PIM-EXPORT-01
+Status: READY FOR SA REVIEW (authoritative PIM source resolved + SH WTP
+semantic export pinned as immutable reference)
 
 Gate type:
-Cross-project semantic-boundary alignment / documentation-contract only
-(ALIGN-01 correction gate C01)
+Cross-project dependency resolution / PIM export handoff
 
 Authoritative VF baseline:
-main @ 3b006c5f58879eb3a9cd72aee21135b7fbbfcb24 (post PR #29 merge)
-ALIGN-01 review head @ b9062356b4dd30451e27c5d073075497b9e1745d
+main @ d64f853ae37578f8b8b7afa8e0cc5de4db9bbae6 (post PR #32 merge)
 
-Frozen (contract-level only):
-- PIM owns canonical object/signal ids + evidence maturity + state-dimension
-  vocabularies; VF consumes read-only.
-- VF owns runtime identity/provenance (workspace_id, run/scenario/step/time,
-  runtime_signal_id, simulation state instances, fidelity, synthetic/simulated
-  provenance) and never overwrites PIM semantic/evidence truth.
-- Mapping: runtime_signal_id → canonical_signal_id via explicit mapping; local
-  keys never renamed to canonical ids.
-- semantic_binding.mode: required → fail closed. For kind: required, ONLY
-  status: mapped with exactly one valid PIM-owned canonical target is
-  acceptable; unmapped / review_required / missing target / ambiguous-multiple
-  target MUST fail closed. Optional simulation-only mappings may stay
-  local/unmapped only when explicitly non-published and non-canonical.
-- Compatibility = PIM/VF integration-review record (artifact/version/SHA ↔ VF
-  consumer contract/version + status + gate).
-- Orthogonal state dimensions: PIM owns dimensions+vocab; VF owns instances.
-- Open gaps marked missing/unknown/review_required; no fabricated semantics.
-- C01: observability/state/evidence value lists are NON-NORMATIVE examples
-  (no PIM ontology/vocabulary invented); SourceMapped ≠ SiteVerified ≠ site
-  truth; canonical ids are PIM-owned stable identity within the applicable
-  semantic contract/namespace (no identifier scheme chosen); no VF-side
-  document supersedes/replaces a PIM/upstream artifact.
+Authoritative PIM source (PROVEN):
+hieudovn/plant-intelligence-model @ main d241da61a6166df8359f892141609add75aec5b5
+
+Pinned SH WTP export (reference-only; content stays PIM-owned):
+- examples/song-hong-wtp/model_fixture/model.yaml (105 entities / 121 rels /
+  4 contracts) + gap_register.yaml (12 gaps GAP-SHW-001..012)
+- examples/song-hong-wtp/contracts/vf_readiness_contract_draft.yaml
+  (CONTRACT-SHW-VF-READINESS-DRAFT-v0.1; GenericProjection; producer PIM,
+  consumer VF-Planning; NOT a runtime VF package)
+- plant_config/canonical_id_rules.md + contract_principles.md +
+  evidence_policy.yaml (PIM-owned ID scheme + vocabularies)
+- seed/signal_catalog_ph02.yaml + first_vf_readiness_slice_t106_t108_t110.yaml
+- vf_readiness/vf_object_class_mapping.yaml + vf_readiness_profile_schema_draft.yaml
+- Pin: git SHA d241da61 + per-file SHA-256 (see evidence/03)
+
+Honest status:
+- No SourceMapped / no SiteVerified items; GAP-SHW-001 blocks SourceMapped.
+- Fidelity: LogicalOnly / FirstOrderReady only.
+- PIM-side gates SHW-PIM-PH03 and SHW-CONTRACT-PH01 are "SA review required /
+  not CLOSED" (PIM side); VF compatibility.status = review_required accordingly.
+- model.yaml top-level source_model_version = SHW-PH02-v0.1 vs contract draft
+  SHW-PH03-v0.1 (PIM-side version-string inconsistency noted, evidence/04).
 
 Production code changed: NO
-PIM export / workspace loader / binding validation / provenance threading: NO
 PH01 started: NO
+VF workspace loader / binding validation implemented: NO
 CORE provenance gate started: NO
+No canonical IDs / vocabularies / site truth invented by VF: YES
 
 Report:
-.ai-harness/sa-review/reports/SHW-PIM-VF-ALIGN-01.md
+.ai-harness/sa-review/reports/SHW-PIM-EXPORT-01.md
 
 Evidence:
-.ai-harness/sa-review/evidence/SHW-PIM-VF-ALIGN-01/ (6 files: 01…06)
+.ai-harness/sa-review/evidence/SHW-PIM-EXPORT-01/ (5 files: 01…05)
 
 
 

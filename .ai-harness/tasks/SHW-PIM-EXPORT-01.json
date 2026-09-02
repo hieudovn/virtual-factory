@@ -1,0 +1,76 @@
+{
+  "task_id": "SHW-PIM-EXPORT-01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "CROSS-PROJECT DEPENDENCY RESOLUTION / PIM EXPORT HANDOFF",
+  "objective": "Resolve the authoritative PIM source-of-truth/repository/artifact location for the Song Hong Water Treatment Plant (SH WTP) and, ONLY IF that source is proven, reference the exact pinned SH WTP semantic export package from the PIM side and record immutable handoff evidence for VF. VF MUST NOT invent canonical IDs, PIM vocabularies, evidence maturity, site truth, or upstream semantic artifacts. Priority 1 is proving the authoritative PIM source; if it cannot be proven, STOP with BLOCKED FOR SA.",
+  "explicit_non_objectives": [
+    "Do not invent canonical IDs or PIM vocabularies",
+    "Do not modify VF production runtime/config/tests",
+    "Do not implement VF workspace loader or binding validation",
+    "Do not implement CORE provenance threading",
+    "Do not start PH01",
+    "Do not convert examples/contracts/wtp-demo-01.contract.yaml into authoritative PIM truth unless its PIM authority is independently proven",
+    "Do not copy an unverified VF-side stub and label it as PIM export"
+  ],
+  "required_branch": "",
+  "expected_base_sha": "d64f853ae37578f8b8b7afa8e0cc5de4db9bbae6",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/SHW-PIM-EXPORT-01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/SHW-PIM-EXPORT-01.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-EXPORT-01/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/SHW-PIM-EXPORT-01/01-authoritative-pim-source.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-EXPORT-01/02-export-artifact-inventory.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-EXPORT-01/03-version-hash-pinning.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-EXPORT-01/04-gap-and-maturity-status.md",
+    ".ai-harness/sa-review/evidence/SHW-PIM-EXPORT-01/05-vf-handoff-reference.md",
+    ".ai-harness/sa-review/reports/SHW-PIM-EXPORT-01.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Invent canonical IDs or PIM vocabularies",
+    "Modify production code (src/, configs/, simulators/, tests/)",
+    "Implement VF workspace loader/binding validation",
+    "Implement CORE provenance threading",
+    "Start PH01",
+    "Convert wtp-demo-01 stub into authoritative PIM truth",
+    "Copy unverified VF stub as PIM export"
+  ],
+  "stop_conditions": [
+    "Authoritative PIM source/repository cannot be proven",
+    "Multiple competing PIM sources exist with unclear authority",
+    "Export requires choosing a new canonical ID scheme",
+    "Required vocabulary/ontology must be invented rather than exported",
+    "Site truth/evidence maturity cannot be distinguished from source mapping",
+    "Producing the export would require unrelated VF implementation"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Authoritative PIM source is proven", "rule": {"field": "pim_source.proven", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Exact export artifact/version/hash is pinned", "rule": {"field": "export.pinned", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Exported semantic content comes from PIM authority, not VF invention", "rule": {"field": "export.from_pim_authority", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Missing/unknown/review-required gaps remain explicit", "rule": {"field": "gaps.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "VF handoff record is immutable/reference-only", "rule": {"field": "handoff.reference_only", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "No VF production code changed", "rule": {"field": "production_code_changed", "operator": "is_false", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "PH01/VF-loader/CORE gates remain not started", "rule": {"field": "downstream_gates_started", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}
