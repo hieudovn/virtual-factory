@@ -48,7 +48,10 @@ optional mappings are explicit.
 ### D. Fail-closed (evidence §04)
 With `mode: required`, the workspace is invalid to load/run if a required
 artifact reference/version/SHA is missing, the SHA mismatches, compatibility is
-not `compatible`, or a required mapping is missing/review-required.
+not `compatible`, or a required mapping is not `mapped` with exactly one valid
+PIM-owned canonical target — i.e. it is `unmapped`, `review_required`, missing
+its target, or ambiguous/multiple-target. Optional simulation-only mappings may
+remain local/unmapped only when explicitly non-published and non-canonical.
 
 ### E. Compatibility review ownership (evidence §05)
 A compatibility record binds exact PIM artifact (name/version/SHA) ↔ exact VF
@@ -68,7 +71,7 @@ canonical semantics to keep the run going.
 | Stop condition | Assessment |
 |---|---|
 | Authority boundary unresolvable from accepted principles | NO — resolved by frozen PH00 ownership |
-| Existing PIM contract contradicts frozen PH00 ownership | NO — `examples/contracts/wtp-demo-01.contract.yaml` (stub) does not contradict; it predates and is superseded by this freeze |
+| Existing PIM contract contradicts frozen PH00 ownership | NO — `examples/contracts/wtp-demo-01.contract.yaml` (stub) does not contradict the frozen ownership model; it is INSUFFICIENT to serve as the final SH WTP semantic export contract and remains non-authoritative/incomplete for runtime binding until the future PIM export gate produces the required pinned artifact. A VF-side documentation gate does NOT supersede or replace a PIM/upstream artifact. |
 | Alignment requires a new canonical identifier scheme | NO — no scheme chosen; PIM ownership frozen |
 | New state vocabulary/ontology with material impact required | NO — dimensions reference the frozen orthogonal model; no new vocabulary invented |
 | Implementation needed to answer the contract | NO — contract answered purely at documentation level |

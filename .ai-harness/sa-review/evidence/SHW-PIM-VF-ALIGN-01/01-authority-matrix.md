@@ -35,3 +35,13 @@ Legend: **PIM** = upstream semantic authority · **VF** = simulation runtime ·
 3. PIM owns artifact identity/version/hash; compatibility is a REVIEW relationship.
 4. SH WTP `semantic_binding.mode: required` — fail closed.
 5. VF runtime state/provenance never overwrites PIM semantic/evidence truth.
+
+## Vocabulary note (frozen)
+
+The concrete value lists mentioned above (e.g. observability examples,
+`SourceMapped` / `SiteVerified` evidence maturity) are **NON-NORMATIVE examples**
+in this gate. ALIGN-01 freezes only ownership + structural fields; it does NOT
+create or expand a PIM ontology/vocabulary. Any value vocabulary becomes
+normative only when proven by an authoritative PIM artifact. `SourceMapped`
+proves mapping/provenance to an identified source — it does NOT imply site
+verification or plant ground truth, and stays distinct from `SiteVerified`.
