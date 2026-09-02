@@ -1,76 +1,53 @@
 # SA REVIEW INBOX
 
-Task: VF-ARCH-01-C02
-Status: READY FOR SA REVIEW (C02: final wording consistency for executable vs
-container-only scopes)
-Parent: Issue #39 VF-vNEXT-ARCH
+Task: VF-ARCH-02
+Status: READY FOR SA REVIEW (runtime composition contract frozen)
+Parent: Issue #39 VF-vNEXT-ARCH (prerequisite: ARCH-01 #40 CLOSED as completed)
 
 Gate type:
 Architecture / design gate — documentation & evidence only (no production
-implementation). C02 correction gate for Issue #40 (narrow wording/consistency).
+implementation)
 
-Canonical baseline:
-main @ f5261c8ca18cd4e01779c0274b55270ba028b4e5
+Architecture baseline:
+ARCH-01 package @ feature/vf-arch-01 41903e186e96a05726483e4a17b9ac2d9cd56655
+Production baseline: canonical main @ f5261c8 (unchanged; not merged)
 
-Frozen structural model (C01-consistent):
-VF Platform -> Workspace -> Simulation Scope -> Simulation Object
-- containment hierarchy = tree; connectivity/dependency = graph (independent).
-- Simulation Scope = structural/addressable boundary; may be EXECUTABLE
-  (runtime/execution boundary) or CONTAINER-ONLY (groups child scopes/objects).
-  executability = capability, NOT a type default.
-- standalone/federated contract applies to executable-capable scopes only.
-- Workspace = deployment/identity/config/composition boundary; NO single-engine
-  implication; legacy runtime.engine = compatibility/default/profile field
-  (ARCH-02 decides runtime-composition semantics).
-- runtime state isolated per scope (executable scopes).
+Frozen runtime-composition contract:
+- Coordinator = composition service; NOT a domain engine (anti-responsibilities:
+  no AP/WIP/quality, physics, recipe, control logic, PIM, monitoring).
+- Common run lifecycle: validate -> create -> start -> step/pause/resume ->
+  stop -> reset; replay distinct from reset; one workspace run owns child run
+  contexts; child run identity scope-scoped; container-only scopes have no run
+  context.
+- Time/sync: composition time vs scope-local time vs sync boundary vs internal
+  cadence vs wall-clock. Invariant: synchronized composition does NOT require
+  identical timestep/scheduler (C/D/Batch mixed cadences compose).
+- Determinism: stable ordering key; explicit inputs/version/seed; no
+  dict/set/hash/time-of-day ordering; replay != snapshot restore.
+- Boundaries: material / utility-energy / information-observation /
+  coordination-event categories; structural identity (NOT PIM canonical);
+  boundary exchange = only cross-scope data path; direct mutation forbidden.
+- Hybrid archetypes (C+C, D+D, C+D, Batch+C) compose without one shared engine.
+- ASSY maps as six executable sub-line scopes over existing AssyLineRuntime
+  (not rewritten); demo policy != plant truth.
+- PH00 runtime.engine = compatibility/default/profile descriptor; not
+  one-engine-per-workspace; no schema change.
 
-Identity invariants:
-- workspace_id / scope_id / scope path / object identity = VF structural
-  identity, SEPARATE from outputs.namespace and PIM canonical ids.
-- child scope id unique within parent boundary; object id unique within owning
-  scope; identity independent of UI labels.
-
-Archetype vs execution:
-- continuous / batch / discrete = archetype labels (hybrid allowed), NOT
-  mandatory engines; mechanisms composable (core tick, discrete event,
-  assembly state-machine).
-
-Reference mappings:
-- TIPA (verified, lossless): TIPA Workspace -> ASSY Scope -> ASSY-SL01..06
-  child Scopes -> AP/WIP/carrier Objects. AssyLineRuntime NOT redesigned.
-- SH WTP (conceptual, no invented topology): SH-WTP Workspace -> area/unit
-  Scopes -> equipment Objects. No special-case architecture.
-
-C01 corrections applied:
-- Simulation Scope executability semantics made consistent (no more
-  "every scope has execution/runtime boundary" contradiction).
-- Workspace definition no longer implies a single engine.
-- AssyDemoComposition downgraded to reusable composition pattern/precedent;
-  vNext TIPA->ASSY federation remains an implementation target.
-- Migration dispositions expressed as candidate directions; final disposition
-  deferred to later gates.
-
-C02 corrections applied:
-- Runtime state isolation stated for executable scopes ONLY; container-only
-  scopes own no simulation runtime state (structural/config/composition state
-  is not runtime state).
-- No fake runtime for container-only scopes.
-- All runtime-execution wording (standalone/federated execution, runtime state
-  per scope, scope runtime/execution) limited to executable(-capable) scopes.
-
-Non-decisions deferred to ARCH-02+: clock sync, port payloads, coordinator
-scheduling, observation/event schema, provenance impl, capability registry,
-UI impl, semantic binding, SH WTP runtime, ASSY refactor, frontend migration.
+Non-decisions deferred to ARCH-03+: production coordinator classes; final port
+payload/schema; Observation/Event/Alarm schema (ARCH-03); capability registry
+(ARCH-03); UI (ARCH-04); TIPA/ASSY migration (ARCH-05+); SH WTP runtime;
+semantic binding; provenance impl; historian; snapshot/checkpoint impl;
+frontend migration; plant-control authority.
 
 Production code changed: NO
-ARCH-02 started: NO
+ARCH-03 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-ARCH-01.md
+.ai-harness/sa-review/reports/VF-ARCH-02.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-ARCH-01/ (6 files: 01…06; 02/03/04/06
-C01-refined)
+.ai-harness/sa-review/evidence/VF-ARCH-02/ (7 files: 01…07)
+
 
 
 

@@ -1,0 +1,93 @@
+{
+  "task_id": "VF-ARCH-02",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "ARCHITECTURE / DESIGN GATE — DOCUMENTATION & EVIDENCE ONLY (NO PRODUCTION IMPLEMENTATION)",
+  "objective": "Freeze the minimum runtime-composition contract needed for Virtual Factory vNext to coordinate multiple executable Simulation Scopes safely and deterministically without turning the coordinator into a second domain engine. Inherits the ARCH-01 structural model (Platform -> Workspace -> Simulation Scope -> Simulation Object; executable vs container-only scopes; containment tree; connectivity graph; standalone/federated execution).",
+  "explicit_non_objectives": [
+    "No production coordinator classes",
+    "No final port payload/schema classes",
+    "No Observation/Event/Alarm schema (ARCH-03)",
+    "No capability registry/readiness model (ARCH-03)",
+    "No UI components/navigation (ARCH-04)",
+    "No TIPA/ASSY migration implementation (ARCH-05+)",
+    "No SH WTP runtime/domain models",
+    "No semantic loader/binding",
+    "No provenance implementation details",
+    "No historian/result warehouse",
+    "No snapshot/checkpoint restore/branching implementation",
+    "No frontend framework migration",
+    "No real plant-control authority"
+  ],
+  "required_branch": "",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-ARCH-02.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-02.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-02/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-ARCH-02/01-current-state-runtime-composition-inventory.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-02/02-runtime-ownership-model.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-02/03-run-lifecycle-and-parent-child.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-02/04-time-synchronization-and-determinism.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-02/05-coordinator-and-inter-scope-boundaries.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-02/06-hybrid-execution-and-assy-mapping.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-02/07-ph00-reconciliation-and-decisions.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-02.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement production coordinator classes",
+    "Freeze final port payload/schema classes",
+    "Decide Observation/Event/Alarm schema",
+    "Decide capability registry/readiness model",
+    "Decide UI components/navigation",
+    "Implement TIPA/ASSY migration",
+    "Implement SH WTP runtime/domain models",
+    "Implement semantic loader/binding",
+    "Rewrite AssyLineRuntime",
+    "Reintroduce single-engine-per-workspace assumption"
+  ],
+  "stop_conditions": [
+    "A safe composition contract requires rewriting accepted AssyLineRuntime domain semantics",
+    "Continuous/Discrete hybrid composition cannot be represented without a single forced global engine",
+    "Existing accepted runtime contracts conflict materially and require a breaking architecture decision",
+    "PH00 runtime.engine cannot be reconciled without a schema-breaking change",
+    "Deterministic composition requires choosing site/domain-specific numerical behavior not authorized in this gate",
+    "Typed boundary semantics cannot be separated from PIM canonical semantic ownership",
+    "Finalizing this gate requires deciding ARCH-03 Observation/Event/Capability semantics prematurely"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Runtime ownership explicit and non-overlapping", "rule": {"field": "ownership.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Executable vs container-only consistent with ARCH-01", "rule": {"field": "exec_container.consistent", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Common run lifecycle explicit", "rule": {"field": "lifecycle.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Parent/child run relationship explicit", "rule": {"field": "parent_child.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Time/synchronization concepts allow different mechanisms/cadences", "rule": {"field": "time_sync.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Deterministic ordering/replay contract explicit", "rule": {"field": "determinism.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Coordinator responsibilities and anti-responsibilities explicit", "rule": {"field": "coordinator.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Inter-scope boundary categories and mutation authority explicit", "rule": {"field": "boundaries.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Hybrid archetype composition maps conceptually without one forced engine", "rule": {"field": "hybrid.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "ASSY maps without runtime rewrite or demo-policy overclaim", "rule": {"field": "assy_map.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "PH00 runtime.engine reconciled safely", "rule": {"field": "runtime_engine.reconciled", "operator": "is_true", "expected": null}},
+    {"id": "A12", "phase": "final", "description": "No production code changed", "rule": {"field": "production_code_changed", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}
