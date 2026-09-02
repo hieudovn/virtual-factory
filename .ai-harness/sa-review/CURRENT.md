@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-ARCH-03
-Status: READY FOR SA REVIEW (observation/event-alarm/capability/readiness contracts frozen)
+Task: VF-ARCH-03-C01
+Status: READY FOR SA REVIEW (C01: event/alarm fact-vs-state, capability authority, required-capability visibility, container readiness corrected)
 Parent: Issue #39 VF-vNEXT-ARCH (prerequisite: ARCH-02 #41 CLOSED as completed)
 
 Gate type:
@@ -42,6 +42,20 @@ Conceptual mappings:
 - SH WTP: continuous/equipment observations, water-quality domain capabilities,
   threshold alarms, aggregated readiness — conceptual only (no invented site
   truth).
+
+C01 corrections applied:
+- Alarm Event (immutable fact) vs Alarm Condition/State (mutable projection)
+  separated; Event.status constrained to occurrence/fact classification captured
+  at creation; ack/clear workflow never mutates the Alarm Event fact.
+- Capability state authority = declared provider/contract owner (observation does
+  not confer authority); aggregators observe but do not invent/upgrade.
+- Capability requirement/declaration (required/optional/not expected) is a
+  separate axis from runtime state; required-missing = explicit blocker
+  (derived not_ready), never silently omitted; not_applicable = declaratively
+  irrelevant, not merely absent.
+- Container-only scope readiness separates structural/composition readiness (can
+  be READY) from execution readiness (not_applicable); aggregation exposes child
+  blockers explicitly.
 
 Production code changed: NO
 ARCH-04 started: NO

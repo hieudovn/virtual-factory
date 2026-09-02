@@ -27,9 +27,12 @@ a separate competing evaluator and **not** a source of truth. The inputs are:
    (or `error/degraded` if it initializes but faults).
 5. **Degraded-continue vs fail-closed** is declared at contract level (ARCH-02
    failure policy); it does not imply a hidden health score.
-6. **Container-only scope readiness:** a container-only scope has no runtime
-   readiness of its own; its readiness is the aggregation of its child scopes
-   (and/or `not_applicable` when it has no executable children).
+6. **Container-only scope readiness (C01-4):** separate
+   **structural/configuration/composition readiness** (the container scope's own
+   grouping/config can be READY) from **execution/runtime readiness** (which is
+   `not_applicable` for a scope with no runtime). A container-only scope can be
+   structurally READY while its execution readiness is N/A; parent/workspace
+   aggregation preserves both distinctions and exposes child blockers explicitly.
 7. **`not_applicable` effect:** capabilities/scopes marked `not_applicable` are
    excluded from blocking aggregation (they are irrelevant, not failures).
 8. **`restricted` vs `not_ready`:** `restricted` is usable-within-limits and does

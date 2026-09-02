@@ -1,8 +1,18 @@
 # VF-ARCH-03 — Freeze observation, event/alarm, capability and readiness contracts
 
+> **C01 revision (Issue #42 SA review):** (1) Alarm Event (immutable fact) vs
+> Alarm Condition/State (mutable projection) separated; `Event.status`
+> constrained to occurrence/fact classification captured at creation;
+> (2) capability state authority = declared provider/contract owner (observation
+> does not confer authority); (3) capability requirement/declaration
+> (required/optional/not expected) is a separate axis from runtime state;
+> required-missing = explicit blocker, never silently omitted; (4) container-only
+> scope readiness separates structural/composition readiness (can be READY) from
+> execution readiness (`not_applicable`).
+
 | Field | Value |
 |---|---|
-| Task ID | `VF-ARCH-03` (GitHub Issue #42) |
+| Task ID | `VF-ARCH-03` (GitHub Issue #42) + C01 |
 | Parent | Issue #39 `VF-vNEXT-ARCH` (umbrella architecture program) |
 | Prerequisite | ARCH-02 / Issue #41 CLOSED by SA as `completed` |
 | Repository | `hieudovn/virtual-factory` |
@@ -39,8 +49,9 @@ bounded live series, `AlarmManager`, `EventStore`), `discrete/events.py`
 
 1. **Runtime State** = only mutable truth; **Observation** = immutable/downstream;
    projections cache/index but never mutate truth.
-2. **Alarm ⊂ Event**; Event Timeline and Alarm List are projections over the
-   event model; alarm lifecycle never mutates the historical event fact.
+2. **Alarm ⊂ Event**; Alarm Event (immutable fact) vs Alarm Condition/State
+   (mutable projection) separated; Event Timeline and Alarm List are projections;
+   alarm lifecycle never mutates the historical event fact.
 3. **Live Series** (bounded current-run) ≠ **Historian** (durable, outside
    baseline); **Run Result** = finalized summary, not a warehouse.
 4. **Capability namespaces**: platform / execution-domain / workspace-feature —
@@ -97,7 +108,7 @@ needed; nothing fabricated.
 ## 8. Final status
 
 ```text
-VF-ARCH-03 — READY FOR SA REVIEW
+VF-ARCH-03-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. ARCH-04 is NOT started; all

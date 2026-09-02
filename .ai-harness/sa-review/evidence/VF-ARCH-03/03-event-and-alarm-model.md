@@ -11,15 +11,17 @@ An Event is an immutable runtime/activity fact with conceptual fields:
 | run / scope context | `run_id` / scope path |
 | event type / category | e.g. process event, quality event, lifecycle event |
 | occurrence simulation / coordination time | `simulation_time_s` / coordination point |
-| severity / status | where applicable |
+| severity / classification | occurrence/fact classification captured at event creation (NOT mutable workflow/lifecycle status) |
 | payload / reference | reference to an observation or domain context (not a copy of truth) |
 | provenance | origin/run/scope provenance (evidence 06) |
 
-**Immutable fact vs mutable workflow state:** the event fact is immutable
+**Immutable fact vs mutable workflow state (C01):** the event fact is immutable
 (append-style, like `ScheduledEvent` / `ObservationEnvelope`). Any
-acknowledgement/status workflow state, if introduced later, is a **separate,
-lower-authority projection layer** — not a mutation of the underlying event
-fact. No full workflow engine is designed here.
+`status`/severity field on the Event is constrained to an **occurrence/fact
+classification captured at event creation**. Mutable workflow/lifecycle status
+(acknowledgement, active/clear, shelving) belongs to a **separate projection/
+state axis**, never inside the immutable Event fact. No full workflow engine is
+designed here.
 
 ## 3.2 Alarm ⊂ Event (frozen)
 
@@ -35,18 +37,25 @@ fact. No full workflow engine is designed here.
 
 **What makes an Event an Alarm (conceptual):** an event that asserts a
 crossed-threshold / out-of-normal / attention-required condition over a signal
-or domain state, carrying an alarm identity + active/clear/acknowledged status.
+or domain state. Distinguish two tiers (C01-1):
+
+- **Alarm Event / Alarm occurrence** — the **immutable historical Event fact**
+  (threshold entered, alarm asserted, alarm cleared as an occurrence event).
+- **Alarm Condition / Alarm State** — the **mutable derived/projection state**
+  over the event stream / runtime condition (active/inactive,
+  acknowledged/unacknowledged; shelved if ever added later).
 
 ## 3.3 Alarm lifecycle vs underlying event fact
 
-- The underlying **event fact** (e.g. "signal X crossed threshold at time T") is
-  immutable and historical.
-- **Alarm status** (active / acknowledged / cleared) is a contract-level
-  projection/lifecycle over that fact; acknowledging or clearing an alarm does
-  **not** mutate or remove the historical event fact.
-- **Alarm List is a projection** over the event model, not a duplicate UI-owned
-  alarm store. Event Timeline and Alarm List are two projections of the same
-  event facts.
+- The **Alarm Event fact** (threshold entered / alarm asserted / alarm cleared)
+  is immutable and historical.
+- The **Alarm Condition/State** (active/inactive, acknowledged/unacknowledged)
+  is a mutable projection over the event stream; acknowledgement/clear workflow
+  state must **not** mutate the original Alarm Event fact.
+- **Alarm List** may project the current Alarm Condition/State plus historical
+  event references; it is **not** an independent truth store. Event Timeline and
+  Alarm List are two projections of the same event facts.
+- No full alarm workflow engine is designed here.
 
 > VF does **not** import real-plant control/alarm-management authority unless
 > explicitly simulation-scoped (non-decision).

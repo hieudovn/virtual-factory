@@ -45,13 +45,28 @@ contract-level operational substate, not a new top-level capability state.
 
 ### 4.2.2 State semantics (explicit)
 
-1. **Authority/owner:** each state is owned by the component that can observe it
-   — platform capability states by the platform/runtime layer; execution/domain
-   capability states by the scope runtime; workspace feature states by the
-   workspace/domain configuration (all aggregated, never independently invented).
-2. **Absent vs not-applicable vs not-ready:**
-   - absent capability = not declared for the scope (no state to aggregate);
-   - `not_applicable` = declared but irrelevant to this scope/domain;
+1. **Authority/owner (C01-2):** capability state authority comes from the
+   **declared capability provider / contract owner**, or from a deterministic
+   derivation over authoritative inputs owned by that provider — platform
+   capability states by the platform/runtime layer; execution/domain capability
+   states by the scope runtime; workspace feature states by the workspace/domain
+   configuration. **Observation does not confer authority**: consumers and
+   aggregators may observe/project a state but may not invent or upgrade it;
+   workspace/scope readiness aggregates capability states but does not become
+   their authority.
+2. **Requirement/declaration vs runtime state are two axes (C01-3):**
+   - **capability requirement/declaration**: `required` | `optional` |
+     `not expected`;
+   - **capability runtime/readiness state**: `available` | `not_applicable` |
+     `not_ready` | `restricted` | `error/degraded`.
+   Cross-axis rules:
+   - a **required** capability that is missing/undeclared/unresolved is an
+     **explicit blocker** (derived `not_ready`), never silently omitted from
+     aggregation;
+   - an **optional** absent capability may remain non-blocking but must stay
+     visible where relevant;
+   - `not_applicable` means the capability is **known/declaratively irrelevant**
+     for this scope/domain — not merely absent;
    - `not_ready` = declared, applicable, but prerequisites missing.
 3. **Failure/error vs configuration/readiness gap:** `error/degraded` is an
    operational fault; `not_ready` is a configuration/readiness gap. They are
