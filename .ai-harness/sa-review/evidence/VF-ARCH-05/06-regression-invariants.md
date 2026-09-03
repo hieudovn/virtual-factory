@@ -24,7 +24,48 @@ normalize it silently").
 | 11 | Accepted continuous/compressor functionality | No `continuous/` package; continuous = `core/simulation_engine.py` + `equipment/{compressor_train,compressor,process_dynamics,boundary}.py` + `operating_states/state_machine.py` + `control/pid_controller.py` + `balance/*` | `test_compressor_train.py`, `test_compressor_states.py`, `test_operating_states.py`, `test_minimal_process_dynamics.py`, `test_minimal_closed_loop.py`, `test_demand_profile.py` |
 | 12 | Existing demo behavior preserved unless classified demo-only | `demo_composition.py` (COMMON_DEMO_CLOCK, DEMO feed policy), `demo_controller.py`; standalone `tests/demo_assy.py::run_tipa_demo()` | `test_demo_composition.py`; `test_auto_equiv_01.py` (manual vs auto equivalence) |
 
-## 3. Exact discrepancies reported (not normalized)
+## 3. Functional-semantics oracle (C01-1) — semantic, not token-based
+
+Issue #44 froze route semantics including the conceptual labels `SSO2_BUFFER`,
+`RSO2_BUFFER`, and `FINISHED`. Repo-first evidence confirms these are NOT
+authoritative conveyor-position tokens, but they DO represent evidence-backed
+functional semantics that the regression oracle must preserve. A later migration
+could preserve `PRE-ASSY → AP01..AP11` and still be a regression if it broke
+SSO2/RSO2 feed/buffer behavior or terminal release/output semantics. The oracle
+below is therefore **semantic**: each row states a functional requirement, the
+exact repo seam that implements it, and whether a direct test exists today.
+
+### 3.1 SSO2 feed / queue / buffering before entry at PRE-ASSY
+
+| Semantic requirement | Repo seam (exact) | Direct test? |
+|---|---|---|
+| SSO2 semi-finished WIP is produced as an upstream source intended for ASSY PRE-ASSY | `assembly/upstream.py` ("SSO2: creates stator/shaft semi-finished WIP → ASSY PRE-ASSY"); `line_runtime.py::produce_sso2_wip()` | indirect (every line test produces then introduces) |
+| An SSO2 WIP does NOT occupy a conveyor position until introduced; entry happens at PRE-ASSY | `line_runtime.py::introduce_to_assy()` → `conveyor.place_carrier(carrier, "PRE-ASSY", wip_id)` + `LINE_ENTRY` emit at PRE-ASSY | `test_assy_line.py::test_trace_contains_all_key_events` (asserts `LINE_ENTRY`); `test_positions_authoritative` |
+| Feed/queue buffering of SSO2 WIPs awaiting entry (per-context demo feed) | `assembly/demo_composition.py` `AssyDemoContext.sso2_ids` feed queue | **NO direct test** → **future regression proof obligation**: assert feed-queue drain → introduce ordering, and that produced-but-not-introduced SSO2 WIPs are buffered (not yet on the conveyor) |
+
+### 3.2 RSO2 buffering / availability feeding AP04 JOIN
+
+| Semantic requirement | Repo seam (exact) | Direct test? |
+|---|---|---|
+| RSO2 semi-finished WIP is produced and buffered for AP04 JOIN | `line_runtime.py::produce_rso2_wip()` (adds to `_rso2_wips`) | `test_assy_line.py` AP04 tests produce RSO2 |
+| AP04 JOIN is blocked when no RSO2 WIP is available (both-parents requirement) | `line_runtime.py::_execute_ap04_join` raises `AssyLineError("AP04 JOIN: no RSO2 WIP available")`; pops one RSO2 on join | `test_assy_line.py::test_ap04_requires_both_parents` (no RSO2 → raises); `test_m6_int_01.py::TestAp04Genealogy` |
+| RSO2 buffer count is observable | `line_runtime.py::rso2_buffer_size()` returns `len(self._rso2_wips)` | **NO direct count-assertion test found** → **future regression proof obligation**: assert `rso2_buffer_size()` reflects produced-minus-joined RSO2 WIPs |
+
+### 3.3 Terminal FINISHED → lifecycle / output mapping
+
+| Semantic requirement | Repo seam (exact) | Direct test? |
+|---|---|---|
+| A good WIP terminal = released as finished good | `line_runtime.py::_execute_release_disposition` sets `ws.lifecycle = WipLifecycle.RELEASED` | `test_assy_line.py::TestA08ReleasedLifecycle::test_child_released_at_ap11`; `test_full_happy_path_released` ("RELEASED_FINISHED_GOOD") |
+| `FINISHED` is NOT a conveyor position — it is lifecycle/output semantics | `conveyor.py` `ConveyorConfig.positions` end at `AP11`; `wip.py` `WipLifecycle.RELEASED` | `test_assy_line.py::test_positions_authoritative` (12 positions, no FINISHED) |
+| MES LINE_OUT projection maps terminal: RELEASED → GOOD; FAILED_FINAL → REJECT | `assy_mes_bridge.py` `_line_out_fact` (disposition `good`) / `_line_out_reject_fact` (disposition `reject`, `reason_code=QualityStatus.FAILED_FINAL.value`) | `test_demo_assy_mes_v1.py::test_ap11_fail_reject_line_out`; `test_assy_mes_bridge_v1.py` (GOOD/REJECT) |
+
+### 3.4 Discrepancy reporting kept (no invented code tokens)
+
+The conceptual labels `SSO2_BUFFER`, `RSO2_BUFFER`, and `FINISHED` are retained
+ONLY as conceptual names in the oracle — never invented as code tokens and never
+added to the authoritative route. Full discrepancy wording is in §4 below.
+
+## 4. Exact discrepancies reported (not normalized)
 
 1. **Route token mismatch (SSO2_BUFFER / RSO2_BUFFER):** the literals
    `"SSO2_BUFFER"` / `"RSO2_BUFFER"` do **not** exist in `src/` or `tests/`.
@@ -46,18 +87,33 @@ normalize it silently").
    (`RETEST_PENDING`, `STAY_AT_STATION`); the legacy `tipa.py` had
    `final-quality → AP04 (REWORK)` — different semantics; must not be confused.
 
-## 4. Regression proof strategy (architecture-level, not implemented)
+## 5. Regression proof strategy (semantic oracle, architecture-level, not implemented)
 
-The frozen invariants above are the acceptance oracle for later migration. A
-future regression proof must demonstrate, at minimum:
+The frozen invariants above + the functional-semantics oracle (§3) are the
+acceptance oracle for later migration. A future regression proof must
+demonstrate, at minimum:
 
 - route order unchanged (12 positions, PRE-ASSY first);
+- SSO2 feed/queue buffering before entry at PRE-ASSY preserved (produced SSO2
+  WIPs enter only via introduction at PRE-ASSY; entry emits `LINE_ENTRY`);
+- RSO2 buffering/availability before AP04 JOIN preserved (no RSO2 WIP → AP04
+  JOIN blocked; RSO2 consumed on join);
+- terminal `FINISHED` semantics preserved as lifecycle/output (`RELEASED` for
+  good; MES `LINE_OUT` GOOD/REJECT as applicable) — never as a conveyor
+  position;
 - AP04 both-parents requirement unchanged;
 - AP06 retest / AP08 reinspect / AP11 final-QC statuses unchanged;
 - `failed_final` terminal + idempotent;
 - `LINE_OUT` good/reject derivation unchanged;
 - deterministic timing stream and idempotency keys byte-identical for the same
   seed + inputs;
-- continuous/compressor tests still pass (no ASSY migration may touch them).
+- continuous/compressor tests still pass (no ASSY migration may touch them);
+- the §3 rows marked "NO direct test" are covered by the explicit future
+  regression proof obligations recorded there (they must be added as tests or
+  documented proof in the migration slice that touches the corresponding seam).
 
-**Decision F is explicit and evidence-backed; discrepancies reported verbatim.**
+The oracle is **semantic**: passing the route-position oracle alone is
+insufficient — a migration must also satisfy §3.1–§3.3 functional semantics.
+
+**Decision F is explicit and evidence-backed; discrepancies reported verbatim;
+oracle is semantic, not token-based.**

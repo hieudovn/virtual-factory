@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-ARCH-05
-Status: READY FOR SA REVIEW
+Task: VF-ARCH-05-C01
+Status: READY FOR SA REVIEW (C01: regression oracle semantic — preserves SSO2 feed, RSO2 buffering, FINISHED lifecycle/output behind conceptual labels)
 Parent: Issue #39 VF-vNEXT-ARCH (prerequisite: ARCH-04 #43 CLOSED as completed)
 
 Gate type:
@@ -44,10 +44,33 @@ good/reject; quality/checklist/measurement (DEMO_SYNTHETIC); deterministic
 timing + idempotency keys; six sub-lines; continuous/compressor functionality;
 demo behavior preserved unless demo-only.
 
+Functional-semantics oracle (C01-1, semantic not token-based):
+the conceptual labels SSO2_BUFFER/RSO2_BUFFER/FINISHED are NOT literal
+conveyor-position tokens (discrepancy reporting kept). The oracle additionally
+preserves the functional semantics they stand for:
+- SSO2 feed/queue/buffering before entry at PRE-ASSY (produce_sso2_wip ->
+  introduce_to_assy at PRE-ASSY -> LINE_ENTRY);
+- RSO2 buffering/availability feeding AP04 JOIN (produce_rso2_wip ->
+  rso2_buffer_size -> AP04 JOIN blocked when no RSO2);
+- terminal FINISHED = lifecycle/output (WipLifecycle.RELEASED for good; MES
+  LINE_OUT GOOD/REJECT as applicable), never as a conveyor position.
+Sub-behaviors without a direct test (SSO2 feed-queue drain ordering;
+rso2_buffer_size count) are recorded as explicit future regression proof
+obligations in evidence 06 §3.
+
 Reported discrepancies (verbatim): SSO2_BUFFER/RSO2_BUFFER are conceptual labels
 not code tokens; FINISHED = WipLifecycle.RELEASED (not a position); tipa.py
 build_tipa_topology is legacy M3-S03 single-line; mes_adapter.py holds no
 determinism/idempotency logic; AP06 retest-in-place != legacy AP04 rework.
+
+C01 corrections applied:
+- Regression oracle expanded to be semantic, not token-based: preserves SSO2
+  feed/queue/buffering before PRE-ASSY, RSO2 buffering/availability before AP04
+  JOIN, and terminal FINISHED semantics (RELEASED / LINE_OUT GOOD/REJECT).
+- Discrepancy reporting kept: SSO2_BUFFER/RSO2_BUFFER/FINISHED remain
+  non-literal, non-conveyor-position labels; no code tokens invented.
+- Rows lacking a direct test marked explicitly as future regression proof
+  obligations (evidence 06 §3.1-3.3), not fabricated as evidence.
 
 STOP conditions: none triggered.
 

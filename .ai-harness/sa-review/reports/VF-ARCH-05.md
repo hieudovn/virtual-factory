@@ -1,5 +1,16 @@
 # VF-ARCH-05 — Freeze TIPA/ASSY migration architecture and regression invariants
 
+> **C01 revision (Issue #44 SA review):** the regression oracle is now
+> **semantic, not token-based**. The conceptual labels `SSO2_BUFFER`,
+> `RSO2_BUFFER`, `FINISHED` are confirmed NOT to be literal conveyor-position
+> tokens, and the discrepancy reporting is kept; the oracle is expanded to
+> preserve the evidence-backed functional semantics behind those labels: (1)
+> SSO2 feed/queue/buffering before entry at PRE-ASSY; (2) RSO2 buffering/
+> availability feeding AP04 JOIN; (3) terminal `FINISHED` semantics as
+> lifecycle/output (`RELEASED` / MES `LINE_OUT` GOOD/REJECT as applicable), not
+> as a conveyor position. Rows lacking a direct test are recorded explicitly as
+> future regression proof obligations. No other ARCH-05 decision changed.
+
 | Field | Value |
 |---|---|
 | Task ID | `VF-ARCH-05` (GitHub Issue #44) |
@@ -39,7 +50,7 @@ generic Workspace/Scope class exists in `src/`.
 | **C — Reuse boundary** | `AssyLineRuntime` domain behavior frozen; migration wraps/adapts around it; never forks or rewrites. |
 | **D — Identity migration** | lossless structural path `TIPA/ASSY/ASSY-SLnn/<object>`; local ids preserved; distinct from PIM semantic id and `outputs.namespace`. |
 | **E — Standalone vs federated** | equivalent domain semantics; parent adds composition/run/context/boundary services only; authority non-overlapping. |
-| **F — Regression invariants** | 12 invariants with exact repo evidence + discrepancies reported verbatim. |
+| **F — Regression invariants** | 12 invariants with exact repo evidence + discrepancies reported verbatim, PLUS a functional-semantics oracle (SSO2 feed before PRE-ASSY; RSO2 buffering before AP04 JOIN; terminal FINISHED → RELEASED / LINE_OUT GOOD/REJECT) that is semantic, not token-based. |
 | **G — UI preservation** | Frame A/B + inspector + domain extensions unchanged until migration; no frontend implementation. |
 | **H — Observation/Event/Capability** | projections map to ARCH-03 contracts; no duplicate store; capability promotion deferred. |
 | **I — Migration sequence** | 5 frozen steps (host seam → ASSY wrapper → hierarchy exposure → UI integration → regression proof); not implemented. |
@@ -52,6 +63,18 @@ AP08 reinspect, AP11 final-QC, `failed_final` terminal+idempotent, `LINE_OUT`
 good/reject, quality/checklist/measurement (`DEMO_SYNTHETIC`), deterministic
 timing + idempotency keys, six sub-lines, continuous/compressor functionality,
 demo behavior preserved unless demo-only.
+
+**Functional-semantics oracle (semantic, not token-based):** the conceptual
+labels `SSO2_BUFFER`, `RSO2_BUFFER`, `FINISHED` are NOT literal conveyor-position
+tokens (discrepancy reporting kept). The oracle additionally preserves the
+functional semantics they stand for: (1) SSO2 feed/queue/buffering before entry
+at PRE-ASSY; (2) RSO2 buffering/availability feeding AP04 JOIN; (3) terminal
+`FINISHED` = lifecycle/output mapping (`RELEASED` for good; MES `LINE_OUT`
+GOOD/REJECT as applicable), never as a conveyor position. Sub-behaviors without
+a direct test are explicitly recorded as **future regression proof obligations**
+in evidence 06 §3. A migration that preserves the 12 positions but breaks
+SSO2/RSO2 feed/buffer behavior or terminal release/output semantics is a
+regression.
 
 **Reported discrepancies (verbatim, not normalized):** buffer literals
 `SSO2_BUFFER`/`RSO2_BUFFER` are not code tokens; `FINISHED` = `WipLifecycle.RELEASED`
@@ -71,6 +94,22 @@ No TIPA Workspace/ASSY federation implementation; no `AssyLineRuntime` rewrite;
 no generic Workspace/Scope classes; no coordinator/ports; no frontend changes;
 no fake TIPA lines; no PIM changes; no provenance-v2; no SH WTP runtime; no
 framework migration.
+
+## 6.1 C01 corrections applied
+
+1. **Regression oracle semantic (C01-1):** the regression oracle in evidence 06
+   now preserves the evidence-backed functional semantics behind the conceptual
+   labels `SSO2_BUFFER`, `RSO2_BUFFER`, `FINISHED`, in addition to the 12
+   conveyor positions: SSO2 feed/queue/buffering before entry at PRE-ASSY (§3.1),
+   RSO2 buffering/availability feeding AP04 JOIN (§3.2), and terminal `FINISHED`
+   = lifecycle/output (`RELEASED` / `LINE_OUT` GOOD/REJECT) (§3.3).
+2. **Token discrepancy reporting kept:** `SSO2_BUFFER`/`RSO2_BUFFER`/`FINISHED`
+   remain explicitly non-literal, non-conveyor-position labels; no code tokens
+   were invented (§3.4 / §4).
+3. **Future regression proof obligations recorded:** sub-behaviors without a
+   direct test today (SSO2 feed-queue drain ordering; `rso2_buffer_size` count
+   semantics) are marked explicitly as future regression proof obligations in
+   evidence 06 §3, not fabricated as evidence.
 
 ## 7. Acceptance
 
@@ -94,7 +133,7 @@ framework migration.
 ## 9. Final status
 
 ```text
-VF-ARCH-05 — READY FOR SA REVIEW
+VF-ARCH-05-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. ARCH-06 is NOT started; all
