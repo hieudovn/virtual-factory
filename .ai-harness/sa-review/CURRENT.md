@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-ARCH-06
-Status: READY FOR SA REVIEW
+Task: VF-ARCH-06-C01
+Status: READY FOR SA REVIEW (C01: executable scope = execution/runtime boundary, not 1 scope = 1 engine)
 Parent: Issue #39 VF-vNEXT-ARCH (prerequisite: ARCH-05 #44 CLOSED as completed)
 
 Gate type:
@@ -22,7 +22,13 @@ Frozen decisions:
 - Continuous/Batch/Discrete = archetypes, not one-engine-per-workspace;
   runtime.engine: continuous_process (B3).
 - Shared core owns execution/composition framework; SH-WTP physics is a future
-  domain model, not platform architecture.
+  domain model, not platform architecture. An executable Simulation Scope owns
+  an execution/runtime boundary (one or more execution mechanisms per scope
+  contract — continuous/state-machine/discrete/hybrid); SimulationEngine /
+  runtime.engine: continuous_process are the current continuous
+  implementation/profile precedent (PH00 descriptor), NOT a universal
+  1 scope = 1 engine rule; engine cardinality/type is an implementation/profile
+  concern.
 - PIM = semantic authority; version/hash-pinned, fail-closed
   (semantic_binding.mode: required); VF read-only.
 - Legacy WTP mini-engines (simulators/wtp, simulators/vf2) = reference/legacy ->
@@ -44,6 +50,19 @@ Architecture closure:
 No unresolved platform-level architecture gap remains after ARCH-01..06.
 Umbrella #39 may close after SA accepts ARCH-06; the implementation program
 (G1..G10) becomes the next phase.
+
+C01 corrections applied:
+- Removed universal '1 executable scope = 1 SimulationEngine' assumption.
+- Executable scope owns an execution/runtime boundary; may use one or more
+  execution mechanisms per scope contract (continuous/state-machine/discrete/
+  hybrid).
+- SimulationEngine / runtime.engine: continuous_process = current continuous
+  implementation/profile precedent (PH00 descriptor), NOT universal
+  engine-cardinality rule.
+- Consistency sweep removed residual 'engine at scope level' / 'exactly one
+  engine per executable scope' wording across evidence 02/03/09/10 + report.
+- G1-G10 roadmap, legacy WTP disposition, fidelity constraints, closure
+  conclusion unchanged.
 
 STOP conditions: none triggered.
 

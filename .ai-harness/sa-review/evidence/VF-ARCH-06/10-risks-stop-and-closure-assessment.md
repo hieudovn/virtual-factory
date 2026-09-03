@@ -6,7 +6,7 @@
 |---|---|
 | Treating old WTP mini-engine as target architecture | frozen: reference/legacy only (evidence 07) |
 | Carrying duplicate mini-engines indefinitely without disposition | frozen disposition + future deprecation after G10 proof (evidence 07) |
-| One SH-WTP Workspace = one engine assumption | rejected: archetype ≠ engine; engine at scope level (evidence 02/03) |
+| One SH-WTP Workspace = one engine assumption | rejected: archetype ≠ engine; an executable scope owns an execution/runtime boundary, and engine cardinality/type is an implementation/profile concern (evidence 02/03) |
 | Inventing site topology or SourceMapped/SiteVerified evidence | forbidden: representative/illustrative scopes only; `logical_only` (evidence 02/04) |
 | Mixing PIM semantic identity with VF structural/runtime identity | B2 three distinct identities preserved (evidence 04) |
 | Implementing semantic binding before identity/provenance foundation | G9 placed after G1+G2+G8 (evidence 08) |
@@ -47,8 +47,11 @@ SA (the per-gate `no-dup-path`/`regression` evidence is the tripwire).
 
 1. SH WTP = Workspace; process areas/units = hierarchical Scopes; equipment/
    instruments = Objects; site topology evidence-dependent (illustrative only).
-2. Continuous/Batch/Discrete = archetypes; no one-engine-per-workspace;
-   `runtime.engine: continuous_process` (B3).
+2. Continuous/Batch/Discrete = archetypes; an executable scope owns an
+   execution/runtime boundary (one or more execution mechanisms per scope
+   contract); `runtime.engine: continuous_process` (B3) is a PH00
+   compatibility/default/profile descriptor, not a universal engine-cardinality
+   rule.
 3. Shared core owns execution/composition framework; SH-WTP physics is a future
    domain model, not platform architecture.
 4. PIM = semantic authority; version/hash-pinned, fail-closed, read-only;

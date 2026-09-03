@@ -1,5 +1,17 @@
 # VF-ARCH-06 — Freeze SH WTP target mapping and vNext implementation roadmap
 
+> **C01 revision (Issue #45 SA review):** removed the universal
+> `1 executable scope = 1 SimulationEngine` assumption. Frozen instead: an
+> executable Simulation Scope owns an **execution/runtime boundary** (one or more
+> execution mechanisms per scope contract — continuous / state-machine /
+> discrete / hybrid); `SimulationEngine` and `runtime.engine: continuous_process`
+> are the **current continuous implementation/profile precedent** (PH00
+> compatibility/default/profile descriptor), NOT a universal engine-cardinality
+> rule; engine cardinality/type is an implementation/profile concern; SH WTP
+> stays compatible with hybrid scopes and ARCH-02 composition semantics. G1–G10
+> roadmap, legacy WTP disposition, fidelity/evidence constraints, and the
+> architecture-closure conclusion are unchanged.
+
 | Field | Value |
 |---|---|
 | Task ID | `VF-ARCH-06` (GitHub Issue #45) |
@@ -36,7 +48,7 @@ implementation gates follow, in what order, with what acceptance evidence?
 |---|---|
 | **A — Inventory** | WTP artifacts classified: reusable shared-core / SH-WTP-specific domain (future) / standalone mini-engine legacy / semantic-binding dependency / UI capability / implementation gap. |
 | **B — Hierarchy** | SH-WTP = Workspace → process-area/unit Scopes → equipment/instrument Objects; illustrative scope names only (no site truth). |
-| **C — Runtime** | shared core owns execution/composition; SH-WTP physics is a future domain model plugging into `SimulationEngine`; no one-engine-per-workspace. |
+| **C — Runtime** | an executable scope owns an execution/runtime boundary (one or more execution mechanisms per scope contract — continuous/state-machine/discrete/hybrid); `SimulationEngine`/`runtime.engine: continuous_process` is the current continuous implementation/profile precedent, NOT a universal `1 scope = 1 engine` rule; shared core owns execution/composition; SH-WTP physics is a future domain model. |
 | **D — PIM dependency** | PIM = semantic authority; version/hash-pinned, fail-closed (`semantic_binding.mode: required`); fidelity `logical_only` (B1–B10 + ALIGN/COMPAT/EXPORT). |
 | **E — Observation/Event/Capability/Readiness** | maps to ARCH-03; `data_status=synthetic`; no fabricated measured/site truth. |
 | **F — UI** | maps to ARCH-04 Continuous experience; legacy dashboard/nav link not the target. |
@@ -80,6 +92,22 @@ No Workspace/Scope, coordinator, provenance-v2, semantic binding, ASSY
 migration, SH WTP runtime, mini-engine deletion/refactor, frontend changes,
 fidelity raise, PIM changes; no implementation gate begun.
 
+## 7.1 C01 corrections applied
+
+1. **Execution boundary, not engine cardinality (C01-1):** removed the universal
+   `1 executable scope = 1 SimulationEngine` assumption. An executable scope
+   owns an execution/runtime boundary that may host/use one or more execution
+   mechanisms per its scope contract (continuous / state-machine / discrete /
+   hybrid). `SimulationEngine` / `runtime.engine: continuous_process` are the
+   current continuous implementation/profile precedent (PH00 descriptor), not a
+   universal engine-cardinality rule. Engine cardinality/type is an
+   implementation/profile concern unless frozen later (evidence 03 §1/§4, 02 §4,
+   10 §4).
+2. **Consistency sweep:** removed residual wording equivalent to "engine at scope
+   level" / "exactly one engine per executable scope" across evidence 02, 03,
+   09, 10 and this report. G1–G10 roadmap, legacy WTP disposition, fidelity/
+   evidence constraints, and the architecture-closure conclusion are unchanged.
+
 ## 8. Acceptance
 
 | Criterion | Result |
@@ -101,7 +129,7 @@ fidelity raise, PIM changes; no implementation gate begun.
 ## 10. Final status
 
 ```text
-VF-ARCH-06 — READY FOR SA REVIEW
+VF-ARCH-06-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. No implementation gate is started; the

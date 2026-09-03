@@ -33,7 +33,7 @@ tests are implemented here — this is an expectation contract only.**
 | G7 Hierarchical Scenario/Run Control | `files`; `integration` (ARCH-02 command levels: create/start/stop vs pause/resume/step; reset in-context); `regression` (ASSY oracle + cont-baseline) |
 | G8 VF Platform vNext Regression Baseline | `files`; full `regression` suite (ASSY oracle + cont-baseline + all prior gate tests); `determinism`; `no-dup-path` |
 | G9 Semantic Binding vNext | `files`; `bind-failclosed`; `integration` (version/hash pinning, `mapped` exactly-one target); `regression` (ASSY oracle + cont-baseline) |
-| G10 Resume SH WTP runtime | `files`; `unit`+`integration` SH WTP domain models inside shared engine; fidelity `logical_only` asserted (`data_status=synthetic`); `regression` (ASSY oracle + cont-baseline); `no-dup-path`; legacy mini-engine deprecation gated on this gate's proof |
+| G10 Resume SH WTP runtime | `files`; `unit`+`integration` SH WTP domain models hosted behind the scope execution boundary (continuous shared-core precedent); fidelity `logical_only` asserted (`data_status=synthetic`); `regression` (ASSY oracle + cont-baseline); `no-dup-path`; legacy mini-engine deprecation gated on this gate's proof |
 
 ## 4. ASSY regression protection (explicit)
 

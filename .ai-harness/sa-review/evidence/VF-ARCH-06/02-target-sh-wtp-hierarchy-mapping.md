@@ -45,13 +45,15 @@ topology.
 | Container vs executable scope | process areas may be container-only or executable |
 | Federated child independently addressable | a child scope is addressable in its own right |
 | Structural identity ≠ PIM canonical id | VF structural ids distinct from PIM ids (evidence 04) |
-| Archetype is a label, not an engine | SH WTP = continuous archetype; engine selection at scope/runtime level (ARCH-01/ARCH-02) |
+| Archetype is a label, not an engine | SH WTP = continuous archetype; engine cardinality/type is an implementation/profile concern behind the scope execution boundary (ARCH-01/ARCH-02) |
 
 ## 5. What this gate does NOT do
 
 - No site topology, no `SourceMapped`/`SiteVerified`/control-interlock claims.
 - No fidelity raise beyond `logical_only` (PH00 B10).
-- No one-workspace-one-engine assumption (B3: `runtime.engine: continuous_process`
-  is the discriminator; `vf-core` is not an engine discriminator).
+- No one-workspace-one-engine assumption; an executable scope owns an
+  execution/runtime boundary, not exactly one engine instance (B3:
+  `runtime.engine: continuous_process` is the PH00 compatibility/default/profile
+  descriptor for SH WTP; `vf-core` is not an engine discriminator).
 
 **Decision B is explicit and evidence-safe.**
