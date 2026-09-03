@@ -1,5 +1,16 @@
 # VF-ARCH-04 — Freeze product/UI interaction architecture: shell, context, monitoring and capability-driven composition
 
+> **C01 revision (Issue #43 SA review):** (1) restore the accepted ARCH-01
+> TIPA/ASSY hierarchy mapping — TIPA = Workspace, ASSY = child Simulation Scope,
+> ASSY-SL01..06 = child Simulation Scopes, station/AP/WIP/carrier = Simulation
+> Objects; the standalone ASSY demo is a presentation precedent, not a structural
+> re-typing. (2) Step is execution-mechanism neutral — one authorized advancement
+> per the active executable scope/runtime contract, never assuming a discrete
+> scheduler. (3) Floating Control is context-aware but command-semantics
+> preserving — create/start/stop are workspace/composition orchestration,
+> pause/resume/step are scope execution actions, reset state is in-context and
+> never erases/replaces historical run identity.
+
 | Field | Value |
 |---|---|
 | Task ID | `VF-ARCH-04` (GitHub Issue #43) |
@@ -42,8 +53,8 @@ generic-legacy platform capability / demo-only / implementation detail.
 | Decision | Frozen contract |
 |---|---|
 | **A — Platform Shell** | One shared chrome (context strip, global nav, breadcrumb/hierarchy, run/scenario visibility, floating control slot, health surface, workspace/scope switching). **Anti-responsibilities**: never owns domain truth, never duplicates monitoring state, never a God UI, never hosts domain/plant controls, never hard-codes by name, never imposes identical layout. |
-| **B — Hierarchy + context** | Workspace→Scope→Object path + run/scenario; tree = structure, graph = connectivity; container vs executable scope; federated child independently addressable; selected object ≠ selected scope; no name hard-coding. |
-| **C — Floating Simulation Control** | Minimal run-control primitive: Time, Run/Pause, Step, Reset, Speed + compact run/scenario context. **Excludes** scenario editor, replay editor, domain process controls, plant-control actions. Bound to active scope/run; commands via ARCH-02 interfaces. |
+| **B — Hierarchy + context** | Workspace→Scope→Object path + run/scenario; tree = structure, graph = connectivity; container vs executable scope; federated child independently addressable; selected object ≠ selected scope; no name hard-coding. ASSY lossless ARCH-01 mapping: TIPA = Workspace, ASSY = child Simulation Scope, ASSY-SL01..06 = child Simulation Scopes, station/AP/WIP/carrier = Simulation Objects (standalone demo = presentation precedent only). |
+| **C — Floating Simulation Control** | Minimal run-control primitive: Time, Run/Pause, Step, Reset, Speed + compact run/scenario context. **Excludes** scenario editor, replay editor, domain process controls, plant-control actions. Context-aware but command-semantics preserving: create/start/stop = workspace orchestration, pause/resume/step = scope execution actions, Step = execution-mechanism neutral, reset state in-context (never erases run history); displays effective command target; commands via ARCH-02 interfaces. |
 | **D — Context Inspector** | Object-centric, projection-only. Generic tabs: Overview, State, Signals, current-run Live Trend, Events/Alarms, Actions, Evidence/Provenance + capability-driven domain extensions. Not a second domain state store. |
 | **E — Monitoring** | Scope-centric, projection-only, 0..N views per scope. Widget categories: numeric/text, status/boolean, table, alarm list, event timeline, live chart, gauge/level/bar, equipment card, quality summary. Live chart ≠ Historian; Alarm List ≠ independent store. |
 | **F — Inspector vs Monitoring** | "Object X ra sao?" vs "Scope/Area Y ra sao?" — same facts, different perspective, no duplicate mutable state. |
@@ -88,6 +99,21 @@ editor; advanced RBAC; production provenance storage.
 | Later migration/implementation concerns deferred | PASS (09 §4) |
 | No production code changed | PASS (only `.ai-harness/`) |
 
+## 6.1 C01 corrections applied
+
+1. **Hierarchy (C01-1):** restored ARCH-01 lossless TIPA/ASSY mapping — ASSY is
+   not retyped as Workspace, sub-line not downgraded from Scope to Object;
+   standalone ASSY UI described only as a presentation precedent (evidence 03).
+2. **Step (C01-2):** Step is execution-mechanism neutral — one authorized
+   advancement per the active executable scope/runtime contract (one tick / one
+   event advancement / one dwell-or-index advancement); no discrete scheduler
+   assumption (evidence 04).
+3. **Command level + reset (C01-3):** Floating Control is context-aware but
+   command-semantics preserving — create/start/stop = workspace orchestration,
+   pause/resume/step = scope execution actions, reset state in-context and never
+   implies history erasure/replacement; effective command target displayed
+   explicitly (evidence 04).
+
 ## 7. Evidence
 
 `.ai-harness/sa-review/evidence/VF-ARCH-04/` — 9 files (01…09).
@@ -95,7 +121,7 @@ editor; advanced RBAC; production provenance storage.
 ## 8. Final status
 
 ```text
-VF-ARCH-04 — READY FOR SA REVIEW
+VF-ARCH-04-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. ARCH-05 is NOT started; all

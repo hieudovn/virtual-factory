@@ -2,18 +2,19 @@
 
 ## 1. Decision statement
 
-**The Floating Simulation Control is the one shared, minimal, context-aware
-run-control primitive. It exposes only run control; it never hosts scenario
-editing, replay, domain process controls, or plant-control actions.**
+**The Floating Simulation Control is the one shared, minimal, context-aware but
+command-semantics-preserving run-control primitive. It exposes only run control;
+it never hosts scenario editing, replay, domain process controls, or
+plant-control actions.**
 
 ## 2. Baseline control set (minimal, frozen)
 
 | Control | Semantics (from ARCH-02) | State visibility |
 |---|---|---|
 | Time | current simulation time of the active run | always visible when a run is selected |
-| Run / Pause | start or pause the active run in the active scope | enabled only when permitted by scope/run state |
-| Step | advance exactly one discrete step | enabled only when the runtime supports stepping |
-| Reset | reset the active scope's run state to baseline | enabled only when permitted |
+| Run / Pause | start (workspace/composition orchestration) / pause (scope execution action) per ARCH-02 | enabled only when permitted by scope/run state |
+| Step | one authorized advancement according to the active executable scope/runtime contract (e.g., one tick, one event advancement, or one dwell/index advancement — never assuming a discrete scheduler) | enabled only when the active executable runtime supports stepping |
+| Reset | reset state per ARCH-02: in-context operation where the run contract permits it; never implies erasing or replacing historical run identity | enabled only when the run contract permits |
 | Speed | run-time rate factor (where supported) | enabled only when supported by the runtime |
 | (optional) compact run/scenario context | read-mostly label of selected run/scenario + its state | always |
 
@@ -25,18 +26,30 @@ Hard boundary — the Floating Control **must never** contain:
 
 Those belong to the **domain content region** (Domain UX) or are deferred.
 
-## 3. Context-awareness
+## 3. Context-awareness (command-semantics preserving)
 
-The Floating Control is **bound to the active scope and active run**:
+The Floating Control is **context-aware but command-semantics preserving**: it
+displays the effective command target and routes each command through ARCH-02,
+without redefining ARCH-02 command levels.
 
-- It operates on the **selected scope** (the scope in the current structural
-  context), never on an unspecified "global" runtime.
-- The target context is always visible in the control (which scope/run the
-  buttons act on).
-- Switching scope re-binds the control to the new scope's runtime; it does not
-  leak commands across scopes.
+ARCH-02 command levels (preserved, not redesigned):
+
+- `create` / `start` / `stop` = **workspace / composition orchestration commands**;
+- `pause` / `resume` / `step` = **scope execution actions**;
+- exact target/propagation must be **explicit**;
+- **container-only scopes have no execution target**;
+- `reset state` is an **in-context operation** where the run contract permits it;
+  after execution history exists, restart/new attempt requires a **distinct
+  run/attempt identity** — Reset must not imply history erasure or replacement.
+
+UI obligations:
+
+- The control displays the **effective command target** (workspace run /
+  executable scope / propagated child set) explicitly; it does not silently
+  assume every command targets the currently selected scope runtime.
 - All commands route through **ARCH-02 declared interfaces** — the UI never
   mutates another scope's runtime state directly.
+- Restart/replay UI is **not redesigned here**.
 
 ## 4. State-driven enablement (from ARCH-02/ARCH-03)
 
@@ -75,6 +88,6 @@ primitive; domain operation is domain UX.**
 
 - Contains only run-control primitives + compact context: **yes**.
 - Contains no editor/domain/plant controls: **yes** (explicitly excluded).
-- Bound to one scope/run with visible target: **yes**.
+- Displays effective command target (workspace run / executable scope / propagated child set): **yes**.
 
 **Decision C is explicit and minimal.**

@@ -70,13 +70,23 @@ Frozen rules:
 | Context switching | `/assy-demo/select`, `/api/config/switch` |
 | Object vs scope | `assy_demo.js` `_selectedStation` / `_selectedWipId` (object axis) vs `_subLineId` (scope axis) |
 
-The ASSY Frame A/B model is already a concrete hierarchy: **Workspace (ASSY) →
-Scope (production line) → Object (sub-line / station / WIP)**. ARCH-04 generalizes
-exactly this — it does not replace it.
+The ASSY Frame A/B model is a **presentation precedent** for hierarchy
+navigation, not a structural re-typing. The frozen ARCH-01 structural mapping is
+lossless and unchanged: **TIPA = Workspace; ASSY = child Simulation Scope;
+ASSY-SL01..06 = child Simulation Scopes of ASSY; station / AP / WIP / carrier =
+Simulation Objects**. ASSY is not retyped as Workspace merely because the current
+demo is standalone, and a sub-line is not downgraded from Scope to Object. ARCH-04
+generalizes the navigation *form* (drill-down, context strip) — it does not change
+the ARCH-01 structure.
 
 ## 5. Consistency check with ARCH-01
 
-- ARCH-01 hierarchy (Workspace → Scope → nested → Object) — respected.
+- ARCH-01 hierarchy (Workspace → Scope → nested → Object) — respected, with the
+  lossless TIPA/ASSY mapping preserved verbatim: TIPA = Workspace, ASSY = child
+  Simulation Scope, ASSY-SL01..06 = child Simulation Scopes, station/AP/WIP/
+  carrier = Simulation Objects. The standalone ASSY demo UI is only a
+  presentation precedent; it never re-types ASSY as Workspace or a sub-line as
+  Object.
 - ARCH-01 container vs executable scope — respected (container shows
   `not_applicable` execution readiness).
 - ARCH-01 federated child independently addressable — respected (child selection
