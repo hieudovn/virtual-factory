@@ -1,8 +1,8 @@
 # SA REVIEW INBOX
 
-Task: VF-ARCH-03-C01
-Status: READY FOR SA REVIEW (C01: event/alarm fact-vs-state, capability authority, required-capability visibility, container readiness corrected)
-Parent: Issue #39 VF-vNEXT-ARCH (prerequisite: ARCH-02 #41 CLOSED as completed)
+Task: VF-ARCH-04
+Status: READY FOR SA REVIEW
+Parent: Issue #39 VF-vNEXT-ARCH (prerequisite: ARCH-03 #42 CLOSED as completed)
 
 Gate type:
 Architecture / design gate — documentation & evidence only (no production
@@ -11,60 +11,67 @@ implementation)
 Architecture baseline:
 ARCH-01 @ feature/vf-arch-01 41903e186e96a05726483e4a17b9ac2d9cd56655
 ARCH-02 @ feature/vf-arch-02 40454487acb4d5667872168a88c8b742c29cb975
+ARCH-03 @ feature/vf-arch-03 392401bdfaf1ee2acf4ebcd204dbcfa419359e4c
 Production baseline: canonical main @ f5261c8 (unchanged; not merged)
 
-Frozen contracts:
-- Runtime State -> Observation -> Monitoring / Live Series / Export /
-  Integration: Runtime State = only mutable truth; Observation = immutable/
-  downstream; projections cache/index but never mutate truth.
-- Runtime Activity -> Event -> Alarm: Alarm ⊂ Event (not a parallel store);
-  Event Timeline + Alarm List are projections; alarm lifecycle never mutates
-  the historical event fact.
-- Live Series (bounded current-run) != Historian (durable, outside baseline);
-  Run Result = finalized summary, not a warehouse.
-- Capability namespaces: platform / execution-domain / workspace-feature —
-  separated; never hard-coded by workspace name.
-- Capability states: available / not_applicable / not_ready / restricted /
-  error-degraded (error vs degraded = operational substates).
-- Readiness = deterministic categorical aggregation of capability + binding +
-  runtime + child-scope states; never a competing evaluator; never hides
-  blockers; no arbitrary health score.
-- Provenance != Evidence: VF owns provenance (origin_kind=simulation, synthetic
-  vocabulary); PIM/external owns evidence (SourceMapped/SiteVerified/...); VF
-  never upgrades evidence; synthetic never relabeled measured/site truth.
-- Monitoring and Context Inspector share the same observation/event facts
-  (different perspective, not two stores).
+Target principle: Unified architecture != identical layout.
+
+Frozen decisions:
+- Platform Shell: one shared chrome (context strip, global nav,
+  breadcrumb/hierarchy, run/scenario visibility, floating control slot, health
+  surface, workspace/scope switching). Anti-responsibilities: never owns domain
+  truth; never duplicates monitoring state; never a God UI; never hosts
+  domain/plant controls; never hard-codes by workspace name; never imposes
+  identical layout.
+- Hierarchy + context: Workspace -> Scope -> Object path + run/scenario; tree =
+  structure, graph = connectivity; container vs executable scope; federated
+  child independently addressable; selected object != selected scope; no
+  workspace-name hard-coding.
+- Floating Simulation Control: minimal run-control primitive — Time, Run/Pause,
+  Step, Reset, Speed + compact run/scenario context. Excludes scenario editor,
+  replay editor, domain process controls, plant-control actions. Bound to
+  active scope/run; commands via ARCH-02 interfaces.
+- Context Inspector: object-centric, projection-only. Generic tabs: Overview,
+  State, Signals, current-run Live Trend, Events/Alarms, Actions,
+  Evidence/Provenance + capability-driven domain extensions (ASSY:
+  Quality/Genealogy/Checklist/Retest/Reinspect; Continuous: Process/Control/
+  Balance/Quality/Parameters; Batch: Recipe/Phase/Material/Hold-Release/
+  Genealogy). Not a second domain state store.
+- Monitoring: scope-centric, projection-only, 0..N views per scope. Widget
+  categories: numeric/text, status/boolean, table, alarm list, event timeline,
+  live chart, gauge/level/bar, equipment card, quality summary. Live chart =
+  bounded current-run Live Series (not Historian); Alarm List = projection
+  (not an independent store).
+- Inspector vs Monitoring: "Object X ra sao?" vs "Scope/Area Y ra sao?" — same
+  facts, different perspective, no duplicate mutable state.
+- Archetype presentation patterns: Discrete (line/sub-line/station/WIP),
+  Continuous (process/equipment/instrument, monitoring/analysis), Batch
+  (recipe/phase/material). Patterns, not mandatory layouts.
+- Capability-driven UI: available / not_applicable / not_ready / restricted /
+  degraded / error / required-missing -> visibility/enablement/transparency
+  matrix; never hard-coded by workspace name.
+- Health/readiness presentation: UI displays readiness + shows blockers +
+  navigates to source; never invents score, upgrades, hides blocker, or becomes
+  evaluator.
+- Action authority: simulation / runtime-model / plant-operational labels;
+  no implied plant control; all mutations via ARCH-02 interfaces.
 
 Conceptual mappings:
-- ASSY: stations/WIP/quality/genealogy -> observations/events; quality alarms =
-  event specializations; station capabilities = domain capabilities
-  (capability-driven dispatch, no workspace-name routing).
-- SH WTP: continuous/equipment observations, water-quality domain capabilities,
-  threshold alarms, aggregated readiness — conceptual only (no invented site
-  truth).
+- ASSY = reference Discrete Experience, preserved without loss or rewrite
+  assumptions (Shell / Inspector / Monitoring mapping); unchanged until ARCH-05.
+- SH WTP = Continuous conceptual mapping (area/equipment/instrument; process/
+  control/balance/quality) — illustrative only, no invented site truth.
 
-C01 corrections applied:
-- Alarm Event (immutable fact) vs Alarm Condition/State (mutable projection)
-  separated; Event.status constrained to occurrence/fact classification captured
-  at creation; ack/clear workflow never mutates the Alarm Event fact.
-- Capability state authority = declared provider/contract owner (observation does
-  not confer authority); aggregators observe but do not invent/upgrade.
-- Capability requirement/declaration (required/optional/not expected) is a
-  separate axis from runtime state; required-missing = explicit blocker
-  (derived not_ready), never silently omitted; not_applicable = declaratively
-  irrelevant, not merely absent.
-- Container-only scope readiness separates structural/composition readiness (can
-  be READY) from execution readiness (not_applicable); aggregation exposes child
-  blockers explicitly.
+STOP conditions: none triggered.
 
 Production code changed: NO
-ARCH-04 started: NO
+ARCH-05 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-ARCH-03.md
+.ai-harness/sa-review/reports/VF-ARCH-04.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-ARCH-03/ (7 files: 01…07)
+.ai-harness/sa-review/evidence/VF-ARCH-04/ (9 files: 01…09)
 
 
 
