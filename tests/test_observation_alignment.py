@@ -8,6 +8,7 @@ never mutates the original envelope.
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 import pytest
@@ -106,7 +107,7 @@ def test_all_run_authorities_agree_when_context_and_provenance_present() -> None
     )
     result = carry_structural_context(env, ctx)
     assert result.context[KEY_RUN_ID] == "run-1"
-    assert result.context[KEY_PROVENANCE]["run_id"] == "run-1"
+    assert _prov_in_result(result)["run_id"] == "run-1"
 
 
 def test_reserved_key_conflict_fails_closed_not_silently_overwritten() -> None:
@@ -176,8 +177,9 @@ def test_all_scope_run_time_authorities_agree() -> None:
     result = carry_structural_context(env, ctx)
     assert result.context[KEY_SCOPE_PATH] == "W/AREA/UNIT"
     assert result.context[KEY_RUN_ID] == "run-1"
-    assert result.context[KEY_PROVENANCE]["scope_path"] == "W/AREA/UNIT"
-    assert result.context[KEY_PROVENANCE]["simulation_time_s"] == 12.5
+    prov = _prov_in_result(result)
+    assert prov["scope_path"] == "W/AREA/UNIT"
+    assert prov["simulation_time_s"] == 12.5
 
 
 def test_context_is_fail_closed_on_workspace_mismatch() -> None:
@@ -209,7 +211,7 @@ def test_carried_provenance_serialized_without_canonical_identity() -> None:
         provenance=provenance,
     )
     result = carry_structural_context(env, ctx)
-    prov = result.context[KEY_PROVENANCE]
+    prov = _prov_in_result(result)
     assert prov["workspace_id"] == "W"
     assert prov["run_id"] == "run-1"
     assert prov["data_status"] == "synthetic"
@@ -241,6 +243,11 @@ def _prov(workspace_id="W", run_id="run-1", scope=None, time_s=None, **kw):
         kwargs["simulation_time_s"] = time_s
     kwargs.update(kw)
     return ProvenanceV2(**kwargs)
+
+
+def _prov_in_result(result) -> dict:
+    """Parse the carried vf.provenance from its immutable canonical JSON string."""
+    return json.loads(result.context[KEY_PROVENANCE])
 
 
 # ── workspace ──────────────────────────────────────────────────────
@@ -352,7 +359,7 @@ def test_existing_vf_provenance_time_coherent_is_accepted() -> None:
     )  # == envelope
     ctx = ObservationStructuralContext(workspace_id="W")
     result = carry_structural_context(env, ctx)
-    assert result.context[KEY_PROVENANCE]["simulation_time_s"] == 12.5
+    assert _prov_in_result(result)["simulation_time_s"] == 12.5
 
 
 # ── provenance (whole authority) ───────────────────────────────────
@@ -366,7 +373,7 @@ def test_existing_vf_provenance_must_equal_incoming_provenance_when_both_present
         provenance=prov,
     )
     result = carry_structural_context(env, ctx)
-    assert result.context[KEY_PROVENANCE] == prov.to_dict()
+    assert _prov_in_result(result) == prov.to_dict()
     # A DIFFERING incoming provenance must not silently overwrite the existing one.
     other = _prov(
         scope=StructuralPath(("W", "AREA", "UNIT")),
@@ -401,7 +408,7 @@ def test_coherent_full_existing_reserved_state_is_accepted() -> None:
     assert result.context[KEY_WORKSPACE_ID] == "W"
     assert result.context[KEY_RUN_ID] == "run-1"
     assert result.context[KEY_SCOPE_PATH] == "W/AREA/UNIT"
-    assert result.context[KEY_PROVENANCE] == prov.to_dict()
+    assert _prov_in_result(result) == prov.to_dict()
 
 
 def test_coherent_existing_provenance_retained_when_incoming_omits() -> None:
@@ -421,7 +428,7 @@ def test_coherent_existing_provenance_retained_when_incoming_omits() -> None:
         run_id="run-1",
     )  # provenance omitted
     result = carry_structural_context(env, ctx)
-    assert result.context[KEY_PROVENANCE] == prov.to_dict()
+    assert _prov_in_result(result) == prov.to_dict()
 
 
 def test_legacy_context_none_returns_same_envelope_even_with_reserved_state() -> None:
@@ -429,3 +436,168 @@ def test_legacy_context_none_returns_same_envelope_even_with_reserved_state() ->
     env = replace(_envelope(), context={"vf.run_id": "run-9"})
     result = carry_structural_context(env, None)
     assert result is env
+
+
+# ═══════════════════════════════════════════════════════════════════
+# C04: vf.provenance must be a valid ProvenanceV2 serialization and
+# immutable through the resulting Observation.
+# Lifecycle: ProvenanceV2 -> serialized vf.provenance -> Observation
+# context -> read/to_dict consumer.
+# ═══════════════════════════════════════════════════════════════════
+
+def _prov_data(**mutations) -> dict:
+    """A faithful ProvenanceV2 serialized dict, with optional mutations."""
+    data = _prov().to_dict()
+    data.update(mutations)
+    return data
+
+
+def test_existing_provenance_invalid_origin_kind_fails_closed() -> None:
+    env = replace(
+        _envelope(),
+        context={"vf.provenance": _prov_data(origin_kind="measured")},
+    )
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_provenance_invalid_data_status_fails_closed() -> None:
+    env = replace(
+        _envelope(),
+        context={"vf.provenance": _prov_data(data_status="measured")},
+    )
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_provenance_invalid_fidelity_fails_closed() -> None:
+    env = replace(
+        _envelope(),
+        context={"vf.provenance": _prov_data(fidelity="ultra")},
+    )
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_provenance_invalid_step_time_fails_closed() -> None:
+    env = replace(
+        _envelope(),
+        context={"vf.provenance": _prov_data(step=-1)},
+    )
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+    env2 = replace(
+        _envelope(),
+        context={"vf.provenance": _prov_data(simulation_time_s=-2.0)},
+    )
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env2, ctx)
+
+
+def test_existing_provenance_missing_required_field_fails_closed() -> None:
+    bad = _prov_data()
+    del bad["run_id"]
+    env = replace(_envelope(), context={"vf.provenance": bad})
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_provenance_extra_unknown_key_fails_closed() -> None:
+    env = replace(
+        _envelope(),
+        context={"vf.provenance": _prov_data(**{"canonical_signal_id": "X"})},
+    )
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_provenance_non_mapping_fails_closed() -> None:
+    env = replace(_envelope(), context={"vf.provenance": ["not", "a", "dict"]})
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_carried_provenance_is_immutable_canonical_json() -> None:
+    prov = _prov(scope=StructuralPath(("W", "AREA", "UNIT")), time_s=12.5)
+    ctx = ObservationStructuralContext(
+        workspace_id="W",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        run_id="run-1",
+        provenance=prov,
+    )
+    result = carry_structural_context(_envelope(), ctx)
+    # The reserved provenance is an immutable string, NOT a nested-mutable dict.
+    assert isinstance(result.context[KEY_PROVENANCE], str)
+    # Direct nested mutation is impossible (str is not subscriptable-assignable).
+    with pytest.raises(TypeError):
+        result.context[KEY_PROVENANCE]["run_id"] = "hijacked"  # type: ignore[index]
+    # Top-level context is read-only.
+    with pytest.raises(TypeError):
+        result.context[KEY_PROVENANCE] = "other"  # type: ignore[index]
+    # Round-trip is lossless: canonical string == the original serialized dict.
+    assert _prov_in_result(result) == prov.to_dict()
+
+
+def test_carried_provenance_serialization_is_plain_data_and_deterministic() -> None:
+    prov = _prov(scope=StructuralPath(("W", "AREA", "UNIT")), time_s=12.5)
+    ctx = ObservationStructuralContext(
+        workspace_id="W",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        run_id="run-1",
+        provenance=prov,
+    )
+    env = _envelope()
+    r1 = carry_structural_context(env, ctx)
+    r2 = carry_structural_context(env, ctx)
+    assert r1.context[KEY_PROVENANCE] == r2.context[KEY_PROVENANCE]
+    # json.dumps of the whole observation works (plain data, no nested proxy).
+    dumped = json.dumps(r1.to_dict())
+    parsed = json.loads(dumped)
+    assert json.loads(parsed["context"][KEY_PROVENANCE]) == prov.to_dict()
+    assert parsed["run_id"] == "run-1"
+
+
+def test_valid_provenance_survives_serialization_boundary() -> None:
+    """Validity is not weakened when crossing the serialization boundary:
+    existing canonical provenance revalidates identically on re-carry."""
+    prov = _prov(
+        scope=StructuralPath(("W", "AREA", "UNIT")),
+        time_s=12.5,
+        data_status=DataStatus.SYNTHETIC,
+    )
+    first = carry_structural_context(
+        _envelope(),
+        ObservationStructuralContext(
+            workspace_id="W",
+            scope_path=StructuralPath(("W", "AREA", "UNIT")),
+            run_id="run-1",
+            provenance=prov,
+        ),
+    )
+    # Feed the already-serialized (string) provenance back as existing state.
+    again = replace(_envelope(), context={"vf.provenance": first.context[KEY_PROVENANCE]})
+    ctx = ObservationStructuralContext(workspace_id="W")  # provenance omitted
+    result = carry_structural_context(again, ctx)
+    assert _prov_in_result(result) == prov.to_dict()
+
+
+def test_no_provenance_mutation_through_context_read() -> None:
+    prov = _prov()
+    result = carry_structural_context(
+        _envelope(),
+        ObservationStructuralContext(workspace_id="W", provenance=prov),
+    )
+    before = result.to_dict()
+    # Attempts to mutate through the mapping/view all fail.
+    with pytest.raises(TypeError):
+        result.context[KEY_PROVENANCE] = "x"  # type: ignore[index]
+    with pytest.raises(TypeError):
+        result.context[KEY_WORKSPACE_ID] = "W2"  # type: ignore[index]
+    assert result.to_dict() == before

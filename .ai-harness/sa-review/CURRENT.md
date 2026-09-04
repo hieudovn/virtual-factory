@@ -1,13 +1,13 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G3-C03
-Status: READY FOR SA REVIEW (C03: validate entire pre-existing reserved vf.* state + self-audit matrix)
+Task: VF-vNEXT-G3-C04
+Status: READY FOR SA REVIEW (C04: vf.provenance validated as full ProvenanceV2 serialization; immutable canonical JSON provenance)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate)
 Prerequisite: G2 PASS / COMPLETE at fec6fe4127634fcf31e1c90ce23dd9a7457ebda5 (#47 CLOSED)
-Reviewed head: 9f4770ab489ceffbc56b9eb34a9b1eb682497d9e
+Reviewed head: c234dbb4b51979e40b2a3affa6d1c1a3876d160d
 
 Gate type:
-Accelerated implementation gate — Align Observation / Event / Alarm Production Contracts (G3), correction C03
+Accelerated implementation gate — Align Observation / Event / Alarm Production Contracts (G3), correction C04
 
 Architecture baseline:
 ARCH-01..06 accepted; G2 base fec6fe4127634fcf31e1c90ce23dd9a7457ebda5
@@ -72,21 +72,39 @@ C03 corrections + self-audit applied:
   two present authorities that differ fail closed; no value fabricated; no
   ObservationEnvelope/ProvenanceV2 redesign (evidence 10).
 
+C04 corrections applied (provenance lifecycle):
+- Defect 1: pre-existing vf.provenance must be a VALID G2 ProvenanceV2
+  serialization — rehydrated through the G2 enums/invariants exactly
+  (OriginKind/DataStatus/Fidelity + ProvenanceV2.__post_init__; exact field set;
+  faithful to_dict round-trip); invalid origin_kind/data_status/fidelity,
+  invalid time/step, malformed/missing/extra fields fail closed. No competing /
+  weaker validator. Optional fields preserved; nothing fabricated.
+- Defect 2: carried provenance is an immutable canonical JSON string of
+  ProvenanceV2.to_dict() (no nested-mutable dict in Observation context), so a
+  completed Observation's provenance cannot be mutated after validation;
+  serialization stays deterministic and plain-data compatible. Pre-existing
+  provenance (dict or string) is validated and normalized to the canonical
+  string. ObservationEnvelope/ProvenanceV2 NOT redesigned (evidence 11).
+- Self-audit of full chain ProvenanceV2 -> serialized vf.provenance ->
+  ObservationEnvelope.context -> read/to_dict consumer: validity not weakened,
+  no post-validation mutation, C01-C03 coherence intact, no PIM
+  canonical/evidence fabricated, legacy context=None unchanged (evidence 11).
+
 Test / regression results:
-- New G3 tests: 67 passed (incl. C01 + C02 + C03).
+- New G3 tests: 78 passed (incl. C01 + C02 + C03 + C04).
 - Existing observation package (M5-S01..S05): 244 passed.
 - Telemetry/alarm/event group: 27 passed.
 - G2 provenance: 36 passed.
 - G1 workspace: 32 passed.
 - ASSY regression oracle: 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1782 passed (0 failures).
+- Full repository suite: 1793 passed (0 failures).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
 Pre-existing ASSY id()-flake family (test_demo_composition.py::TestReset::
 test_reset_creates_fresh_runtimes / test_reset_creates_fresh_configs)
 documented separately; passes when the file runs alone; no flake surfaced in
-the C03 full run.
+the C04 full run.
 
 Deferred (NOT implemented): capability/readiness, G4 coordinator/ports,
 G5 ASSY federation, G6 UI, G7 run-control/replay, G8, G9 semantic binding,
@@ -102,7 +120,7 @@ Report:
 .ai-harness/sa-review/reports/VF-vNEXT-G3.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G3/ (10 files: 01…10; 08 = C01, 09 = C02, 10 = C03 + self-audit matrix)
+.ai-harness/sa-review/evidence/VF-vNEXT-G3/ (11 files: 01…11; 08 = C01, 09 = C02, 10 = C03 + self-audit matrix, 11 = C04 provenance lifecycle)
 
 
 

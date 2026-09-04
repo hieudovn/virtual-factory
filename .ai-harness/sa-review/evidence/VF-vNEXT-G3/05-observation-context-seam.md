@@ -29,7 +29,8 @@ def carry_structural_context(
   fabricated, nothing mutated).
 - otherwise returns a NEW envelope (input never mutated) whose read-only
   `context` mapping carries reserved keys: `vf.workspace_id`, `vf.scope_path`
-  (canonical string), `vf.run_id`, `vf.provenance` (serialized dict).
+  (canonical string), `vf.run_id`, `vf.provenance` (canonical JSON string of the
+  G2 `ProvenanceV2` serialized dict — immutable, C04).
 
 ## 2b. Run-identity coherence (C01-1, fail-closed)
 
@@ -48,6 +49,11 @@ def carry_structural_context(
 - Existing observation identity (run_id, model_id, idempotency_key,
   source/subject, quality, schema_version) is never collapsed or replaced.
 - No PIM canonical identity / evidence maturity fabricated.
+- `vf.provenance` is validated as a full G2 `ProvenanceV2` serialization
+  (rehydrated through the G2 enums/invariants; invalid truth labels / malformed
+  / missing / extra fields fail closed) and carried as an immutable canonical
+  JSON string, so a completed Observation's provenance cannot be mutated
+  afterwards (C04).
 
 ## 4. Relationship freeze (F)
 
@@ -65,6 +71,8 @@ def carry_structural_context(
   existing identity not collapsed;
 - fail-closed on workspace/scope and workspace/provenance mismatch; empty
   workspace rejected;
-- carried provenance serialized with `data_status=synthetic`, no
-  canonical/evidence keys;
-- no fabrication when scope/provenance absent.
+- carried provenance is a faithful, valid ProvenanceV2 serialization with
+  `data_status=synthetic`, no canonical/evidence keys;
+- no fabrication when scope/provenance absent;
+- C03/C04: full pre-existing reserved vf.* state validation matrix (evidence 10)
+  and provenance lifecycle immutability/validation (evidence 11).

@@ -14,11 +14,13 @@ unchanged (legacy observation flows remain supported and unmodified).
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, replace
 from typing import Any, Mapping
 
 from virtual_factory.observation.envelope import ObservationEnvelope
 from virtual_factory.provenance.envelope import ProvenanceV2
+from virtual_factory.provenance.enums import DataStatus, Fidelity, OriginKind
 from virtual_factory.workspace.identity import StructuralPath
 
 
@@ -27,6 +29,9 @@ class ObservationContextError(ValueError):
 
 
 # Reserved context keys (never collide with consumer payload fields).
+# ``vf.provenance`` is carried as a canonical, immutable JSON string encoding of
+# the G2 ``ProvenanceV2`` serialized dict (C04) — never a nested-mutable dict —
+# so a completed Observation's provenance cannot be mutated after validation.
 KEY_WORKSPACE_ID = "vf.workspace_id"
 KEY_SCOPE_PATH = "vf.scope_path"
 KEY_RUN_ID = "vf.run_id"
@@ -115,35 +120,141 @@ def _validate_existing_provenance(
     env_time_s: float,
     workspace_id: str,
     scope_authorities: list[StructuralPath],
-) -> None:
-    """Fail closed when pre-existing ``vf.provenance`` contradicts the frozen
-    workspace/run/scope/time authorities (C03)."""
-    if not isinstance(prov_raw, Mapping):
-        raise ObservationContextError(
-            "existing vf.provenance must be a serialized mapping"
-        )
-    if prov_raw.get("workspace_id") != workspace_id:
-        _conflict(KEY_PROVENANCE, prov_raw.get("workspace_id"), workspace_id)
-    if prov_raw.get("run_id") != env_run_id:
-        _conflict(KEY_PROVENANCE, prov_raw.get("run_id"), env_run_id)
-    prov_time = prov_raw.get("simulation_time_s")
-    if prov_time is not None and prov_time != env_time_s:
-        _conflict(KEY_PROVENANCE, prov_time, env_time_s)
-    prov_scope_raw = prov_raw.get("scope_path")
-    if prov_scope_raw is not None:
-        prov_scope = _parse_scope_path(
-            prov_scope_raw, "existing vf.provenance.scope_path"
-        )
-        if prov_scope.workspace_id != workspace_id:
+) -> str:
+    """Fail closed when pre-existing ``vf.provenance`` is not a valid G2
+    ``ProvenanceV2`` serialization or contradicts the frozen workspace/run/scope/
+    time authorities (C03/C04). Returns the canonical immutable JSON encoding.
+
+    A present reserved provenance must be a VALID ``ProvenanceV2`` serialization:
+    it is rehydrated through the G2 enums/invariants exactly (no competing,
+    weaker validator), so invalid truth labels such as ``origin_kind='measured'``,
+    unsupported ``data_status``/``fidelity``, or malformed/missing fields fail
+    closed. Optional fields are preserved; nothing is fabricated.
+    """
+    data = _coerce_existing_provenance(prov_raw)
+    prov = _rehydrate_provenance(data)  # full G2 validation (no weaker semantics)
+    if prov.workspace_id != workspace_id:
+        _conflict(KEY_PROVENANCE, data.get("workspace_id"), workspace_id)
+    if prov.run_id != env_run_id:
+        _conflict(KEY_PROVENANCE, data.get("run_id"), env_run_id)
+    if prov.simulation_time_s is not None and prov.simulation_time_s != env_time_s:
+        _conflict(KEY_PROVENANCE, data.get("simulation_time_s"), env_time_s)
+    if prov.scope_path is not None:
+        if prov.scope_path.workspace_id != workspace_id:
+            raise ObservationContextError(
+                "existing vf.provenance scope_path must be rooted in "
+                f"workspace_id {workspace_id!r}"
+            )
+        if scope_authorities and prov.scope_path != scope_authorities[0]:
             _conflict(
                 KEY_PROVENANCE,
-                prov_scope_raw,
-                f"workspace {workspace_id!r}",
+                data.get("scope_path"),
+                scope_authorities[0].as_string(),
             )
-        if scope_authorities and prov_scope != scope_authorities[0]:
-            _conflict(
-                KEY_PROVENANCE, prov_scope_raw, scope_authorities[0].as_string()
+    return _canonical_prov_json(prov.to_dict())
+
+
+_PROVENANCE_SERIALIZED_KEYS = (
+    "workspace_id",
+    "run_id",
+    "scope_path",
+    "scenario_id",
+    "origin_kind",
+    "fidelity",
+    "data_status",
+    "semantic_contract_version",
+    "semantic_contract_sha",
+    "evidence_note",
+    "simulation_time_s",
+    "step",
+)
+
+
+def _canonical_prov_json(prov_dict: Mapping[str, Any]) -> str:
+    """Deterministic, immutable canonical JSON encoding of a ``ProvenanceV2``
+    serialized dict (the reserved ``vf.provenance`` value form)."""
+    return json.dumps(dict(prov_dict), sort_keys=True, separators=(",", ":"))
+
+
+def _coerce_existing_provenance(prov_raw: Any) -> dict[str, Any]:
+    """Coerce the pre-existing reserved ``vf.provenance`` value to a dict.
+
+    Accepts the canonical JSON-string form (immutable) or a plain serialized
+    mapping; anything else fails closed.
+    """
+    if isinstance(prov_raw, str):
+        try:
+            parsed = json.loads(prov_raw)
+        except Exception as exc:
+            raise ObservationContextError(
+                "existing vf.provenance is not valid canonical JSON"
+            ) from exc
+        if not isinstance(parsed, dict):
+            raise ObservationContextError(
+                "existing vf.provenance JSON must encode a mapping"
             )
+        return parsed
+    if isinstance(prov_raw, Mapping):
+        return dict(prov_raw)
+    raise ObservationContextError(
+        "existing vf.provenance must be a serialized mapping or canonical JSON"
+    )
+
+
+def _rehydrate_provenance(data: Mapping[str, Any]) -> ProvenanceV2:
+    """Reconstruct a G2 ``ProvenanceV2`` from its serialized dict, reusing the
+    G2 enums/invariants exactly (no competing schema/validator).
+
+    Raises ``ObservationContextError`` fail-closed when the mapping is not a
+    faithful, valid ``ProvenanceV2`` serialization (e.g. ``origin_kind`` not
+    simulation, unsupported ``data_status``/``fidelity``, invalid time/step,
+    malformed or missing required fields, or unknown/extra keys). Optional
+    fields are preserved as-is; nothing is fabricated.
+    """
+    try:
+        raw_scope = data.get("scope_path")
+        scope_path = (
+            StructuralPath.from_string(raw_scope) if raw_scope is not None else None
+        )
+        prov = ProvenanceV2(
+            workspace_id=data["workspace_id"],
+            run_id=data["run_id"],
+            scope_path=scope_path,
+            scenario_id=data.get("scenario_id"),
+            origin_kind=OriginKind(data["origin_kind"]),
+            fidelity=(
+                Fidelity(data["fidelity"])
+                if data.get("fidelity") is not None
+                else None
+            ),
+            data_status=(
+                DataStatus(data["data_status"])
+                if data.get("data_status") is not None
+                else None
+            ),
+            semantic_contract_version=data.get("semantic_contract_version"),
+            semantic_contract_sha=data.get("semantic_contract_sha"),
+            evidence_note=data.get("evidence_note"),
+            simulation_time_s=data.get("simulation_time_s"),
+            step=data.get("step"),
+        )
+    except ObservationContextError:
+        raise
+    except Exception as exc:
+        raise ObservationContextError(
+            "existing vf.provenance is not a valid ProvenanceV2 serialization: "
+            f"{exc}"
+        ) from exc
+    if set(data) != set(_PROVENANCE_SERIALIZED_KEYS):
+        raise ObservationContextError(
+            "existing vf.provenance must serialize exactly the ProvenanceV2 "
+            "field set"
+        )
+    if prov.to_dict() != dict(data):
+        raise ObservationContextError(
+            "existing vf.provenance is not a faithful ProvenanceV2 serialization"
+        )
+    return prov
 
 
 def carry_structural_context(
@@ -171,10 +282,16 @@ def carry_structural_context(
       existing ``vf.run_id`` must equal ``envelope.run_id`` (even when the
       incoming run_id is omitted); existing ``vf.scope_path`` must be a valid
       canonical path rooted in the same workspace and agree with every other
-      present scope authority; existing ``vf.provenance`` must be structurally
-      compatible with the same workspace/run/scope/time authorities. An omitted
+      present scope authority; existing ``vf.provenance`` must be a VALID G2
+      ``ProvenanceV2`` serialization (rehydrated through the G2 enums/invariants
+      — invalid truth labels/fields fail closed) AND structurally compatible
+      with the same workspace/run/scope/time authorities (C04). An omitted
       incoming optional field is NOT permission to retain stale contradictory
       reserved authority.
+    - ``vf.provenance`` is carried as an immutable canonical JSON string (C04):
+      the resulting Observation's provenance is not a nested-mutable dict, so it
+      cannot be mutated after validation; serialization stays deterministic and
+      plain-data compatible (same G2 serialized dict, JSON-encoded).
 
     This is a reference/carry seam only — it never renames or fabricates PIM
     canonical identity, and it never turns Observation into runtime authority.
@@ -249,22 +366,27 @@ def carry_structural_context(
             + ", ".join(sorted(distinct_scopes))
         )
 
+    existing_prov_canonical: str | None = None
     if KEY_PROVENANCE in existing:
-        _validate_existing_provenance(
+        existing_prov_canonical = _validate_existing_provenance(
             existing[KEY_PROVENANCE],
             env_run_id=env_run_id,
             env_time_s=env_time_s,
             workspace_id=ctx_workspace,
             scope_authorities=scope_authorities,
         )
-    # Two provenance authorities both present and different -> fail closed (never
-    # silently overwrite a differing pre-existing vf.provenance with incoming).
-    if (
-        context.provenance is not None
-        and KEY_PROVENANCE in existing
-        and existing[KEY_PROVENANCE] != context.provenance.to_dict()
-    ):
-        _conflict(KEY_PROVENANCE, existing[KEY_PROVENANCE], context.provenance.to_dict())
+    incoming_prov_canonical: str | None = None
+    if context.provenance is not None:
+        incoming_prov_canonical = _canonical_prov_json(
+            context.provenance.to_dict()
+        )
+        if (
+            existing_prov_canonical is not None
+            and existing_prov_canonical != incoming_prov_canonical
+        ):
+            _conflict(
+                KEY_PROVENANCE, existing[KEY_PROVENANCE], incoming_prov_canonical
+            )
 
     # --- Merge: existing (fully validated) + incoming explicit values ---
     new_context = dict(existing)
@@ -273,7 +395,12 @@ def carry_structural_context(
         new_context[KEY_SCOPE_PATH] = context.scope_path.as_string()
     if context.run_id is not None:
         new_context[KEY_RUN_ID] = context.run_id
-    if context.provenance is not None:
-        new_context[KEY_PROVENANCE] = context.provenance.to_dict()
+    if incoming_prov_canonical is not None:
+        # immutable canonical encoding — no nested-mutable provenance leaf.
+        new_context[KEY_PROVENANCE] = incoming_prov_canonical
+    elif existing_prov_canonical is not None:
+        # normalize any pre-existing provenance to the immutable canonical
+        # encoding so the returned observation cannot be mutated afterwards.
+        new_context[KEY_PROVENANCE] = existing_prov_canonical
 
     return replace(envelope, context=new_context)
