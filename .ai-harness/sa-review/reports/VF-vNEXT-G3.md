@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G3` (GitHub Issue #48) + C01 + C02 |
+| Task ID | `VF-vNEXT-G3` (GitHub Issue #48) + C01 + C02 + C03 |
 | Program | Implementation phase (G3; only authorized implementation gate) |
 | G2 base (required) | `fec6fe4127634fcf31e1c90ce23dd9a7457ebda5` |
 | Branch | `feature/vf-vnext-g3` |
@@ -81,19 +81,31 @@ existing observation modules, provenance, workspace untouched.
   authority even when explicit workspace_id is omitted.
 - **C02-2 reserved keys by presence:** a present `vf.*` key (even `None` value)
   may only repeat the SAME value; any other value fails closed.
+- **C03 full pre-existing state validation + self-audit:** before merge,
+  `carry_structural_context()` validates the ENTIRE existing reserved `vf.*`
+  state against the authoritative envelope + incoming workspace (even when the
+  incoming optional field is omitted): existing `vf.workspace_id` must equal the
+  incoming workspace; `vf.run_id` must equal `envelope.run_id`; `vf.scope_path`
+  must be a valid path rooted in the workspace and agree with every other
+  present scope authority; `vf.provenance` must be structurally compatible with
+  the frozen authorities and, when an incoming provenance is also present, equal
+  it (no silent overwrite). Coherent existing reserved state is accepted;
+  `context=None` returns the same envelope unchanged. Matrix for workspace /
+  run_id / scope_path / simulation_time_s / provenance verified with
+  positive/negative tests (evidence 10).
 
 ## 4. Test / regression results (evidence 06)
 
 | Suite | Result |
 |---|---|
-| New G3 tests | **51 passed** (incl. C01 + C02) |
+| New G3 tests | **67 passed** (incl. C01 + C02 + C03) |
 | Existing observation package (M5-S01..S05) | **244 passed** |
 | Telemetry/alarm/event group | **27 passed** |
 | G2 provenance | **36 passed** |
 | G1 workspace | **32 passed** |
 | ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1766 passed** (0 failures) |
+| Full repository suite | **1782 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 Pre-existing ASSY `id()`-flake (`test_demo_composition.py::TestReset::
@@ -124,18 +136,18 @@ alarm workflow/notification, real-plant acknowledgement authority — all deferr
 | Existing alarm/telemetry behavior compatible | PASS |
 | Runtime state remains sole mutable execution truth | PASS |
 | No historian/workflow/capability/G4+ present | PASS |
-| Mandatory regressions pass (anomalies honestly evidenced) | PASS (51+244+27+36+32+354+61+full 1766) |
+| Mandatory regressions pass (anomalies honestly evidenced) | PASS (67+244+27+36+32+354+61+full 1782) |
 | Branch/head pushed and working tree clean | PASS (after push) |
 
 ## 8. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G3/` — 9 files (01…09; 08 = C01, 09 =
-C02 corrections).
+`.ai-harness/sa-review/evidence/VF-vNEXT-G3/` — 10 files (01…10; 08 = C01, 09 =
+C02, 10 = C03 + self-audit matrix).
 
 ## 9. Final status
 
 ```text
-VF-vNEXT-G3-C02 — READY FOR SA REVIEW
+VF-vNEXT-G3-C03 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G4 is NOT started.

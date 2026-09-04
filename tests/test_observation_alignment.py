@@ -225,3 +225,207 @@ def test_no_fabrication_when_scope_or_provenance_absent() -> None:
     assert result.context[KEY_WORKSPACE_ID] == "W"
     assert KEY_SCOPE_PATH not in result.context
     assert KEY_PROVENANCE not in result.context
+
+
+# ═══════════════════════════════════════════════════════════════════
+# C03 + self-audit: validate the ENTIRE pre-existing reserved vf.* state
+# Matrix: envelope field / pre-existing vf.* / incoming context-provenance.
+# Any two present authorities that differ must fail closed. No fabricated value.
+# ═══════════════════════════════════════════════════════════════════
+
+def _prov(workspace_id="W", run_id="run-1", scope=None, time_s=None, **kw):
+    kwargs: dict = {"workspace_id": workspace_id, "run_id": run_id}
+    if scope is not None:
+        kwargs["scope_path"] = scope
+    if time_s is not None:
+        kwargs["simulation_time_s"] = time_s
+    kwargs.update(kw)
+    return ProvenanceV2(**kwargs)
+
+
+# ── workspace ──────────────────────────────────────────────────────
+
+def test_existing_vf_workspace_must_match_incoming_workspace() -> None:
+    env = replace(_envelope(), context={"vf.workspace_id": "W"})
+    ctx = ObservationStructuralContext(workspace_id="W2")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_vf_provenance_workspace_conflict_fails_closed() -> None:
+    env = replace(
+        _envelope(), context={"vf.provenance": _prov(workspace_id="W2").to_dict()}
+    )
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+# ── run_id ─────────────────────────────────────────────────────────
+
+def test_existing_vf_run_id_conflicts_when_incoming_omits_run() -> None:
+    """C03: incoming run_id omitted must NOT retain stale contradictory vf.run_id."""
+    env = replace(_envelope(), context={"vf.run_id": "run-9"})  # != envelope run-1
+    ctx = ObservationStructuralContext(workspace_id="W")  # run_id omitted
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_vf_run_id_coherent_when_incoming_omits_run_is_accepted() -> None:
+    env = replace(_envelope(), context={"vf.run_id": "run-1"})  # == envelope
+    ctx = ObservationStructuralContext(workspace_id="W")  # run_id omitted
+    result = carry_structural_context(env, ctx)
+    assert result.context[KEY_RUN_ID] == "run-1"
+    assert result.context[KEY_WORKSPACE_ID] == "W"
+
+
+def test_existing_vf_provenance_run_id_conflict_fails_closed() -> None:
+    env = replace(
+        _envelope(), context={"vf.provenance": _prov(run_id="run-9").to_dict()}
+    )
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+# ── scope_path ─────────────────────────────────────────────────────
+
+def test_existing_vf_scope_path_conflicts_via_incoming_provenance_scope() -> None:
+    """C03: existing scope retained while provenance supplies another -> fail."""
+    env = replace(_envelope(), context={"vf.scope_path": "W/AREA/OTHER"})
+    prov = _prov(scope=StructuralPath(("W", "AREA", "UNIT")))
+    ctx = ObservationStructuralContext(workspace_id="W", provenance=prov)
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_vf_scope_path_must_be_rooted_in_workspace() -> None:
+    env = replace(_envelope(), context={"vf.scope_path": "W2/AREA"})
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_vf_scope_path_must_be_valid_structural_path() -> None:
+    env = replace(_envelope(), context={"vf.scope_path": "W//AREA"})
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_vf_scope_path_coherent_is_accepted_when_incoming_omits_scope() -> None:
+    env = replace(_envelope(), context={"vf.scope_path": "W/AREA/UNIT"})
+    ctx = ObservationStructuralContext(workspace_id="W")  # scope omitted
+    result = carry_structural_context(env, ctx)
+    assert result.context[KEY_SCOPE_PATH] == "W/AREA/UNIT"
+
+
+def test_existing_vf_provenance_scope_conflict_fails_closed() -> None:
+    env = replace(
+        _envelope(),
+        context={
+            "vf.provenance": _prov(
+                scope=StructuralPath(("W", "AREA", "OTHER"))
+            ).to_dict()
+        },
+    )
+    prov = _prov(scope=StructuralPath(("W", "AREA", "UNIT")))
+    ctx = ObservationStructuralContext(workspace_id="W", provenance=prov)
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+# ── simulation_time_s (carried in provenance) ──────────────────────
+
+def test_existing_vf_provenance_time_conflict_fails_closed() -> None:
+    env = replace(
+        _envelope(), context={"vf.provenance": _prov(time_s=13.5).to_dict()}
+    )  # != envelope 12.5
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_existing_vf_provenance_time_coherent_is_accepted() -> None:
+    env = replace(
+        _envelope(), context={"vf.provenance": _prov(time_s=12.5).to_dict()}
+    )  # == envelope
+    ctx = ObservationStructuralContext(workspace_id="W")
+    result = carry_structural_context(env, ctx)
+    assert result.context[KEY_PROVENANCE]["simulation_time_s"] == 12.5
+
+
+# ── provenance (whole authority) ───────────────────────────────────
+
+def test_existing_vf_provenance_must_equal_incoming_provenance_when_both_present() -> None:
+    prov = _prov(scope=StructuralPath(("W", "AREA", "UNIT")), time_s=12.5)
+    env = replace(_envelope(), context={"vf.provenance": prov.to_dict()})
+    ctx = ObservationStructuralContext(
+        workspace_id="W",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        provenance=prov,
+    )
+    result = carry_structural_context(env, ctx)
+    assert result.context[KEY_PROVENANCE] == prov.to_dict()
+    # A DIFFERING incoming provenance must not silently overwrite the existing one.
+    other = _prov(
+        scope=StructuralPath(("W", "AREA", "UNIT")),
+        time_s=12.5,
+        data_status=DataStatus.SIMULATED_GROUND_TRUTH,
+    )
+    ctx2 = ObservationStructuralContext(workspace_id="W", provenance=other)
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx2)
+
+
+# ── coherent full existing state + legacy ──────────────────────────
+
+def test_coherent_full_existing_reserved_state_is_accepted() -> None:
+    prov = _prov(scope=StructuralPath(("W", "AREA", "UNIT")), time_s=12.5)
+    env = replace(
+        _envelope(),
+        context={
+            "vf.workspace_id": "W",
+            "vf.run_id": "run-1",
+            "vf.scope_path": "W/AREA/UNIT",
+            "vf.provenance": prov.to_dict(),
+        },
+    )
+    ctx = ObservationStructuralContext(
+        workspace_id="W",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        run_id="run-1",
+        provenance=prov,
+    )
+    result = carry_structural_context(env, ctx)
+    assert result.context[KEY_WORKSPACE_ID] == "W"
+    assert result.context[KEY_RUN_ID] == "run-1"
+    assert result.context[KEY_SCOPE_PATH] == "W/AREA/UNIT"
+    assert result.context[KEY_PROVENANCE] == prov.to_dict()
+
+
+def test_coherent_existing_provenance_retained_when_incoming_omits() -> None:
+    prov = _prov(scope=StructuralPath(("W", "AREA", "UNIT")), time_s=12.5)
+    env = replace(
+        _envelope(),
+        context={
+            "vf.workspace_id": "W",
+            "vf.run_id": "run-1",
+            "vf.scope_path": "W/AREA/UNIT",
+            "vf.provenance": prov.to_dict(),
+        },
+    )
+    ctx = ObservationStructuralContext(
+        workspace_id="W",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        run_id="run-1",
+    )  # provenance omitted
+    result = carry_structural_context(env, ctx)
+    assert result.context[KEY_PROVENANCE] == prov.to_dict()
+
+
+def test_legacy_context_none_returns_same_envelope_even_with_reserved_state() -> None:
+    """C03 applies only when the carry/merge seam is explicitly invoked."""
+    env = replace(_envelope(), context={"vf.run_id": "run-9"})
+    result = carry_structural_context(env, None)
+    assert result is env

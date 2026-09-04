@@ -85,19 +85,65 @@ class ObservationStructuralContext:
             raise ObservationContextError("run_id must be a non-empty str")
 
 
-def _reserved_key_check(current: Mapping[str, Any], key: str, value: Any) -> None:
-    """Fail closed when a reserved ``vf.*`` key is already present with a value.
+def _conflict(key: str, existing: Any, incoming: Any) -> None:
+    """Raise a fail-closed conflict for a reserved vf.* key."""
+    raise ObservationContextError(
+        f"reserved context key {key!r} already holds {existing!r}; "
+        f"conflicts with {incoming!r}"
+    )
 
-    Uses KEY PRESENCE (``key in current``), not ``get()``, so a present key
-    whose value is ``None`` is still a pre-existing reserved key and cannot be
-    silently overwritten. Same-value repeats are allowed (proven equal); any
-    different existing value fails closed.
-    """
-    if key in current and current[key] != value:
+
+def _parse_scope_path(raw: object, what: str) -> StructuralPath:
+    """Parse a canonical structural-path string (a present value must be valid)."""
+    if not isinstance(raw, str) or not raw.strip():
         raise ObservationContextError(
-            f"reserved context key {key!r} already holds a conflicting value "
-            f"{current[key]!r}; refusing to overwrite with {value!r}"
+            f"{what} must be a non-empty canonical structural-path string, "
+            f"got {raw!r}"
         )
+    try:
+        return StructuralPath.from_string(raw)
+    except Exception as exc:
+        raise ObservationContextError(
+            f"{what} is not a valid structural path: {raw!r}"
+        ) from exc
+
+
+def _validate_existing_provenance(
+    prov_raw: Any,
+    *,
+    env_run_id: str,
+    env_time_s: float,
+    workspace_id: str,
+    scope_authorities: list[StructuralPath],
+) -> None:
+    """Fail closed when pre-existing ``vf.provenance`` contradicts the frozen
+    workspace/run/scope/time authorities (C03)."""
+    if not isinstance(prov_raw, Mapping):
+        raise ObservationContextError(
+            "existing vf.provenance must be a serialized mapping"
+        )
+    if prov_raw.get("workspace_id") != workspace_id:
+        _conflict(KEY_PROVENANCE, prov_raw.get("workspace_id"), workspace_id)
+    if prov_raw.get("run_id") != env_run_id:
+        _conflict(KEY_PROVENANCE, prov_raw.get("run_id"), env_run_id)
+    prov_time = prov_raw.get("simulation_time_s")
+    if prov_time is not None and prov_time != env_time_s:
+        _conflict(KEY_PROVENANCE, prov_time, env_time_s)
+    prov_scope_raw = prov_raw.get("scope_path")
+    if prov_scope_raw is not None:
+        prov_scope = _parse_scope_path(
+            prov_scope_raw, "existing vf.provenance.scope_path"
+        )
+        if prov_scope.workspace_id != workspace_id:
+            _conflict(
+                KEY_PROVENANCE,
+                prov_scope_raw,
+                f"workspace {workspace_id!r}",
+            )
+        if scope_authorities and prov_scope != scope_authorities[0]:
+            _conflict(
+                KEY_PROVENANCE, prov_scope_raw, scope_authorities[0].as_string()
+            )
 
 
 def carry_structural_context(
@@ -107,18 +153,28 @@ def carry_structural_context(
     """Return an observation carrying an explicit G1/G2 structural context.
 
     - ``context`` is ``None`` → the SAME envelope is returned unchanged (legacy:
-      nothing is fabricated, nothing is mutated).
+      nothing is fabricated, nothing is mutated). C03 validation applies only
+      when this carry/merge seam is explicitly invoked.
     - otherwise a NEW envelope is returned with the structural/provenance
       identity carried in its read-only ``context`` mapping under reserved
       ``vf.*`` keys. The input envelope is never mutated.
 
-    Identity coherence is fail-closed (Issue #48 C01-1):
+    Identity coherence is fail-closed (Issue #48 C01-1/C02-1/C03):
 
     - when ``context.run_id`` is present it MUST equal ``envelope.run_id``;
-    - when ``context.provenance`` is present, ``provenance.run_id`` MUST equal
-      ``envelope.run_id`` (so if both are present all three agree);
-    - a pre-existing reserved ``vf.*`` key may only be repeated with the SAME
-      value; a conflicting value fails closed (never silently overwritten).
+    - when ``context.provenance`` is present, its ``run_id``/``simulation_time_s``
+      (when present) MUST equal the envelope's, and its workspace/scope must
+      match the incoming workspace/scope;
+    - BEFORE merging, the ENTIRE existing reserved ``vf.*`` state is validated
+      against the authoritative envelope + incoming explicit context/provenance
+      (C03): existing ``vf.workspace_id`` must equal the incoming workspace;
+      existing ``vf.run_id`` must equal ``envelope.run_id`` (even when the
+      incoming run_id is omitted); existing ``vf.scope_path`` must be a valid
+      canonical path rooted in the same workspace and agree with every other
+      present scope authority; existing ``vf.provenance`` must be structurally
+      compatible with the same workspace/run/scope/time authorities. An omitted
+      incoming optional field is NOT permission to retain stale contradictory
+      reserved authority.
 
     This is a reference/carry seam only — it never renames or fabricates PIM
     canonical identity, and it never turns Observation into runtime authority.
@@ -131,46 +187,93 @@ def carry_structural_context(
             f"got {type(envelope).__name__}"
         )
 
-    if context.run_id is not None and context.run_id != envelope.run_id:
+    env_run_id = envelope.run_id
+    env_time_s = envelope.simulation_time_s
+    ctx_workspace = context.workspace_id
+
+    # --- Incoming explicit authority vs envelope (C01/C02) ---
+    if context.run_id is not None and context.run_id != env_run_id:
         raise ObservationContextError(
             f"context.run_id {context.run_id!r} must equal "
-            f"envelope.run_id {envelope.run_id!r}"
+            f"envelope.run_id {env_run_id!r}"
         )
-    if (
-        context.provenance is not None
-        and context.provenance.run_id != envelope.run_id
-    ):
-        raise ObservationContextError(
-            f"provenance.run_id {context.provenance.run_id!r} must equal "
-            f"envelope.run_id {envelope.run_id!r}"
-        )
-    if (
-        context.provenance is not None
-        and context.provenance.simulation_time_s is not None
-        and context.provenance.simulation_time_s != envelope.simulation_time_s
-    ):
-        raise ObservationContextError(
-            f"provenance.simulation_time_s "
-            f"{context.provenance.simulation_time_s!r} must equal "
-            f"envelope.simulation_time_s {envelope.simulation_time_s!r}"
-        )
+    if context.provenance is not None:
+        if context.provenance.run_id != env_run_id:
+            raise ObservationContextError(
+                f"provenance.run_id {context.provenance.run_id!r} must equal "
+                f"envelope.run_id {env_run_id!r}"
+            )
+        if (
+            context.provenance.simulation_time_s is not None
+            and context.provenance.simulation_time_s != env_time_s
+        ):
+            raise ObservationContextError(
+                f"provenance.simulation_time_s "
+                f"{context.provenance.simulation_time_s!r} must equal "
+                f"envelope.simulation_time_s {env_time_s!r}"
+            )
 
-    new_context: dict[str, Any] = dict(envelope.context)
+    # --- Validate the ENTIRE existing reserved vf.* state (C03) ---
+    existing = dict(envelope.context)
 
-    _reserved_key_check(new_context, KEY_WORKSPACE_ID, context.workspace_id)
-    new_context[KEY_WORKSPACE_ID] = context.workspace_id
+    if KEY_WORKSPACE_ID in existing and existing[KEY_WORKSPACE_ID] != ctx_workspace:
+        _conflict(KEY_WORKSPACE_ID, existing[KEY_WORKSPACE_ID], ctx_workspace)
+
+    if KEY_RUN_ID in existing and existing[KEY_RUN_ID] != env_run_id:
+        _conflict(KEY_RUN_ID, existing[KEY_RUN_ID], env_run_id)
+
+    # Every present scope authority must be a valid path rooted in the incoming
+    # workspace, and all present scope authorities must agree.
+    scope_authorities: list[StructuralPath] = []
+    if KEY_SCOPE_PATH in existing:
+        scope_authorities.append(
+            _parse_scope_path(existing[KEY_SCOPE_PATH], "existing vf.scope_path")
+        )
     if context.scope_path is not None:
-        _reserved_key_check(
-            new_context, KEY_SCOPE_PATH, context.scope_path.as_string()
+        scope_authorities.append(context.scope_path)
+    if (
+        context.provenance is not None
+        and context.provenance.scope_path is not None
+    ):
+        scope_authorities.append(context.provenance.scope_path)
+    for sp in scope_authorities:
+        if sp.workspace_id != ctx_workspace:
+            raise ObservationContextError(
+                f"scope authority {sp.as_string()!r} must be rooted in "
+                f"workspace_id {ctx_workspace!r}"
+            )
+    distinct_scopes = {sp.as_string() for sp in scope_authorities}
+    if len(distinct_scopes) > 1:
+        raise ObservationContextError(
+            "multiple scope authorities disagree: "
+            + ", ".join(sorted(distinct_scopes))
         )
+
+    if KEY_PROVENANCE in existing:
+        _validate_existing_provenance(
+            existing[KEY_PROVENANCE],
+            env_run_id=env_run_id,
+            env_time_s=env_time_s,
+            workspace_id=ctx_workspace,
+            scope_authorities=scope_authorities,
+        )
+    # Two provenance authorities both present and different -> fail closed (never
+    # silently overwrite a differing pre-existing vf.provenance with incoming).
+    if (
+        context.provenance is not None
+        and KEY_PROVENANCE in existing
+        and existing[KEY_PROVENANCE] != context.provenance.to_dict()
+    ):
+        _conflict(KEY_PROVENANCE, existing[KEY_PROVENANCE], context.provenance.to_dict())
+
+    # --- Merge: existing (fully validated) + incoming explicit values ---
+    new_context = dict(existing)
+    new_context[KEY_WORKSPACE_ID] = ctx_workspace
+    if context.scope_path is not None:
         new_context[KEY_SCOPE_PATH] = context.scope_path.as_string()
     if context.run_id is not None:
-        _reserved_key_check(new_context, KEY_RUN_ID, context.run_id)
         new_context[KEY_RUN_ID] = context.run_id
     if context.provenance is not None:
-        _reserved_key_check(
-            new_context, KEY_PROVENANCE, context.provenance.to_dict()
-        )
         new_context[KEY_PROVENANCE] = context.provenance.to_dict()
 
     return replace(envelope, context=new_context)
