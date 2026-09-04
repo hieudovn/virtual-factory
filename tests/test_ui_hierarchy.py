@@ -362,3 +362,98 @@ class TestNoG7AndDomainAgnosticPrimitives:
         assert "def run" not in src
         assert "def step" not in src
         assert "def reset" not in src
+
+
+# ═══════════════════════════════════════════════════════════
+# G6-C01 — ASSY-SLxx hierarchy selection binds to the existing
+# authoritative POST /assy-demo/select seam (no second UI authority).
+# ═══════════════════════════════════════════════════════════
+
+class TestAssySelectAuthorityC01:
+    JS = UI_STATIC / "assy_context.js"
+
+    def _js(self) -> str:
+        return self.JS.read_text(encoding="utf-8")
+
+    def test_static_seam_binds_to_assy_select_authority(self):
+        js = self._js()
+        # The additive seam calls the existing backend select surface exactly
+        # once and only for an executable ASSY-SLxx leaf.
+        assert js.count("fetch('/assy-demo/select'") == 1
+        assert "method: 'POST'" in js
+        assert "sub_line_id" in js
+        assert "/^ASSY-SL\\d+$/" in js
+        assert "kind === 'executable'" in js
+        # Fail-safe: the backend acceptance gate precedes the breadcrumb/card
+        # UI commit (a failed select never claims a selection).
+        assert js.index("if (!res.ok)") < js.index("Backend accepted")
+        # No reset/reconstruct/step semantics are issued by the seam.
+        assert "reset(" not in js
+        assert "/assy-demo/reset" not in js
+        assert "/assy-demo/step" not in js
+
+    def test_structural_sub_line_path_maps_to_select_id(self):
+        # canonical path leaf == the ASSY sub-line id the select seam accepts.
+        for sid in SUB_LINE_IDS:
+            path = sub_line_path(sid)
+            assert path.as_string() == f"TIPA/ASSY/{sid}"
+            assert path.segments[-1] == sid
+
+    def test_workspace_container_selection_does_not_invoke_select(self):
+        # Python authority: container/workspace selection implies no execution.
+        ws = _tipa_workspace()
+        assy_ctx = ui_h.structural_context(ws, scope_path=assy_scope_path())
+        assert assy_ctx["selection"]["executable_capable"] is False
+        assert assy_ctx["executable_controls_implied"] is False
+        # JS: only an executable ASSY-SLxx leaf is routed to the select seam;
+        # everything else goes through the structural-only branch.
+        js = self._js()
+        assert "/^ASSY-SL\\d+$/" in js
+        assert js.count("fetch('/assy-demo/select'") == 1
+
+    def test_select_endpoint_accepts_hierarchy_sub_line_and_fails_closed(self):
+        c = _client()
+        ok = c.post("/assy-demo/select", json={"sub_line_id": "ASSY-SL03"})
+        assert ok.status_code == 200
+        assert ok.json()["sub_line_id"] == "ASSY-SL03"
+        # Failed backend selection never commits (404 unknown / 400 missing).
+        unknown = c.post("/assy-demo/select", json={"sub_line_id": "ASSY-SL99"})
+        assert unknown.status_code == 404
+        missing = c.post("/assy-demo/select", json={})
+        assert missing.status_code == 400
+
+    def test_select_is_non_mutating_controller_level(self):
+        """Selecting a sub-line never resets/reconstructs/steps any runtime:
+        runtimes keep identical time / dwell / WIP state across selects."""
+        from virtual_factory.assembly.demo_controller import DemoController
+
+        ctrl = DemoController(config_path=str(REAL_CONFIG))
+        ctrl.initialize()
+        ctx = ctrl.composition.get_context("ASSY-SL03")
+        before = (
+            ctx.runtime.simulation_time_s,
+            ctx.runtime.conveyor.dwell_number,
+            tuple(ctx.runtime.wip_ids),
+            tuple(
+                sorted(
+                    (w, ctx.runtime.get_wip(w).lifecycle.value)
+                    for w in ctx.runtime.wip_ids
+                )
+            ),
+        )
+        # select away and back — the runtime is untouched.
+        ctrl.select_sub_line("ASSY-SL05")
+        ctrl.select_sub_line("ASSY-SL03")
+        after = (
+            ctx.runtime.simulation_time_s,
+            ctx.runtime.conveyor.dwell_number,
+            tuple(ctx.runtime.wip_ids),
+            tuple(
+                sorted(
+                    (w, ctx.runtime.get_wip(w).lifecycle.value)
+                    for w in ctx.runtime.wip_ids
+                )
+            ),
+        )
+        assert after == before
+        assert ctrl.composition.selected_sub_line_id == "ASSY-SL03"

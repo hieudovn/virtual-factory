@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G6` (GitHub Issue #51) |
+| Task ID | `VF-vNEXT-G6` (GitHub Issue #51) + C01 |
 | Program | Implementation phase (G6; only authorized implementation gate after G5) |
 | Required base (branch) | `d1419cec3bd87d283ee9dcb03c412479a794359d` (accepted G5-C01 head) |
 | Branch | `feature/vf-vnext-g6` |
@@ -31,8 +31,11 @@ run-control/replay.
   (`renderNavigator`, `renderBreadcrumb`); container vs executable from G1
   capability booleans; path-qualified selection; expand/collapse.
 - `static/assy_context.js` — additive ASSY seam: renders the canonical
-  hierarchy and binds executable `ASSY-SLxx` selection to the EXISTING Frame A
-  single-click selection path (never resets/reconstructs a runtime).
+  hierarchy and, for an executable `ASSY-SLxx` selection, forwards to the
+  EXISTING backend authority `POST /assy-demo/select` (then updates breadcrumb
+  + existing card selection only after backend acceptance — fail-safe). Never
+  resets/reconstructs/steps a runtime. Workspace/container selection is
+  structural-context-only and never calls `/assy-demo/select`. (C01)
 - `static/continuous_context.js` — additive continuous seam: renders the
   truthful ROOT-ONLY context (no invented hierarchy).
 - `index.html` / `assy_demo.html` — additive context mounts + script tags;
@@ -55,7 +58,7 @@ preserved. No frontend framework migration. No G7 run-control/replay API.
 
 | Suite | Result |
 |---|---|
-| New G6 tests | **26 passed** |
+| New G6 tests | **31 passed** (incl. C01) |
 | Existing UI/API + S04B gating tests | **134 passed** |
 | G5 federation tests | **26 passed** |
 | G4 composition tests | **56 passed** |
@@ -64,7 +67,7 @@ preserved. No frontend framework migration. No G7 run-control/replay API.
 | G3 Observation/Event/Alarm (+ M5 + alarm) | **328 passed** |
 | Complete ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1901 passed** (0 failures) |
+| Full repository suite | **1906 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 6. STOP-condition assessment (evidence 06)
@@ -94,12 +97,14 @@ semantics; no G7/G8+; no framework migration.
 
 ## 8. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G6/` — 7 files (01…07).
+`.ai-harness/sa-review/evidence/VF-vNEXT-G6/` — 8 files (01…08; 08 = C01
+corrections: hierarchy ASSY-SLxx selection bound to existing /assy-demo/select
+authority).
 
 ## 9. Final status
 
 ```text
-VF-vNEXT-G6 — READY FOR SA REVIEW
+VF-vNEXT-G6-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G7 is NOT started.

@@ -4,7 +4,7 @@
 
 Command: `python -m pytest tests/test_ui_hierarchy.py -q`
 
-Result: **26 passed** (0 failures). Covers the Issue #51 test set:
+Result: **31 passed** (0 failures). Covers the Issue #51 test set:
 1 recursive hierarchy serialization preserves canonical StructuralPath;
 2 deterministic G1 order; 3 container-only vs executable capability;
 4 path-qualified selection / no ambiguous bare-id authority;
@@ -15,7 +15,10 @@ domain semantics (no reset/step/reconstruction calls; domain scripts
 untouched); 8 continuous view retains existing behavior and is ROOT-ONLY (no
 invented hierarchy); 9 Inspector (object) vs Monitoring (scope) distinct;
 10 no G7 run-control/replay/orchestration API (read-only GET route scan);
-11 no G8+ (allowlist + module checks).
+11 no G8+ (allowlist + module checks). Includes the G6-C01 tests binding
+ASSY-SLxx hierarchy selection to the existing `POST /assy-demo/select`
+authority (static seam binding, path-id mapping, endpoint fail-closed,
+container/workspace non-invocation, controller-level non-mutation).
 
 ## 2. Existing UI/API/S04B-gating tests (directly relevant)
 `test_api.py`, `test_demo_overview.py`, `test_ops03_interaction.py`,
@@ -25,7 +28,7 @@ invented hierarchy); 9 Inspector (object) vs Monitoring (scope) distinct;
 
 | Group | Result |
 |---|---|
-| New G6 tests | **26 passed** |
+| New G6 tests | **31 passed** (incl. C01 select-authority binding) |
 | G5 federation tests | **26 passed** |
 | G4 composition tests | **56 passed** |
 | G1 workspace | **32 passed** |
@@ -33,7 +36,7 @@ invented hierarchy); 9 Inspector (object) vs Monitoring (scope) distinct;
 | G3 Observation/Event/Alarm (+ M5 + alarm_manager) | **328 passed** |
 | Complete ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1901 passed** (0 failures) |
+| Full repository suite | **1906 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black; no JS lint configured) |
 
 ## 4. Flakes
