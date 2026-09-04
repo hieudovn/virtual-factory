@@ -4,14 +4,15 @@ Negative tests for the fail-closed containment/identity invariants:
 
 - missing/invalid parent (path-qualified);
 - duplicate child identity within the SAME structural parent namespace;
-- containment self-nesting (a scope nesting inside itself via its parent path);
 - object attached to a nonexistent Scope;
 - executable-only assumptions applied to a container-only Scope;
 - invalid structural path/reference.
 
 C01-1: scope ids are unique per structural parent namespace (NOT globally);
-the full StructuralPath is the unambiguous identity. Positive duplicate-local-id
-coverage lives in test_workspace_foundation.py.
+the full StructuralPath is the unambiguous identity. Repeated local ids along
+an ancestor chain (e.g. W/Area-A/Line-1/Area-A) are VALID — they are NOT a
+containment cycle (C03-1). Positive duplicate-local-id coverage lives in
+test_workspace_foundation.py.
 """
 
 from __future__ import annotations
@@ -84,22 +85,6 @@ def test_duplicate_child_id_same_parent_fails_closed() -> None:
             "X",
             mode=ScopeMode.EXECUTABLE_CAPABLE,
             parent_path=StructuralPath(("W", "P")),
-        ),
-    ]
-    with pytest.raises(StructuralValidationError):
-        build_workspace("W", specs)
-
-
-def test_containment_self_nesting_fails_closed() -> None:
-    # A scope whose parent path already contains its own id nests inside itself.
-    # (With path-qualified parents the parent depth strictly decreases, so
-    # multi-node cycles are unrepresentable; self-nesting is the cycle case.)
-    specs = [
-        ScopeSpec("A", mode=ScopeMode.CONTAINER_ONLY),  # path W/A
-        ScopeSpec(
-            "A",
-            mode=ScopeMode.CONTAINER_ONLY,
-            parent_path=StructuralPath(("W", "A")),  # path W/A/A -> nests "A" in "A"
         ),
     ]
     with pytest.raises(StructuralValidationError):

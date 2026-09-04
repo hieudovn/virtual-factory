@@ -57,7 +57,7 @@ Key model methods:
 | I2 | Scope id path-safe, no `/` | `StructuralPath` segment validation |
 | I3 | **Scope id unique WITHIN its structural parent namespace** (not global across the Workspace); the full `StructuralPath` is the authoritative unambiguous identity | builder `_compute_paths` (same parent path + same id → same path → rejected) |
 | I4 | Parent reference is path-qualified (`StructuralPath`) and exists (missing/invalid parent fails); resolution never depends on a globally-unique bare id. A top-level scope MUST use `parent_path=None`; `parent_path == workspace_root` is invalid and fails closed (canonical top-level representation) | builder `_compute_paths` (rejects root parent) + `_validate_parents` |
-| I5 | No containment self-nesting (a parent path already containing the child's id); with path-qualified parents the parent depth strictly decreases, so multi-node cycles are unrepresentable | builder `_detect_self_nesting` |
+| I5 | Repeated local scope ids along an ancestor chain are VALID when their full `StructuralPath` differs (e.g. `W/Area-A/Line-1/Area-A`); local-id repetition is NOT a containment-cycle criterion. A parent cycle is structurally unrepresentable (each scope path is its parent path plus one segment) | by construction (path-qualified parents); fail-closed integrity via `_validate_parents` (parent exists) |
 | I6 | Object id unique within its owning Scope | builder `_compute_paths` |
 | I7 | Object belongs to a declared Scope; resolution fail-closed | `Workspace.resolve_object` |
 | I8 | Container-only scope never treated as executable | `SimulationScope.require_executable` |
@@ -66,6 +66,7 @@ Key model methods:
 | I11 | No workspace-name hard-coding in platform behavior | builder/loader fully generic (workspace id is data) |
 | I12 | Bare-id convenience lookup must NOT silently return the first match when duplicate local ids exist | `find_scope`/`find_object`/`scope_path_by_id` raise `StructuralValidationError` on ambiguity; path-based lookup is canonical |
 | I13 | **Completeness (C02):** every validated `ScopeSpec` materializes exactly once in the built tree — no declared scope may disappear | builder `_check_completeness` (node count == declaration count; declared-path set == built-path set) |
+| I14 | Repeated ancestor local ids are valid and resolve by full path (C03 positive) | `test_repeated_ancestor_local_id_is_valid` (`W/Area-A/Line-1/Area-A`) |
 
 ## 4. Identity / path determinism
 

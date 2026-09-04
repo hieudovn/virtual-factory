@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G1-C02
-Status: READY FOR SA REVIEW (C02: canonical top-level parent=None; completeness invariant — no declared scope disappears)
+Task: VF-vNEXT-G1-C03
+Status: READY FOR SA REVIEW (C03: repeated ancestor local ids valid — not a cycle; removed ancestor-id cycle criterion)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate)
 Prerequisite: ARCH-06 / Issue #45 CLOSED by SA as completed
 
@@ -34,10 +34,10 @@ Implemented:
 
 Test / regression results:
 - New G1 tests: 32 passed.
-- ASSY regression oracle (ARCH-05 incl. C01 automated obligations): 354 passed
-  (deterministic re-run; one transient pre-existing test-isolation flake noted).
+- ASSY regression oracle (ARCH-05 incl. C01 automated obligations): 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1679 passed (0 failures; no baseline exceptions).
+- Full repository suite: 1679 passed (deterministic re-run; one pre-existing
+  id()-based ASSY flake recorded in evidence 05).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
 C01 corrections applied:
@@ -57,7 +57,16 @@ C02 corrections applied:
   once (declaration count == tree node count).
 - Added workspace-root-parent negative test and declaration-count/tree-count
   completeness positive test.
-- All other G1 contracts preserved.
+
+C03 corrections applied:
+- Removed the over-restrictive _detect_self_nesting guard: repeated local scope
+  ids along an ancestor chain (e.g. W/Area-A/Line-1/Area-A) are VALID when full
+  StructuralPaths differ; local-id repetition is NOT a containment-cycle
+  criterion.
+- Fail-closed integrity kept via path-qualified parent existence, same-parent
+  duplicate rejection, canonical top-level rule, and completeness invariant.
+- Added test_repeated_ancestor_local_id_is_valid positive; removed the
+  self-nesting negative. All C01/C02 tests retained.
 
 Deferred to G2+ (NOT implemented): runtime context + provenance-v2 (G2),
 observation/event/alarm alignment (G3), coordinator/ports (G4), ASSY federation

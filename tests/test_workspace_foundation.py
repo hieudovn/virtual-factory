@@ -278,6 +278,40 @@ def test_subtree_bare_lookup_within_single_parent_is_ok() -> None:
     assert util.path == StructuralPath(("W", "Line-A", "Utilities"))
 
 
+def test_repeated_ancestor_local_id_is_valid() -> None:
+    """C03-1: repeated local ids along an ancestor chain are NOT a cycle.
+
+    W / Area-A / Line-1 / Area-A is valid because the two ``Area-A`` scopes have
+    different full StructuralPaths; each is unique within its own parent.
+    """
+    specs = [
+        ScopeSpec("Area-A", mode=ScopeMode.CONTAINER_ONLY),  # W/Area-A
+        ScopeSpec(
+            "Line-1",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("W", "Area-A")),
+        ),
+        ScopeSpec(
+            "Area-A",
+            mode=ScopeMode.CONTAINER_ONLY,
+            parent_path=StructuralPath(("W", "Area-A", "Line-1")),
+        ),
+    ]
+    ws = build_workspace("W", specs)
+
+    outer = ws.resolve_scope(StructuralPath(("W", "Area-A")))
+    inner = ws.resolve_scope(StructuralPath(("W", "Area-A", "Line-1", "Area-A")))
+    assert outer.scope_id == "Area-A"
+    assert inner.scope_id == "Area-A"
+    assert outer.path == StructuralPath(("W", "Area-A"))
+    assert inner.path == StructuralPath(("W", "Area-A", "Line-1", "Area-A"))
+    assert outer.path != inner.path
+    assert outer is not inner
+
+    # Completeness still holds: 3 declarations -> 3 nodes.
+    assert _count_tree_scopes(ws.top_level_scopes) == 3
+
+
 def _count_tree_scopes(top_scopes) -> int:
     """Recursively count scope nodes under the given top-level scopes."""
     total = 0

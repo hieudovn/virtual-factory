@@ -12,8 +12,9 @@ python -m pytest tests/test_workspace_foundation.py \
 Result: **32 passed** (0 failures).
 
 (C01-1 added duplicate-local-id + ambiguity coverage; C02-1 added the
-workspace-root-parent negative and the declaration-count/tree-count completeness
-test — total 32.)
+workspace-root-parent negative and the completeness test; C03-1 removed the
+over-restrictive self-nesting negative and added the repeated-ancestor-local-id
+positive — net 32.)
 
 ## 2. ASSY regression oracle (ARCH-05 incl. C01 functional semantics where automated)
 
@@ -33,13 +34,17 @@ Result: **354 passed** on the deterministic re-run. Covers the ASSY route/qualit
 genealogy/timing/LINE_OUT oracle and the ARCH-05 C01 semantic obligations that
 are automated. No `AssyLineRuntime` file was modified.
 
-Note (pre-existing test-isolation flake, not caused by G1): one run of this
-batch showed ``test_demo_composition.py::TestReset::test_reset_creates_fresh_configs``
-failing while its whole file passed in isolation (49/49) and the full batch
-passed on re-run (354/354). The workspace package is not imported by
-``demo_composition``, so G1 changes cannot affect it; this is a pre-existing
-cross-file order dependency recorded honestly per the Issue #46 requirement to
-distinguish baseline anomalies.
+Note (pre-existing test-isolation flake, NOT caused by G1): the ASSY test
+`test_demo_composition.py::TestReset::test_reset_creates_fresh_configs` asserts
+that old/new config object Python `id()`s are disjoint across a reset. Because
+`id()` is a memory address, once the GC frees the old config objects the
+allocator can reuse the same addresses for the freshly created configs, so the
+`id()` sets overlap intermittently under GC/timing-dependent collection order.
+The test passes in isolation and when its whole file runs alone (49/49), and it
+is unrelated to the workspace package (`demo_composition` does not import it).
+G1 cannot modify this ASSY-domain test (assembly/ is a G1-forbidden path); it is
+recorded honestly as a pre-existing baseline anomaly per the Issue #46
+requirement to distinguish baseline failures.
 
 ## 3. Continuous/compressor baseline (ARCH-06)
 
@@ -62,9 +67,9 @@ Command:
 python -m pytest tests -q
 ```
 
-Result: **1679 passed (0 failures)** on the G1-C02 head (1675 → 1677 after C01
-tests → 1679 after C02 tests). No pre-existing baseline failures to distinguish —
-the full suite is green on the head.
+Result: **1679 passed** on the deterministic re-run. One run surfaced the
+pre-existing `id()`-based ASSY flake described above (1 failed / 1678 passed);
+the re-run was clean (1679 passed, 0 failures). No other baseline exceptions.
 
 ## 5. Lint / type checks
 

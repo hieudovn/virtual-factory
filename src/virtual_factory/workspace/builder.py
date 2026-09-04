@@ -6,17 +6,20 @@ scope specifications and enforces the G1 containment/identity invariants:
 - workspace id valid;
 - scope id valid and unique WITHIN ITS STRUCTURAL PARENT NAMESPACE (NOT global
   across the Workspace); the full ``StructuralPath`` is the authoritative
-  unambiguous scope identity;
+  unambiguous scope identity. Repeated local scope ids along an ancestor chain
+  (e.g. ``W/Area-A/Line-1/Area-A``) are VALID because their full structural
+  paths differ;
 - parent references are path-qualified (``StructuralPath``) — resolution never
   depends on a globally-unique bare scope id;
-- every declared parent path exists (missing/invalid parent is an error);
-- no self-nesting (a scope whose parent path already contains its own id); with
-  path-qualified parents the parent depth strictly decreases, so multi-node
-  cycles are unrepresentable and containment is a tree by construction;
+- every declared parent path exists (missing/invalid parent is an error); a
+  parent cycle is structurally unrepresentable because each scope path is its
+  parent path plus one segment (parent depth strictly decreases to the
+  canonical top-level), so containment is a tree by construction;
 - container-only vs executable-capable is explicit; executable-only assumptions
   are never applied to a container-only scope (guarded at the model);
 - objects belong to declared scopes; an object attached to a nonexistent scope
   is rejected at resolution time (fail-closed);
+- completeness: every validated declaration materializes exactly once (C02);
 - the resulting tree is deterministic independent of input iteration order
   (children and objects are ordered by id).
 
@@ -149,23 +152,6 @@ def _validate_parents(
             )
 
 
-def _detect_self_nesting(
-    path_to_spec: dict[StructuralPath, ScopeSpec],
-) -> None:
-    """Reject self-nesting (a scope whose parent path already contains its id).
-
-    With path-qualified parents the parent depth strictly decreases, so a
-    multi-node containment cycle is unrepresentable. The remaining cycle-like
-    case is self-nesting: a parent path that already contains the child's own id.
-    """
-    for path, spec in path_to_spec.items():
-        if spec.parent_path is not None and spec.scope_id in spec.parent_path.segments:
-            raise StructuralValidationError(
-                f"containment cycle detected: scope {spec.scope_id!r} nests "
-                f"inside itself via parent path {spec.parent_path.as_string()!r}"
-            )
-
-
 def _build_scope(
     path: StructuralPath,
     spec: ScopeSpec,
@@ -256,7 +242,6 @@ def build_workspace(
 
     path_to_spec = _compute_paths(specs, workspace_root)
     _validate_parents(path_to_spec)
-    _detect_self_nesting(path_to_spec)
 
     children_by_parent: dict[StructuralPath | None, list[StructuralPath]] = {}
     for path, spec in path_to_spec.items():

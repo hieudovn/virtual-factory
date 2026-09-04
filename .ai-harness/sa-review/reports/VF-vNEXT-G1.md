@@ -19,6 +19,15 @@
 > workspace-root-parent negative test and the declaration-count/tree-count
 > completeness test. All C01 identity semantics and other G1 contracts preserved.
 
+> **C03 revision (Issue #46 SA review):** removed the over-restrictive
+> `_detect_self_nesting` guard. Repeated local scope ids along an ancestor chain
+> (e.g. `W/Area-A/Line-1/Area-A`) are VALID when their full `StructuralPath`
+> differs; local-id repetition is NOT a containment-cycle criterion. Fail-closed
+> tree integrity is preserved via path-qualified parent existence, same-parent
+> duplicate rejection, the canonical top-level rule (`parent_path=None`), and
+> the completeness invariant. Added a positive repeated-ancestor-local-id test;
+> all C01/C02 tests retained.
+
 | Field | Value |
 |---|---|
 | Task ID | `VF-vNEXT-G1` (GitHub Issue #46) + C02 |
@@ -50,8 +59,8 @@ New dependency-light package `src/virtual_factory/workspace/`:
   (informational), `SimulationObject`, `SimulationScope`, `Workspace`; immutable
   validated tree; `require_executable()` guard.
 - `builder.py` — `ScopeSpec`/`ObjectSpec` + `build_workspace()`; fail-closed
-  validation (missing parent, duplicate ids, containment cycle, mode guard);
-  deterministic ordering.
+  validation (missing path-qualified parent, same-parent duplicate ids,
+  canonical top-level, completeness); deterministic ordering.
 - `config.py` + `loader.py` — generic Pydantic manifest schema + YAML loading
   seam (`load_workspace_manifest`).
 - `__init__.py` — public API.
@@ -73,9 +82,10 @@ registry/singleton.
 ## 4. Validation (evidence 04)
 
 Fail-closed: missing/invalid path-qualified parent, duplicate child id under the
-same parent, containment self-nesting, object on nonexistent Scope, object not
-found, executable assumption on container-only, invalid path/reference, duplicate
-object ids, ambiguity in bare-id lookup, determinism vs input order.
+same parent, object on nonexistent Scope, object not found, executable assumption
+on container-only, invalid path/reference, duplicate object ids, ambiguity in
+bare-id lookup, completeness, determinism vs input order. Repeated local ids
+along an ancestor chain are VALID (full path disambiguates; C03).
 
 ## 5. Lossless proofs (evidence 03)
 
@@ -139,8 +149,7 @@ truth; scope did not expand into G2+.
    raise on ambiguity instead of returning the first match; path-based
    `find_scope_by_path`/`resolve_scope` is canonical.
 4. **Tests:** added positive duplicate-local-id-under-different-parents tests
-   (builder + config); kept duplicate-child-same-parent negative; self-nesting
-   replaces the (now unrepresentable) multi-node cycle.
+   (builder + config); kept duplicate-child-same-parent negative.
 5. **All other G1 contracts preserved** (container/executable, no fake runtime,
    object ownership, PIM identity separation, deterministic build, TIPA/ASSY and
    generic-continuous fixtures).
@@ -162,6 +171,22 @@ truth; scope did not expand into G2+.
    parent resolution, container/executable, no fake runtime, object ownership,
    PIM identity separation, deterministic build, fixtures).
 
+## 9.3 C03 corrections applied
+
+1. **Repeated ancestor local id is NOT a cycle (C03-1):** removed the
+   over-restrictive `_detect_self_nesting` guard; local-id repetition along an
+   ancestor chain is allowed when full `StructuralPath`s differ.
+2. **Fail-closed integrity preserved** via the four independent mechanisms:
+   path-qualified parent existence, same-parent duplicate rejection, the
+   canonical top-level rule (`parent_path=None`), and the completeness
+   invariant. A parent cycle remains structurally unrepresentable (each scope
+   path is its parent path plus one segment).
+3. **Tests:** added `test_repeated_ancestor_local_id_is_valid`
+   (`W/Area-A/Line-1/Area-A` builds and resolves by full path); removed the
+   now-invalid self-nesting negative. All C01/C02 tests retained (same-parent
+   duplicate rejection, workspace-root canonical, completeness, ambiguity,
+   duplicate-local-id positives).
+
 ## 10. Evidence
 
 `.ai-harness/sa-review/evidence/VF-vNEXT-G1/` — 6 files (01…06).
@@ -169,7 +194,7 @@ truth; scope did not expand into G2+.
 ## 11. Final status
 
 ```text
-VF-vNEXT-G1-C02 — READY FOR SA REVIEW
+VF-vNEXT-G1-C03 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G2 is NOT started.
