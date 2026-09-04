@@ -9,7 +9,10 @@ python -m pytest tests/test_workspace_foundation.py \
     tests/test_workspace_validation.py tests/test_workspace_config.py -q
 ```
 
-Result: **28 passed** (0 failures).
+Result: **30 passed** (0 failures).
+
+(C01-1 added positive duplicate-local-id-under-different-parents coverage and
+ambiguity-guard tests; total grew from 28 to 30.)
 
 ## 2. ASSY regression oracle (ARCH-05 incl. C01 functional semantics where automated)
 
@@ -52,8 +55,8 @@ Command:
 python -m pytest tests -q
 ```
 
-Result: **1675 passed in 68.56s (0 failures)**. No pre-existing baseline
-failures to distinguish — the full suite is green on the G1 head.
+Result: **1677 passed (0 failures)**. No pre-existing baseline failures to
+distinguish — the full suite is green on the G1-C01 head.
 
 ## 5. Lint / type checks
 

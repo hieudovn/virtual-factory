@@ -4,9 +4,15 @@ Builds an immutable :class:`~virtual_factory.workspace.model.Workspace` from fla
 scope specifications and enforces the G1 containment/identity invariants:
 
 - workspace id valid;
-- scope id valid and unique within its structural parent namespace;
-- every declared parent scope exists (missing/invalid parent is an error);
-- no containment cycle (parent references are followed upward);
+- scope id valid and unique WITHIN ITS STRUCTURAL PARENT NAMESPACE (NOT global
+  across the Workspace); the full ``StructuralPath`` is the authoritative
+  unambiguous scope identity;
+- parent references are path-qualified (``StructuralPath``) — resolution never
+  depends on a globally-unique bare scope id;
+- every declared parent path exists (missing/invalid parent is an error);
+- no self-nesting (a scope whose parent path already contains its own id); with
+  path-qualified parents the parent depth strictly decreases, so multi-node
+  cycles are unrepresentable and containment is a tree by construction;
 - container-only vs executable-capable is explicit; executable-only assumptions
   are never applied to a container-only scope (guarded at the model);
 - objects belong to declared scopes; an object attached to a nonexistent scope
@@ -23,7 +29,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Sequence
 
-from virtual_factory.workspace.identity import StructuralIdentityError
 from virtual_factory.workspace.identity import StructuralPath
 from virtual_factory.workspace.model import (
     Archetype,
@@ -51,42 +56,63 @@ class ObjectSpec:
 class ScopeSpec:
     """Declaration of one Simulation Scope.
 
-    ``parent_scope_id`` is None for a top-level scope under the Workspace.
+    ``parent_path`` is the full ``StructuralPath`` of the parent scope, or None
+    for a top-level scope directly under the Workspace. It is path-qualified
+    (never a bare id), so duplicate local scope ids under different parents
+    remain valid and resolve independently by their full path.
     """
 
     scope_id: str
     mode: ScopeMode
-    parent_scope_id: str | None = None
+    parent_path: StructuralPath | None = None
     archetype: Archetype | None = None
     display_name: str | None = None
     objects: tuple[ObjectSpec, ...] = ()
 
 
-def _validate_ids(specs: Sequence[ScopeSpec], workspace_id: str) -> None:
-    """Fail-closed id validation (unique within parent, valid, parent exists)."""
+def _workspace_root(workspace_id: str) -> StructuralPath:
     if not workspace_id:
         raise StructuralValidationError("workspace id must not be empty")
+    return StructuralPath.workspace_root(workspace_id)
 
-    # all declared scope ids (for parent-existence check)
-    all_ids = {spec.scope_id for spec in specs}
-    if len(all_ids) != len(specs):
-        seen: set[str] = set()
-        dupes = sorted(
-            {s.scope_id for s in specs if s.scope_id in seen or seen.add(s.scope_id)}
-        )
-        raise StructuralValidationError(
-            f"duplicate scope id within workspace {workspace_id!r}: {dupes}"
-        )
 
+def _scope_path(spec: ScopeSpec, workspace_root: StructuralPath) -> StructuralPath:
+    """The full structural path of a declared scope."""
+    if spec.parent_path is None:
+        return workspace_root.child(spec.scope_id)
+    return spec.parent_path.child(spec.scope_id)
+
+
+def _compute_paths(
+    specs: Sequence[ScopeSpec], workspace_root: StructuralPath
+) -> dict[StructuralPath, ScopeSpec]:
+    """Compute each scope's full path and validate id/path/object basics.
+
+    Returns a deterministic-by-construction map ``path -> spec``. Duplicate scope
+    ids are only rejected when they collide in the SAME parent namespace (same
+    parent path + same scope id -> same full path).
+    """
+    path_to_spec: dict[StructuralPath, ScopeSpec] = {}
     for spec in specs:
         if not spec.scope_id:
             raise StructuralValidationError("scope id must not be empty")
-        if spec.parent_scope_id is not None:
-            if spec.parent_scope_id not in all_ids:
-                raise StructuralValidationError(
-                    f"scope {spec.scope_id!r} has missing/invalid parent "
-                    f"{spec.parent_scope_id!r}"
-                )
+        if spec.parent_path is not None and (
+            spec.parent_path.workspace_id != workspace_root.workspace_id
+        ):
+            raise StructuralValidationError(
+                f"scope {spec.scope_id!r} parent path "
+                f"{spec.parent_path.as_string()!r} is not inside workspace "
+                f"{workspace_root.workspace_id!r}"
+            )
+
+        path = _scope_path(spec, workspace_root)
+        if path in path_to_spec:
+            raise StructuralValidationError(
+                f"duplicate scope id {spec.scope_id!r} within the same parent "
+                f"namespace (path {path.as_string()!r})"
+            )
+        path_to_spec[path] = spec
+
         # object ids unique within owning scope + non-empty
         obj_ids = [o.object_id for o in spec.objects]
         if len(obj_ids) != len(set(obj_ids)):
@@ -96,48 +122,54 @@ def _validate_ids(specs: Sequence[ScopeSpec], workspace_id: str) -> None:
         for obj in spec.objects:
             if not obj.object_id:
                 raise StructuralValidationError("object id must not be empty")
+    return path_to_spec
 
 
-def _detect_cycles(specs: Sequence[ScopeSpec]) -> None:
-    """Detect containment cycles by walking parent references upward.
-
-    A containment tree has exactly one structural parent per child, so a cycle
-    (A inside B inside A) is invalid and must fail closed.
-    """
-    by_id = {spec.scope_id: spec for spec in specs}
-    visiting: set[str] = set()
-    visited: set[str] = set()
-
-    def visit(scope_id: str) -> None:
-        if scope_id in visiting:
+def _validate_parents(
+    path_to_spec: dict[StructuralPath, ScopeSpec],
+    workspace_root: StructuralPath,
+) -> None:
+    """Every non-root parent path must reference the workspace root or a declared scope."""
+    for path, spec in path_to_spec.items():
+        if spec.parent_path is None:
+            continue
+        if spec.parent_path != workspace_root and spec.parent_path not in path_to_spec:
             raise StructuralValidationError(
-                f"containment cycle detected involving scope {scope_id!r}"
+                f"scope {spec.scope_id!r} has missing/invalid parent path "
+                f"{spec.parent_path.as_string()!r}"
             )
-        if scope_id in visited:
-            return
-        visiting.add(scope_id)
-        parent = by_id[scope_id].parent_scope_id
-        if parent is not None:
-            visit(parent)
-        visiting.discard(scope_id)
-        visited.add(scope_id)
 
-    for spec in specs:
-        visit(spec.scope_id)
+
+def _detect_self_nesting(
+    path_to_spec: dict[StructuralPath, ScopeSpec],
+) -> None:
+    """Reject self-nesting (a scope whose parent path already contains its id).
+
+    With path-qualified parents the parent depth strictly decreases, so a
+    multi-node containment cycle is unrepresentable. The remaining cycle-like
+    case is self-nesting: a parent path that already contains the child's own id.
+    """
+    for path, spec in path_to_spec.items():
+        if spec.parent_path is not None and spec.scope_id in spec.parent_path.segments:
+            raise StructuralValidationError(
+                f"containment cycle detected: scope {spec.scope_id!r} nests "
+                f"inside itself via parent path {spec.parent_path.as_string()!r}"
+            )
 
 
 def _build_scope(
-    spec: ScopeSpec,
     path: StructuralPath,
-    children_by_parent: dict[str | None, list[ScopeSpec]],
-    spec_by_id: dict[str, ScopeSpec],
+    spec: ScopeSpec,
+    path_to_spec: dict[StructuralPath, ScopeSpec],
+    children_by_parent: dict[StructuralPath | None, list[StructuralPath]],
 ) -> SimulationScope:
-    """Recursively build an immutable scope subtree (children sorted by id)."""
-    child_specs = children_by_parent.get(spec.scope_id, [])
-    child_specs_sorted = sorted(child_specs, key=lambda s: s.scope_id)
+    """Recursively build an immutable scope subtree (children sorted by path)."""
+    child_paths = sorted(
+        children_by_parent.get(path, ()), key=lambda p: p.as_string()
+    )
     children = tuple(
-        _build_scope(child, path.child(child.scope_id), children_by_parent, spec_by_id)
-        for child in child_specs_sorted
+        _build_scope(cp, path_to_spec[cp], path_to_spec, children_by_parent)
+        for cp in child_paths
     )
     objects = tuple(
         SimulationObject(
@@ -168,36 +200,31 @@ def build_workspace(
     """Validate and build an immutable Workspace tree from flat scope specs.
 
     Fail-closed: raises :class:`StructuralValidationError` (or
-    :class:`StructuralIdentityError`) on any invalid layout. The result is
-    deterministic regardless of ``scope_specs`` iteration order.
+    :class:`~virtual_factory.workspace.identity.StructuralIdentityError` from the
+    path segment validation) on any invalid layout. The result is deterministic
+    regardless of ``scope_specs`` iteration order.
     """
     specs = list(scope_specs)
-    if not workspace_id:
-        raise StructuralValidationError("workspace id must not be empty")
+    workspace_root = _workspace_root(workspace_id)
 
-    _validate_ids(specs, workspace_id)
-    _detect_cycles(specs)
+    path_to_spec = _compute_paths(specs, workspace_root)
+    _validate_parents(path_to_spec, workspace_root)
+    _detect_self_nesting(path_to_spec)
 
-    children_by_parent: dict[str | None, list[ScopeSpec]] = {}
-    for spec in specs:
-        children_by_parent.setdefault(spec.parent_scope_id, []).append(spec)
+    children_by_parent: dict[StructuralPath | None, list[StructuralPath]] = {}
+    for path, spec in path_to_spec.items():
+        children_by_parent.setdefault(spec.parent_path, []).append(path)
 
-    workspace_path = StructuralPath.workspace_root(workspace_id)
-    top_specs = sorted(
-        children_by_parent.get(None, []), key=lambda s: s.scope_id
+    top_paths = sorted(
+        children_by_parent.get(None, ()), key=lambda p: p.as_string()
     )
     top_scopes = tuple(
-        _build_scope(
-            spec,
-            workspace_path.child(spec.scope_id),
-            children_by_parent,
-            {s.scope_id: s for s in specs},
-        )
-        for spec in top_specs
+        _build_scope(tp, path_to_spec[tp], path_to_spec, children_by_parent)
+        for tp in top_paths
     )
     return Workspace(
         workspace_id=workspace_id,
-        path=workspace_path,
+        path=workspace_root,
         display_name=display_name,
         description=description,
         top_level_scopes=top_scopes,

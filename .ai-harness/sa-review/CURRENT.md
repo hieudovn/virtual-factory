@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G1
-Status: READY FOR SA REVIEW
+Task: VF-vNEXT-G1-C01
+Status: READY FOR SA REVIEW (C01: scope id unique within structural parent; StructuralPath is authoritative identity)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate)
 Prerequisite: ARCH-06 / Issue #45 CLOSED by SA as completed
 
@@ -18,8 +18,11 @@ Implemented:
   loader.py, __init__.py): generic Workspace -> hierarchical Simulation Scope ->
   Simulation Object foundation; ScopeMode container_only/executable_capable;
   Archetype informational; deterministic StructuralPath + SimulationObjectRef;
-  fail-closed build_workspace validation (missing parent, duplicate ids,
-  containment cycle, mode guard, object ownership); generic config/loading seam.
+  fail-closed build_workspace validation (missing path-qualified parent,
+  duplicate child id under same parent, self-nesting, mode guard, object
+  ownership, ambiguity in bare-id lookup); generic config/loading seam.
+  Scope ids unique WITHIN their structural parent namespace (NOT global); full
+  StructuralPath is the authoritative identity.
 - configs/workspaces/tipa_assy_demo.yaml (lossless TIPA -> ASSY -> ASSY-SL01..06)
   + configs/workspaces/generic_continuous_demo.yaml (no SH-WTP site truth).
 - tests/test_workspace_{foundation,validation,config}.py.
@@ -27,11 +30,22 @@ Implemented:
   hard-coding; PIM canonical identity separate.
 
 Test / regression results:
-- New G1 tests: 28 passed.
+- New G1 tests: 30 passed.
 - ASSY regression oracle (ARCH-05 incl. C01 automated obligations): 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1675 passed (0 failures; no baseline exceptions).
+- Full repository suite: 1677 passed (0 failures; no baseline exceptions).
 - Compile check PASS (no configured ruff/mypy/black in repo).
+
+C01 corrections applied:
+- Scope id uniqueness now WITHIN structural parent namespace (not global).
+- Parent references path-qualified (StructuralPath); resolution never depends on
+  a globally-unique bare id.
+- Full StructuralPath = authoritative unambiguous identity; path-based lookup
+  deterministic + fail-closed.
+- Bare-id lookups (find_scope/find_object/scope_path_by_id) raise on ambiguity.
+- Positive tests for duplicate local ids under different parents; negative test
+  for duplicate child ids under same parent kept.
+- All other G1 contracts preserved.
 
 Deferred to G2+ (NOT implemented): runtime context + provenance-v2 (G2),
 observation/event/alarm alignment (G3), coordinator/ports (G4), ASSY federation

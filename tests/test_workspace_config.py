@@ -195,3 +195,39 @@ def test_config_is_generic_not_name_hard_coded() -> None:
         assert child is not None
         assert child.is_executable_capable
         assert child.find_object("OBJ-1") is not None
+
+
+def test_config_duplicate_local_ids_under_different_parents() -> None:
+    """C01-1: nested config may reuse a local scope id under different parents;
+    the full StructuralPath disambiguates."""
+    from virtual_factory.workspace import StructuralPath
+
+    manifest = {
+        "workspace": {
+            "id": "W",
+            "scopes": [
+                {
+                    "id": "Line-A",
+                    "mode": "container_only",
+                    "children": [
+                        {"id": "Utilities", "mode": "executable_capable"}
+                    ],
+                },
+                {
+                    "id": "Line-B",
+                    "mode": "container_only",
+                    "children": [
+                        {"id": "Utilities", "mode": "executable_capable"}
+                    ],
+                },
+            ],
+        }
+    }
+    ws = WorkspaceConfig.model_validate(manifest["workspace"]).to_workspace()
+    assert ws.workspace_id == "W"
+
+    util_a = ws.resolve_scope(StructuralPath(("W", "Line-A", "Utilities")))
+    util_b = ws.resolve_scope(StructuralPath(("W", "Line-B", "Utilities")))
+    assert util_a.scope_id == "Utilities"
+    assert util_b.scope_id == "Utilities"
+    assert util_a.path != util_b.path

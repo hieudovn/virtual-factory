@@ -2,12 +2,16 @@
 
 Negative tests for the fail-closed containment/identity invariants:
 
-- missing/invalid parent;
-- duplicate child identity within the relevant namespace;
-- containment cycle;
+- missing/invalid parent (path-qualified);
+- duplicate child identity within the SAME structural parent namespace;
+- containment self-nesting (a scope nesting inside itself via its parent path);
 - object attached to a nonexistent Scope;
 - executable-only assumptions applied to a container-only Scope;
 - invalid structural path/reference.
+
+C01-1: scope ids are unique per structural parent namespace (NOT globally);
+the full StructuralPath is the unambiguous identity. Positive duplicate-local-id
+coverage lives in test_workspace_foundation.py.
 """
 
 from __future__ import annotations
@@ -16,8 +20,11 @@ import pytest
 
 from virtual_factory.workspace import (
     Archetype,
+    ObjectSpec,
     ScopeMode,
     ScopeSpec,
+    StructuralIdentityError,
+    StructuralPath,
     StructuralValidationError,
     build_workspace,
 )
@@ -28,74 +35,55 @@ def test_missing_parent_fails_closed() -> None:
         ScopeSpec(
             scope_id="CHILD",
             mode=ScopeMode.EXECUTABLE_CAPABLE,
-            parent_scope_id="MISSING",
+            parent_path=StructuralPath(("W", "MISSING")),
         )
     ]
     with pytest.raises(StructuralValidationError):
         build_workspace("W", specs)
 
 
-def test_invalid_parent_self_reference_fails_closed() -> None:
-    # A scope may not be its own parent (cycle of length one).
+def test_parent_outside_workspace_fails_closed() -> None:
     specs = [
         ScopeSpec(
-            scope_id="A",
-            mode=ScopeMode.CONTAINER_ONLY,
-            parent_scope_id="A",
+            scope_id="CHILD",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("OTHER-WS", "SCOPE")),
         )
     ]
     with pytest.raises(StructuralValidationError):
         build_workspace("W", specs)
 
 
-def test_duplicate_scope_id_fails_closed() -> None:
+def test_duplicate_child_id_same_parent_fails_closed() -> None:
+    # Same parent namespace + same scope id -> same structural path -> rejected.
     specs = [
-        ScopeSpec("U", mode=ScopeMode.CONTAINER_ONLY),
-        ScopeSpec("U", mode=ScopeMode.CONTAINER_ONLY),
-    ]
-    with pytest.raises(StructuralValidationError):
-        build_workspace("W", specs)
-
-
-def test_duplicate_scope_id_anywhere_fails_closed() -> None:
-    # Scope ids are globally unique within a workspace (stronger invariant,
-    # chosen over per-parent-only uniqueness): this keeps structural paths and
-    # cycle detection deterministic and matches the canonical ASSY evidence
-    # (globally canonical scope ids). Duplicates under any parent are rejected.
-    specs = [
-        ScopeSpec("P1", mode=ScopeMode.CONTAINER_ONLY),
-        ScopeSpec("P2", mode=ScopeMode.CONTAINER_ONLY),
-        ScopeSpec("X", mode=ScopeMode.EXECUTABLE_CAPABLE, parent_scope_id="P1"),
-        ScopeSpec("X", mode=ScopeMode.EXECUTABLE_CAPABLE, parent_scope_id="P2"),
-    ]
-    with pytest.raises(StructuralValidationError):
-        build_workspace("W", specs)
-
-    # Duplicate within the SAME parent namespace is also rejected.
-    specs_bad = [
         ScopeSpec("P", mode=ScopeMode.CONTAINER_ONLY),
-        ScopeSpec("X", mode=ScopeMode.EXECUTABLE_CAPABLE, parent_scope_id="P"),
-        ScopeSpec("X", mode=ScopeMode.EXECUTABLE_CAPABLE, parent_scope_id="P"),
-    ]
-    with pytest.raises(StructuralValidationError):
-        build_workspace("W", specs_bad)
-
-
-def test_containment_cycle_fails_closed() -> None:
-    # A -> B -> A forms a containment cycle.
-    specs = [
-        ScopeSpec("A", mode=ScopeMode.CONTAINER_ONLY, parent_scope_id="B"),
-        ScopeSpec("B", mode=ScopeMode.CONTAINER_ONLY, parent_scope_id="A"),
+        ScopeSpec(
+            "X",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("W", "P")),
+        ),
+        ScopeSpec(
+            "X",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("W", "P")),
+        ),
     ]
     with pytest.raises(StructuralValidationError):
         build_workspace("W", specs)
 
 
-def test_three_node_cycle_fails_closed() -> None:
+def test_containment_self_nesting_fails_closed() -> None:
+    # A scope whose parent path already contains its own id nests inside itself.
+    # (With path-qualified parents the parent depth strictly decreases, so
+    # multi-node cycles are unrepresentable; self-nesting is the cycle case.)
     specs = [
-        ScopeSpec("A", mode=ScopeMode.CONTAINER_ONLY, parent_scope_id="C"),
-        ScopeSpec("B", mode=ScopeMode.CONTAINER_ONLY, parent_scope_id="A"),
-        ScopeSpec("C", mode=ScopeMode.CONTAINER_ONLY, parent_scope_id="B"),
+        ScopeSpec("A", mode=ScopeMode.CONTAINER_ONLY),  # path W/A
+        ScopeSpec(
+            "A",
+            mode=ScopeMode.CONTAINER_ONLY,
+            parent_path=StructuralPath(("W", "A")),  # path W/A/A -> nests "A" in "A"
+        ),
     ]
     with pytest.raises(StructuralValidationError):
         build_workspace("W", specs)
@@ -107,7 +95,7 @@ def test_executable_assumption_on_container_only_fails_closed() -> None:
         ScopeSpec(
             "ASSY-SL01",
             mode=ScopeMode.EXECUTABLE_CAPABLE,
-            parent_scope_id="ASSY",
+            parent_path=StructuralPath(("TIPA", "ASSY")),
         ),
     ]
     ws = build_workspace("TIPA", specs)
@@ -123,8 +111,6 @@ def test_executable_assumption_on_container_only_fails_closed() -> None:
 
 
 def test_duplicate_object_ids_within_scope_fails_closed() -> None:
-    from virtual_factory.workspace import ObjectSpec
-
     specs = [
         ScopeSpec(
             "U",
@@ -141,8 +127,6 @@ def test_duplicate_object_ids_within_scope_fails_closed() -> None:
 
 
 def test_empty_workspace_id_and_scope_id_fail_closed() -> None:
-    from virtual_factory.workspace.identity import StructuralIdentityError
-
     with pytest.raises(StructuralValidationError):
         build_workspace("", [ScopeSpec("U", mode=ScopeMode.CONTAINER_ONLY)])
     with pytest.raises(StructuralValidationError):

@@ -107,36 +107,68 @@ class SimulationScope:
                 f"{self.path.as_string()}"
             )
 
-    def find_scope(self, scope_id: str) -> SimulationScope | None:
-        """Depth-first find of a descendant scope by id (deterministic order)."""
+    def iter_scopes(self):
+        """Yield self then all descendant scopes in deterministic pre-order."""
+        yield self
         for child in self.children:
-            if child.scope_id == scope_id:
-                return child
-            found = child.find_scope(scope_id)
-            if found is not None:
-                return found
-        return None
+            yield from child.iter_scopes()
+
+    def find_scope(self, scope_id: str) -> SimulationScope | None:
+        """Return the descendant scope with this id, or None when absent.
+
+        Raises ``StructuralValidationError`` when the bare id is ambiguous
+        (duplicate local ids under different parents). The canonical public
+        lookup is path-based (:meth:`Workspace.find_scope_by_path`).
+        """
+        from virtual_factory.workspace.builder import StructuralValidationError
+
+        matches = [s for s in self.iter_scopes() if s.scope_id == scope_id]
+        if not matches:
+            return None
+        if len(matches) > 1:
+            raise StructuralValidationError(
+                f"ambiguous scope id {scope_id!r}: {len(matches)} matches; "
+                f"use a structural path"
+            )
+        return matches[0]
 
     def find_object(self, object_id: str) -> SimulationObject | None:
-        """Find an object in this scope's subtree by id (deterministic order)."""
-        for obj in self.objects:
-            if obj.object_id == object_id:
-                return obj
-        for child in self.children:
-            found = child.find_object(object_id)
-            if found is not None:
-                return found
-        return None
+        """Find an object in this scope's subtree by id, or None when absent.
+
+        Raises when the bare object id is ambiguous across the subtree.
+        """
+        from virtual_factory.workspace.builder import StructuralValidationError
+
+        matches: list[SimulationObject] = []
+        for scope in self.iter_scopes():
+            for obj in scope.objects:
+                if obj.object_id == object_id:
+                    matches.append(obj)
+        if not matches:
+            return None
+        if len(matches) > 1:
+            raise StructuralValidationError(
+                f"ambiguous object id {object_id!r}: {len(matches)} matches; "
+                f"use an owning-scope-qualified reference"
+            )
+        return matches[0]
 
     def scope_path_by_id(self, scope_id: str) -> StructuralPath | None:
-        """Return the structural path of a descendant scope by id."""
-        if self.scope_id == scope_id:
-            return self.path
-        for child in self.children:
-            found = child.scope_path_by_id(scope_id)
-            if found is not None:
-                return found
-        return None
+        """Return the structural path of a descendant scope by id, or None.
+
+        Raises when the bare id is ambiguous (duplicate local ids).
+        """
+        from virtual_factory.workspace.builder import StructuralValidationError
+
+        matches = [s for s in self.iter_scopes() if s.scope_id == scope_id]
+        if not matches:
+            return None
+        if len(matches) > 1:
+            raise StructuralValidationError(
+                f"ambiguous scope id {scope_id!r}: {len(matches)} matches; "
+                f"use a structural path"
+            )
+        return matches[0].path
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,14 +195,25 @@ class Workspace:
         return self.top_level_scopes
 
     def find_scope(self, scope_id: str) -> SimulationScope | None:
-        """Find a scope anywhere in this workspace by id (deterministic order)."""
+        """Find a scope anywhere in this workspace by id, or None when absent.
+
+        Raises ``StructuralValidationError`` when the bare id is ambiguous
+        (duplicate local ids under different parents). Path-based lookup
+        (:meth:`find_scope_by_path`) is the canonical public API.
+        """
+        from virtual_factory.workspace.builder import StructuralValidationError
+
+        matches: list[SimulationScope] = []
         for scope in self.top_level_scopes:
-            if scope.scope_id == scope_id:
-                return scope
-            found = scope.find_scope(scope_id)
-            if found is not None:
-                return found
-        return None
+            matches.extend(s for s in scope.iter_scopes() if s.scope_id == scope_id)
+        if not matches:
+            return None
+        if len(matches) > 1:
+            raise StructuralValidationError(
+                f"ambiguous scope id {scope_id!r}: {len(matches)} matches; "
+                f"use a structural path"
+            )
+        return matches[0]
 
     def find_scope_by_path(self, path: StructuralPath) -> SimulationScope | None:
         """Resolve a structural path to a scope in this workspace.

@@ -32,7 +32,7 @@ def _default_tree() -> Workspace:
         ScopeSpec(
             scope_id="ASSY-SL01",
             mode=ScopeMode.EXECUTABLE_CAPABLE,
-            parent_scope_id="ASSY",
+            parent_path=StructuralPath(("TIPA", "ASSY")),
             archetype=Archetype.DISCRETE,
             objects=(
                 ObjectSpec(object_id="AP04", object_type="station"),
@@ -42,7 +42,7 @@ def _default_tree() -> Workspace:
         ScopeSpec(
             scope_id="ASSY-SL02",
             mode=ScopeMode.EXECUTABLE_CAPABLE,
-            parent_scope_id="ASSY",
+            parent_path=StructuralPath(("TIPA", "ASSY")),
             archetype=Archetype.DISCRETE,
         ),
     ]
@@ -198,4 +198,82 @@ def test_scope_find_helpers_deterministic() -> None:
     assert sl1.find_object("NOPE") is None
     assert sl1.scope_path_by_id("ASSY-SL01") == sl1.path
     assert ws.find_scope("NOPE") is None
+
+
+def test_duplicate_local_scope_ids_under_different_parents_are_valid() -> None:
+    """C01-1: local scope ids are unique per parent, not globally.
+
+    Two different parents may each have a child named ``Utilities``; the full
+    StructuralPath is the unambiguous identity.
+    """
+    specs = [
+        ScopeSpec("Line-A", mode=ScopeMode.CONTAINER_ONLY),
+        ScopeSpec("Line-B", mode=ScopeMode.CONTAINER_ONLY),
+        ScopeSpec(
+            "Utilities",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("W", "Line-A")),
+        ),
+        ScopeSpec(
+            "Utilities",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("W", "Line-B")),
+        ),
+    ]
+    ws = build_workspace("W", specs)
+
+    # Path-based resolution is deterministic and unambiguous.
+    util_a = ws.resolve_scope(StructuralPath(("W", "Line-A", "Utilities")))
+    util_b = ws.resolve_scope(StructuralPath(("W", "Line-B", "Utilities")))
+    assert util_a.scope_id == "Utilities"
+    assert util_b.scope_id == "Utilities"
+    assert util_a is not util_b
+    assert util_a.path == StructuralPath(("W", "Line-A", "Utilities"))
+    assert util_b.path == StructuralPath(("W", "Line-B", "Utilities"))
+
+
+def test_bare_id_lookup_raises_on_ambiguity() -> None:
+    """C01-1: a bare-id convenience lookup must not silently return first match."""
+    specs = [
+        ScopeSpec("Line-A", mode=ScopeMode.CONTAINER_ONLY),
+        ScopeSpec("Line-B", mode=ScopeMode.CONTAINER_ONLY),
+        ScopeSpec(
+            "Utilities",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("W", "Line-A")),
+        ),
+        ScopeSpec(
+            "Utilities",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("W", "Line-B")),
+        ),
+    ]
+    ws = build_workspace("W", specs)
+    with pytest.raises(StructuralValidationError):
+        ws.find_scope("Utilities")
+
+    # Within a single parent subtree the id is unique, so a bare-id lookup is OK.
+    line_a = ws.find_scope("Line-A")
+    assert line_a is not None
+    util = line_a.find_scope("Utilities")
+    assert util is not None
+    assert util.path == StructuralPath(("W", "Line-A", "Utilities"))
+
+
+def test_subtree_bare_lookup_within_single_parent_is_ok() -> None:
+    """A bare-id lookup is fine when the id is unique within the searched scope."""
+    specs = [
+        ScopeSpec("Line-A", mode=ScopeMode.CONTAINER_ONLY),
+        ScopeSpec(
+            "Utilities",
+            mode=ScopeMode.EXECUTABLE_CAPABLE,
+            parent_path=StructuralPath(("W", "Line-A")),
+        ),
+    ]
+    ws = build_workspace("W", specs)
+    line_a = ws.find_scope("Line-A")
+    assert line_a is not None
+    util = line_a.find_scope("Utilities")
+    assert util is not None
+    assert util.path == StructuralPath(("W", "Line-A", "Utilities"))
 

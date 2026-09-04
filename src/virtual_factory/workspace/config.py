@@ -16,6 +16,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from virtual_factory.workspace.builder import ObjectSpec, ScopeSpec, build_workspace
+from virtual_factory.workspace.identity import StructuralPath
 from virtual_factory.workspace.model import Archetype, ScopeMode, Workspace
 
 
@@ -41,13 +42,24 @@ class ScopeConfig(BaseModel):
     children: list["ScopeConfig"] = Field(default_factory=list)
     objects: list[ObjectConfig] = Field(default_factory=list)
 
-    def to_specs(self, parent_scope_id: str | None) -> list[ScopeSpec]:
-        """Flatten this nested scope into one ScopeSpec per scope."""
+    def to_specs(
+        self, workspace_root: StructuralPath, parent_path: StructuralPath | None
+    ) -> list[ScopeSpec]:
+        """Flatten this nested scope into one ScopeSpec per scope.
+
+        Parent references are path-qualified (the full parent ``StructuralPath``),
+        so duplicate local ids under different parents remain valid.
+        """
+        own_path = (
+            workspace_root.child(self.id)
+            if parent_path is None
+            else parent_path.child(self.id)
+        )
         specs = [
             ScopeSpec(
                 scope_id=self.id,
                 mode=self.mode,
-                parent_scope_id=parent_scope_id,
+                parent_path=parent_path,
                 archetype=self.archetype,
                 display_name=self.display_name,
                 objects=tuple(
@@ -61,7 +73,7 @@ class ScopeConfig(BaseModel):
             )
         ]
         for child in self.children:
-            specs.extend(child.to_specs(parent_scope_id=self.id))
+            specs.extend(child.to_specs(workspace_root, own_path))
         return specs
 
 
@@ -77,9 +89,10 @@ class WorkspaceConfig(BaseModel):
 
     def to_specs(self) -> list[ScopeSpec]:
         """Flatten the nested manifest into flat ScopeSpec declarations."""
+        workspace_root = StructuralPath.workspace_root(self.id)
         specs: list[ScopeSpec] = []
         for scope in self.scopes:
-            specs.extend(scope.to_specs(parent_scope_id=None))
+            specs.extend(scope.to_specs(workspace_root, parent_path=None))
         return specs
 
     def to_workspace(self) -> Workspace:
