@@ -10,9 +10,18 @@
 > different parents are valid; negative tests keep duplicate child ids under the
 > SAME parent fail-closed. All other G1 contracts preserved.
 
+> **C02 revision (Issue #46 SA review):** fixed the silent structural data-loss
+> case in the builder. Top-level scopes MUST use `parent_path=None` (canonical);
+> `parent_path == workspace_root` now fails closed instead of being silently
+> dropped from the tree. An explicit completeness invariant/check guarantees
+> every validated `ScopeSpec` materializes exactly once (node count ==
+> declaration count, declared-path set == built-path set). Added the
+> workspace-root-parent negative test and the declaration-count/tree-count
+> completeness test. All C01 identity semantics and other G1 contracts preserved.
+
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G1` (GitHub Issue #46) |
+| Task ID | `VF-vNEXT-G1` (GitHub Issue #46) + C02 |
 | Program | Implementation phase following completed architecture umbrella #39 (`VF-vNEXT-ARCH`) |
 | Gate mode | Accelerated implementation gate (only authorized implementation gate) |
 | Architecture baseline | ARCH-01 `41903e18…` + ARCH-02 `40454487…` + ARCH-03 `392401bd…` + ARCH-04 `d5c155b6…` + ARCH-05 `8fafa119…` + ARCH-06 `41300d34…` |
@@ -80,10 +89,10 @@ object ids, ambiguity in bare-id lookup, determinism vs input order.
 
 | Suite | Result |
 |---|---|
-| New G1 unit/negative/config tests | **30 passed** |
-| ASSY regression oracle (incl. ARCH-05 C01 automated obligations) | **354 passed** |
+| New G1 unit/negative/config tests | **32 passed** |
+| ASSY regression oracle (incl. ARCH-05 C01 automated obligations) | **354 passed** (deterministic re-run; one transient pre-existing test-isolation flake recorded in evidence 05) |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1677 passed** (0 failures; no baseline exceptions) |
+| Full repository suite | **1679 passed** (0 failures; no baseline exceptions) |
 | Compile check | PASS (no configured ruff/mypy/black in repo) |
 
 ## 7. Non-decisions / deferred (evidence 06)
@@ -115,7 +124,7 @@ truth; scope did not expand into G2+.
 | No workspace-name hard-coding | PASS |
 | PIM semantic identity separate | PASS |
 | No G2+ implementation | PASS |
-| Mandatory tests/regressions pass | PASS (30 + 354 + 61 + full 1677) |
+| Mandatory tests/regressions pass | PASS (32 + 354 + 61 + full 1679) |
 | Working tree clean and head pushed | PASS (after push) |
 
 ## 9.1 C01 corrections applied
@@ -136,6 +145,23 @@ truth; scope did not expand into G2+.
    object ownership, PIM identity separation, deterministic build, TIPA/ASSY and
    generic-continuous fixtures).
 
+## 9.2 C02 corrections applied
+
+1. **Canonical top-level representation (C02-1):** top-level scopes MUST use
+   `parent_path=None`; `parent_path == workspace_root` is rejected fail-closed
+   in `_compute_paths` (previously it passed parent validation and was silently
+   dropped from `Workspace.top_level_scopes`).
+2. **Completeness invariant:** `_check_completeness` verifies the built tree
+   node count equals the validated declaration count and the declared-path set
+   equals the built-path set; a mismatch fails the build (no declaration may
+   disappear).
+3. **Tests:** added `test_workspace_root_parent_fails_closed` (negative) and
+   `test_declaration_count_matches_tree_count_completeness` (positive).
+4. **C01 semantics and all other G1 contracts preserved** (local scope id per
+   parent, `StructuralPath` authoritative, ambiguity fail-closed, path-qualified
+   parent resolution, container/executable, no fake runtime, object ownership,
+   PIM identity separation, deterministic build, fixtures).
+
 ## 10. Evidence
 
 `.ai-harness/sa-review/evidence/VF-vNEXT-G1/` — 6 files (01…06).
@@ -143,7 +169,7 @@ truth; scope did not expand into G2+.
 ## 11. Final status
 
 ```text
-VF-vNEXT-G1-C01 — READY FOR SA REVIEW
+VF-vNEXT-G1-C02 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G2 is NOT started.

@@ -104,6 +104,12 @@ def _compute_paths(
                 f"{spec.parent_path.as_string()!r} is not inside workspace "
                 f"{workspace_root.workspace_id!r}"
             )
+        if spec.parent_path == workspace_root:
+            raise StructuralValidationError(
+                f"scope {spec.scope_id!r} uses workspace root "
+                f"{workspace_root.as_string()!r} as parent_path; a top-level "
+                f"scope must use parent_path=None (canonical representation)"
+            )
 
         path = _scope_path(spec, workspace_root)
         if path in path_to_spec:
@@ -127,13 +133,16 @@ def _compute_paths(
 
 def _validate_parents(
     path_to_spec: dict[StructuralPath, ScopeSpec],
-    workspace_root: StructuralPath,
 ) -> None:
-    """Every non-root parent path must reference the workspace root or a declared scope."""
+    """Every non-root parent path must reference a declared scope path.
+
+    A top-level scope uses ``parent_path=None`` (the canonical representation);
+    ``parent_path == workspace_root`` is rejected earlier in ``_compute_paths``.
+    """
     for path, spec in path_to_spec.items():
         if spec.parent_path is None:
             continue
-        if spec.parent_path != workspace_root and spec.parent_path not in path_to_spec:
+        if spec.parent_path not in path_to_spec:
             raise StructuralValidationError(
                 f"scope {spec.scope_id!r} has missing/invalid parent path "
                 f"{spec.parent_path.as_string()!r}"
@@ -190,6 +199,43 @@ def _build_scope(
     )
 
 
+def _scope_count(scopes: tuple[SimulationScope, ...]) -> int:
+    """Total number of scope nodes under the given roots (recursive)."""
+    total = 0
+    for scope in scopes:
+        total += 1 + _scope_count(scope.children)
+    return total
+
+
+def _check_completeness(
+    path_to_spec: dict[StructuralPath, ScopeSpec],
+    top_scopes: tuple[SimulationScope, ...],
+) -> None:
+    """Every validated ScopeSpec must materialize exactly once in the tree.
+
+    Fail-closed: if the number of scope nodes in the built tree differs from the
+    number of validated declarations (or any declared path is missing), the build
+    must fail rather than silently drop a declaration.
+    """
+    built_paths = set()
+
+    def collect(scopes: tuple[SimulationScope, ...]) -> None:
+        for scope in scopes:
+            built_paths.add(scope.path)
+            collect(scope.children)
+
+    collect(top_scopes)
+    declared = set(path_to_spec)
+    if len(built_paths) != len(declared):
+        missing = sorted(p.as_string() for p in declared - built_paths)
+        extra = sorted(p.as_string() for p in built_paths - declared)
+        raise StructuralValidationError(
+            f"internal completeness error: {len(declared)} scope declarations "
+            f"materialized {len(built_paths)} nodes (missing={missing}, "
+            f"extra={extra})"
+        )
+
+
 def build_workspace(
     workspace_id: str,
     scope_specs: Iterable[ScopeSpec],
@@ -201,14 +247,15 @@ def build_workspace(
 
     Fail-closed: raises :class:`StructuralValidationError` (or
     :class:`~virtual_factory.workspace.identity.StructuralIdentityError` from the
-    path segment validation) on any invalid layout. The result is deterministic
-    regardless of ``scope_specs`` iteration order.
+    path segment validation) on any invalid layout, including a completeness
+    check that every validated declaration materializes exactly once. The result
+    is deterministic regardless of ``scope_specs`` iteration order.
     """
     specs = list(scope_specs)
     workspace_root = _workspace_root(workspace_id)
 
     path_to_spec = _compute_paths(specs, workspace_root)
-    _validate_parents(path_to_spec, workspace_root)
+    _validate_parents(path_to_spec)
     _detect_self_nesting(path_to_spec)
 
     children_by_parent: dict[StructuralPath | None, list[StructuralPath]] = {}
@@ -222,6 +269,7 @@ def build_workspace(
         _build_scope(tp, path_to_spec[tp], path_to_spec, children_by_parent)
         for tp in top_paths
     )
+    _check_completeness(path_to_spec, top_scopes)
     return Workspace(
         workspace_id=workspace_id,
         path=workspace_root,

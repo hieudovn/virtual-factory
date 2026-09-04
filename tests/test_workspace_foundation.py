@@ -277,3 +277,52 @@ def test_subtree_bare_lookup_within_single_parent_is_ok() -> None:
     assert util is not None
     assert util.path == StructuralPath(("W", "Line-A", "Utilities"))
 
+
+def _count_tree_scopes(top_scopes) -> int:
+    """Recursively count scope nodes under the given top-level scopes."""
+    total = 0
+    for scope in top_scopes:
+        total += 1 + _count_tree_scopes(scope.children)
+    return total
+
+
+def test_declaration_count_matches_tree_count_completeness() -> None:
+    """C02-1: every validated declaration materializes exactly once in the tree.
+
+    A nested tree (top-level, deep children, and duplicate local ids under
+    different parents) must build with node count == declaration count, and each
+    declared structural path must be present exactly once.
+    """
+    specs = [
+        ScopeSpec("Line-A", mode=ScopeMode.CONTAINER_ONLY),
+        ScopeSpec("Line-B", mode=ScopeMode.CONTAINER_ONLY),
+        ScopeSpec("Utilities", mode=ScopeMode.EXECUTABLE_CAPABLE,
+                  parent_path=StructuralPath(("W", "Line-A"))),
+        ScopeSpec("Utilities", mode=ScopeMode.EXECUTABLE_CAPABLE,
+                  parent_path=StructuralPath(("W", "Line-B"))),
+        ScopeSpec("Area", mode=ScopeMode.CONTAINER_ONLY),
+        ScopeSpec("Unit", mode=ScopeMode.EXECUTABLE_CAPABLE,
+                  parent_path=StructuralPath(("W", "Area"))),
+        ScopeSpec("Cell", mode=ScopeMode.EXECUTABLE_CAPABLE,
+                  parent_path=StructuralPath(("W", "Area", "Unit"))),
+    ]
+    ws = build_workspace("W", specs)
+
+    # every declaration materializes exactly once
+    assert _count_tree_scopes(ws.top_level_scopes) == len(specs)
+
+    # each declared structural path resolves to exactly one scope
+    for spec in specs:
+        path = (
+            StructuralPath(("W",))
+            .child(spec.scope_id)
+            if spec.parent_path is None
+            else spec.parent_path.child(spec.scope_id)
+        )
+        resolved = ws.resolve_scope(path)
+        assert resolved.scope_id == spec.scope_id
+        assert resolved.path == path
+
+    # top-level scopes are exactly the parent_path=None declarations
+    assert [s.scope_id for s in ws.top_level_scopes] == ["Area", "Line-A", "Line-B"]
+

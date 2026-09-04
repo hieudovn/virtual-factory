@@ -54,6 +54,23 @@ def test_parent_outside_workspace_fails_closed() -> None:
         build_workspace("W", specs)
 
 
+def test_workspace_root_parent_fails_closed() -> None:
+    """C02-1: top-level scopes MUST use parent_path=None (canonical).
+
+    ``parent_path == workspace_root`` is invalid and fails closed, so a declared
+    scope can never silently disappear from the built tree.
+    """
+    specs = [
+        ScopeSpec(
+            "A",
+            mode=ScopeMode.CONTAINER_ONLY,
+            parent_path=StructuralPath(("W",)),
+        )
+    ]
+    with pytest.raises(StructuralValidationError):
+        build_workspace("W", specs)
+
+
 def test_duplicate_child_id_same_parent_fails_closed() -> None:
     # Same parent namespace + same scope id -> same structural path -> rejected.
     specs = [

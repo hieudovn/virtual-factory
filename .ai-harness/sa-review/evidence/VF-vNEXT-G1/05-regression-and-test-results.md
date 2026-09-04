@@ -9,10 +9,11 @@ python -m pytest tests/test_workspace_foundation.py \
     tests/test_workspace_validation.py tests/test_workspace_config.py -q
 ```
 
-Result: **30 passed** (0 failures).
+Result: **32 passed** (0 failures).
 
-(C01-1 added positive duplicate-local-id-under-different-parents coverage and
-ambiguity-guard tests; total grew from 28 to 30.)
+(C01-1 added duplicate-local-id + ambiguity coverage; C02-1 added the
+workspace-root-parent negative and the declaration-count/tree-count completeness
+test — total 32.)
 
 ## 2. ASSY regression oracle (ARCH-05 incl. C01 functional semantics where automated)
 
@@ -28,10 +29,17 @@ python -m pytest tests/test_assy_line.py tests/test_assy_demo.py \
     tests/test_auto_timing_runtime.py tests/test_vf_contract_finality_01.py -q
 ```
 
-Result: **354 passed** (0 failures). Covers the ASSY route/quality/genealogy/
-timing/LINE_OUT oracle and the ARCH-05 C01 semantic obligations that are
-automated (SSO2/RSO2 feed behavior, terminal release, idempotency/determinism).
-No `AssyLineRuntime` file was modified.
+Result: **354 passed** on the deterministic re-run. Covers the ASSY route/quality/
+genealogy/timing/LINE_OUT oracle and the ARCH-05 C01 semantic obligations that
+are automated. No `AssyLineRuntime` file was modified.
+
+Note (pre-existing test-isolation flake, not caused by G1): one run of this
+batch showed ``test_demo_composition.py::TestReset::test_reset_creates_fresh_configs``
+failing while its whole file passed in isolation (49/49) and the full batch
+passed on re-run (354/354). The workspace package is not imported by
+``demo_composition``, so G1 changes cannot affect it; this is a pre-existing
+cross-file order dependency recorded honestly per the Issue #46 requirement to
+distinguish baseline anomalies.
 
 ## 3. Continuous/compressor baseline (ARCH-06)
 
@@ -46,7 +54,6 @@ python -m pytest tests/test_compressor_train.py tests/test_compressor_states.py 
 ```
 
 Result: **61 passed** (0 failures).
-
 ## 4. Full repository suite
 
 Command:
@@ -55,8 +62,9 @@ Command:
 python -m pytest tests -q
 ```
 
-Result: **1677 passed (0 failures)**. No pre-existing baseline failures to
-distinguish — the full suite is green on the G1-C01 head.
+Result: **1679 passed (0 failures)** on the G1-C02 head (1675 → 1677 after C01
+tests → 1679 after C02 tests). No pre-existing baseline failures to distinguish —
+the full suite is green on the head.
 
 ## 5. Lint / type checks
 
