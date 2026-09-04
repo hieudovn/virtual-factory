@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G3` (GitHub Issue #48) + C01 |
+| Task ID | `VF-vNEXT-G3` (GitHub Issue #48) + C01 + C02 |
 | Program | Implementation phase (G3; only authorized implementation gate) |
 | G2 base (required) | `fec6fe4127634fcf31e1c90ce23dd9a7457ebda5` |
 | Branch | `feature/vf-vnext-g3` |
@@ -24,8 +24,10 @@ backward compatibility.
 - `telemetry/event_fact.py` (NEW) — dependency-light typed immutable platform
   `EventFact` (stable event_id, event_type/category, occurrence simulation time,
   source/severity/status occurrence classification, deep-frozen payload, G1
-  workspace/scope + G2 provenance carried only when explicit, with provenance
-  run/workspace/scope coherence fail-closed C01-1) and
+  workspace/scope + G2 provenance carried only when explicit; full provenance
+  coherence: workspace (scope_path is workspace authority even when
+  workspace_id omitted), run_id, scope_path and simulation_time_s all agree
+  when both authorities present — C01-1/C02-1) and
   `AlarmEventFact(EventFact)` — the Alarm specialization/category (`category =
   ALARM`, alarm_id/alarm_kind/transition/threshold/message metadata beside the
   shared event identity).
@@ -40,11 +42,14 @@ backward compatibility.
   states emit no duplicates); `AlarmState` remains a mutable DERIVED projection
   that never mutates facts.
 - `observation/alignment.py` (NEW) — non-fabricating G1/G2 context seam:
-  `ObservationStructuralContext` + `carry_structural_context()`; run-identity
-  coherence fail-closed (context/provenance run_id must equal envelope run_id)
-  and reserved `vf.*` key conflict fail-closed (C01-1); legacy flows with no
-  context return the same envelope unchanged; existing
-  `ObservationEnvelope`/`ObservationService` untouched.
+  `ObservationStructuralContext` + `carry_structural_context()`; full identity
+  coherence fail-closed: context/provenance run_id must equal envelope run_id,
+  context scope_path must equal provenance scope_path when both present,
+  provenance simulation_time_s (when present) must equal envelope
+  simulation_time_s (C01-1/C02-1), and reserved `vf.*` key conflict uses KEY
+  PRESENCE and fails closed (C02-2); legacy flows with no context return the
+  same envelope unchanged; existing `ObservationEnvelope`/`ObservationService`
+  untouched.
 
 No forbidden file modified. `AssyLineRuntime`, discrete, maintenance, core,
 existing observation modules, provenance, workspace untouched.
@@ -70,19 +75,25 @@ existing observation modules, provenance, workspace untouched.
 - **C01-2 alarm history:** first-observed ACTIVE emits an `assert` fact (no
   orphan `clear`); first-observed INACTIVE is a baseline; stable states emit no
   duplicate facts.
+- **C02-1 full scope/time coherence:** context/provenance scope_path equal when
+  both present; provenance simulation_time_s equals envelope/EventFact
+  simulation_time_s when present; `EventFact` scope_path is the workspace
+  authority even when explicit workspace_id is omitted.
+- **C02-2 reserved keys by presence:** a present `vf.*` key (even `None` value)
+  may only repeat the SAME value; any other value fails closed.
 
 ## 4. Test / regression results (evidence 06)
 
 | Suite | Result |
 |---|---|
-| New G3 tests | **44 passed** (incl. C01) |
+| New G3 tests | **51 passed** (incl. C01 + C02) |
 | Existing observation package (M5-S01..S05) | **244 passed** |
 | Telemetry/alarm/event group | **27 passed** |
 | G2 provenance | **36 passed** |
 | G1 workspace | **32 passed** |
-| ASSY regression oracle | **354 passed** (clean re-run) |
+| ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1759 passed** (0 failures) |
+| Full repository suite | **1766 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 Pre-existing ASSY `id()`-flake (`test_demo_composition.py::TestReset::
@@ -113,18 +124,18 @@ alarm workflow/notification, real-plant acknowledgement authority — all deferr
 | Existing alarm/telemetry behavior compatible | PASS |
 | Runtime state remains sole mutable execution truth | PASS |
 | No historian/workflow/capability/G4+ present | PASS |
-| Mandatory regressions pass (anomalies honestly evidenced) | PASS (44+244+27+36+32+354+61+full 1759) |
+| Mandatory regressions pass (anomalies honestly evidenced) | PASS (51+244+27+36+32+354+61+full 1766) |
 | Branch/head pushed and working tree clean | PASS (after push) |
 
 ## 8. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G3/` — 8 files (01…08; 08 = C01
-corrections).
+`.ai-harness/sa-review/evidence/VF-vNEXT-G3/` — 9 files (01…09; 08 = C01, 09 =
+C02 corrections).
 
 ## 9. Final status
 
 ```text
-VF-vNEXT-G3-C01 — READY FOR SA REVIEW
+VF-vNEXT-G3-C02 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G4 is NOT started.

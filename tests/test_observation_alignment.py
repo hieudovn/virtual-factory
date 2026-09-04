@@ -125,6 +125,61 @@ def test_reserved_key_same_value_is_allowed() -> None:
     assert result.context[KEY_WORKSPACE_ID] == "W"
 
 
+def test_reserved_key_present_none_conflicts_with_new_value() -> None:
+    """Key PRESENCE is used: a present reserved key whose value is None is still
+    a pre-existing key and must not be silently overwritten (C02-2)."""
+    env = _envelope()
+    present_none = replace(env, context={"vf.workspace_id": None})
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(present_none, ctx)
+
+
+def test_scope_vs_provenance_scope_mismatch_fails_closed() -> None:
+    provenance = ProvenanceV2(
+        workspace_id="W",
+        run_id="run-1",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+    )
+    with pytest.raises(ObservationContextError):
+        ObservationStructuralContext(
+            workspace_id="W",
+            scope_path=StructuralPath(("W", "AREA", "OTHER")),  # conflicts
+            provenance=provenance,
+        )
+
+
+def test_provenance_simulation_time_mismatch_fails_closed() -> None:
+    env = _envelope()  # envelope simulation_time_s = 12.5
+    provenance = ProvenanceV2(
+        workspace_id="W", run_id="run-1", simulation_time_s=13.5
+    )
+    ctx = ObservationStructuralContext(workspace_id="W", provenance=provenance)
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_all_scope_run_time_authorities_agree() -> None:
+    env = _envelope()  # run_id=run-1, simulation_time_s=12.5
+    provenance = ProvenanceV2(
+        workspace_id="W",
+        run_id="run-1",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        simulation_time_s=12.5,
+    )
+    ctx = ObservationStructuralContext(
+        workspace_id="W",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        run_id="run-1",
+        provenance=provenance,
+    )
+    result = carry_structural_context(env, ctx)
+    assert result.context[KEY_SCOPE_PATH] == "W/AREA/UNIT"
+    assert result.context[KEY_RUN_ID] == "run-1"
+    assert result.context[KEY_PROVENANCE]["scope_path"] == "W/AREA/UNIT"
+    assert result.context[KEY_PROVENANCE]["simulation_time_s"] == 12.5
+
+
 def test_context_is_fail_closed_on_workspace_mismatch() -> None:
     with pytest.raises(ObservationContextError):
         ObservationStructuralContext(

@@ -5,8 +5,10 @@
 Command: `python -m pytest tests/test_event_fact.py tests/test_event_store.py
 tests/test_alarm_event_facts.py tests/test_observation_alignment.py -q`
 
-Result: **44 passed** (0 failures). Includes the C01 corrections (initial-active
-assert, run-identity coherence negatives, reserved-key conflict negatives).
+Result: **51 passed** (0 failures). Includes the C01 corrections (initial-active
+assert, run-identity coherence negatives, reserved-key conflict negatives) and
+C02 corrections (full scope/provenance/time coherence + presence-based reserved
+key checks).
 
 Covers Issue #48 "Required tests / proofs":
 - Event fact immutable + deterministic to serialize;
@@ -34,7 +36,7 @@ Covers Issue #48 "Required tests / proofs":
 | G1 workspace | `test_workspace_foundation/validation/config` | **32 passed** |
 | ASSY regression oracle | ARCH-05 incl. C01 set | **354 passed** |
 | Continuous/compressor baseline | ARCH-06 set | **61 passed** |
-| Full repository suite | `tests` | **1759 passed** (0 failures, clean) |
+| Full repository suite | `tests` | **1766 passed** (0 failures, clean) |
 
 ## 3. Pre-existing flake (documented, unrelated to G3)
 
@@ -44,8 +46,8 @@ pre-existing ASSY `id()`-disjoint flake family (Python `id()` address reuse
 across a reset) already documented in G1/G2 for the sibling
 `test_reset_creates_fresh_configs`. It passes when its file runs alone and the
 ASSY oracle re-run was clean (**354 passed**). G3 did not modify
-`assembly/`/`demo_composition`. Deterministic full-suite run: **1759 passed,
-0 failures** (no flake surfaced).
+`assembly/`/`demo_composition`. Deterministic full-suite runs: **1766 passed,
+0 failures** (no flake surfaced in the C02 run).
 
 ## 4. Lint / type / compile / harness
 

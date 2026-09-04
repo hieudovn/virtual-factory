@@ -179,6 +179,7 @@ def test_event_and_provenance_authorities_agree_when_both_present() -> None:
         workspace_id="W",
         run_id="run-1",
         scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        simulation_time_s=1.5,
     )
     fact = _fact(
         run_id="run-1",
@@ -191,6 +192,38 @@ def test_event_and_provenance_authorities_agree_when_both_present() -> None:
     assert d["scope_path"] == "W/AREA/UNIT"
     assert d["provenance"]["run_id"] == "run-1"
     assert d["provenance"]["scope_path"] == "W/AREA/UNIT"
+    assert d["provenance"]["simulation_time_s"] == 1.5
+
+
+def test_scope_path_is_workspace_authority_without_explicit_workspace() -> None:
+    """scope_path carries authoritative workspace: provenance must match it even
+    when EventFact.workspace_id is omitted (C02)."""
+    provenance = ProvenanceV2(workspace_id="W2", run_id="run-1")
+    with pytest.raises(EventFactError):
+        _fact(
+            run_id="run-1",
+            scope_path=StructuralPath(("W1", "AREA")),  # workspace W1
+            provenance=provenance,  # workspace W2 -> conflict
+        )
+
+
+def test_scope_path_workspace_authority_agrees_with_provenance() -> None:
+    provenance = ProvenanceV2(workspace_id="W1", run_id="run-1")
+    fact = _fact(
+        run_id="run-1",
+        scope_path=StructuralPath(("W1", "AREA")),
+        provenance=provenance,
+    )
+    assert fact.workspace_id is None  # not fabricated
+    assert fact.to_dict()["provenance"]["workspace_id"] == "W1"
+
+
+def test_provenance_simulation_time_mismatch_fails_closed() -> None:
+    provenance = ProvenanceV2(
+        workspace_id="W", run_id="run-1", simulation_time_s=5.0
+    )
+    with pytest.raises(EventFactError):
+        _fact(run_id="run-1", workspace_id="W", provenance=provenance)
 
 
 # ── Alarm ⊂ Event ──────────────────────────────────────────────

@@ -71,6 +71,14 @@ class ObservationStructuralContext:
                 raise ObservationContextError(
                     "provenance.workspace_id must match workspace_id"
                 )
+            if (
+                self.scope_path is not None
+                and self.provenance.scope_path is not None
+                and self.provenance.scope_path != self.scope_path
+            ):
+                raise ObservationContextError(
+                    "provenance.scope_path must match scope_path"
+                )
         if self.run_id is not None and (
             not isinstance(self.run_id, str) or not self.run_id.strip()
         ):
@@ -78,16 +86,17 @@ class ObservationStructuralContext:
 
 
 def _reserved_key_check(current: Mapping[str, Any], key: str, value: Any) -> None:
-    """Fail closed when a reserved ``vf.*`` key already holds a conflicting value.
+    """Fail closed when a reserved ``vf.*`` key is already present with a value.
 
-    Same-value repeats are allowed (proven equal); conflicting pre-existing
-    values are never silently overwritten.
+    Uses KEY PRESENCE (``key in current``), not ``get()``, so a present key
+    whose value is ``None`` is still a pre-existing reserved key and cannot be
+    silently overwritten. Same-value repeats are allowed (proven equal); any
+    different existing value fails closed.
     """
-    existing = current.get(key)
-    if existing is not None and existing != value:
+    if key in current and current[key] != value:
         raise ObservationContextError(
             f"reserved context key {key!r} already holds a conflicting value "
-            f"{existing!r}; refusing to overwrite with {value!r}"
+            f"{current[key]!r}; refusing to overwrite with {value!r}"
         )
 
 
@@ -134,6 +143,16 @@ def carry_structural_context(
         raise ObservationContextError(
             f"provenance.run_id {context.provenance.run_id!r} must equal "
             f"envelope.run_id {envelope.run_id!r}"
+        )
+    if (
+        context.provenance is not None
+        and context.provenance.simulation_time_s is not None
+        and context.provenance.simulation_time_s != envelope.simulation_time_s
+    ):
+        raise ObservationContextError(
+            f"provenance.simulation_time_s "
+            f"{context.provenance.simulation_time_s!r} must equal "
+            f"envelope.simulation_time_s {envelope.simulation_time_s!r}"
         )
 
     new_context: dict[str, Any] = dict(envelope.context)

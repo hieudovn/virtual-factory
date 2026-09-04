@@ -173,12 +173,19 @@ class EventFact:
             # When both the explicit event identity and the provenance authority
             # are present they must agree (optional fields need not exist, but no
             # two authorities may contradict each other).
+            # The full scope_path itself carries authoritative workspace identity:
+            # provenance.workspace_id must match it EVEN when the explicit
+            # workspace_id is omitted (C02).
+            event_workspace = self.workspace_id
+            if self.scope_path is not None:
+                event_workspace = self.scope_path.workspace_id
             if (
-                self.workspace_id is not None
-                and self.provenance.workspace_id != self.workspace_id
+                event_workspace is not None
+                and self.provenance.workspace_id != event_workspace
             ):
                 raise EventFactError(
-                    "provenance.workspace_id must match workspace_id"
+                    "provenance.workspace_id must match the event's "
+                    "workspace/scope authority"
                 )
             if (
                 self.run_id is not None
@@ -194,6 +201,13 @@ class EventFact:
             ):
                 raise EventFactError(
                     "provenance.scope_path must match scope_path"
+                )
+            if (
+                self.provenance.simulation_time_s is not None
+                and self.provenance.simulation_time_s != self.simulation_time_s
+            ):
+                raise EventFactError(
+                    "provenance.simulation_time_s must match simulation_time_s"
                 )
 
         # Deep-freeze the payload so no retroactive dict mutation is possible.

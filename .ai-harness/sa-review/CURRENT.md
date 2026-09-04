@@ -1,13 +1,13 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G3-C01
-Status: READY FOR SA REVIEW (C01: Observation/Event run-identity coherence fail-closed; initial-active alarm assert history)
+Task: VF-vNEXT-G3-C02
+Status: READY FOR SA REVIEW (C02: full scope/provenance/time coherence; presence-based reserved vf.* key checks)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate)
 Prerequisite: G2 PASS / COMPLETE at fec6fe4127634fcf31e1c90ce23dd9a7457ebda5 (#47 CLOSED)
-Reviewed head: 910317f4bd66877aeda6ae264f7ed9cc1860845f
+Reviewed head: f2beb14193880f8676d4c70b844a906c969721bc
 
 Gate type:
-Accelerated implementation gate — Align Observation / Event / Alarm Production Contracts (G3), correction C01
+Accelerated implementation gate — Align Observation / Event / Alarm Production Contracts (G3), correction C02
 
 Architecture baseline:
 ARCH-01..06 accepted; G2 base fec6fe4127634fcf31e1c90ce23dd9a7457ebda5
@@ -41,26 +41,38 @@ C01 corrections applied:
   then clear => [assert, clear]; stable active/inactive emits no duplicate
   facts. SignalValue/thresholds/AlarmState preserved.
 
+C02 corrections applied:
+- C02-1 full scope/time coherence: observation context.scope_path must equal
+  provenance.scope_path when both present; provenance.simulation_time_s (when
+  present) must equal envelope.simulation_time_s; EventFact scope_path is the
+  workspace authority (provenance.workspace_id must match it even when explicit
+  workspace_id omitted); event/provenance scope_path and simulation_time_s must
+  agree when both present. Optional fields never fabricated.
+- C02-2 reserved vf.* key checks use KEY PRESENCE (key in current): a present
+  key whose value is None is still pre-existing and cannot be silently
+  overwritten; any differing existing value fails closed.
+
 Test / regression results:
-- New G3 tests: 44 passed (incl. C01 negatives/positives).
+- New G3 tests: 51 passed (incl. C01 + C02).
 - Existing observation package (M5-S01..S05): 244 passed.
 - Telemetry/alarm/event group: 27 passed.
 - G2 provenance: 36 passed.
 - G1 workspace: 32 passed.
-- ASSY regression oracle: 354 passed (clean re-run).
+- ASSY regression oracle: 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1759 passed (0 failures).
+- Full repository suite: 1766 passed (0 failures).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
-Pre-existing ASSY id()-flake (test_demo_composition.py::TestReset::
-test_reset_creates_fresh_runtimes, same family as test_reset_creates_fresh_
-configs) documented separately; passes when the file runs alone; oracle re-run
-clean.
+Pre-existing ASSY id()-flake family (test_demo_composition.py::TestReset::
+test_reset_creates_fresh_runtimes / test_reset_creates_fresh_configs)
+documented separately; passes when the file runs alone; no flake surfaced in
+the C02 full run.
 
 Deferred (NOT implemented): capability/readiness, G4 coordinator/ports,
 G5 ASSY federation, G6 UI, G7 run-control/replay, G8, G9 semantic binding,
 G10 SH WTP runtime, historian/database, alarm workflow/notification,
-real-plant acknowledgement authority.
+real-plant acknowledgement authority. No redesign of ObservationEnvelope /
+ProvenanceV2 / EventStore / alarm semantics.
 
 STOP conditions: none triggered.
 
@@ -70,7 +82,7 @@ Report:
 .ai-harness/sa-review/reports/VF-vNEXT-G3.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G3/ (8 files: 01…08; 08 = C01)
+.ai-harness/sa-review/evidence/VF-vNEXT-G3/ (9 files: 01…09; 08 = C01, 09 = C02)
 
 
 
