@@ -1,126 +1,79 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G3-C04
-Status: READY FOR SA REVIEW (C04: vf.provenance validated as full ProvenanceV2 serialization; immutable canonical JSON provenance)
+Task: VF-vNEXT-G4
+Status: READY FOR SA REVIEW
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate)
-Prerequisite: G2 PASS / COMPLETE at fec6fe4127634fcf31e1c90ce23dd9a7457ebda5 (#47 CLOSED)
-Reviewed head: c234dbb4b51979e40b2a3affa6d1c1a3876d160d
+Prerequisite: G3 PASS / COMPLETE at 8edb9f4cce0410ea2f0b15e6e1eb1607c4fdc5e7 (#48 CLOSED)
 
 Gate type:
-Accelerated implementation gate — Align Observation / Event / Alarm Production Contracts (G3), correction C04
+Accelerated implementation gate — Implement Composition Graph + Coordinator + Typed Boundary Ports (G4)
 
 Architecture baseline:
-ARCH-01..06 accepted; G2 base fec6fe4127634fcf31e1c90ce23dd9a7457ebda5
+ARCH-01..06 accepted; G3 base 8edb9f4cce0410ea2f0b15e6e1eb1607c4fdc5e7
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
-Implemented:
-- telemetry/event_fact.py (new): dependency-light typed immutable platform
-  EventFact (event_id/type/category, occurrence time, source/severity/status,
-  deep-frozen payload, G1 workspace/scope + G2 provenance only when explicit)
-  + AlarmEventFact(EventFact) — Alarm specialization/category (category=ALARM).
-- telemetry/event_store.py (adapted): append-only typed EventFact store (typed
-  append, deterministic append order, read-only events tuple, no
-  mutation/deletion; no historian).
-- telemetry/alarm_manager.py (additive): evaluate()/SignalValue/AlarmState
-  unchanged; emits immutable AlarmEventFacts (assert/clear); AlarmState = mutable
-  DERIVED projection, never mutates facts.
-- observation/alignment.py (new): non-fabricating G1/G2 context seam
-  (ObservationStructuralContext + carry_structural_context); legacy envelope
-  unchanged when no context.
-- Runtime state stays the sole mutable truth; observation/event objects are
-  downstream facts only; no PIM canonical/evidence fabricated.
+Implemented (new package src/virtual_factory/composition/):
+- ports.py: typed boundary ports — PortRef (owner scope + port id), BoundaryPort
+  (direction in/out; category material/utility/information/coordination;
+  optional unit/descriptor), PortRegistry, check_port_compatibility (fail-closed
+  direction/category/unit/descriptor rules).
+- graph.py: CompositionGraph + CompositionBinding — directed declared bindings
+  over G1 identity; CYCLES ALLOWED (no DAG); deterministic enumeration;
+  dangling/duplicate edge id/duplicate logical binding/cross-workspace fail
+  closed; fan-out deterministic; disconnected nodes allowed.
+- transfer.py: BoundaryTransfer — detached/immutable staged exchange value;
+  deep-frozen JSON-compatible payload (no callable/runtime-object reference);
+  workspace identity fail-closed.
+- participant.py: ExecutableParticipant protocol (mechanism-neutral:
+  scope_path/current_time_s/advance_to/commit_transfers; no one-engine-per-scope,
+  no identical dt/scheduler).
+- coordinator.py: Coordinator + WindowOutcome — deterministic
+  validate -> advance -> stage -> validate transfers -> commit -> finalize;
+  fail-closed failure semantics WITHOUT false rollback claims.
 
-C01 corrections applied:
-- C01-1 run-identity coherence (fail-closed): context.run_id must equal
-  ObservationEnvelope.run_id; provenance.run_id must equal envelope.run_id (all
-  three agree when both present); EventFact explicit run_id/scope_path must
-  agree with an accompanying ProvenanceV2.
-- C01-2 alarm history: first-observed INACTIVE = baseline (no fact); first-
-  observed ACTIVE emits an assert AlarmEventFact (no orphan clear); first active
-  then clear => [assert, clear]; stable active/inactive emits no duplicate
-  facts. SignalValue/thresholds/AlarmState preserved.
+Frozen invariants preserved:
+- Containment tree separate from composition graph; cycles allowed.
+- Coordinator is a composition service, not a domain engine (owns no domain truth).
+- Exchange only via declared typed boundary ports; no direct cross-scope state
+  mutation; staged transfer detached/immutable.
+- Deterministic ordering independent of declaration/registration order (sorted by
+  structural identity).
+- Container-only scope cannot be registered as executable participant.
+- No PIM canonical identity fabricated; no false rollback claim.
+- No AssyLineRuntime rewrite; no G5+.
 
-C02 corrections applied:
-- C02-1 full scope/time coherence: observation context.scope_path must equal
-  provenance.scope_path when both present; provenance.simulation_time_s (when
-  present) must equal envelope.simulation_time_s; EventFact scope_path is the
-  workspace authority; event/provenance scope_path and simulation_time_s must
-  agree when both present. Optional fields never fabricated.
-- C02-2 reserved vf.* key checks use KEY PRESENCE (key in current): a present
-  key whose value is None is still pre-existing and cannot be silently
-  overwritten.
-
-C03 corrections + self-audit applied:
-- Before merge, carry_structural_context validates the ENTIRE existing reserved
-  vf.* state against the authoritative envelope + incoming workspace, even when
-  the incoming optional field is omitted (omission is NOT permission to retain
-  stale contradictory reserved authority).
-  - existing vf.workspace_id must equal incoming context.workspace_id;
-  - existing vf.run_id must equal ObservationEnvelope.run_id (all present run
-    authorities agree);
-  - existing vf.scope_path must be a valid canonical structural path rooted in
-    the same workspace and agree with every present scope authority (existing /
-    incoming context / incoming provenance);
-  - existing vf.provenance must be structurally compatible with the frozen
-    workspace/run/scope/time authorities and, when an incoming provenance is
-    also present, must equal it (no silent overwrite);
-  - coherent existing reserved state remains accepted; context=None returns the
-    same envelope unchanged (legacy).
-- Self-audit matrix covered for workspace / run_id / scope_path /
-  simulation_time_s / provenance across envelope field / pre-existing vf.* /
-  incoming context-provenance for absent / present-same / present-conflict; any
-  two present authorities that differ fail closed; no value fabricated; no
-  ObservationEnvelope/ProvenanceV2 redesign (evidence 10).
-
-C04 corrections applied (provenance lifecycle):
-- Defect 1: pre-existing vf.provenance must be a VALID G2 ProvenanceV2
-  serialization — rehydrated through the G2 enums/invariants exactly
-  (OriginKind/DataStatus/Fidelity + ProvenanceV2.__post_init__; exact field set;
-  faithful to_dict round-trip); invalid origin_kind/data_status/fidelity,
-  invalid time/step, malformed/missing/extra fields fail closed. No competing /
-  weaker validator. Optional fields preserved; nothing fabricated.
-- Defect 2: carried provenance is an immutable canonical JSON string of
-  ProvenanceV2.to_dict() (no nested-mutable dict in Observation context), so a
-  completed Observation's provenance cannot be mutated after validation;
-  serialization stays deterministic and plain-data compatible. Pre-existing
-  provenance (dict or string) is validated and normalized to the canonical
-  string. ObservationEnvelope/ProvenanceV2 NOT redesigned (evidence 11).
-- Self-audit of full chain ProvenanceV2 -> serialized vf.provenance ->
-  ObservationEnvelope.context -> read/to_dict consumer: validity not weakened,
-  no post-validation mutation, C01-C03 coherence intact, no PIM
-  canonical/evidence fabricated, legacy context=None unchanged (evidence 11).
+Self-audit (5 invariant matrices, evidence 06): identity/authority; port
+compatibility; graph/order; time/window; mutation/isolation — each audited with
+positive/negative tests; no same-class defect left; no new architecture decision
+required.
 
 Test / regression results:
-- New G3 tests: 78 passed (incl. C01 + C02 + C03 + C04).
-- Existing observation package (M5-S01..S05): 244 passed.
-- Telemetry/alarm/event group: 27 passed.
-- G2 provenance: 36 passed.
+- New G4 tests: 43 passed.
 - G1 workspace: 32 passed.
+- G2 provenance: 36 passed.
+- G3 Observation/Event/Alarm (+ M5 + alarm_manager): 328 passed.
+- Core graph/port/runtime: 21 passed.
+- Discrete runtime/scheduler: 279 passed.
 - ASSY regression oracle: 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1793 passed (0 failures).
+- Full repository suite: 1836 passed (0 failures).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
-Pre-existing ASSY id()-flake family (test_demo_composition.py::TestReset::
-test_reset_creates_fresh_runtimes / test_reset_creates_fresh_configs)
-documented separately; passes when the file runs alone; no flake surfaced in
-the C04 full run.
-
-Deferred (NOT implemented): capability/readiness, G4 coordinator/ports,
-G5 ASSY federation, G6 UI, G7 run-control/replay, G8, G9 semantic binding,
-G10 SH WTP runtime, historian/database, alarm workflow/notification,
-real-plant acknowledgement authority. No redesign of ObservationEnvelope /
-ProvenanceV2 / EventStore / alarm semantics.
+Deferred (NOT implemented): G5 ASSY federation, G6 UI, G7 run-control/UI/API,
+replay/restart policy, G8, G9 semantic binding, G10 SH-WTP runtime, final
+material/energy schemas, numerical coupling solver, historian/database,
+real-plant control, frontend changes, AssyLineRuntime rewrite, legacy WTP
+mini-engine migration/deletion.
 
 STOP conditions: none triggered.
 
-G4 started: NO
+G5 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G3.md
+.ai-harness/sa-review/reports/VF-vNEXT-G4.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G3/ (11 files: 01…11; 08 = C01, 09 = C02, 10 = C03 + self-audit matrix, 11 = C04 provenance lifecycle)
+.ai-harness/sa-review/evidence/VF-vNEXT-G4/ (8 files: 01…08)
 
 
 
