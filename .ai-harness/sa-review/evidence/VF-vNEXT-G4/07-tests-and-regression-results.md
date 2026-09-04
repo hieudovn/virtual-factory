@@ -6,17 +6,18 @@ Command: `python -m pytest tests/test_composition_ports.py
 tests/test_composition_graph.py tests/test_composition_transfer.py
 tests/test_composition_coordinator.py -q`
 
-Result: **53 passed** (0 failures). Includes the C01 authority corrections
+Result: **56 passed** (0 failures). Includes the C01 authority corrections
 (producer ownership, window authority, graph-level multi-producer, endpoint
-scope resolution, participant time contract) and the C02 authority corrections
+scope resolution, participant time contract), the C02 authority corrections
 (producer coordination interval [before, target]; execution-time
-registered-vs-current scope_path identity).
+registered-vs-current scope_path identity) and the C03 authority correction
+(registered-vs-current scope_path identity also coherent across advance_to()).
 
 ## 2. Regression groups (Issue #49)
 
 | Group | Result |
 |---|---|
-| New G4 tests | **53 passed** (incl. C01 + C02) |
+| New G4 tests | **56 passed** (incl. C01 + C02 + C03) |
 | G1 workspace | **32 passed** |
 | G2 provenance | **36 passed** |
 | G3 Observation/Event/Alarm (+ M5 observation + alarm_manager) | **328 passed** |
@@ -24,7 +25,7 @@ registered-vs-current scope_path identity).
 | Discrete runtime/scheduler (discrete_engine/kernel/run_controller + event_trace) | **279 passed** |
 | ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1846 passed** (0 failures) |
+| Full repository suite | **1849 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 3. Flakes
@@ -37,4 +38,4 @@ None surfaced in the G4 runs (ASSY oracle and full suite both clean).
 - `python -m compileall -q src/virtual_factory/composition` → exit 0.
 - Task-contract preflight: baseline matches (`origin/main` =
   `f5261c8ca18cd4e01779c0274b55270ba028b4e5`); clean after commit (evidence 08).
-- Changed-file validation against the G4 allowlist: PASS (6 files, C02 commit).
+- Changed-file validation against the G4 allowlist: PASS (6 files, C03 commit).

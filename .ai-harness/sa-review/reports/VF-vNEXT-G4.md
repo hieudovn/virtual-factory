@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G4` (GitHub Issue #49) + C01 + C02 |
+| Task ID | `VF-vNEXT-G4` (GitHub Issue #49) + C01 + C02 + C03 |
 | Program | Implementation phase (G4; only authorized implementation gate) |
 | G3 base (required) | `8edb9f4cce0410ea2f0b15e6e1eb1607c4fdc5e7` |
 | Branch | `feature/vf-vnext-g4` |
@@ -43,7 +43,11 @@ direct cross-scope state mutation.
   interval [before, target_time_s] (equality allowed; no epsilon; no global
   timestep); and the registered structural identity is re-verified against
   `participant.scope_path` immediately before advance (drift or invalid type
-  fails closed).
+  fails closed). C03 enforcement: after a successful advance_to(target) and
+  before staging its outputs, `participant.scope_path` is re-read again through
+  the participant contract; it must still be a StructuralPath exactly equal to
+  the registered key (drift/invalid type DURING advance_to() fails the window
+  before any boundary commit; both sides of the call verified).
 
 No forbidden file modified; `workspace`, `provenance`, `observation`, `telemetry`,
 `discrete`, `assembly`, `core`, `ui`, `integration` untouched.
@@ -75,7 +79,7 @@ left unaddressed; no new architecture/schema decision required.
 
 | Suite | Result |
 |---|---|
-| New G4 tests | **53 passed** (incl. C01 + C02) |
+| New G4 tests | **56 passed** (incl. C01 + C02 + C03) |
 | G1 workspace | **32 passed** |
 | G2 provenance | **36 passed** |
 | G3 Observation/Event/Alarm (+ M5 + alarm) | **328 passed** |
@@ -83,7 +87,7 @@ left unaddressed; no new architecture/schema decision required.
 | Discrete runtime/scheduler | **279 passed** |
 | ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1846 passed** (0 failures) |
+| Full repository suite | **1849 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 7. STOP-condition assessment (evidence 08)
@@ -105,18 +109,19 @@ None triggered.
 | No direct cross-scope mutation path | PASS |
 | Failure semantics explicit and honest about lack of rollback | PASS |
 | Invariant matrices / self-audit complete | PASS |
-| Regressions pass (anomalies honestly evidenced) | PASS (53+32+36+328+21+279+354+61+full 1846) |
+| Regressions pass (anomalies honestly evidenced) | PASS (56+32+36+328+21+279+354+61+full 1849) |
 | Branch/head pushed and working tree clean | PASS (after push) |
 
 ## 9. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G4/` — 10 files (01…10; 09 = C01
-corrections + adversarial self-audit; 10 = C02 corrections).
+`.ai-harness/sa-review/evidence/VF-vNEXT-G4/` — 11 files (01…11; 09 = C01
+corrections + adversarial self-audit; 10 = C02 corrections; 11 = C03
+corrections + final bounded authority-matrix review).
 
 ## 10. Final status
 
 ```text
-VF-vNEXT-G4-C02 — READY FOR SA REVIEW
+VF-vNEXT-G4-C03 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G5 is NOT started.

@@ -543,3 +543,91 @@ def test_post_registration_invalid_scope_type_fails_closed() -> None:
     outcome = c.run_window("w1", 2.0)
     assert outcome.status == "failed"
     assert "not a StructuralPath" in (outcome.failure or "")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# C03: participant scope identity must stay coherent ACROSS advance_to()
+# — registered scope ↔ pre-advance scope_path ↔ post-advance scope_path.
+# ═══════════════════════════════════════════════════════════════════
+
+class MidAdvanceDrifter:
+    """Participant that mutates its reported scope_path DURING advance_to().
+
+    Registered as scope A; reports A at the C02 pre-advance check; flips
+    scope_path_value to `post_value` inside advance_to(); returns normally with
+    no transfers and lands at the boundary. Used to prove the C03 post-advance
+    identity re-read fails the window before any boundary commit.
+    """
+
+    def __init__(self, scope_path, *, post_value, dt_s=1.0):
+        self.scope_path_value = scope_path
+        self._post = post_value
+        self._dt = dt_s
+        self._time = 0.0
+        self.received = []
+
+    @property
+    def scope_path(self):
+        return self.scope_path_value
+
+    @property
+    def current_time_s(self):
+        return self._time
+
+    def advance_to(self, target_time_s):
+        while self._time < target_time_s:
+            self._time = min(self._time + self._dt, target_time_s)
+        self.scope_path_value = self._post  # mutate DURING advance_to()
+        return ()
+
+    def commit_transfers(self, inbound):
+        self.received.extend(inbound)
+
+
+def test_scope_drift_during_advance_fails_closed() -> None:
+    """C03: registered A, reports A pre-advance, drifts to B DURING
+    advance_to(), emits nothing and lands at the boundary -> fail."""
+    drifter = MidAdvanceDrifter(_A, post_value=_B)
+    c = _coordinator()
+    c.register(drifter)
+    c.register(Participant(_B, dt_s=1.0))
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "changed during advance_to" in (outcome.failure or "")
+    assert "drifted" in (outcome.failure or "")
+    assert outcome.committed == ()  # failed before any boundary commit
+    # The drifter reached the boundary but the window still failed.
+    assert drifter.current_time_s == 2.0
+
+
+def test_scope_invalid_type_during_advance_fails_closed() -> None:
+    """C03: registered A, mutates to a non-StructuralPath DURING advance_to()
+    -> fail."""
+    drifter = MidAdvanceDrifter(_A, post_value="W/AREA/UNIT-A")
+    c = _coordinator()
+    c.register(drifter)
+    c.register(Participant(_B, dt_s=1.0))
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "changed during advance_to" in (outcome.failure or "")
+    assert "not a StructuralPath" in (outcome.failure or "")
+    assert outcome.committed == ()
+
+
+def test_coherent_identity_across_advance_is_accepted() -> None:
+    """C03 positive: identity stable before AND after advance remains accepted
+    and the exchange completes normally."""
+    a = Participant(
+        _A,
+        dt_s=1.0,
+        events=[(1.0, _transfer("tA", (_A, "out"), (_B, "in"), "e1"))],
+    )
+    b = Participant(_B, dt_s=1.0)
+    c = _coordinator()
+    c.register(a)
+    c.register(b)
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "completed"
+    assert outcome.committed == ("tA",)
+    assert a.current_time_s == 2.0
+    assert b.current_time_s == 2.0

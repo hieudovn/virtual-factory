@@ -163,29 +163,20 @@ class Coordinator:
         for key in order:
             participant = self._participants[key]
 
-            # C02-2: the registered structural identity must remain coherent at
-            # execution time. The participant protocol exposes scope_path as its
-            # owning executable scope; drift to another scope (or a foreign/
-            # nonexistent/container-only path, or an invalid type) fails closed
-            # before this participant advances. We never re-key/re-register.
-            current_scope = getattr(participant, "scope_path", None)
-            if not isinstance(current_scope, StructuralPath):
+            # C02-2 (pre-advance): the registered structural identity must remain
+            # coherent at execution time. The participant protocol exposes
+            # scope_path as its owning executable scope; drift to another scope
+            # (or a foreign/nonexistent/container-only path, or an invalid type)
+            # fails closed before this participant advances. Never re-key/
+            # re-register.
+            reason = self._scope_identity_failure(participant, key)
+            if reason is not None:
                 return _failure(
                     window_id,
                     target_time_s,
                     order,
                     (),
-                    f"participant {key} scope_path is not a StructuralPath, "
-                    f"got {type(current_scope).__name__}",
-                )
-            if current_scope.as_string() != key:
-                return _failure(
-                    window_id,
-                    target_time_s,
-                    order,
-                    (),
-                    f"participant {key} scope_path drifted to "
-                    f"{current_scope.as_string()!r}",
+                    f"participant {key} {reason}",
                 )
 
             # Time preconditions (verified by the coordinator, not trusted).
@@ -212,6 +203,25 @@ class Coordinator:
                     order,
                     (),
                     f"participant advance failed for {key}: {exc}",
+                )
+
+            # C03 (post-advance): a successful advance_to(target) must not change
+            # the participant's structural identity. A broken/mutable participant
+            # could report A before the call and flip scope_path to B (or an
+            # invalid type) DURING advance_to(); that drift must fail the window
+            # before any of its outputs are accepted/staged and before any
+            # boundary commit. This is a deterministic pre/post contract around
+            # the call — no continuous polling, no concurrency semantics, no
+            # re-key/re-register.
+            reason = self._scope_identity_failure(participant, key)
+            if reason is not None:
+                return _failure(
+                    window_id,
+                    target_time_s,
+                    order,
+                    (),
+                    f"participant {key} scope identity changed during "
+                    f"advance_to: {reason}",
                 )
 
             # Time postcondition: a participant that reports success must have
@@ -343,6 +353,26 @@ class Coordinator:
         )
 
     # ── internal validation ──────────────────────────────────────
+
+    @staticmethod
+    def _scope_identity_failure(participant, key: str) -> str | None:
+        """Re-read participant.scope_path through the participant contract.
+
+        Returns a failure reason when it is no longer a StructuralPath exactly
+        equal to the registered scope key, else None. Used on BOTH sides of the
+        advance_to call (C02-2 pre-advance; C03 post-advance) so that no
+        authority conflict (registered key vs pre-advance scope_path vs
+        post-advance scope_path) can be silently re-keyed/re-registered away.
+        """
+        current_scope = getattr(participant, "scope_path", None)
+        if not isinstance(current_scope, StructuralPath):
+            return (
+                f"scope_path is not a StructuralPath, got "
+                f"{type(current_scope).__name__}"
+            )
+        if current_scope.as_string() != key:
+            return f"scope_path drifted to {current_scope.as_string()!r}"
+        return None
 
     @staticmethod
     def _require_finite_time(participant, label: str) -> float:
