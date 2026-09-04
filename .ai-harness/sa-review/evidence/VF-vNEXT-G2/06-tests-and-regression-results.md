@@ -10,21 +10,26 @@ python -m pytest tests/test_provenance_context.py tests/test_provenance_envelope
     tests/test_telemetry_provenance_threading.py -q
 ```
 
-Result: **32 passed** (0 failures).
+Result: **36 passed** (0 failures).
 
 Covers (Issue #47 "Required tests / proofs"):
 - generic context immutable + deterministic serialization;
 - identity concepts not collapsed (workspace/scope/run/scenario/namespace/
   runtime signal vs absent canonical);
+- workspace/scope identity consistency fail-closed (C01-1: mismatched
+  `scope_path.workspace_id` rejected in `RunContextV2`, `ProvenanceV2`, and via
+  the discrete adapter);
 - continuous + discrete + batch + hybrid share the same generic contract without
   engine-cardinality assumptions;
 - missing/invalid required identity fails closed;
 - origin_kind cannot become plant truth; only allowed data-status/fidelity
   accepted;
 - semantic pins immutable/serialized, no PIM validation;
-- runtime_signal_id distinct from canonical; no fabricated canonical id;
+- envelope carries NO frame-level runtime_signal_id (C01-2);
 - telemetry provenance deterministic + additive; legacy seam unchanged;
-- output-policy behavior unchanged.
+- output-policy behavior unchanged;
+- per-signal runtime_signal_id derived from each signal's own identity; distinct
+  signals never share a fabricated frame-level runtime identity (C01-2).
 
 ## 2. Targeted regression (G1 + discrete + telemetry/observation)
 
@@ -53,8 +58,8 @@ Result: **61 passed** (0 failures).
 
 `python -m pytest tests -q`
 
-Result: **1711 passed in 19.09s (0 failures)**. No baseline anomalies in this
-run (1679 pre-G2 + 32 new G2 tests).
+Result: **1715 passed in 24.04s (0 failures)**. No baseline anomalies in this
+run (1679 pre-G2 + 36 G2 tests incl. C01).
 
 ## 6. Lint / type / compile
 

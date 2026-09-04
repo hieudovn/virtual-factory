@@ -82,16 +82,35 @@ class ProvenancedFrame:
         """Return the signal values as a plain list (legacy interop)."""
         return list(self.signals)
 
-    def to_records(self) -> list[dict[str, Any]]:
-        """Flatten each signal record plus the provenance envelope (additive).
+    def _signal_runtime_id(self, signal: SignalValue) -> str:
+        """Deterministic VF-internal per-signal execution key.
 
-        Signal fields are preserved verbatim; provenance fields are added as a
-        separate per-record provenance section (never overwriting signal fields,
-        and never fabricating a PIM canonical id).
+        Rooted in the signal's own structural identity (the effective scope path,
+        or the workspace when no scope is present) plus its signal name. Two
+        distinct signals therefore never share a runtime identity. This key is a
+        VF-internal execution key — DISTINCT from any PIM ``canonical_signal_id``
+        (which is never fabricated here).
+        """
+        root = (
+            self.provenance.scope_path.as_string()
+            if self.provenance.scope_path is not None
+            else self.provenance.workspace_id
+        )
+        return f"{root}/{signal.name}"
+
+    def to_records(self) -> list[dict[str, Any]]:
+        """Flatten each signal record plus provenance (additive).
+
+        Signal fields are preserved verbatim. The shared run/frame provenance is
+        copied per record, and a per-signal ``runtime_signal_id`` is derived from
+        that signal's own identity (never one frame-level value stamped on every
+        signal, and never a fabricated PIM canonical id).
         """
         prov = self.provenance.to_dict()
         records: list[dict[str, Any]] = []
         for signal in self.signals:
+            record_prov = dict(prov)
+            record_prov["runtime_signal_id"] = self._signal_runtime_id(signal)
             record = {
                 "name": signal.name,
                 "value": signal.value,
@@ -100,7 +119,7 @@ class ProvenancedFrame:
                 "quality": signal.quality,
                 "timestamp_s": signal.timestamp_s,
                 "source": signal.source,
-                "provenance": prov,
+                "provenance": record_prov,
             }
             records.append(record)
         return records

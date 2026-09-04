@@ -55,10 +55,16 @@ class RunContextV2:
     def __post_init__(self) -> None:
         _require_non_empty_str(self.workspace_id, "workspace_id")
         _require_non_empty_str(self.run_id, "run_id")
-        if self.scope_path is not None and not isinstance(self.scope_path, StructuralPath):
-            raise RunContextV2Error(
-                f"scope_path must be StructuralPath, got {type(self.scope_path).__name__}"
-            )
+        if self.scope_path is not None:
+            if not isinstance(self.scope_path, StructuralPath):
+                raise RunContextV2Error(
+                    f"scope_path must be StructuralPath, got {type(self.scope_path).__name__}"
+                )
+            if self.scope_path.workspace_id != self.workspace_id:
+                raise RunContextV2Error(
+                    f"scope_path workspace_id {self.scope_path.workspace_id!r} must "
+                    f"match workspace_id {self.workspace_id!r}"
+                )
         for name in ("scenario_id", "scenario_version", "model_id", "model_version",
                      "profile", "environment", "source_run_id"):
             value = getattr(self, name)

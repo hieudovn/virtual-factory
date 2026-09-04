@@ -17,11 +17,17 @@ class ProvenanceV2:
     semantic_contract_version: str | None = None
     semantic_contract_sha: str | None = None
     evidence_note: str | None = None
-    runtime_signal_id: str | None = None     # VF-internal key, NOT canonical
     simulation_time_s: float | None = None
     step: int | None = None
     def to_dict(self) -> dict  # deterministic serialization
 ```
+
+C01 note: `runtime_signal_id` is NOT a frame-level field (one frame-level value
+would be stamped on every signal). It is derived per signal at record
+construction in `ProvenancedFrame` (evidence 05 / 08).
+
+`scope_path` (when present) MUST root in `workspace_id`:
+`scope_path.workspace_id == workspace_id`, else `ProvenanceError` (C01-1).
 
 ## 2. Simulation truth labels (fail-closed)
 
@@ -36,10 +42,13 @@ class ProvenanceV2:
 ## 3. Identity separation
 
 - `runtime_signal_id` is a VF-internal execution key (e.g.
-  `W.UNIT.FT-101`) — explicitly DISTINCT from the PIM-owned
-  `canonical_signal_id`.
+  `W/UNIT/FT-101`) — explicitly DISTINCT from the PIM-owned
+  `canonical_signal_id`. It is per-signal: derived at record construction in
+  `ProvenancedFrame` (never a single frame-level value; C01-2).
 - `ProvenanceV2` has NO `canonical_signal_id` field and never serializes one;
   VF never fabricates PIM canonical identity (B1).
+- `scope_path.workspace_id` must equal `workspace_id` when `scope_path` is
+  present (C01-1).
 
 ## 4. Semantic pins (opaque, immutable — no PIM validation)
 

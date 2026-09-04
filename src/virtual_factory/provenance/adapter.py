@@ -64,7 +64,6 @@ def to_provenance_v2(
     semantic_contract_version: str | None = None,
     semantic_contract_sha: str | None = None,
     evidence_note: str | None = None,
-    runtime_signal_id: str | None = None,
     simulation_time_s: float | None = None,
     step: int | None = None,
 ) -> ProvenanceV2:
@@ -84,7 +83,6 @@ def to_provenance_v2(
         semantic_contract_version=semantic_contract_version,
         semantic_contract_sha=semantic_contract_sha,
         evidence_note=evidence_note,
-        runtime_signal_id=runtime_signal_id,
         simulation_time_s=simulation_time_s,
         step=step,
     )

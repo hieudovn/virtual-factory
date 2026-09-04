@@ -13,6 +13,7 @@ from virtual_factory.provenance import (
     DataStatus,
     OriginKind,
     RunContextV2,
+    RunContextV2Error,
     from_discrete_run_context,
     to_provenance_v2,
 )
@@ -90,3 +91,15 @@ def test_no_duplicate_authority() -> None:
         from_discrete_run_context(RunContext(run_id="r", model_id="m"), workspace_id="W"),
         RunContextV2,
     )
+
+
+def test_adapter_cannot_create_mismatched_scope_context() -> None:
+    """The discrete adapter must not produce a generic context whose scope path
+    roots in a different workspace than workspace_id (fail closed)."""
+    rc = RunContext(run_id="run-1", model_id="model-1")
+    with pytest.raises(RunContextV2Error):
+        from_discrete_run_context(
+            rc,
+            workspace_id="W1",
+            scope_path=StructuralPath(("W2", "ASSY", "ASSY-SL01")),
+        )

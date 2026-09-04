@@ -6,9 +6,12 @@ runtime truth, evidence maturity, or PIM semantic identity.
 Identity separation (frozen):
 
 - ``workspace_id``, ``scope_path``, ``run_id``, ``scenario_id`` are VF structural/
-  runtime identity;
-- ``runtime_signal_id`` is a VF-internal execution key — DISTINCT from the
-  PIM-owned ``canonical_signal_id`` (which G2 neither stores nor fabricates);
+  runtime identity; a present ``scope_path`` MUST root in ``workspace_id``
+  (``scope_path.workspace_id == workspace_id``) — fail closed otherwise.
+- this envelope is RUN/FRAME provenance only; per-signal execution identity
+  (``runtime_signal_id``) is DERIVED per signal at record construction in
+  ``telemetry_frame``, distinct from the PIM-owned ``canonical_signal_id``
+  (which G2 neither stores nor fabricates);
 - ``origin_kind``/``fidelity``/``data_status`` are frozen simulation-truth labels.
 
 G2 does NOT implement PIM semantic binding (G9). ``semantic_contract_version``
@@ -43,17 +46,22 @@ class ProvenanceV2:
     semantic_contract_version: str | None = None
     semantic_contract_sha: str | None = None
     evidence_note: str | None = None
-    runtime_signal_id: str | None = None
     simulation_time_s: float | None = None
     step: int | None = None
 
     def __post_init__(self) -> None:
         _require_non_empty_str(self.workspace_id, "workspace_id")
         _require_non_empty_str(self.run_id, "run_id")
-        if self.scope_path is not None and not isinstance(self.scope_path, StructuralPath):
-            raise ProvenanceError(
-                f"scope_path must be StructuralPath, got {type(self.scope_path).__name__}"
-            )
+        if self.scope_path is not None:
+            if not isinstance(self.scope_path, StructuralPath):
+                raise ProvenanceError(
+                    f"scope_path must be StructuralPath, got {type(self.scope_path).__name__}"
+                )
+            if self.scope_path.workspace_id != self.workspace_id:
+                raise ProvenanceError(
+                    f"scope_path workspace_id {self.scope_path.workspace_id!r} must "
+                    f"match workspace_id {self.workspace_id!r}"
+                )
         if self.scenario_id is not None:
             _require_non_empty_str(self.scenario_id, "scenario_id")
 
@@ -77,7 +85,7 @@ class ProvenanceV2:
             )
 
         for name in ("semantic_contract_version", "semantic_contract_sha",
-                     "evidence_note", "runtime_signal_id"):
+                     "evidence_note"):
             value = getattr(self, name)
             if value is not None:
                 _require_non_empty_str(value, name)
@@ -106,7 +114,6 @@ class ProvenanceV2:
             "semantic_contract_version": self.semantic_contract_version,
             "semantic_contract_sha": self.semantic_contract_sha,
             "evidence_note": self.evidence_note,
-            "runtime_signal_id": self.runtime_signal_id,
             "simulation_time_s": self.simulation_time_s,
             "step": self.step,
         }

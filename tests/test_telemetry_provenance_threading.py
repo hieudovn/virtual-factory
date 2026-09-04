@@ -85,22 +85,49 @@ def test_output_policy_behavior_unchanged() -> None:
     assert "internal_truth" not in categories
 
 
-def test_no_fabricated_canonical_signal_id() -> None:
+def test_no_fabricated_canonical_signal_id_and_per_signal_runtime_id() -> None:
     config, engine = _engine()
     provenance = ProvenanceV2(
         workspace_id="W",
         run_id="run-1",
-        runtime_signal_id="W.UNIT.FT-101",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
     )
     provenanced = build_provenanced_frame(
         config, engine.state, engine.assembly.output_policy, timestamp_s=0.0,
         provenance=provenance,
     )
     records = provenanced.to_records()
+    assert len(records) >= 2
+    seen: set[str] = set()
     for record in records:
         prov = record["provenance"]
         assert "canonical_signal_id" not in prov
-        assert prov["runtime_signal_id"] == "W.UNIT.FT-101"
+        runtime_id = prov["runtime_signal_id"]
+        # Per-signal identity derives from the signal's own name — never one
+        # frame-level value duplicated across all signals.
+        assert runtime_id == f"W/AREA/UNIT/{record['name']}"
+        assert runtime_id not in seen
+        seen.add(runtime_id)
+
+
+def test_distinct_signals_do_not_share_fabricated_runtime_identity() -> None:
+    """Multi-signal proof: a frame with many signals must not stamp one
+    fabricated frame-level runtime identity onto all of them."""
+    config, engine = _engine()
+    provenance = ProvenanceV2(workspace_id="W", run_id="run-1")
+    provenanced = build_provenanced_frame(
+        config, engine.state, engine.assembly.output_policy, timestamp_s=0.0,
+        provenance=provenance,
+    )
+    records = provenanced.to_records()
+    runtime_ids = [r["provenance"]["runtime_signal_id"] for r in records]
+    assert len(runtime_ids) >= 2
+    assert len(set(runtime_ids)) == len(runtime_ids)
+    # The common run/frame provenance is still shared by every record.
+    for record in records:
+        prov = record["provenance"]
+        assert prov["workspace_id"] == "W"
+        assert prov["run_id"] == "run-1"
 
 
 def test_legacy_seam_remains_plain_signal_list() -> None:

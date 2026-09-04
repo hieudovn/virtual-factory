@@ -2,8 +2,9 @@
 
 Proves: immutability, deterministic serialization, fail-closed simulation truth
 labels (origin_kind / data_status / fidelity), semantic pins are opaque +
-immutable (no PIM validation), and runtime_signal_id is distinct from any
-canonical id (which G2 does not fabricate).
+immutable (no PIM validation), workspace/scope identity consistency, and that
+the run/frame envelope carries NO frame-level runtime_signal_id (per-signal
+identity is derived at record construction, distinct from any canonical id).
 """
 
 from __future__ import annotations
@@ -69,16 +70,24 @@ def test_semantic_pins_are_opaque_immutable_and_serialized() -> None:
     assert env.to_dict() == d
 
 
-def test_runtime_signal_id_distinct_from_canonical_and_not_fabricated() -> None:
-    env = ProvenanceV2(
-        workspace_id="W",
-        run_id="run-1",
-        runtime_signal_id="W.UNIT-1.FT-101",
-    )
-    assert env.runtime_signal_id == "W.UNIT-1.FT-101"
+def test_envelope_has_no_frame_level_runtime_signal_id() -> None:
+    env = ProvenanceV2(workspace_id="W", run_id="run-1")
+    # Run/frame provenance carries NO per-signal identity: one frame-level
+    # runtime_signal_id would otherwise be stamped on every signal record.
+    assert not hasattr(env, "runtime_signal_id")
+    assert "runtime_signal_id" not in env.to_dict()
     # There is NO canonical_signal_id field; VF never fabricates one.
     assert not hasattr(env, "canonical_signal_id")
     assert "canonical_signal_id" not in env.to_dict()
+
+
+def test_mismatched_scope_workspace_identity_fails_closed() -> None:
+    with pytest.raises(ProvenanceError):
+        ProvenanceV2(
+            workspace_id="W1",
+            run_id="run-1",
+            scope_path=StructuralPath(("W2", "AREA", "UNIT")),
+        )
 
 
 def test_missing_required_identity_fails_closed() -> None:

@@ -23,7 +23,7 @@ New package `src/virtual_factory/provenance/`:
 - `enums.py` — `OriginKind`/`DataStatus`/`Fidelity` (frozen truth labels);
 - `context.py` — generic immutable `RunContextV2` (mechanism-neutral);
 - `envelope.py` — immutable `ProvenanceV2` (origin_kind/data_status/fidelity +
-  semantic pins + runtime_signal_id, no canonical field);
+  semantic pins, no canonical field; no frame-level runtime_signal_id);
 - `namespace.py` — deterministic `derive_output_namespace`;
 - `adapter.py` — `from_discrete_run_context` + `to_provenance_v2`.
 
@@ -46,16 +46,22 @@ No `discrete/`, `assembly/`, `observation/`, `ui/`, `integration/`, `core/`, or
 - **Telemetry threading additive:** same policy filtering/coercion; provenance
   lives beside `SignalValue`, never inside it; legacy seam unchanged.
 - **Namespace:** deterministic, distinct from `workspace_id`, no registry.
+- **C01-1 workspace/scope consistency:** a present `scope_path` must root in
+  `workspace_id` (`scope_path.workspace_id == workspace_id`) — fail closed in
+  `RunContextV2`, `ProvenanceV2`, and via the discrete adapter.
+- **C01-2 per-signal runtime identity:** `runtime_signal_id` is per-signal,
+  derived at record construction (never one frame-level value stamped on all
+  signals); run/frame provenance stays shared; no PIM canonical id fabricated.
 
 ## 4. Test / regression results (evidence 06)
 
 | Suite | Result |
 |---|---|
-| New G2 tests | **32 passed** |
+| New G2 tests | **36 passed** (incl. C01) |
 | G1 + discrete + telemetry/observation targeted | **415 passed** |
 | ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1711 passed** (0 failures) |
+| Full repository suite | **1715 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 5. STOP-condition assessment (evidence 07 §2)
@@ -80,17 +86,18 @@ propagation of `ProvenancedFrame`, namespace consumption — all deferred.
 | Namespace and identity separation explicit | PASS |
 | No PIM semantic identity fabricated | PASS |
 | No G3+ implementation | PASS |
-| Mandatory regressions pass | PASS (32 + 415 + 354 + 61 + full 1711) |
+| Mandatory regressions pass | PASS (36 + 415 + 354 + 61 + full 1715) |
 | Working tree clean and branch/head pushed | PASS (after push) |
 
 ## 8. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G2/` — 7 files (01…07).
+`.ai-harness/sa-review/evidence/VF-vNEXT-G2/` — 8 files (01…08; 08 = C01
+corrections).
 
 ## 9. Final status
 
 ```text
-VF-vNEXT-G2 — READY FOR SA REVIEW
+VF-vNEXT-G2-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G3 is NOT started.

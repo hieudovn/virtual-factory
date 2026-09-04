@@ -91,6 +91,15 @@ def test_invalid_scope_path_type_fails_closed() -> None:
         RunContextV2(workspace_id="W", run_id="run-1", scope_path="W/AREA")  # type: ignore[arg-type]
 
 
+def test_mismatched_scope_workspace_identity_fails_closed() -> None:
+    with pytest.raises(RunContextV2Error):
+        RunContextV2(
+            workspace_id="W1",
+            run_id="run-1",
+            scope_path=StructuralPath(("W2", "AREA", "UNIT")),
+        )
+
+
 def test_invalid_random_seed_fails_closed() -> None:
     with pytest.raises(RunContextV2Error):
         RunContextV2(workspace_id="W", run_id="run-1", random_seed=True)  # type: ignore[arg-type]
