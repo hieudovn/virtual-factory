@@ -1,12 +1,12 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G4
-Status: READY FOR SA REVIEW
+Task: VF-vNEXT-G4-C01
+Status: READY FOR SA REVIEW (C01: producer ownership, window authority, graph multi-producer, endpoint scope resolution, participant time contract)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate)
 Prerequisite: G3 PASS / COMPLETE at 8edb9f4cce0410ea2f0b15e6e1eb1607c4fdc5e7 (#48 CLOSED)
 
 Gate type:
-Accelerated implementation gate — Implement Composition Graph + Coordinator + Typed Boundary Ports (G4)
+Accelerated implementation gate — Implement Composition Graph + Coordinator + Typed Boundary Ports (G4), correction C01
 
 Architecture baseline:
 ARCH-01..06 accepted; G3 base 8edb9f4cce0410ea2f0b15e6e1eb1607c4fdc5e7
@@ -47,8 +47,27 @@ compatibility; graph/order; time/window; mutation/isolation — each audited wit
 positive/negative tests; no same-class defect left; no new architecture decision
 required.
 
+C01 corrections applied (coordinator authority, evidence 09):
+- C01-1 producer ownership fail-closed: transfer staged by scope X must have
+  source.owner_scope == X; source-scope mismatch fails before commit.
+- C01-2 window authority: staged transfer must carry exactly the active
+  window_id; simulation_time_s finite (NaN/Inf rejected) and <= target boundary;
+  coordinator rejects NaN/Inf target.
+- C01-3 multi-producer is a declared-graph error: CompositionGraph rejects
+  implicit many-to-one input at build time (not only emitted transfers); fan-out
+  remains allowed.
+- C01-4 endpoint scope resolution: every bound endpoint owner scope resolves in
+  the G1 Workspace before advance; nonexistent scope fails pre-advance.
+- C01-5 participant time contract: coordinator verifies current_time_s
+  numeric/finite/>=0, fails if local time ahead of boundary before advance, and
+  requires exact boundary landing after a successful advance_to (already-at-
+  boundary remains valid no-op).
+- Adversarial self-audit with broken participants + stale transfers covers all 5
+  matrices (source ownership, window, time, graph multi-producer, scope
+  resolution).
+
 Test / regression results:
-- New G4 tests: 43 passed.
+- New G4 tests: 49 passed (incl. C01).
 - G1 workspace: 32 passed.
 - G2 provenance: 36 passed.
 - G3 Observation/Event/Alarm (+ M5 + alarm_manager): 328 passed.
@@ -56,7 +75,7 @@ Test / regression results:
 - Discrete runtime/scheduler: 279 passed.
 - ASSY regression oracle: 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1836 passed (0 failures).
+- Full repository suite: 1842 passed (0 failures).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
 Deferred (NOT implemented): G5 ASSY federation, G6 UI, G7 run-control/UI/API,
@@ -73,7 +92,7 @@ Report:
 .ai-harness/sa-review/reports/VF-vNEXT-G4.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G4/ (8 files: 01…08)
+.ai-harness/sa-review/evidence/VF-vNEXT-G4/ (9 files: 01…09; 09 = C01 corrections + adversarial self-audit)
 
 
 

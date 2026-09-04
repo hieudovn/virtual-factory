@@ -21,6 +21,7 @@ Frozen phase semantics (validated in tests):
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -144,6 +145,8 @@ class Coordinator:
             raise CoordinationError("target_time_s must be numeric, not bool")
         if target_time_s < 0:
             raise CoordinationError("target_time_s must be >= 0")
+        if not math.isfinite(target_time_s):
+            raise CoordinationError("target_time_s must be finite")
 
         order = tuple(sorted(self._participants.keys()))
 
@@ -159,6 +162,22 @@ class Coordinator:
         staged: dict[str, BoundaryTransfer] = {}
         for key in order:
             participant = self._participants[key]
+
+            # Time preconditions (verified by the coordinator, not trusted).
+            try:
+                before = self._require_finite_time(participant, key)
+            except CoordinationError as exc:
+                return _failure(window_id, target_time_s, order, (), str(exc))
+            if before > target_time_s:
+                return _failure(
+                    window_id,
+                    target_time_s,
+                    order,
+                    (),
+                    f"participant {key} local time {before!r} is ahead of "
+                    f"boundary {target_time_s!r}",
+                )
+
             try:
                 outputs = participant.advance_to(target_time_s)
             except Exception as exc:  # noqa: BLE001 — fail closed on any advance failure
@@ -169,6 +188,24 @@ class Coordinator:
                     (),
                     f"participant advance failed for {key}: {exc}",
                 )
+
+            # Time postcondition: a participant that reports success must have
+            # reached exactly the authorized boundary (exact equality; no
+            # invented tolerance policy).
+            try:
+                after = self._require_finite_time(participant, key)
+            except CoordinationError as exc:
+                return _failure(window_id, target_time_s, order, (), str(exc))
+            if after != target_time_s:
+                return _failure(
+                    window_id,
+                    target_time_s,
+                    order,
+                    (),
+                    f"participant {key} did not reach boundary "
+                    f"{target_time_s!r}: reported {after!r}",
+                )
+
             if not isinstance(outputs, (tuple, list)):
                 return _failure(
                     window_id,
@@ -186,6 +223,28 @@ class Coordinator:
                         (),
                         f"advance_to for {key} returned a non-BoundaryTransfer",
                     )
+                # C01-1: the emitting participant is the authoritative producer.
+                if transfer.source.owner_scope.as_string() != key:
+                    return _failure(
+                        window_id,
+                        target_time_s,
+                        order,
+                        (),
+                        f"transfer {transfer.transfer_id!r} source scope "
+                        f"{transfer.source.owner_scope.as_string()!r} does not "
+                        f"match emitting participant {key!r}",
+                    )
+                # C01-2: staged transfers must carry exactly the active window.
+                if transfer.window_id != window_id:
+                    return _failure(
+                        window_id,
+                        target_time_s,
+                        order,
+                        (),
+                        f"transfer {transfer.transfer_id!r} window "
+                        f"{transfer.window_id!r} does not match active window "
+                        f"{window_id!r}",
+                    )
                 if transfer.transfer_id in staged:
                     return _failure(
                         window_id,
@@ -198,7 +257,7 @@ class Coordinator:
 
         # 3. validate all staged transfers
         try:
-            self._validate_transfers(staged)
+            self._validate_transfers(staged, window_id, target_time_s)
         except CoordinationError as exc:
             return _failure(
                 window_id,
@@ -243,9 +302,38 @@ class Coordinator:
 
     # ── internal validation ──────────────────────────────────────
 
+    @staticmethod
+    def _require_finite_time(participant, label: str) -> float:
+        """Read + validate a participant's current_time_s (numeric, finite, >=0)."""
+        value = getattr(participant, "current_time_s", None)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise CoordinationError(
+                f"participant {label!r} current_time_s must be numeric, "
+                f"got {type(value).__name__}"
+            )
+        if not math.isfinite(value):
+            raise CoordinationError(
+                f"participant {label!r} current_time_s must be finite, got {value!r}"
+            )
+        if value < 0:
+            raise CoordinationError(
+                f"participant {label!r} current_time_s must be >= 0, got {value!r}"
+            )
+        return float(value)
+
     def _validate_graph_bindings(self) -> None:
-        """Every declared binding must be port-compatible (detected pre-advance)."""
+        """Every declared binding must resolve in the G1 Workspace and be
+        port-compatible (detected pre-advance)."""
         for binding in self._graph.bindings:
+            for ref in (binding.source, binding.target):
+                try:
+                    self._workspace.resolve_scope(ref.owner_scope)
+                except Exception as exc:  # noqa: BLE001
+                    raise CoordinationError(
+                        f"binding {binding.edge_id!r} endpoint "
+                        f"{ref.as_string()!r} names a nonexistent structural "
+                        f"scope: {exc}"
+                    ) from exc
             source_port = self._graph.registry.require(binding.source)
             target_port = self._graph.registry.require(binding.target)
             try:
@@ -255,14 +343,36 @@ class Coordinator:
                     f"invalid binding {binding.edge_id!r}: {exc}"
                 ) from exc
 
-    def _validate_transfers(self, staged: dict[str, BoundaryTransfer]) -> None:
+    def _validate_transfers(
+        self,
+        staged: dict[str, BoundaryTransfer],
+        window_id: str,
+        target_time_s: float,
+    ) -> None:
         """Fail-closed transfer validation before any boundary commit."""
         for transfer in staged.values():
+            if transfer.window_id != window_id:
+                raise CoordinationError(
+                    f"transfer {transfer.transfer_id!r} window "
+                    f"{transfer.window_id!r} does not match active window "
+                    f"{window_id!r}"
+                )
             if transfer.workspace_id != self._graph.workspace_id:
                 raise CoordinationError(
                     f"transfer {transfer.transfer_id!r} workspace "
                     f"{transfer.workspace_id!r} does not match graph workspace "
                     f"{self._graph.workspace_id!r}"
+                )
+            if not math.isfinite(transfer.simulation_time_s):
+                raise CoordinationError(
+                    f"transfer {transfer.transfer_id!r} simulation_time_s must "
+                    f"be finite, got {transfer.simulation_time_s!r}"
+                )
+            if transfer.simulation_time_s > target_time_s:
+                raise CoordinationError(
+                    f"transfer {transfer.transfer_id!r} simulation_time_s "
+                    f"{transfer.simulation_time_s!r} exceeds the authorized "
+                    f"boundary {target_time_s!r}"
                 )
             if not self._graph.has_binding(transfer.source, transfer.target):
                 raise CoordinationError(

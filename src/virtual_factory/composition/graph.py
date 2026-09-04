@@ -111,6 +111,19 @@ class CompositionGraph:
         self._bindings = tuple(
             sorted(by_edge_id.values(), key=lambda b: b.key)
         )
+        # Baseline input has at most one producer (declared, not just emitted):
+        # a target input may not receive from >1 distinct source port.
+        sources_by_target: dict[str, set[str]] = {}
+        for binding in self._bindings:
+            sources_by_target.setdefault(
+                binding.target.as_string(), set()
+            ).add(binding.source.as_string())
+        for target, sources in sorted(sources_by_target.items()):
+            if len(sources) > 1:
+                raise CompositionError(
+                    f"implicit multi-producer input at {target!r}: "
+                    f"{sorted(sources)}"
+                )
 
     def _check_endpoint(self, ref: PortRef) -> None:
         """Dangling and cross-workspace endpoint refs fail closed."""

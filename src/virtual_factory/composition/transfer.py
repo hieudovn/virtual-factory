@@ -102,6 +102,8 @@ class BoundaryTransfer:
             raise TransferError("simulation_time_s must be numeric, not bool")
         if self.simulation_time_s < 0:
             raise TransferError("simulation_time_s must be >= 0")
+        if math.isnan(self.simulation_time_s) or math.isinf(self.simulation_time_s):
+            raise TransferError("simulation_time_s must be finite")
         # Identity/authority: both endpoints must live in this transfer's
         # workspace (fail closed; never fabricate or accept a mismatch).
         if self.source.owner_scope.workspace_id != self.workspace_id:

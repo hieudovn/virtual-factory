@@ -6,13 +6,15 @@ Command: `python -m pytest tests/test_composition_ports.py
 tests/test_composition_graph.py tests/test_composition_transfer.py
 tests/test_composition_coordinator.py -q`
 
-Result: **43 passed** (0 failures).
+Result: **49 passed** (0 failures). Includes the C01 authority corrections
+(producer ownership, window authority, graph-level multi-producer, endpoint
+scope resolution, participant time contract).
 
 ## 2. Regression groups (Issue #49)
 
 | Group | Result |
 |---|---|
-| New G4 tests | **43 passed** |
+| New G4 tests | **49 passed** (incl. C01) |
 | G1 workspace | **32 passed** |
 | G2 provenance | **36 passed** |
 | G3 Observation/Event/Alarm (+ M5 observation + alarm_manager) | **328 passed** |
@@ -20,7 +22,7 @@ Result: **43 passed** (0 failures).
 | Discrete runtime/scheduler (discrete_engine/kernel/run_controller + event_trace) | **279 passed** |
 | ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1836 passed** (0 failures) |
+| Full repository suite | **1842 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 3. Flakes

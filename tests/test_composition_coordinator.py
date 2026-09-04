@@ -15,6 +15,7 @@ from virtual_factory.composition import (
     BoundaryPort,
     BoundaryTransfer,
     CompositionBinding,
+    CompositionError,
     CompositionGraph,
     CoordinationError,
     Coordinator,
@@ -228,7 +229,7 @@ def test_backward_time_fails_closed() -> None:
     c.run_window("w1", 5.0)
     outcome = c.run_window("w2", 3.0)  # target behind current time
     assert outcome.status == "failed"
-    assert "backward" in (outcome.failure or "")
+    assert "ahead of boundary" in (outcome.failure or "")
 
 
 def test_advance_failure_stops_window_before_exchange() -> None:
@@ -263,28 +264,23 @@ def test_undeclared_exchange_fails_closed() -> None:
     assert outcome.status == "failed"
 
 
-def test_multi_producer_input_rejected() -> None:
-    # Two distinct source ports (same scope) both bound to the same target port:
-    # this is an implicit many-to-one merge and must be rejected.
-    graph = CompositionGraph(
-        "W",
-        bindings=[
-            CompositionBinding("e1", PortRef(_A, "out"), PortRef(_B, "in")),
-            CompositionBinding("e3", PortRef(_A, "out2"), PortRef(_B, "in")),
-        ],
-        ports=_ports()
-        + [BoundaryPort(PortRef(_A, "out2"), PortDirection.OUT, PortCategory.MATERIAL, unit="m3/s")],
-    )
-    a = Participant(_A, dt_s=1.0, events=[
-        (1.0, _transfer("tA", (_A, "out"), (_B, "in"), "e1")),
-        (1.0, _transfer("tA2", (_A, "out2"), (_B, "in"), "e3")),
-    ])
-    c = Coordinator(_workspace(), graph)
-    c.register(a)
-    c.register(Participant(_B, dt_s=1.0))
-    outcome = c.run_window("w1", 2.0)
-    assert outcome.status == "failed"
-    assert "multi-producer" in (outcome.failure or "")
+def test_declared_multi_producer_input_rejected_at_graph_build() -> None:
+    # Two distinct source ports bound to the same target input is a graph/config
+    # error, rejected at construction — before any window / participant advance.
+    with pytest.raises(CompositionError):
+        CompositionGraph(
+            "W",
+            bindings=[
+                CompositionBinding("e1", PortRef(_A, "out"), PortRef(_B, "in")),
+                CompositionBinding("e3", PortRef(_A, "out2"), PortRef(_B, "in")),
+            ],
+            ports=_ports()
+            + [
+                BoundaryPort(
+                    PortRef(_A, "out2"), PortDirection.OUT, PortCategory.MATERIAL, unit="m3/s"
+                )
+            ],
+        )
 
 
 def test_commit_failure_stops_further_commits_without_rollback() -> None:
@@ -318,3 +314,137 @@ def test_no_direct_cross_scope_state_mutation_via_payload() -> None:
     # Consumer cannot mutate the frozen payload.
     with pytest.raises(TypeError):
         received["level"] = -1.0  # type: ignore[index]
+
+
+# ═══════════════════════════════════════════════════════════════════
+# C01: adversarial / broken participant + stale-transfer authority audits
+# ═══════════════════════════════════════════════════════════════════
+
+class BadParticipant:
+    """Adversarial participant: controlled time postcondition + emitted transfers."""
+
+    def __init__(self, scope_path, *, time=0.0, transfers=(), after_time=None):
+        self._scope = scope_path
+        self._time = time
+        self._transfers = transfers
+        self._after = after_time
+        self.received = []
+
+    @property
+    def scope_path(self):
+        return self._scope
+
+    @property
+    def current_time_s(self):
+        return self._time
+
+    def advance_to(self, target_time_s):
+        self._time = self._after if self._after is not None else target_time_s
+        return tuple(self._transfers)
+
+    def commit_transfers(self, inbound):
+        self.received.extend(inbound)
+
+
+def _bad(scope, *, transfers=(), after_time=None, time=0.0):
+    return BadParticipant(scope, transfers=transfers, after_time=after_time, time=time)
+
+
+def test_emitting_participant_is_authoritative_producer() -> None:
+    """C01-1: A emits a VALID declared B->A transfer (source=B) -> rejected."""
+    bad_t = BoundaryTransfer(
+        transfer_id="tB",
+        source=PortRef(_B, "out"),
+        target=PortRef(_A, "in"),
+        binding_id="e2",
+        window_id="w1",
+        simulation_time_s=1.0,
+        workspace_id="W",
+    )
+    c = _coordinator()
+    c.register(_bad(_A, transfers=[bad_t]))
+    c.register(Participant(_B, dt_s=1.0))
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "source scope" in (outcome.failure or "")
+
+
+def test_transfer_window_id_must_match_active_window() -> None:
+    """C01-2: staged transfer must carry exactly the active window_id."""
+    wrong = BoundaryTransfer(
+        transfer_id="tA",
+        source=PortRef(_A, "out"),
+        target=PortRef(_B, "in"),
+        binding_id="e1",
+        window_id="w9",
+        simulation_time_s=1.0,
+        workspace_id="W",
+    )
+    c = _coordinator()
+    c.register(_bad(_A, transfers=[wrong]))
+    c.register(Participant(_B, dt_s=1.0))
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "window" in (outcome.failure or "")
+
+
+def test_transfer_time_must_not_exceed_boundary() -> None:
+    """C01-2: transfer time finite and within the authorized boundary."""
+    late = BoundaryTransfer(
+        transfer_id="tA",
+        source=PortRef(_A, "out"),
+        target=PortRef(_B, "in"),
+        binding_id="e1",
+        window_id="w1",
+        simulation_time_s=5.0,
+        workspace_id="W",
+    )
+    c = _coordinator()
+    c.register(_bad(_A, transfers=[late]))
+    c.register(Participant(_B, dt_s=1.0))
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "exceeds" in (outcome.failure or "")
+
+
+def test_participant_must_reach_boundary_after_advance() -> None:
+    """C01-5: participant reporting success must reach exactly the boundary."""
+    c = _coordinator()
+    c.register(_bad(_A, after_time=1.0))  # reports 1.0, target is 2.0
+    c.register(Participant(_B, dt_s=1.0))
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "did not reach boundary" in (outcome.failure or "")
+
+
+def test_nonexistent_bound_endpoint_scope_fails_before_advance() -> None:
+    """C01-4: a bound endpoint naming a nonexistent G1 scope fails pre-advance."""
+    ghost = StructuralPath(("W", "AREA", "GHOST"))
+    graph = CompositionGraph(
+        "W",
+        bindings=[
+            CompositionBinding("e1", PortRef(_A, "out"), PortRef(_B, "in")),
+            CompositionBinding("e2", PortRef(_B, "out"), PortRef(ghost, "in")),
+        ],
+        ports=_ports()
+        + [BoundaryPort(PortRef(ghost, "in"), PortDirection.IN, PortCategory.MATERIAL)],
+    )
+    a = Participant(_A, dt_s=1.0)
+    b = Participant(_B, dt_s=1.0)
+    c = Coordinator(_workspace(), graph)
+    c.register(a)
+    c.register(b)
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "nonexistent" in (outcome.failure or "")
+    assert a.current_time_s == 0.0  # failed before any advance
+
+
+def test_coordinator_rejects_nonfinite_target_time() -> None:
+    c = _coordinator()
+    c.register(Participant(_A, dt_s=1.0))
+    c.register(Participant(_B, dt_s=1.0))
+    with pytest.raises(CoordinationError):
+        c.run_window("w1", float("nan"))
+    with pytest.raises(CoordinationError):
+        c.run_window("w1", float("inf"))
