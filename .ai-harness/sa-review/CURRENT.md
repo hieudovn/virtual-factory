@@ -1,12 +1,12 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G4-C01
-Status: READY FOR SA REVIEW (C01: producer ownership, window authority, graph multi-producer, endpoint scope resolution, participant time contract)
+Task: VF-vNEXT-G4-C02
+Status: READY FOR SA REVIEW (C02: producer coordination interval [before, target]; execution-time registered-vs-current scope_path identity)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate)
 Prerequisite: G3 PASS / COMPLETE at 8edb9f4cce0410ea2f0b15e6e1eb1607c4fdc5e7 (#48 CLOSED)
 
 Gate type:
-Accelerated implementation gate — Implement Composition Graph + Coordinator + Typed Boundary Ports (G4), correction C01
+Accelerated implementation gate — Implement Composition Graph + Coordinator + Typed Boundary Ports (G4), correction C02
 
 Architecture baseline:
 ARCH-01..06 accepted; G3 base 8edb9f4cce0410ea2f0b15e6e1eb1607c4fdc5e7
@@ -66,8 +66,23 @@ C01 corrections applied (coordinator authority, evidence 09):
   matrices (source ownership, window, time, graph multi-producer, scope
   resolution).
 
+C02 corrections applied (authority-triangle completion, evidence 10):
+- C02-1 producer coordination interval: every staged transfer time must satisfy
+  before <= simulation_time_s <= target_time_s for the emitting participant
+  (equality allowed; no epsilon/tolerance invented; no global timestep); a stale
+  transfer below the producer's lower bound fails the window before commit.
+- C02-2 execution-time participant identity: before advancing each participant,
+  run_window re-reads participant.scope_path; it must still be a StructuralPath
+  and exactly equal the registered scope key (drift / invalid type / foreign
+  scope fails closed before that participant advances). No silent re-key or
+  re-register mid-window.
+- Full authority triangle enforced: registered scope key == current
+  participant.scope_path == transfer.source.owner_scope; plus participant
+  pre-window time <= transfer time <= target boundary; active window_id ==
+  transfer.window_id.
+
 Test / regression results:
-- New G4 tests: 49 passed (incl. C01).
+- New G4 tests: 53 passed (incl. C01 + C02).
 - G1 workspace: 32 passed.
 - G2 provenance: 36 passed.
 - G3 Observation/Event/Alarm (+ M5 + alarm_manager): 328 passed.
@@ -75,7 +90,7 @@ Test / regression results:
 - Discrete runtime/scheduler: 279 passed.
 - ASSY regression oracle: 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1842 passed (0 failures).
+- Full repository suite: 1846 passed (0 failures).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
 Deferred (NOT implemented): G5 ASSY federation, G6 UI, G7 run-control/UI/API,
@@ -92,7 +107,7 @@ Report:
 .ai-harness/sa-review/reports/VF-vNEXT-G4.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G4/ (9 files: 01…09; 09 = C01 corrections + adversarial self-audit)
+.ai-harness/sa-review/evidence/VF-vNEXT-G4/ (10 files: 01…10; 09 = C01 corrections + adversarial self-audit; 10 = C02 corrections)
 
 
 

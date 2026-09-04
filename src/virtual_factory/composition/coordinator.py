@@ -163,6 +163,31 @@ class Coordinator:
         for key in order:
             participant = self._participants[key]
 
+            # C02-2: the registered structural identity must remain coherent at
+            # execution time. The participant protocol exposes scope_path as its
+            # owning executable scope; drift to another scope (or a foreign/
+            # nonexistent/container-only path, or an invalid type) fails closed
+            # before this participant advances. We never re-key/re-register.
+            current_scope = getattr(participant, "scope_path", None)
+            if not isinstance(current_scope, StructuralPath):
+                return _failure(
+                    window_id,
+                    target_time_s,
+                    order,
+                    (),
+                    f"participant {key} scope_path is not a StructuralPath, "
+                    f"got {type(current_scope).__name__}",
+                )
+            if current_scope.as_string() != key:
+                return _failure(
+                    window_id,
+                    target_time_s,
+                    order,
+                    (),
+                    f"participant {key} scope_path drifted to "
+                    f"{current_scope.as_string()!r}",
+                )
+
             # Time preconditions (verified by the coordinator, not trusted).
             try:
                 before = self._require_finite_time(participant, key)
@@ -244,6 +269,23 @@ class Coordinator:
                         f"transfer {transfer.transfer_id!r} window "
                         f"{transfer.window_id!r} does not match active window "
                         f"{window_id!r}",
+                    )
+                # C02-1: a transfer staged during this advance must belong to
+                # the PRODUCER's own advancement interval [before, target]
+                # (equality at either boundary allowed; no epsilon/tolerance).
+                if (
+                    transfer.simulation_time_s < before
+                    or transfer.simulation_time_s > target_time_s
+                ):
+                    return _failure(
+                        window_id,
+                        target_time_s,
+                        order,
+                        (),
+                        f"transfer {transfer.transfer_id!r} time "
+                        f"{transfer.simulation_time_s!r} is outside the "
+                        f"producer's coordination interval "
+                        f"[{before!r}, {target_time_s!r}]",
                     )
                 if transfer.transfer_id in staged:
                     return _failure(

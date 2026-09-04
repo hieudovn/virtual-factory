@@ -404,7 +404,7 @@ def test_transfer_time_must_not_exceed_boundary() -> None:
     c.register(Participant(_B, dt_s=1.0))
     outcome = c.run_window("w1", 2.0)
     assert outcome.status == "failed"
-    assert "exceeds" in (outcome.failure or "")
+    assert "coordination interval" in (outcome.failure or "")
 
 
 def test_participant_must_reach_boundary_after_advance() -> None:
@@ -448,3 +448,98 @@ def test_coordinator_rejects_nonfinite_target_time() -> None:
         c.run_window("w1", float("nan"))
     with pytest.raises(CoordinationError):
         c.run_window("w1", float("inf"))
+
+
+# ═══════════════════════════════════════════════════════════════════
+# C02: full authority triangle — registered scope ↔ current scope_path ↔
+# transfer.source; participant pre-time ↔ transfer.time ↔ target boundary.
+# ═══════════════════════════════════════════════════════════════════
+
+def test_stale_transfer_below_producer_interval_fails_closed() -> None:
+    """C02-1: participant at 5.0 advancing to 10.0 may not emit time 1.0."""
+    stale = BoundaryTransfer(
+        transfer_id="tA",
+        source=PortRef(_A, "out"),
+        target=PortRef(_B, "in"),
+        binding_id="e1",
+        window_id="w1",
+        simulation_time_s=1.0,
+        workspace_id="W",
+    )
+    c = _coordinator()
+    c.register(_bad(_A, time=5.0, transfers=[stale]))
+    c.register(Participant(_B, dt_s=1.0))
+    outcome = c.run_window("w1", 10.0)
+    assert outcome.status == "failed"
+    assert "coordination interval" in (outcome.failure or "")
+
+
+def test_transfer_inside_producer_interval_is_accepted() -> None:
+    """C02-1 positive: event timestamped inside [before, target] is accepted."""
+    inside = BoundaryTransfer(
+        transfer_id="tA",
+        source=PortRef(_A, "out"),
+        target=PortRef(_B, "in"),
+        binding_id="e1",
+        window_id="w1",
+        simulation_time_s=7.0,  # inside [5.0, 10.0]
+        workspace_id="W",
+    )
+    c = _coordinator()
+    c.register(_bad(_A, time=5.0, transfers=[inside]))
+    c.register(Participant(_B, dt_s=1.0))
+    outcome = c.run_window("w1", 10.0)
+    assert outcome.status == "completed"
+    assert outcome.committed == ("tA",)
+
+
+class DriftingParticipant:
+    """Participant whose reported scope_path can change after registration."""
+
+    def __init__(self, scope_path, *, dt_s=1.0):
+        self.scope_path_value = scope_path
+        self._dt = dt_s
+        self._time = 0.0
+        self.received = []
+
+    @property
+    def scope_path(self):
+        return self.scope_path_value
+
+    @property
+    def current_time_s(self):
+        return self._time
+
+    def advance_to(self, target_time_s):
+        while self._time < target_time_s:
+            self._time = min(self._time + self._dt, target_time_s)
+        return ()
+
+    def commit_transfers(self, inbound):
+        self.received.extend(inbound)
+
+
+def test_post_registration_scope_drift_fails_closed() -> None:
+    """C02-2: participant registered as A, later reporting B, fails before advance."""
+    drifter = DriftingParticipant(_A)
+    c = _coordinator()
+    c.register(drifter)
+    c.register(Participant(_B, dt_s=1.0))
+    drifter.scope_path_value = _B  # drift after registration
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "drifted" in (outcome.failure or "")
+    # The drifter never advanced.
+    assert drifter.current_time_s == 0.0
+
+
+def test_post_registration_invalid_scope_type_fails_closed() -> None:
+    """C02-2: participant reporting a non-StructuralPath scope_path fails."""
+    drifter = DriftingParticipant(_A)
+    c = _coordinator()
+    c.register(drifter)
+    c.register(Participant(_B, dt_s=1.0))
+    drifter.scope_path_value = "W/AREA/UNIT-A"  # plain string, not StructuralPath
+    outcome = c.run_window("w1", 2.0)
+    assert outcome.status == "failed"
+    assert "not a StructuralPath" in (outcome.failure or "")

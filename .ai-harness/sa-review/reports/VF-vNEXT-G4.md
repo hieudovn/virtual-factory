@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G4` (GitHub Issue #49) + C01 |
+| Task ID | `VF-vNEXT-G4` (GitHub Issue #49) + C01 + C02 |
 | Program | Implementation phase (G4; only authorized implementation gate) |
 | G3 base (required) | `8edb9f4cce0410ea2f0b15e6e1eb1607c4fdc5e7` |
 | Branch | `feature/vf-vnext-g4` |
@@ -38,7 +38,12 @@ direct cross-scope state mutation.
   carry exactly the active window and a finite time within the boundary;
   graph-level multi-producer ambiguity rejected; bound endpoint scopes resolved
   in the G1 Workspace pre-advance; participant current_time verified before/after
-  advance (must land exactly on the boundary).
+  advance (must land exactly on the boundary). C02 enforcement: every staged
+  transfer time must fall inside the emitting participant's coordination
+  interval [before, target_time_s] (equality allowed; no epsilon; no global
+  timestep); and the registered structural identity is re-verified against
+  `participant.scope_path` immediately before advance (drift or invalid type
+  fails closed).
 
 No forbidden file modified; `workspace`, `provenance`, `observation`, `telemetry`,
 `discrete`, `assembly`, `core`, `ui`, `integration` untouched.
@@ -70,7 +75,7 @@ left unaddressed; no new architecture/schema decision required.
 
 | Suite | Result |
 |---|---|
-| New G4 tests | **49 passed** (incl. C01) |
+| New G4 tests | **53 passed** (incl. C01 + C02) |
 | G1 workspace | **32 passed** |
 | G2 provenance | **36 passed** |
 | G3 Observation/Event/Alarm (+ M5 + alarm) | **328 passed** |
@@ -78,7 +83,7 @@ left unaddressed; no new architecture/schema decision required.
 | Discrete runtime/scheduler | **279 passed** |
 | ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1842 passed** (0 failures) |
+| Full repository suite | **1846 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 7. STOP-condition assessment (evidence 08)
@@ -100,18 +105,18 @@ None triggered.
 | No direct cross-scope mutation path | PASS |
 | Failure semantics explicit and honest about lack of rollback | PASS |
 | Invariant matrices / self-audit complete | PASS |
-| Regressions pass (anomalies honestly evidenced) | PASS (49+32+36+328+21+279+354+61+full 1842) |
+| Regressions pass (anomalies honestly evidenced) | PASS (53+32+36+328+21+279+354+61+full 1846) |
 | Branch/head pushed and working tree clean | PASS (after push) |
 
 ## 9. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G4/` — 9 files (01…09; 09 = C01
-corrections + adversarial self-audit).
+`.ai-harness/sa-review/evidence/VF-vNEXT-G4/` — 10 files (01…10; 09 = C01
+corrections + adversarial self-audit; 10 = C02 corrections).
 
 ## 10. Final status
 
 ```text
-VF-vNEXT-G4-C01 — READY FOR SA REVIEW
+VF-vNEXT-G4-C02 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G5 is NOT started.
