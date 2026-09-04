@@ -78,6 +78,14 @@
         <button class="vf-btn" onclick="ctrl.reset()">⚠ Clear Alarms</button>
         <button class="vf-btn" onclick="console.log('Export')">⬇ Export</button>
       </div>
+
+      <!-- G6 additive: shared structural hierarchy context (read-only) -->
+      <div id="vf-hierarchy-section" class="vf-hierarchy-section" style="display:none;">
+        <div class="vf-context-title">Structural context</div>
+        <div id="vf-context-crumbs" class="vf-context-crumbs"></div>
+        <div id="vf-hierarchy-nav" class="vf-hierarchy-nav"></div>
+        <div class="vf-context-note">Selecting a sub-line sets monitoring/context; it never reconstructs a runtime.</div>
+      </div>
     </nav>
 
     <!-- CANVAS AREA -->
@@ -358,5 +366,7 @@
 </div><!-- /app -->
 
 <script src="/static/assy_demo.js"></script>
+<script src="/static/hierarchy.js"></script>
+<script src="/static/assy_context.js"></script>
 </body>
 </html>

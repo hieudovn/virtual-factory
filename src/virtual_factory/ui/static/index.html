@@ -75,6 +75,12 @@
             </button>
           </div>
         </nav>
+        <!-- G6 additive: shared structural context (root-only for continuous) -->
+        <div class="vf-context-section" id="vf-context-section" hidden>
+          <div class="vf-context-title">Structural context</div>
+          <div id="vf-context-crumbs" class="vf-context-crumbs"></div>
+          <div id="vf-context-nav" class="vf-context-nav"></div>
+        </div>
         <div class="sidebar-footer">
           <div class="sidebar-status">
             <span class="status-dot" id="sidebar-status-dot"></span>
@@ -247,5 +253,7 @@
     <script src="/static/builder.js?v=5" defer></script>
     <script src="/static/resizer.js?v=5" defer></script>
     <script src="/static/app.js?v=11" defer></script>
+    <script src="/static/hierarchy.js?v=1" defer></script>
+    <script src="/static/continuous_context.js?v=1" defer></script>
   </body>
 </html>

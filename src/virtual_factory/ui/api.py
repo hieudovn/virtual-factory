@@ -531,4 +531,80 @@ def create_app(
                     content={"detail": f"Sub-line not found: {sub_line_id!r}"},
                 )
 
+    # ═══════════════════════════════════════════════════
+    # G6 — Shared hierarchical UI context (read-only, additive)
+    # Projection of the accepted G1 Workspace/StructuralPath authority only.
+    # No run-control/replay/orchestration semantics.
+    # ═══════════════════════════════════════════════════
+    from fastapi.responses import JSONResponse as _JSONResponse
+
+    def _tipa_structural_workspace():
+        from virtual_factory.federation import build_tipa_workspace
+
+        return build_tipa_workspace()
+
+    @app.get("/api/ui/hierarchy")
+    def ui_hierarchy(workspace: str = Query("TIPA")):
+        from virtual_factory.ui import hierarchy as ui_hierarchy_mod
+
+        if workspace != "TIPA":
+            return _JSONResponse(
+                status_code=404,
+                content={
+                    "detail": (
+                        f"unknown workspace {workspace!r} for structural "
+                        f"hierarchy; supported: TIPA"
+                    )
+                },
+            )
+        return ui_hierarchy_mod.workspace_to_dict(
+            _tipa_structural_workspace()
+        )
+
+    @app.get("/api/ui/context")
+    def ui_context(
+        workspace: str = Query("TIPA"),
+        path: str | None = Query(None),
+        object_id: str | None = Query(None),
+    ):
+        from virtual_factory.ui import hierarchy as ui_hierarchy_mod
+
+        if workspace != "TIPA":
+            return _JSONResponse(
+                status_code=404,
+                content={
+                    "detail": (
+                        f"unknown workspace {workspace!r} for structural "
+                        f"context; supported: TIPA"
+                    )
+                },
+            )
+        try:
+            scope_path = (
+                ui_hierarchy_mod.parse_path(path) if path else None
+            )
+            return ui_hierarchy_mod.structural_context(
+                _tipa_structural_workspace(),
+                scope_path=scope_path,
+                object_id=object_id,
+            )
+        except ui_hierarchy_mod.UiHierarchyError as exc:
+            return _JSONResponse(
+                status_code=400,
+                content={"detail": str(exc)},
+            )
+
+    @app.get("/api/ui/context/continuous")
+    def ui_context_continuous():
+        """Truthful ROOT-ONLY context for the continuous dashboard.
+
+        The continuous runtime has no authoritative multi-level G1 hierarchy;
+        do not invent plant structure. The shared primitives may render only
+        the workspace root.
+        """
+        from virtual_factory.ui import hierarchy as ui_hierarchy_mod
+
+        plant_id = (service.status().get("plant_id") or "continuous")
+        return ui_hierarchy_mod.root_only_context(plant_id)
+
     return app
