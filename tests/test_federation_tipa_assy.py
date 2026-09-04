@@ -245,6 +245,35 @@ class TestFederationHost:
             "TIPA/ASSY/ASSY-SL01"
         )
 
+    def test_production_host_initializes_without_demo_composition(self):
+        """G5-C01: six isolated runtimes are built DIRECTLY (no
+        AssyDemoComposition constructed/owned, no demo policy names imported)."""
+        import virtual_factory.federation.assy_host as host_module
+
+        for name in ("AssyDemoComposition", "DemoScenario", "ContinuousFeedPolicy"):
+            assert name not in host_module.__dict__, name
+        host = TipaAssyFederation(config_path=str(REAL_CONFIG)).initialize()
+        assert len(host.sub_lines) == 6
+        for name in ("_composition", "composition", "scenario", "feed_policy",
+                     "continuous_feed_enabled", "selected_sub_line_id",
+                     "demo_step_number"):
+            assert not hasattr(host, name), name
+        for sl in host.sub_lines.values():
+            assert type(sl.runtime) is AssyLineRuntime
+
+    def test_federation_api_exposes_no_demo_policy_authority(self):
+        """G5-C01: host construction takes only config_path; no implicit
+        seeded-inventory/demo policy in the production host."""
+        import inspect
+
+        params = list(inspect.signature(TipaAssyFederation.__init__).parameters)
+        assert params == ["self", "config_path"]
+        host = TipaAssyFederation(config_path=str(REAL_CONFIG)).initialize()
+        for sub_line_id in SUB_LINE_IDS:
+            # No WIP is pre-seeded by the production host (time 0, empty).
+            assert host.runtime(sub_line_id).simulation_time_s == 0.0
+            assert host.runtime(sub_line_id).wip_count == 0
+
 
 # ═══════════════════════════════════════════════════════════
 # D — Adapter time delegation + supported shared boundary (tests 5, 6)
@@ -257,8 +286,12 @@ class TestAdapterTimeAndBoundary:
             sl = host.get(sub_line_id)
             assert sl.adapter.current_time_s == sl.runtime.simulation_time_s == 0.0
 
-    def test_all_six_reach_supported_shared_boundary(self):
+    def test_all_six_reach_supported_shared_boundary_after_explicit_prep(self):
+        """All six reach a supported shared natural boundary after EXPLICIT
+        equivalent preparation (seeding is not implicit production policy)."""
         host = TipaAssyFederation(config_path=str(REAL_CONFIG)).initialize()
+        for sub_line_id in SUB_LINE_IDS:
+            seed_like_demo(host.runtime(sub_line_id))  # explicit prep helper
         coord = host.make_coordinator()
         outcome = host.run_window(coord, 120.0)
         assert outcome.status == "completed"
@@ -342,9 +375,12 @@ class TestStandaloneFederatedParity:
         assert canonical_state(standalone) == canonical_state(federated)
 
     def test_real_config_six_subline_replica_parity(self):
-        """Hosting six REAL demo-config runtimes federated (one shared natural
-        dwell boundary) equals each sub-line's standalone replica outcome."""
+        """Hosting six REAL config runtimes federated (one shared natural dwell
+        boundary) equals each sub-line's standalone replica, given EXPLICIT
+        equivalent initial conditions on both arms."""
         host = TipaAssyFederation(config_path=str(REAL_CONFIG)).initialize()
+        for sub_line_id in SUB_LINE_IDS:
+            seed_like_demo(host.runtime(sub_line_id))  # explicit prep
         coord = host.make_coordinator()
         outcome = host.run_window(coord, 120.0)
         assert outcome.status == "completed"
@@ -380,6 +416,7 @@ class TestIsolation:
 
     def test_no_cross_scope_mutation_when_single_subline_advanced(self):
         host = TipaAssyFederation(config_path=str(REAL_CONFIG)).initialize()
+        seed_like_demo(host.runtime("ASSY-SL01"))  # prepare only SL01
         others = {sid: canonical_state(host.runtime(sid)) for sid in SUB_LINE_IDS[1:]}
         coord = host.make_coordinator()
         outcome = host.run_window(coord, 120.0, sub_line_ids=["ASSY-SL01"])

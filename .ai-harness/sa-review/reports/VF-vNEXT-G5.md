@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G5` (GitHub Issue #50) |
+| Task ID | `VF-vNEXT-G5` (GitHub Issue #50) + C01 |
 | Program | Implementation phase (G5; only authorized implementation gate after G4) |
 | Required base (branch) | `ae0a86e4ad8add77c731fbd597534f24a2f7b575` (accepted G4 final head) |
 | Branch | `feature/vf-vnext-g5` |
@@ -31,10 +31,13 @@ synchronization policy.
   order). Natural-boundary rule: only EXACT reachable boundaries succeed;
   overshooting/fractional targets fail closed — no ASSY rewrite.
 - `assy_host.py` — `TipaAssyFederation`: owns the TIPA Workspace, builds six
-  isolated runtimes via the existing demo construction/config-isolation pattern
-  (deepcopy + ordinal seed), binds each to its executable G1 scope, exposes
-  adapters and a G4 `Coordinator` seam; never makes ASSY executable; never
-  replaces domain truth.
+  isolated runtimes DIRECTLY from the accepted ASSY config/identity loaders
+  reproducing the proven isolation mechanics only (deepcopy + ordinal seed),
+  binds each to its executable G1 scope, exposes adapters and a G4
+  `Coordinator` seam; never makes ASSY executable; never replaces domain truth.
+  C01: the production host no longer constructs/owns `AssyDemoComposition` and
+  accepts no `DemoScenario`; no demo feed/scenario/continuous-feed policy is
+  promoted; upstream seeding is explicit, not implicit production policy.
 
 No forbidden file modified; `assembly/`, `workspace/`, `composition/`, and all
 other existing packages are untouched.
@@ -45,7 +48,9 @@ other existing packages are untouched.
   standalone vs federated produce identical canonical domain state, identical
   RELEASED set, exact-equal simulation time.
 - Real demo-config host federates all six sub-lines at the shared natural 120s
-  boundary; each federated runtime equals its standalone replica (evidence 05).
+  boundary under EXPLICIT equivalent preparation (host runtimes and replicas
+  seeded via the test/demo prep helper); each federated runtime equals its
+  standalone replica (evidence 05/08).
 - Full ASSY regression oracle stays green (354) — domain semantics (conveyor
   literals PRE-ASSY..AP11, SSO2/RSO2, AP04 genealogy, AP06 retest, AP08
   reinspect, AP11 QC, failed_final, RELEASED/LINE_OUT, evidence, deterministic
@@ -67,7 +72,7 @@ other existing packages are untouched.
 
 | Suite | Result |
 |---|---|
-| New G5 tests | **24 passed** |
+| New G5 tests | **26 passed** (incl. C01) |
 | G4 composition tests | **56 passed** |
 | G1 workspace | **32 passed** |
 | G2 provenance | **36 passed** |
@@ -76,7 +81,7 @@ other existing packages are untouched.
 | Discrete runtime/scheduler | **279 passed** |
 | Complete ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1873 passed** (0 failures) |
+| Full repository suite | **1875 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 6. STOP-condition assessment (evidence 06)
@@ -105,12 +110,13 @@ contracts intact; no demo-policy-to-plant-truth leakage; no G6+.
 
 ## 8. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G5/` — 7 files (01…07).
+`.ai-harness/sa-review/evidence/VF-vNEXT-G5/` — 8 files (01…08; 08 = C01
+corrections: production host decoupled from AssyDemoComposition / demo policy).
 
 ## 9. Final status
 
 ```text
-VF-vNEXT-G5 — READY FOR SA REVIEW
+VF-vNEXT-G5-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G6 is NOT started.

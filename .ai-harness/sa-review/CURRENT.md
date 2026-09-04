@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G5
-Status: READY FOR SA REVIEW (Migrate TIPA Workspace / ASSY Federation onto G1–G4)
+Task: VF-vNEXT-G5-C01
+Status: READY FOR SA REVIEW (C01: production federation host decoupled from AssyDemoComposition / demo policy)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate after G4)
 Prerequisite: Issue #49 accepted as completed; G1–G4 contracts authoritative
 
@@ -22,9 +22,13 @@ Implemented (new additive package src/virtual_factory/federation/):
   advancement via public ASSY runtime ops only, oracle-driver order). Exact
   natural-boundary landing only; overshooting/fractional targets fail closed.
 - assy_host.py: TipaAssyFederation — owns TIPA Workspace; six isolated runtimes
-  via existing demo construction/config-isolation pattern (deepcopy + ordinal
-  seed); binds each to its executable G1 scope; exposes G4 Coordinator seam
-  (empty graph); ASSY container never executable; domain truth stays in runtime.
+  built DIRECTLY from accepted ASSY config/identity loaders reproducing the
+  proven isolation mechanics only (deepcopy + ordinal seed); binds each to its
+  executable G1 scope; exposes G4 Coordinator seam (empty graph); ASSY container
+  never executable; domain truth stays in runtime. C01: host no longer
+  constructs/owns AssyDemoComposition, accepts no DemoScenario, and imports no
+  demo feed/scenario/continuous-feed policy; upstream seeding is explicit, not
+  implicit production policy.
 
 Frozen invariants preserved:
 - AssyLineRuntime is the single source of ASSY truth; NOT rewritten.
@@ -37,11 +41,12 @@ Frozen invariants preserved:
 - ASSY stays container-only; no G6 UI, G7 run-control/replay, G8+, G9 semantic
   binding, G10 SH-WTP.
 
-Standalone / federated parity (evidence 05):
+Standalone / federated parity (evidence 05/08):
 - Fast-config: 16-cycle RELEASE and 7-cycle AP04 JOIN parity — standalone vs
   federated identical canonical domain state + released set.
-- Real demo-config: six sub-lines federated at shared natural 120s boundary;
-  each equals its standalone replica.
+- Real config: six sub-lines federated at shared natural 120s boundary under
+  EXPLICIT equivalent preparation (host runtimes and replicas seeded via the
+  test/demo prep helper); each equals its standalone replica.
 - Complete ASSY regression oracle stays green (354).
 
 Identity / isolation (evidence 06):
@@ -56,7 +61,7 @@ fractional dwell, no new sync policy, ASSY container-only, G1–G4 intact, no
 demo-policy-to-plant-truth leakage, no G6+).
 
 Test / regression results (evidence 07):
-- New G5 tests: 24 passed.
+- New G5 tests: 26 passed (incl. C01 decoupling).
 - G4 composition tests: 56 passed.
 - G1 workspace: 32 passed.
 - G2 provenance: 36 passed.
@@ -65,7 +70,7 @@ Test / regression results (evidence 07):
 - Discrete runtime/scheduler: 279 passed.
 - Complete ASSY regression oracle: 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1873 passed (0 failures).
+- Full repository suite: 1875 passed (0 failures).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
 Deferred (NOT implemented): G6 UI, G7 run-control/UI/API/replay policy, G8+,
@@ -80,10 +85,11 @@ Report:
 .ai-harness/sa-review/reports/VF-vNEXT-G5.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G5/ (7 files: 01 repo-first discovery +
+.ai-harness/sa-review/evidence/VF-vNEXT-G5/ (8 files: 01 repo-first discovery +
 scope; 02 tipa workspace mapping; 03 assy participant adapter; 04 federation
 host; 05 standalone/federated parity; 06 identity/isolation + STOP assessment;
-07 tests + regression results)
+07 tests + regression results; 08 C01 corrections — production host decoupled
+from AssyDemoComposition / demo policy)
 
 
 

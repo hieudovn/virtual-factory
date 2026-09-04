@@ -3,10 +3,13 @@
 Smallest production federation host that:
 
 - creates/owns the TIPA :class:`Workspace` structure (G5-A);
-- creates six isolated ``AssyLineRuntime`` contexts reusing the EXISTING
-  ``AssyDemoComposition`` construction/config-isolation pattern (per-sub-line
-  deep-copied config + ordinal random seed + scenario quality normalization) —
-  no second simulation engine;
+- creates six isolated ``AssyLineRuntime`` contexts directly from the accepted
+  ASSY config/identity sources, reproducing the PROVEN config-isolation
+  mechanics only (per-sub-line deep-copied config + stable ordinal random-seed
+  isolation) — it does NOT instantiate, own or reuse the demo presentation
+  composition (``AssyDemoComposition``) or any demo-only orchestration policy
+  (no ``DemoScenario``, no scenario-targeting, no continuous-feed policy, no
+  selected-sub-line/demo-step state, no implicit seeded upstream inventory);
 - binds each context to its matching executable G1 scope (structural identity
   authority is the G1 :class:`StructuralPath`);
 - exposes G4-compliant :class:`AssySubLineAdapter` participants so supported
@@ -14,7 +17,12 @@ Smallest production federation host that:
   shared coordination boundary is explicitly available;
 - never makes the ``ASSY`` container itself executable;
 - never replaces domain truth with coordinator state (the runtime remains the
-  single source of ASSY truth).
+  single source of ASSY truth);
+- never promotes demo feed/scenario policy to production/plant truth.
+
+Seeding upstream WIP is NOT implicit production policy: runtimes are created at
+time 0 with no WIP. Tests/tools that need seeded upstream state prepare it
+explicitly (or via a clearly-named demo/test preparation helper).
 
 The host is a *federation/migration* seam, NOT a plant-synchronization policy.
 It does not force sub-line clocks to align; ``run_window`` fails closed for any
@@ -28,17 +36,15 @@ import copy
 from dataclasses import dataclass
 from typing import Iterable
 
-from virtual_factory.assembly.demo_composition import (
-    AssyDemoComposition,
-    DemoScenario,
-)
 from virtual_factory.assembly.line_runtime import (
     AssyLineConfig,
     AssyLineRuntime,
+    load_assy_config_from_yaml,
 )
 from virtual_factory.assembly.sub_line_identity import (
     AssyProductionLineIdentity,
     AssySubLineIdentity,
+    load_assy_demo_identity_from_yaml,
 )
 from virtual_factory.composition import (
     CompositionGraph,
@@ -57,6 +63,7 @@ from virtual_factory.workspace import (
     StructuralPath,
     Workspace,
 )
+
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,16 +89,16 @@ class FederationError(ValueError):
 
 class TipaAssyFederation:
     """Host that owns the TIPA Workspace and six isolated ASSY sub-line
-    runtimes, each bound to its executable G1 scope."""
+    runtimes, each bound to its executable G1 scope.
 
-    def __init__(
-        self,
-        config_path: str,
-        scenario: DemoScenario = DemoScenario.HAPPY_PATH,
-    ) -> None:
+    Production construction takes only a config path. It accepts NO
+    ``DemoScenario`` and owns no demo presentation composition, scenario
+    targeting, continuous-feed policy, selected-sub-line/demo-step state, or
+    seeded upstream inventory.
+    """
+
+    def __init__(self, config_path: str) -> None:
         self.config_path = config_path
-        self.scenario = scenario
-        self._composition: AssyDemoComposition | None = None
         self.workspace: Workspace | None = None
         self.identity: AssyProductionLineIdentity | None = None
         self.sub_lines: dict[str, FederatedAssySubLine] = {}
@@ -101,25 +108,25 @@ class TipaAssyFederation:
     def initialize(self) -> "TipaAssyFederation":
         """Build the TIPA Workspace and six isolated, bound sub-line contexts.
 
-        Reuses the existing ``AssyDemoComposition`` construction/config-
-        isolation pattern (deepcopy + ordinal seed + scenario normalization);
-        each context runtime stays the single source of ASSY domain truth.
+        Builds each ``AssyLineRuntime`` DIRECTLY from the accepted ASSY config/
+        identity sources (``load_assy_config_from_yaml`` /
+        ``load_assy_demo_identity_from_yaml``), reproducing the proven
+        isolation mechanics only: per-sub-line deep-copied config + stable
+        ordinal random-seed isolation. It never constructs ``AssyDemoComposition``
+        and applies no demo-only policy. Runtimes are created at time 0 with no
+        seeded WIP (upstream seeding is explicit, never implicit policy).
         """
-        composition = AssyDemoComposition(
-            config_path=self.config_path,
-            scenario=self.scenario,
-        )
-        composition.initialize()
-        self._composition = composition
+        base_config = load_assy_config_from_yaml(self.config_path)
+        pline = load_assy_demo_identity_from_yaml(self.config_path)
         self.workspace = build_tipa_workspace()
-        self.identity = composition.identity
+        self.identity = pline
         self.sub_lines = {}
 
-        for sub_line_id in SUB_LINE_IDS:
-            ctx = composition.contexts.get(sub_line_id)
-            if ctx is None:
+        for ordinal, sub_line_id in enumerate(SUB_LINE_IDS):
+            sl_identity = pline.get_sub_line(sub_line_id)
+            if sl_identity is None:
                 raise FederationError(
-                    f"demo composition did not create context {sub_line_id!r}"
+                    f"identity source has no sub-line {sub_line_id!r}"
                 )
             path = sub_line_path(sub_line_id)
             # G1 authority: the bound scope must resolve and be executable.
@@ -128,13 +135,18 @@ class TipaAssyFederation:
                 raise FederationError(
                     f"scope {path.as_string()!r} is not executable-capable"
                 )
-            adapter = AssySubLineAdapter(scope_path=path, runtime=ctx.runtime)
+            # Proven isolation mechanics only: deep-copied config + stable
+            # ordinal seed (base seed + canonical ordinal), never shared.
+            ctx_config = copy.deepcopy(base_config)
+            ctx_config.random_seed = base_config.random_seed + ordinal
+            runtime = AssyLineRuntime(config=ctx_config)
+            adapter = AssySubLineAdapter(scope_path=path, runtime=runtime)
             self.sub_lines[sub_line_id] = FederatedAssySubLine(
                 sub_line_id=sub_line_id,
-                identity=ctx.identity,
+                identity=sl_identity,
                 path=path,
-                config=ctx.config,
-                runtime=ctx.runtime,
+                config=ctx_config,
+                runtime=runtime,
                 adapter=adapter,
             )
         return self
@@ -144,10 +156,6 @@ class TipaAssyFederation:
     @property
     def sub_line_ids(self) -> tuple[str, ...]:
         return SUB_LINE_IDS
-
-    @property
-    def composition(self) -> AssyDemoComposition | None:
-        return self._composition
 
     def get(self, sub_line_id: str) -> FederatedAssySubLine:
         if sub_line_id not in self.sub_lines:
@@ -216,12 +224,15 @@ class TipaAssyFederation:
 
     # ── Standalone replica (parity support) ───────────────────
 
-    def standalone_replica(
-        self, sub_line_id: str, *, seed_like_demo: bool = True
-    ) -> AssyLineRuntime:
+    def standalone_replica(self, sub_line_id: str) -> AssyLineRuntime:
         """Build a fresh, identical runtime for one sub-line using its isolated
         config (deep-copied, same seed) — used to prove standalone/federated
-        semantic parity. Returns an UNSEEDED runtime at time 0."""
+        semantic parity under EXPLICIT equivalent initial conditions.
+
+        Returns an UNSEEDED runtime at time 0; the caller applies the same
+        explicit preparation it applied to the federated runtime. No demo
+        policy is applied here.
+        """
         fed = self.get(sub_line_id)
         config = copy.deepcopy(fed.config)
         return AssyLineRuntime(config=config)
