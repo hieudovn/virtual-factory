@@ -1,87 +1,51 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G1-C03
-Status: READY FOR SA REVIEW (C03: repeated ancestor local ids valid — not a cycle; removed ancestor-id cycle criterion)
+Task: VF-vNEXT-G2
+Status: READY FOR SA REVIEW
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate)
-Prerequisite: ARCH-06 / Issue #45 CLOSED by SA as completed
+Prerequisite: G1 PASS / COMPLETE at ac329fbd7f96614be9f09e8037a3e10cfabaf1dd (#46 CLOSED)
 
 Gate type:
-Accelerated implementation gate — production structural foundation (G1)
+Accelerated implementation gate — Runtime Context + Provenance v2 (G2)
 
 Architecture baseline:
-ARCH-01 @ 41903e18…, ARCH-02 @ 40454487…, ARCH-03 @ 392401bd…,
-ARCH-04 @ d5c155b6…, ARCH-05 @ 8fafa119…, ARCH-06 @ 41300d34…
+ARCH-01..06 accepted; G1 base ac329fbd7f96614be9f09e8037a3e10cfabaf1dd
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
 Implemented:
-- src/virtual_factory/workspace/ (identity.py, model.py, builder.py, config.py,
-  loader.py, __init__.py): generic Workspace -> hierarchical Simulation Scope ->
-  Simulation Object foundation; ScopeMode container_only/executable_capable;
-  Archetype informational; deterministic StructuralPath + SimulationObjectRef;
-  fail-closed build_workspace validation (missing path-qualified parent,
-  duplicate child id under same parent, self-nesting, mode guard, object
-  ownership, ambiguity in bare-id lookup); generic config/loading seam.
-  Scope ids unique WITHIN their structural parent namespace (NOT global); full
-  StructuralPath is the authoritative identity. Top-level scopes MUST use
-  parent_path=None; parent_path == workspace_root fails closed (C02).
-  Completeness invariant: every validated declaration materializes exactly once
-  (node count == declaration count).
-- configs/workspaces/tipa_assy_demo.yaml (lossless TIPA -> ASSY -> ASSY-SL01..06)
-  + configs/workspaces/generic_continuous_demo.yaml (no SH-WTP site truth).
-- tests/test_workspace_{foundation,validation,config}.py.
-- No AssyLineRuntime change; no G2+ implementation; no workspace-name
-  hard-coding; PIM canonical identity separate.
+- src/virtual_factory/provenance/ (enums.py, context.py, envelope.py,
+  namespace.py, adapter.py, __init__.py): generic immutable RunContextV2 +
+  ProvenanceV2 + deterministic output namespace + discrete adapter.
+- telemetry/telemetry_frame.py: additive ProvenancedFrame + build_provenanced_frame
+  (legacy build_publishable_frame unchanged).
+- tests/test_provenance_{context,envelope,namespace}.py,
+  tests/test_run_context_adapter.py, tests/test_telemetry_provenance_threading.py.
+- discrete.RunContext reconciled via thin adapter (no duplicate authority);
+  origin_kind=simulation; only frozen data_status/fidelity; no fabricated PIM
+  canonical id; no engine_kind universal authority (profile is informational).
 
 Test / regression results:
-- New G1 tests: 32 passed.
-- ASSY regression oracle (ARCH-05 incl. C01 automated obligations): 354 passed.
+- New G2 tests: 32 passed.
+- G1 + discrete + telemetry/observation targeted: 415 passed.
+- ASSY regression oracle: 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1679 passed (deterministic re-run; one pre-existing
-  id()-based ASSY flake recorded in evidence 05).
+- Full repository suite: 1711 passed (0 failures).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
-C01 corrections applied:
-- Scope id uniqueness now WITHIN structural parent namespace (not global).
-- Parent references path-qualified (StructuralPath); resolution never depends on
-  a globally-unique bare id.
-- Full StructuralPath = authoritative unambiguous identity; path-based lookup
-  deterministic + fail-closed.
-- Bare-id lookups (find_scope/find_object/scope_path_by_id) raise on ambiguity.
-- Positive tests for duplicate local ids under different parents; negative test
-  for duplicate child ids under same parent kept.
-
-C02 corrections applied:
-- Canonical top-level representation: top-level scopes MUST use parent_path=None;
-  parent_path == workspace_root fails closed (was silently dropped from tree).
-- Completeness invariant/check: every validated ScopeSpec materializes exactly
-  once (declaration count == tree node count).
-- Added workspace-root-parent negative test and declaration-count/tree-count
-  completeness positive test.
-
-C03 corrections applied:
-- Removed the over-restrictive _detect_self_nesting guard: repeated local scope
-  ids along an ancestor chain (e.g. W/Area-A/Line-1/Area-A) are VALID when full
-  StructuralPaths differ; local-id repetition is NOT a containment-cycle
-  criterion.
-- Fail-closed integrity kept via path-qualified parent existence, same-parent
-  duplicate rejection, canonical top-level rule, and completeness invariant.
-- Added test_repeated_ancestor_local_id_is_valid positive; removed the
-  self-nesting negative. All C01/C02 tests retained.
-
-Deferred to G2+ (NOT implemented): runtime context + provenance-v2 (G2),
-observation/event/alarm alignment (G3), coordinator/ports (G4), ASSY federation
-(G5), UI primitives (G6), scenario/run control (G7), regression baseline gate
-(G8), semantic binding (G9), SH WTP runtime (G10).
+Deferred to G3+ (NOT implemented): observation/event/alarm alignment (G3),
+coordinator/ports (G4), ASSY federation (G5), UI (G6), run-control/replay (G7),
+regression baseline (G8), semantic binding (G9), SH WTP runtime (G10), protocol
+propagation of ProvenancedFrame, namespace consumption.
 
 STOP conditions: none triggered.
 
-G2 started: NO
+G3 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G1.md
+.ai-harness/sa-review/reports/VF-vNEXT-G2.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G1/ (6 files: 01…06)
+.ai-harness/sa-review/evidence/VF-vNEXT-G2/ (7 files: 01…07)
 
 
 
