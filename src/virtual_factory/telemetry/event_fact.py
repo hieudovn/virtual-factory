@@ -170,12 +170,30 @@ class EventFact:
                     "provenance must be ProvenanceV2, "
                     f"got {type(self.provenance).__name__}"
                 )
+            # When both the explicit event identity and the provenance authority
+            # are present they must agree (optional fields need not exist, but no
+            # two authorities may contradict each other).
             if (
                 self.workspace_id is not None
                 and self.provenance.workspace_id != self.workspace_id
             ):
                 raise EventFactError(
                     "provenance.workspace_id must match workspace_id"
+                )
+            if (
+                self.run_id is not None
+                and self.provenance.run_id != self.run_id
+            ):
+                raise EventFactError(
+                    "provenance.run_id must match run_id"
+                )
+            if (
+                self.scope_path is not None
+                and self.provenance.scope_path is not None
+                and self.provenance.scope_path != self.scope_path
+            ):
+                raise EventFactError(
+                    "provenance.scope_path must match scope_path"
                 )
 
         # Deep-freeze the payload so no retroactive dict mutation is possible.

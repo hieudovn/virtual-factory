@@ -40,6 +40,11 @@ class EventFact:
 - Workspace/scope consistency fail-closed: if both present,
   `scope_path.workspace_id == workspace_id`, and
   `provenance.workspace_id == workspace_id` when workspace is present.
+- Provenance coherence (C01-1): whenever explicit event fields AND
+  `ProvenanceV2` are both present they must agree — `provenance.run_id ==
+  run_id` (when run_id present) and `provenance.scope_path == scope_path` (when
+  both scope paths present). Optional fields need not exist; no two present
+  authorities may contradict.
 - `to_dict()` deterministic key-stable serialization; payload/provenance
   serialized as plain JSON-compatible structures.
 

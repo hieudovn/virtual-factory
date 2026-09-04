@@ -46,11 +46,35 @@ def test_existing_single_evaluation_behavior_compatible() -> None:
     assert low.unit == "bool"
 
 
-def test_baseline_evaluation_emits_no_fact() -> None:
-    """A first observation establishes the baseline condition (no transition)."""
+def test_first_observed_inactive_emits_no_fact() -> None:
+    """A first INACTIVE observation establishes the baseline (no fact)."""
+    manager = AlarmManager(_CONFIG.alarms)
+    manager.evaluate(_state_with_level(1.0, 1.0), _CONFIG, timestamp_s=1.0)
+    assert len(_alarm_facts_for(manager, "T102_LOW_LEVEL")) == 0
+
+
+def test_first_observed_active_emits_assert_fact() -> None:
+    """A first ACTIVE observation must emit an assert AlarmEventFact (C01-2)."""
     manager = AlarmManager(_CONFIG.alarms)
     manager.evaluate(_state_with_level(0.25, 1.0), _CONFIG, timestamp_s=1.0)
-    assert len(manager.event_store) == 0
+    facts = _alarm_facts_for(manager, "T102_LOW_LEVEL")
+    assert len(facts) == 1
+    assert facts[0].to_dict()["alarm"]["transition"] == "assert"
+    assert facts[0].simulation_time_s == 1.0
+
+
+def test_first_active_then_clear_is_assert_then_clear_not_orphan() -> None:
+    """Initial ACTIVE then CLEAR yields [assert, clear] — never an orphan clear."""
+    manager = AlarmManager(_CONFIG.alarms)
+    # first observation ACTIVE at t=1 -> assert
+    manager.evaluate(_state_with_level(0.25, 1.0), _CONFIG, timestamp_s=1.0)
+    # stable ACTIVE at t=2 -> no duplicate
+    manager.evaluate(_state_with_level(0.2, 2.0), _CONFIG, timestamp_s=2.0)
+    # clear at t=3 -> clear
+    manager.evaluate(_state_with_level(1.0, 3.0), _CONFIG, timestamp_s=3.0)
+    facts = _alarm_facts_for(manager, "T102_LOW_LEVEL")
+    assert [f.to_dict()["alarm"]["transition"] for f in facts] == ["assert", "clear"]
+    assert len(facts) == 2
 
 
 def test_activation_and_clear_transitions_produce_alarm_facts() -> None:

@@ -5,7 +5,8 @@
 Command: `python -m pytest tests/test_event_fact.py tests/test_event_store.py
 tests/test_alarm_event_facts.py tests/test_observation_alignment.py -q`
 
-Result: **34 passed** (0 failures).
+Result: **44 passed** (0 failures). Includes the C01 corrections (initial-active
+assert, run-identity coherence negatives, reserved-key conflict negatives).
 
 Covers Issue #48 "Required tests / proofs":
 - Event fact immutable + deterministic to serialize;
@@ -33,19 +34,18 @@ Covers Issue #48 "Required tests / proofs":
 | G1 workspace | `test_workspace_foundation/validation/config` | **32 passed** |
 | ASSY regression oracle | ARCH-05 incl. C01 set | **354 passed** |
 | Continuous/compressor baseline | ARCH-06 set | **61 passed** |
-| Full repository suite | `tests` | **1749 passed** (0 failures, deterministic re-run) |
+| Full repository suite | `tests` | **1759 passed** (0 failures, clean) |
 
 ## 3. Pre-existing flake (documented, unrelated to G3)
 
-First full-suite run surfaced `test_demo_composition.py::TestReset::
-test_reset_creates_fresh_configs` (1 failed / 1748 passed). This is the
-documented pre-existing ASSY flake: it asserts disjoint Python `id()`s across a
-reset; under GC the allocator can reuse addresses, so the `id()` sets overlap
-intermittently. It passes in isolation (49/49) and when its file runs alone; G3
-did not modify `assembly/`/`demo_composition`. It is recorded honestly as a
-pre-existing baseline anomaly (per Issue #48: document flakes separately; do not
-modify forbidden domain code to hide them). Deterministic re-run: **1749 passed,
-0 failures**.
+One ASSY-oracle run surfaced `test_demo_composition.py::TestReset::
+test_reset_creates_fresh_runtimes` (1 failed / 353 passed). This is the same
+pre-existing ASSY `id()`-disjoint flake family (Python `id()` address reuse
+across a reset) already documented in G1/G2 for the sibling
+`test_reset_creates_fresh_configs`. It passes when its file runs alone and the
+ASSY oracle re-run was clean (**354 passed**). G3 did not modify
+`assembly/`/`demo_composition`. Deterministic full-suite run: **1759 passed,
+0 failures** (no flake surfaced).
 
 ## 4. Lint / type / compile / harness
 

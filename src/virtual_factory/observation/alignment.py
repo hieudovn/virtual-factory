@@ -77,6 +77,20 @@ class ObservationStructuralContext:
             raise ObservationContextError("run_id must be a non-empty str")
 
 
+def _reserved_key_check(current: Mapping[str, Any], key: str, value: Any) -> None:
+    """Fail closed when a reserved ``vf.*`` key already holds a conflicting value.
+
+    Same-value repeats are allowed (proven equal); conflicting pre-existing
+    values are never silently overwritten.
+    """
+    existing = current.get(key)
+    if existing is not None and existing != value:
+        raise ObservationContextError(
+            f"reserved context key {key!r} already holds a conflicting value "
+            f"{existing!r}; refusing to overwrite with {value!r}"
+        )
+
+
 def carry_structural_context(
     envelope: ObservationEnvelope,
     context: ObservationStructuralContext | None,
@@ -89,6 +103,14 @@ def carry_structural_context(
       identity carried in its read-only ``context`` mapping under reserved
       ``vf.*`` keys. The input envelope is never mutated.
 
+    Identity coherence is fail-closed (Issue #48 C01-1):
+
+    - when ``context.run_id`` is present it MUST equal ``envelope.run_id``;
+    - when ``context.provenance`` is present, ``provenance.run_id`` MUST equal
+      ``envelope.run_id`` (so if both are present all three agree);
+    - a pre-existing reserved ``vf.*`` key may only be repeated with the SAME
+      value; a conflicting value fails closed (never silently overwritten).
+
     This is a reference/carry seam only — it never renames or fabricates PIM
     canonical identity, and it never turns Observation into runtime authority.
     """
@@ -100,14 +122,36 @@ def carry_structural_context(
             f"got {type(envelope).__name__}"
         )
 
-    extra: dict[str, Any] = {KEY_WORKSPACE_ID: context.workspace_id}
-    if context.scope_path is not None:
-        extra[KEY_SCOPE_PATH] = context.scope_path.as_string()
-    if context.run_id is not None:
-        extra[KEY_RUN_ID] = context.run_id
-    if context.provenance is not None:
-        extra[KEY_PROVENANCE] = context.provenance.to_dict()
+    if context.run_id is not None and context.run_id != envelope.run_id:
+        raise ObservationContextError(
+            f"context.run_id {context.run_id!r} must equal "
+            f"envelope.run_id {envelope.run_id!r}"
+        )
+    if (
+        context.provenance is not None
+        and context.provenance.run_id != envelope.run_id
+    ):
+        raise ObservationContextError(
+            f"provenance.run_id {context.provenance.run_id!r} must equal "
+            f"envelope.run_id {envelope.run_id!r}"
+        )
 
-    new_context: Mapping[str, Any] = dict(envelope.context)
-    new_context = {**new_context, **extra}
+    new_context: dict[str, Any] = dict(envelope.context)
+
+    _reserved_key_check(new_context, KEY_WORKSPACE_ID, context.workspace_id)
+    new_context[KEY_WORKSPACE_ID] = context.workspace_id
+    if context.scope_path is not None:
+        _reserved_key_check(
+            new_context, KEY_SCOPE_PATH, context.scope_path.as_string()
+        )
+        new_context[KEY_SCOPE_PATH] = context.scope_path.as_string()
+    if context.run_id is not None:
+        _reserved_key_check(new_context, KEY_RUN_ID, context.run_id)
+        new_context[KEY_RUN_ID] = context.run_id
+    if context.provenance is not None:
+        _reserved_key_check(
+            new_context, KEY_PROVENANCE, context.provenance.to_dict()
+        )
+        new_context[KEY_PROVENANCE] = context.provenance.to_dict()
+
     return replace(envelope, context=new_context)

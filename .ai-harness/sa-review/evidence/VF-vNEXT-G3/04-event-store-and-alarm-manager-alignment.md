@@ -33,12 +33,12 @@ Additive, backward-compatible:
 - `evaluate(state, config, timestamp_s) -> list[SignalValue]` is UNCHANGED in
   signature, return, runtime `industrial_event` writes, threshold semantics and
   `AlarmState` content.
-- On activation/clear transitions (detected against the prior derived
-  `AlarmState`) it appends an immutable `AlarmEventFact`
+- On alarm occurrence/state changes it appends an immutable `AlarmEventFact`
   (`event_type=alarm.assert` / `alarm.clear`) to `self.event_store`. Smallest
-  correct contract: a first observation establishes the baseline condition; only
-  subsequent assert/clear transitions become facts (stable conditions emit no
-  duplicates).
+  correct contract (C01-2): a first INACTIVE observation establishes a baseline
+  (no fact); a first ACTIVE observation emits an `assert` occurrence fact (so a
+  later clear is never an orphan); subsequent active<->inactive transitions
+  emit assert/clear; stable active/inactive emits no duplicate facts.
 - `AlarmState` remains a mutable DERIVED projection (current active/severity/
   message/last_value/time). Updating it never mutates stored facts.
 - Emitted facts carry no fabricated G1/G2/PIM identity (legacy continuous

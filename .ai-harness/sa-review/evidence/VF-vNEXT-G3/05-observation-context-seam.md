@@ -31,6 +31,14 @@ def carry_structural_context(
   `context` mapping carries reserved keys: `vf.workspace_id`, `vf.scope_path`
   (canonical string), `vf.run_id`, `vf.provenance` (serialized dict).
 
+## 2b. Run-identity coherence (C01-1, fail-closed)
+
+- when `context.run_id` is present it MUST equal `envelope.run_id`;
+- when `context.provenance` is present, `provenance.run_id` MUST equal
+  `envelope.run_id` (so if both are present all three agree);
+- a pre-existing reserved `vf.*` key may only be repeated with the SAME value;
+  a conflicting value fails closed (never silently overwritten).
+
 ## 3. Non-fabrication + fail-closed
 
 - Values are carried only from an explicit context; there is no defaulting.

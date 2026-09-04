@@ -8,10 +8,13 @@ never mutates the original envelope.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from virtual_factory.observation.alignment import (
     KEY_PROVENANCE,
+    KEY_RUN_ID,
     KEY_SCOPE_PATH,
     KEY_WORKSPACE_ID,
     ObservationContextError,
@@ -59,11 +62,11 @@ def test_observation_envelope_is_immutable_downstream_fact() -> None:
 
 
 def test_carries_explicit_structural_context() -> None:
-    env = _envelope()
+    env = _envelope()  # envelope run_id = "run-1"
     ctx = ObservationStructuralContext(
         workspace_id="W",
         scope_path=StructuralPath(("W", "AREA", "UNIT")),
-        run_id="run-9",
+        run_id="run-1",  # MUST equal envelope.run_id (C01-1)
     )
     result = carry_structural_context(env, ctx)
     # A NEW envelope is returned; the original is never mutated.
@@ -71,13 +74,55 @@ def test_carries_explicit_structural_context() -> None:
     assert KEY_WORKSPACE_ID not in env.context
     assert result.context[KEY_WORKSPACE_ID] == "W"
     assert result.context[KEY_SCOPE_PATH] == "W/AREA/UNIT"
-    assert result.context["vf.run_id"] == "run-9"
+    assert result.context[KEY_RUN_ID] == "run-1"
     d = result.to_dict()
     assert d["context"][KEY_WORKSPACE_ID] == "W"
     # Existing observation identity is not collapsed or replaced.
     assert d["run_id"] == "run-1"
     assert d["model_id"] == "tipa"
     assert d["idempotency_key"].startswith("run-1|")
+
+
+def test_context_run_id_mismatch_fails_closed() -> None:
+    env = _envelope()  # envelope run_id = "run-1"
+    ctx = ObservationStructuralContext(workspace_id="W", run_id="run-9")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_provenance_run_id_mismatch_fails_closed() -> None:
+    env = _envelope()  # envelope run_id = "run-1"
+    prov = ProvenanceV2(workspace_id="W", run_id="run-9")
+    ctx = ObservationStructuralContext(workspace_id="W", provenance=prov)
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(env, ctx)
+
+
+def test_all_run_authorities_agree_when_context_and_provenance_present() -> None:
+    env = _envelope()  # envelope run_id = "run-1"
+    prov = ProvenanceV2(workspace_id="W", run_id="run-1")
+    ctx = ObservationStructuralContext(
+        workspace_id="W", run_id="run-1", provenance=prov
+    )
+    result = carry_structural_context(env, ctx)
+    assert result.context[KEY_RUN_ID] == "run-1"
+    assert result.context[KEY_PROVENANCE]["run_id"] == "run-1"
+
+
+def test_reserved_key_conflict_fails_closed_not_silently_overwritten() -> None:
+    env = _envelope()
+    conflicting = replace(env, context={"vf.workspace_id": "OTHER"})
+    ctx = ObservationStructuralContext(workspace_id="W")
+    with pytest.raises(ObservationContextError):
+        carry_structural_context(conflicting, ctx)
+
+
+def test_reserved_key_same_value_is_allowed() -> None:
+    env = _envelope()
+    same = replace(env, context={"vf.workspace_id": "W"})
+    ctx = ObservationStructuralContext(workspace_id="W")
+    result = carry_structural_context(same, ctx)
+    assert result.context[KEY_WORKSPACE_ID] == "W"
 
 
 def test_context_is_fail_closed_on_workspace_mismatch() -> None:

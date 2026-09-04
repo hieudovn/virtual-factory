@@ -90,10 +90,22 @@ class AlarmManager:
                 last_value=source_value,
                 timestamp_s=timestamp_s,
             )
-            # Emit immutable alarm Event facts on transition only (smallest
-            # correct contract): a first observation establishes the baseline
-            # condition; subsequent assert/clear transitions become facts.
-            if previous is not None and previous.active != active:
+            # Emit immutable alarm Event facts under the smallest correct
+            # contract (Issue #48 C01-2):
+            #  - first observed INACTIVE establishes a baseline (no fact);
+            #  - first observed ACTIVE emits an 'assert' occurrence fact (so a
+            #    later clear can never be an orphan with no preceding assert);
+            #  - subsequent active<->inactive transitions emit assert/clear;
+            #  - stable active/inactive emits no duplicate facts.
+            if previous is None:
+                if active:
+                    self._append_alarm_fact(
+                        alarm=alarm,
+                        active=active,
+                        source_value=source_value,
+                        timestamp_s=timestamp_s,
+                    )
+            elif previous.active != active:
                 self._append_alarm_fact(
                     alarm=alarm,
                     active=active,

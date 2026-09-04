@@ -149,6 +149,50 @@ def test_provenance_workspace_mismatch_fails_closed() -> None:
         _fact(workspace_id="W1", provenance=provenance)
 
 
+def test_provenance_run_id_mismatch_fails_closed() -> None:
+    provenance = ProvenanceV2(workspace_id="W", run_id="run-9")
+    with pytest.raises(EventFactError):
+        _fact(
+            run_id="run-1",
+            workspace_id="W",
+            provenance=provenance,
+        )
+
+
+def test_provenance_scope_path_mismatch_fails_closed() -> None:
+    provenance = ProvenanceV2(
+        workspace_id="W",
+        run_id="run-1",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+    )
+    with pytest.raises(EventFactError):
+        _fact(
+            run_id="run-1",
+            workspace_id="W",
+            scope_path=StructuralPath(("W", "AREA", "OTHER")),
+            provenance=provenance,
+        )
+
+
+def test_event_and_provenance_authorities_agree_when_both_present() -> None:
+    provenance = ProvenanceV2(
+        workspace_id="W",
+        run_id="run-1",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+    )
+    fact = _fact(
+        run_id="run-1",
+        workspace_id="W",
+        scope_path=StructuralPath(("W", "AREA", "UNIT")),
+        provenance=provenance,
+    )
+    d = fact.to_dict()
+    assert d["run_id"] == "run-1"
+    assert d["scope_path"] == "W/AREA/UNIT"
+    assert d["provenance"]["run_id"] == "run-1"
+    assert d["provenance"]["scope_path"] == "W/AREA/UNIT"
+
+
 # ── Alarm ⊂ Event ──────────────────────────────────────────────
 
 def test_alarm_fact_is_event_specialization() -> None:
