@@ -47,6 +47,15 @@ group-by-group table. Command checks: compile PASS, static PASS (truthful no-too
 changed_files PASS, preflight PASS. Full suite PASS (1968 passed: 1956 + 9 G8
 invariants + 3 entrypoint smokes). Overall baseline PASS.
 
+## Flake observation (recorded honestly)
+The first full canonical run reported `assy_oracle` FAIL once on the pre-existing
+accepted test `tests/test_demo_composition.py::TestReset::test_reset_creates_fresh_configs`
+(an object-identity assertion; `id()` reuse after GC). This is a known
+nondeterministic pattern in that ACCEPTED test and is NOT caused by C01 (no
+src/gate test change; the same module passes in the full suite, alone, and on
+the authoritative re-run below). The authoritative complete canonical baseline
+re-run is green (assy_oracle 354 PASS, full_suite 1968 PASS).
+
 ## Confirmation
 - No `src/` change; no architecture/runtime semantics change; no new framework.
 - G9/G10 NOT started.
