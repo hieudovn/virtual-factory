@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G8` (GitHub Issue #53) + C01 |
+| Task ID | `VF-vNEXT-G8` (GitHub Issue #53) + C01 + C02 |
 | Program | Implementation phase (G8; only authorized gate after G7) |
 | Required base (branch) | `3f8c9409cac5698399ab4d386506b0419d68a5df` (accepted G7-C03 head) |
 | Branch | `feature/vf-vnext-g8` |
@@ -45,6 +45,13 @@ no semantics change and no G9/G10.
 - `tests/test_vnext_g8_entrypoint.py` — 3 bounded smoke tests of the
   command-group code path (failing command group → non-zero exit + names the
   group; passing command group → exit 0; `{python}` substitution).
+- C02 (test-only, SA `5557757350`): `tests/test_demo_composition.py`
+  `TestReset::test_reset_creates_fresh_runtimes` and
+  `test_reset_creates_fresh_configs` no longer use the unsafe
+  `id()`-after-GC/address-reuse pattern. They now keep strong references to the
+  pre-reset runtime/config objects and assert direct identity (`is not`) per
+  sub-line after reset — deterministic by construction, assertion NOT weakened,
+  no production/semantics change.
 
 ## 3. Deliberate non-duplication
 
@@ -74,6 +81,9 @@ duplicated.
 | checks_changed_files | PASS |
 | checks_preflight | PASS |
 
+C02: the two corrected `TestReset` identity tests stress-ran 30× in fresh
+subprocesses with 0 failures (no address-reuse dependence).
+
 Canonical command: `python .ai-harness/regression/run_vnext_baseline.py`
 (overall PASS; machine JSON: `.ai-harness/traces/g8_baseline.json`).
 
@@ -101,12 +111,13 @@ canonical hierarchy; no G9/G10.
 
 `.ai-harness/sa-review/evidence/VF-vNEXT-G8/` —
 `01-regression-baseline-and-invariants.md`,
-`02-c01-harness-checks.md` (harness checks as first-class baseline groups).
+`02-c01-harness-checks.md` (harness checks as first-class baseline groups),
+`03-c02-reset-identity-proof.md` (deterministic reset identity proof).
 
 ## 8. Final status
 
 ```text
-VF-vNEXT-G8-C01 — READY FOR SA REVIEW
+VF-vNEXT-G8-C02 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G9 is NOT started.

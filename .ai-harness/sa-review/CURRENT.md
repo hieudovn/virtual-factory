@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G8-C01
-Status: READY FOR SA REVIEW (Platform vNext Regression Baseline — C01 harness checks)
+Task: VF-vNEXT-G8-C02
+Status: READY FOR SA REVIEW (Platform vNext Regression Baseline — C02 reset identity proof)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized gate after G7)
 Prerequisite: Issue #52 accepted as completed; G1-G7 contracts authoritative
 
@@ -44,6 +44,14 @@ Implemented (additive; NO src/ change):
 - tests/test_vnext_g8_entrypoint.py — 3 bounded smoke tests of the
   command-group code path (failing command group -> non-zero exit + names the
   group; passing command group -> exit 0; {python} substitution).
+- C02 (SA comment 5557757350): tests/test_demo_composition.py
+  TestReset::test_reset_creates_fresh_runtimes and
+  test_reset_creates_fresh_configs no longer use the unsafe id()-after-GC /
+  address-reuse pattern. They keep STRONG references to the pre-reset
+  runtime/config objects and assert DIRECT identity (`is not`) per sub-line
+  after reset — deterministic by construction; assertion NOT weakened; no
+  production/semantics change. Minimum allowlist addition for this one test
+  file.
 
 Deliberate non-duplication:
 - Independent TIPA/continuous active runs (G7-C02) and per-attempt fresh
@@ -54,14 +62,16 @@ Canonical command:
 python .ai-harness/regression/run_vnext_baseline.py
 (machine JSON: .ai-harness/traces/g8_baseline.json; overall PASS)
 
-Regression results (canonical entrypoint, evidence 01/02):
+Regression results (canonical entrypoint, evidence 01/02/03):
 - g1_workspace PASS; g2_provenance PASS; g3_observation_event_alarm PASS;
   g4_composition_coordinator PASS; g5_federation PASS; g6_hierarchy_ui PASS;
-  g7_run_control PASS; ui_api_dashboard PASS; assy_oracle PASS;
-  continuous_compressor PASS; g8_cross_gate_invariants PASS (12);
-  full_suite PASS -> 1968 passed (0 failures).
+  g7_run_control PASS; ui_api_dashboard PASS; assy_oracle PASS (354,
+  deterministic); continuous_compressor PASS; g8_cross_gate_invariants PASS
+  (12); full_suite PASS -> 1968 passed (0 failures).
 - checks_compile PASS; checks_static_lint_type PASS (truthful: no static tool
   configured); checks_changed_files PASS; checks_preflight PASS.
+- C02 stress: corrected TestReset identity tests 30x fresh subprocess runs -> 0
+  failures (no address-reuse dependence).
 - Compile check PASS; no configured ruff/mypy/black (truthful note).
 - Preflight PASSED; verify_changed_files PASSED (G8 allowlist only).
 
@@ -79,7 +89,8 @@ Report:
 
 Evidence:
 .ai-harness/sa-review/evidence/VF-vNEXT-G8/ (01 regression baseline + cross-gate
-invariants; 02 C01 harness checks as first-class baseline groups)
+invariants; 02 C01 harness checks as first-class baseline groups; 03 C02
+reset identity proof)
 
 
 
