@@ -4,6 +4,11 @@ Gate: GitHub Issue #53 — one canonical, repo-native vNext regression baseline
 for the accepted G1-G7 platform invariants. No semantics/feature change; no
 G9/G10.
 
+> C01 note (SA `5557658309`): the harness checks were made first-class baseline
+> groups at the C01 head; see `02-c01-harness-checks.md` for the authoritative
+> final run (manifest v1.1.0, typed pytest + command groups, full suite 1968).
+
+
 ## Base / head lineage
 - Required base (G7 accepted head): `3f8c9409cac5698399ab4d386506b0419d68a5df`
 - Branch: `feature/vf-vnext-g8` (created from the required base)

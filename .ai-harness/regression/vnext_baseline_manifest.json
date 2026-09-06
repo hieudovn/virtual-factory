@@ -1,24 +1,29 @@
 {
   "schema": "vf.vnext.g8.regression.manifest",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
-  "purpose": "Deterministic, repo-native Platform vNext regression baseline for the accepted G1-G7 platform invariants (Issue #53). Every group references existing authoritative pytest modules; no test logic is duplicated here. The canonical entrypoint runs each group with `python -m pytest -q -p no:cacheprovider`, reports the failing group, and exits non-zero if any required group fails.",
+  "purpose": "Deterministic, repo-native Platform vNext regression baseline for the accepted G1-G7 platform invariants (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails.",
+  "static_checks": {
+    "configured": false,
+    "note": "This repository configures no ruff/mypy/black/pyright/flake8 static/lint/type tool (pyproject.toml has only [tool.setuptools.*] and [tool.pytest.ini_options]). The G8 baseline does not invent one; the checks_static_lint_type command group verifies absence truthfully and fails if a configured static tool appears without baseline execution."
+  },
   "groups": [
     {
       "id": "g1_workspace",
       "gate": "G1",
+      "type": "pytest",
       "purpose": "G1 workspace / Simulation Scope foundation: structural identity/path, container-only vs executable-capable, fail-closed hierarchy/reference validation.",
       "files": [
         "tests/test_workspace_foundation.py",
         "tests/test_workspace_validation.py",
         "tests/test_workspace_config.py"
-      ],
-      "expected": "32 passed"
+      ]
     },
     {
       "id": "g2_provenance",
       "gate": "G2",
+      "type": "pytest",
       "purpose": "G2 provenance v2: immutable RunContextV2, simulation origin/status, envelope/namespace identity.",
       "files": [
         "tests/test_provenance_context.py",
@@ -26,12 +31,12 @@
         "tests/test_provenance_namespace.py",
         "tests/test_run_context_adapter.py",
         "tests/test_telemetry_provenance_threading.py"
-      ],
-      "expected": "36 passed"
+      ]
     },
     {
       "id": "g3_observation_event_alarm",
       "gate": "G3",
+      "type": "pytest",
       "purpose": "G3 observation/event/alarm: domain truth vs immutable facts/projections, alarm event immutability, canonical provenance/time/identity fail-closed.",
       "files": [
         "tests/test_event_fact.py",
@@ -44,63 +49,63 @@
         "tests/test_m5_s04_projections.py",
         "tests/test_m5_s05_gateway.py",
         "tests/test_alarm_manager.py"
-      ],
-      "expected": "328 passed"
+      ]
     },
     {
       "id": "g4_composition_coordinator",
       "gate": "G4",
+      "type": "pytest",
       "purpose": "G4 composition/coordinator: containment vs connectivity graph, coordinator as composition service, deterministic participant/commit ordering, exact-window semantics.",
       "files": [
         "tests/test_composition_ports.py",
         "tests/test_composition_graph.py",
         "tests/test_composition_transfer.py",
         "tests/test_composition_coordinator.py"
-      ],
-      "expected": "56 passed"
+      ]
     },
     {
       "id": "g5_federation",
       "gate": "G5",
+      "type": "pytest",
       "purpose": "G5 TIPA ASSY federation: six isolated executable sub-line scopes mapped correctly, no demo policy promoted, natural-boundary semantics.",
       "files": [
         "tests/test_federation_tipa_assy.py"
-      ],
-      "expected": "26 passed"
+      ]
     },
     {
       "id": "g6_hierarchy_ui",
       "gate": "G6",
+      "type": "pytest",
       "purpose": "G6 shared hierarchy UI: path-qualified context authority, workspace/container vs executable distinction, ASSY + continuous hierarchy truthfulness.",
       "files": [
         "tests/test_ui_hierarchy.py"
-      ],
-      "expected": "31 passed"
+      ]
     },
     {
       "id": "g7_run_control",
       "gate": "G7",
+      "type": "pytest",
       "purpose": "G7 hierarchical run control: one mutable active attempt per workspace, independent TIPA/continuous active runs, historical/superseded fail-closed, fresh attempt state, path-qualified continuous/PROCESS participant.",
       "files": [
         "tests/test_run_control.py"
-      ],
-      "expected": "50 passed"
+      ]
     },
     {
       "id": "ui_api_dashboard",
       "gate": "UI/API",
+      "type": "pytest",
       "purpose": "Continuous dashboard + OPS interaction/overview + S04B gating API compatibility (legacy compatibility surfaces).",
       "files": [
         "tests/test_api.py",
         "tests/test_demo_overview.py",
         "tests/test_ops03_interaction.py",
         "tests/test_ops04_c01.py"
-      ],
-      "expected": "134 passed"
+      ]
     },
     {
       "id": "assy_oracle",
       "gate": "ASSY",
+      "type": "pytest",
       "purpose": "Complete ASSY regression oracle: SSO2 feed/queue ordering, PRE-ASSY token, AP04 RSO2 JOIN/genealogy, AP06 retest-in-place, AP08 reinspect, AP11 final QC, failed_final, LINE_OUT GOOD/REJECT, quality/checklist/measurement evidence, deterministic timestamps, six sub-lines, no FINISHED conveyor fabrication.",
       "files": [
         "tests/test_assy_line.py",
@@ -117,12 +122,12 @@
         "tests/test_auto_timing.py",
         "tests/test_auto_timing_runtime.py",
         "tests/test_vf_contract_finality_01.py"
-      ],
-      "expected": "354 passed"
+      ]
     },
     {
       "id": "continuous_compressor",
       "gate": "CONTINUOUS",
+      "type": "pytest",
       "purpose": "Continuous-process + compressor baseline: process dynamics, closed loop, PID, balance, engine/controller boundary, compressor train/states/operating states.",
       "files": [
         "tests/test_compressor_train.py",
@@ -135,24 +140,80 @@
         "tests/test_pid_controller.py",
         "tests/test_engine_boundary.py",
         "tests/test_controller_boundary.py"
-      ],
-      "expected": "61 passed"
+      ]
     },
     {
       "id": "g8_cross_gate_invariants",
       "gate": "G8",
-      "purpose": "G8 cross-gate invariants (workspace/structural/run-control/UI-hierarchy alignment) not directly covered by individual gate suites.",
+      "type": "pytest",
+      "purpose": "G8 cross-gate invariants (workspace/structural/run-control/UI-hierarchy alignment) plus the canonical-baseline entrypoint smoke tests (command-group failure path).",
       "files": [
-        "tests/test_vnext_g8_invariants.py"
-      ],
-      "expected": "run"
+        "tests/test_vnext_g8_invariants.py",
+        "tests/test_vnext_g8_entrypoint.py"
+      ]
     },
     {
       "id": "full_suite",
       "gate": "FULL",
+      "type": "pytest",
       "purpose": "Full repository suite: every pytest module under tests/.",
-      "directory": "tests",
-      "expected": "1956 passed"
+      "directory": "tests"
+    },
+    {
+      "id": "checks_compile",
+      "gate": "CHECKS",
+      "type": "command",
+      "purpose": "Compile check actually used by the repo: python -m compileall over src, tests and the harness scripts.",
+      "cmd": [
+        "{python}",
+        "-m",
+        "compileall",
+        "-q",
+        "src",
+        "tests",
+        ".ai-harness/regression",
+        ".ai-harness/scripts"
+      ]
+    },
+    {
+      "id": "checks_static_lint_type",
+      "gate": "CHECKS",
+      "type": "command",
+      "purpose": "Truthful static/lint/type check: no ruff/mypy/black/pyright/flake8 is configured in this repo; the check verifies that (and fails if a configured static tool appears without baseline execution). Nothing is invented.",
+      "cmd": [
+        "{python}",
+        ".ai-harness/regression/check_repo_static_config.py"
+      ]
+    },
+    {
+      "id": "checks_changed_files",
+      "gate": "CHECKS",
+      "type": "command",
+      "kind": "changed_files",
+      "changed_files_base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
+      "changed_files_output": ".ai-harness/traces/g8_changed_files.txt",
+      "purpose": "Changed-file validation actually used by the repo: verify_changed_files.py against the G8 task contract allowlist for the diff of the current branch vs the required G8 base.",
+      "cmd": [
+        "{python}",
+        ".ai-harness/scripts/verify_changed_files.py",
+        "--task",
+        ".ai-harness/tasks/VF-vNEXT-G8.json",
+        "--changed-files",
+        "{changed_files_file}"
+      ]
+    },
+    {
+      "id": "checks_preflight",
+      "gate": "CHECKS",
+      "type": "command",
+      "purpose": "Harness preflight actually used by the repo: preflight.py against the G8 task contract (branch, clean tree, origin/main baseline). Runs last; requires a clean committed tree on feature/vf-vnext-g8.",
+      "cmd": [
+        "{python}",
+        ".ai-harness/scripts/preflight.py",
+        "--task",
+        ".ai-harness/tasks/VF-vNEXT-G8.json"
+      ]
     }
   ]
 }
+
