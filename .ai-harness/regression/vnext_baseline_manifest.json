@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G9.json",
-    "changed_files_base": "e75fa95259f1b68e465c546e2e4dbc6b24e9a76d"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G10.json",
+    "changed_files_base": "3f5cf41745bb033b26b26bcb849a558381d3f510"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -163,6 +163,15 @@
       "purpose": "G9 semantic binding vNext: pinned source identity, fail-closed mapping cardinality/status, compatibility vs runtime authorization separation, pre-run admission (zero domain advancement), provenance threading of consumed semantic contract version/SHA.",
       "files": [
         "tests/test_semantic_binding.py"
+      ]
+    },
+    {
+      "id": "g10_shwtp_readiness",
+      "gate": "G10",
+      "type": "pytest",
+      "purpose": "G10 SH-WTP runtime readiness & scope freeze invariant tests: evidence-traceable inventory, fidelity ceiling, NOT_AUTHORIZED preservation, authz separation, container vs executable, boundary-contract provenance, containment vs connectivity, many-to-many topology, no G11 runtime.",
+      "files": [
+        "tests/test_vnext_g10_plan.py"
       ]
     },
     {

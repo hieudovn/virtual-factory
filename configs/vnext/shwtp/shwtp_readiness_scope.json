@@ -1,0 +1,518 @@
+{
+  "schema": "vf.vnext.g10.shwtp.readiness_scope",
+  "version": "1.0.0",
+  "gate": "VF-vNEXT-G10",
+  "kind": "PLANNING_AND_REFERENCE_ONLY",
+  "generated_by": "PM execution gate VF-vNEXT-G10",
+  "pim_source": {
+    "repository": "hieudovn/plant-intelligence-model",
+    "repository_base_sha": "ec7f1266d4a19e5201b689874a2a7a75a022fc5c",
+    "export_package_id": "SHW-PIM-VF-EXPORT-v0.1",
+    "export_version": "v0.1",
+    "source_model_version": "SHW-PH03-v0.1",
+    "task_start_baseline_sha": "d241da61a6166df8359f892141609add75aec5b5",
+    "semantic_model_identity_sha": "f23f3c4614f50a1a2e3805f7e887433feb934915",
+    "export_artifact_hash_baseline_sha": "ea3361a4aca9d25927a4a76c792f3af184e1aabb",
+    "final_pim_main_sha": "da33c1ea19b838e3df797571e436219ce0b096b2",
+    "model_fixture": {
+      "file": "examples/song-hong-wtp/model_fixture/model.yaml",
+      "sha256": "e9c6703fd0c50a58ccb481aa952eddbeddd4b94b5206103b8c472836e0729ea6",
+      "note": "105 entities / 121 relationships / 4 contracts (PIM authoritative; NOT imported to VF KG)"
+    },
+    "seed_skeleton": {
+      "file": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "sha256": "0668ac60cf350fb41de77c4ee8250d607b683ab8c108b73690c1aa7ecdef2808",
+      "note": "PH03 plant-wide skeleton; review artifact only; seed_status: review_artifact; source mapping pending (GAP-SHW-001)"
+    },
+    "first_vf_readiness_slice": {
+      "file": "examples/song-hong-wtp/seed/first_vf_readiness_slice_t106_t108_t110.yaml",
+      "sha256": "47581a3fef5099481d4d61925e77a1bc231c1c5cde2a26ec7eb5662cd89ec8a3",
+      "note": "T106 / T108 / T110 first VF-readiness slice (review artifact)"
+    }
+  },
+  "pim_authority": {
+    "canonical_id_authority": "PIM owns canonical IDs; VF must reference, not invent",
+    "state_vocabulary_authority": "PIM owns evidence_status / epistemic_state / truth_domain vocabulary",
+    "evidence_policy": "No SourceMapped, no SiteVerified; every entity and relationship carries evidence_status",
+    "gap_register_file": "examples/song-hong-wtp/model_fixture/gap_register.yaml",
+    "gap_ids": ["GAP-SHW-001", "GAP-SHW-002", "GAP-SHW-003", "GAP-SHW-004", "GAP-SHW-005", "GAP-SHW-006", "GAP-SHW-007", "GAP-SHW-008", "GAP-SHW-009", "GAP-SHW-010", "GAP-SHW-011", "GAP-SHW-012"]
+  },
+  "authorization": {
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "vf_compatibility_decision": "compatible_with_constraints",
+    "pim_requested_compatibility": "candidate_for_review",
+    "non_authorization_statement": "This export does NOT authorize VF runtime implementation, VF package generation, simulation execution, or model calibration. VF may only review the compatibility of PIM semantics: canonical IDs, state vocabulary, evidence policy, VF readiness profiles, and gap register."
+  },
+  "authz_separation": {
+    "structural_planning": "ALLOWED_IN_G10_G11",
+    "runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED",
+    "statement": "Structural construction planning (containment-only scopes, reference binding) is a planning activity and does not authorize runtime execution. G10/G11 may only plan structural construction; synthetic/reference black-box execution remains subject to a later PIM re-review; site-faithful (site-authorized) execution is not authorized by this plan."
+  },
+  "fidelity_ladder": ["NotReady", "LogicalOnly", "FirstOrderReady", "ParameterizedReady", "CalibratedReady"],
+  "fidelity_policy": {
+    "progressive_refinement": "No universal execution/fidelity policy; progressive refinement scoped per candidate subsystem and gated by explicit PIM evidence readiness.",
+    "ceiling_rule": "No candidate may be planned above its evidence-supported fidelity ceiling. ParameterizedReady and CalibratedReady are BLOCKED for the entire SH-WTP candidate set until the corresponding PIM gaps are closed with source evidence.",
+    "first_order_scope": "Only simple tanks with basic level/flow signals (first VF-readiness slice T108 / T110) may be planned at FirstOrderReady ceiling. Filtration (T106) and all other units remain LogicalOnly at most."
+  },
+  "inventory": [
+    {
+      "id": "INV-SHW-PLANT",
+      "pim_canonical_id": "PLANT-SHW",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "container_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "high"},
+      "gaps": ["GAP-SHW-001"],
+      "runtime_later": "blocked",
+      "note": "Plant-wide workspace root. Containment only; never executable."
+    },
+    {
+      "id": "INV-SHW-AREA-RAW-WATER",
+      "pim_canonical_id": "AREA-SHW-RAW-WATER",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "container_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "high"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Contains UNIT-SHW-RAW-INTAKE and UNIT-SHW-T100."
+    },
+    {
+      "id": "INV-SHW-AREA-LINE1",
+      "pim_canonical_id": "AREA-SHW-LINE1",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "container_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "high"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-002", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Contains the first VF-readiness slice units (T106/T108/T110)."
+    },
+    {
+      "id": "INV-SHW-AREA-LINE2",
+      "pim_canonical_id": "AREA-SHW-LINE2",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "container_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "PatternInferred", "confidence": "low"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "All Line 2 units PatternInferred; require source mapping before any first-order planning."
+    },
+    {
+      "id": "INV-SHW-AREA-CHEMICAL",
+      "pim_canonical_id": "AREA-SHW-CHEMICAL",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "container_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "PatternInferred", "confidence": "low"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-004", "GAP-SHW-009"],
+      "runtime_later": "blocked",
+      "note": "Chemical dosing reference only; no runtime chemical truth available."
+    },
+    {
+      "id": "INV-SHW-AREA-SLUDGE",
+      "pim_canonical_id": "AREA-SHW-SLUDGE",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "container_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003", "GAP-SHW-010"],
+      "runtime_later": "blocked",
+      "note": "Sludge treatment T201 skeleton-level only."
+    },
+    {
+      "id": "INV-SHW-AREA-ELECTRICAL",
+      "pim_canonical_id": "AREA-SHW-ELECTRICAL",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "IndustryExpected", "confidence": "reference"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-005"],
+      "runtime_later": "blocked",
+      "note": "MCC / VSD reference only. Not a VF runtime candidate."
+    },
+    {
+      "id": "INV-SHW-AREA-AUTOMATION",
+      "pim_canonical_id": "AREA-SHW-AUTOMATION",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "IndustryExpected", "confidence": "reference"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-002"],
+      "runtime_later": "blocked",
+      "note": "PLC / SCADA reference only. Control truth unavailable (GAP-SHW-002)."
+    },
+    {
+      "id": "INV-SHW-UNIT-RAW-INTAKE",
+      "pim_canonical_id": "UNIT-SHW-RAW-INTAKE",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Raw water intake / pumping. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-T100",
+      "pim_canonical_id": "UNIT-SHW-T100",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Receiving tank T100. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T101",
+      "pim_canonical_id": "UNIT-SHW-L1-T101",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Aeration. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T109",
+      "pim_canonical_id": "UNIT-SHW-L1-T109",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Pre-sedimentation. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T102",
+      "pim_canonical_id": "UNIT-SHW-L1-T102",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003", "GAP-SHW-009"],
+      "runtime_later": "blocked",
+      "note": "PAC contact. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T103",
+      "pim_canonical_id": "UNIT-SHW-L1-T103",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Rapid mix / coagulation. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T104",
+      "pim_canonical_id": "UNIT-SHW-L1-T104",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Flocculation. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T105",
+      "pim_canonical_id": "UNIT-SHW-L1-T105",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Lamella clarification. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T106",
+      "pim_canonical_id": "UNIT-SHW-L1-T106",
+      "pim_reference": "examples/song-hong-wtp/seed/first_vf_readiness_slice_t106_t108_t110.yaml",
+      "vf_scope_role": "executable_candidate",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003", "GAP-SHW-004"],
+      "runtime_later": "synthetic_reference_only",
+      "note": "OSF filtration (first VF-readiness slice). Filtration physics/quality parameters unavailable; LogicalOnly ceiling only. Synthetic/reference black-box only in a later gate."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T107",
+      "pim_canonical_id": "UNIT-SHW-L1-T107",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003", "GAP-SHW-004"],
+      "runtime_later": "blocked",
+      "note": "Disinfection. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-L1-T108",
+      "pim_canonical_id": "UNIT-SHW-L1-T108",
+      "pim_reference": "examples/song-hong-wtp/seed/first_vf_readiness_slice_t106_t108_t110.yaml",
+      "vf_scope_role": "executable_candidate",
+      "fidelity_ceiling": "FirstOrderReady",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "synthetic_reference_only",
+      "note": "Clean water tank (first VF-readiness slice). Simple tank with basic level/flow signals -> FirstOrderReady ceiling at most."
+    },
+    {
+      "id": "INV-SHW-UNIT-L2-T101",
+      "pim_canonical_id": "UNIT-SHW-L2-T101",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "PatternInferred", "confidence": "low"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Aeration equivalent (PatternInferred)."
+    },
+    {
+      "id": "INV-SHW-UNIT-L2-T105",
+      "pim_canonical_id": "UNIT-SHW-L2-T105",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "PatternInferred", "confidence": "low"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Clarification equivalent (PatternInferred)."
+    },
+    {
+      "id": "INV-SHW-UNIT-L2-T106",
+      "pim_canonical_id": "UNIT-SHW-L2-T106",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "PatternInferred", "confidence": "low"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "OSF filtration equivalent (PatternInferred)."
+    },
+    {
+      "id": "INV-SHW-UNIT-L2-T108",
+      "pim_canonical_id": "UNIT-SHW-L2-T108",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "PatternInferred", "confidence": "low"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Clean water tank equivalent (PatternInferred)."
+    },
+    {
+      "id": "INV-SHW-UNIT-CHEM-DOSING",
+      "pim_canonical_id": "UNIT-SHW-CHEM-DOSING",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "PatternInferred", "confidence": "low"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-004", "GAP-SHW-009"],
+      "runtime_later": "blocked",
+      "note": "Chemical dosing systems (PatternInferred)."
+    },
+    {
+      "id": "INV-SHW-UNIT-SLUDGE-T201",
+      "pim_canonical_id": "UNIT-SHW-SLUDGE-T201",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003", "GAP-SHW-010"],
+      "runtime_later": "blocked",
+      "note": "Sludge treatment T201. Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-ELEC-MCC",
+      "pim_canonical_id": "UNIT-SHW-ELEC-MCC",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "IndustryExpected", "confidence": "reference"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-005"],
+      "runtime_later": "blocked",
+      "note": "Electrical / MCC / VSD reference."
+    },
+    {
+      "id": "INV-SHW-UNIT-AUTO-PLC",
+      "pim_canonical_id": "UNIT-SHW-AUTO-PLC",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "reference_only",
+      "fidelity_ceiling": "NotReady",
+      "evidence": {"status": "IndustryExpected", "confidence": "reference"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-002"],
+      "runtime_later": "blocked",
+      "note": "Automation / PLC / SCADA reference."
+    },
+    {
+      "id": "INV-SHW-UNIT-DIST-P108",
+      "pim_canonical_id": "UNIT-SHW-DIST-P108",
+      "pim_reference": "examples/song-hong-wtp/seed/plant_wide_skeleton_ph03.yaml",
+      "vf_scope_role": "object_only",
+      "fidelity_ceiling": "LogicalOnly",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "blocked",
+      "note": "Distribution pumping P108 (plant-level). Not in first VF-readiness slice."
+    },
+    {
+      "id": "INV-SHW-UNIT-WASH-T110",
+      "pim_canonical_id": "UNIT-SHW-WASH-T110",
+      "pim_reference": "examples/song-hong-wtp/seed/first_vf_readiness_slice_t106_t108_t110.yaml",
+      "vf_scope_role": "executable_candidate",
+      "fidelity_ceiling": "FirstOrderReady",
+      "evidence": {"status": "DocumentConfirmed", "confidence": "medium"},
+      "gaps": ["GAP-SHW-001", "GAP-SHW-003"],
+      "runtime_later": "synthetic_reference_only",
+      "note": "Wash water recovery T110 (homed under AREA-SHW-LINE1 for slice scope). Simple tank with basic level/flow signals -> FirstOrderReady ceiling at most."
+    }
+  ],
+  "boundary_contracts_v0": {
+    "policy": "Each field is tagged with support provenance. PIM-supported = traceable to the pinned PIM export/skeleton; VF synthetic assumption = VF-side placeholder behaviour allowed only behind the contract; unknown/blocking = must not be asserted in any executable scope.",
+    "UNIT-SHW-L1-T108": {
+      "name": "Clean water tank boundary contract v0",
+      "inputs": [
+        {"signal": "filtered_water_inflow_from_T106", "support": "PIM-supported", "detail": "major_flow_spine: Line 1 clean water path (T106 -> T108). Value/timing unknown."}
+      ],
+      "outputs": [
+        {"signal": "clean_water_to_distribution_P108", "support": "PIM-supported", "detail": "major_flow_spine: PROC-SHW-L1-TO-DIST. Value/timing unknown."}
+      ],
+      "properties": [
+        {"property": "level", "support": "PIM-supported", "detail": "Tank level signal existence; value unknown (GAP-SHW-003)."},
+        {"property": "volume", "support": "PIM-supported", "detail": "Tank volume; value unknown (GAP-SHW-003)."},
+        {"property": "flow", "support": "unknown/blocking", "detail": "Flow values require source evidence (GAP-SHW-003)."}
+      ],
+      "behavior": [
+        {"behavior": "mass_accumulation_black_box", "support": "VF synthetic assumption", "detail": "FirstOrder candidate placeholder only; not site-faithful."}
+      ],
+      "runtime_later": "synthetic_reference_only"
+    },
+    "UNIT-SHW-WASH-T110": {
+      "name": "Wash water recovery tank boundary contract v0",
+      "inputs": [
+        {"signal": "wash_water_return", "support": "PIM-supported", "detail": "Wash water recovery; homed under LINE1 for slice scope. Value/timing unknown."}
+      ],
+      "outputs": [
+        {"signal": "recovered_water_return_to_process", "support": "VF synthetic assumption", "detail": "Return destination inferred; must be confirmed by PIM before first-order use."}
+      ],
+      "properties": [
+        {"property": "level", "support": "PIM-supported", "detail": "Tank level signal existence; value unknown (GAP-SHW-003)."},
+        {"property": "volume", "support": "unknown/blocking", "detail": "Volume requires source evidence (GAP-SHW-003)."},
+        {"property": "flow", "support": "unknown/blocking", "detail": "Flow values require source evidence (GAP-SHW-003)."}
+      ],
+      "behavior": [
+        {"behavior": "mass_accumulation_black_box", "support": "VF synthetic assumption", "detail": "FirstOrder candidate placeholder only; not site-faithful."}
+      ],
+      "runtime_later": "synthetic_reference_only"
+    },
+    "UNIT-SHW-L1-T106": {
+      "name": "OSF filtration boundary contract v0",
+      "inputs": [
+        {"signal": "clarified_water_from_T105", "support": "PIM-supported", "detail": "major_flow_spine: Line 1 upstream path. Value/timing unknown."}
+      ],
+      "outputs": [
+        {"signal": "filtered_water_to_T108", "support": "PIM-supported", "detail": "major_flow_spine: T106 -> T108. Value/timing unknown."}
+      ],
+      "properties": [
+        {"property": "filtration_quality", "support": "unknown/blocking", "detail": "Quality parameters require source evidence (GAP-SHW-004)."},
+        {"property": "hydraulic_parameters", "support": "unknown/blocking", "detail": "Hydraulic parameters unavailable (GAP-SHW-003)."}
+      ],
+      "behavior": [
+        {"behavior": "logical_pass_through_black_box", "support": "VF synthetic assumption", "detail": "LogicalOnly placeholder only; no filtration physics/equations."}
+      ],
+      "runtime_later": "synthetic_reference_only"
+    }
+  },
+  "fidelity_matrix": {
+    "StructuralOnly": {
+      "scope": ["PLANT-SHW", "all AREA-SHW-* containers", "all UNIT-SHW-* skeleton objects"],
+      "authorized_in": "G10 (planning) / G11 (structural construction)",
+      "note": "Containment and canonical-id reference binding only. No equations, no execution."
+    },
+    "LogicalOnly": {
+      "scope": ["UNIT-SHW-L1-T106", "UNIT-SHW-RAW-INTAKE", "UNIT-SHW-T100", "UNIT-SHW-L1-T101", "UNIT-SHW-L1-T102", "UNIT-SHW-L1-T103", "UNIT-SHW-L1-T104", "UNIT-SHW-L1-T105", "UNIT-SHW-L1-T107", "UNIT-SHW-L1-T109", "UNIT-SHW-SLUDGE-T201", "UNIT-SHW-DIST-P108"],
+      "authorized_in": "G11 structural only; synthetic/reference black-box in a later gate",
+      "note": "Connectivity and input/output existence only; no quantitative behaviour."
+    },
+    "FirstOrderReady": {
+      "scope": ["UNIT-SHW-L1-T108", "UNIT-SHW-WASH-T110"],
+      "authorized_in": "Later gate (after PIM re-review of first-order tank fidelity)",
+      "note": "Simple tanks with basic level/flow signals. NOT ParameterizedReady."
+    },
+    "ParameterizedReady": {
+      "scope": [],
+      "authorized_in": "NEVER until GAP-SHW-003 / GAP-SHW-004 closed with source evidence",
+      "note": "BLOCKED for the entire SH-WTP candidate set."
+    },
+    "CalibratedReady": {
+      "scope": [],
+      "authorized_in": "NEVER until GAP-SHW-012 closed with source evidence",
+      "note": "BLOCKED for the entire SH-WTP candidate set."
+    }
+  },
+  "g11_admission_plan": {
+    "authorized_in_g11": [
+      "Structural construction: Workspace/Scope/StructuralPath mirroring PIM canonical ids as reference-only (no rename, no invented ids).",
+      "Container-only scopes for PLANT-SHW and every AREA-SHW-* (no executable areas).",
+      "Object/reference binding for skeleton-level units (UNIT-SHW-*) as reference_only/object_only per inventory.",
+      "Synthetic/reference black-box for the three first-slice executable candidates (T106/T108/T110) at their frozen fidelity ceilings, behind boundary_contracts_v0."
+    ],
+    "stays_container_only_in_g11": ["PLANT-SHW", "AREA-SHW-RAW-WATER", "AREA-SHW-LINE1", "AREA-SHW-LINE2", "AREA-SHW-CHEMICAL", "AREA-SHW-SLUDGE"],
+    "stays_reference_only_in_g11": ["AREA-SHW-ELECTRICAL", "AREA-SHW-AUTOMATION", "UNIT-SHW-ELEC-MCC", "UNIT-SHW-AUTO-PLC", "UNIT-SHW-CHEM-DOSING", "UNIT-SHW-L2-T101", "UNIT-SHW-L2-T105", "UNIT-SHW-L2-T106", "UNIT-SHW-L2-T108"],
+    "synthetic_reference_black_box_allowed_later": ["UNIT-SHW-L1-T106", "UNIT-SHW-L1-T108", "UNIT-SHW-WASH-T110"],
+    "prohibited_until_site_evidence": [
+      "Site-faithful control/interlock implementation (GAP-SHW-002)",
+      "Hydraulic parameter assertion (GAP-SHW-003)",
+      "Water-quality history / truth assertion (GAP-SHW-004)",
+      "Electrical MCC/VSD mapping (GAP-SHW-005)",
+      "Sludge-quality and sludge-treatment modelling (GAP-SHW-010)",
+      "Calibration / ParameterizedReady / CalibratedReady (GAP-SHW-012)"
+    ],
+    "execution_modes": {
+      "structural_construction": "AUTHORIZED_IN_G11",
+      "synthetic_reference_execution": "PENDING_LATER_PIM_REVIEW",
+      "site_authorized_execution": "NOT_AUTHORIZED"
+    },
+    "no_flattening_rule": "Do not flatten SH-WTP into a single A->B->C chain. Cross-area relations are many-to-many and must be represented as such."
+  },
+  "relation_classes": {
+    "classes": [
+      {"id": "material_flow", "description": "Water / treated-water material transport (e.g. major_flow_spine raw->T100->Line1->distribution)."},
+      {"id": "chemical_flow", "description": "Chemical dosing (PAC, coagulant) from AREA-SHW-CHEMICAL into process lines; many-to-many."},
+      {"id": "sludge_waste_flow", "description": "Sludge removal from Line 1 clarification to sludge treatment T201."},
+      {"id": "utility_energy_flow", "description": "Electrical power to units; reference-only (AREA-SHW-ELECTRICAL)."},
+      {"id": "control_information_flow", "description": "PLC/SCADA signals; reference-only, control truth unavailable (GAP-SHW-002)."},
+      {"id": "dependency_constraint", "description": "Ordering/constraint relations between process steps; not a material flow."}
+    ],
+    "topology_rules": {
+      "containment_vs_connectivity": "Containment (PLANT -> AREA -> UNIT) is a structural tree and is NOT connectivity. Connectivity is a separate relation graph.",
+      "many_to_many_allowed": true,
+      "no_flattening": "Cross-area material/chemical/sludge flows may be many-to-many; no single A->B->C chain is imposed."
+    }
+  },
+  "tests": {
+    "g10_invariant_tests": "tests/test_vnext_g10_plan.py",
+    "required_assertions": [
+      "evidence_traceability",
+      "fidelity_ceiling_not_exceeded",
+      "no_parameterized_or_calibrated",
+      "not_authorized_preserved",
+      "authz_separation",
+      "container_vs_executable",
+      "boundary_field_support_provenance",
+      "containment_distinct_from_connectivity",
+      "many_to_many_not_prohibited",
+      "no_g11_runtime_implementation",
+      "g1_g9_baseline_green"
+    ]
+  }
+}
