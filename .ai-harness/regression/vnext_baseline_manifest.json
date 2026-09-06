@@ -153,6 +153,15 @@
       ]
     },
     {
+      "id": "g9_semantic_binding",
+      "gate": "G9",
+      "type": "pytest",
+      "purpose": "G9 semantic binding vNext: pinned source identity, fail-closed mapping cardinality/status, compatibility vs runtime authorization separation, pre-run admission (zero domain advancement), provenance threading of consumed semantic contract version/SHA.",
+      "files": [
+        "tests/test_semantic_binding.py"
+      ]
+    },
+    {
       "id": "full_suite",
       "gate": "FULL",
       "type": "pytest",

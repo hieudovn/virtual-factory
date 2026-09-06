@@ -109,6 +109,10 @@ class RunRecord:
     last_result: str | None = None
     failure: str | None = None
     bridge: object | None = field(default=None, repr=False, compare=False)
+    # G9: consumed semantic contract identity (None == not consumed; never
+    # fabricated when a run does not consume a semantic binding).
+    semantic_contract_version: str | None = None
+    semantic_contract_sha: str | None = None
 
     def to_dict(self) -> dict:
         data = self.context.to_dict()
@@ -126,6 +130,8 @@ class RunRecord:
                 "last_time_s": self.last_time_s,
                 "last_result": self.last_result,
                 "failure": self.failure,
+                "semantic_contract_version": self.semantic_contract_version,
+                "semantic_contract_sha": self.semantic_contract_sha,
             }
         )
         return data
@@ -147,6 +153,7 @@ class RunLifecycleService:
         bridge_factory: Callable[[], ExecutionBridge],
         *,
         run_id_prefix: str | None = None,
+        admission: Callable[[RunRecord], None] | None = None,
     ) -> None:
         self._workspace = workspace
         self._bridge_factory = bridge_factory
@@ -154,6 +161,9 @@ class RunLifecycleService:
         self._active_run_id: str | None = None
         self._seq = 0
         self._run_id_prefix = run_id_prefix or workspace.workspace_id
+        # G9 bounded pre-run admission seam (no-op by default; G7 semantics
+        # unchanged for callers that do not set it).
+        self._admission = admission
 
     # ── identity / lookup ─────────────────────────────────────
 
@@ -182,6 +192,11 @@ class RunLifecycleService:
                 f"mutations require the active run_id"
             )
         return record
+
+    def _assert_admissible(self, record: RunRecord) -> None:
+        """Bounded G9 pre-run admission seam (no-op when no admission hook set)."""
+        if self._admission is not None:
+            self._admission(record)
 
     def _bridge_for(self, record: RunRecord) -> ExecutionBridge:
         """Attempt-bound execution state: build once per run attempt.
@@ -270,6 +285,7 @@ class RunLifecycleService:
             raise RunLifecycleError(
                 f"cannot start run {run_id!r} from state {record.state.value!r}"
             )
+        self._assert_admissible(record)  # G9 admission: fail before any advance
         record.state = RunState.RUNNING
         return record
 
@@ -308,6 +324,7 @@ class RunLifecycleService:
             raise RunLifecycleError(
                 f"cannot step run {run_id!r} from state {record.state.value!r}"
             )
+        self._assert_admissible(record)  # G9 admission: fail before any advance
         bridge = self._bridge_for(record)
         scope_ids = record.effective_sub_line_ids
         target = bridge.natural_next_boundary(scope_ids)
