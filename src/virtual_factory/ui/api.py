@@ -607,4 +607,150 @@ def create_app(
         plant_id = (service.status().get("plant_id") or "continuous")
         return ui_hierarchy_mod.root_only_context(plant_id)
 
+    # ═══════════════════════════════════════════════
+    # G7 — Hierarchical Scenario / Run Control (additive vNext seam)
+    # One platform-level run authority; domain runtimes stay authoritative.
+    # ═══════════════════════════════════════════════
+    _run_control: dict = {"instance": None}
+
+    def _get_run_control_service():
+        if _run_control["instance"] is None:
+            from virtual_factory.federation import (
+                TipaAssyFederation,
+                build_tipa_workspace,
+            )
+            from virtual_factory.runcontrol import (
+                AssyExecutionBridge,
+                RunLifecycleService,
+            )
+
+            workspace = build_tipa_workspace()
+
+            def bridge_factory():
+                assy_config = os.environ.get(
+                    "TIPA_ASSY_CONFIG",
+                    str(Path(__file__).resolve().parent.parent.parent.parent
+                        / "configs" / "plants" / "tipa_assy_demo.yaml"),
+                )
+                federation = TipaAssyFederation(config_path=assy_config)
+                federation.initialize()
+                return AssyExecutionBridge(federation)
+
+            _run_control["instance"] = RunLifecycleService(workspace, bridge_factory)
+        return _run_control["instance"]
+
+    @app.post("/vnext/runs", status_code=201)
+    def vnext_create_run(body: dict):
+        from virtual_factory.runcontrol import (
+            RunLifecycleError,
+            TargetResolutionError,
+        )
+
+        target_path = body.get("target_path", "")
+        if not target_path:
+            return _JSONResponse(
+                status_code=400, content={"detail": "target_path is required"}
+            )
+        try:
+            record = _get_run_control_service().create_run(
+                target_path,
+                scenario_id=body.get("scenario_id"),
+                model_id=body.get("model_id"),
+                profile=body.get("profile"),
+                random_seed=body.get("random_seed"),
+            )
+            return record.to_dict()
+        except (TargetResolutionError, ValueError) as exc:
+            return _JSONResponse(status_code=400, content={"detail": str(exc)})
+        except RunLifecycleError as exc:
+            return _JSONResponse(status_code=409, content={"detail": str(exc)})
+
+    @app.get("/vnext/runs/current")
+    def vnext_current_run():
+        record = _get_run_control_service().current()
+        if record is None:
+            return _JSONResponse(
+                status_code=404, content={"detail": "no active run"}
+            )
+        return record.to_dict()
+
+    @app.get("/vnext/runs/{run_id}")
+    def vnext_get_run(run_id: str):
+        service = _get_run_control_service()
+        if not service.has_run(run_id):
+            return _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown/stale run_id {run_id!r}"},
+            )
+        return service.status(run_id)
+
+    def _vnext_mutate(run_id: str, operation: str, body: dict | None = None):
+        service = _get_run_control_service()
+        if not service.has_run(run_id):
+            return _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown/stale run_id {run_id!r}"},
+            )
+        from virtual_factory.runcontrol import (
+            ReplayUnavailableError,
+            RunLifecycleError,
+        )
+
+        try:
+            if operation == "start":
+                return service.start(run_id).to_dict()
+            if operation == "step":
+                return service.step(run_id).to_dict()
+            if operation == "pause":
+                return service.pause(run_id).to_dict()
+            if operation == "resume":
+                return service.resume(run_id).to_dict()
+            if operation == "stop":
+                return service.stop(run_id).to_dict()
+            if operation == "reset":
+                return service.reset(run_id).to_dict()
+            if operation == "restart":
+                return service.restart(run_id).to_dict()
+            if operation == "replay":
+                return service.replay(run_id).to_dict()
+        except ReplayUnavailableError as exc:
+            return _JSONResponse(status_code=409, content={"detail": str(exc)})
+        except RunLifecycleError as exc:
+            return _JSONResponse(status_code=409, content={"detail": str(exc)})
+        return _JSONResponse(
+            status_code=400, content={"detail": f"unknown operation {operation!r}"}
+        )
+
+    @app.post("/vnext/runs/{run_id}/start")
+    def vnext_start(run_id: str):
+        return _vnext_mutate(run_id, "start")
+
+    @app.post("/vnext/runs/{run_id}/step")
+    def vnext_step(run_id: str):
+        return _vnext_mutate(run_id, "step")
+
+    @app.post("/vnext/runs/{run_id}/pause")
+    def vnext_pause(run_id: str):
+        return _vnext_mutate(run_id, "pause")
+
+    @app.post("/vnext/runs/{run_id}/resume")
+    def vnext_resume(run_id: str):
+        return _vnext_mutate(run_id, "resume")
+
+    @app.post("/vnext/runs/{run_id}/stop")
+    def vnext_stop(run_id: str):
+        return _vnext_mutate(run_id, "stop")
+
+    @app.post("/vnext/runs/{run_id}/reset")
+    def vnext_reset(run_id: str):
+        return _vnext_mutate(run_id, "reset")
+
+    @app.post("/vnext/runs/{run_id}/restart")
+    def vnext_restart(run_id: str):
+        return _vnext_mutate(run_id, "restart")
+
+    @app.post("/vnext/runs/{run_id}/replay")
+    def vnext_replay(run_id: str):
+        return _vnext_mutate(run_id, "replay")
+
     return app

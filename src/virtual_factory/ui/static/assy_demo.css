@@ -871,3 +871,13 @@ html, body {
 .vf-hierarchy-node-executable .vf-hierarchy-badge { color: #4ecca3; }
 .vf-hierarchy-selected > .vf-hierarchy-row .vf-hierarchy-label { font-weight: 700; text-decoration: underline; }
 .vf-hierarchy-node.vf-hierarchy-collapsed > .vf-hierarchy-children { display: none; }
+
+/* ═══════════════════════════════════════════
+   G7 — run-control context (additive)
+   ═══════════════════════════════════════════ */
+.vf-run-control-section { margin: 6px 10px 4px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; background: rgba(255,255,255,0.03); }
+.vf-run-control-path { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+.vf-run-control-meta { font-size: 10px; opacity: .8; margin-bottom: 4px; }
+.vf-run-control-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+.vf-run-control-buttons button { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: inherit; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer; }
+.vf-run-control-buttons button:disabled { opacity: .4; cursor: default; }

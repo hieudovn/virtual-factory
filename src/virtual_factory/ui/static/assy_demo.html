@@ -86,6 +86,26 @@
         <div id="vf-hierarchy-nav" class="vf-hierarchy-nav"></div>
         <div class="vf-context-note">Selecting a sub-line sets monitoring/context; it never reconstructs a runtime.</div>
       </div>
+
+      <!-- G7 additive: run-control context (read-only + minimal controls) -->
+      <div id="vf-run-control-section" class="vf-run-control-section" style="display:none;">
+        <div class="vf-context-title">Run control</div>
+        <div class="vf-run-control-path" id="vf-run-control-path"></div>
+        <div class="vf-run-control-meta">
+          <span id="vf-run-control-kind"></span> ·
+          <span id="vf-run-control-state"></span> ·
+          <span id="vf-run-control-time"></span>
+        </div>
+        <div class="vf-context-note" id="vf-run-control-eff"></div>
+        <div class="vf-run-control-buttons">
+          <button type="button" id="vf-run-control-run">Run</button>
+          <button type="button" id="vf-run-control-pause">Pause</button>
+          <button type="button" id="vf-run-control-resume">Resume</button>
+          <button type="button" id="vf-run-control-step">Step</button>
+          <button type="button" id="vf-run-control-stop">Stop</button>
+          <button type="button" id="vf-run-control-reset">Reset</button>
+        </div>
+      </div>
     </nav>
 
     <!-- CANVAS AREA -->
@@ -368,5 +388,6 @@
 <script src="/static/assy_demo.js"></script>
 <script src="/static/hierarchy.js"></script>
 <script src="/static/assy_context.js"></script>
+<script src="/static/run_control_context.js"></script>
 </body>
 </html>
