@@ -58,6 +58,17 @@ VALID_SUPPORT = {
     "unknown/blocking",
 }
 
+# G10-C01: no authorized_in_g11 item may authorize executable behavior while
+# synthetic_reference_execution remains PENDING_LATER_PIM_REVIEW.
+FORBIDDEN_G11_AUTHORIZATION_TOKENS = (
+    "execution",
+    "runtime",
+    "behavior",
+    "behaviour",
+    "black-box",
+    "black_box",
+)
+
 FIDELITY_ORDER = [
     "NotReady",
     "LogicalOnly",
@@ -225,6 +236,29 @@ class TestNoG11Runtime:
         assert modes["structural_construction"] == "AUTHORIZED_IN_G11"
         assert modes["synthetic_reference_execution"] == "PENDING_LATER_PIM_REVIEW"
         assert modes["site_authorized_execution"] == "NOT_AUTHORIZED"
+
+    def test_authorized_in_g11_is_structural_construction_only(self, plan):
+        # G10-C01: no authorized_in_g11 item may authorize executable behavior
+        # while synthetic_reference_execution remains PENDING_LATER_PIM_REVIEW.
+        items = plan["g11_admission_plan"]["authorized_in_g11"]
+        assert items, "authorized_in_g11 must not be empty"
+        joined = " ".join(items).lower()
+        assert "structural construction" in joined
+        for item in items:
+            lowered = item.lower()
+            for token in FORBIDDEN_G11_AUTHORIZATION_TOKENS:
+                assert token not in lowered, (token, item)
+
+    def test_executable_candidates_are_classification_only_in_g11(self, plan):
+        items = plan["g11_admission_plan"]["authorized_in_g11"]
+        joined = " ".join(items).lower()
+        assert "classification only" in joined
+        later = plan["g11_admission_plan"]["synthetic_reference_black_box_allowed_later"]
+        assert later == [
+            "UNIT-SHW-L1-T106",
+            "UNIT-SHW-L1-T108",
+            "UNIT-SHW-WASH-T110",
+        ]
 
     def test_parameterized_and_calibrated_prohibited_in_g11(self, plan):
         prohibited = " ".join(plan["g11_admission_plan"]["prohibited_until_site_evidence"])

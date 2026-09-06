@@ -464,7 +464,7 @@
       "Structural construction: Workspace/Scope/StructuralPath mirroring PIM canonical ids as reference-only (no rename, no invented ids).",
       "Container-only scopes for PLANT-SHW and every AREA-SHW-* (no executable areas).",
       "Object/reference binding for skeleton-level units (UNIT-SHW-*) as reference_only/object_only per inventory.",
-      "Synthetic/reference black-box for the three first-slice executable candidates (T106/T108/T110) at their frozen fidelity ceilings, behind boundary_contracts_v0."
+      "Executable-candidate classification only for the three first-slice units (T106/T108/T110) at their frozen roles/fidelity ceilings; nothing executable is authorized in G11."
     ],
     "stays_container_only_in_g11": ["PLANT-SHW", "AREA-SHW-RAW-WATER", "AREA-SHW-LINE1", "AREA-SHW-LINE2", "AREA-SHW-CHEMICAL", "AREA-SHW-SLUDGE"],
     "stays_reference_only_in_g11": ["AREA-SHW-ELECTRICAL", "AREA-SHW-AUTOMATION", "UNIT-SHW-ELEC-MCC", "UNIT-SHW-AUTO-PLC", "UNIT-SHW-CHEM-DOSING", "UNIT-SHW-L2-T101", "UNIT-SHW-L2-T105", "UNIT-SHW-L2-T106", "UNIT-SHW-L2-T108"],
@@ -512,6 +512,7 @@
       "containment_distinct_from_connectivity",
       "many_to_many_not_prohibited",
       "no_g11_runtime_implementation",
+      "g11_authorized_in_g11_no_executable_behavior",
       "g1_g9_baseline_green"
     ]
   }

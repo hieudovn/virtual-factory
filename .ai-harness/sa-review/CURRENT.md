@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G10
-Status: READY FOR SA REVIEW (SH-WTP Runtime Readiness & Scope Freeze — planning/readiness-freeze gate)
+Task: VF-vNEXT-G10-C01
+Status: READY FOR SA REVIEW (SH-WTP Runtime Readiness & Scope Freeze — C01 G11-admission consistency fix)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G9 complete)
 Prerequisite: Issue #53 (regression baseline) accepted; Issue #54 (G9) complete; Issue #55 (G10) current
 
@@ -29,14 +29,19 @@ Deliverables (planning/config/test only; no src/ change):
   CalibratedReady BLOCKED), G11 admission plan (structural vs synthetic vs
   site-authorized), relation classes (containment ≠ connectivity; many-to-many)
 - configs/vnext/shwtp/PLAN.md — human-readable summary
-- tests/test_vnext_g10_plan.py — 17 invariant tests
+- tests/test_vnext_g10_plan.py — 19 invariant tests (C01: strengthened G11
+  admission consistency checks)
 - .ai-harness/regression/vnext_baseline_manifest.json — G10 gate context + g10 group
 - Evidence/report under .ai-harness/sa-review/
 
-Regression: G10 17 passed; full suite 2003 passed; canonical baseline PASS
+Regression: G10 19 passed; full suite 2005 passed; canonical baseline PASS
 (compile/static/changed-files/preflight green on clean committed tree).
 
-G10 started: YES (completed; READY FOR SA REVIEW)
+C01 (SA 5560434475): G11 admission is structural-construction-only; removed the
+contradictory synthetic/reference black-box authorization; T106/T108/T110 remain
+executable_candidate classification only; strengthened invariant tests.
+
+G10 started: YES (completed; G10-C01 READY FOR SA REVIEW)
 G11 started: NO
 
 Report:
@@ -44,3 +49,4 @@ Report:
 
 Evidence:
 .ai-harness/sa-review/evidence/VF-vNEXT-G10/01-readiness-scope-freeze.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G10/02-c01-admission-plan-consistency.md

@@ -44,11 +44,16 @@ See `shwtp_readiness_scope.json` `boundary_contracts_v0` for T106/T108/T110.
 
 ## 5. G11 admission plan
 
-- Authorized: structural construction, container-only areas, reference binding, synthetic/reference
-  black-box for T106/T108/T110 at frozen ceilings.
+- Authorized in G11 (structural construction only): SH-WTP Workspace, containment scopes,
+  StructuralPath, canonical PIM reference binding, container_only / object_only / reference_only
+  materialization per inventory, and executable_candidate classification only for
+  T106 / T108 / T110 (roles and fidelity ceilings frozen).
+- Not authorized in G11: executable behavior for T106 / T108 / T110. Their synthetic/reference
+  black-box behavior is `allowed_later` / `PENDING_LATER_PIM_REVIEW`.
+- Three distinct concepts: structural construction = `AUTHORIZED_IN_G11`;
+  synthetic/reference execution = `PENDING_LATER_PIM_REVIEW`; site-authorized execution = `NOT_AUTHORIZED`.
 - Prohibited until site evidence: control/interlock (GAP-002), hydraulic params (GAP-003),
   quality truth (GAP-004), electrical mapping (GAP-005), sludge modelling (GAP-010), calibration (GAP-012).
-- Structural construction ≠ synthetic/reference execution ≠ site-authorized execution.
 - Do not flatten SH-WTP into a single A→B→C chain; cross-area relations are many-to-many.
 
 ## 6. Relation classes
