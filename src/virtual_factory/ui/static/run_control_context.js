@@ -11,6 +11,9 @@
     const section = document.getElementById('vf-run-control-section');
     if (!section) return;
 
+    const workspace = (section.getAttribute('data-vf-workspace') || 'TIPA');
+    const wsParam = '?workspace=' + encodeURIComponent(workspace);
+
     const pathEl = document.getElementById('vf-run-control-path');
     const kindEl = document.getElementById('vf-run-control-kind');
     const stateEl = document.getElementById('vf-run-control-state');
@@ -27,7 +30,7 @@
 
     function post(op) {
       if (!runId) return;
-      fetch('/vnext/runs/' + encodeURIComponent(runId) + '/' + op, { method: 'POST' })
+      fetch('/vnext/runs/' + encodeURIComponent(runId) + '/' + op + wsParam, { method: 'POST' })
         .then(refresh)
         .catch(function () { /* keep previous state */ });
     }
@@ -51,7 +54,7 @@
     }
 
     function refresh() {
-      fetch('/vnext/runs/current')
+      fetch('/vnext/runs/current' + wsParam)
         .then(function (res) {
           if (!res.ok) { section.hidden = true; return null; }
           return res.json();

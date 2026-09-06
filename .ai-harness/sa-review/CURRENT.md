@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G7-C01
-Status: READY FOR SA REVIEW (Hierarchical Scenario / Run Control — C01 correction)
+Task: VF-vNEXT-G7-C02
+Status: READY FOR SA REVIEW (Hierarchical Scenario / Run Control — C02 correction)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate after G6)
 Prerequisite: Issue #51 accepted as completed; G1–G6 contracts authoritative
 
@@ -32,14 +32,25 @@ Implemented (additive package src/virtual_factory/runcontrol/ + ui seam):
 - assy_bridge.py: AssyExecutionBridge over TipaAssyFederation + G4 Coordinator —
   natural-boundary-only advancement (no fractional dwell/index); capability-
   scoped in-context reset via AssyLineRuntime.reset().
+- continuous_bridge.py: ContinuousExecutionBridge over the accepted continuous
+  RuntimeService seam (one step_once() per boundary; in-context reset()) +
+  build_continuous_workspace() (root-only Workspace, zero scopes). No engine
+  rewrite, no invented continuous hierarchy.
 - ui/api.py (additive): /vnext/runs/* endpoints (create/current/get + start/step/
-  pause/resume/stop/reset/restart/replay); legacy endpoints untouched.
-- ui/static/run_control_context.js + assy_demo.html mount + assy_demo.css:
+  pause/resume/stop/reset/restart/replay) with an additive `?workspace=`
+  discriminator (TIPA default | continuous); independent per-workspace
+  RunLifecycleService (no platform-global active run); unknown workspace /
+  foreign run_id -> 404, foreign target -> 400. Legacy endpoints untouched
+  (compatibility surfaces, not repointed).
+- ui/static/run_control_context.js (workspace-aware) + assy_demo.html mount +
+  assy_demo.css + index.html mount + styles.css:
   additive minimal run-control context (path-qualified target, state, truthful
   time, Run/Pause/Resume/Step/Stop/Reset).
 
 Frozen invariants preserved:
-- One platform-level run lifecycle authority; domain runtimes stay authoritative.
+- One platform-level run lifecycle authority PER WORKSPACE; domain runtimes stay
+  authoritative; TIPA and continuous are independent authorities (no
+  cross-workspace mutation, no platform-global active run).
 - Immutable RunContextV2 per run; workspace_id/run_id/scope_path/scenario_id
   coherent; one scenario authority per run.
 - Terminal run attempts never reused under the same run_id; restart/replay
@@ -56,12 +67,13 @@ Failure semantics (evidence 06):
   no hidden retry; terminal runs never step under the same run_id.
 
 STOP-condition assessment: none triggered (no new synchronization/timestep
-policy; no ASSY fractionalization; continuous not bridged; reset capability-
-scoped; replay never fabricated; no terminal run-id reuse; no container
-execution; G2/G4 contracts intact; no G8+).
+policy; no ASSY fractionalization; continuous truthfully bridged over its
+RuntimeService seam, root-only; reset capability-scoped; replay never
+fabricated; no terminal run-id reuse; no container execution; TIPA/continuous
+workspace authorities independent; G2/G4 contracts intact; no G8+).
 
 Test / regression results (evidence 07):
-- New G7 tests: 37 passed (incl. C01).
+- New G7 tests: 47 passed (incl. C01 + C02).
 - UI/API + S04B gating tests: 134 passed.
 - G6 UI hierarchy tests: 31 passed.
 - G5 federation tests: 26 passed.
@@ -71,7 +83,7 @@ Test / regression results (evidence 07):
 - G3 Observation/Event/Alarm (+ M5 + alarm_manager): 328 passed.
 - Complete ASSY regression oracle: 354 passed.
 - Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1943 passed (0 failures).
+- Full repository suite: 1953 passed (0 failures).
 - Compile check PASS (no configured ruff/mypy/black in repo).
 
 Deferred (NOT implemented): G8 regression-baseline program, G9 semantic binding,
@@ -86,11 +98,11 @@ Report:
 .ai-harness/sa-review/reports/VF-vNEXT-G7.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G7/ (8 files: 01 repo-first discovery +
+.ai-harness/sa-review/evidence/VF-vNEXT-G7/ (9 files: 01 repo-first discovery +
 scope; 02 lifecycle model + guards; 03 target resolution; 04 execution bridge;
 05 API + UI binding; 06 failure + stop assessment; 07 tests + regression
 results; 08 C01 corrections — active-attempt authority + attempt-bound
-execution)
+execution; 09 C02 corrections — continuous binding + workspace isolation)
 
 
 

@@ -609,12 +609,27 @@ def create_app(
 
     # ═══════════════════════════════════════════════
     # G7 — Hierarchical Scenario / Run Control (additive vNext seam)
-    # One platform-level run authority; domain runtimes stay authoritative.
+    # One platform-level run authority PER WORKSPACE; domain runtimes stay
+    # authoritative. TIPA and continuous are independent workspace authorities
+    # (no cross-workspace mutation, no platform-global active run singleton).
+    # Legacy /step /start /stop /reset remain compatibility surfaces (not
+    # repointed). The ``workspace`` discriminator follows the existing G6
+    # ``?workspace=`` query-param convention (default: TIPA).
     # ═══════════════════════════════════════════════
-    _run_control: dict = {"instance": None}
+    _run_control: dict = {}
 
-    def _get_run_control_service():
-        if _run_control["instance"] is None:
+    def _get_run_control_service(workspace: str = "TIPA"):
+        """Return the run-control authority for a workspace, or None.
+
+        ``workspace`` is a platform workspace discriminator (``TIPA`` or
+        ``continuous``); each value owns an independent RunLifecycleService
+        (independent active run, history and bridge state). Unknown names fail
+        closed (caller returns 404).
+        """
+        if workspace in _run_control:
+            return _run_control[workspace]
+
+        if workspace == "TIPA":
             from virtual_factory.federation import (
                 TipaAssyFederation,
                 build_tipa_workspace,
@@ -624,7 +639,7 @@ def create_app(
                 RunLifecycleService,
             )
 
-            workspace = build_tipa_workspace()
+            ws = build_tipa_workspace()
 
             def bridge_factory():
                 assy_config = os.environ.get(
@@ -636,15 +651,49 @@ def create_app(
                 federation.initialize()
                 return AssyExecutionBridge(federation)
 
-            _run_control["instance"] = RunLifecycleService(workspace, bridge_factory)
-        return _run_control["instance"]
+            _run_control[workspace] = RunLifecycleService(ws, bridge_factory)
+        elif workspace == "continuous":
+            from virtual_factory.runcontrol import (
+                ContinuousExecutionBridge,
+                RunLifecycleService,
+                build_continuous_workspace,
+            )
+
+            ws = build_continuous_workspace()
+
+            def bridge_factory():
+                # Attempt-bound (C01): a NEW attempt builds a fresh execution
+                # context on the SAME accepted continuous RuntimeService seam
+                # (no engine rewrite, no second runtime instance).
+                return ContinuousExecutionBridge(
+                    service, participant_id=ws.workspace_id
+                )
+
+            _run_control[workspace] = RunLifecycleService(ws, bridge_factory)
+        else:
+            return None
+
+        return _run_control[workspace]
+
+    def _vnext_service(workspace: str):
+        svc = _get_run_control_service(workspace)
+        if svc is None:
+            return None, _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown workspace {workspace!r}"},
+            )
+        return svc, None
 
     @app.post("/vnext/runs", status_code=201)
-    def vnext_create_run(body: dict):
+    def vnext_create_run(body: dict, workspace: str = Query("TIPA")):
         from virtual_factory.runcontrol import (
             RunLifecycleError,
             TargetResolutionError,
         )
+
+        service, unknown = _vnext_service(workspace)
+        if service is None:
+            return unknown
 
         target_path = body.get("target_path", "")
         if not target_path:
@@ -652,7 +701,7 @@ def create_app(
                 status_code=400, content={"detail": "target_path is required"}
             )
         try:
-            record = _get_run_control_service().create_run(
+            record = service.create_run(
                 target_path,
                 scenario_id=body.get("scenario_id"),
                 model_id=body.get("model_id"),
@@ -666,8 +715,11 @@ def create_app(
             return _JSONResponse(status_code=409, content={"detail": str(exc)})
 
     @app.get("/vnext/runs/current")
-    def vnext_current_run():
-        record = _get_run_control_service().current()
+    def vnext_current_run(workspace: str = Query("TIPA")):
+        service, unknown = _vnext_service(workspace)
+        if service is None:
+            return unknown
+        record = service.current()
         if record is None:
             return _JSONResponse(
                 status_code=404, content={"detail": "no active run"}
@@ -675,8 +727,10 @@ def create_app(
         return record.to_dict()
 
     @app.get("/vnext/runs/{run_id}")
-    def vnext_get_run(run_id: str):
-        service = _get_run_control_service()
+    def vnext_get_run(run_id: str, workspace: str = Query("TIPA")):
+        service, unknown = _vnext_service(workspace)
+        if service is None:
+            return unknown
         if not service.has_run(run_id):
             return _JSONResponse(
                 status_code=404,
@@ -684,8 +738,15 @@ def create_app(
             )
         return service.status(run_id)
 
-    def _vnext_mutate(run_id: str, operation: str, body: dict | None = None):
-        service = _get_run_control_service()
+    def _vnext_mutate(
+        run_id: str,
+        operation: str,
+        workspace: str = "TIPA",
+        body: dict | None = None,
+    ):
+        service, unknown = _vnext_service(workspace)
+        if service is None:
+            return unknown
         if not service.has_run(run_id):
             return _JSONResponse(
                 status_code=404,
@@ -722,35 +783,35 @@ def create_app(
         )
 
     @app.post("/vnext/runs/{run_id}/start")
-    def vnext_start(run_id: str):
-        return _vnext_mutate(run_id, "start")
+    def vnext_start(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "start", workspace)
 
     @app.post("/vnext/runs/{run_id}/step")
-    def vnext_step(run_id: str):
-        return _vnext_mutate(run_id, "step")
+    def vnext_step(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "step", workspace)
 
     @app.post("/vnext/runs/{run_id}/pause")
-    def vnext_pause(run_id: str):
-        return _vnext_mutate(run_id, "pause")
+    def vnext_pause(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "pause", workspace)
 
     @app.post("/vnext/runs/{run_id}/resume")
-    def vnext_resume(run_id: str):
-        return _vnext_mutate(run_id, "resume")
+    def vnext_resume(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "resume", workspace)
 
     @app.post("/vnext/runs/{run_id}/stop")
-    def vnext_stop(run_id: str):
-        return _vnext_mutate(run_id, "stop")
+    def vnext_stop(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "stop", workspace)
 
     @app.post("/vnext/runs/{run_id}/reset")
-    def vnext_reset(run_id: str):
-        return _vnext_mutate(run_id, "reset")
+    def vnext_reset(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "reset", workspace)
 
     @app.post("/vnext/runs/{run_id}/restart")
-    def vnext_restart(run_id: str):
-        return _vnext_mutate(run_id, "restart")
+    def vnext_restart(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "restart", workspace)
 
     @app.post("/vnext/runs/{run_id}/replay")
-    def vnext_replay(run_id: str):
-        return _vnext_mutate(run_id, "replay")
+    def vnext_replay(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "replay", workspace)
 
     return app

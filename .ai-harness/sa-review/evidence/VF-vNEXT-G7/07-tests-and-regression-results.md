@@ -4,7 +4,7 @@
 
 Command: `python -m pytest tests/test_run_control.py -q`
 
-Result: **37 passed** (0 failures). Covers the Issue #52 test set:
+Result: **47 passed** (0 failures). Covers the Issue #52 test set:
 1 lifecycle transitions + fail-closed guards; 2 immutable/coherent RunContextV2
 + one scenario authority; 3 workspace/container → deterministic descendant
 executable scopes (no fake container participant); 4 executable → itself;
@@ -20,12 +20,18 @@ single mutable active attempt (create superseded fails closed; superseded known
 run id fails closed; API historical mutation 409); attempt-bound execution state
 (restart/replay fresh context at initial time; source runtime untouched; reset
 keeps same run_id + same runtime objects; prior records readable history).
+Includes the G7-C02 tests (evidence 09): continuous bridge over the accepted
+RuntimeService seam (one dt per boundary, in-context reset); root-only
+continuous workspace (no invented hierarchy); TIPA + continuous independent
+workspace authorities (coexistence, no cross-mutation, foreign target fail
+closed, unknown workspace 404); continuous lifecycle + fresh restart; replay
+unavailable without a pinned scenario; legacy engine semantics unchanged.
 
 ## 2. Regression groups (Issue #52)
 
 | Group | Result |
 |---|---|
-| New G7 lifecycle/run-control tests | **37 passed** (incl. C01) |
+| New G7 lifecycle/run-control tests | **47 passed** (incl. C01 + C02) |
 | Existing UI/API + S04B gating tests | **134 passed** |
 | G6 UI hierarchy tests | **31 passed** |
 | G5 federation tests | **26 passed** |
@@ -35,7 +41,7 @@ keeps same run_id + same runtime objects; prior records readable history).
 | G3 Observation/Event/Alarm (+ M5 + alarm_manager) | **328 passed** |
 | Complete ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1943 passed** (0 failures) |
+| Full repository suite | **1953 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black; no JS lint configured) |
 
 ## 3. Flakes

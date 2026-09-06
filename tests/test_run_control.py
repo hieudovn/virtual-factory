@@ -33,15 +33,18 @@ from virtual_factory.federation import (  # noqa: E402
 )
 from virtual_factory.runcontrol import (  # noqa: E402
     AssyExecutionBridge,
+    ContinuousExecutionBridge,
     ReplayUnavailableError,
     RunLifecycleError,
     RunLifecycleService,
     RunState,
     StepResult,
     TargetResolutionError,
+    build_continuous_workspace,
     resolve_target,
 )
 from virtual_factory.ui.api import create_app  # noqa: E402
+from virtual_factory.ui.runtime_service import RuntimeService  # noqa: E402
 from virtual_factory.workspace import StructuralPath  # noqa: E402
 
 REAL_CONFIG = (
@@ -570,4 +573,194 @@ class TestActiveAttemptAuthorityC01:
         assert history["scenario_id"] == "SCN-1"
         assert history["step_count"] == 1
         assert history["state"] == "stopped"
+
+
+# ═══════════════════════════════════════════════════════════
+# G7-C02 — continuous execution bridge + workspace isolation
+# ═══════════════════════════════════════════════════════════
+
+CONTINUOUS_CONFIG = (
+    Path(__file__).resolve().parent.parent
+    / "configs" / "plants" / "continuous_mvp_01.yaml"
+)
+
+
+def _continuous_runtime() -> RuntimeService:
+    return RuntimeService(config_path=CONTINUOUS_CONFIG, dt_s=1.0)
+
+
+def _continuous_service(runtime: RuntimeService) -> RunLifecycleService:
+    ws = build_continuous_workspace()
+    return RunLifecycleService(
+        ws,
+        lambda: ContinuousExecutionBridge(
+            runtime, participant_id=ws.workspace_id
+        ),
+    )
+
+
+class TestContinuousExecutionBridgeC02:
+    def test_natural_boundary_is_one_dt_and_step_advances(self):
+        runtime = _continuous_runtime()
+        bridge = ContinuousExecutionBridge(runtime, participant_id="continuous")
+        assert bridge.supports_reset is True
+        assert bridge.natural_next_boundary(()) == 1.0
+        result = bridge.advance(1.0, (), "w1")
+        assert result.status == "completed"
+        assert result.target_time_s == 1.0
+        assert result.participants == ("continuous",)
+        assert bridge.natural_next_boundary(()) == 2.0
+
+    def test_reset_is_in_context(self):
+        runtime = _continuous_runtime()
+        bridge = ContinuousExecutionBridge(runtime, participant_id="continuous")
+        bridge.advance(1.0, (), "w1")
+        bridge.advance(2.0, (), "w2")
+        assert runtime.engine.time_manager.now() == 2.0
+        bridge.reset(())
+        assert runtime.engine.time_manager.now() == 0.0
+
+    def test_workspace_root_only_no_invented_scopes(self):
+        ws = build_continuous_workspace()
+        assert ws.workspace_id == "continuous"
+        assert ws.top_level_scopes == ()
+        res = resolve_target(ws, StructuralPath(("continuous",)))
+        assert res.target_kind == "workspace"
+        assert res.effective_scope_paths == ()
+        # a non-root path must fail closed (no fabricated hierarchy)
+        with pytest.raises(TargetResolutionError):
+            resolve_target(ws, StructuralPath(("continuous", "FAKE")))
+
+    def test_lifecycle_authority_and_fresh_restart(self):
+        runtime = _continuous_runtime()
+        svc = _continuous_service(runtime)
+        a = svc.create_run("continuous")
+        aid = a.context.run_id
+        assert a.target_kind == "workspace"
+        assert a.effective_scopes == ()
+        svc.start(aid)
+        assert svc.step(aid).target_time_s == 1.0
+        assert runtime.engine.time_manager.now() == 1.0
+        svc.pause(aid)
+        with pytest.raises(RunLifecycleError):
+            svc.step(aid)  # paused -> no advancement
+        assert runtime.engine.time_manager.now() == 1.0
+        svc.resume(aid)
+        svc.step(aid)  # 2.0
+        assert runtime.engine.time_manager.now() == 2.0
+        svc.stop(aid)
+        # restart must start fresh (t=0), source remains historical
+        b = svc.restart(aid)
+        assert b.context.run_id != aid
+        assert b.context.source_run_id == aid
+        svc.start(b.context.run_id)
+        assert svc.step(b.context.run_id).target_time_s == 1.0
+        assert runtime.engine.time_manager.now() == 1.0  # not 3.0
+        assert svc.status(aid)["state"] == "stopped"
+
+    def test_replay_unavailable_without_pinned_scenario(self):
+        runtime = _continuous_runtime()
+        svc = _continuous_service(runtime)
+        a = svc.create_run("continuous")
+        aid = a.context.run_id
+        svc.start(aid)
+        svc.stop(aid)
+        with pytest.raises(ReplayUnavailableError):
+            svc.replay(aid)
+
+
+class TestWorkspaceIsolationC02:
+    def test_tipa_and_continuous_active_runs_coexist(self):
+        c = _client()
+        a = c.post("/vnext/runs", json={"target_path": "TIPA"}).json()
+        aid = a["run_id"]
+        b = c.post(
+            "/vnext/runs",
+            params={"workspace": "continuous"},
+            json={"target_path": "continuous"},
+        ).json()
+        bid = b["run_id"]
+        assert aid != bid
+        assert c.post(f"/vnext/runs/{aid}/start").status_code == 200
+        assert c.post(
+            f"/vnext/runs/{bid}/start", params={"workspace": "continuous"}
+        ).status_code == 200
+        # both are active simultaneously in independent authorities
+        assert c.get("/vnext/runs/current").json()["run_id"] == aid
+        assert c.get(
+            "/vnext/runs/current", params={"workspace": "continuous"}
+        ).json()["run_id"] == bid
+
+    def test_run_id_cannot_cross_mutate(self):
+        c = _client()
+        a = c.post("/vnext/runs", json={"target_path": "TIPA"}).json()
+        aid = a["run_id"]
+        b = c.post(
+            "/vnext/runs",
+            params={"workspace": "continuous"},
+            json={"target_path": "continuous"},
+        ).json()
+        bid = b["run_id"]
+        # TIPA run_id against continuous authority -> unknown (404)
+        assert c.post(
+            f"/vnext/runs/{aid}/start", params={"workspace": "continuous"}
+        ).status_code == 404
+        # continuous run_id against TIPA authority -> unknown (404)
+        assert c.post(f"/vnext/runs/{bid}/start").status_code == 404
+
+    def test_foreign_workspace_target_fails_closed(self):
+        c = _client()
+        r = c.post(
+            "/vnext/runs",
+            params={"workspace": "continuous"},
+            json={"target_path": "TIPA/ASSY/ASSY-SL01"},
+        )
+        assert r.status_code == 400
+        r2 = c.post("/vnext/runs", json={"target_path": "continuous"})
+        assert r2.status_code == 400
+
+    def test_unknown_workspace_fails_closed(self):
+        c = _client()
+        assert c.post(
+            "/vnext/runs",
+            params={"workspace": "NOPE"},
+            json={"target_path": "x"},
+        ).status_code == 404
+        assert c.get(
+            "/vnext/runs/current", params={"workspace": "NOPE"}
+        ).status_code == 404
+
+    def test_continuous_lifecycle_via_api_keeps_legacy_engine(self):
+        c = _client()
+        rec = c.post(
+            "/vnext/runs",
+            params={"workspace": "continuous"},
+            json={"target_path": "continuous"},
+        ).json()
+        rid = rec["run_id"]
+        assert rec["target_kind"] == "workspace"
+        assert rec["effective_scopes"] == []
+        assert c.post(
+            f"/vnext/runs/{rid}/start", params={"workspace": "continuous"}
+        ).status_code == 200
+        step = c.post(
+            f"/vnext/runs/{rid}/step", params={"workspace": "continuous"}
+        ).json()
+        assert step["status"] == "completed"
+        assert step["target_time_s"] == 1.0
+        assert c.post(
+            f"/vnext/runs/{rid}/pause", params={"workspace": "continuous"}
+        ).status_code == 200
+        assert c.post(
+            f"/vnext/runs/{rid}/step", params={"workspace": "continuous"}
+        ).status_code == 409
+        assert c.post(
+            f"/vnext/runs/{rid}/resume", params={"workspace": "continuous"}
+        ).status_code == 200
+        assert c.post(
+            f"/vnext/runs/{rid}/stop", params={"workspace": "continuous"}
+        ).status_code == 200
+        # legacy engine semantics unchanged: same RuntimeService seam, dt=1.0
+        assert c.get("/status").json()["dt_s"] == 1.0
+        assert c.get("/status").json()["time_s"] == 1.0
 

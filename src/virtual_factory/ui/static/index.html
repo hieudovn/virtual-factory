@@ -81,6 +81,25 @@
           <div id="vf-context-crumbs" class="vf-context-crumbs"></div>
           <div id="vf-context-nav" class="vf-context-nav"></div>
         </div>
+        <!-- G7 additive: run-control context (root-only continuous workspace) -->
+        <div id="vf-run-control-section" class="vf-run-control-section" data-vf-workspace="continuous" style="display:none;">
+          <div class="vf-context-title">Run control</div>
+          <div class="vf-run-control-path" id="vf-run-control-path"></div>
+          <div class="vf-run-control-meta">
+            <span id="vf-run-control-kind"></span> ·
+            <span id="vf-run-control-state"></span> ·
+            <span id="vf-run-control-time"></span>
+          </div>
+          <div class="vf-context-note" id="vf-run-control-eff"></div>
+          <div class="vf-run-control-buttons">
+            <button type="button" id="vf-run-control-run">Run</button>
+            <button type="button" id="vf-run-control-pause">Pause</button>
+            <button type="button" id="vf-run-control-resume">Resume</button>
+            <button type="button" id="vf-run-control-step">Step</button>
+            <button type="button" id="vf-run-control-stop">Stop</button>
+            <button type="button" id="vf-run-control-reset">Reset</button>
+          </div>
+        </div>
         <div class="sidebar-footer">
           <div class="sidebar-status">
             <span class="status-dot" id="sidebar-status-dot"></span>
@@ -255,5 +274,6 @@
     <script src="/static/app.js?v=11" defer></script>
     <script src="/static/hierarchy.js?v=1" defer></script>
     <script src="/static/continuous_context.js?v=1" defer></script>
+    <script src="/static/run_control_context.js?v=1" defer></script>
   </body>
 </html>
