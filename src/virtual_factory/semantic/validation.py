@@ -29,9 +29,15 @@ from virtual_factory.semantic.binding import (
     SemanticBinding,
 )
 
-# (artifact_id, version) -> accepted exact artifact hash baseline (offline pin).
-KNOWN_SEMANTIC_ARTIFACTS: dict[tuple[str, str], str] = {
-    ("SHW-PIM-VF-EXPORT-v0.1", "v0.1"): "ea3361a4aca9d25927a4a76c792f3af184e1aabb",
+# (artifact_id, version) -> (accepted artifact hash, accepted semantic identity SHA).
+KNOWN_SEMANTIC_ARTIFACTS: dict[tuple[str, str], tuple[str, str]] = {
+    (
+        "SHW-PIM-VF-EXPORT-v0.1",
+        "v0.1",
+    ): (
+        "ea3361a4aca9d25927a4a76c792f3af184e1aabb",
+        "f23f3c4614f50a1a2e3805f7e887433feb934915",
+    ),
 }
 
 
@@ -70,14 +76,22 @@ def validate_binding(binding: SemanticBinding) -> BindingValidation:
             if not getattr(src, field_name):
                 diags.append(f"required binding missing source pin: {label}")
 
-    # exact accepted hash baseline (mismatch fails closed)
+    # exact accepted pins baseline (mismatch fails closed, offline)
     if src.artifact_id and src.version:
         known = KNOWN_SEMANTIC_ARTIFACTS.get((src.artifact_id, src.version))
-        if known is not None and src.artifact_hash and src.artifact_hash != known:
-            diags.append(
-                f"artifact hash mismatch for {src.artifact_id}@{src.version}: "
-                f"supplied {src.artifact_hash!r} != accepted {known!r}"
-            )
+        if known is not None:
+            accepted_hash, accepted_sha = known
+            if src.artifact_hash and src.artifact_hash != accepted_hash:
+                diags.append(
+                    f"artifact hash mismatch for {src.artifact_id}@{src.version}: "
+                    f"supplied {src.artifact_hash!r} != accepted {accepted_hash!r}"
+                )
+            if src.semantic_identity_sha and src.semantic_identity_sha != accepted_sha:
+                diags.append(
+                    f"semantic identity SHA mismatch for "
+                    f"{src.artifact_id}@{src.version}: supplied "
+                    f"{src.semantic_identity_sha!r} != accepted {accepted_sha!r}"
+                )
 
     # ── mapping cardinality / status ───────────────────────
     if binding.mode in (BindingMode.REQUIRED, BindingMode.OPTIONAL):

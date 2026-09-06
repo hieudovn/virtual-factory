@@ -137,7 +137,8 @@ class TestSourceIdentity:
             assert any(missing in d for d in result.diagnostics)
 
     def test_hash_mismatch_fails_closed(self):
-        # SH-WTP pinned artifact/version but a wrong artifact hash.
+        # SH-WTP pinned artifact/version with the correct semantic SHA but a
+        # wrong artifact hash.
         binding = SemanticBinding(
             mode=BindingMode.REQUIRED,
             source=SemanticSourcePin(
@@ -145,6 +146,7 @@ class TestSourceIdentity:
                 artifact_id="SHW-PIM-VF-EXPORT-v0.1",
                 version="v0.1",
                 artifact_hash="deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+                semantic_identity_sha="f23f3c4614f50a1a2e3805f7e887433feb934915",
             ),
             compatibility=CompatibilityDecision.COMPATIBLE_WITH_CONSTRAINTS,
             runtime_authorization=RuntimeAuthorization.NOT_AUTHORIZED,
@@ -152,6 +154,28 @@ class TestSourceIdentity:
         result = validate_binding(binding)
         assert result.ok is False
         assert any("hash mismatch" in d for d in result.diagnostics)
+
+    def test_semantic_sha_mismatch_fails_closed_for_known_artifact(self):
+        # Exact SH-WTP artifact/version + correct artifact hash but a WRONG
+        # non-empty semantic identity SHA -> must fail closed with a clear
+        # diagnostic.
+        binding = SemanticBinding(
+            mode=BindingMode.REQUIRED,
+            source=SemanticSourcePin(
+                producer_id="song-hong-wtp-pim",
+                artifact_id="SHW-PIM-VF-EXPORT-v0.1",
+                version="v0.1",
+                artifact_hash="ea3361a4aca9d25927a4a76c792f3af184e1aabb",
+                semantic_identity_sha="deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+            ),
+            compatibility=CompatibilityDecision.COMPATIBLE_WITH_CONSTRAINTS,
+            runtime_authorization=RuntimeAuthorization.NOT_AUTHORIZED,
+        )
+        result = validate_binding(binding)
+        assert result.ok is False
+        assert any(
+            "semantic identity SHA mismatch" in d for d in result.diagnostics
+        )
 
 
 # ── 4-9. mapping cardinality / status ─────────────────────
