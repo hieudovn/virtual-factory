@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G9
-Status: READY FOR SA REVIEW (Semantic Binding vNext)
+Task: VF-vNEXT-G9-C01
+Status: READY FOR SA REVIEW (Semantic Binding vNext — C01 corrections)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized gate after G8)
 Prerequisite: Issue #53 accepted as completed; G1-G8 contracts authoritative
 
@@ -40,8 +40,15 @@ Implemented (additive):
   admission callable invoked in start()/step() BEFORE any advance; RunRecord
   carries semantic_contract_version/semantic_contract_sha (None == not
   consumed). G7 state machine unchanged (default no-op).
-- .ai-harness/regression/vnext_baseline_manifest.json: minimally updated ONLY by
-  adding the additive g9_semantic_binding pytest group (no prior group weakened).
+- .ai-harness/regression/vnext_baseline_manifest.json + run_vnext_baseline.py:
+  minimally updated ONLY by adding the additive g9_semantic_binding pytest group
+  (no prior group weakened). C01: top-level `gate` context (task_contract /
+  changed_files_base) + {task_contract} substitution so the SAME canonical
+  entrypoint runs the current authorized gate (changed-files/preflight use the
+  current task/branch/base, not hard-coded G8).
+- C01 (SA 5559907951): REQUIRED mappings now require exactly one non-empty
+  canonical target independent of published/canonical_claimed; semantic_identity_sha
+  is a required pin for admittable bindings (no fabricated SHA); G9 tests 16 -> 17.
 - tests/test_semantic_binding.py (16 tests) + tests/fixtures/semantic/
   song_hong_wtp_export_v0_1.yaml (pinned SH-WTP reference fixture).
 
@@ -60,15 +67,15 @@ ea3361a4... with compatibility compatible_with_constraints + runtime_authorizati
 NOT_AUTHORIZED. Validation passes (pins recognized); admission raises; lifecycle
 cannot start (run stays CREATED, zero advancement, no fabricated provenance).
 
-Test / regression results (evidence 01):
-- New G9 semantic-binding tests: 16 passed.
+Test / regression results (evidence 01/02):
+- New G9 semantic-binding tests: 17 passed.
 - G7 run-control: 50 passed (unchanged).
-- Full repository suite: 1984 passed (0 failures).
-- Canonical G8 baseline: green at its accepted head (e75fa95) + minimal additive
-  g9_semantic_binding group; entrypoint g9_semantic_binding PASS (16) +
-  checks_compile + checks_static_lint_type PASS.
+- COMPLETE canonical vNext baseline at C01 head: overall PASS (all groups) —
+  g1 32; g2 36; g3 328; g4 56; g5 26; g6 31; g7 50; ui_api_dashboard 134;
+  assy_oracle 354; continuous_compressor 61; g8 12; g9 17; full_suite 1985
+  passed (0 failures); checks_compile/static/changed_files(14)/preflight PASS.
 - Compile check PASS; no configured ruff/mypy/black (truthful).
-- Preflight PASSED (G9 contract); verify_changed_files PASSED.
+- Preflight PASSED (G9 contract); verify_changed_files PASSED (14 files).
 
 Deferred (NOT implemented): G10 SH-WTP runtime/topology/physics/control, full
 replay browser/editor/history subsystem, scenario editor, universal reset/
@@ -82,7 +89,8 @@ Report:
 .ai-harness/sa-review/reports/VF-vNEXT-G9.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G9/ (01 semantic-binding model + admission)
+.ai-harness/sa-review/evidence/VF-vNEXT-G9/ (01 semantic-binding model + admission;
+02 C01 corrections — required-target fail-closed, semantic SHA, reusable baseline)
 
 
 

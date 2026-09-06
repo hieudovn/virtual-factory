@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G9` (GitHub Issue #54) |
+| Task ID | `VF-vNEXT-G9` (GitHub Issue #54) + C01 |
 | Program | Implementation phase (G9; only authorized gate after G8) |
 | Required base (branch) | `e75fa95259f1b68e465c546e2e4dbc6b24e9a76d` (accepted G8-C02 head) |
 | Branch | `feature/vf-vnext-g9` |
@@ -38,8 +38,16 @@ provenance threading of the consumed contract version/SHA.
   before any advance; `RunRecord` carries `semantic_contract_version`/
   `semantic_contract_sha` (None when not consumed). G7 semantics unchanged
   (default no-op).
-- `.ai-harness/regression/vnext_baseline_manifest.json` — minimally updated to
-  add the additive `g9_semantic_binding` pytest group (no prior group weakened).
+- `.ai-harness/regression/vnext_baseline_manifest.json` + `run_vnext_baseline.py`
+  — minimally updated: additive `g9_semantic_binding` group (no prior group
+  weakened); C01 adds a top-level `gate` context (`task_contract`,
+  `changed_files_base`) + `{task_contract}` substitution so the SAME canonical
+  entrypoint runs the current authorized gate (changed-files/preflight use the
+  current task/branch/base, not hard-coded G8).
+- C01 (SA `5559907951`): required-mode mappings now require exactly one
+  non-empty canonical target independent of `published`/`canonical_claimed`;
+  `semantic_identity_sha` is a required pin for admittable bindings (no
+  fabricated SHA); G9 tests 16 → 17.
 
 ## 3. Frozen distinctions (NOT changed)
 
@@ -54,11 +62,12 @@ provenance threading of the consumed contract version/SHA.
 
 | Suite | Result |
 |---|---|
-| New G9 semantic-binding tests | **16 passed** |
+| New G9 semantic-binding tests | **17 passed** |
 | G7 run-control | **50 passed** |
-| Full repository suite | **1984 passed** (0 failures) |
-| Canonical baseline g9 group (entrypoint) | **PASS** (16) |
+| Full repository suite | **1985 passed** (0 failures) |
+| COMPLETE canonical vNext baseline (C01 head) | **PASS** (all groups) |
 | checks_compile / checks_static_lint_type | **PASS** (truthful: no static tool) |
+| checks_changed_files / checks_preflight | **PASS** (14 files) |
 | Compile check | PASS |
 | Preflight (G9 contract) | PASSED |
 | Changed-file validation | PASSED |
@@ -88,12 +97,14 @@ G10.
 
 ## 7. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G9/` — `01-semantic-binding-model.md`.
+`.ai-harness/sa-review/evidence/VF-vNEXT-G9/` — `01-semantic-binding-model.md`,
+`02-c01-corrections.md` (required-target fail-closed, semantic SHA, reusable
+baseline).
 
 ## 8. Final status
 
 ```text
-VF-vNEXT-G9 — READY FOR SA REVIEW
+VF-vNEXT-G9-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G10 is NOT started.
