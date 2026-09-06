@@ -20,9 +20,12 @@ separate from, and must not be coupled to:
 
 Frozen semantics:
 
-- Endpoints are generic immutable external semantic node references
-  (authority + external/canonical entity id + optional entity kind). They do NOT
-  require ``StructuralPath`` and never rename an external id into a VF local id.
+- Endpoints are generic immutable external semantic node references. Frozen
+  endpoint identity is ``(authority, entity_id)``; ``entity_kind`` is
+  descriptive metadata and is EXCLUDED from equality/hash. Endpoints do NOT
+  require ``StructuralPath`` and never rename an external id into a VF local
+  id. Conflicting ``entity_kind`` metadata for the same identity fails closed
+  at graph construction.
 - Edges are immutable, provenance-rich, inert reference facts with an explicit
   ``runtime_effect = "none"`` marker (enforced, not defaulted to anything else).
 - The graph supports fan-out, fan-in, many-to-many, cycles, and endpoints that
@@ -36,7 +39,7 @@ Frozen semantics:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterable
 
 # Canonical string separator for endpoint identity. Neither authority nor
@@ -71,16 +74,16 @@ def _require_no_separator(value: str, name: str) -> None:
 class ReferenceEndpoint:
     """Generic immutable external semantic node reference.
 
-    ``authority`` is the source/authority identity (e.g. a repository or system
-    that owns the entity). ``entity_id`` is the external/canonical entity id.
-    ``entity_kind`` is optional descriptive metadata (e.g. ``Unit``, ``Signal``,
-    ``ProcessConnection``) — never a VF runtime type and never used to infer
-    semantics.
+    Frozen endpoint identity is ``(authority, entity_id)`` — equality and hash
+    use ONLY these two fields. ``entity_kind`` is descriptive metadata (e.g.
+    ``Unit``, ``Signal``, ``ProcessConnection``): it is NOT identity, never a VF
+    runtime type, and never used to infer semantics. Conflicting ``entity_kind``
+    for the same identity is rejected at graph construction (fail closed).
     """
 
     authority: str
     entity_id: str
-    entity_kind: str | None = None
+    entity_kind: str | None = field(default=None, compare=False, hash=False)
 
     def __post_init__(self) -> None:
         _require_nonempty(self.authority, "authority")
@@ -179,13 +182,17 @@ class ReferenceConnectivityGraph:
     __slots__ = ("_edges",)
 
     def __init__(self, edges: Iterable[ReferenceEdge] = ()) -> None:
-        by_edge_id: dict[str, ReferenceEdge] = {}
-        logical: dict[tuple, ReferenceEdge] = {}
-        for edge in edges:
+        edge_list = list(edges)
+        for edge in edge_list:
             if not isinstance(edge, ReferenceEdge):
                 raise ReferenceGraphError(
                     f"edges must be ReferenceEdge, got {type(edge).__name__}"
                 )
+        self._check_endpoint_metadata_consistency(edge_list)
+
+        by_edge_id: dict[str, ReferenceEdge] = {}
+        logical: dict[tuple, ReferenceEdge] = {}
+        for edge in edge_list:
             if edge.edge_id in by_edge_id:
                 raise ReferenceGraphError(f"duplicate edge id {edge.edge_id!r}")
             if edge.logical_key in logical:
@@ -197,6 +204,29 @@ class ReferenceConnectivityGraph:
             by_edge_id[edge.edge_id] = edge
             logical[edge.logical_key] = edge
         self._edges = tuple(sorted(by_edge_id.values(), key=lambda e: e.sort_key))
+
+    @staticmethod
+    def _check_endpoint_metadata_consistency(
+        edges: list[ReferenceEdge],
+    ) -> None:
+        """Fail closed on conflicting ``entity_kind`` for one endpoint identity.
+
+        Frozen endpoint identity is ``(authority, entity_id)``; ``entity_kind``
+        is descriptive metadata. Every occurrence of the same identity across
+        all edges must carry the SAME ``entity_kind`` (a missing kind and a
+        known kind are treated as a disagreement). Any conflict fails closed so
+        one external canonical identity can never carry contradictory metadata.
+        """
+        kinds: dict[tuple[str, str], str | None] = {}
+        for edge in edges:
+            for endpoint in (edge.source, edge.target):
+                known = kinds.setdefault(endpoint.key, endpoint.entity_kind)
+                if known != endpoint.entity_kind:
+                    raise ReferenceGraphError(
+                        f"endpoint identity {endpoint.as_string()!r} has "
+                        f"conflicting entity_kind metadata: "
+                        f"{known!r} vs {endpoint.entity_kind!r}"
+                    )
 
     @property
     def edges(self) -> tuple[ReferenceEdge, ...]:

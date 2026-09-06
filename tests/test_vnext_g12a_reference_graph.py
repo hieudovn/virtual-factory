@@ -110,6 +110,81 @@ class TestEndpointIdentity:
             ReferenceEndpoint(authority="a", entity_id="x", entity_kind="  ")
 
 
+class TestEndpointIdentityConsistency:
+    """G12A-C01: frozen endpoint identity is (authority, entity_id); entity_kind
+    is descriptive metadata excluded from equality/hash and fail-closed on
+    conflict."""
+
+    def test_equality_and_hash_ignore_entity_kind(self):
+        unit = ReferenceEndpoint(authority=AUTHORITY, entity_id="X", entity_kind="Unit")
+        conn = ReferenceEndpoint(
+            authority=AUTHORITY, entity_id="X", entity_kind="ProcessConnection"
+        )
+        assert unit == conn
+        assert hash(unit) == hash(conn)
+        assert unit.key == conn.key == (AUTHORITY, "X")
+
+    def test_same_identity_same_kind_allowed(self):
+        graph = ReferenceConnectivityGraph(
+            [
+                _edge("e1", "X", "Y", relation_type="flows_to"),
+                _edge("e2", "Y", "Z", relation_type="flows_to"),
+            ]
+        )
+        # endpoint Y appears as target of e1 and source of e2 with the same
+        # (None) entity_kind -> allowed
+        assert graph.edge_count == 2
+
+    def test_conflicting_entity_kind_fails_closed(self):
+        e1 = ReferenceEdge(
+            edge_id="e1",
+            source=_ep("X", kind="Unit"),
+            target=_ep("Y"),
+            relation_type="flows_to",
+            evidence_ref="DOC",
+        )
+        e2 = ReferenceEdge(
+            edge_id="e2",
+            source=_ep("X", kind="ProcessConnection"),
+            target=_ep("Z"),
+            relation_type="flows_to",
+            evidence_ref="DOC",
+        )
+        with pytest.raises(ReferenceGraphError) as exc:
+            ReferenceConnectivityGraph([e1, e2])
+        assert "conflicting entity_kind" in str(exc.value)
+
+    def test_missing_vs_known_entity_kind_fails_closed(self):
+        e1 = ReferenceEdge(
+            edge_id="e1",
+            source=_ep("X", kind=None),
+            target=_ep("Y"),
+            relation_type="flows_to",
+            evidence_ref="DOC",
+        )
+        e2 = ReferenceEdge(
+            edge_id="e2",
+            source=_ep("X", kind="Unit"),
+            target=_ep("Z"),
+            relation_type="flows_to",
+            evidence_ref="DOC",
+        )
+        with pytest.raises(ReferenceGraphError) as exc:
+            ReferenceConnectivityGraph([e1, e2])
+        assert "conflicting entity_kind" in str(exc.value)
+
+    def test_inbound_outbound_use_frozen_identity_not_entity_kind(self):
+        graph = ReferenceConnectivityGraph(
+            [_edge("e1", "X", "Y", relation_type="flows_to")]
+        )
+        query = ReferenceEndpoint(
+            authority=AUTHORITY, entity_id="X", entity_kind="Unit"
+        )
+        assert [e.edge_id for e in graph.outbound(query)] == ["e1"]
+        # identical result regardless of the query endpoint's entity_kind
+        assert graph.outbound(_ep("X")) == graph.outbound(query)
+
+
 class TestEdge:
     def test_edge_requires_nonempty_relation_type(self):
         with pytest.raises(ReferenceGraphError):

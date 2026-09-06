@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G12A
-Status: READY FOR SA REVIEW (Generic Reference Connectivity Graph Foundation — inert reference graph layer)
+Task: VF-vNEXT-G12A-C01
+Status: READY FOR SA REVIEW (Generic Reference Connectivity Graph Foundation — C01 endpoint-identity consistency fix)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G11 complete; Issue #57 superseded)
 Prerequisite: Issue #56 (G11) accepted; Issue #57 BLOCKED -> CLOSED not_planned; Issue #58 (G12A) current
 
@@ -27,7 +27,8 @@ Implemented (additive, generic):
     many-to-many/cycles/non-Scope endpoints; duplicate edge id + duplicate exact
     logical relation (source,target,relation_type) rejected; order-independent
     enumeration + deterministic serialize().
-- tests/test_vnext_g12a_reference_graph.py (26 tests)
+- tests/test_vnext_g12a_reference_graph.py (31 tests; C01: endpoint identity
+  consistency + conflicting entity_kind fail-closed regressions)
 - .ai-harness/regression/vnext_baseline_manifest.json (G12A gate context + g12a group)
 
 Frozen distinctions preserved:
@@ -38,11 +39,15 @@ Frozen distinctions preserved:
   relation-class enum.
 - runtime_effect = none on every edge (enforced at construction).
 
-Regression (post-commit, clean tree): G12A 26 passed; full suite 2053 passed; complete
+Regression (post-commit, clean tree): G12A 31 passed; full suite 2058 passed; complete
 canonical vNext baseline PASS (g1..g11 + g12a + full_suite + compile/static/changed-files/
 preflight).
 
-G12A started: YES (completed; READY FOR SA REVIEW)
+C01 (SA 5560719582): endpoint identity frozen to (authority, entity_id); entity_kind
+is compare/hash-excluded metadata; conflicting entity_kind (incl. missing vs known)
+fails closed at graph construction; inbound/outbound/has_edge use frozen identity.
+
+G12A started: YES (completed; G12A-C01 READY FOR SA REVIEW)
 G12B started: NO
 
 Report:
@@ -50,3 +55,4 @@ Report:
 
 Evidence:
 .ai-harness/sa-review/evidence/VF-vNEXT-G12A/01-reference-graph-foundation.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G12A/02-c01-endpoint-identity-consistency.md
