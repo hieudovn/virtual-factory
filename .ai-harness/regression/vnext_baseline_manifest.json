@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G10.json",
-    "changed_files_base": "5e66e7e0f7ea79e0ef918a18daa26439e9fd7ed9"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G11.json",
+    "changed_files_base": "41017af82f9307fa12d115c7d4c67fc86ea38af4"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -172,6 +172,15 @@
       "purpose": "G10 SH-WTP runtime readiness & scope freeze invariant tests: evidence-traceable inventory, fidelity ceiling, NOT_AUTHORIZED preservation, authz separation, container vs executable, boundary-contract provenance, containment vs connectivity, many-to-many topology, no G11 runtime.",
       "files": [
         "tests/test_vnext_g10_plan.py"
+      ]
+    },
+    {
+      "id": "g11_shwtp_structural",
+      "gate": "G11",
+      "type": "pytest",
+      "purpose": "G11 SH-WTP structural Workspace construction invariant tests: single deterministic root, G10 traceability, no invented topology, one containment parent per node, container/object/reference non-executable, T106/T108/T110 executable_candidate classification only with zero runtime, local vs canonical identity separation, metadata/fidelity preservation, NOT_AUTHORIZED, containment != connectivity, no G7 run-control participant, TIPA/continuous unchanged.",
+      "files": [
+        "tests/test_vnext_g11_shwtp.py"
       ]
     },
     {

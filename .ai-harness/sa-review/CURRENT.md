@@ -1,52 +1,55 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G10-C01
-Status: READY FOR SA REVIEW (SH-WTP Runtime Readiness & Scope Freeze — C01 G11-admission consistency fix)
-Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G9 complete)
-Prerequisite: Issue #53 (regression baseline) accepted; Issue #54 (G9) complete; Issue #55 (G10) current
+Task: VF-vNEXT-G11
+Status: READY FOR SA REVIEW (SH-WTP Structural Workspace Construction — structural construction gate)
+Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G10 complete)
+Prerequisite: Issue #55 (G10) accepted; Issue #56 (G11) current
 
 Gate type:
-PLANNING / READINESS FREEZE gate — SH-WTP Runtime Readiness & Scope Freeze (G10), per Issue #55.
-Planning/config/test artifacts ONLY. No SH-WTP runtime, physics, control, or PIM write.
+IMPLEMENTATION gate — SH-WTP Structural Workspace Construction (G11), per Issue #56.
+Structural construction ONLY. No runtime, connectivity, physics/control, or PIM write.
 
 Architecture baseline:
-G1-G9 contracts authoritative; G9-C02 head = 3f5cf41745bb033b26b26bcb849a558381d3f510 (branch point)
+G1-G10 contracts authoritative; G10 final head = 41017af82f9307fa12d115c7d4c67fc86ea38af4 (branch point)
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
-Pinned PIM evidence (repo-first, no invented truth):
-- PIM repo: hieudovn/plant-intelligence-model @ ec7f1266d4a19e5201b689874a2a7a75a022fc5c
-- Export: SHW-PIM-VF-EXPORT-v0.1 v0.1 (SHW-PH03-v0.1)
-- Semantic model identity SHA: f23f3c4614f50a1a2e3805f7e887433feb934915
-- Export artifact hash SHA: ea3361a4aca9d25927a4a76c792f3af184e1aabb
-- vf_runtime_authorization: NOT_AUTHORIZED · VF decision: compatible_with_constraints
-- Model fixture: model.yaml (105 entities / 121 relationships / 4 contracts)
-- Seed skeleton: plant_wide_skeleton_ph03.yaml (review_artifact)
-- First VF-readiness slice: T106 / T108 / T110
+Construction source (VF-side authoritative):
+- configs/vnext/shwtp/shwtp_readiness_scope.json (frozen G10 plan; read-only)
+- Generic G1 Workspace/Scope/Object foundation reused (virtual_factory.workspace)
+- External PIM pinned: hieudovn/plant-intelligence-model; SHW-PIM-VF-EXPORT-v0.1 v0.1 SHW-PH03-v0.1;
+  semantic SHA f23f3c46…; artifact hash ea3361a4…; NOT_AUTHORIZED
 
-Deliverables (planning/config/test only; no src/ change):
-- configs/vnext/shwtp/shwtp_readiness_scope.json — inventory (29 entries),
-  boundary contracts v0 (T106/T108/T110), fidelity matrix (ParameterizedReady/
-  CalibratedReady BLOCKED), G11 admission plan (structural vs synthetic vs
-  site-authorized), relation classes (containment ≠ connectivity; many-to-many)
-- configs/vnext/shwtp/PLAN.md — human-readable summary
-- tests/test_vnext_g10_plan.py — 19 invariant tests (C01: strengthened G11
-  admission consistency checks)
-- .ai-harness/regression/vnext_baseline_manifest.json — G10 gate context + g10 group
-- Evidence/report under .ai-harness/sa-review/
+Implemented (additive, structural only):
+- src/virtual_factory/shwtp/structural.py + __init__.py:
+  * deterministic single Workspace root `shwtp` (plant canonical PLANT-SHW as reference metadata);
+  * containment tree materialized from G10/PIM skeleton: 8 top-level scopes (7 areas +
+    plant-level dist_p108) + 20 unit scopes = 28 scope nodes == G10 inventory minus PLANT;
+  * roles -> ScopeMode: container/object/reference -> CONTAINER_ONLY; T106/T108/T110
+    executable_candidate -> EXECUTABLE_CAPABLE classification only (zero runtime);
+  * VF local ids (lowercase aliases) distinct from canonical; canonical refs read-only metadata;
+  * per-node metadata preserved exactly from G10 (role/fidelity/evidence/confidence/gaps/note);
+  * deterministic serialize() structural inspection; fail-closed completeness checks.
+- tests/test_vnext_g11_shwtp.py (22 invariant tests)
+- .ai-harness/regression/vnext_baseline_manifest.json (G11 gate context + g11_shwtp_structural group)
 
-Regression: G10 19 passed; full suite 2005 passed; canonical baseline PASS
-(compile/static/changed-files/preflight green on clean committed tree).
+Frozen distinctions preserved:
+- PIM = canonical authority (read-only); VF local identity/StructuralPath local; canonical never renamed.
+- Containment tree != connectivity graph; no flow inferred from containment.
+- structural_construction = AUTHORIZED_IN_G11; synthetic_reference_execution =
+  PENDING_LATER_PIM_REVIEW; site_authorized_execution = NOT_AUTHORIZED; vf_runtime_authorization
+  NOT_AUTHORIZED unchanged.
+- No engine/bridge/coordinator/run-control participant/solver/behavior/state advancement on SH-WTP.
+- No SH-WTP reference in virtual_factory.runcontrol (no G7 participant).
+- TIPA/continuous behavior unchanged; no G12 work.
 
-C01 (SA 5560434475): G11 admission is structural-construction-only; removed the
-contradictory synthetic/reference black-box authorization; T106/T108/T110 remain
-executable_candidate classification only; strengthened invariant tests.
+Regression (post-commit, clean tree): G11 22 passed; full suite 2027 passed; complete canonical
+vNext baseline PASS (g1..g11 + full_suite + compile/static/changed-files/preflight).
 
-G10 started: YES (completed; G10-C01 READY FOR SA REVIEW)
-G11 started: NO
+G11 started: YES (completed; READY FOR SA REVIEW)
+G12 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G10.md
+.ai-harness/sa-review/reports/VF-vNEXT-G11.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G10/01-readiness-scope-freeze.md
-.ai-harness/sa-review/evidence/VF-vNEXT-G10/02-c01-admission-plan-consistency.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G11/01-structural-workspace-construction.md
