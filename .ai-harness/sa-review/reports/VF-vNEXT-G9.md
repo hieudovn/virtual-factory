@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G9` (GitHub Issue #54) + C01 |
+| Task ID | `VF-vNEXT-G9` (GitHub Issue #54) + C01 + C02 |
 | Program | Implementation phase (G9; only authorized gate after G8) |
 | Required base (branch) | `e75fa95259f1b68e465c546e2e4dbc6b24e9a76d` (accepted G8-C02 head) |
 | Branch | `feature/vf-vnext-g9` |
@@ -48,6 +48,11 @@ provenance threading of the consumed contract version/SHA.
   non-empty canonical target independent of `published`/`canonical_claimed`;
   `semantic_identity_sha` is a required pin for admittable bindings (no
   fabricated SHA); G9 tests 16 → 17.
+- C02 (SA `5560021077`): `KNOWN_SEMANTIC_ARTIFACTS` now pins BOTH accepted
+  artifact hash and accepted semantic identity SHA; a known artifact with a
+  non-empty but wrong semantic SHA fails closed with an explicit diagnostic;
+  unknown generic artifacts remain valid with explicit non-empty pins; exact
+  SH-WTP pins preserved; G9 tests 17 → 18.
 
 ## 3. Frozen distinctions (NOT changed)
 
@@ -62,12 +67,12 @@ provenance threading of the consumed contract version/SHA.
 
 | Suite | Result |
 |---|---|
-| New G9 semantic-binding tests | **17 passed** |
+| New G9 semantic-binding tests | **18 passed** |
 | G7 run-control | **50 passed** |
-| Full repository suite | **1985 passed** (0 failures) |
-| COMPLETE canonical vNext baseline (C01 head) | **PASS** (all groups) |
+| Full repository suite | **1986 passed** (0 failures) |
+| COMPLETE canonical vNext baseline (C02 head) | **PASS** (all groups) |
 | checks_compile / checks_static_lint_type | **PASS** (truthful: no static tool) |
-| checks_changed_files / checks_preflight | **PASS** (14 files) |
+| checks_changed_files / checks_preflight | **PASS** (15 files) |
 | Compile check | PASS |
 | Preflight (G9 contract) | PASSED |
 | Changed-file validation | PASSED |
@@ -98,13 +103,12 @@ G10.
 ## 7. Evidence
 
 `.ai-harness/sa-review/evidence/VF-vNEXT-G9/` — `01-semantic-binding-model.md`,
-`02-c01-corrections.md` (required-target fail-closed, semantic SHA, reusable
-baseline).
+`02-c01-corrections.md`, `03-c02-semantic-sha-pin.md`.
 
 ## 8. Final status
 
 ```text
-VF-vNEXT-G9-C01 — READY FOR SA REVIEW
+VF-vNEXT-G9-C02 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G10 is NOT started.

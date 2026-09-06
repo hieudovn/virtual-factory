@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G9-C01
-Status: READY FOR SA REVIEW (Semantic Binding vNext — C01 corrections)
+Task: VF-vNEXT-G9-C02
+Status: READY FOR SA REVIEW (Semantic Binding vNext — C02 semantic SHA pin validation)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized gate after G8)
 Prerequisite: Issue #53 accepted as completed; G1-G8 contracts authoritative
 
@@ -49,6 +49,11 @@ Implemented (additive):
 - C01 (SA 5559907951): REQUIRED mappings now require exactly one non-empty
   canonical target independent of published/canonical_claimed; semantic_identity_sha
   is a required pin for admittable bindings (no fabricated SHA); G9 tests 16 -> 17.
+- C02 (SA 5560021077): KNOWN_SEMANTIC_ARTIFACTS pins BOTH accepted artifact hash
+  and accepted semantic identity SHA; known artifact with non-empty-but-wrong
+  semantic SHA fails closed with explicit diagnostic; unknown generic artifacts
+  remain valid with explicit non-empty pins; exact SH-WTP pins preserved; G9
+  tests 17 -> 18.
 - tests/test_semantic_binding.py (16 tests) + tests/fixtures/semantic/
   song_hong_wtp_export_v0_1.yaml (pinned SH-WTP reference fixture).
 
@@ -67,15 +72,15 @@ ea3361a4... with compatibility compatible_with_constraints + runtime_authorizati
 NOT_AUTHORIZED. Validation passes (pins recognized); admission raises; lifecycle
 cannot start (run stays CREATED, zero advancement, no fabricated provenance).
 
-Test / regression results (evidence 01/02):
-- New G9 semantic-binding tests: 17 passed.
+Test / regression results (evidence 01/02/03):
+- New G9 semantic-binding tests: 18 passed.
 - G7 run-control: 50 passed (unchanged).
-- COMPLETE canonical vNext baseline at C01 head: overall PASS (all groups) —
+- COMPLETE canonical vNext baseline at C02 head: overall PASS (all groups) —
   g1 32; g2 36; g3 328; g4 56; g5 26; g6 31; g7 50; ui_api_dashboard 134;
-  assy_oracle 354; continuous_compressor 61; g8 12; g9 17; full_suite 1985
-  passed (0 failures); checks_compile/static/changed_files(14)/preflight PASS.
+  assy_oracle 354; continuous_compressor 61; g8 12; g9 18; full_suite 1986
+  passed (0 failures); checks_compile/static/changed_files(15)/preflight PASS.
 - Compile check PASS; no configured ruff/mypy/black (truthful).
-- Preflight PASSED (G9 contract); verify_changed_files PASSED (14 files).
+- Preflight PASSED (G9 contract); verify_changed_files PASSED (15 files).
 
 Deferred (NOT implemented): G10 SH-WTP runtime/topology/physics/control, full
 replay browser/editor/history subsystem, scenario editor, universal reset/
@@ -90,7 +95,8 @@ Report:
 
 Evidence:
 .ai-harness/sa-review/evidence/VF-vNEXT-G9/ (01 semantic-binding model + admission;
-02 C01 corrections — required-target fail-closed, semantic SHA, reusable baseline)
+02 C01 corrections — required-target fail-closed, semantic SHA, reusable baseline;
+03 C02 semantic SHA pin validation for known artifacts)
 
 
 
