@@ -31,7 +31,8 @@
     ".ai-harness/sa-review/evidence/VF-vNEXT-G8/",
     ".ai-harness/regression/",
     "tests/test_vnext_g8_invariants.py",
-    "tests/test_vnext_g8_entrypoint.py"
+    "tests/test_vnext_g8_entrypoint.py",
+    "tests/test_demo_composition.py"
   ],
   "forbidden_paths": [
     "src/",
