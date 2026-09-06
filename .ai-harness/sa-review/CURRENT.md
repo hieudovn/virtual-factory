@@ -1,58 +1,54 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G12A-C01
-Status: READY FOR SA REVIEW (Generic Reference Connectivity Graph Foundation — C01 endpoint-identity consistency fix)
-Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G11 complete; Issue #57 superseded)
-Prerequisite: Issue #56 (G11) accepted; Issue #57 BLOCKED -> CLOSED not_planned; Issue #58 (G12A) current
+Task: VF-vNEXT-G12B
+Status: READY FOR SA REVIEW (SH-WTP PIM Reference Connectivity Materialization — inert reference facts)
+Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G12A complete)
+Prerequisite: Issue #58 (G12A) accepted; Issue #59 (G12B) current
 
 Gate type:
-IMPLEMENTATION gate — Generic Reference Connectivity Graph Foundation (G12A), per Issue #58.
-Inert, generic, deterministic reference graph ONLY. No runtime, ports, coordinator, or SH-WTP.
+IMPLEMENTATION gate — SH-WTP PIM Reference Connectivity Materialization (G12B), per Issue #59.
+Inert reference facts ONLY. No PIM change, no runtime projection, no G4 change, no G13.
 
 Architecture baseline:
-G1-G11 contracts authoritative; G11 final head = 90019909d22edf966a30a5b94b0356e892defc83 (branch point)
+G1-G12A contracts authoritative; G12A final head = 4d916a3ddeaa1890c637c1db2d51d292434cd059 (branch point)
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
-Frozen architecture (G12A implements only layer 2):
-PIM -> ReferenceConnectivityGraph -> explicit later projection/mapping ->
-VF Boundary Contracts/Ports -> G4 CompositionGraph -> Coordinator/Runtime
+Frozen architecture (G12B implements only the first arrow):
+PIM semantic relationships -> VF ReferenceConnectivityGraph -> later explicit
+interpretation/projection -> Boundary Contracts/Ports -> G4 CompositionGraph -> Runtime
 
-Implemented (additive, generic):
-- src/virtual_factory/connectivity/reference_graph.py + __init__.py:
-  * ReferenceEndpoint(authority, entity_id, entity_kind=None) — generic external
-    semantic node identity; no StructuralPath; external ids never renamed;
-  * ReferenceEdge(edge_id, source, target, relation_type, evidence_ref,
-    confidence/status/gaps optional, runtime_effect="none" enforced) — immutable, inert;
-  * ReferenceConnectivityGraph — deterministic fail-closed: fan-out/fan-in/
-    many-to-many/cycles/non-Scope endpoints; duplicate edge id + duplicate exact
-    logical relation (source,target,relation_type) rejected; order-independent
-    enumeration + deterministic serialize().
-- tests/test_vnext_g12a_reference_graph.py (31 tests; C01: endpoint identity
-  consistency + conflicting entity_kind fail-closed regressions)
-- .ai-harness/regression/vnext_baseline_manifest.json (G12A gate context + g12a group)
+Pinned PIM (repo-first):
+- repo hieudovn/plant-intelligence-model @ ec7f1266d4a19e5201b689874a2a7a75a022fc5c
+- package SHW-PIM-VF-EXPORT-v0.1 v0.1 (SHW-PH03-v0.1); semantic SHA f23f3c46…; artifact hash ea3361a4…
+- model fixture examples/song-hong-wtp/model_fixture/model.yaml
+
+Implemented (additive):
+- src/virtual_factory/shwtp/connectivity.py (+ __init__ exports):
+  * frozen PIM source pins + frozen PimReferenceRelation slice = exactly F01-F07
+    process/connectivity facts (FLOWS_TO/DISCHARGES_TO/CONNECTED_TO verbatim);
+  * endpoints = ReferenceEndpoint(authority=hieudovn/plant-intelligence-model,
+    entity_id=<canonical>, entity_kind=ProcessConnection) — PROC-* as non-Scope endpoints;
+  * F02/F03 preserve REL-006 "known-but-unconstrained" warning; every edge runtime_effect=none;
+  * build_shwtp_reference_graph() -> G12A ReferenceConnectivityGraph;
+  * ShwtpReferenceConnectivity.serialize() = source summary + deterministic graph serialization.
+- tests/test_vnext_g12b_shwtp.py (19 tests)
+- .ai-harness/regression/vnext_baseline_manifest.json (G12B gate context + g12b group)
 
 Frozen distinctions preserved:
-- Reference graph completely separate from G1 containment (no edge inferred from ancestry).
-- No BoundaryPort/PortDirection/PortCategory/PortRegistry/coordinator/run-control/state
-  propagation; no G4 semantics change; no runtime projection.
-- No SH-WTP/PROC-*/PIM relation-name/plant-specific vocabulary hard-coding; no universal
-  relation-class enum.
-- runtime_effect = none on every edge (enforced at construction).
+- Raw PIM relation types preserved; NO six-class reclassification; F06/F07 not name-classified.
+- No PART_OF/containment-derived edges; no G11 containment change (28 scopes unchanged).
+- No BoundaryPort/PortDirection/PortCategory/CompositionBinding/coordinator/run-control/state.
+- vf_runtime_authorization NOT_AUTHORIZED; synthetic_reference_execution PENDING_LATER_PIM_REVIEW;
+  site_authorized_execution NOT_AUTHORIZED — all unchanged.
 
-Regression (post-commit, clean tree): G12A 31 passed; full suite 2058 passed; complete
-canonical vNext baseline PASS (g1..g11 + g12a + full_suite + compile/static/changed-files/
-preflight).
+Regression (post-commit, clean tree): G12B 19 passed; full suite 2077 passed; complete canonical
+vNext baseline PASS (g1..g12b + full_suite + compile/static/changed-files/preflight).
 
-C01 (SA 5560719582): endpoint identity frozen to (authority, entity_id); entity_kind
-is compare/hash-excluded metadata; conflicting entity_kind (incl. missing vs known)
-fails closed at graph construction; inbound/outbound/has_edge use frozen identity.
-
-G12A started: YES (completed; G12A-C01 READY FOR SA REVIEW)
-G12B started: NO
+G12B started: YES (completed; READY FOR SA REVIEW)
+G13 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G12A.md
+.ai-harness/sa-review/reports/VF-vNEXT-G12B.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G12A/01-reference-graph-foundation.md
-.ai-harness/sa-review/evidence/VF-vNEXT-G12A/02-c01-endpoint-identity-consistency.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G12B/01-pim-reference-connectivity.md

@@ -11,6 +11,9 @@ Public API:
 - metadata: :class:`ShwtpNodeMeta`, :class:`ShwtpPlantMeta`
 - view: :class:`ShwtpWorkspace`
 - construction: :func:`build_shwtp_workspace`
+- connectivity (G12B): :func:`build_shwtp_reference_connectivity`,
+  :class:`ShwtpReferenceConnectivity`, :func:`build_shwtp_reference_graph`,
+  :func:`source_pins`
 
 Structural construction only (G11). No executable behavior, no runtime bridge,
 no connectivity graph, no PIM authority transfer, no G12+ work.
@@ -33,6 +36,17 @@ from virtual_factory.shwtp.structural import (
     build_shwtp_workspace,
     vf_local_id,
 )
+from virtual_factory.shwtp.connectivity import (
+    SHWTP_PIM_AUTHORITY,
+    SHWTP_PIM_MAIN_SHA,
+    SHWTP_SELECTED_RELATIONSHIPS,
+    SHWTP_SYNTHETIC_REFERENCE_EXECUTION,
+    PimReferenceRelation,
+    ShwtpReferenceConnectivity,
+    build_shwtp_reference_connectivity,
+    build_shwtp_reference_graph,
+    source_pins,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -48,4 +62,13 @@ __all__ = [
     "ShwtpWorkspace",
     "build_shwtp_workspace",
     "vf_local_id",
+    "SHWTP_PIM_AUTHORITY",
+    "SHWTP_PIM_MAIN_SHA",
+    "SHWTP_SELECTED_RELATIONSHIPS",
+    "SHWTP_SYNTHETIC_REFERENCE_EXECUTION",
+    "PimReferenceRelation",
+    "ShwtpReferenceConnectivity",
+    "build_shwtp_reference_connectivity",
+    "build_shwtp_reference_graph",
+    "source_pins",
 ]
