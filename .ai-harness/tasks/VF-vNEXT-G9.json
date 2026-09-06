@@ -28,6 +28,7 @@
     ".ai-harness/sa-review/reports/VF-vNEXT-G9.md",
     ".ai-harness/sa-review/evidence/VF-vNEXT-G9/",
     ".ai-harness/regression/vnext_baseline_manifest.json",
+    ".ai-harness/regression/run_vnext_baseline.py",
     "src/virtual_factory/semantic/",
     "src/virtual_factory/runcontrol/lifecycle.py",
     "tests/test_semantic_binding.py",
