@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G7` (GitHub Issue #52) |
+| Task ID | `VF-vNEXT-G7` (GitHub Issue #52) + C01 |
 | Program | Implementation phase (G7; only authorized implementation gate after G6) |
 | Required base (branch) | `a10f581ca2e7a8b8b39c605fc54339ae88386922` (accepted G6-C01 head) |
 | Branch | `feature/vf-vnext-g7` |
@@ -27,9 +27,11 @@ ASSY dwell, no run-id reuse, no fabricated replay, no G8+.
   unknown/foreign; container never a participant).
 - `runcontrol/lifecycle.py` — `RunState`, `RunRecord`, `RunLifecycleService`
   (create/start/pause/resume/stop/step/reset/restart/replay), `StepResult`,
-  `ExecutionBridge` protocol; fail-closed guards; fresh run identity for
-  restart/replay with `source_run_id`; replay pins prior accepted inputs and is
-  unavailable when the scenario authority is missing.
+  `ExecutionBridge` protocol; fail-closed guards. C01: mutations require the
+  active run_id (superseded historical ids fail closed); `create_run` fails
+  closed while the active run is nonterminal; execution state is attempt-bound
+  (fresh bridge per attempt); restart/replay require terminal sources and start
+  fresh domain contexts; reset stays in-context (same run_id + runtime objects).
 - `runcontrol/assy_bridge.py` — `AssyExecutionBridge` over `TipaAssyFederation`
   + G4 `Coordinator`; natural-boundary-only advancement; capability-scoped
   in-context reset (`AssyLineRuntime.reset()`).
@@ -48,7 +50,7 @@ claimed; terminal runs never step under the same `run_id`; no hidden retry.
 
 | Suite | Result |
 |---|---|
-| New G7 tests | **30 passed** |
+| New G7 tests | **37 passed** (incl. C01) |
 | UI/API + S04B gating | **134 passed** |
 | G6 UI hierarchy | **31 passed** |
 | G5 federation | **26 passed** |
@@ -58,7 +60,7 @@ claimed; terminal runs never step under the same `run_id`; no hidden retry.
 | G3 Observation/Event/Alarm (+ M5 + alarm) | **328 passed** |
 | Complete ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1936 passed** (0 failures) |
+| Full repository suite | **1943 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 5. STOP-condition assessment (evidence 06)
@@ -83,12 +85,13 @@ container execution; G2/G4 contracts intact; no G8+.
 
 ## 7. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G7/` — 7 files (01…07).
+`.ai-harness/sa-review/evidence/VF-vNEXT-G7/` — 8 files (01…08; 08 = C01
+corrections: active-attempt authority + attempt-bound execution).
 
 ## 8. Final status
 
 ```text
-VF-vNEXT-G7 — READY FOR SA REVIEW
+VF-vNEXT-G7-C01 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G8 is NOT started.

@@ -23,7 +23,7 @@ Frozen rules (Issue #52):
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, Protocol
 
@@ -108,6 +108,7 @@ class RunRecord:
     last_time_s: float | None = None
     last_result: str | None = None
     failure: str | None = None
+    bridge: object | None = field(default=None, repr=False, compare=False)
 
     def to_dict(self) -> dict:
         data = self.context.to_dict()
@@ -152,7 +153,6 @@ class RunLifecycleService:
         self._runs: dict[str, RunRecord] = {}
         self._active_run_id: str | None = None
         self._seq = 0
-        self._bridge: ExecutionBridge | None = None
         self._run_id_prefix = run_id_prefix or workspace.workspace_id
 
     # ── identity / lookup ─────────────────────────────────────
@@ -169,10 +169,30 @@ class RunLifecycleService:
             )
         return record
 
-    def _bridge_or_build(self) -> ExecutionBridge:
-        if self._bridge is None:
-            self._bridge = self._bridge_factory()
-        return self._bridge
+    def _require_active(self, run_id: str) -> RunRecord:
+        """A MUTATION may target only the current active run attempt.
+
+        A known but superseded/historical run id fails closed here (it exists in
+        ``_runs`` but is no longer the mutable active attempt).
+        """
+        record = self._get(run_id)
+        if run_id != self._active_run_id:
+            raise RunLifecycleError(
+                f"run {run_id!r} is not the active run (active={self._active_run_id!r}); "
+                f"mutations require the active run_id"
+            )
+        return record
+
+    def _bridge_for(self, record: RunRecord) -> ExecutionBridge:
+        """Attempt-bound execution state: build once per run attempt.
+
+        A fresh run attempt (create/restart/replay) starts with ``bridge=None``
+        and lazily builds its OWN execution context; prior attempts never share
+        runtime state.
+        """
+        if record.bridge is None:
+            record.bridge = self._bridge_factory()
+        return record.bridge
 
     @property
     def active_run_id(self) -> str | None:
@@ -196,6 +216,14 @@ class RunLifecycleService:
         source_run_id: str | None = None,
     ) -> RunRecord:
         """Create a new run attempt (immutable RunContextV2)."""
+        if self._active_run_id is not None:
+            active = self._runs.get(self._active_run_id)
+            if active is not None and active.state not in _TERMINAL:
+                raise RunLifecycleError(
+                    f"cannot create a new run while active run "
+                    f"{self._active_run_id!r} is nonterminal "
+                    f"({active.state.value!r})"
+                )
         if isinstance(target_path, str):
             from virtual_factory.workspace import StructuralPath as SP
 
@@ -237,7 +265,7 @@ class RunLifecycleService:
     # ── lifecycle transitions ─────────────────────────────────
 
     def start(self, run_id: str) -> RunRecord:
-        record = self._get(run_id)
+        record = self._require_active(run_id)
         if record.state is not RunState.CREATED:
             raise RunLifecycleError(
                 f"cannot start run {run_id!r} from state {record.state.value!r}"
@@ -246,7 +274,7 @@ class RunLifecycleService:
         return record
 
     def pause(self, run_id: str) -> RunRecord:
-        record = self._get(run_id)
+        record = self._require_active(run_id)
         if record.state is not RunState.RUNNING:
             raise RunLifecycleError(
                 f"cannot pause run {run_id!r} from state {record.state.value!r}"
@@ -255,7 +283,7 @@ class RunLifecycleService:
         return record
 
     def resume(self, run_id: str) -> RunRecord:
-        record = self._get(run_id)
+        record = self._require_active(run_id)
         if record.state is not RunState.PAUSED:
             raise RunLifecycleError(
                 f"cannot resume run {run_id!r} from state {record.state.value!r}"
@@ -264,7 +292,7 @@ class RunLifecycleService:
         return record
 
     def stop(self, run_id: str) -> RunRecord:
-        record = self._get(run_id)
+        record = self._require_active(run_id)
         if record.state in _TERMINAL:
             raise RunLifecycleError(
                 f"run {run_id!r} is already terminal ({record.state.value!r})"
@@ -275,12 +303,12 @@ class RunLifecycleService:
     # ── execution ─────────────────────────────────────────────
 
     def step(self, run_id: str) -> StepResult:
-        record = self._get(run_id)
+        record = self._require_active(run_id)
         if record.state is not RunState.RUNNING:
             raise RunLifecycleError(
                 f"cannot step run {run_id!r} from state {record.state.value!r}"
             )
-        bridge = self._bridge_or_build()
+        bridge = self._bridge_for(record)
         scope_ids = record.effective_sub_line_ids
         target = bridge.natural_next_boundary(scope_ids)
         window_id = f"{run_id}-w{record.step_count + 1}"
@@ -297,13 +325,13 @@ class RunLifecycleService:
         return result
 
     def reset(self, run_id: str) -> RunRecord:
-        record = self._get(run_id)
+        record = self._require_active(run_id)
         if record.state in _TERMINAL:
             raise RunLifecycleError(
                 f"cannot reset terminal run {run_id!r} ({record.state.value!r}); "
                 f"restart as a new run attempt instead"
             )
-        bridge = self._bridge_or_build()
+        bridge = self._bridge_for(record)
         if not bridge.supports_reset:
             raise RunLifecycleError(
                 f"reset is not supported for the execution contract of run "
@@ -338,6 +366,11 @@ class RunLifecycleService:
 
     def replay(self, run_id: str) -> RunRecord:
         record = self._get(run_id)
+        if record.state not in _TERMINAL:
+            raise RunLifecycleError(
+                f"replay requires a terminal/historical source run; run "
+                f"{run_id!r} is {record.state.value!r}"
+            )
         pinned = record.context
         # Replay pins prior accepted inputs; if the single scenario authority or
         # seed is unavailable, expose replay as unavailable (never fabricate).

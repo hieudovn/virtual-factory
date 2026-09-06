@@ -168,9 +168,15 @@ class TestRunContext:
         rec = svc.create_run("TIPA", scenario_id="SCN-1")
         assert rec.context.scenario_id == "SCN-1"
         # Replay requires a pinned scenario authority; missing -> unavailable.
-        rec2 = svc.create_run("TIPA")  # no scenario
+        rid = rec.context.run_id
+        svc.start(rid)
+        svc.stop(rid)  # terminalize first attempt
+        rec2 = svc.create_run("TIPA")  # no scenario (fresh active attempt)
+        rid2 = rec2.context.run_id
+        svc.start(rid2)
+        svc.stop(rid2)  # terminal -> eligible replay source
         with pytest.raises(ReplayUnavailableError):
-            svc.replay(rec2.context.run_id)
+            svc.replay(rid2)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -267,6 +273,8 @@ class TestRunIdentityAndLineage:
         svc = _service(_FakeBridge())
         rec = svc.create_run("TIPA", scenario_id="SCN-1", random_seed=7)
         rid = rec.context.run_id
+        svc.start(rid)
+        svc.stop(rid)  # terminal -> eligible replay source
         replay = svc.replay(rid)
         assert replay.context.run_id != rid
         assert replay.context.source_run_id == rid
@@ -406,6 +414,8 @@ class TestApiSurface:
         c = _client()
         created = c.post("/vnext/runs", json={"target_path": "TIPA"})
         rid = created.json()["run_id"]
+        c.post(f"/vnext/runs/{rid}/start")
+        c.post(f"/vnext/runs/{rid}/stop")  # terminal -> eligible replay source
         r = c.post(f"/vnext/runs/{rid}/replay")
         assert r.status_code == 409
         assert "unavailable" in r.json()["detail"]
@@ -449,3 +459,115 @@ class TestStaticUiAndNoG8:
         src = inspect.getsource(rc)
         for forbidden in ("semantic_binding", "shwtp", "SHWTP", "regression_baseline"):
             assert forbidden not in src
+
+
+# ═══════════════════════════════════════════════════════════
+# G7-C01 — active-attempt authority + attempt-bound execution
+# ═══════════════════════════════════════════════════════════
+
+def _real_service() -> RunLifecycleService:
+    """Service whose bridge_factory builds a FRESH federation per attempt."""
+    def factory():
+        fed = TipaAssyFederation(config_path=str(REAL_CONFIG))
+        fed.initialize()
+        return AssyExecutionBridge(fed)
+
+    return RunLifecycleService(build_tipa_workspace(), factory)
+
+
+class TestActiveAttemptAuthorityC01:
+    def test_create_second_attempt_fails_while_active_nonterminal(self):
+        svc = _service(_FakeBridge())
+        svc.create_run("TIPA")
+        with pytest.raises(RunLifecycleError):
+            svc.create_run("TIPA")  # cannot supersede a nonterminal active run
+
+    def test_superseded_known_run_id_fails_closed(self):
+        svc = _service(_FakeBridge())
+        a = svc.create_run("TIPA")
+        aid = a.context.run_id
+        svc.start(aid)
+        svc.stop(aid)  # A terminal
+        b = svc.create_run("TIPA")  # B active
+        assert b.context.run_id != aid
+        # A still exists as history but is no longer mutable.
+        with pytest.raises(RunLifecycleError):
+            svc.start(aid)
+        with pytest.raises(RunLifecycleError):
+            svc.step(aid)
+
+    def test_api_historical_run_id_mutation_returns_conflict(self):
+        c = _client()
+        a = c.post("/vnext/runs", json={"target_path": "TIPA"}).json()
+        aid = a["run_id"]
+        c.post(f"/vnext/runs/{aid}/start")
+        c.post(f"/vnext/runs/{aid}/stop")  # A terminal
+        b = c.post("/vnext/runs", json={"target_path": "TIPA"}).json()
+        assert b["run_id"] != aid
+        # Known but superseded run id -> conflict, not success.
+        assert c.post(f"/vnext/runs/{aid}/step").status_code == 409
+        assert c.post(f"/vnext/runs/{aid}/start").status_code == 409
+
+    def test_restart_starts_fresh_execution_context(self):
+        svc = _real_service()
+        a = svc.create_run("TIPA/ASSY/ASSY-SL01", scenario_id="SCN-1")
+        aid = a.context.run_id
+        svc.start(aid)
+        svc.step(aid)  # advances ASSY to 120
+        svc.stop(aid)
+        b = svc.restart(aid)
+        assert b.context.run_id != aid
+        assert b.context.source_run_id == aid
+        svc.start(b.context.run_id)
+        result = svc.step(b.context.run_id)
+        # Fresh domain context: B starts from 0, so first step is 120 (not 240).
+        assert result.status == "completed"
+        assert result.target_time_s == 120.0
+
+    def test_replay_uses_fresh_context_and_does_not_mutate_source(self):
+        svc = _real_service()
+        a = svc.create_run("TIPA/ASSY/ASSY-SL01", scenario_id="SCN-1")
+        aid = a.context.run_id
+        svc.start(aid)
+        svc.step(aid)  # 120
+        svc.stop(aid)
+        b = svc.replay(aid)
+        assert b.context.run_id != aid
+        assert b.context.source_run_id == aid
+        assert b.context.scenario_id == "SCN-1"
+        svc.start(b.context.run_id)
+        result = svc.step(b.context.run_id)
+        assert result.target_time_s == 120.0  # fresh context
+        # Source run's runtime state is untouched (still at 120, next boundary 240).
+        assert a.bridge.natural_next_boundary(("ASSY-SL01",)) == 240.0
+
+    def test_reset_keeps_same_run_id_and_same_runtime_objects(self):
+        fed = TipaAssyFederation(config_path=str(REAL_CONFIG)).initialize()
+        bridge = AssyExecutionBridge(fed)
+        svc = RunLifecycleService(build_tipa_workspace(), lambda: bridge)
+        rec = svc.create_run("TIPA/ASSY/ASSY-SL01")
+        rid = rec.context.run_id
+        svc.start(rid)
+        svc.step(rid)  # 120
+        obj_id_before = id(fed.get("ASSY-SL01").runtime)
+        svc.reset(rid)
+        assert rec.context.run_id == rid  # same run identity
+        assert id(fed.get("ASSY-SL01").runtime) == obj_id_before  # same objects
+        assert fed.get("ASSY-SL01").runtime.simulation_time_s == 0.0
+
+    def test_prior_run_records_remain_readable_history(self):
+        svc = _service(_FakeBridge())
+        a = svc.create_run("TIPA", scenario_id="SCN-1")
+        aid = a.context.run_id
+        svc.start(aid)
+        svc.step(aid)
+        svc.stop(aid)
+        b = svc.restart(aid)
+        assert b.context.run_id != aid
+        # Prior record readable and unchanged as lifecycle history.
+        history = svc.status(aid)
+        assert history["run_id"] == aid
+        assert history["scenario_id"] == "SCN-1"
+        assert history["step_count"] == 1
+        assert history["state"] == "stopped"
+
