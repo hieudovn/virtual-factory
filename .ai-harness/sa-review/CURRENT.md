@@ -1,117 +1,73 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G7-C03
-Status: READY FOR SA REVIEW (Hierarchical Scenario / Run Control — C03 correction)
-Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized implementation gate after G6)
-Prerequisite: Issue #51 accepted as completed; G1–G6 contracts authoritative
+Task: VF-vNEXT-G8
+Status: READY FOR SA REVIEW (Platform vNext Regression Baseline)
+Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH CLOSED; only authorized gate after G7)
+Prerequisite: Issue #52 accepted as completed; G1-G7 contracts authoritative
 
 Gate type:
-Accelerated implementation gate — Hierarchical Scenario / Run Control (G7), per Issue #52
+Regression baseline gate — Platform vNext Regression Baseline (G8), per Issue #53
 
 Architecture baseline:
-ARCH-01..06 accepted; G1–G6 contracts authoritative
-Required base (branch point): a10f581ca2e7a8b8b39c605fc54339ae88386922 (accepted G6-C01 head)
+ARCH-01..06 accepted; G1-G7 contracts authoritative
+Required base (branch point): 3f8c9409cac5698399ab4d386506b0419d68a5df (accepted G7-C03 head)
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
-Implemented (additive package src/virtual_factory/runcontrol/ + ui seam):
-- targets.py: resolve_target() — G1 hierarchical target resolution (workspace/
-  container -> deterministic descendant executable scopes; executable -> itself;
-  unknown/foreign fail closed; container never a participant).
-- lifecycle.py: RunState, RunRecord, RunLifecycleService (create/start/pause/
-  resume/stop/step/reset/restart/replay) with immutable RunContextV2 per run,
-  fail-closed transition guards, fresh run_id + source_run_id lineage for
-  restart/replay, replay pins prior inputs and is explicit-unavailable when the
-  scenario authority is missing; StepResult + ExecutionBridge protocol.
-- C01 (SA comment 5557354313): mutations require the ACTIVE run_id — known
-  historical/superseded run_ids fail closed; create_run fails closed while the
-  active run is nonterminal (no concurrent mutable attempts); execution state is
-  attempt-bound (fresh bridge per attempt); restart/replay require terminal
-  sources and start FRESH domain contexts (no continuation of prior time/WIP/
-  domain state); reset stays in-context (same run_id + same runtime objects);
-  historical records remain readable; no AssyLineRuntime edit.
-- assy_bridge.py: AssyExecutionBridge over TipaAssyFederation + G4 Coordinator —
-  natural-boundary-only advancement (no fractional dwell/index); capability-
-  scoped in-context reset via AssyLineRuntime.reset().
-- continuous_bridge.py: ContinuousExecutionBridge over the accepted continuous
-  RuntimeService seam (one step_once() per boundary; in-context reset()) +
-  build_continuous_workspace() + process_scope_path(). No engine rewrite.
-  C03 (SA decision 5557511518): `continuous` Workspace root is NON-executable
-  with exactly one executable `PROCESS` scope (`continuous/PROCESS`); the bridge
-  executes on behalf of that path-qualified scope (never the Workspace root);
-  each attempt owns a FRESH RuntimeService (no shared mutable runtime).
-- ui/api.py (additive): /vnext/runs/* endpoints (create/current/get + start/step/
-  pause/resume/stop/reset/restart/replay) with an additive `?workspace=`
-  discriminator (TIPA default | continuous); independent per-workspace
-  RunLifecycleService (no platform-global active run); unknown workspace /
-  foreign run_id -> 404, foreign target -> 400. Continuous attempts build a
-  FRESH RuntimeService from the same accepted config inputs (legacy dashboard
-  service never aliased into vNext attempt state). Legacy endpoints untouched
-  (compatibility surfaces, not repointed). /api/ui/hierarchy + /api/ui/context
-  also serve workspace=continuous (`continuous / PROCESS`).
-- ui/static/run_control_context.js (workspace-aware) + assy_demo.html mount +
-  assy_demo.css + index.html mount + styles.css:
-  additive minimal run-control context (path-qualified target, state, truthful
-  time, Run/Pause/Resume/Step/Stop/Reset).
+Implemented (additive; NO src/ change):
+- .ai-harness/regression/run_vnext_baseline.py — canonical, repo-native G8
+  regression entrypoint (uses existing `python -m pytest -q -p no:cacheprovider`
+  per deterministic group; reports the failing group; exits non-zero if any
+  required group fails; optional machine-readable JSON output). Verified: forced
+  group failure -> exit 1 + `BASELINE FAILED groups: <group>`.
+- .ai-harness/regression/vnext_baseline_manifest.json — machine-readable
+  baseline manifest/contract (schema vf.vnext.g8.regression.manifest v1.0.0)
+  referencing the existing authoritative tests/commands for every group (G1
+  workspace; G2 provenance; G3 observation/event/alarm; G4
+  composition/coordinator; G5 federation; G6 hierarchy UI; G7 run control;
+  UI/API dashboard; complete ASSY oracle; continuous/compressor; G8 cross-gate
+  invariants; full suite). No test-logic duplication.
+- tests/test_vnext_g8_invariants.py — 9 cross-gate invariant tests proving the
+  ALIGNMENT across G1 structural resolution, G6 hierarchy UI projection and G7
+  run-control effective-scope/context identity for TIPA + continuous:
+  workspace roots never executable; TIPA -> six ASSY executable descendants;
+  continuous -> exactly continuous/PROCESS (no deeper topology); RunContextV2
+  workspace/scope identity aligns with target resolution; disjoint path
+  namespaces (no cross-workspace ambiguity).
 
-Frozen invariants preserved:
-- One platform-level run lifecycle authority PER WORKSPACE; domain runtimes stay
-  authoritative; TIPA and continuous are independent authorities (no
-  cross-workspace mutation, no platform-global active run).
-- Immutable RunContextV2 per run; workspace_id/run_id/scope_path/scenario_id
-  coherent; one scenario authority per run.
-- Terminal run attempts never reused under the same run_id; restart/replay
-  create fresh run_id with source lineage.
-- ASSY steps reuse G4 natural/common boundaries only; no universal timestep; no
-  fractional dwell/index.
-- pause/resume change orchestration permission only; stop terminal (history
-  preserved); reset capability-scoped; replay never fabricated.
-- No AssyLineRuntime/continuous-engine rewrite; no legacy endpoint repoint;
-  container-only never executable; no G8+/G9/G10.
+Deliberate non-duplication:
+- Independent TIPA/continuous active runs (G7-C02) and per-attempt fresh
+  execution state / reset same-run-same-attempt (G7-C03) are already directly
+  proven by the accepted g7_run_control group and are REFERENCED, not duplicated.
 
-Failure semantics (evidence 06):
-- Step failure -> run `failed` (distinct from completed); no rollback claimed;
-  no hidden retry; terminal runs never step under the same run_id.
+Canonical command:
+python .ai-harness/regression/run_vnext_baseline.py
+(machine JSON: .ai-harness/traces/g8_baseline.json; overall PASS)
 
-STOP-condition assessment: none triggered (no new synchronization/timestep
-policy; no ASSY fractionalization; continuous truthfully bridged via
-non-executable `continuous` Workspace + single executable `continuous/PROCESS`
-scope (no invented unit/area/equipment hierarchy); reset capability-scoped;
-replay never fabricated; no terminal run-id reuse; no container execution;
-TIPA/continuous workspace authorities independent with per-attempt runtime
-isolation; G2/G4 contracts intact; no G8+).
+Regression results (canonical entrypoint, evidence 01):
+- g1_workspace PASS; g2_provenance PASS; g3_observation_event_alarm PASS;
+  g4_composition_coordinator PASS; g5_federation PASS; g6_hierarchy_ui PASS;
+  g7_run_control PASS; ui_api_dashboard PASS; assy_oracle PASS;
+  continuous_compressor PASS; g8_cross_gate_invariants PASS (9);
+  full_suite PASS -> 1965 passed (0 failures).
+- Compile check PASS (`python -m compileall -q src tests .ai-harness/regression
+  .ai-harness/scripts` -> exit 0; no configured ruff/mypy/black).
+- Preflight PASSED; verify_changed_files PASSED (G8 allowlist only).
 
-Test / regression results (evidence 07):
-- New G7 tests: 50 passed (incl. C01 + C02 + C03).
-- UI/API + S04B gating tests: 134 passed.
-- G6 UI hierarchy tests: 31 passed.
-- G5 federation tests: 26 passed.
-- G4 composition tests: 56 passed.
-- G1 workspace: 32 passed.
-- G2 provenance: 36 passed.
-- G3 Observation/Event/Alarm (+ M5 + alarm_manager): 328 passed.
-- Complete ASSY regression oracle: 354 passed.
-- Continuous/compressor baseline: 61 passed.
-- Full repository suite: 1956 passed (0 failures).
-- Compile check PASS (no configured ruff/mypy/black in repo).
-
-Deferred (NOT implemented): G8 regression-baseline program, G9 semantic binding,
-G10 SH-WTP runtime, full replay browser/editor/history subsystem, scenario
-editor, universal reset/synchronization policy.
+Deferred (NOT implemented): G9 semantic binding, G10 SH-WTP runtime, full replay
+browser/editor/history subsystem, scenario editor, universal reset/
+synchronization policy. (G8 baseline entrypoint is the accepted regression
+program.)
 
 STOP conditions: none triggered.
 
-G8 started: NO
+G9 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G7.md
+.ai-harness/sa-review/reports/VF-vNEXT-G8.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G7/ (10 files: 01 repo-first discovery +
-scope; 02 lifecycle model + guards; 03 target resolution; 04 execution bridge;
-05 API + UI binding; 06 failure + stop assessment; 07 tests + regression
-results; 08 C01 corrections — active-attempt authority + attempt-bound
-execution; 09 C02 corrections — continuous binding + workspace isolation;
-10 C03 corrections — PROCESS scope + attempt isolation)
+.ai-harness/sa-review/evidence/VF-vNEXT-G8/ (01 regression baseline + cross-gate
+invariants)
 
 
 

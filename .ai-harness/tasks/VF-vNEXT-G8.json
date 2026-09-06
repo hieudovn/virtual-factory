@@ -1,0 +1,92 @@
+{
+  "task_id": "VF-vNEXT-G8",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "REGRESSION BASELINE GATE — Platform vNext Regression Baseline (G8)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/53",
+  "objective": "Create one canonical, repo-native vNext regression entrypoint plus a machine-readable baseline manifest/contract describing the accepted G1-G7 regression groups, add only the smallest genuinely-missing cross-gate invariant tests (workspace/structural/run-control/UI-hierarchy alignment), and produce G8 regression evidence proving the accepted G1-G7 platform invariants remain green from the exact G7 accepted base lineage (3f8c9409cac5698399ab4d386506b0419d68a5df). No semantics change, no feature, no new runtime mechanism, no G9/G10.",
+  "explicit_non_objectives": [
+    "No product features",
+    "No new runtime mechanisms",
+    "No change to ASSY/continuous domain semantics",
+    "No new synchronization/timestep policy",
+    "No change to lifecycle/run-identity rules",
+    "No change to run-control semantics",
+    "No PIM semantic binding",
+    "No SH-WTP runtime work",
+    "No cross-workspace data exchange / supply-chain semantics",
+    "No new invented canonical hierarchy beyond accepted TIPA and continuous/PROCESS",
+    "No UI redesign",
+    "No rewrite of legacy APIs",
+    "No broad refactor for cleanliness",
+    "No test-logic duplication (the manifest references existing authoritative tests/commands)"
+  ],
+  "required_branch": "feature/vf-vnext-g8",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G8.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G8.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G8/",
+    ".ai-harness/regression/",
+    "tests/test_vnext_g8_invariants.py"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "simulators/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "Dockerfile",
+    "tests/test_run_control.py",
+    "tests/test_ui_hierarchy.py",
+    "tests/test_workspace_foundation.py",
+    "tests/test_workspace_validation.py",
+    "tests/test_workspace_config.py",
+    "tests/test_federation_tipa_assy.py"
+  ],
+  "required_deliverables": [
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    ".ai-harness/regression/run_vnext_baseline.py",
+    "tests/test_vnext_g8_invariants.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G8/01-regression-baseline-and-invariants.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Change accepted G1-G7 architecture/semantics",
+    "Select a new workspace/runtime ownership model",
+    "Change lifecycle/run-identity rules",
+    "Change coordinator synchronization semantics",
+    "Change ASSY or continuous domain behavior",
+    "Invent new canonical hierarchy beyond accepted TIPA and continuous/PROCESS",
+    "Introduce G9/G10 scope",
+    "Duplicate test logic (manifest must reference existing tests)",
+    "Run a new third-party test framework",
+    "Push directly to main"
+  ],
+  "stop_conditions": [
+    "Completing the regression baseline would require changing any accepted G1-G7 architecture/semantics",
+    "Completing the baseline would require selecting a new workspace/runtime ownership model",
+    "Completing the baseline would require changing lifecycle/run identity rules",
+    "Completing the baseline would require changing coordinator synchronization semantics",
+    "Completing the baseline would require changing ASSY or continuous domain behavior",
+    "Completing the baseline would require inventing new canonical hierarchy beyond accepted TIPA and continuous/PROCESS",
+    "Completing the baseline would require introducing G9/G10 scope"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "One canonical repo-native G8 regression entrypoint exists", "rule": {"field": "baseline.entrypoint", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Machine-readable baseline manifest references existing groups/tests (no duplication)", "rule": {"field": "baseline.manifest", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Cross-gate invariant tests added only where not directly covered", "rule": {"field": "baseline.invariants", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Canonical G8 regression entrypoint groups all green", "rule": {"field": "baseline.groups_green", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Full repository suite green", "rule": {"field": "baseline.full_suite", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Compile/static/preflight/changed-file validation passes", "rule": {"field": "baseline.harness_checks", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "No G9/G10 and no semantics change", "rule": {"field": "baseline.no_g9g10", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

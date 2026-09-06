@@ -1,0 +1,158 @@
+{
+  "schema": "vf.vnext.g8.regression.manifest",
+  "version": "1.0.0",
+  "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
+  "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
+  "purpose": "Deterministic, repo-native Platform vNext regression baseline for the accepted G1-G7 platform invariants (Issue #53). Every group references existing authoritative pytest modules; no test logic is duplicated here. The canonical entrypoint runs each group with `python -m pytest -q -p no:cacheprovider`, reports the failing group, and exits non-zero if any required group fails.",
+  "groups": [
+    {
+      "id": "g1_workspace",
+      "gate": "G1",
+      "purpose": "G1 workspace / Simulation Scope foundation: structural identity/path, container-only vs executable-capable, fail-closed hierarchy/reference validation.",
+      "files": [
+        "tests/test_workspace_foundation.py",
+        "tests/test_workspace_validation.py",
+        "tests/test_workspace_config.py"
+      ],
+      "expected": "32 passed"
+    },
+    {
+      "id": "g2_provenance",
+      "gate": "G2",
+      "purpose": "G2 provenance v2: immutable RunContextV2, simulation origin/status, envelope/namespace identity.",
+      "files": [
+        "tests/test_provenance_context.py",
+        "tests/test_provenance_envelope.py",
+        "tests/test_provenance_namespace.py",
+        "tests/test_run_context_adapter.py",
+        "tests/test_telemetry_provenance_threading.py"
+      ],
+      "expected": "36 passed"
+    },
+    {
+      "id": "g3_observation_event_alarm",
+      "gate": "G3",
+      "purpose": "G3 observation/event/alarm: domain truth vs immutable facts/projections, alarm event immutability, canonical provenance/time/identity fail-closed.",
+      "files": [
+        "tests/test_event_fact.py",
+        "tests/test_event_store.py",
+        "tests/test_alarm_event_facts.py",
+        "tests/test_observation_alignment.py",
+        "tests/test_m5_s01_envelope.py",
+        "tests/test_m5_s02_point_policy.py",
+        "tests/test_m5_s03_service.py",
+        "tests/test_m5_s04_projections.py",
+        "tests/test_m5_s05_gateway.py",
+        "tests/test_alarm_manager.py"
+      ],
+      "expected": "328 passed"
+    },
+    {
+      "id": "g4_composition_coordinator",
+      "gate": "G4",
+      "purpose": "G4 composition/coordinator: containment vs connectivity graph, coordinator as composition service, deterministic participant/commit ordering, exact-window semantics.",
+      "files": [
+        "tests/test_composition_ports.py",
+        "tests/test_composition_graph.py",
+        "tests/test_composition_transfer.py",
+        "tests/test_composition_coordinator.py"
+      ],
+      "expected": "56 passed"
+    },
+    {
+      "id": "g5_federation",
+      "gate": "G5",
+      "purpose": "G5 TIPA ASSY federation: six isolated executable sub-line scopes mapped correctly, no demo policy promoted, natural-boundary semantics.",
+      "files": [
+        "tests/test_federation_tipa_assy.py"
+      ],
+      "expected": "26 passed"
+    },
+    {
+      "id": "g6_hierarchy_ui",
+      "gate": "G6",
+      "purpose": "G6 shared hierarchy UI: path-qualified context authority, workspace/container vs executable distinction, ASSY + continuous hierarchy truthfulness.",
+      "files": [
+        "tests/test_ui_hierarchy.py"
+      ],
+      "expected": "31 passed"
+    },
+    {
+      "id": "g7_run_control",
+      "gate": "G7",
+      "purpose": "G7 hierarchical run control: one mutable active attempt per workspace, independent TIPA/continuous active runs, historical/superseded fail-closed, fresh attempt state, path-qualified continuous/PROCESS participant.",
+      "files": [
+        "tests/test_run_control.py"
+      ],
+      "expected": "50 passed"
+    },
+    {
+      "id": "ui_api_dashboard",
+      "gate": "UI/API",
+      "purpose": "Continuous dashboard + OPS interaction/overview + S04B gating API compatibility (legacy compatibility surfaces).",
+      "files": [
+        "tests/test_api.py",
+        "tests/test_demo_overview.py",
+        "tests/test_ops03_interaction.py",
+        "tests/test_ops04_c01.py"
+      ],
+      "expected": "134 passed"
+    },
+    {
+      "id": "assy_oracle",
+      "gate": "ASSY",
+      "purpose": "Complete ASSY regression oracle: SSO2 feed/queue ordering, PRE-ASSY token, AP04 RSO2 JOIN/genealogy, AP06 retest-in-place, AP08 reinspect, AP11 final QC, failed_final, LINE_OUT GOOD/REJECT, quality/checklist/measurement evidence, deterministic timestamps, six sub-lines, no FINISHED conveyor fabrication.",
+      "files": [
+        "tests/test_assy_line.py",
+        "tests/test_assy_demo.py",
+        "tests/test_demo_composition.py",
+        "tests/test_auto_equiv_01.py",
+        "tests/test_quality.py",
+        "tests/test_quality_records_projection.py",
+        "tests/test_demo_assy_mes_v1.py",
+        "tests/test_assy_mes_bridge_v1.py",
+        "tests/test_assy_mes_03_evidence.py",
+        "tests/test_m6_int_01.py",
+        "tests/test_sub_line_identity.py",
+        "tests/test_auto_timing.py",
+        "tests/test_auto_timing_runtime.py",
+        "tests/test_vf_contract_finality_01.py"
+      ],
+      "expected": "354 passed"
+    },
+    {
+      "id": "continuous_compressor",
+      "gate": "CONTINUOUS",
+      "purpose": "Continuous-process + compressor baseline: process dynamics, closed loop, PID, balance, engine/controller boundary, compressor train/states/operating states.",
+      "files": [
+        "tests/test_compressor_train.py",
+        "tests/test_compressor_states.py",
+        "tests/test_operating_states.py",
+        "tests/test_minimal_process_dynamics.py",
+        "tests/test_minimal_closed_loop.py",
+        "tests/test_demand_profile.py",
+        "tests/test_balance.py",
+        "tests/test_pid_controller.py",
+        "tests/test_engine_boundary.py",
+        "tests/test_controller_boundary.py"
+      ],
+      "expected": "61 passed"
+    },
+    {
+      "id": "g8_cross_gate_invariants",
+      "gate": "G8",
+      "purpose": "G8 cross-gate invariants (workspace/structural/run-control/UI-hierarchy alignment) not directly covered by individual gate suites.",
+      "files": [
+        "tests/test_vnext_g8_invariants.py"
+      ],
+      "expected": "run"
+    },
+    {
+      "id": "full_suite",
+      "gate": "FULL",
+      "purpose": "Full repository suite: every pytest module under tests/.",
+      "directory": "tests",
+      "expected": "1956 passed"
+    }
+  ]
+}
