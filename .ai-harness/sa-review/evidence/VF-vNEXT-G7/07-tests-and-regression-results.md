@@ -4,7 +4,7 @@
 
 Command: `python -m pytest tests/test_run_control.py -q`
 
-Result: **47 passed** (0 failures). Covers the Issue #52 test set:
+Result: **50 passed** (0 failures). Covers the Issue #52 test set:
 1 lifecycle transitions + fail-closed guards; 2 immutable/coherent RunContextV2
 + one scenario authority; 3 workspace/container → deterministic descendant
 executable scopes (no fake container participant); 4 executable → itself;
@@ -26,12 +26,19 @@ continuous workspace (no invented hierarchy); TIPA + continuous independent
 workspace authorities (coexistence, no cross-mutation, foreign target fail
 closed, unknown workspace 404); continuous lifecycle + fresh restart; replay
 unavailable without a pinned scenario; legacy engine semantics unchanged.
+Includes the G7-C03 tests (evidence 10): non-executable `continuous` Workspace
+with exactly one executable `continuous/PROCESS` scope; workspace target
+resolves to exactly `continuous/PROCESS`; executable target resolves only
+itself; path-qualified participant `continuous/PROCESS` (never Workspace
+root); per-attempt fresh RuntimeService (restart B fresh object/state, A
+unchanged); reset keeps same run_id + same runtime object; continuous
+hierarchy shows `continuous / PROCESS`.
 
 ## 2. Regression groups (Issue #52)
 
 | Group | Result |
 |---|---|
-| New G7 lifecycle/run-control tests | **47 passed** (incl. C01 + C02) |
+| New G7 lifecycle/run-control tests | **50 passed** (incl. C01 + C02 + C03) |
 | Existing UI/API + S04B gating tests | **134 passed** |
 | G6 UI hierarchy tests | **31 passed** |
 | G5 federation tests | **26 passed** |
@@ -41,7 +48,7 @@ unavailable without a pinned scenario; legacy engine semantics unchanged.
 | G3 Observation/Event/Alarm (+ M5 + alarm_manager) | **328 passed** |
 | Complete ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1953 passed** (0 failures) |
+| Full repository suite | **1956 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black; no JS lint configured) |
 
 ## 3. Flakes

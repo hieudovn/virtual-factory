@@ -543,23 +543,35 @@ def create_app(
 
         return build_tipa_workspace()
 
+    def _continuous_structural_workspace():
+        from virtual_factory.runcontrol import build_continuous_workspace
+
+        return build_continuous_workspace()
+
+    def _structural_workspace(workspace: str):
+        """Resolve a workspace discriminator to its G1 Workspace (or None)."""
+        if workspace == "TIPA":
+            return _tipa_structural_workspace()
+        if workspace == "continuous":
+            return _continuous_structural_workspace()
+        return None
+
     @app.get("/api/ui/hierarchy")
     def ui_hierarchy(workspace: str = Query("TIPA")):
         from virtual_factory.ui import hierarchy as ui_hierarchy_mod
 
-        if workspace != "TIPA":
+        ws = _structural_workspace(workspace)
+        if ws is None:
             return _JSONResponse(
                 status_code=404,
                 content={
                     "detail": (
                         f"unknown workspace {workspace!r} for structural "
-                        f"hierarchy; supported: TIPA"
+                        f"hierarchy; supported: TIPA, continuous"
                     )
                 },
             )
-        return ui_hierarchy_mod.workspace_to_dict(
-            _tipa_structural_workspace()
-        )
+        return ui_hierarchy_mod.workspace_to_dict(ws)
 
     @app.get("/api/ui/context")
     def ui_context(
@@ -569,13 +581,14 @@ def create_app(
     ):
         from virtual_factory.ui import hierarchy as ui_hierarchy_mod
 
-        if workspace != "TIPA":
+        ws = _structural_workspace(workspace)
+        if ws is None:
             return _JSONResponse(
                 status_code=404,
                 content={
                     "detail": (
                         f"unknown workspace {workspace!r} for structural "
-                        f"context; supported: TIPA"
+                        f"context; supported: TIPA, continuous"
                     )
                 },
             )
@@ -584,7 +597,7 @@ def create_app(
                 ui_hierarchy_mod.parse_path(path) if path else None
             )
             return ui_hierarchy_mod.structural_context(
-                _tipa_structural_workspace(),
+                ws,
                 scope_path=scope_path,
                 object_id=object_id,
             )
@@ -657,16 +670,31 @@ def create_app(
                 ContinuousExecutionBridge,
                 RunLifecycleService,
                 build_continuous_workspace,
+                process_scope_path,
             )
 
             ws = build_continuous_workspace()
 
             def bridge_factory():
-                # Attempt-bound (C01): a NEW attempt builds a fresh execution
-                # context on the SAME accepted continuous RuntimeService seam
-                # (no engine rewrite, no second runtime instance).
+                # Attempt isolation (C03): a NEW run attempt owns a FRESH
+                # RuntimeService built from the SAME accepted config/runtime
+                # construction inputs. It never shares the legacy dashboard's
+                # service and never reuses another attempt's runtime object.
+                attempt_runtime = RuntimeService(
+                    config_path=config_path,
+                    scenario_path=scenario_path,
+                    dt_s=dt_s,
+                    mqtt_host=mqtt_host,
+                    mqtt_port=mqtt_port,
+                    mqtt_topic_prefix=mqtt_topic_prefix,
+                    mqtt_client_id=mqtt_client_id,
+                    mqtt_connect_retries=mqtt_connect_retries,
+                    mqtt_connect_delay=mqtt_connect_delay,
+                    opcua_endpoint=opcua_endpoint,
+                )
                 return ContinuousExecutionBridge(
-                    service, participant_id=ws.workspace_id
+                    attempt_runtime,
+                    participant_id=process_scope_path().as_string(),
                 )
 
             _run_control[workspace] = RunLifecycleService(ws, bridge_factory)

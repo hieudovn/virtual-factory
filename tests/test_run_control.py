@@ -41,6 +41,7 @@ from virtual_factory.runcontrol import (  # noqa: E402
     StepResult,
     TargetResolutionError,
     build_continuous_workspace,
+    process_scope_path,
     resolve_target,
 )
 from virtual_factory.ui.api import create_app  # noqa: E402
@@ -589,78 +590,122 @@ def _continuous_runtime() -> RuntimeService:
     return RuntimeService(config_path=CONTINUOUS_CONFIG, dt_s=1.0)
 
 
-def _continuous_service(runtime: RuntimeService) -> RunLifecycleService:
-    ws = build_continuous_workspace()
-    return RunLifecycleService(
-        ws,
-        lambda: ContinuousExecutionBridge(
-            runtime, participant_id=ws.workspace_id
-        ),
-    )
+def _continuous_service_factory():
+    """Service whose bridge_factory builds a FRESH RuntimeService per attempt.
+
+    Returns (service, runtimes) where ``runtimes`` records every attempt-owned
+    RuntimeService in creation order (for attempt-isolation assertions).
+    """
+    runtimes: list[RuntimeService] = []
+
+    def factory():
+        rt = RuntimeService(config_path=CONTINUOUS_CONFIG, dt_s=1.0)
+        runtimes.append(rt)
+        return ContinuousExecutionBridge(
+            rt, participant_id=process_scope_path().as_string()
+        )
+
+    return RunLifecycleService(build_continuous_workspace(), factory), runtimes
 
 
 class TestContinuousExecutionBridgeC02:
     def test_natural_boundary_is_one_dt_and_step_advances(self):
         runtime = _continuous_runtime()
-        bridge = ContinuousExecutionBridge(runtime, participant_id="continuous")
+        bridge = ContinuousExecutionBridge(
+            runtime, participant_id=process_scope_path().as_string()
+        )
         assert bridge.supports_reset is True
-        assert bridge.natural_next_boundary(()) == 1.0
-        result = bridge.advance(1.0, (), "w1")
+        assert bridge.natural_next_boundary(("PROCESS",)) == 1.0
+        result = bridge.advance(1.0, ("PROCESS",), "w1")
         assert result.status == "completed"
         assert result.target_time_s == 1.0
-        assert result.participants == ("continuous",)
-        assert bridge.natural_next_boundary(()) == 2.0
+        assert result.participants == ("continuous/PROCESS",)
+        assert bridge.natural_next_boundary(("PROCESS",)) == 2.0
 
     def test_reset_is_in_context(self):
         runtime = _continuous_runtime()
-        bridge = ContinuousExecutionBridge(runtime, participant_id="continuous")
-        bridge.advance(1.0, (), "w1")
-        bridge.advance(2.0, (), "w2")
+        bridge = ContinuousExecutionBridge(
+            runtime, participant_id=process_scope_path().as_string()
+        )
+        bridge.advance(1.0, ("PROCESS",), "w1")
+        bridge.advance(2.0, ("PROCESS",), "w2")
         assert runtime.engine.time_manager.now() == 2.0
-        bridge.reset(())
+        bridge.reset(("PROCESS",))
         assert runtime.engine.time_manager.now() == 0.0
 
-    def test_workspace_root_only_no_invented_scopes(self):
+    def test_workspace_non_executable_single_process_scope(self):
         ws = build_continuous_workspace()
         assert ws.workspace_id == "continuous"
-        assert ws.top_level_scopes == ()
+        # exactly one top-level scope, and it is the executable PROCESS scope
+        assert [s.scope_id for s in ws.top_level_scopes] == ["PROCESS"]
+        process = ws.top_level_scopes[0]
+        assert process.is_executable_capable is True
+        assert process.path.as_string() == "continuous/PROCESS"
+        # Workspace root is NOT an executable target kind
         res = resolve_target(ws, StructuralPath(("continuous",)))
         assert res.target_kind == "workspace"
-        assert res.effective_scope_paths == ()
-        # a non-root path must fail closed (no fabricated hierarchy)
+        assert res.effective_scope_strings == ("continuous/PROCESS",)
+        # PROCESS executable target resolves only itself
+        res2 = resolve_target(ws, process_scope_path())
+        assert res2.target_kind == "executable"
+        assert res2.effective_scope_strings == ("continuous/PROCESS",)
+        # any other path fails closed (no fabricated hierarchy)
         with pytest.raises(TargetResolutionError):
             resolve_target(ws, StructuralPath(("continuous", "FAKE")))
+        with pytest.raises(TargetResolutionError):
+            resolve_target(ws, StructuralPath(("continuous", "PROCESS", "UNIT")))
 
-    def test_lifecycle_authority_and_fresh_restart(self):
-        runtime = _continuous_runtime()
-        svc = _continuous_service(runtime)
+    def test_lifecycle_authority_and_attempt_isolation(self):
+        svc, runtimes = _continuous_service_factory()
         a = svc.create_run("continuous")
         aid = a.context.run_id
         assert a.target_kind == "workspace"
-        assert a.effective_scopes == ()
+        assert a.effective_scopes == ("continuous/PROCESS",)
+        assert a.effective_sub_line_ids == ("PROCESS",)
         svc.start(aid)
-        assert svc.step(aid).target_time_s == 1.0
-        assert runtime.engine.time_manager.now() == 1.0
+        result = svc.step(aid)
+        assert result.target_time_s == 1.0
+        assert result.participants == ("continuous/PROCESS",)
+        assert runtimes[0].engine.time_manager.now() == 1.0
         svc.pause(aid)
         with pytest.raises(RunLifecycleError):
             svc.step(aid)  # paused -> no advancement
-        assert runtime.engine.time_manager.now() == 1.0
+        assert runtimes[0].engine.time_manager.now() == 1.0
         svc.resume(aid)
         svc.step(aid)  # 2.0
-        assert runtime.engine.time_manager.now() == 2.0
+        assert runtimes[0].engine.time_manager.now() == 2.0
         svc.stop(aid)
-        # restart must start fresh (t=0), source remains historical
+        # restart must own a FRESH runtime object/state (attempt isolation)
         b = svc.restart(aid)
         assert b.context.run_id != aid
         assert b.context.source_run_id == aid
+        assert len(runtimes) == 1  # restart does not build until first step
         svc.start(b.context.run_id)
-        assert svc.step(b.context.run_id).target_time_s == 1.0
-        assert runtime.engine.time_manager.now() == 1.0  # not 3.0
+        assert svc.step(b.context.run_id).target_time_s == 1.0  # fresh, not 3.0
+        assert len(runtimes) == 2
+        assert runtimes[1] is not runtimes[0]  # distinct object identity
+        assert runtimes[1].engine.time_manager.now() == 1.0
+        # source attempt runtime unchanged (still at 2.0, never reset/mutated)
+        assert runtimes[0].engine.time_manager.now() == 2.0
         assert svc.status(aid)["state"] == "stopped"
 
+    def test_reset_keeps_same_run_id_and_runtime_object(self):
+        svc, runtimes = _continuous_service_factory()
+        a = svc.create_run("continuous/PROCESS")
+        aid = a.context.run_id
+        assert a.target_kind == "executable"
+        svc.start(aid)
+        svc.step(aid)
+        svc.step(aid)  # 2.0
+        assert runtimes[0].engine.time_manager.now() == 2.0
+        obj_before = id(a.bridge._runtime)
+        svc.reset(aid)
+        assert a.context.run_id == aid  # same run identity
+        assert id(a.bridge._runtime) == obj_before  # same runtime object
+        assert runtimes[0].engine.time_manager.now() == 0.0
+
     def test_replay_unavailable_without_pinned_scenario(self):
-        runtime = _continuous_runtime()
-        svc = _continuous_service(runtime)
+        svc, _ = _continuous_service_factory()
         a = svc.create_run("continuous")
         aid = a.context.run_id
         svc.start(aid)
@@ -739,7 +784,7 @@ class TestWorkspaceIsolationC02:
         ).json()
         rid = rec["run_id"]
         assert rec["target_kind"] == "workspace"
-        assert rec["effective_scopes"] == []
+        assert rec["effective_scopes"] == ["continuous/PROCESS"]
         assert c.post(
             f"/vnext/runs/{rid}/start", params={"workspace": "continuous"}
         ).status_code == 200
@@ -748,6 +793,7 @@ class TestWorkspaceIsolationC02:
         ).json()
         assert step["status"] == "completed"
         assert step["target_time_s"] == 1.0
+        assert step["participants"] == ["continuous/PROCESS"]
         assert c.post(
             f"/vnext/runs/{rid}/pause", params={"workspace": "continuous"}
         ).status_code == 200
@@ -760,7 +806,37 @@ class TestWorkspaceIsolationC02:
         assert c.post(
             f"/vnext/runs/{rid}/stop", params={"workspace": "continuous"}
         ).status_code == 200
-        # legacy engine semantics unchanged: same RuntimeService seam, dt=1.0
+        # legacy continuous dashboard/service is a SEPARATE compatibility
+        # surface and is NOT aliased into vNext attempt state: its own engine is
+        # untouched by the vNext continuous step (time still 0, dt unchanged).
         assert c.get("/status").json()["dt_s"] == 1.0
-        assert c.get("/status").json()["time_s"] == 1.0
+        assert c.get("/status").json()["time_s"] == 0.0
+        assert c.post("/step").status_code == 200
+
+    def test_continuous_process_scope_via_api(self):
+        c = _client()
+        rec = c.post(
+            "/vnext/runs",
+            params={"workspace": "continuous"},
+            json={"target_path": "continuous/PROCESS"},
+        ).json()
+        assert rec["target_kind"] == "executable"
+        assert rec["target_path"] == "continuous/PROCESS"
+        assert rec["effective_scopes"] == ["continuous/PROCESS"]
+        # foreign/non-existent continuous path fails closed
+        assert c.post(
+            "/vnext/runs",
+            params={"workspace": "continuous"},
+            json={"target_path": "continuous/NOPE"},
+        ).status_code == 400
+
+    def test_continuous_hierarchy_shows_process_scope(self):
+        c = _client()
+        hierarchy = c.get(
+            "/api/ui/hierarchy", params={"workspace": "continuous"}
+        ).json()
+        assert hierarchy["workspace_id"] == "continuous"
+        assert [s["scope_id"] for s in hierarchy["scopes"]] == ["PROCESS"]
+        assert hierarchy["scopes"][0]["path"] == "continuous/PROCESS"
+        assert hierarchy["scopes"][0]["executable_capable"] is True
 

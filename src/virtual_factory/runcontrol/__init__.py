@@ -20,8 +20,10 @@ from __future__ import annotations
 from virtual_factory.runcontrol.assy_bridge import AssyExecutionBridge
 from virtual_factory.runcontrol.continuous_bridge import (
     CONTINUOUS_WORKSPACE_ID,
+    PROCESS_SCOPE_ID,
     ContinuousExecutionBridge,
     build_continuous_workspace,
+    process_scope_path,
 )
 from virtual_factory.runcontrol.lifecycle import (
     ExecutionBridge,
@@ -43,6 +45,7 @@ __all__ = [
     "CONTINUOUS_WORKSPACE_ID",
     "ContinuousExecutionBridge",
     "ExecutionBridge",
+    "PROCESS_SCOPE_ID",
     "ReplayUnavailableError",
     "RunLifecycleError",
     "RunLifecycleService",
@@ -52,5 +55,6 @@ __all__ = [
     "TargetResolution",
     "TargetResolutionError",
     "build_continuous_workspace",
+    "process_scope_path",
     "resolve_target",
 ]

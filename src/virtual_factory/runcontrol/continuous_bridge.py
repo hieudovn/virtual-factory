@@ -1,70 +1,87 @@
-"""G7-C02 — Continuous execution bridge (RuntimeService seam, root-only).
+"""G7-C03 — Continuous execution bridge (RuntimeService seam, PROCESS scope).
 
-Binds the accepted continuous ``RuntimeService`` runtime-control seam
-(``step_once`` / ``reset`` / engine time) into the mechanism-neutral
-:class:`ExecutionBridge` protocol WITHOUT rewriting the continuous engine and
-WITHOUT inventing a G1 scope hierarchy.
+Frozen architecture decision (SA ``5557511518``): the continuous Workspace is a
+plant/site isolation boundary and does NOT itself own executable runtime
+semantics. Runtime ownership lives below the Workspace on one executable
+Simulation Scope:
 
-Continuous is root-only (Issue #52 / SA C02): the single participant is the
-workspace root engine itself. There is no authoritative multi-level G1
-sub-structure for the continuous runtime, so no nested scopes are fabricated.
+    continuous Workspace -> PROCESS Scope (executable)   path ``continuous/PROCESS``
 
-Attempt-bound execution (C01) is preserved: constructing a
-``ContinuousExecutionBridge`` reinitializes the shared ``RuntimeService`` to its
-accepted initial baseline (t=0), so a restart/replay/new attempt always starts
-from fresh execution state while reset stays in-context on the same run/attempt
-(the same ``RuntimeService`` object is never replaced).
+This is a bounded generic execution-boundary wrapper around the already-existing
+single continuous process runtime — NOT an invented plant/unit/area/equipment
+topology and NOT a rewrite of the continuous engine.
+
+The bridge executes on behalf of the effective executable Scope
+(``continuous/PROCESS``); the Workspace root is never a participant.
 """
 
 from __future__ import annotations
 
 from virtual_factory.runcontrol.lifecycle import StepResult
-from virtual_factory.workspace import StructuralPath, Workspace
+from virtual_factory.workspace import (
+    ScopeMode,
+    ScopeSpec,
+    StructuralPath,
+    Workspace,
+    build_workspace,
+)
 
 CONTINUOUS_WORKSPACE_ID = "continuous"
+PROCESS_SCOPE_ID = "PROCESS"
+
+
+def process_scope_path() -> StructuralPath:
+    """Canonical structural path of the single continuous executable Scope."""
+    return StructuralPath((CONTINUOUS_WORKSPACE_ID, PROCESS_SCOPE_ID))
 
 
 def build_continuous_workspace(
     *,
-    workspace_id: str = CONTINUOUS_WORKSPACE_ID,
     display_name: str | None = None,
     description: str | None = None,
 ) -> Workspace:
-    """Build the root-only continuous Workspace (no invented scopes).
+    """Build the continuous Workspace with exactly ONE executable child Scope.
 
-    ``workspace_id`` is the stable canonical structural identity of the
-    continuous workspace authority. The loaded plant config's ``plant_id`` is a
-    config/display fact (never promoted into a structural scope).
+    - ``continuous`` (Workspace root) is orchestration-only, non-executable.
+    - ``continuous/PROCESS`` is the single executable Scope.
+    - No unit/area/equipment/process-section decomposition is introduced.
     """
-    return Workspace(
-        workspace_id=workspace_id,
-        path=StructuralPath.workspace_root(workspace_id),
+    specs = [
+        ScopeSpec(
+            PROCESS_SCOPE_ID,
+            ScopeMode.EXECUTABLE_CAPABLE,
+            display_name="Continuous Process",
+        )
+    ]
+    return build_workspace(
+        CONTINUOUS_WORKSPACE_ID,
+        specs,
         display_name=display_name or "Continuous Workspace",
         description=description
-        or "Root-only continuous-process workspace authority; no authoritative "
-        "G1 scope sub-structure.",
-        top_level_scopes=(),
+        or "Continuous process workspace authority: Workspace root is "
+        "non-executable; single executable PROCESS scope at "
+        "continuous/PROCESS.",
     )
 
 
 class ContinuousExecutionBridge:
-    """Execution bridge over one continuous ``RuntimeService``.
+    """Execution bridge over one continuous ``RuntimeService`` attempt.
 
     - ``natural_next_boundary`` = engine time + dt_s (the engine's fixed-step
       scan cadence — the only truthful continuous boundary).
     - ``advance`` = one ``RuntimeService.step_once()`` (the accepted seam).
     - ``reset`` = ``RuntimeService.reset()`` (in-context reinitialize to t=0).
-    - Root-only: the selected ``scope_ids`` (empty for a workspace target) map
-      to the single root engine participant; no fabricated sub-scopes.
+    - The participant identity is path-qualified ``continuous/PROCESS`` (the
+      effective executable Scope), never the Workspace root.
     """
 
     def __init__(self, runtime, *, participant_id: str) -> None:
         self._runtime = runtime
         self._participant_id = participant_id
         self._window_seq = 0
-        # Attempt-bound freshness: each new run attempt gets a fresh execution
-        # context at the accepted initial baseline (t=0) on the SAME
-        # RuntimeService object. No engine rewrite; no second runtime instance.
+        # Attempt-bound baseline: reinitialize this attempt's OWN RuntimeService
+        # to its accepted initial state (t=0). Each attempt owns a fresh
+        # RuntimeService; this call never touches another attempt's runtime.
         self._runtime.reset()
 
     @property
@@ -103,6 +120,7 @@ class ContinuousExecutionBridge:
         )
 
     def reset(self, scope_ids: tuple[str, ...]) -> None:
-        # In-context reinitialize to t=0 (same RuntimeService object). This is
-        # the accepted continuous reset contract, never a run-identity rebuild.
+        # In-context reinitialize to t=0 (same RuntimeService object for this
+        # attempt). This is the accepted continuous reset contract, never a
+        # run-identity or attempt rebuild.
         self._runtime.reset()

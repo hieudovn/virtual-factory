@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Task ID | `VF-vNEXT-G7` (GitHub Issue #52) + C01 + C02 |
+| Task ID | `VF-vNEXT-G7` (GitHub Issue #52) + C01 + C02 + C03 |
 | Program | Implementation phase (G7; only authorized implementation gate after G6) |
 | Required base (branch) | `a10f581ca2e7a8b8b39c605fc54339ae88386922` (accepted G6-C01 head) |
 | Branch | `feature/vf-vnext-g7` |
@@ -37,16 +37,23 @@ ASSY dwell, no run-id reuse, no fabricated replay, no G8+.
   in-context reset (`AssyLineRuntime.reset()`).
 - `runcontrol/continuous_bridge.py` — `ContinuousExecutionBridge` over the
   accepted continuous `RuntimeService` seam (one `step_once()` per boundary,
-  `reset()` in-context) + `build_continuous_workspace()` (root-only, zero
-  scopes). No engine rewrite, no invented continuous hierarchy. C02: the
-  bridge constructor reinitializes the shared RuntimeService to t=0 so every
-  new attempt starts fresh (C01 preserved).
+  `reset()` in-context) + `build_continuous_workspace()` + `process_scope_path()`.
+  No engine rewrite. C02: fresh execution context per attempt. C03: the
+  continuous Workspace root is non-executable with exactly one executable
+  `PROCESS` scope (`continuous/PROCESS`); the bridge executes on behalf of that
+  path-qualified scope (never the Workspace root); each attempt owns a FRESH
+  RuntimeService (no sharing of mutable runtime between historical/active
+  attempts).
 - `ui/api.py` — additive `/vnext/runs/*` endpoints (create/current/get +
   start/step/pause/resume/stop/reset/restart/replay) with an additive
   `?workspace=` discriminator (`TIPA` default | `continuous`); independent
   per-workspace `RunLifecycleService` (no platform-global active run); unknown
-  workspace/foreign run_id → 404, foreign target → 400. Legacy endpoints
-  untouched (compatibility surfaces, not repointed).
+  workspace/foreign run_id → 404, foreign target → 400. Continuous attempts
+  build a FRESH `RuntimeService` from the same accepted config inputs (the
+  legacy dashboard service is never aliased into vNext attempt state). Legacy
+  endpoints untouched (compatibility surfaces, not repointed). `/api/ui/hierarchy`
+  and `/api/ui/context` now also serve `workspace=continuous` (`continuous →
+  PROCESS`).
 - `ui/static/run_control_context.js` (workspace-aware) + `assy_demo.html`
   mount + `assy_demo.css` + `index.html` mount + `styles.css` — additive
   minimal run-control context (path-qualified target, state, truthful time,
@@ -61,7 +68,7 @@ claimed; terminal runs never step under the same `run_id`; no hidden retry.
 
 | Suite | Result |
 |---|---|
-| New G7 tests | **47 passed** (incl. C01 + C02) |
+| New G7 tests | **50 passed** (incl. C01 + C02 + C03) |
 | UI/API + S04B gating | **134 passed** |
 | G6 UI hierarchy | **31 passed** |
 | G5 federation | **26 passed** |
@@ -71,18 +78,19 @@ claimed; terminal runs never step under the same `run_id`; no hidden retry.
 | G3 Observation/Event/Alarm (+ M5 + alarm) | **328 passed** |
 | Complete ASSY regression oracle | **354 passed** |
 | Continuous/compressor baseline | **61 passed** |
-| Full repository suite | **1953 passed** (0 failures) |
+| Full repository suite | **1956 passed** (0 failures) |
 | Compile check | PASS (no configured ruff/mypy/black) |
 
 ## 5. STOP-condition assessment (evidence 06)
 
 None triggered. No new synchronization/timestep policy; no ASSY
-fractionalization; continuous is now truthfully bridged over its existing
-RuntimeService seam (root-only, no invented hierarchy); reset
-capability-scoped; replay never fabricates; no terminal run-id reuse; no
-container execution; TIPA/continuous workspace authorities independent (no
-platform-global active run, no cross-workspace mutation); G2/G4 contracts
-intact; no G8+.
+fractionalization; continuous is truthfully bridged over its existing
+RuntimeService seam via the non-executable `continuous` Workspace + single
+executable `continuous/PROCESS` scope (no invented unit/area/equipment
+hierarchy); reset capability-scoped; replay never fabricates; no terminal
+run-id reuse; no container execution; TIPA/continuous workspace authorities
+independent with per-attempt runtime isolation (no platform-global active run,
+no cross-workspace mutation); G2/G4 contracts intact; no G8+.
 
 ## 6. Acceptance (Issue #52 criteria)
 
@@ -93,7 +101,7 @@ intact; no G8+.
 | Container/workspace targets resolve to real executable descendants | PASS |
 | Existing domain runtimes remain authoritative | PASS |
 | ASSY uses only legitimate natural coordination boundaries | PASS |
-| Continuous bridged over its existing RuntimeService seam (root-only) | PASS |
+| Continuous bridged via non-executable `continuous` Workspace + `continuous/PROCESS` | PASS |
 | TIPA/continuous independent workspace authorities (no cross-workspace) | PASS |
 | pause/resume/stop/reset/restart/replay obey frozen identity/history semantics | PASS |
 | No new synchronization policy or G8+ scope | PASS |
@@ -101,14 +109,15 @@ intact; no G8+.
 
 ## 7. Evidence
 
-`.ai-harness/sa-review/evidence/VF-vNEXT-G7/` — 9 files (01…09; 08 = C01
+`.ai-harness/sa-review/evidence/VF-vNEXT-G7/` — 10 files (01…10; 08 = C01
 corrections: active-attempt authority + attempt-bound execution; 09 = C02
-continuous binding + workspace isolation).
+continuous binding + workspace isolation; 10 = C03 PROCESS scope + attempt
+isolation).
 
 ## 8. Final status
 
 ```text
-VF-vNEXT-G7-C02 — READY FOR SA REVIEW
+VF-vNEXT-G7-C03 — READY FOR SA REVIEW
 ```
 
 PM does not self-certify COMPLETE/CLOSED. G8 is NOT started.
