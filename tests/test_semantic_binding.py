@@ -116,12 +116,18 @@ class TestSourceIdentity:
         assert a.to_dict() == b.to_dict()  # deterministic
 
     def test_missing_required_pins_fail_closed(self):
-        for missing in ("artifact_id", "version", "artifact_hash"):
+        for missing in (
+            "artifact_id",
+            "version",
+            "artifact_hash",
+            "semantic_identity_sha",
+        ):
             kwargs = {
                 "producer_id": "producer-x",
                 "artifact_id": "artifact-y",
                 "version": "v1.2.3",
                 "artifact_hash": "hash-y",
+                "semantic_identity_sha": "sha-y",
             }
             kwargs[missing] = None
             source = SemanticSourcePin(**kwargs)
@@ -167,16 +173,23 @@ class TestMappingCardinality:
         assert any("name-only" in d for d in result.diagnostics)
 
     def test_zero_target_fails(self):
-        binding = _valid_required_binding(
-            mappings=(
-                LocalCanonicalMapping(
-                    local_id="runtime.sig", canonical_id=None, published=True
-                ),
+        # A REQUIRED mapping must have exactly one non-empty canonical target
+        # regardless of the published / canonical_claimed flags.
+        for flags in (
+            {"published": True, "canonical_claimed": False},
+            {"published": False, "canonical_claimed": True},
+            {"published": False, "canonical_claimed": False},
+        ):
+            binding = _valid_required_binding(
+                mappings=(
+                    LocalCanonicalMapping(
+                        local_id="runtime.sig", canonical_id=None, **flags
+                    ),
+                )
             )
-        )
-        result = validate_binding(binding)
-        assert result.ok is False
-        assert any("zero target" in d for d in result.diagnostics)
+            result = validate_binding(binding)
+            assert result.ok is False
+            assert any("zero target" in d for d in result.diagnostics)
 
     def test_multiple_ambiguous_targets_fail(self):
         binding = _valid_required_binding(
@@ -325,6 +338,37 @@ class TestAdmissionAndProvenance:
         assert rec.state is RunState.CREATED
         assert rec.step_count == 0
         assert rec.last_time_s is None
+        assert bridge.advances == 0
+
+    def test_missing_semantic_sha_fails_before_start_no_provenance(self):
+        # A required + AUTHORIZED binding with no semantic SHA must not admit;
+        # nothing is consumed and no provenance is written.
+        binding = SemanticBinding(
+            mode=BindingMode.REQUIRED,
+            source=SemanticSourcePin(
+                producer_id="p",
+                artifact_id="a",
+                version="v",
+                artifact_hash="h",
+                semantic_identity_sha=None,  # missing exact SHA
+            ),
+            compatibility=CompatibilityDecision.COMPATIBLE,
+            runtime_authorization=RuntimeAuthorization.AUTHORIZED,
+            mappings=(LocalCanonicalMapping(local_id="s", canonical_id="C"),),
+        )
+        gate = SemanticAdmissionGate(binding)
+        assert gate.assess().ok is False  # validation fails on missing SHA
+        bridge = _FakeBridge()
+        svc = RunLifecycleService(
+            build_continuous_workspace(), lambda: bridge, admission=gate
+        )
+        rec = svc.create_run("continuous")
+        rid = rec.context.run_id
+        with pytest.raises(SemanticAdmissionError):
+            svc.start(rid)
+        assert rec.state is RunState.CREATED
+        assert rec.semantic_contract_version is None  # no fabricated provenance
+        assert rec.semantic_contract_sha is None
         assert bridge.advances == 0
 
     def test_consumed_contract_threads_exact_version_and_sha_into_provenance(self):

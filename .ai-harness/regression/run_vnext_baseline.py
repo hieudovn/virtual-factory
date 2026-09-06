@@ -55,13 +55,16 @@ def _load_manifest(path: Path) -> dict:
     return manifest
 
 
-def _materialize_changed_files(group: dict) -> Path:
+def _materialize_changed_files(group: dict, manifest: dict) -> Path:
     """Materialize ``git diff --name-only <base> HEAD`` into a UTF-8 file.
 
     Used by ``kind: "changed_files"`` command groups so the repo's
-    ``verify_changed_files.py`` can validate exactly the current-branch delta.
+    ``verify_changed_files.py`` can validate exactly the current-gate delta.
+    The base resolves from the group or the manifest gate context.
     """
-    base = group.get("changed_files_base")
+    base = group.get("changed_files_base") or manifest.get("gate", {}).get(
+        "changed_files_base"
+    )
     if not base:
         raise ValueError("changed_files command group requires changed_files_base")
     out_rel = group.get("changed_files_output", CHANGED_FILES_DEFAULT)
@@ -83,7 +86,7 @@ def _materialize_changed_files(group: dict) -> Path:
     return out_path
 
 
-def _group_command(group: dict) -> list[str]:
+def _group_command(group: dict, manifest: dict) -> list[str]:
     """Build the executable command for one manifest group."""
     gtype = group.get("type", "pytest")
     if gtype == "pytest":
@@ -101,7 +104,7 @@ def _group_command(group: dict) -> list[str]:
         cmd: list[str] = []
         changed_file: Path | None = None
         if group.get("kind") == "changed_files":
-            changed_file = _materialize_changed_files(group)
+            changed_file = _materialize_changed_files(group, manifest)
         for arg in raw:
             if arg == "{python}":
                 cmd.append(sys.executable)
@@ -112,6 +115,11 @@ def _group_command(group: dict) -> list[str]:
                         f"{{changed_files_file}} but is not kind=changed_files"
                     )
                 cmd.append(str(changed_file))
+            elif arg == "{task_contract}":
+                task = manifest.get("gate", {}).get("task_contract")
+                if not task:
+                    raise ValueError("command group uses {task_contract} but manifest has no gate.task_contract")
+                cmd.append(str(task))
             else:
                 cmd.append(arg)
         return cmd
@@ -163,7 +171,7 @@ def main() -> int:
     for group in groups:
         gid = group["id"]
         try:
-            cmd = _group_command(group)
+            cmd = _group_command(group, manifest)
         except ValueError as exc:
             print(f"\n[baseline] group '{gid}': ERROR ({exc})")
             failed_groups.append(gid)

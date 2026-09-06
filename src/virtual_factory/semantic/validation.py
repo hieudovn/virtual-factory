@@ -65,6 +65,7 @@ def validate_binding(binding: SemanticBinding) -> BindingValidation:
             ("artifact_id", "artifact_id"),
             ("version", "version"),
             ("artifact_hash", "artifact_hash"),
+            ("semantic_identity_sha", "semantic_identity_sha"),
         ):
             if not getattr(src, field_name):
                 diags.append(f"required binding missing source pin: {label}")
@@ -98,7 +99,10 @@ def validate_binding(binding: SemanticBinding) -> BindingValidation:
                     diags.append(f"required mapping unmapped: {mapping.local_id!r}")
                 if mapping.status is MappingStatus.REVIEW_REQUIRED:
                     diags.append(f"required mapping review_required: {mapping.local_id!r}")
-                if claims and not mapping.canonical_id:
+                # Frozen rule: every REQUIRED mapping must have exactly one
+                # non-empty canonical target, independent of published/
+                # canonical_claimed flags.
+                if not mapping.canonical_id:
                     diags.append(f"required mapping zero target: {mapping.local_id!r}")
             else:  # OPTIONAL
                 if claims and not mapping.canonical_id:

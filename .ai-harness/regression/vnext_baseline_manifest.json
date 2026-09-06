@@ -1,9 +1,13 @@
 {
   "schema": "vf.vnext.g8.regression.manifest",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
-  "purpose": "Deterministic, repo-native Platform vNext regression baseline for the accepted G1-G7 platform invariants (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails.",
+  "gate": {
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G9.json",
+    "changed_files_base": "e75fa95259f1b68e465c546e2e4dbc6b24e9a76d"
+  },
+  "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
     "configured": false,
     "note": "This repository configures no ruff/mypy/black/pyright/flake8 static/lint/type tool (pyproject.toml has only [tool.setuptools.*] and [tool.pytest.ini_options]). The G8 baseline does not invent one; the checks_static_lint_type command group verifies absence truthfully and fails if a configured static tool appears without baseline execution."
@@ -199,14 +203,13 @@
       "gate": "CHECKS",
       "type": "command",
       "kind": "changed_files",
-      "changed_files_base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
-      "changed_files_output": ".ai-harness/traces/g8_changed_files.txt",
-      "purpose": "Changed-file validation actually used by the repo: verify_changed_files.py against the G8 task contract allowlist for the diff of the current branch vs the required G8 base.",
+      "changed_files_output": ".ai-harness/traces/vnext_changed_files.txt",
+      "purpose": "Changed-file validation actually used by the repo: verify_changed_files.py against the CURRENT gate task contract allowlist for the diff of the current branch vs the current gate base (from the top-level gate context).",
       "cmd": [
         "{python}",
         ".ai-harness/scripts/verify_changed_files.py",
         "--task",
-        ".ai-harness/tasks/VF-vNEXT-G8.json",
+        "{task_contract}",
         "--changed-files",
         "{changed_files_file}"
       ]
@@ -215,12 +218,12 @@
       "id": "checks_preflight",
       "gate": "CHECKS",
       "type": "command",
-      "purpose": "Harness preflight actually used by the repo: preflight.py against the G8 task contract (branch, clean tree, origin/main baseline). Runs last; requires a clean committed tree on feature/vf-vnext-g8.",
+      "purpose": "Harness preflight actually used by the repo: preflight.py against the CURRENT gate task contract (branch, clean tree, origin/main baseline). Runs last; requires a clean committed tree on the current gate branch.",
       "cmd": [
         "{python}",
         ".ai-harness/scripts/preflight.py",
         "--task",
-        ".ai-harness/tasks/VF-vNEXT-G8.json"
+        "{task_contract}"
       ]
     }
   ]
