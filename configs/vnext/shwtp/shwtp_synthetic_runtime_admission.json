@@ -1,0 +1,142 @@
+{
+  "schema": "vf.vnext.g12c.shwtp.synthetic_runtime_admission.v1",
+  "gate": "VF-vNEXT-G12C",
+  "kind": "REVIEW_AND_ADMISSION_ONLY",
+  "generated_by": "PM execution gate VF-vNEXT-G12C",
+  "pim_source": {
+    "repository": "hieudovn/plant-intelligence-model",
+    "main_sha": "ec7f1266d4a19e5201b689874a2a7a75a022fc5c",
+    "package": "SHW-PIM-VF-EXPORT-v0.1",
+    "version": "v0.1",
+    "source_model_version": "SHW-PH03-v0.1",
+    "semantic_identity_sha": "f23f3c4614f50a1a2e3805f7e887433feb934915",
+    "artifact_hash_sha": "ea3361a4aca9d25927a4a76c792f3af184e1aabb",
+    "compatibility": "compatible_with_constraints"
+  },
+  "authority": {
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED",
+    "synthetic_reference_execution": "PENDING_LATER_PIM_REVIEW",
+    "structural_construction": "AUTHORIZED_IN_G11",
+    "scope_rule": "Only future candidate-by-candidate synthetic/reference execution may be authorized. No site-faithful, calibrated, parameterized-from-plant-data, or control/interlock-equivalent authorization is granted by this gate."
+  },
+  "candidates": [
+    {
+      "canonical_id": "UNIT-SHW-L1-T106",
+      "vf_structural_path": "shwtp/line1/l1_t106",
+      "g10_role": "executable_candidate",
+      "fidelity_ceiling": "LogicalOnly",
+      "boundary_contract_v0": "present",
+      "pim_supported": [
+        "input: clarified water from T105 path (existence only; value/timing unknown)",
+        "output: filtered water to T108 path (existence only; value/timing unknown)"
+      ],
+      "synthetic_assumptions_required": [
+        "clarified-water inflow value/time-series (explicit synthetic scenario input)"
+      ],
+      "unknown_blocking": [
+        "filtration_quality (GAP-SHW-004)",
+        "hydraulic_parameters (GAP-SHW-003)",
+        "filter media/headloss/backwash parameters (GAP-SHW-010)"
+      ],
+      "g12b_relations": [
+        "REL-SHW-F01 FLOWS_TO (DocumentConfirmed)",
+        "REL-SHW-F02 DISCHARGES_TO (PatternInferred, REL-006 known-but-unconstrained)",
+        "REL-SHW-F03 CONNECTED_TO (PatternInferred, REL-006 known-but-unconstrained)"
+      ],
+      "admission": "SYNTHETIC_REFERENCE_ALLOWED",
+      "rationale": "G10 boundary contract v0 present; fidelity ceiling LogicalOnly (logical pass-through black-box, no filtration physics/equations). Input/output existence is PIM-supported; values/timing unknown and marked synthetic scenario inputs. Missing filtration/quality/hydraulic parameters remain unknown under LogicalOnly (never represented as plant data). G12B relations are cited as reference evidence only; the LogicalOnly pass-through does not reclassify the ambiguous wash/backwash relations.",
+      "g13_slice": "deferred-after-first-slice (optional upstream logical source)"
+    },
+    {
+      "canonical_id": "UNIT-SHW-L1-T108",
+      "vf_structural_path": "shwtp/line1/l1_t108",
+      "g10_role": "executable_candidate",
+      "fidelity_ceiling": "FirstOrderReady",
+      "boundary_contract_v0": "present",
+      "pim_supported": [
+        "level (existence only)",
+        "volume (existence only)",
+        "input: filtered water inflow from T106 path (existence only; value/timing unknown)",
+        "output: clean water to distribution P108 (existence only; value/timing unknown)"
+      ],
+      "synthetic_assumptions_required": [
+        "volume/geometry (explicit synthetic scenario/config assumption; GAP-SHW-003)",
+        "inflow value/time-series (explicit synthetic scenario input)",
+        "outflow demand value/time-series (explicit synthetic scenario input)"
+      ],
+      "unknown_blocking": [
+        "flow values (GAP-SHW-003)"
+      ],
+      "g12b_relations": [
+        "REL-SHW-F01 FLOWS_TO (DocumentConfirmed, target)",
+        "REL-SHW-F05 FLOWS_TO (DocumentConfirmed, via PROC-SHW-L1-TO-DIST)"
+      ],
+      "admission": "SYNTHETIC_REFERENCE_ALLOWED",
+      "rationale": "G10 boundary contract v0 present; the only candidate the G10 fidelity matrix authorizes at FirstOrderReady (simple tank with level/flow signals). First-order mass-accumulation uses only the minimum first-order behavior with explicitly declared synthetic volume/geometry and flow assumptions. Missing volume/flow parameters (GAP-SHW-003) are synthetic scenario inputs, never relabeled plant data. G12B FLOWS_TO relations (DocumentConfirmed) are reference evidence only. This is the smallest meaningful executable slice.",
+      "g13_slice": "first-slice (smallest meaningful executable slice)"
+    },
+    {
+      "canonical_id": "UNIT-SHW-WASH-T110",
+      "vf_structural_path": "shwtp/line1/wash_t110",
+      "g10_role": "executable_candidate",
+      "fidelity_ceiling": "FirstOrderReady",
+      "boundary_contract_v0": "present",
+      "pim_supported": [
+        "level (existence only)",
+        "input: wash water return (existence only; value/timing unknown)"
+      ],
+      "synthetic_assumptions_required": [
+        "wash-water return inflow value/time-series (explicit synthetic scenario input)"
+      ],
+      "unknown_blocking": [
+        "volume (GAP-SHW-003)",
+        "flow values (GAP-SHW-003)",
+        "output return destination (VF-inferred; 'must be confirmed by PIM before first-order use')"
+      ],
+      "g12b_relations": [
+        "REL-SHW-F02 DISCHARGES_TO (PatternInferred, REL-006 known-but-unconstrained, target)",
+        "REL-SHW-F03 CONNECTED_TO (PatternInferred, REL-006 known-but-unconstrained, source)"
+      ],
+      "admission": "BLOCKED_PENDING_EVIDENCE",
+      "rationale": "G10 boundary contract v0 present, but its output 'recovered_water_return_to_process' is a VF synthetic assumption whose return destination is explicitly unconfirmed ('must be confirmed by PIM before first-order use'). Its G12B relations are PatternInferred with REL-006 'known-but-unconstrained' warnings. Authorizing synthetic execution would require semantically resolving an ambiguous recovery-return relationship and inferring the return destination — not permitted by G12C. Blocked until PIM confirms wash-recovery return semantics.",
+      "g13_slice": "blocked-pending-evidence"
+    }
+  ],
+  "synthetic_assumption_policy": {
+    "rules": [
+      "Synthetic values must be explicitly declared and provenance-marked (scenario/config-driven).",
+      "No synthetic value may be relabeled as measured or site truth.",
+      "Default values must be scenario/config inputs, not hidden magic constants that affect behavior.",
+      "Unknown plant parameters stay unknown (never represented as real plant data).",
+      "LogicalOnly behavior may use logical/state-transition/reference behavior only; no fabricated physics.",
+      "FirstOrderReady behavior may use only the minimum first-order behavior supported by current evidence plus explicit synthetic assumptions."
+    ]
+  },
+  "runtime_projection_requirements": {
+    "statement": "The following are future-gate requirements and are NOT implemented in G12C. Every SYNTHETIC_REFERENCE_ALLOWED candidate requires them before any G4 runtime composition.",
+    "per_candidate": {
+      "UNIT-SHW-L1-T106": [
+        "semantic endpoint -> candidate scope/boundary interpretation",
+        "boundary port definitions",
+        "unit/type compatibility",
+        "cardinality/merge policy",
+        "coordinator timing/order"
+      ],
+      "UNIT-SHW-L1-T108": [
+        "semantic endpoint -> candidate scope/boundary interpretation",
+        "boundary port definitions",
+        "unit/type compatibility",
+        "cardinality/merge policy",
+        "coordinator timing/order"
+      ]
+    },
+    "not_implemented": true
+  },
+  "g13_authorization_plan": {
+    "smallest_meaningful_slice": ["UNIT-SHW-L1-T108"],
+    "allowed_candidates": ["UNIT-SHW-L1-T106", "UNIT-SHW-L1-T108"],
+    "blocked_pending_evidence": ["UNIT-SHW-WASH-T110"],
+    "rule": "G13 may implement ONLY the smallest meaningful slice first: UNIT-SHW-L1-T108 (FirstOrderReady clean-water tank) with explicitly synthetic volume/geometry and flow assumptions. UNIT-SHW-L1-T106 (LogicalOnly synthetic pass-through) is authorized as an optional later upstream logical source, NOT part of the first slice. UNIT-SHW-WASH-T110 remains blocked pending PIM evidence. No candidate may exceed its frozen fidelity ceiling; no ParameterizedReady/CalibratedReady/site-faithful/control-interlock behavior is authorized."
+  }
+}

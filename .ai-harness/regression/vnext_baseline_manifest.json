@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G12B.json",
-    "changed_files_base": "4d916a3ddeaa1890c637c1db2d51d292434cd059"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G12C.json",
+    "changed_files_base": "65347f66daed873878c15dbd4cf1e48c0d291da1"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -199,6 +199,15 @@
       "purpose": "G12B SH-WTP PIM reference connectivity materialization tests: exact PIM source pins, F01-F07 selection, canonical PROC-* endpoints (not G11 Scopes), raw relation types preserved (FLOWS_TO/DISCHARGES_TO/CONNECTED_TO), no six-class reclassification, F06/F07 not name-classified, REL-006 warning metadata preserved, no containment/PART_OF-derived edges, no G11 change, inert runtime_effect none, no BoundaryPort/G4/runtime projection, NOT_AUTHORIZED + PENDING_LATER_PIM_REVIEW frozen, deterministic serialization.",
       "files": [
         "tests/test_vnext_g12b_shwtp.py"
+      ]
+    },
+    {
+      "id": "g12c_admission_review",
+      "gate": "G12C",
+      "type": "pytest",
+      "purpose": "G12C SH-WTP synthetic runtime admission review tests: only T106/T108/T110 reviewed, explicit deterministic per-candidate admission (SYNTHETIC_REFERENCE_ALLOWED/STRUCTURAL_ONLY/BLOCKED_PENDING_EVIDENCE), fidelity ceiling not exceeded, no Parameterized/Calibrated fabrication, site NOT_AUTHORIZED, PIM pins unchanged, synthetic assumptions separated from PIM facts, no raw G12B relation runtime-classified, no BoundaryPort/G4/runtime implementation, smallest meaningful G13 slice (T108).",
+      "files": [
+        "tests/test_vnext_g12c_admission_review.py"
       ]
     },
     {

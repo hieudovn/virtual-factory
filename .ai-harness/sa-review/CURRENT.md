@@ -1,54 +1,50 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G12B
-Status: READY FOR SA REVIEW (SH-WTP PIM Reference Connectivity Materialization — inert reference facts)
-Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G12A complete)
-Prerequisite: Issue #58 (G12A) accepted; Issue #59 (G12B) current
+Task: VF-vNEXT-G12C
+Status: READY FOR SA REVIEW (SH-WTP Synthetic Runtime Admission Review — review/admission only)
+Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G12B complete)
+Prerequisite: Issue #59 (G12B) accepted; Issue #60 (G12C) current
 
 Gate type:
-IMPLEMENTATION gate — SH-WTP PIM Reference Connectivity Materialization (G12B), per Issue #59.
-Inert reference facts ONLY. No PIM change, no runtime projection, no G4 change, no G13.
+REVIEW/ADMISSION gate — SH-WTP Synthetic Runtime Admission Review (G12C), per Issue #60.
+Review only. No runtime implementation, no PIM change, no G4 projection, no site authorization.
 
 Architecture baseline:
-G1-G12A contracts authoritative; G12A final head = 4d916a3ddeaa1890c637c1db2d51d292434cd059 (branch point)
+G1-G12B contracts authoritative; G12B final head = 65347f66daed873878c15dbd4cf1e48c0d291da1 (branch point)
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
-Frozen architecture (G12B implements only the first arrow):
-PIM semantic relationships -> VF ReferenceConnectivityGraph -> later explicit
-interpretation/projection -> Boundary Contracts/Ports -> G4 CompositionGraph -> Runtime
+Pinned PIM (repo-first): hieudovn/plant-intelligence-model @ ec7f1266…; package
+SHW-PIM-VF-EXPORT-v0.1 v0.1 (SHW-PH03-v0.1); semantic SHA f23f3c46…; artifact hash ea3361a4…
 
-Pinned PIM (repo-first):
-- repo hieudovn/plant-intelligence-model @ ec7f1266d4a19e5201b689874a2a7a75a022fc5c
-- package SHW-PIM-VF-EXPORT-v0.1 v0.1 (SHW-PH03-v0.1); semantic SHA f23f3c46…; artifact hash ea3361a4…
-- model fixture examples/song-hong-wtp/model_fixture/model.yaml
+Candidate admission decisions (frozen):
+- UNIT-SHW-L1-T106 (LogicalOnly) -> SYNTHETIC_REFERENCE_ALLOWED
+- UNIT-SHW-L1-T108 (FirstOrderReady) -> SYNTHETIC_REFERENCE_ALLOWED (smallest meaningful slice)
+- UNIT-SHW-WASH-T110 (FirstOrderReady) -> BLOCKED_PENDING_EVIDENCE (unconfirmed recovery-return semantics)
 
-Implemented (additive):
-- src/virtual_factory/shwtp/connectivity.py (+ __init__ exports):
-  * frozen PIM source pins + frozen PimReferenceRelation slice = exactly F01-F07
-    process/connectivity facts (FLOWS_TO/DISCHARGES_TO/CONNECTED_TO verbatim);
-  * endpoints = ReferenceEndpoint(authority=hieudovn/plant-intelligence-model,
-    entity_id=<canonical>, entity_kind=ProcessConnection) — PROC-* as non-Scope endpoints;
-  * F02/F03 preserve REL-006 "known-but-unconstrained" warning; every edge runtime_effect=none;
-  * build_shwtp_reference_graph() -> G12A ReferenceConnectivityGraph;
-  * ShwtpReferenceConnectivity.serialize() = source summary + deterministic graph serialization.
-- tests/test_vnext_g12b_shwtp.py (19 tests)
-- .ai-harness/regression/vnext_baseline_manifest.json (G12B gate context + g12b group)
+Deliverables (planning/config/test only; no src change):
+- configs/vnext/shwtp/shwtp_synthetic_runtime_admission.json — candidate admission matrix +
+  synthetic assumption policy + runtime projection requirements (future gates) + G13 authorization plan
+- configs/vnext/shwtp/ADMISSION.md
+- tests/test_vnext_g12c_admission_review.py (13 tests)
+- .ai-harness/regression/vnext_baseline_manifest.json (G12C gate context + g12c group)
+- Evidence/report under .ai-harness/sa-review/
 
 Frozen distinctions preserved:
-- Raw PIM relation types preserved; NO six-class reclassification; F06/F07 not name-classified.
-- No PART_OF/containment-derived edges; no G11 containment change (28 scopes unchanged).
-- No BoundaryPort/PortDirection/PortCategory/CompositionBinding/coordinator/run-control/state.
-- vf_runtime_authorization NOT_AUTHORIZED; synthetic_reference_execution PENDING_LATER_PIM_REVIEW;
-  site_authorized_execution NOT_AUTHORIZED — all unchanged.
+- vf_runtime_authorization = NOT_AUTHORIZED; site_authorized_execution = NOT_AUTHORIZED;
+  synthetic_reference_execution = PENDING_LATER_PIM_REVIEW.
+- Fidelity ceilings not exceeded; no ParameterizedReady/CalibratedReady/site-faithful claims.
+- Synthetic assumptions explicit + provenance-marked, never relabeled plant truth.
+- Raw G12B relations (FLOWS_TO/DISCHARGES_TO/CONNECTED_TO) cited only, never runtime-classified.
+- No BoundaryPort/G4 projection/runtime code; no new executable candidates.
 
-Regression (post-commit, clean tree): G12B 19 passed; full suite 2077 passed; complete canonical
-vNext baseline PASS (g1..g12b + full_suite + compile/static/changed-files/preflight).
+Regression (post-commit, clean tree): G12C 13 passed; full suite 2090 passed; complete canonical
+vNext baseline PASS (g1..g12c + full_suite + compile/static/changed-files/preflight).
 
-G12B started: YES (completed; READY FOR SA REVIEW)
+G12C started: YES (completed; READY FOR SA REVIEW)
 G13 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G12B.md
+.ai-harness/sa-review/reports/VF-vNEXT-G12C.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G12B/01-pim-reference-connectivity.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G12C/01-admission-review.md
