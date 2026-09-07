@@ -16,9 +16,13 @@
   "authority": {
     "vf_runtime_authorization": "NOT_AUTHORIZED",
     "site_authorized_execution": "NOT_AUTHORIZED",
-    "synthetic_reference_execution": "PENDING_LATER_PIM_REVIEW",
     "structural_construction": "AUTHORIZED_IN_G11",
-    "scope_rule": "Only future candidate-by-candidate synthetic/reference execution may be authorized. No site-faithful, calibrated, parameterized-from-plant-data, or control/interlock-equivalent authorization is granted by this gate."
+    "review_status": "COMPLETE",
+    "authorization_mode": "CANDIDATE_SCOPED",
+    "authorized_candidates": ["UNIT-SHW-L1-T106", "UNIT-SHW-L1-T108"],
+    "first_authorized_slice": ["UNIT-SHW-L1-T108"],
+    "blocked_candidates": ["UNIT-SHW-WASH-T110"],
+    "scope_rule": "Synthetic/reference execution is authorized ONLY for the explicitly listed candidates (candidate-scoped): T108 is the first authorized G13 slice; T106 is allowed only later/optional. There is NO blanket SH-WTP runtime authorization; UNIT-SHW-WASH-T110 remains blocked; site-faithful execution remains NOT_AUTHORIZED. No site-faithful, calibrated, parameterized-from-plant-data, or control/interlock-equivalent authorization is granted."
   },
   "candidates": [
     {
@@ -134,9 +138,9 @@
     "not_implemented": true
   },
   "g13_authorization_plan": {
-    "smallest_meaningful_slice": ["UNIT-SHW-L1-T108"],
-    "allowed_candidates": ["UNIT-SHW-L1-T106", "UNIT-SHW-L1-T108"],
-    "blocked_pending_evidence": ["UNIT-SHW-WASH-T110"],
-    "rule": "G13 may implement ONLY the smallest meaningful slice first: UNIT-SHW-L1-T108 (FirstOrderReady clean-water tank) with explicitly synthetic volume/geometry and flow assumptions. UNIT-SHW-L1-T106 (LogicalOnly synthetic pass-through) is authorized as an optional later upstream logical source, NOT part of the first slice. UNIT-SHW-WASH-T110 remains blocked pending PIM evidence. No candidate may exceed its frozen fidelity ceiling; no ParameterizedReady/CalibratedReady/site-faithful/control-interlock behavior is authorized."
+    "first_authorized_slice": ["UNIT-SHW-L1-T108"],
+    "authorized_candidates": ["UNIT-SHW-L1-T106", "UNIT-SHW-L1-T108"],
+    "blocked_candidates": ["UNIT-SHW-WASH-T110"],
+    "rule": "G13 may implement ONLY the first authorized slice: UNIT-SHW-L1-T108 (FirstOrderReady clean-water tank) with explicitly synthetic volume/geometry and flow assumptions. UNIT-SHW-L1-T106 (LogicalOnly synthetic pass-through) is authorized as an optional later upstream logical source, NOT part of the first slice. UNIT-SHW-WASH-T110 remains blocked pending PIM evidence. No candidate may exceed its frozen fidelity ceiling; no ParameterizedReady/CalibratedReady/site-faithful/control-interlock behavior is authorized."
   }
 }

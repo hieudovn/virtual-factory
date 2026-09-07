@@ -1,6 +1,6 @@
 # VF-vNEXT-G12C — SH-WTP Synthetic Runtime Admission Review — Report
 
-Status: **READY FOR SA REVIEW** (admission review gate; no runtime).
+Status: **VF-vNEXT-G12C-C01 — READY FOR SA REVIEW** (admission review gate; C01 authority-consistency fix applied).
 
 ## Objective
 
@@ -16,7 +16,7 @@ fidelity.
 | Task contract | `.ai-harness/tasks/VF-vNEXT-G12C.json` |
 | Admission matrix (JSON) | `configs/vnext/shwtp/shwtp_synthetic_runtime_admission.json` |
 | Human-readable summary | `configs/vnext/shwtp/ADMISSION.md` |
-| Invariant tests | `tests/test_vnext_g12c_admission_review.py` (13 tests) |
+| Invariant tests | `tests/test_vnext_g12c_admission_review.py` (16 tests) |
 | Evidence | `.ai-harness/sa-review/evidence/VF-vNEXT-G12C/01-admission-review.md` |
 | Baseline manifest | `.ai-harness/regression/vnext_baseline_manifest.json` (G12C gate context + g12c group) |
 
@@ -31,20 +31,22 @@ fidelity.
 ## Key invariants preserved
 
 - Fidelity ceilings not exceeded; no ParameterizedReady/CalibratedReady fabricated.
-- `vf_runtime_authorization = NOT_AUTHORIZED`; `site_authorized_execution = NOT_AUTHORIZED`;
-  `synthetic_reference_execution = PENDING_LATER_PIM_REVIEW`.
+- `vf_runtime_authorization = NOT_AUTHORIZED`; `site_authorized_execution = NOT_AUTHORIZED`.
+- C01 scoped authorization: `review_status = COMPLETE`, `authorization_mode = CANDIDATE_SCOPED`,
+  `authorized_candidates = [T106, T108]`, `first_authorized_slice = [T108]`,
+  `blocked_candidates = [T110]`. No blanket SH-WTP runtime authorization.
 - Synthetic assumptions explicitly separated from PIM-supported facts and
   unknown/blocking items; synthetic assumption policy frozen for G13.
 - Raw G12B relations (`FLOWS_TO`/`DISCHARGES_TO`/`CONNECTED_TO`) cited as evidence only,
   never runtime-classified.
-- G13 plan: smallest meaningful slice = `UNIT-SHW-L1-T108` only; T106 optional later
+- G13 plan: first authorized slice = `UNIT-SHW-L1-T108` only; T106 optional later
   upstream logical source; T110 blocked. No default all-three authorization.
 - No production runtime code, no PIM change, no G4 projection.
 
 ## Regression evidence
 
-- New G12C tests: **13 passed**.
-- Full suite: **2090 passed**.
+- New G12C tests: **16 passed**.
+- Full suite: **2093 passed**.
 - Complete canonical vNext baseline: **PASS** (see below).
 - Compile / static / changed-files / preflight: **PASS**.
 
@@ -53,3 +55,13 @@ fidelity.
 No runtime implementation; no PIM modification; no G4 projection / BoundaryPort /
 CompositionBinding / coordinator / run-control; no site authorization; no
 ParameterizedReady/CalibratedReady; no new executable candidates; no G13.
+
+## C01 correction (SA 5566580805)
+
+Removed the ambiguous global `synthetic_reference_execution = PENDING_LATER_PIM_REVIEW`
+state and replaced it with explicit candidate-scoped authorization semantics:
+`review_status = COMPLETE`, `authorization_mode = CANDIDATE_SCOPED`,
+`authorized_candidates = [T106, T108]`, `first_authorized_slice = [T108]`,
+`blocked_candidates = [T110]`. No blanket SH-WTP runtime authorization; site-faithful
+execution remains NOT_AUTHORIZED. Tests strengthened so an authorized candidate/slice
+cannot coexist with a pending-review state.

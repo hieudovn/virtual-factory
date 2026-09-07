@@ -118,8 +118,35 @@ class TestAuthorization:
         authority = admission["authority"]
         assert authority["vf_runtime_authorization"] == "NOT_AUTHORIZED"
         assert authority["site_authorized_execution"] == "NOT_AUTHORIZED"
-        assert authority["synthetic_reference_execution"] == "PENDING_LATER_PIM_REVIEW"
         assert authority["structural_construction"] == "AUTHORIZED_IN_G11"
+
+    def test_scoped_authorization_semantics(self, admission):
+        authority = admission["authority"]
+        assert authority["review_status"] == "COMPLETE"
+        assert authority["authorization_mode"] == "CANDIDATE_SCOPED"
+        assert authority["authorized_candidates"] == [
+            "UNIT-SHW-L1-T106",
+            "UNIT-SHW-L1-T108",
+        ]
+        assert authority["first_authorized_slice"] == ["UNIT-SHW-L1-T108"]
+        assert authority["blocked_candidates"] == ["UNIT-SHW-WASH-T110"]
+
+    def test_no_pending_review_with_authorized_candidates(self, admission):
+        # C01 regression: it must be impossible to have an authorized
+        # candidate/G13 slice while the admission artifact still claims the
+        # synthetic-reference review is pending.
+        authority = admission["authority"]
+        assert authority["review_status"] == "COMPLETE"
+        assert authority["authorized_candidates"]
+        assert "synthetic_reference_execution" not in authority
+        assert "PENDING_LATER_PIM_REVIEW" not in json.dumps(admission)
+
+    def test_no_blanket_shwtp_authorization(self, admission):
+        authority = admission["authority"]
+        assert authority["authorization_mode"] == "CANDIDATE_SCOPED"
+        assert "UNIT-SHW-WASH-T110" in authority["blocked_candidates"]
+        plan = admission["g13_authorization_plan"]
+        assert set(plan["authorized_candidates"]) != REVIEWED_CANDIDATES
 
     def test_no_site_or_calibrated_claim(self, admission):
         rule = admission["g13_authorization_plan"]["rule"]
@@ -184,12 +211,12 @@ class TestSeparation:
 
 
 class TestDecisions:
-    def test_t108_is_smallest_meaningful_slice(self, admission):
+    def test_t108_is_first_authorized_slice(self, admission):
         plan = admission["g13_authorization_plan"]
-        assert plan["smallest_meaningful_slice"] == ["UNIT-SHW-L1-T108"]
+        assert plan["first_authorized_slice"] == ["UNIT-SHW-L1-T108"]
         # no default authorization of all three
-        assert set(plan["allowed_candidates"]) != REVIEWED_CANDIDATES
-        assert "UNIT-SHW-WASH-T110" not in plan["allowed_candidates"]
+        assert set(plan["authorized_candidates"]) != REVIEWED_CANDIDATES
+        assert "UNIT-SHW-WASH-T110" not in plan["authorized_candidates"]
 
     def test_t106_t108_allowed_within_ceiling(self, admission):
         by_id = _by_canonical(admission)

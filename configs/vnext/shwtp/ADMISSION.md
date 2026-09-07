@@ -25,15 +25,21 @@ Review/admission only. No runtime implementation, no PIM change, no G4 projectio
 
 - `vf_runtime_authorization = NOT_AUTHORIZED`
 - `site_authorized_execution = NOT_AUTHORIZED`
-- `synthetic_reference_execution = PENDING_LATER_PIM_REVIEW` (G12C reviews the later review)
 - `structural_construction = AUTHORIZED_IN_G11`
+- `review_status = COMPLETE`
+- `authorization_mode = CANDIDATE_SCOPED`
+- `authorized_candidates = [UNIT-SHW-L1-T106, UNIT-SHW-L1-T108]`
+- `first_authorized_slice = [UNIT-SHW-L1-T108]`
+- `blocked_candidates = [UNIT-SHW-WASH-T110]`
 
-Only future candidate-by-candidate synthetic/reference execution may be authorized. No
-ParameterizedReady / CalibratedReady / site-faithful / control-interlock behavior is authorized.
+Synthetic/reference execution is authorized ONLY for the explicitly listed candidates
+(candidate-scoped). There is NO blanket SH-WTP runtime authorization; T110 remains blocked;
+site-faithful execution remains NOT_AUTHORIZED. No ParameterizedReady / CalibratedReady /
+site-faithful / control-interlock behavior is authorized.
 
-## G13 plan (smallest meaningful slice)
+## G13 plan (first authorized slice)
 
-- First slice: **`UNIT-SHW-L1-T108`** (FirstOrderReady clean-water tank).
+- First authorized slice: **`UNIT-SHW-L1-T108`** (FirstOrderReady clean-water tank).
 - `UNIT-SHW-L1-T106` authorized as an optional later upstream logical source, not part of the first slice.
 - `UNIT-SHW-WASH-T110` blocked pending PIM evidence.
 
