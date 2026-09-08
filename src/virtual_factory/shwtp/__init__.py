@@ -20,6 +20,9 @@ Public API:
 - logical runtime (G13B): :class:`T106Config`, :class:`T106LogicalRuntime`,
   :class:`T106State`, :class:`T106Step`, :class:`T106RuntimeError`,
   ``SHWTP_T106_CANONICAL_ID``, ``SHWTP_T106_SCOPE_PATH``
+- projection (G14A): :class:`ProjectionRecord`, :class:`ShwtpF01Projection`,
+  :func:`build_shwtp_f01_projection`, :func:`t106_out_port`, :func:`t108_in_port`,
+  :func:`f01_binding`, :class:`ShwtpProjectionError`
 
 Structural construction only (G11). No executable behavior, no runtime bridge,
 no connectivity graph, no PIM authority transfer, no G12+ work.
@@ -71,6 +74,16 @@ from virtual_factory.shwtp.logical_runtime import (
     T106State,
     T106Step,
 )
+from virtual_factory.shwtp.projection import (
+    SHWTP_F01_PROJECTION_ID,
+    ShwtpF01Projection,
+    ShwtpProjectionError,
+    ProjectionRecord,
+    build_shwtp_f01_projection,
+    f01_binding,
+    t106_out_port,
+    t108_in_port,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -109,4 +122,12 @@ __all__ = [
     "T106RuntimeError",
     "T106State",
     "T106Step",
+    "SHWTP_F01_PROJECTION_ID",
+    "ShwtpF01Projection",
+    "ShwtpProjectionError",
+    "ProjectionRecord",
+    "build_shwtp_f01_projection",
+    "f01_binding",
+    "t106_out_port",
+    "t108_in_port",
 ]

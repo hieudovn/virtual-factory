@@ -1,49 +1,50 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G13B
-Status: READY FOR SA REVIEW (SH-WTP T106 Standalone Synthetic Logical Runtime — second authorized executable candidate)
+Task: VF-vNEXT-G14A
+Status: READY FOR SA REVIEW (SH-WTP T106→T108 Runtime Projection Contract — explicit inert F01 projection)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G13-C01 complete)
-Prerequisite: Issue #61/#62 (G13/G13-C01) accepted; Issue #63 (G13B) current
+Prerequisite: Issue #63 (G13B) accepted; Issue #64 (G14A) current
 
 Gate type:
-IMPLEMENTATION gate — SH-WTP T106 Standalone Synthetic Logical Runtime (G13B), per Issue #63.
-Standalone LogicalOnly pass-through ONLY. No T108 change, no T110, no G4/federation/projection.
+IMPLEMENTATION gate — SH-WTP T106→T108 Runtime Projection Contract (G14A), per Issue #64.
+Explicit inert projection ONLY. No execution/federation, no F02-F07/T110, no generic FLOWS_TO auto-projection.
 
 Architecture baseline:
-G1-G13-C01 contracts authoritative; G13-C01 final head = b20fcb2d8cb4b046f6ef7e1130de9396fce7e0f8 (branch point)
+G1-G13-C01 contracts authoritative; G13B final head = 2cea59f8fbb7ce974d4b9404469c085d98cdeca6 (branch point)
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
 Target (frozen):
-- canonical UNIT-SHW-L1-T106 (locked read-only PIM reference); VF StructuralPath shwtp/line1/l1_t106
-- standalone synthetic LogicalOnly zero-storage pass-through (output = inflow; time += dt)
+- exactly one PIM relationship REL-SHW-F01 (FLOWS_TO, DocumentConfirmed):
+  PROC-SHW-L1-T106-OUT-FLOW -> PROC-SHW-L1-T108-IN-FLOW
+- VF StructuralPaths shwtp/line1/l1_t106 -> shwtp/line1/l1_t108
 
 Implemented (additive, isolated):
-- src/virtual_factory/shwtp/logical_runtime.py (+ __init__ exports):
-  * T106Config(dt_s) explicit (dt_s > 0); per-step inflow_m3_s >= 0;
-  * T106LogicalRuntime — isolated attempt; canonical locked to UNIT-SHW-L1-T106; exact target
-    shwtp/line1/l1_t106 only (workspace/container/T108/T110 rejected); deterministic step
-    (output==input, exact dt advance); reset; detached immutable snapshot; attempt isolation;
-  * provenance via reused G2 RunContextV2/ProvenanceV2 on step + snapshot:
-    OriginKind.SIMULATION + DataStatus.SYNTHETIC + Fidelity.LOGICAL_ONLY; no site/measure labels;
-    optional G9 semantic pins threaded only when supplied.
-- tests/test_vnext_g13b_t106.py (19 tests)
-- .ai-harness/regression/vnext_baseline_manifest.json (G13B gate context + g13b group)
+- src/virtual_factory/shwtp/projection.py (+ __init__ exports):
+  * frozen F01 pins; fail-closed cross-check against accepted G12B connectivity slice;
+  * exactly 2 BoundaryPorts (T106 OUT/MATERIAL/m3/s/volumetric_flow, T108 IN/MATERIAL/m3/s/volumetric_flow);
+  * check_port_compatibility enforced; exactly 1 CompositionBinding; inert CompositionGraph;
+  * ProjectionRecord (frozen) + ShwtpF01Projection.serialize() deterministic;
+  * VF-local PortRefs only (never PIM canonical ids).
+- tests/test_vnext_g14a_projection.py (20 tests)
+- .ai-harness/regression/vnext_baseline_manifest.json (G14A gate context + g14a_f01_projection group)
 
 Frozen boundaries preserved:
-- T108 runtime (src/virtual_factory/shwtp/runtime.py) NOT modified; G13 T108 28 tests still green.
-- No T110; T110 blocked; no G4/BoundaryPort/CompositionBinding/coordinator/federation;
-  G12A/B inert; no FLOWS_TO/DISCHARGES_TO/CONNECTED_TO conversion; no T106->T108 wiring.
-- No filtration physics/headloss/quality/backwash/storage; no PIM/legacy engine/global engine change.
-- vf_runtime_authorization NOT_AUTHORIZED; site_authorized_execution NOT_AUTHORIZED.
+- Only F01; F02-F07 not projected; T110 absent/blocked.
+- T106 runtime (G13B 19 green) and T108 runtime (G13 28 green) NOT modified; no runtime
+  mutation on construct/inspect.
+- No coordinator/run-control execution, no value transfer, no shared clock, no federation;
+  G12A/B inert; G4 semantics unchanged; PIM unchanged.
+- vf_runtime_authorization NOT_AUTHORIZED; site_authorized_execution NOT_AUTHORIZED;
+  no workspace/container execution, no G14B.
 
-Regression (post-commit, clean tree): G13B 19 passed; G13 T108 28 passed; full suite 2140 passed;
-complete canonical vNext baseline PASS (g1..g13b + full_suite + compile/static/changed-files/preflight).
+Regression (post-commit, clean tree): G14A 20 passed; full suite 2160 passed;
+complete canonical vNext baseline PASS (g1..g13b + g14a + full_suite + compile/static/changed-files/preflight).
 
-G13B started: YES (completed; READY FOR SA REVIEW)
-G14 started: NO
+G14A started: YES (completed; READY FOR SA REVIEW)
+G14B started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G13B.md
+.ai-harness/sa-review/reports/VF-vNEXT-G14A.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G13B/01-t106-logical-runtime.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G14A/01-f01-projection-contract.md
