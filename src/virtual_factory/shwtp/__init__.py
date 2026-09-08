@@ -23,6 +23,10 @@ Public API:
 - projection (G14A): :class:`ProjectionRecord`, :class:`ShwtpF01Projection`,
   :func:`build_shwtp_f01_projection`, :func:`t106_out_port`, :func:`t108_in_port`,
   :func:`f01_binding`, :class:`ShwtpProjectionError`
+- federation (G14B): :class:`ShwtpFederationConfig`, :class:`ShwtpFederation`,
+  :class:`ShwtpT106Participant`, :class:`ShwtpT108Participant`,
+  :class:`ShwtpFederationError`, ``SHWTP_FEDERATION_COUPLING_POLICY``,
+  ``SHWTP_FEDERATION_PAYLOAD_KEY``
 
 Structural construction only (G11). No executable behavior, no runtime bridge,
 no connectivity graph, no PIM authority transfer, no G12+ work.
@@ -84,6 +88,15 @@ from virtual_factory.shwtp.projection import (
     t106_out_port,
     t108_in_port,
 )
+from virtual_factory.shwtp.federation import (
+    SHWTP_FEDERATION_COUPLING_POLICY,
+    SHWTP_FEDERATION_PAYLOAD_KEY,
+    ShwtpFederation,
+    ShwtpFederationConfig,
+    ShwtpFederationError,
+    ShwtpT106Participant,
+    ShwtpT108Participant,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -130,4 +143,11 @@ __all__ = [
     "f01_binding",
     "t106_out_port",
     "t108_in_port",
+    "SHWTP_FEDERATION_COUPLING_POLICY",
+    "SHWTP_FEDERATION_PAYLOAD_KEY",
+    "ShwtpFederation",
+    "ShwtpFederationConfig",
+    "ShwtpFederationError",
+    "ShwtpT106Participant",
+    "ShwtpT108Participant",
 ]

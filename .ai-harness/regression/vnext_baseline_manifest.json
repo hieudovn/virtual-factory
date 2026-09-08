@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G14A.json",
-    "changed_files_base": "2cea59f8fbb7ce974d4b9404469c085d98cdeca6"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G14B.json",
+    "changed_files_base": "22a69e0cf61958d256fb2f61ce38ae0f3e207dca"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -235,6 +235,15 @@
       "purpose": "G14A SH-WTP T106->T108 runtime projection contract (F01 only) tests: exactly one projection, only REL-SHW-F01, exact PIM endpoints + T106/T108 VF paths, exactly two BoundaryPorts (OUT/IN MATERIAL m3/s volumetric_flow), check_port_compatibility PASS, exactly one CompositionBinding, deterministic graph + serialization, VF-local PortRefs, no generic FLOWS_TO auto-projection, F02-F07 absent, T110 absent, T106/T108 state unchanged on construct/inspect, no coordinator/run-control execution.",
       "files": [
         "tests/test_vnext_g14a_projection.py"
+      ]
+    },
+    {
+      "id": "g14b_federation",
+      "gate": "G14B",
+      "type": "pytest",
+      "purpose": "G14B SH-WTP T106->T108 explicit lagged federation tests: explicit_lagged policy visible + unsupported fail-closed + policy NOT on G4 graph/binding/ports; exactly T106+T108 participants; exactly one F01 binding; T110/F02-F07 absent; explicit initial T108 inflow required; first window uses initial inflow (not Q106[1]); boundary 1 commits Q106[1]; second window uses exactly Q106[1]; no same-window retroactive step; detached immutable transfer; exact PortRefs/binding/window/time; payload exact; stale/wrong window fails closed; deterministic replay; fresh attempt isolation; T106/T108 standalone unchanged; G14A unchanged; no direct T106-state read by T108; no workspace/container execution; authority unchanged.",
+      "files": [
+        "tests/test_vnext_g14b_federation.py"
       ]
     },
     {
