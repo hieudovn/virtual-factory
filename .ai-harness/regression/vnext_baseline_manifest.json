@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G13-C01.json",
-    "changed_files_base": "34b87516288d9e4c805a683e5b208a49e99dc0cd"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G13B.json",
+    "changed_files_base": "b20fcb2d8cb4b046f6ef7e1130de9396fce7e0f8"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -217,6 +217,15 @@
       "purpose": "G13 SH-WTP T108 standalone synthetic first-order tank runtime tests: exact T108 target (shwtp/line1/l1_t108), only-T108 implementation, explicit config inputs (no hidden defaults), deterministic initial/repeated scenario, mass balance, fill/drain/empty-saturation/explicit-overflow, level=volume/area, reset, attempt isolation, invalid-config fail closed, synthetic first-order provenance (no site truth), no G12B relation projection, no G4/BoundaryPort/coordinator, T106 unimplemented, T110 blocked, workspace/container target not enabled.",
       "files": [
         "tests/test_vnext_g13_t108.py"
+      ]
+    },
+    {
+      "id": "g13b_t106_logical",
+      "gate": "G13B",
+      "type": "pytest",
+      "purpose": "G13B SH-WTP T106 standalone synthetic LogicalOnly pass-through runtime tests: locked T106 canonical/path (shwtp/line1/l1_t106), only-T106 added, deterministic init/sequence, output==input, exact dt time advance, zero inflow, invalid dt/inflow fail closed, reset, attempt isolation, detached snapshot, simulation/synthetic/logical_only provenance on step+snapshot, no site/measure labels, no filtration physics/quality/backwash fields, no G12B relation projection, no BoundaryPort/G4/coordinator, T108 unchanged/green, T110 blocked, workspace/container target not enabled.",
+      "files": [
+        "tests/test_vnext_g13b_t106.py"
       ]
     },
     {

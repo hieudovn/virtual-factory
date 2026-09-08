@@ -17,6 +17,9 @@ Public API:
 - runtime (G13): :class:`T108Config`, :class:`T108TankRuntime`,
   :class:`T108State`, :class:`T108Step`, :class:`T108RuntimeError`,
   ``SHWTP_T108_CANONICAL_ID``, ``SHWTP_T108_SCOPE_PATH``
+- logical runtime (G13B): :class:`T106Config`, :class:`T106LogicalRuntime`,
+  :class:`T106State`, :class:`T106Step`, :class:`T106RuntimeError`,
+  ``SHWTP_T106_CANONICAL_ID``, ``SHWTP_T106_SCOPE_PATH``
 
 Structural construction only (G11). No executable behavior, no runtime bridge,
 no connectivity graph, no PIM authority transfer, no G12+ work.
@@ -59,6 +62,15 @@ from virtual_factory.shwtp.runtime import (
     T108Step,
     T108TankRuntime,
 )
+from virtual_factory.shwtp.logical_runtime import (
+    SHWTP_T106_CANONICAL_ID,
+    SHWTP_T106_SCOPE_PATH,
+    T106Config,
+    T106LogicalRuntime,
+    T106RuntimeError,
+    T106State,
+    T106Step,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -90,4 +102,11 @@ __all__ = [
     "T108State",
     "T108Step",
     "T108TankRuntime",
+    "SHWTP_T106_CANONICAL_ID",
+    "SHWTP_T106_SCOPE_PATH",
+    "T106Config",
+    "T106LogicalRuntime",
+    "T106RuntimeError",
+    "T106State",
+    "T106Step",
 ]
