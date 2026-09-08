@@ -27,6 +27,9 @@ Public API:
   :class:`ShwtpT106Participant`, :class:`ShwtpT108Participant`,
   :class:`ShwtpFederationError`, ``SHWTP_FEDERATION_COUPLING_POLICY``,
   ``SHWTP_FEDERATION_PAYLOAD_KEY``
+- evaluation (G15): :class:`ShwtpEvaluator`, :class:`ShwtpEvaluationRow`,
+  :class:`ShwtpEvaluationSummary`, :func:`t108_mass_balance_residual`,
+  :class:`ShwtpEvaluationError`, ``SHWTP_EVALUATION_LAG_WINDOWS``
 
 Structural construction only (G11). No executable behavior, no runtime bridge,
 no connectivity graph, no PIM authority transfer, no G12+ work.
@@ -97,6 +100,14 @@ from virtual_factory.shwtp.federation import (
     ShwtpT106Participant,
     ShwtpT108Participant,
 )
+from virtual_factory.shwtp.evaluation import (
+    SHWTP_EVALUATION_LAG_WINDOWS,
+    ShwtpEvaluationError,
+    ShwtpEvaluationRow,
+    ShwtpEvaluationSummary,
+    ShwtpEvaluator,
+    t108_mass_balance_residual,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -150,4 +161,10 @@ __all__ = [
     "ShwtpFederationError",
     "ShwtpT106Participant",
     "ShwtpT108Participant",
+    "SHWTP_EVALUATION_LAG_WINDOWS",
+    "ShwtpEvaluationError",
+    "ShwtpEvaluationRow",
+    "ShwtpEvaluationSummary",
+    "ShwtpEvaluator",
+    "t108_mass_balance_residual",
 ]

@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G14B-C01.json",
-    "changed_files_base": "3e69e257a578c220594df92e136017ba0f846249"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G15.json",
+    "changed_files_base": "75521720ae6330160c16075084a36a07ecaa6521"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -244,6 +244,15 @@
       "purpose": "G14B SH-WTP T106->T108 explicit lagged federation tests: explicit_lagged policy visible + unsupported fail-closed + policy NOT on G4 graph/binding/ports; exactly T106+T108 participants; exactly one F01 binding; T110/F02-F07 absent; explicit initial T108 inflow required; first window uses initial inflow (not Q106[1]); boundary 1 commits Q106[1]; second window uses exactly Q106[1]; no same-window retroactive step; detached immutable transfer; exact PortRefs/binding/window/time; payload exact; stale/wrong window fails closed; deterministic replay; fresh attempt isolation; T106/T108 standalone unchanged; G14A unchanged; no direct T106-state read by T108; no workspace/container execution; authority unchanged.",
       "files": [
         "tests/test_vnext_g14b_federation.py"
+      ]
+    },
+    {
+      "id": "g15_evaluation",
+      "gate": "G15",
+      "type": "pytest",
+      "purpose": "G15 SH-WTP federated evaluation trace & diagnostics tests: one immutable trace row per completed window; deterministic trace + summary; exact run/window/time identity; explicit_lagged; lag_windows=1; first-window lag + second-window previous-output use; T106/T108 step values captured; committed-next inflow; volume/level/outflow/overflow exact; zero mass-balance residual (no invented tolerance); balanced/fill/drain/overflow cases; exact totals; min/max; attempt isolation; failed window not recorded as success; provenance truthful; authority unchanged.",
+      "files": [
+        "tests/test_vnext_g15_evaluation.py"
       ]
     },
     {
