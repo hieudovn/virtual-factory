@@ -14,6 +14,9 @@ Public API:
 - connectivity (G12B): :func:`build_shwtp_reference_connectivity`,
   :class:`ShwtpReferenceConnectivity`, :func:`build_shwtp_reference_graph`,
   :func:`source_pins`
+- runtime (G13): :class:`T108Config`, :class:`T108TankRuntime`,
+  :class:`T108State`, :class:`T108Step`, :class:`T108RuntimeError`,
+  ``SHWTP_T108_CANONICAL_ID``, ``SHWTP_T108_SCOPE_PATH``
 
 Structural construction only (G11). No executable behavior, no runtime bridge,
 no connectivity graph, no PIM authority transfer, no G12+ work.
@@ -47,6 +50,15 @@ from virtual_factory.shwtp.connectivity import (
     build_shwtp_reference_graph,
     source_pins,
 )
+from virtual_factory.shwtp.runtime import (
+    SHWTP_T108_CANONICAL_ID,
+    SHWTP_T108_SCOPE_PATH,
+    T108Config,
+    T108RuntimeError,
+    T108State,
+    T108Step,
+    T108TankRuntime,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -71,4 +83,11 @@ __all__ = [
     "build_shwtp_reference_connectivity",
     "build_shwtp_reference_graph",
     "source_pins",
+    "SHWTP_T108_CANONICAL_ID",
+    "SHWTP_T108_SCOPE_PATH",
+    "T108Config",
+    "T108RuntimeError",
+    "T108State",
+    "T108Step",
+    "T108TankRuntime",
 ]
