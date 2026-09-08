@@ -1,44 +1,45 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G15
-Status: READY FOR SA REVIEW (SH-WTP Federated Evaluation Trace & Diagnostics)
-Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G14B-C01 complete)
-Prerequisite: Issue #65 (G14B-C01) accepted; Issue #66 (G15) current
+Task: VF-vNEXT-G16
+Status: READY FOR SA REVIEW (SH-WTP Whole-Plant Federation Expansion Readiness Review)
+Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G15 complete)
+Prerequisite: Issue #66 (G15) accepted; Issue #67 (G16) current
 
 Gate type:
-IMPLEMENTATION gate — SH-WTP Federated Evaluation Trace & Diagnostics (G15), per Issue #66.
-Deterministic evaluation/inspection layer ONLY over the accepted G14B federation. No new runtime/coupling/plant semantics.
+PLANNING/REVIEW gate — SH-WTP Whole-Plant Federation Expansion Readiness Review (G16), per Issue #67.
+Review/classification only. NO new runtime, ports, bindings, participants, plant-wide execution.
 
 Architecture baseline:
-G1-G14B-C01 contracts authoritative; G14B-C01 final head = 75521720ae6330160c16075084a36a07ecaa6521 (branch point)
+G1-G15 contracts authoritative; G15 final head = 786e11f3604478f825c800852a7b3224f65c6a4e (branch point)
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
 Target (frozen):
-- evaluate T106 -> REL-SHW-F01 -> T108 under explicit_lagged (accepted ShwtpFederation + G14B-C01 identity locking)
-- one immutable evaluation row per completed window + deterministic summary + lag_windows=1 evaluation metadata
+- classify all reviewed SH-WTP units with exactly one planning decision; choose exactly one evidence-safe next slice or NO_NEXT_RUNTIME_SLICE_WITH_CURRENT_EVIDENCE; whole-plant runtime stays NOT_AUTHORIZED / NOT_IMPLEMENTED.
 
 Implemented (additive, isolated):
-- src/virtual_factory/shwtp/evaluation.py (+ __init__ exports):
-  * ShwtpEvaluationRow (window identity, times, run_id, policy, T106 input/output-staged, T108 inflow-used/committed-next/requested/applied, volume/level/overflow, mass-balance residual, provenance/fidelity/status refs);
-  * t108_mass_balance_residual (exact accepted-model invariant; exactly 0.0; no invented tolerance; non-zero fails closed);
-  * ShwtpEvaluator(config, window_count>=1) bounded sequential runner (fresh attempt per instance; only completed windows recorded; failed window fails closed);
-  * ShwtpEvaluationSummary (derived only from trace: totals/min/max/levels/lag_windows/max residual).
-- tests/test_vnext_g15_evaluation.py (30 tests)
-- .ai-harness/regression/vnext_baseline_manifest.json (G15 gate context + g15_evaluation group)
+- configs/vnext/shwtp/shwtp_expansion_readiness.json (source pins, 29 per-unit decision records, relation projection plan F01-F07 + next-slice, coverage matrix, next-slice recommendation, blocked evidence, invariants).
+- configs/vnext/shwtp/EXPANSION-READINESS.md (planning note).
+- tests/test_vnext_g16_readiness.py (23 tests)
+- .ai-harness/regression/vnext_baseline_manifest.json (G16 gate context + g16_readiness group)
 
 Frozen boundaries preserved:
-- T106 (G13B 19 green) / T108 (G13 28 green) equations + provenance unchanged; G4/Coordinator/participant/transfer unchanged; G14A (20 green) unchanged; G14B-C01 (63 green) unchanged; PIM/G7 unchanged.
-- No T110/F02-F07; no scheduler/profile engine; no tolerance policy; no variable per-window scenarios; no UI/alarms/KPIs; no plant-wide execution.
-- vf_runtime_authorization NOT_AUTHORIZED; site_authorized_execution NOT_AUTHORIZED.
+- T106/T108 equations + provenance unchanged; G4/Coordinator/participant/transfer unchanged; G14A projection (2 ports / 1 binding) unchanged; explicit_lagged + identity locking unchanged; G15 evaluator unchanged; PIM/G7 unchanged.
+- No T110/Line2/chemical/automation runtime; no new ports/bindings/participants; no plant-wide execution.
+- vf_runtime_authorization NOT_AUTHORIZED; site_authorized_execution NOT_AUTHORIZED; whole_plant_runtime NOT_AUTHORIZED / NOT_IMPLEMENTED.
 
-Regression (post-commit, clean tree): G15 30 passed; full suite 2253 passed;
-complete canonical vNext baseline PASS (g1..g13b + g14a + g14b + g15 + full_suite + compile/static/changed-files/preflight).
+Decisions summary:
+- NEXT_SLICE_CANDIDATE: UNIT-SHW-DIST-P108 (LogicalOnly distribution sink; next projection T108 -> DIST-P108).
+- LATER_CANDIDATE: 12 (RAW-INTAKE, T100, L1-T101/109/102/103/104/105/107, SLUDGE-T201, T106/T108 implemented-accepted).
+- STRUCTURAL_ONLY: 8 (PLANT + 7 areas). REFERENCE_ONLY: 7. BLOCKED_PENDING_EVIDENCE: 1 (WASH-T110).
 
-G15 started: YES (completed; READY FOR SA REVIEW)
-G16 started: NO
+Regression (post-commit, clean tree): G16 23 passed; full suite 2276 passed;
+complete canonical vNext baseline PASS (g1..g13b + g14a + g14b + g15 + g16 + full_suite + compile/static/changed-files/preflight).
+
+G16 started: YES (completed; READY FOR SA REVIEW)
+G17 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G15.md
+.ai-harness/sa-review/reports/VF-vNEXT-G16.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G15/01-evaluation-trace.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G16/01-expansion-readiness.md
