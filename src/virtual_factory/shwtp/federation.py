@@ -221,6 +221,61 @@ def _exact_boundary_check(
         )
 
 
+def _validate_runtime_identity(
+    runtime,
+    run_id: str,
+    workspace_id: str,
+    expected_scope_path: StructuralPath,
+    label: str,
+) -> None:
+    """Lock the adapter's federation identity to the wrapped runtime's
+    immutable ``RunContextV2`` (fail closed on any mismatch).
+
+    The adapter never mutates the RunContext and never derives a new run
+    identity after construction: it only cross-checks the explicit adapter
+    context against the runtime's own frozen context, then uses the runtime's
+    values as the single authority.
+    """
+    ctx = runtime.run_context
+    if not isinstance(ctx, RunContextV2):
+        raise ShwtpFederationError(
+            f"{label} runtime run_context must be RunContextV2, "
+            f"got {type(ctx).__name__}"
+        )
+    if workspace_id != SHWTP_WORKSPACE_ID:
+        raise ShwtpFederationError(
+            f"{label} adapter workspace_id must be "
+            f"{SHWTP_WORKSPACE_ID!r}, got {workspace_id!r}"
+        )
+    if ctx.workspace_id != workspace_id:
+        raise ShwtpFederationError(
+            f"{label} runtime RunContext workspace_id {ctx.workspace_id!r} "
+            f"does not match adapter workspace_id {workspace_id!r}"
+        )
+    if ctx.workspace_id != SHWTP_WORKSPACE_ID:
+        raise ShwtpFederationError(
+            f"{label} runtime RunContext workspace_id must be "
+            f"{SHWTP_WORKSPACE_ID!r}, got {ctx.workspace_id!r}"
+        )
+    if ctx.run_id != run_id:
+        raise ShwtpFederationError(
+            f"{label} runtime RunContext run_id {ctx.run_id!r} does not "
+            f"match adapter run_id {run_id!r}"
+        )
+    if runtime.scope_path != expected_scope_path:
+        raise ShwtpFederationError(
+            f"{label} runtime scope_path "
+            f"{runtime.scope_path.as_string()!r} must be "
+            f"{expected_scope_path.as_string()!r}"
+        )
+    if ctx.scope_path != expected_scope_path:
+        raise ShwtpFederationError(
+            f"{label} runtime RunContext scope_path "
+            f"{ctx.scope_path.as_string() if ctx.scope_path is not None else None!r} "
+            f"must be {expected_scope_path.as_string()!r}"
+        )
+
+
 class ShwtpT106Participant:
     """G4 participant adapter around the accepted T106 standalone runtime.
 
@@ -257,10 +312,15 @@ class ShwtpT106Participant:
             raise ShwtpFederationError("inflow_m3_s must be >= 0")
         _require_nonempty(run_id, "run_id")
         _require_nonempty(workspace_id, "workspace_id")
+        _validate_runtime_identity(
+            runtime, run_id, workspace_id, SHWTP_T106_SCOPE_PATH, "T106"
+        )
         self._runtime = runtime
         self._inflow_m3_s = float(inflow_m3_s)
-        self._run_id = run_id
-        self._workspace_id = workspace_id
+        # Lock the federation identity to the runtime's immutable RunContextV2
+        # (never mutate/rewrite it; never derive a new identity later).
+        self._run_id = runtime.run_context.run_id
+        self._workspace_id = runtime.run_context.workspace_id
         self._active_window_id: str | None = None
         self._last_step: T106Step | None = None
         self._last_transfer: BoundaryTransfer | None = None
@@ -372,11 +432,16 @@ class ShwtpT108Participant:
             raise ShwtpFederationError("initial_inflow_m3_s must be >= 0")
         _require_nonempty(run_id, "run_id")
         _require_nonempty(workspace_id, "workspace_id")
+        _validate_runtime_identity(
+            runtime, run_id, workspace_id, SHWTP_T108_SCOPE_PATH, "T108"
+        )
         self._runtime = runtime
         self._requested_outflow_m3_s = float(requested_outflow_m3_s)
         self._committed_inflow_m3_s = float(initial_inflow_m3_s)
-        self._run_id = run_id
-        self._workspace_id = workspace_id
+        # Lock the federation identity to the runtime's immutable RunContextV2
+        # (never mutate/rewrite it; never derive a new identity later).
+        self._run_id = runtime.run_context.run_id
+        self._workspace_id = runtime.run_context.workspace_id
         self._active_window_id: str | None = None
         self._last_step: T108Step | None = None
         self._last_committed_transfer: BoundaryTransfer | None = None

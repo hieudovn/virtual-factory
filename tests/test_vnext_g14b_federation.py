@@ -405,6 +405,107 @@ class TestT108CommitValidation:
             fed.t108.commit_transfers((wrong,))
 
 
+class TestIdentityLocking:
+    """G14B-C01: federation adapter identity is locked to the runtime RunContextV2."""
+
+    def _t106_runtime(self, run_id: str = "r1") -> T106LogicalRuntime:
+        return T106LogicalRuntime(
+            T106Config(dt_s=1.0),
+            RunContextV2(
+                workspace_id="shwtp",
+                run_id=run_id,
+                scope_path=SHWTP_T106_SCOPE_PATH,
+            ),
+        )
+
+    def _t108_runtime(self, run_id: str = "r1") -> T108TankRuntime:
+        return T108TankRuntime(
+            T108Config(
+                capacity_m3=100.0,
+                tank_area_m2=10.0,
+                initial_volume_m3=50.0,
+                dt_s=1.0,
+            ),
+            RunContextV2(
+                workspace_id="shwtp",
+                run_id=run_id,
+                scope_path=SHWTP_T108_SCOPE_PATH,
+            ),
+        )
+
+    def test_t106_adapter_run_id_mismatch_fails_closed(self):
+        rt = self._t106_runtime(run_id="r1")
+        with pytest.raises(ShwtpFederationError):
+            ShwtpT106Participant(rt, inflow_m3_s=2.0, run_id="r2")
+
+    def test_t108_adapter_run_id_mismatch_fails_closed(self):
+        rt = self._t108_runtime(run_id="r1")
+        with pytest.raises(ShwtpFederationError):
+            ShwtpT108Participant(
+                rt,
+                requested_outflow_m3_s=0.5,
+                initial_inflow_m3_s=1.0,
+                run_id="r2",
+            )
+
+    def test_t106_adapter_workspace_mismatch_fails_closed(self):
+        rt = self._t106_runtime(run_id="r1")
+        with pytest.raises(ShwtpFederationError):
+            ShwtpT106Participant(
+                rt, inflow_m3_s=2.0, run_id="r1", workspace_id="other"
+            )
+
+    def test_t108_adapter_workspace_mismatch_fails_closed(self):
+        rt = self._t108_runtime(run_id="r1")
+        with pytest.raises(ShwtpFederationError):
+            ShwtpT108Participant(
+                rt,
+                requested_outflow_m3_s=0.5,
+                initial_inflow_m3_s=1.0,
+                run_id="r1",
+                workspace_id="other",
+            )
+
+    def test_valid_matching_context_passes(self):
+        rt106 = self._t106_runtime(run_id="r1")
+        p106 = ShwtpT106Participant(rt106, inflow_m3_s=2.0, run_id="r1")
+        assert p106.runtime is rt106
+        rt108 = self._t108_runtime(run_id="r1")
+        p108 = ShwtpT108Participant(
+            rt108, requested_outflow_m3_s=0.5, initial_inflow_m3_s=1.0, run_id="r1"
+        )
+        assert p108.runtime is rt108
+
+    def test_transfer_run_id_equals_t106_provenance_run_id(self):
+        fed = ShwtpFederation(_config(run_id="run-c01"))
+        fed.run_window("window-1")
+        transfer = fed.t106.last_transfer
+        step = fed.t106.last_step
+        ctx_run_id = fed.t106.runtime.run_context.run_id
+        assert transfer.run_id == "run-c01"
+        assert step.provenance.run_id == "run-c01"
+        assert ctx_run_id == "run-c01"
+        assert transfer.run_id == step.provenance.run_id == ctx_run_id
+
+    def test_t108_provenance_run_id_equals_federation_run_id(self):
+        fed = ShwtpFederation(_config(run_id="run-c01"))
+        fed.run_window("window-1")
+        step = fed.t108.last_step
+        ctx_run_id = fed.t108.runtime.run_context.run_id
+        assert step.provenance.run_id == "run-c01"
+        assert ctx_run_id == "run-c01"
+        assert step.provenance.run_id == ctx_run_id
+
+    def test_run_context_not_mutated(self):
+        fed = ShwtpFederation(_config(run_id="run-c01"))
+        t106_ctx = fed.t106.runtime.run_context
+        t108_ctx = fed.t108.runtime.run_context
+        fed.run_window("window-1")
+        # The runtime RunContext remains the same immutable identity object.
+        assert fed.t106.runtime.run_context == t106_ctx
+        assert fed.t108.runtime.run_context == t108_ctx
+
+
 class TestDeterminismAndIsolation:
     def test_deterministic_replay(self):
         a = ShwtpFederation(_config())
