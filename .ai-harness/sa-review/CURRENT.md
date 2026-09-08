@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G13
-Status: READY FOR SA REVIEW (SH-WTP T108 Standalone Synthetic First-Order Runtime — first authorized executable slice)
+Task: VF-vNEXT-G13-C01
+Status: READY FOR SA REVIEW (SH-WTP T108 Standalone Synthetic First-Order Runtime — C01 identity/provenance closure)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G12C complete)
 Prerequisite: Issue #60 (G12C) accepted; Issue #61 (G13) current
 
@@ -25,7 +25,7 @@ Implemented (additive, isolated):
     saturation + mass-balance guard); reset; detached immutable snapshot; attempt isolation;
   * provenance via reused G2 RunContextV2/ProvenanceV2: OriginKind.SIMULATION + DataStatus.SYNTHETIC
     + Fidelity.FIRST_ORDER; no measured/site labels; optional G9 semantic pins threaded when supplied.
-- tests/test_vnext_g13_t108.py (24 tests)
+- tests/test_vnext_g13_t108.py (28 tests; C01: locked T108 canonical ref + snapshot provenance regressions)
 - .ai-harness/regression/vnext_baseline_manifest.json (G13 gate context + g13 group)
 
 Frozen boundaries preserved:
@@ -36,10 +36,13 @@ Frozen boundaries preserved:
 - No modification of equipment.process_dynamics.py / legacy continuous engine; no G7 redesign;
   no new global engine; no G4 semantics change.
 
-Regression (post-commit, clean tree): G13 24 passed; full suite 2117 passed; complete canonical
+Regression (post-commit, clean tree): G13 28 passed; full suite 2121 passed; complete canonical
 vNext baseline PASS (g1..g13 + full_suite + compile/static/changed-files/preflight).
 
-G13 started: YES (completed; READY FOR SA REVIEW)
+C01 (Issue #62): locked T108 canonical reference (removed caller override); T108State/snapshot
+carries truthful G2 provenance (simulation/synthetic/first_order, time+step); 4 focused tests added.
+
+G13 started: YES (completed; G13-C01 READY FOR SA REVIEW)
 G14 started: NO
 
 Report:
@@ -47,3 +50,4 @@ Report:
 
 Evidence:
 .ai-harness/sa-review/evidence/VF-vNEXT-G13/01-t108-runtime.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G13/02-c01-identity-provenance.md

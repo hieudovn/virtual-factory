@@ -315,3 +315,51 @@ class TestAdmissionAlignment:
         plan = admission["g13_authorization_plan"]
         assert plan["first_authorized_slice"] == ["UNIT-SHW-L1-T108"]
         assert plan["blocked_candidates"] == ["UNIT-SHW-WASH-T110"]
+
+
+class TestC01Corrections:
+    """G13-C01: locked T108 canonical reference + snapshot provenance."""
+
+    def test_canonical_reference_locked_to_t108(self):
+        # no caller override remains
+        params = inspect.signature(T108TankRuntime.__init__).parameters
+        assert "canonical_id" not in params
+        rt = _runtime()
+        assert rt.canonical_id == "UNIT-SHW-L1-T108"
+        rec = rt.step(1.0, 0.0)
+        assert rec.canonical_id == "UNIT-SHW-L1-T108"
+        # every emitted record keeps the locked canonical reference
+        rec2 = rt.step(0.0, 2.0)
+        assert rec2.canonical_id == "UNIT-SHW-L1-T108"
+
+    def test_snapshot_carries_truthful_provenance(self):
+        rt = _runtime()
+        snap = rt.snapshot()
+        prov = snap.provenance
+        assert prov.origin_kind is OriginKind.SIMULATION
+        assert prov.data_status is DataStatus.SYNTHETIC
+        assert prov.fidelity is Fidelity.FIRST_ORDER
+        assert prov.workspace_id == "shwtp"
+        assert prov.scope_path == SHWTP_T108_SCOPE_PATH
+        # no site/measurement labels in the serialized snapshot provenance
+        blob = json.dumps(prov.to_dict()).lower()
+        for token in ("measured", "site", "siteverified", "sourcemapped", "calibrated"):
+            assert token not in blob
+
+    def test_snapshot_provenance_tracks_time_and_step(self):
+        rt = _runtime()
+        assert rt.state.provenance.simulation_time_s == pytest.approx(0.0)
+        assert rt.state.provenance.step == 0
+        rt.step(1.0, 0.0)
+        assert rt.state.provenance.simulation_time_s == pytest.approx(1.0)
+        assert rt.state.provenance.step == 1
+
+    def test_snapshot_provenance_immutable_and_detached(self):
+        rt = _runtime()
+        snap = rt.snapshot()
+        rt.step(5.0, 0.0)
+        # the pre-step snapshot provenance is unchanged (detached)
+        assert snap.provenance.simulation_time_s == pytest.approx(0.0)
+        assert snap.provenance.step == 0
+        assert rt.state.provenance.simulation_time_s == pytest.approx(1.0)
+

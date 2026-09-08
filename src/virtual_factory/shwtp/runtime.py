@@ -106,11 +106,17 @@ class T108Config:
 
 @dataclass(frozen=True, slots=True)
 class T108State:
-    """Immutable/detached point-in-time state snapshot."""
+    """Immutable/detached point-in-time state snapshot.
+
+    Carries truthful G2 provenance (``simulation`` / ``synthetic`` /
+    ``first_order``) so the detached snapshot visibly distinguishes synthetic
+    first-order VF truth from site truth.
+    """
 
     time_s: float
     volume_m3: float
     level_m: float
+    provenance: ProvenanceV2
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,7 +167,6 @@ class T108TankRuntime:
         config: T108Config,
         run_context: RunContextV2,
         *,
-        canonical_id: str = SHWTP_T108_CANONICAL_ID,
         semantic_contract_version: str | None = None,
         semantic_contract_sha: str | None = None,
     ) -> None:
@@ -188,7 +193,9 @@ class T108TankRuntime:
 
         self._config = config
         self._run_context = run_context
-        self._canonical_id = canonical_id
+        # G13-C01: the canonical semantic reference is locked to exactly T108;
+        # it is read-only metadata and can never be relabeled by a caller.
+        self._canonical_id = SHWTP_T108_CANONICAL_ID
         self._time_s = 0.0
         self._volume_m3 = config.initial_volume_m3
         self._step_index = 0
@@ -220,11 +227,28 @@ class T108TankRuntime:
     # -- state --------------------------------------------------------------
     @property
     def state(self) -> T108State:
-        """Detached immutable state snapshot (time, volume, level)."""
+        """Detached immutable state snapshot with truthful G2 provenance."""
         return T108State(
             time_s=self._time_s,
             volume_m3=self._volume_m3,
             level_m=self._volume_m3 / self._config.tank_area_m2,
+            provenance=self._state_provenance(),
+        )
+
+    def _state_provenance(self) -> ProvenanceV2:
+        """Truthful synthetic first-order provenance for the current snapshot."""
+        return to_provenance_v2(
+            self._run_context,
+            origin_kind=OriginKind.SIMULATION,
+            fidelity=Fidelity.FIRST_ORDER,
+            data_status=DataStatus.SYNTHETIC,
+            semantic_contract_version=self._semantic_contract_version,
+            semantic_contract_sha=self._semantic_contract_sha,
+            evidence_note=(
+                "SH-WTP T108 standalone synthetic first-order tank accumulator"
+            ),
+            simulation_time_s=self._time_s,
+            step=self._step_index,
         )
 
     def snapshot(self) -> T108State:

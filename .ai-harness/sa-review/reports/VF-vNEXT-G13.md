@@ -1,6 +1,6 @@
 # VF-vNEXT-G13 — SH-WTP T108 Standalone Synthetic First-Order Runtime — Report
 
-Status: **READY FOR SA REVIEW** (first authorized SH-WTP executable slice; T108 only).
+Status: **VF-vNEXT-G13-C01 — READY FOR SA REVIEW** (first authorized SH-WTP executable slice; C01 identity/provenance closure applied).
 
 ## Objective
 
@@ -15,7 +15,7 @@ projecting PIM relations into G4 or broadening runtime authority.
 | --- | --- |
 | Task contract | `.ai-harness/tasks/VF-vNEXT-G13.json` |
 | Runtime module | `src/virtual_factory/shwtp/runtime.py` (+ `__init__` exports) |
-| Invariant tests | `tests/test_vnext_g13_t108.py` (24 tests) |
+| Invariant tests | `tests/test_vnext_g13_t108.py` (28 tests) |
 | Evidence | `.ai-harness/sa-review/evidence/VF-vNEXT-G13/01-t108-runtime.md` |
 | Baseline manifest | `.ai-harness/regression/vnext_baseline_manifest.json` (G13 gate context + g13 group) |
 
@@ -42,8 +42,8 @@ projecting PIM relations into G4 or broadening runtime authority.
 
 ## Regression evidence
 
-- New G13 tests: **24 passed**.
-- Full suite: **2117 passed**.
+- New G13 tests: **28 passed**.
+- Full suite: **2121 passed**.
 - Complete canonical vNext baseline: **PASS** (see below).
 - Compile / static / changed-files / preflight: **PASS**.
 
@@ -51,3 +51,11 @@ projecting PIM relations into G4 or broadening runtime authority.
 
 No T106/T110 runtime; no G4 projection; no federation/plant-wide run; no hydraulics/
 chemistry/control/calibration; no PIM change; no G7 redesign; no new global engine; no G14.
+
+## C01 correction (Issue #62)
+
+Locked the T108 canonical reference (removed the caller ``canonical_id`` override; always
+``UNIT-SHW-L1-T108``) and added truthful G2 provenance to the detached
+``T108State``/``snapshot()`` (``simulation``/``synthetic``/``first_order``, time + step
+index, optional semantic pins only when supplied). Focused regression tests added
+(28 total). No runtime/G4/PIM/T106/T110/G14 expansion.
