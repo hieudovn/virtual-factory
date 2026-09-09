@@ -555,6 +555,40 @@ def _window_number(window_id: str) -> int:
     return int(m.group(1))
 
 
+def build_shwtp_plant_slice_workspace() -> Workspace:
+    """Build the bounded 5-scope slice Workspace (same containment paths as
+    G11/G16: raw_water/ and line1/ are containers)."""
+    ws_id = SHWTP_PLANT_SLICE_WORKSPACE_ID
+    return build_workspace(
+        ws_id,
+        [
+            ScopeSpec(scope_id="raw_water", mode=ScopeMode.CONTAINER_ONLY),
+            ScopeSpec(
+                scope_id="raw_intake",
+                mode=ScopeMode.EXECUTABLE_CAPABLE,
+                parent_path=StructuralPath((ws_id, "raw_water")),
+            ),
+            ScopeSpec(
+                scope_id="t100",
+                mode=ScopeMode.EXECUTABLE_CAPABLE,
+                parent_path=StructuralPath((ws_id, "raw_water")),
+            ),
+            ScopeSpec(scope_id="line1", mode=ScopeMode.CONTAINER_ONLY),
+            ScopeSpec(
+                scope_id="l1_t106",
+                mode=ScopeMode.EXECUTABLE_CAPABLE,
+                parent_path=StructuralPath((ws_id, "line1")),
+            ),
+            ScopeSpec(
+                scope_id="l1_t108",
+                mode=ScopeMode.EXECUTABLE_CAPABLE,
+                parent_path=StructuralPath((ws_id, "line1")),
+            ),
+            ScopeSpec(scope_id="dist_p108", mode=ScopeMode.EXECUTABLE_CAPABLE),
+        ],
+    )
+
+
 def build_shwtp_plant_slice(
     *,
     communication_step_s: float = 1.0,
@@ -583,36 +617,7 @@ def build_shwtp_plant_slice(
     _require_number(t108_initial_volume_m3, "t108_initial_volume_m3")
 
     ws_id = SHWTP_PLANT_SLICE_WORKSPACE_ID
-    # Bounded slice workspace: only the five executable scopes, with the same
-    # containment paths as G11/G16 (raw_water/ and line1/ are containers).
-    workspace = build_workspace(
-        ws_id,
-        [
-            ScopeSpec(scope_id="raw_water", mode=ScopeMode.CONTAINER_ONLY),
-            ScopeSpec(
-                scope_id="raw_intake",
-                mode=ScopeMode.EXECUTABLE_CAPABLE,
-                parent_path=StructuralPath((ws_id, "raw_water")),
-            ),
-            ScopeSpec(
-                scope_id="t100",
-                mode=ScopeMode.EXECUTABLE_CAPABLE,
-                parent_path=StructuralPath((ws_id, "raw_water")),
-            ),
-            ScopeSpec(scope_id="line1", mode=ScopeMode.CONTAINER_ONLY),
-            ScopeSpec(
-                scope_id="l1_t106",
-                mode=ScopeMode.EXECUTABLE_CAPABLE,
-                parent_path=StructuralPath((ws_id, "line1")),
-            ),
-            ScopeSpec(
-                scope_id="l1_t108",
-                mode=ScopeMode.EXECUTABLE_CAPABLE,
-                parent_path=StructuralPath((ws_id, "line1")),
-            ),
-            ScopeSpec(scope_id="dist_p108", mode=ScopeMode.EXECUTABLE_CAPABLE),
-        ],
-    )
+    workspace = build_shwtp_plant_slice_workspace()
 
     raw_out = PortRef(RAW_INTAKE_SCOPE_PATH, RAW_OUT_PORT)
     t100_in = PortRef(T100_SCOPE_PATH, T100_IN_PORT)

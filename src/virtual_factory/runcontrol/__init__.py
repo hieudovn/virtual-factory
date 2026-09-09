@@ -39,6 +39,14 @@ from virtual_factory.runcontrol.targets import (
     TargetResolutionError,
     resolve_target,
 )
+from virtual_factory.runcontrol.shwtp_bridge import ShwtpExecutionBridge
+from virtual_factory.runcontrol.session import (
+    RuntimeSession,
+    SessionError,
+    SessionIdentity,
+    build_shwtp_session,
+    build_tipa_session,
+)
 
 __all__ = [
     "AssyExecutionBridge",
@@ -57,4 +65,10 @@ __all__ = [
     "build_continuous_workspace",
     "process_scope_path",
     "resolve_target",
+    "ShwtpExecutionBridge",
+    "RuntimeSession",
+    "SessionError",
+    "SessionIdentity",
+    "build_shwtp_session",
+    "build_tipa_session",
 ]

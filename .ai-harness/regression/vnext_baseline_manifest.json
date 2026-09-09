@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G21.json",
-    "changed_files_base": "65a2581ef825a79f8f088c0bc7672b249e96c942"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G22.json",
+    "changed_files_base": "028fdd8aadcee05483b7c5b3bbcf9815a680685f"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -307,6 +307,15 @@
       "purpose": "G21 SH-WTP Functional Simulation Expansion tests: coherent runnable multi-scope slice materially larger than T106->T108; >=4 executable scopes; assumed links explicit/versioned/reversible and distinct from PIM truth; fidelity/status explicit per scope; deterministic multi-window; no same-window feed-through under explicit_lagged; CompositionGraph != execution order; no mutable cross-scope state; no authority broadening; T106/T108 behavior unchanged; G20/G19/G18/G14/G15 unchanged.",
       "files": [
         "tests/test_vnext_g21_shwtp_expansion.py"
+      ]
+    },
+    {
+      "id": "g22_session_replay",
+      "gate": "G22",
+      "type": "pytest",
+      "purpose": "G22 Scenario/Run/Replay Integration tests: explicit session/run identity per Workspace; fresh new attempt has fresh runtime state and distinct attempt/run identity; deterministic replay reproduces equivalent outcome/trace; reset/new-attempt/replay semantics unambiguous; TIPA and SH-WTP sessions isolated; mismatched workspace/run/scenario identity fails closed; SH-WTP assumed topology/fidelity metadata survives replay unchanged; TIPA ASSY + G21/G20/G19/G18/G14/G15 unchanged.",
+      "files": [
+        "tests/test_vnext_g22_session.py"
       ]
     },
     {
