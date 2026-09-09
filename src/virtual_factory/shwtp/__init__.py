@@ -108,6 +108,13 @@ from virtual_factory.shwtp.evaluation import (
     ShwtpEvaluator,
     t108_mass_balance_residual,
 )
+from virtual_factory.shwtp.overlay import (
+    SHWTP_T108_DIST_P108_ASSUMPTION_ID,
+    SHWTP_T108_DIST_P108_ASSUMPTION_VERSION,
+    SHWTP_DIST_P108_VF_PATH,
+    build_shwtp_t108_dist_p108_assumption,
+    build_shwtp_t108_dist_p108_overlay,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -167,4 +174,9 @@ __all__ = [
     "ShwtpEvaluationSummary",
     "ShwtpEvaluator",
     "t108_mass_balance_residual",
+    "SHWTP_T108_DIST_P108_ASSUMPTION_ID",
+    "SHWTP_T108_DIST_P108_ASSUMPTION_VERSION",
+    "SHWTP_DIST_P108_VF_PATH",
+    "build_shwtp_t108_dist_p108_assumption",
+    "build_shwtp_t108_dist_p108_overlay",
 ]

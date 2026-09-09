@@ -25,6 +25,16 @@ from virtual_factory.connectivity.reference_graph import (
     ReferenceEndpoint,
     ReferenceGraphError,
 )
+from virtual_factory.connectivity.scenario_overlay import (
+    ASSUMED_SOURCE_KIND,
+    ASSUMED_STATUS,
+    ASSUMED_TOPOLOGY_SCHEMA,
+    OVERLAY_RUNTIME_AUTHORIZATION,
+    OVERLAY_SITE_AUTHORIZED_EXECUTION,
+    AssumedTopologyEdge,
+    ScenarioTopologyOverlay,
+    ScenarioTopologyOverlayError,
+)
 
 __all__ = [
     "NO_RUNTIME_EFFECT",
@@ -33,4 +43,12 @@ __all__ = [
     "ReferenceEdge",
     "ReferenceEndpoint",
     "ReferenceGraphError",
+    "ASSUMED_SOURCE_KIND",
+    "ASSUMED_STATUS",
+    "ASSUMED_TOPOLOGY_SCHEMA",
+    "OVERLAY_RUNTIME_AUTHORIZATION",
+    "OVERLAY_SITE_AUTHORIZED_EXECUTION",
+    "AssumedTopologyEdge",
+    "ScenarioTopologyOverlay",
+    "ScenarioTopologyOverlayError",
 ]

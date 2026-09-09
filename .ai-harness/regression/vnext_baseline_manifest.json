@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G17A.json",
-    "changed_files_base": "732decd68a02af6f0ee1de1e830631747a99d060"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G18.json",
+    "changed_files_base": "ae1dbd3575df11f5aad68762cd5c7f47620f55d8"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -271,6 +271,15 @@
       "purpose": "G17A Post-G16 platform workstream independence review tests: external PIM blocker reference (d10049801a1eb022a7fa2e83badabefb92fb7412, T108-DIST-EVIDENCE STILL_INSUFFICIENT) + required VF base 732decd recorded; every required workstream has exactly one classification with full decision record; all 23 workstreams present; topology distinction (PIM_AUTHORITATIVE_TOPOLOGY blocked vs VF_SCENARIO_ASSUMED_TOPOLOGY future-only); exactly one recommended next gate satisfying all seven selection criteria; authority unchanged (NOT_AUTHORIZED); G17A changed no runtime behavior (frozen G4/G7/G14A/G14B/G15 constants/structures unchanged).",
       "files": [
         "tests/test_vnext_g17a_workstream_review.py"
+      ]
+    },
+    {
+      "id": "g18_scenario_overlay",
+      "gate": "G18",
+      "type": "pytest",
+      "purpose": "G18 Scenario-Assumed Topology Overlay tests: authoritative vs assumed topology distinguishable (distinct schema); assumed edge has explicit id/version/provenance (source_kind=vf_scenario_assumption, status=assumed/synthetic); deterministic round-trip serialization; malformed/ambiguous overlay fails closed (empty identity, duplicate id, duplicate logical assumption, wrong source_kind/status/schema); remove/replace reversible without altering PIM/reference baseline; no execution order implied; no coupling-policy field; no runtime/site authorization broadened (NOT_AUTHORIZED); T108->DIST-P108 fixture assumed-only (never DocumentConfirmed/site-verified); G14/G15/G17A behavior unchanged.",
+      "files": [
+        "tests/test_vnext_g18_scenario_overlay.py"
       ]
     },
     {
