@@ -34,6 +34,13 @@ from virtual_factory.federation.tipa_workspace import (
     build_tipa_workspace,
     sub_line_path,
 )
+from virtual_factory.federation.generic import (
+    GENERIC_FEDERATION_COUPLING_POLICY,
+    GenericFederationError,
+    SyntheticFederation,
+    SyntheticParticipant,
+    build_synthetic_federation,
+)
 
 __all__ = [
     "AssySubLineAdapter",
@@ -47,4 +54,9 @@ __all__ = [
     "assy_scope_path",
     "build_tipa_workspace",
     "sub_line_path",
+    "GENERIC_FEDERATION_COUPLING_POLICY",
+    "GenericFederationError",
+    "SyntheticFederation",
+    "SyntheticParticipant",
+    "build_synthetic_federation",
 ]
