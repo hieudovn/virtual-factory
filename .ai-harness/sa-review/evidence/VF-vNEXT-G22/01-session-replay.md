@@ -6,14 +6,15 @@ Model: Pro.
 
 ## 1. What was implemented
 
-- `src/virtual_factory/runcontrol/shwtp_bridge.py` — `ShwtpExecutionBridge`, an
+- `src/virtual_factory/shwtp/bridge.py` — `ShwtpExecutionBridge`, an
   `ExecutionBridge` over the accepted G21 `ShwtpPlantSlice` (next-boundary /
   advance one window / in-context reset via fresh slice rebuild).
+- `src/virtual_factory/shwtp/session.py` — `build_shwtp_session` (SH-WTP slice
+  session factory).
 - `src/virtual_factory/runcontrol/session.py` — `RuntimeSession`,
-  `SessionIdentity`, `build_tipa_session`, `build_shwtp_session`. A thin,
-  orchestration-only facade over the G7 `RunLifecycleService` with explicit
-  workspace/run/attempt/scenario identity and distinct reset / new-attempt /
-  replay operations.
+  `SessionIdentity`, `build_tipa_session`. A thin, orchestration-only, DOMAIN-
+  AGNOSTIC facade over the G7 `RunLifecycleService` (preserves the frozen G7
+  boundary: runcontrol never references SH-WTP).
 - `tests/test_vnext_g22_session.py` — 15 tests.
 
 ## 2. Required semantics coverage

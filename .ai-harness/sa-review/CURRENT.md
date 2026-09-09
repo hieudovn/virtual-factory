@@ -15,10 +15,10 @@ G21 head = 028fdd8aadcee05483b7c5b3bbcf9815a680685f
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
 Implemented (additive, isolated):
-- src/virtual_factory/runcontrol/shwtp_bridge.py (ShwtpExecutionBridge over
-  ShwtpPlantSlice)
+- src/virtual_factory/shwtp/bridge.py (ShwtpExecutionBridge over ShwtpPlantSlice)
+- src/virtual_factory/shwtp/session.py (build_shwtp_session)
 - src/virtual_factory/runcontrol/session.py (RuntimeSession, SessionIdentity,
-  build_tipa_session, build_shwtp_session)
+  build_tipa_session; domain-agnostic, no SH-WTP reference)
 - tests/test_vnext_g22_session.py (15 tests)
 - .ai-harness/regression/vnext_baseline_manifest.json (G22 gate context +
   g22_session_replay group)

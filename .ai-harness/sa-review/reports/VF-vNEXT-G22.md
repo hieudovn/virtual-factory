@@ -13,9 +13,11 @@ transport.
 
 ## Implemented (additive, isolated)
 
-- `src/virtual_factory/runcontrol/shwtp_bridge.py` — `ShwtpExecutionBridge`.
+- `src/virtual_factory/shwtp/bridge.py` — `ShwtpExecutionBridge`.
+- `src/virtual_factory/shwtp/session.py` — `build_shwtp_session`.
 - `src/virtual_factory/runcontrol/session.py` — `RuntimeSession`,
-  `SessionIdentity`, `build_tipa_session`, `build_shwtp_session`.
+  `SessionIdentity`, `build_tipa_session` (domain-agnostic; runcontrol never
+  references SH-WTP).
 - `tests/test_vnext_g22_session.py` (15 tests).
 - `.ai-harness/regression/vnext_baseline_manifest.json`: G22 gate context +
   `g22_session_replay` group.

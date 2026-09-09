@@ -25,9 +25,11 @@
     ".ai-harness/sa-review/evidence/VF-vNEXT-G22/",
     ".ai-harness/regression/vnext_baseline_manifest.json",
     "src/virtual_factory/runcontrol/session.py",
-    "src/virtual_factory/runcontrol/shwtp_bridge.py",
     "src/virtual_factory/runcontrol/__init__.py",
     "src/virtual_factory/shwtp/expansion.py",
+    "src/virtual_factory/shwtp/bridge.py",
+    "src/virtual_factory/shwtp/session.py",
+    "src/virtual_factory/shwtp/__init__.py",
     "tests/test_vnext_g22_session.py"
   ],
   "forbidden_paths": [
@@ -54,8 +56,9 @@
     "examples/"
   ],
   "required_deliverables": [
-    "src/virtual_factory/runcontrol/session.py (RuntimeSession + SessionIdentity + build_tipa_session + build_shwtp_session)",
-    "src/virtual_factory/runcontrol/shwtp_bridge.py (ShwtpExecutionBridge over ShwtpPlantSlice)",
+    "src/virtual_factory/runcontrol/session.py (RuntimeSession + SessionIdentity + build_tipa_session; domain-agnostic, no SH-WTP reference)",
+    "src/virtual_factory/shwtp/bridge.py (ShwtpExecutionBridge over ShwtpPlantSlice)",
+    "src/virtual_factory/shwtp/session.py (build_shwtp_session)",
     "tests/test_vnext_g22_session.py",
     ".ai-harness/sa-review/evidence/VF-vNEXT-G22/01-session-replay.md"
   ],

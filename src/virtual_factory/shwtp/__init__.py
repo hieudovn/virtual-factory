@@ -123,6 +123,8 @@ from virtual_factory.shwtp.expansion import (
     ShwtpPlantSlice,
     build_shwtp_plant_slice,
 )
+from virtual_factory.shwtp.bridge import ShwtpExecutionBridge
+from virtual_factory.shwtp.session import build_shwtp_session
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -193,4 +195,6 @@ __all__ = [
     "ShwtpExpansionError",
     "ShwtpPlantSlice",
     "build_shwtp_plant_slice",
+    "ShwtpExecutionBridge",
+    "build_shwtp_session",
 ]

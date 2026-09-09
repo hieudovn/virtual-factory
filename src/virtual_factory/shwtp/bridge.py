@@ -1,8 +1,11 @@
 """SH-WTP G21 plant-slice execution bridge (VF-vNEXT-G22).
 
 An :class:`~virtual_factory.runcontrol.ExecutionBridge` over the accepted G21
-:class:`~virtual_factory.shwtp.expansion.ShwtpPlantSlice`, so the same G7
+:class:`~virtual_factory.shwtp.expansion.ShwtpPlantSlice`, so the G7
 run-lifecycle seam can drive SH-WTP exactly like it drives TIPA ASSY.
+
+This module lives in the SH-WTP package (NOT in ``runcontrol``) to preserve the
+frozen G7 boundary: the generic run-control package never references SH-WTP.
 
 - ``natural_next_boundary`` = the next deterministic communication window.
 - ``advance`` prepares every participant and runs one coordinator window at the

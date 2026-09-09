@@ -17,9 +17,9 @@ from virtual_factory.runcontrol import (
     RunLifecycleError,
     RuntimeSession,
     SessionError,
-    build_shwtp_session,
     build_tipa_session,
 )
+from virtual_factory.shwtp import build_shwtp_session
 from virtual_factory.runcontrol.lifecycle import RunLifecycleService
 from virtual_factory.shwtp.expansion import PLANT_SLICE_SCOPES
 
@@ -137,11 +137,10 @@ class TestFailClosed:
             s._service.step("bogus-run-id")
 
     def test_empty_scenario_fails_closed(self):
-        from virtual_factory.runcontrol import build_shwtp_session
         # RuntimeSession requires a non-empty scenario_id.
         from virtual_factory.shwtp.expansion import build_shwtp_plant_slice_workspace
         from virtual_factory.runcontrol import RunLifecycleService
-        from virtual_factory.runcontrol.shwtp_bridge import ShwtpExecutionBridge
+        from virtual_factory.shwtp.bridge import ShwtpExecutionBridge
         from virtual_factory.shwtp.expansion import build_shwtp_plant_slice
         ws = build_shwtp_plant_slice_workspace()
         service = RunLifecycleService(

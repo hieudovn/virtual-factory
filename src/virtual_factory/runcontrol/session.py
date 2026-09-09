@@ -1,8 +1,8 @@
 """Generic runtime-session/lifecycle seam (VF-vNEXT-G22).
 
 A small, orchestration-only session facade over the accepted G7
-:class:`~virtual_factory.runcontrol.RunLifecycleService`, usable for both the
-accepted TIPA ASSY runtime and the accepted SH-WTP G21 plant slice.
+:class:`~virtual_factory.runcontrol.RunLifecycleService`, usable across
+executable workspaces (TIPA ASSY and the SH-WTP G21 plant slice).
 
 - A session has explicit Workspace identity, run/attempt identity, and
   scenario/config identity.
@@ -14,6 +14,9 @@ accepted TIPA ASSY runtime and the accepted SH-WTP G21 plant slice.
 - Deterministic: identical scenario/config reproduces an identical step trace.
 - The session is lifecycle/orchestration authority only; the domain runtime
   remains the domain-truth owner.
+
+This module is domain-agnostic and must not reference SH-WTP (frozen G7
+boundary). Domain-specific session factories live in their own packages.
 """
 
 from __future__ import annotations
@@ -173,33 +176,6 @@ def build_tipa_session(
         federation = TipaAssyFederation(config_path=config_path)
         federation.initialize()
         return AssyExecutionBridge(federation)
-
-    service = RunLifecycleService(workspace, bridge_factory)
-    return RuntimeSession(service, workspace_id, scenario_id)
-
-
-def build_shwtp_session(
-    scenario_id: str = "shwtp-g21-slice",
-    workspace_id: str = "shwtp",
-    **slice_kwargs,
-) -> RuntimeSession:
-    """Build a SH-WTP G21 plant-slice runtime session (5 scopes, one workspace)."""
-    from virtual_factory.runcontrol import RunLifecycleService
-    from virtual_factory.runcontrol.shwtp_bridge import ShwtpExecutionBridge
-    from virtual_factory.shwtp.expansion import (
-        build_shwtp_plant_slice,
-        build_shwtp_plant_slice_workspace,
-    )
-
-    workspace = build_shwtp_plant_slice_workspace()
-    if workspace.workspace_id != workspace_id:
-        raise SessionError(
-            f"workspace_id {workspace_id!r} does not match SH-WTP workspace "
-            f"{workspace.workspace_id!r}"
-        )
-
-    def bridge_factory():
-        return ShwtpExecutionBridge(lambda: build_shwtp_plant_slice(**slice_kwargs))
 
     service = RunLifecycleService(workspace, bridge_factory)
     return RuntimeSession(service, workspace_id, scenario_id)
