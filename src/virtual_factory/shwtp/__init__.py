@@ -115,6 +115,14 @@ from virtual_factory.shwtp.overlay import (
     build_shwtp_t108_dist_p108_assumption,
     build_shwtp_t108_dist_p108_overlay,
 )
+from virtual_factory.shwtp.expansion import (
+    PLANT_SLICE_SCOPES,
+    SHWTP_PLANT_SLICE_COUPLING_POLICY,
+    PlantSliceScope,
+    ShwtpExpansionError,
+    ShwtpPlantSlice,
+    build_shwtp_plant_slice,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -179,4 +187,10 @@ __all__ = [
     "SHWTP_DIST_P108_VF_PATH",
     "build_shwtp_t108_dist_p108_assumption",
     "build_shwtp_t108_dist_p108_overlay",
+    "PLANT_SLICE_SCOPES",
+    "SHWTP_PLANT_SLICE_COUPLING_POLICY",
+    "PlantSliceScope",
+    "ShwtpExpansionError",
+    "ShwtpPlantSlice",
+    "build_shwtp_plant_slice",
 ]
