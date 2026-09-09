@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G16.json",
-    "changed_files_base": "786e11f3604478f825c800852a7b3224f65c6a4e"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G17A.json",
+    "changed_files_base": "732decd68a02af6f0ee1de1e830631747a99d060"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -262,6 +262,15 @@
       "purpose": "G16 SH-WTP whole-plant federation expansion readiness review tests: source pins match G10/G12B; every reviewed unit exactly one decision; T106/T108 accepted existing runtime candidates; T110 blocked; no PatternInferred/IndustryExpected promotion to next slice; every future candidate has a boundary-contract plan; unknowns explicit; no fabricated site values; projection candidates reference exact PIM relation ids; no G4 binding created in G16; no generic FLOWS_TO auto-projection; whole-plant runtime NOT_AUTHORIZED/NOT_IMPLEMENTED; exactly one next-slice recommendation (not T110); no G14/G15 behavior changed; authority unchanged.",
       "files": [
         "tests/test_vnext_g16_readiness.py"
+      ]
+    },
+    {
+      "id": "g17a_workstream_review",
+      "gate": "G17A",
+      "type": "pytest",
+      "purpose": "G17A Post-G16 platform workstream independence review tests: external PIM blocker reference (d10049801a1eb022a7fa2e83badabefb92fb7412, T108-DIST-EVIDENCE STILL_INSUFFICIENT) + required VF base 732decd recorded; every required workstream has exactly one classification with full decision record; all 23 workstreams present; topology distinction (PIM_AUTHORITATIVE_TOPOLOGY blocked vs VF_SCENARIO_ASSUMED_TOPOLOGY future-only); exactly one recommended next gate satisfying all seven selection criteria; authority unchanged (NOT_AUTHORIZED); G17A changed no runtime behavior (frozen G4/G7/G14A/G14B/G15 constants/structures unchanged).",
+      "files": [
+        "tests/test_vnext_g17a_workstream_review.py"
       ]
     },
     {
