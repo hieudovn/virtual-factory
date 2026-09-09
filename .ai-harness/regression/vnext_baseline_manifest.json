@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G19.json",
-    "changed_files_base": "44d026f4d081296c31d418806ac5e96575a2d8e4"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G20.json",
+    "changed_files_base": "babd1f4c872751a47392f9bd26fa865da056ff80"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -289,6 +289,15 @@
       "purpose": "G19 Generic Multi-Participant Federation Proof (>2) tests: 3+ synthetic participants coordinate over 2+ bindings in one window; >=2 transfers commit deterministically; no same-window feed-through under explicit_lagged; ordering independent of declaration/registration order; identity/workspace mismatch fails closed; failed window not reported completed; detached immutable transfers; identical inputs produce identical results; CompositionGraph != execution order; coupling policy stays orchestration policy; G14/G15/G18 unchanged.",
       "files": [
         "tests/test_vnext_g19_multi_participant.py"
+      ]
+    },
+    {
+      "id": "g20_gateway_binding",
+      "gate": "G20",
+      "type": "pytest",
+      "purpose": "G20 Generic Gateway/Workstation Observation Binding tests: N scopes -> 1 gateway; 1 scope -> N gateways allowed (no one-gateway-per-scope invariant); scope/runtime truth unchanged by gateway observation; messages preserve source scope + independent/idempotent identity; duplicate/invalid/ambiguous binding + identity mismatch fail closed; deterministic serialization independent of declaration order; gateway identity does not impersonate PIM/Scope identity; gateway topology is not execution order or containment hierarchy; ASSY MES bridge + G19/G18/G14/G15 unchanged.",
+      "files": [
+        "tests/test_vnext_g20_gateway_binding.py"
       ]
     },
     {

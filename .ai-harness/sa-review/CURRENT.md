@@ -1,45 +1,44 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G19
-Status: READY FOR SA REVIEW (Generic Multi-Participant Federation Proof >2)
-Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G18-C01 complete)
-Prerequisite: Issue #69 (G18-C01) accepted; Issue #70 (G19) current
+Task: VF-vNEXT-G20
+Status: READY FOR SA REVIEW (Generic Gateway / Workstation Observation Binding)
+Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G19 complete)
+Prerequisite: Issue #70 (G19) accepted; Issue #71 (G20) current
 
 Gate type:
-IMPLEMENTATION gate — Generic Multi-Participant Federation Proof (>2), per
-Issue #70. Additive synthetic harness + tests proving G4 Coordinator scales to
-3+ participants over 2+ bindings. No PIM/G4/coupling-policy/UI change.
+IMPLEMENTATION gate — Generic Gateway / Workstation Observation Binding, per
+Issue #71. Additive read-only scope->gateway binding seam. No MQTT/Kafka/REST/
+retry/security; no MES/PIM/G4 change; no ASSY semantics change.
 
 Base:
-G18-C01 head = 44d026f4d081296c31d418806ac5e96575a2d8e4
+G19 head = babd1f4c872751a47392f9bd26fa865da056ff80
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
 Implemented (additive, isolated):
-- src/virtual_factory/federation/generic.py (SyntheticParticipant,
-  SyntheticFederation, build_synthetic_federation; explicit_lagged at
-  orchestration level only)
-- tests/test_vnext_g19_multi_participant.py (19 tests)
-- .ai-harness/regression/vnext_baseline_manifest.json (G19 gate context +
-  g19_multi_participant group)
+- src/virtual_factory/integration/binding.py (GatewayWorkstation,
+  GatewayScopeBinding, GatewayBindingTable, collect_executable_scope_paths,
+  build_assy_gateway_binding fixture ASSY-SL01..06 -> ASSY-GW-01)
+- tests/test_vnext_g20_gateway_binding.py (22 tests)
+- .ai-harness/regression/vnext_baseline_manifest.json (G20 gate context +
+  g20_gateway_binding group)
 
 Frozen boundaries preserved:
-G4 composition/coordinator; G14A projection; G14B explicit_lagged; G15 evaluator;
-G18 overlay; reference connectivity graph; T106/T108 runtimes; PIM pins. No new
-coupling policy; no DIST-P108/T110/Line2/chemical/electrical/automation runtime;
-no SH-WTP authority broadening; no UI.
+ASSY MES bridge + observation stack unchanged; G19/G18/G14/G15 unchanged; no
+MQTT/Kafka/REST/retry/security; no MES/PIM modification; no G4 redesign; no
+ASSY domain semantics change; no UI.
 
 Authority unchanged:
 vf_runtime_authorization NOT_AUTHORIZED; site_authorized_execution NOT_AUTHORIZED;
 whole_plant_runtime NOT_AUTHORIZED / NOT_IMPLEMENTED.
 
-Regression: G19 19 passed; full suite 2352 passed; complete canonical vNext
+Regression: G20 22 passed; full suite 2374 passed; complete canonical vNext
 baseline PASS (see report).
 
-G19 started: YES (completed; READY FOR SA REVIEW)
-G20 started: NO
+G20 started: YES (completed; READY FOR SA REVIEW)
+G21 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G19.md
+.ai-harness/sa-review/reports/VF-vNEXT-G20.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G19/01-multi-participant-proof.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G20/01-gateway-binding.md
