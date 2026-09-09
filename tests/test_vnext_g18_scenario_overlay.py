@@ -112,6 +112,23 @@ class TestFailClosed:
             ScenarioTopologyOverlay.from_dict({"schema": "wrong"})
 
 
+class TestFromDictOmissionFailClosed:
+    """G18-C01: from_dict must fail closed when provenance/reversibility fields
+    are omitted — never silently default to assumed."""
+
+    @pytest.mark.parametrize("field", ["source_kind", "status", "reversible"])
+    def test_missing_required_field_fails_closed(self, field):
+        data = build_shwtp_t108_dist_p108_assumption().to_dict()
+        data.pop(field)
+        with pytest.raises(ScenarioTopologyOverlayError):
+            AssumedTopologyEdge.from_dict(data)
+
+    def test_valid_edge_round_trip_still_passes(self):
+        data = build_shwtp_t108_dist_p108_assumption().to_dict()
+        edge = AssumedTopologyEdge.from_dict(data)
+        assert edge.to_dict() == data
+
+
 class TestDeterminismAndSerialization:
     def test_serialization_is_deterministic_regardless_of_input_order(self):
         a = _edge(assumption_id="A", source="shwtp/x")

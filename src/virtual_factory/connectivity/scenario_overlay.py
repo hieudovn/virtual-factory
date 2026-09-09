@@ -142,6 +142,13 @@ class AssumedTopologyEdge:
     def from_dict(cls, data: dict) -> "AssumedTopologyEdge":
         if not isinstance(data, dict):
             raise ScenarioTopologyOverlayError("assumed edge must be a dict")
+        # Provenance and reversibility fields are REQUIRED on reconstruction:
+        # omitting them must fail closed (never silently default to assumed).
+        for required in ("source_kind", "status", "reversible"):
+            if required not in data:
+                raise ScenarioTopologyOverlayError(
+                    f"assumed edge missing required field {required!r}"
+                )
         return cls(
             assumption_id=data.get("assumption_id", ""),
             version=data.get("version", ""),
@@ -149,10 +156,10 @@ class AssumedTopologyEdge:
             target=data.get("target", ""),
             relation_type=data.get("relation_type", ""),
             rationale=data.get("rationale", ""),
-            source_kind=data.get("source_kind", ASSUMED_SOURCE_KIND),
-            status=data.get("status", ASSUMED_STATUS),
+            source_kind=data["source_kind"],
+            status=data["status"],
             replaces_assumption_id=data.get("replaces_assumption_id"),
-            reversible=data.get("reversible", True),
+            reversible=data["reversible"],
         )
 
 
