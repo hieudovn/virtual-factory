@@ -842,4 +842,95 @@ def create_app(
     def vnext_replay(run_id: str, workspace: str = Query("TIPA")):
         return _vnext_mutate(run_id, "replay", workspace)
 
+    # ═══════════════════════════════════════════════
+    # G24 — Multi-Workspace UI Switching + Monitoring Shell
+    # Additive observer/controller seam over the G23 WorkspaceRuntimeRegistry
+    # + G22 RuntimeSession. The shell page (`/workspaces`) lists the accepted
+    # workspaces (selector), selects a workspace, shows a read-only monitor
+    # view, and lets shared run controls act on the selected workspace session
+    # only. SH-WTP assumed topology/fidelity is never presented as site truth.
+    # No gateway routing / export / MES-PIM change here.
+    # ═══════════════════════════════════════════════
+    _workspace_monitor: dict = {"instance": None}
+
+    def _get_workspace_monitor():
+        if _workspace_monitor["instance"] is None:
+            from virtual_factory.ui.workspace_monitor import WorkspaceMonitor
+
+            tipa_config = os.environ.get(
+                "TIPA_ASSY_CONFIG",
+                str(
+                    Path(__file__).resolve().parent.parent.parent.parent
+                    / "configs" / "plants" / "tipa_assy_demo.yaml"
+                ),
+            )
+            _workspace_monitor["instance"] = WorkspaceMonitor(
+                tipa_config_path=tipa_config
+            )
+        return _workspace_monitor["instance"]
+
+    @app.get("/workspaces", include_in_schema=False)
+    def workspaces_page() -> FileResponse:
+        """G24 multi-workspace shell page (HTML/CSS/JS)."""
+        return FileResponse(static_dir / "workspace_shell.html")
+
+    @app.get("/static/workspace_shell.js", include_in_schema=False)
+    def workspace_shell_js_direct() -> FileResponse:
+        return FileResponse(
+            static_dir / "workspace_shell.js", media_type="application/javascript"
+        )
+
+    @app.get("/static/workspace_shell.css", include_in_schema=False)
+    def workspace_shell_css_direct() -> FileResponse:
+        return FileResponse(static_dir / "workspace_shell.css", media_type="text/css")
+
+    @app.get("/vnext/workspaces")
+    def vnext_workspaces():
+        """Registry-backed selector source (deterministic, orchestration only)."""
+        monitor = _get_workspace_monitor()
+        return monitor.workspace_list()
+
+    @app.get("/vnext/workspaces/{workspace_id}/view")
+    def vnext_workspace_view(workspace_id: str):
+        monitor = _get_workspace_monitor()
+        try:
+            return monitor.view(workspace_id)
+        except Exception as exc:
+            return _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown workspace {workspace_id!r}: {exc}"},
+            )
+
+    @app.post("/vnext/workspaces/select")
+    def vnext_workspace_select(body: dict):
+        monitor = _get_workspace_monitor()
+        workspace_id = (body or {}).get("workspace_id", "")
+        if not workspace_id:
+            return _JSONResponse(
+                status_code=400, content={"detail": "workspace_id is required"}
+            )
+        try:
+            return monitor.select(workspace_id)
+        except Exception as exc:
+            return _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown workspace {workspace_id!r}: {exc}"},
+            )
+
+    @app.post("/vnext/workspaces/{workspace_id}/control")
+    def vnext_workspace_control(workspace_id: str, body: dict):
+        monitor = _get_workspace_monitor()
+        action = (body or {}).get("action", "")
+        if not action:
+            return _JSONResponse(
+                status_code=400, content={"detail": "action is required"}
+            )
+        try:
+            return monitor.control(workspace_id, action)
+        except Exception as exc:
+            return _JSONResponse(
+                status_code=400,
+                content={"detail": f"workspace {workspace_id!r}: {exc}"},
+            )
+
     return app

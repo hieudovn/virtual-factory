@@ -525,6 +525,43 @@ def _latest_inbound_flow(
     return value
 
 
+def _monitor_values(participant) -> dict:
+    """READ-ONLY detached monitor values for one slice participant.
+
+    G24 UI monitor support: never mutates the participant or its runtime; it
+    only reads the already-committed current state and returns detached,
+    JSON-serializable scalars. Assumed/labelled fidelity is carried by the
+    ``PlantSliceScope`` metadata, NOT invented here.
+    """
+    values: dict = {}
+    inflow = getattr(participant, "_inflow", None)
+    if isinstance(inflow, (int, float)):
+        values["inflow_m3_s"] = float(inflow)
+    requested = getattr(participant, "_requested_outflow", None)
+    if isinstance(requested, (int, float)):
+        values["requested_outflow_m3_s"] = float(requested)
+    runtime = getattr(participant, "_runtime", None)
+    if runtime is not None:
+        state = getattr(runtime, "state", None)
+        if state is not None:
+            for field in (
+                "time_s",
+                "volume_m3",
+                "level_m",
+                "last_input_flow_m3_s",
+                "last_output_flow_m3_s",
+            ):
+                raw = getattr(state, field, None)
+                if isinstance(raw, (int, float)):
+                    values[field] = float(raw)
+    received = getattr(participant, "_received", None)
+    if isinstance(received, (list, tuple)):
+        values["received_count"] = len(received)
+        if received and isinstance(received[-1], (int, float)):
+            values["last_received_m3_s"] = float(received[-1])
+    return values
+
+
 @dataclass
 class ShwtpPlantSlice:
     """A built runnable SH-WTP slice (workspace + graph + overlay + coordinator)."""
@@ -543,6 +580,26 @@ class ShwtpPlantSlice:
             participant.prepare_window(window_id)
         target = self.communication_step_s * _window_number(window_id)
         return self.coordinator.run_window(window_id, target)
+
+    def monitor_rows(self) -> tuple[dict, ...]:
+        """Read-only detached per-scope monitor rows (G24 UI observer support).
+
+        Returns one detached dict per accepted slice scope (in ``PLANT_SLICE_SCOPES``
+        order) with its fidelity/status/assumed metadata plus current scalar
+        values. Pure read-only: never mutates the slice, a participant or a
+        runtime; the domain runtime remains the truth owner.
+        """
+        rows: list[dict] = []
+        for scope in self.scopes:
+            row = scope.to_dict()
+            participant = self.participants.get(scope.vf_path)
+            time_s = getattr(participant, "current_time_s", None)
+            if isinstance(time_s, (int, float)):
+                row["time_s"] = float(time_s)
+            if participant is not None:
+                row["values"] = _monitor_values(participant)
+            rows.append(row)
+        return tuple(rows)
 
 
 def _window_number(window_id: str) -> int:

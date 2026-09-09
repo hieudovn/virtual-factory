@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G23.json",
-    "changed_files_base": "1c076525c62ab5c12e98fe970e035b4921cb62a0"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G24.json",
+    "changed_files_base": "320fc4ec1cfcf3b3ebb9566dbc79b3219ab2a33d"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -325,6 +325,15 @@
       "purpose": "G23 Multi-Workspace Runtime Selection tests: deterministic enumeration of TIPA + shwtp; select TIPA returns a TIPA RuntimeSession; select shwtp returns a SH-WTP RuntimeSession; two Workspace sessions isolated; switching does not mutate inactive session; fresh independent session for the same Workspace; unknown/ambiguous Workspace fails closed; registration order does not affect enumeration/selection; no cross-workspace runtime coupling; open for future Workspaces; G22/G21/G20/G19/G18 + TIPA ASSY unchanged.",
       "files": [
         "tests/test_vnext_g23_registry.py"
+      ]
+    },
+    {
+      "id": "g24_workspace_shell",
+      "gate": "G24",
+      "type": "pytest",
+      "purpose": "G24 Multi-Workspace UI Switching + Monitoring Shell tests: selector from backend G23 registry; select TIPA reuses six-sub-line ASSY UI/runtime; select shwtp shows the accepted G21 5-scope slice with key flow/tank values; switching never mutates the inactive workspace session; each workspace view exposes minimum monitor fields; run control acts only on the selected workspace/session; unknown workspace/session/action fails closed; SH-WTP assumed topology/fidelity never presented as site truth; static shell page + FastAPI endpoints served; G23/G22/G21 + TIPA ASSY unchanged.",
+      "files": [
+        "tests/test_vnext_g24_workspace_ui.py"
       ]
     },
     {
