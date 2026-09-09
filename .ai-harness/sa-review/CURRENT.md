@@ -23,7 +23,7 @@ Implemented (additive, isolated):
   records, dependency matrix, topology distinction, recommended next gate,
   deferred/blocked list, invariants, no-runtime-authorization statement).
 - configs/vnext/shwtp/WORKSTREAM-INDEPENDENCE-REVIEW.md (planning note).
-- tests/test_vnext_g17a_workstream_review.py (21 tests)
+- tests/test_vnext_g17a_workstream_review.py (24 tests)
 - .ai-harness/regression/vnext_baseline_manifest.json (G17A gate context +
   g17a_workstream_review group)
 

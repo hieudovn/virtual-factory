@@ -19,7 +19,7 @@ that can proceed independently.
   matrix, topology distinction, recommended next gate, deferred/blocked list,
   architecture invariants, no-runtime-authorization statement.
 - `configs/vnext/shwtp/WORKSTREAM-INDEPENDENCE-REVIEW.md` — human-readable note.
-- `tests/test_vnext_g17a_workstream_review.py` (21 tests).
+- `tests/test_vnext_g17a_workstream_review.py` (24 tests).
 - `.ai-harness/regression/vnext_baseline_manifest.json`: G17A gate context +
   `g17a_workstream_review` group.
 
@@ -69,7 +69,8 @@ redesign.
 
 ## Regression
 
-- G17A: 21 passed.
+- G17A: 24 passed.
+- Full suite: 2300 passed.
 - Complete canonical vNext baseline
   (g1_workspace, g2_provenance, g3, g4, g5, g6, g7, ui_api_dashboard,
   assy_oracle, continuous_compressor, g8, g9, g10, g11, g12a, g12b, g12c, g13,
