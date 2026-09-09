@@ -33,6 +33,31 @@ class AssyExecutionBridge:
         # AssyLineRuntime exposes an accepted public in-context reset().
         return True
 
+    def sub_line_views(self) -> tuple[dict, ...]:
+        """READ-ONLY per-sub-line monitor projection (G24-C01).
+
+        Returns one detached dict per TIPA ASSY sub-line, reading only the
+        public runtime read surface (simulation time, conveyor state, WIP and
+        motor counts, RSO2 buffer). Never mutates the federation, a runtime or
+        a sub-line; the domain runtime remains the truth owner.
+        """
+        rows: list[dict] = []
+        for sub_line_id in self._federation.sub_line_ids:
+            sub = self._federation.get(sub_line_id)
+            runtime = sub.runtime
+            identity = sub.identity
+            rows.append({
+                "sub_line_id": sub_line_id,
+                "scope": sub.path.as_string(),
+                "variant": (identity.variant if identity is not None else ""),
+                "simulation_time_s": runtime.simulation_time_s,
+                "conveyor_state": runtime.conveyor.state.value,
+                "wip_count": runtime.wip_count,
+                "motor_count": runtime.motor_count,
+                "rso2_buffer_size": runtime.rso2_buffer_size,
+            })
+        return tuple(rows)
+
     def natural_next_boundary(self, scope_ids: tuple[str, ...]) -> float:
         ids = tuple(scope_ids)
         if not ids:

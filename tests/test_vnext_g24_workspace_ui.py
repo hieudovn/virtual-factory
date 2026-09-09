@@ -35,6 +35,7 @@ from virtual_factory.shwtp.expansion import (
     SHWTP_T108_SCOPE_PATH,
     T100_SCOPE_PATH,
 )
+from virtual_factory.federation import SUB_LINE_IDS
 
 TIPA_CONFIG = "configs/plants/tipa_assy_demo.yaml"
 
@@ -317,6 +318,86 @@ class TestApiAndStatic:
         # selector is driven by the backend registry and control is workspace-scoped
         assert "/vnext/workspaces" in js
         assert "workspace_id" in js
+
+
+class TestG24C01TipaLiveProjection:
+    """G24-C01: the shell's TIPA view reflects the selected G22 RuntimeSession.
+
+    Live per-sub-line state/status/key values are read from the SELECTED
+    session's own execution bridge (no second runtime), and /assy-demo is
+    explicitly labelled a SEPARATE legacy demo runtime (not the same session).
+    """
+
+    def test_step_changes_per_sub_line_values(self):
+        mon = _monitor()
+        mon.select("TIPA")
+        before = mon.view("TIPA")
+        # No bridge yet -> no live sub-line rows; session state is created.
+        assert before["sub_lines"] == []
+        mon.control("TIPA", "step")
+        after = mon.view("TIPA")
+        rows = after["sub_lines"]
+        assert len(rows) == 6
+        assert all(r["simulation_time_s"] > 0 for r in rows)
+        # the step actually moved per-sub-line state
+        assert any(r["simulation_time_s"] != 0 for r in rows)
+
+    def test_six_sub_lines_present(self):
+        mon = _monitor()
+        mon.select("TIPA")
+        mon.control("TIPA", "step")
+        view = mon.view("TIPA")
+        ids = [r["sub_line_id"] for r in view["sub_lines"]]
+        assert ids == list(SUB_LINE_IDS)
+        # structure carries six sub-lines too
+        assert len(view["structure"]) == 6
+
+    def test_runtime_identity_is_selected_g22_session(self):
+        mon = _monitor()
+        mon.select("TIPA")
+        mon.control("TIPA", "step")
+        view = mon.view("TIPA")
+        assert view["runtime_kind"] == "selected_g22_session"
+        assert view["identity"]["run_id"] == view["session"]["run_id"]
+        assert view["session"]["scenario_id"] == "tipa-default"
+
+    def test_no_second_runtime_in_shell(self):
+        mon = _monitor()
+        mon.select("TIPA")
+        # The shell only reads the session's own bridge; it must not have
+        # built any separate federation/runtime for TIPA.
+        assert mon.selected() == "TIPA"
+        view = mon.view("TIPA")
+        # before step the session has no bridge yet (lazily built on step)
+        assert view["sub_lines"] == []
+
+    def test_assy_demo_not_presented_as_same_session(self):
+        mon = _monitor()
+        view = mon.select("TIPA")
+        assert view["ui_page"] == "/assy-demo"
+        legacy = view.get("legacy_demo", {})
+        assert legacy.get("shares_session") is False
+        assert legacy.get("shares_identity") is False
+        note = (legacy.get("note") or "") + (view.get("ui_note") or "")
+        assert "SEPARATE" in note or "separate" in note.lower()
+        assert "not" in note.lower()
+
+    def test_step_increments_session_step_count(self):
+        mon = _monitor()
+        mon.select("TIPA")
+        mon.control("TIPA", "step")
+        view = mon.view("TIPA")
+        assert view["session"]["step_count"] == 1
+        assert view["session"]["last_time_s"] is not None
+
+    def test_shwtp_unaffected(self):
+        mon = _monitor()
+        mon.select("TIPA")
+        mon.control("TIPA", "step")
+        shwtp = mon.select("shwtp")
+        # TIPA session stepping must not have touched shwtp monitor
+        assert shwtp["workspace_id"] == "shwtp"
+        assert shwtp["session"]["step_count"] == 0
 
 
 class TestG23G22Unchanged:

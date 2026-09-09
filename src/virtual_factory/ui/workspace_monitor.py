@@ -236,34 +236,68 @@ def _step_dict(result) -> dict:
 
 
 def _tipa_view_extra(session: RuntimeSession) -> dict:
-    """TIPA monitor: six-sub-line structure + reuse of existing ASSY UI.
+    """TIPA monitor: live per-sub-line projection + explicit legacy-UI label.
 
-    The structure is the authoritative six ASSY sub-lines (G5 federation
-    workspace identity). The existing rich visualization is reused via
-    ``ui_page``; the shell does not re-implement the ASSY visual.
+    The per-sub-line state/status/key values come READ-ONLY from the selected
+    G22 ``RuntimeSession``'s own execution bridge (built lazily on first step).
+    The shell never creates a second runtime. ``/assy-demo`` is a SEPARATE
+    legacy demo runtime (its own controller); it is NOT the same session and
+    shares no identity/state with this shell's selected session.
     """
     from virtual_factory.federation import SUB_LINE_IDS, sub_line_path
 
     record = session.record
     structure = [
-        {"scope": sub_line_path(sid).as_string(), "kind": "sub_line"}
+        {"scope": sub_line_path(sid).as_string(), "kind": "sub_line", "sub_line_id": sid}
         for sid in SUB_LINE_IDS
     ]
+
+    # Live per-sub-line values from the SELECTED session's own bridge (none
+    # until the session has stepped; never build a second runtime here).
+    bridge = record.bridge
+    sub_lines: list[dict] = []
+    if bridge is not None and hasattr(bridge, "sub_line_views"):
+        sub_lines = list(bridge.sub_line_views())
+
     values = [
         {"scope": "session", "key": "run_state", "value": session.state.value},
         {"scope": "session", "key": "simulation_time_s", "value": record.last_time_s},
         {"scope": "session", "key": "step", "value": record.step_count},
     ]
+    for row in sub_lines:
+        values.extend([
+            {"scope": row["scope"], "sub_line_id": row["sub_line_id"],
+             "key": "simulation_time_s", "value": row["simulation_time_s"]},
+            {"scope": row["scope"], "sub_line_id": row["sub_line_id"],
+             "key": "conveyor_state", "value": row["conveyor_state"]},
+            {"scope": row["scope"], "sub_line_id": row["sub_line_id"],
+             "key": "wip_count", "value": row["wip_count"]},
+            {"scope": row["scope"], "sub_line_id": row["sub_line_id"],
+             "key": "motor_count", "value": row["motor_count"]},
+        ])
+
     return {
         "runtime": "TIPA ASSY (six sub-lines)",
+        "runtime_kind": "selected_g22_session",
         "structure": structure,
+        "sub_lines": sub_lines,
         "values": values,
-        "site_truth": False,  # demo/simulated runtime; existing ASSY UI is the visual
+        "site_truth": False,
+        "legacy_demo": {
+            "page": "/assy-demo",
+            "shares_session": False,
+            "shares_identity": False,
+            "note": (
+                "/assy-demo is a SEPARATE legacy demo runtime (its own "
+                "controller). It does NOT share this shell's selected G22 "
+                "TIPA RuntimeSession identity or state."
+            ),
+        },
         "ui_page": "/assy-demo",
         "ui_note": (
-            "Reuses the existing six-sub-line ASSY UI/runtime. The shell "
-            "shows session/structure only; full visualization lives at "
-            "/assy-demo."
+            "Separate legacy demo runtime: /assy-demo is NOT the same runtime "
+            "or session as this shell's selected G22 TIPA RuntimeSession. "
+            "Identity/state are not shared."
         ),
     }
 

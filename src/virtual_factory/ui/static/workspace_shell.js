@@ -123,9 +123,10 @@
       kvRow('description', view.description || '');
 
     const uiPage = view.ui_page;
+    const legacy = view.legacy_demo || {};
     $('ws-ui-page').innerHTML = uiPage
       ? '<a href="' + esc(uiPage) + '" target="_blank" rel="noopener">' +
-        'Open existing ASSY demo UI (reuse) →</a>'
+        'Open separate legacy ASSY demo UI (NOT this session) →</a>'
       : (view.ui_note ? '<span class="badge badge-info">' + esc(view.ui_note) + '</span>' : '');
 
     // session
@@ -157,7 +158,9 @@
     }
 
     // values
-    $('ws-values').innerHTML = valuesTable(view.values || [], view.workspace_id);
+    $('ws-values').innerHTML =
+      (view.sub_lines && view.sub_lines.length ? subLinesTable(view.sub_lines) : '') +
+      valuesTable(view.values || [], view.workspace_id);
 
     // trace
     const trace = (view.trace || []).map(function (step) {
@@ -186,6 +189,23 @@
         '<td>' + badgeFor(row.fidelity) + '</td>' +
         '<td>' + badgeFor(row.status) + '</td>' +
         '<td>' + details.join(' · ') + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<table class="ws-table"><thead>' + header + '</thead><tbody>' + body + '</tbody></table>';
+  }
+
+  function subLinesTable(subLines) {
+    const header = '<tr><th>sub-line</th><th>variant</th><th>sim time (s)</th>' +
+      '<th>conveyor</th><th>WIP</th><th>motors</th><th>RSO2 buffer</th></tr>';
+    const body = subLines.map(function (row) {
+      return '<tr>' +
+        '<td><code>' + esc(row.sub_line_id || row.scope || '') + '</code></td>' +
+        '<td>' + badgeFor(row.variant || '') + '</td>' +
+        '<td>' + esc(row.simulation_time_s == null ? '—' : row.simulation_time_s) + '</td>' +
+        '<td>' + badgeFor(row.conveyor_state || '') + '</td>' +
+        '<td>' + esc(row.wip_count == null ? '—' : row.wip_count) + '</td>' +
+        '<td>' + esc(row.motor_count == null ? '—' : row.motor_count) + '</td>' +
+        '<td>' + esc(row.rso2_buffer_size == null ? '—' : row.rso2_buffer_size) + '</td>' +
         '</tr>';
     }).join('');
     return '<table class="ws-table"><thead>' + header + '</thead><tbody>' + body + '</tbody></table>';
