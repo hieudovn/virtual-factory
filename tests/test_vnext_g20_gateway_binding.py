@@ -225,13 +225,56 @@ class TestDeterminism:
 
     def test_round_trip_serialization(self):
         table = build_assy_gateway_binding()
-        restored = GatewayBindingTable.from_dict(table.serialize())
+        restored = GatewayBindingTable.from_dict(
+            table.serialize(), known_scope_paths=table.known_scope_paths,
+        )
         assert restored.serialize() == table.serialize()
         assert restored.serialize()["schema"] == GATEWAY_BINDING_SCHEMA
 
     def test_from_dict_wrong_schema_fails_closed(self):
         with pytest.raises(GatewayBindingError):
             GatewayBindingTable.from_dict({"schema": "wrong"})
+
+
+class TestFromDictAuthority:
+    """G20-C01: serialized known_scope_paths is inspection metadata only;
+    reconstruction authority must come from the caller / actual Workspace."""
+
+    def test_tampered_scope_list_does_not_authorize_unknown_scope(self):
+        table = build_assy_gateway_binding()
+        data = table.serialize()
+        # Tamper the serialized inspection metadata to claim an arbitrary scope.
+        data["known_scope_paths"] = ["TIPA/ASSY/FAKE"]
+        # The tampered field is ignored: reconstruction against an authoritative
+        # set that lacks the bound scopes fails closed.
+        with pytest.raises(GatewayBindingError):
+            GatewayBindingTable.from_dict(
+                data, known_scope_paths=frozenset({"TIPA/ASSY/OTHER"}),
+            )
+        # And a correct authoritative set reconstructs fine, ignoring FAKE.
+        restored = GatewayBindingTable.from_dict(
+            data, known_scope_paths=ASSY_SCOPES,
+        )
+        assert set(restored.known_scope_paths) == ASSY_SCOPES
+
+    def test_reconstruction_requires_authoritative_scope_set(self):
+        data = build_assy_gateway_binding().serialize()
+        # Bindings present but no authoritative set -> fail closed.
+        with pytest.raises(GatewayBindingError):
+            GatewayBindingTable.from_dict(data)
+        # Wrong authoritative set -> fail closed.
+        with pytest.raises(GatewayBindingError):
+            GatewayBindingTable.from_dict(
+                data, known_scope_paths=frozenset({"TIPA/ASSY/OTHER"}),
+            )
+
+    def test_deterministic_trusted_round_trip(self):
+        table = build_assy_gateway_binding()
+        restored = GatewayBindingTable.from_dict(
+            table.serialize(), known_scope_paths=table.known_scope_paths,
+        )
+        assert restored.serialize() == table.serialize()
+        assert restored.binding_count == 6
 
 
 class TestGatewayTopologyNotExecutionOrContainment:

@@ -265,7 +265,21 @@ class GatewayBindingTable:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "GatewayBindingTable":
+    def from_dict(
+        cls,
+        data: dict,
+        *,
+        known_scope_paths: frozenset[str] | None = None,
+    ) -> "GatewayBindingTable":
+        """Reconstruct a table WITHOUT trusting the serialized scope list.
+
+        The serialized ``known_scope_paths`` field is inspection metadata only
+        and is NEVER used as validation authority. When the reconstruction has
+        bindings, the caller MUST supply the authoritative ``known_scope_paths``
+        (e.g. derived from the actual G1 Workspace) or reconstruction fails
+        closed. A tampered serialized scope list can therefore never authorize
+        an unknown scope.
+        """
         if not isinstance(data, dict):
             raise GatewayBindingError("binding table must be a dict")
         if data.get("schema") != GATEWAY_BINDING_SCHEMA:
@@ -279,12 +293,24 @@ class GatewayBindingTable:
         bindings = tuple(
             GatewayScopeBinding.from_dict(b) for b in data.get("bindings", [])
         )
+        if bindings and known_scope_paths is None:
+            raise GatewayBindingError(
+                "reconstruction with bindings requires an authoritative "
+                "known_scope_paths set (from the caller / actual Workspace); "
+                "the serialized known_scope_paths field is inspection metadata "
+                "only and is never trusted"
+            )
+        authority = (
+            frozenset(known_scope_paths)
+            if known_scope_paths is not None
+            else frozenset()
+        )
         return cls(
             table_id=data.get("table_id", ""),
             version=data.get("version", ""),
             gateways=gateways,
             bindings=bindings,
-            known_scope_paths=frozenset(data.get("known_scope_paths", [])),
+            known_scope_paths=authority,
         )
 
 
