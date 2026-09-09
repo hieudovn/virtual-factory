@@ -45,6 +45,11 @@ from virtual_factory.runcontrol.session import (
     SessionIdentity,
     build_tipa_session,
 )
+from virtual_factory.runcontrol.registry import (
+    WorkspaceRegistryError,
+    WorkspaceRuntimeInfo,
+    WorkspaceRuntimeRegistry,
+)
 
 __all__ = [
     "AssyExecutionBridge",
@@ -67,4 +72,7 @@ __all__ = [
     "SessionError",
     "SessionIdentity",
     "build_tipa_session",
+    "WorkspaceRegistryError",
+    "WorkspaceRuntimeInfo",
+    "WorkspaceRuntimeRegistry",
 ]

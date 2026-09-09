@@ -1,45 +1,43 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G22
-Status: READY FOR SA REVIEW (Scenario / Run / Replay Integration)
-Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G21 complete)
-Prerequisite: Issue #72 (G21) accepted; Issue #73 (G22) current
+Task: VF-vNEXT-G23
+Status: READY FOR SA REVIEW (Multi-Workspace Runtime Selection)
+Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G22 complete)
+Prerequisite: Issue #73 (G22) accepted; Issue #74 (G23) current
 
 Gate type:
-IMPLEMENTATION gate — Scenario / Run / Replay Integration, per Issue #73.
-Additive generic runtime-session seam over G7 run-lifecycle, for TIPA + SH-WTP
-G21 slice. No UI, no transport.
+IMPLEMENTATION gate — Multi-Workspace Runtime Selection, per Issue #74.
+Additive generic Workspace runtime registry/selector over TIPA + shwtp G22
+sessions. Backend/platform selection only; no UI yet.
 
 Base:
-G21 head = 028fdd8aadcee05483b7c5b3bbcf9815a680685f
+G22 head = 1c076525c62ab5c12e98fe970e035b4921cb62a0
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
 Implemented (additive, isolated):
-- src/virtual_factory/shwtp/bridge.py (ShwtpExecutionBridge over ShwtpPlantSlice)
-- src/virtual_factory/shwtp/session.py (build_shwtp_session)
-- src/virtual_factory/runcontrol/session.py (RuntimeSession, SessionIdentity,
-  build_tipa_session; domain-agnostic, no SH-WTP reference)
-- tests/test_vnext_g22_session.py (15 tests)
-- .ai-harness/regression/vnext_baseline_manifest.json (G22 gate context +
-  g22_session_replay group)
+- src/virtual_factory/runcontrol/registry.py (WorkspaceRuntimeRegistry,
+  WorkspaceRuntimeInfo, WorkspaceRegistryError; domain-agnostic, no SH-WTP ref)
+- tests/test_vnext_g23_registry.py (15 tests)
+- .ai-harness/regression/vnext_baseline_manifest.json (G23 gate context +
+  g23_workspace_registry group)
 
 Frozen boundaries preserved:
-TIPA ASSY semantics; T106/T108 equations; G21/G20/G19/G18/G14/G15; reference
-connectivity graph; PIM pins. No UI, no gateway routing, no MES/PIM change, no
-G4 redesign, no T110/Line2 physics.
+G22 session semantics; G21/G20/G19/G18/G14/G15; TIPA ASSY; runcontrol G7
+boundary. No UI, no gateway routing, no MES/PIM change, no G4 redesign, no
+domain semantics change, no T110/Line2.
 
 Authority unchanged:
 vf_runtime_authorization NOT_AUTHORIZED; site_authorized_execution NOT_AUTHORIZED;
 whole_plant_runtime NOT_AUTHORIZED / NOT_IMPLEMENTED.
 
-Regression: G22 15 passed; full suite 2413 passed; complete canonical vNext
+Regression: G23 15 passed; full suite 2428 passed; complete canonical vNext
 baseline PASS (see report).
 
-G22 started: YES (completed; READY FOR SA REVIEW)
-G23 started: NO
+G23 started: YES (completed; READY FOR SA REVIEW)
+G24 started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G22.md
+.ai-harness/sa-review/reports/VF-vNEXT-G23.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G22/01-session-replay.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G23/01-workspace-registry.md

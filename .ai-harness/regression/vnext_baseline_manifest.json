@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G22.json",
-    "changed_files_base": "028fdd8aadcee05483b7c5b3bbcf9815a680685f"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G23.json",
+    "changed_files_base": "1c076525c62ab5c12e98fe970e035b4921cb62a0"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -316,6 +316,15 @@
       "purpose": "G22 Scenario/Run/Replay Integration tests: explicit session/run identity per Workspace; fresh new attempt has fresh runtime state and distinct attempt/run identity; deterministic replay reproduces equivalent outcome/trace; reset/new-attempt/replay semantics unambiguous; TIPA and SH-WTP sessions isolated; mismatched workspace/run/scenario identity fails closed; SH-WTP assumed topology/fidelity metadata survives replay unchanged; TIPA ASSY + G21/G20/G19/G18/G14/G15 unchanged.",
       "files": [
         "tests/test_vnext_g22_session.py"
+      ]
+    },
+    {
+      "id": "g23_workspace_registry",
+      "gate": "G23",
+      "type": "pytest",
+      "purpose": "G23 Multi-Workspace Runtime Selection tests: deterministic enumeration of TIPA + shwtp; select TIPA returns a TIPA RuntimeSession; select shwtp returns a SH-WTP RuntimeSession; two Workspace sessions isolated; switching does not mutate inactive session; fresh independent session for the same Workspace; unknown/ambiguous Workspace fails closed; registration order does not affect enumeration/selection; no cross-workspace runtime coupling; open for future Workspaces; G22/G21/G20/G19/G18 + TIPA ASSY unchanged.",
+      "files": [
+        "tests/test_vnext_g23_registry.py"
       ]
     },
     {
