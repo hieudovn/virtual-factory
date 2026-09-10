@@ -99,11 +99,11 @@ No authority broadening occurred in this gate.
 ## 9. Regression
 
 - G25 acceptance: 24 passed.
-- Full suite: PASS (see trace `g25_baseline.json`).
+- Full suite: 2489 passed (see trace `g25_baseline.json`).
 - Complete canonical vNext baseline
   (g1_workspace ... g24_workspace_shell, g25_acceptance, full_suite,
   checks_compile, checks_static_lint_type, checks_changed_files,
-  checks_preflight): PASS.
+  checks_preflight): PASS (37/37 groups).
 
 ## 10. Evidence
 
