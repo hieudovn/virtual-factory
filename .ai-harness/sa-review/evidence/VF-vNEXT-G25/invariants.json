@@ -1,0 +1,14 @@
+{
+  "independent_run_ids": true,
+  "no_cross_workspace_mutation": true,
+  "registry_metadata_keys": [
+    "workspace_ids",
+    "workspaces"
+  ],
+  "shwtp_assumed_not_site_truth": true,
+  "shwtp_bridge_slice_coupling_policy": "explicit_lagged",
+  "workspace_ids": [
+    "TIPA",
+    "shwtp"
+  ]
+}

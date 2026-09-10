@@ -1,47 +1,61 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-G24-C01
-Status: READY FOR SA REVIEW (Workspace Shell reflects selected G22 TIPA RuntimeSession)
+Task: VF-vNEXT-G25
+Status: READY FOR SA REVIEW (Integrated Multi-Workspace Demo / MVP Acceptance)
 Parent: Implementation phase (umbrella #39 VF-vNEXT-ARCH; gates G1-G24 complete)
-Prerequisite: Issue #75 (G24) accepted; G24-C01 current
+Prerequisite: G24-C01 accepted; Issue #76 (G25) current
 
 Gate type:
-CORRECTION gate — G24-C01, on the G24 head
-899e851167de768669769dfe650bb46e011024d7. Makes the Workspace Shell's TIPA view
-reflect the SELECTED G22 TIPA RuntimeSession: live per-sub-line projection read
-from the selected session's own bridge (no second runtime); /assy-demo labelled
-a separate legacy demo runtime (identity/state not shared).
+ACCEPTANCE / HARDENING gate — Integrated Multi-Workspace Demo / MVP Acceptance,
+per Issue #76. No new architecture. Proves both accepted Workspaces end-to-end
+through the Workspace Shell backend (G23 registry + G22 RuntimeSession), records
+deterministic evidence, and delivers a milestone acceptance report.
 
 Base:
-G24 head = 899e851167de768669769dfe650bb46e011024d7
+G24-C01 head = 0ca571e2a490502683cf41ae7c1b22822217d1fa
 Production base SHA: canonical main @ f5261c8 (inspected; not merged)
 
-Implemented (additive, read-only):
-- src/virtual_factory/runcontrol/assy_bridge.py (AssyExecutionBridge.sub_line_views())
-- src/virtual_factory/ui/workspace_monitor.py (TIPA view live per-sub-line values
-  from selected session bridge; runtime_kind=selected_g22_session; /assy-demo
-  separate legacy demo runtime label)
-- src/virtual_factory/ui/static/workspace_shell.js (live per-sub-line table;
-  /assy-demo "(NOT this session)" link)
-- tests/test_vnext_g24_workspace_ui.py (C01 tests)
-- .ai-harness/regression/vnext_baseline_manifest.json (G24-C01 gate context)
+Implemented (tests + evidence only; no production code change):
+- tests/test_vnext_g25_acceptance.py (24 integrated acceptance tests:
+  FLOW A TIPA, FLOW B SH-WTP, platform invariants, frozen invariants)
+- .ai-harness/sa-review/evidence/VF-vNEXT-G25/ (generate_evidence.py +
+  flow-a-tipa.json + flow-b-shwtp.json + invariants.json; deterministic)
+- .ai-harness/sa-review/reports/VF-vNEXT-G25.md (milestone acceptance report)
+- .ai-harness/regression/vnext_baseline_manifest.json (G25 gate context +
+  g25_acceptance group)
+
+FLOW A TIPA: shell opens; selector from backend registry; select TIPA uses the
+selected G22 RuntimeSession; step proves six live ASSY sub-lines from that
+session; reset/new-attempt/replay explicit + deterministic; switch to SH-WTP and
+back does not mutate TIPA; /assy-demo labelled a separate legacy runtime.
+
+FLOW B SH-WTP: select shwtp; runs RAW-INTAKE -> T100 -> T106 -> T108 ->
+DIST-P108; live time/step/flow/tank/status; fidelity/status/assumed topology
+explicit; reset/new-attempt/replay deterministic; switch to TIPA and back does
+not mutate SH-WTP.
+
+Re-proven: one platform -> many independent Workspaces; no shared
+state/run_id/clock/truth; no cross-workspace runtime coupling; RuntimeSession
+lifecycle reused; explicit_lagged/G4/G19 unchanged; ASSY oracle green; SH-WTP
+assumptions never site truth.
 
 Frozen boundaries preserved:
-No ASSY runtime/UI rewrite; no legacy-controller unification; no G22/G23
-semantics change; runcontrol SH-WTP-free; G21 slice untouched; no G25.
+No gateway routing / production export / multi-gateway / store-and-forward;
+no SH-WTP whole-plant/site-faithful; no T110/Line2; no distributed execution /
+advanced coupling; no broad UI redesign; no PIM/MES change.
 
 Authority unchanged:
 vf_runtime_authorization NOT_AUTHORIZED; site_authorized_execution NOT_AUTHORIZED;
 whole_plant_runtime NOT_AUTHORIZED / NOT_IMPLEMENTED.
 
-Regression: G24 + C01 37 passed; full suite PASS; complete canonical vNext
+Regression: G25 acceptance 24 passed; full suite PASS; complete canonical vNext
 baseline PASS (see report).
 
-G24-C01 started: YES (completed; READY FOR SA REVIEW)
-G25 started: NO
+G25 started: YES (completed; READY FOR SA REVIEW)
+Next gate started: NO
 
 Report:
-.ai-harness/sa-review/reports/VF-vNEXT-G24-C01.md
+.ai-harness/sa-review/reports/VF-vNEXT-G25.md
 
 Evidence:
-.ai-harness/sa-review/evidence/VF-vNEXT-G24-C01/01-tipa-live-projection.md
+.ai-harness/sa-review/evidence/VF-vNEXT-G25/

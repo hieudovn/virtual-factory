@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G24-C01.json",
-    "changed_files_base": "899e851167de768669769dfe650bb46e011024d7"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-G25.json",
+    "changed_files_base": "0ca571e2a490502683cf41ae7c1b22822217d1fa"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -334,6 +334,15 @@
       "purpose": "G24 + G24-C01 Multi-Workspace UI Switching + Monitoring Shell tests: selector from backend G23 registry; select TIPA reuses six-sub-line ASSY UI/runtime; select shwtp shows the accepted G21 5-scope slice with key flow/tank values; switching never mutates the inactive workspace session; each workspace view exposes minimum monitor fields; run control acts only on the selected workspace/session; unknown workspace/session/action fails closed; SH-WTP assumed topology/fidelity never presented as site truth; static shell page + FastAPI endpoints served; G24-C01: TIPA view reflects the SELECTED G22 RuntimeSession (live per-sub-line state/status/key values from the session's own bridge, no second runtime; /assy-demo explicitly labelled a separate legacy demo runtime); G23/G22/G21 + TIPA ASSY unchanged.",
       "files": [
         "tests/test_vnext_g24_workspace_ui.py"
+      ]
+    },
+    {
+      "id": "g25_acceptance",
+      "gate": "G25",
+      "type": "pytest",
+      "purpose": "G25 Integrated Multi-Workspace Demo / MVP acceptance tests: FLOW A TIPA (select from registry, six live ASSY sub-lines from the selected G22 session, deterministic reset/new-attempt/replay, switch-away-no-mutation, /assy-demo separate legacy runtime); FLOW B SH-WTP (5-scope slice RAW-INTAKE -> T100 -> T106 -> T108 -> DIST-P108, live time/step/flow/tank/status, explicit fidelity/status/assumed topology, deterministic reset/new-attempt/replay, switch-away-no-mutation); platform invariants (one platform -> many independent Workspaces, no shared state/run_id/clock/truth, no cross-workspace coupling, RuntimeSession lifecycle reuse); frozen invariants (explicit_lagged/G4/G19 unchanged, ASSY oracle deterministic, SH-WTP assumptions never site truth).",
+      "files": [
+        "tests/test_vnext_g25_acceptance.py"
       ]
     },
     {
