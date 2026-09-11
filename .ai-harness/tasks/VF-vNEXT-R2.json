@@ -36,7 +36,8 @@
     "src/virtual_factory/ui/static/assy_demo.css",
     "tests/test_vnext_r2_same_session_rich_assy.py",
     "tests/test_vnext_g24_workspace_ui.py",
-    "tests/test_vnext_g25_acceptance.py"
+    "tests/test_vnext_g25_acceptance.py",
+    "tests/test_demo_overview.py"
   ],
   "forbidden_paths": [
     "src/virtual_factory/assembly/",

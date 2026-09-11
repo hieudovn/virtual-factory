@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-R1-C01.json",
-    "changed_files_base": "77ab1def956d9b3d5aefd7304413dedd77206597"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-R2.json",
+    "changed_files_base": "4f866323fc73a1f73f6d513d5c91220d14a997b3"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -352,6 +352,15 @@
       "purpose": "VF-vNEXT-R1 Canonical TIPA Same-Session Production Semantics tests: the selected tipa-default RuntimeSession runs MEANINGFUL six-sub-line ASSY production (explicit immutable run profile; per-line effective scenario + accepted config/quality transforms applied before runtime construction; deterministic initial SSO2/RSO2 inventory and carrier/feed sequencing; shared production driver: feed replenish -> on-demand RSO2 for AP04 -> execute_dwell -> conditional index_line -> next SSO2 introduction); first meaningful step is non-empty on all six lines; bounded canonical run reaches AP04 motor creation + genealogy; exactly six isolated runtimes/configs/run-state holders with stable per-line seed mapping and no cross-line mutation; scenario targeting effective (HAPPY default; AP06/AP08/failed-final synthetic exceptions affect ONLY the accepted target line); one-line hold/freeze with the other five continuing; determinism of two fresh sessions; G22 lifecycle compatibility (profile-consistent reset keeping the run identity, new-attempt fresh identity with the same pinned inputs, replay bounded production-state equivalence); frozen guards (no AssyLineRuntime rewrite, no second runtime authority, G4 exact-boundary/no-fractional-dwell, legacy accepted demo regression-green). Gateway routing is NOT performed.",
       "files": [
         "tests/test_vnext_r1_production_semantics.py"
+      ]
+    },
+    {
+      "id": "r2_same_session_rich_assy",
+      "gate": "R2",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R2 Canonical Same-Session Rich ASSY 2D Experience tests: ONE product-path TIPA simulation authority (the rich /assy-demo experience obtains the SAME canonical RuntimeSession that /workspaces uses via the WorkspaceMonitor live-session seam; exactly one federation is constructed and ZERO legacy DemoController objects are instantiated); Frame A overview is exactly the six canonical sub-lines with live values; Frame B is the accepted 2D physical projection built from detached snapshots of the canonical AssyLineRuntime public read surface (accepted 12-position list, positions[] physical truth = conveyor.wip_at, successive-snapshot WIP movement, AP04 join -> MTR-0001 genealogy, station/operation/quality inspector read models); sub-line selection is presentation-only; rich STEP/RESET act on the same session as the shell (reset keeps the R1-C01 same-run-id fresh-profile semantics); legacy-authority-only capabilities (observation/MES output, AP05 jam/recover, run-to-terminal/OEE, scenario mutation) fail closed as explicitly deferred with deferred_to R3/R4 and legacy_runtime_authority false; thin OPS-03/OPS-04 command and run-mode bindings act on the canonical runtime; held-one/five-continue is reflected in the overview/detail projections. No gateway/SH-WTP/Observation work is performed.",
+      "files": [
+        "tests/test_vnext_r2_same_session_rich_assy.py"
       ]
     },
     {

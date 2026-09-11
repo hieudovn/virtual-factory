@@ -284,31 +284,56 @@ def create_app(
     # M6-S04 — TIPA ASSY Demo Endpoints
     # ═══════════════════════════════════════════════════
 
-    _assy_controller: dict = {"instance": None}
+    _assy_experience_note = (
+        "R2: /assy-demo is the rich projection of the SAME canonical TIPA "
+        "RuntimeSession used by /workspaces (one run authority). No legacy "
+        "DemoController/AssyDemoComposition is instantiated on this path."
+    )
 
-    def _get_assy_controller():
-        if _assy_controller["instance"] is None:
-            from virtual_factory.assembly.demo_controller import DemoController
-            from virtual_factory.assembly.observation_bridge import (
-                build_assy_observation_pipeline,
+    def _get_assy_experience():
+        from virtual_factory.ui.assy_experience import CanonicalAssyExperience
+
+        return CanonicalAssyExperience(_get_workspace_monitor())
+
+    def _deferred_response(feature: str, reason: str, *, mutation: bool = True):
+        """Explicit deferred-unavailable (fail closed; never legacy runtime)."""
+        from fastapi.responses import JSONResponse
+        from virtual_factory.ui.assy_experience import DeferredUnavailable
+
+        exc = DeferredUnavailable(feature, reason)
+        return JSONResponse(
+            status_code=409 if mutation else 503,
+            content={
+                "status": "deferred",
+                "feature": exc.feature,
+                "deferred_to": exc.gate,
+                "reason": exc.reason,
+                "authority": "canonical_tipa_runtime_session",
+                "legacy_runtime_authority": False,
+            },
+        )
+
+    def _experience_error_response(exc: Exception):
+        from fastapi.responses import JSONResponse
+        from virtual_factory.ui.assy_experience import (
+            AssyExperienceError,
+            SessionNotStarted,
+        )
+
+        if isinstance(exc, SessionNotStarted):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "session_not_started",
+                    "detail": str(exc),
+                    "authority": "canonical_tipa_runtime_session",
+                },
             )
-            from virtual_factory.assembly.assy_mes_bridge import (
-                build_assy_mes_pipeline,
+        if isinstance(exc, AssyExperienceError):
+            return JSONResponse(
+                status_code=404, content={"detail": str(exc), "status": "error"}
             )
-            assy_config = os.environ.get(
-                "TIPA_ASSY_CONFIG",
-                str(Path(__file__).resolve().parent.parent.parent.parent / "configs" / "plants" / "tipa_assy_demo.yaml")
-            )
-            ctrl = DemoController(config_path=assy_config)
-            ctrl.initialize()
-            # M6-INT-01: attach the downstream observation pipeline (read-only).
-            pipeline = build_assy_observation_pipeline()
-            ctrl.attach_observation_bridge(pipeline.bridge)
-            # VF-DM-DEMO-ASSY-MES-02: attach the six-sub-line MES contract bridge.
-            mes_pipeline = build_assy_mes_pipeline()
-            ctrl.attach_mes_bridge(mes_pipeline.bridge)
-            _assy_controller["instance"] = ctrl
-        return _assy_controller["instance"]
+        raise exc
 
     @app.get("/assy-demo")
     def assy_demo_page() -> FileResponse:
@@ -320,30 +345,53 @@ def create_app(
 
     @app.post("/assy-demo/reset")
     def assy_demo_reset(body: dict | None = None) -> dict:
-        ctrl = _get_assy_controller()
-        scenario = (body or {}).get("scenario", "HAPPY_PATH")
-        from virtual_factory.assembly.demo_controller import DemoScenario
-        ctrl.set_scenario(DemoScenario(scenario))
-        snap = ctrl.reset()
-        return snap.to_dict()
+        """In-context reset of the SELECTED canonical TIPA session (R1-C01).
+
+        Scenario/profile is pinned run input (R1): a request for a DIFFERENT
+        scenario is deferred (no legacy mutate-then-reset semantics).
+        """
+        experience = _get_assy_experience()
+        requested = (body or {}).get("scenario")
+        if requested:
+            effective = experience.session_identity().get("scenario_id", "")
+            profile = experience.session_identity().get("run_profile") or {}
+            if requested not in (effective, profile.get("scenario")):
+                return _deferred_response(
+                    "scenario_change",
+                    "scenario/profile is pinned run input; changing it needs a "
+                    "new canonical session (R4), not a legacy reset",
+                )
+        try:
+            return experience.reset()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/step")
     def assy_demo_step() -> dict:
-        ctrl = _get_assy_controller()
-        snap = ctrl.step()
-        return snap.to_dict()
+        """Advance the SELECTED canonical TIPA session (one boundary)."""
+        experience = _get_assy_experience()
+        try:
+            return experience.step()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.get("/assy-demo/observations")
     def assy_demo_observations() -> dict:
-        """M6-INT-01: ordered P0 outbound observation trace (read-only)."""
-        ctrl = _get_assy_controller()
-        trace = ctrl.outbound_trace
-        return {"count": len(trace), "observations": trace}
+        """R3: observation/MES output is not rewired yet (fail closed)."""
+        return _deferred_response(
+            "observations",
+            "observation/MES reintegration is R3; the legacy runtime is not "
+            "allowed to serve it",
+            mutation=False,
+        )
 
     @app.post("/assy-demo/snapshot")
     def assy_demo_snapshot() -> dict:
-        ctrl = _get_assy_controller()
-        return ctrl.snapshot().to_dict()
+        experience = _get_assy_experience()
+        try:
+            return experience.snapshot()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     # ═══════════════════════════════════════════════════
     # VF-DM-DEMO-ASSY-MES-02 — MES contract bridge endpoints
@@ -351,43 +399,54 @@ def create_app(
 
     @app.post("/assy-demo/jam")
     def assy_demo_jam(body: dict | None = None) -> dict:
-        """Deterministic AP05_JAM on the exception target sub-line."""
-        ctrl = _get_assy_controller()
-        sub_line_id = (body or {}).get("sub_line_id") or None
-        return ctrl.trigger_jam(sub_line_id).to_dict()
+        """R4: AP05 fault/OEE workflow needs legacy authority (fail closed)."""
+        return _deferred_response(
+            "jam",
+            "AP05 fault/OEE workflow is not bindable to the canonical session "
+            "without new architecture (R4)",
+        )
 
     @app.post("/assy-demo/recover")
     def assy_demo_recover(body: dict | None = None) -> dict:
-        """Resolve the AP05_JAM after the deterministic 120 s downtime."""
-        ctrl = _get_assy_controller()
-        sub_line_id = (body or {}).get("sub_line_id") or None
-        return ctrl.recover(sub_line_id).to_dict()
+        """R4: AP05 fault recovery needs legacy authority (fail closed)."""
+        return _deferred_response(
+            "recover",
+            "AP05 fault recovery is not bindable to the canonical session "
+            "without new architecture (R4)",
+        )
 
     @app.post("/assy-demo/run-to-terminal")
     def assy_demo_run_to_terminal() -> dict:
-        """Run the demo until the exception target sub-line is terminal, then
-        emit per-sub-line OEE summaries."""
-        ctrl = _get_assy_controller()
-        return ctrl.run_to_terminal().to_dict()
+        """R4: legacy run-to-terminal/OEE driver is deferred (fail closed)."""
+        return _deferred_response(
+            "run_to_terminal",
+            "legacy run-to-terminal/OEE driving is not part of the canonical "
+            "session contract (R4)",
+        )
 
     @app.get("/assy-demo/mes-messages")
     def assy_demo_mes_messages() -> dict:
-        """VF-DM-DEMO-ASSY-MES-02: delivered MES-compatible messages."""
-        ctrl = _get_assy_controller()
-        msgs = ctrl.mes_messages
-        return {"count": len(msgs), "messages": msgs}
+        """R3: MES contract output is not rewired yet (fail closed)."""
+        return _deferred_response(
+            "mes_messages",
+            "MES/output reintegration is R3; the legacy runtime is not allowed "
+            "to serve it",
+            mutation=False,
+        )
 
     @app.get("/assy-demo/mes-trace")
     def assy_demo_mes_trace() -> dict:
-        """VF-DM-DEMO-ASSY-MES-02: ordered MES bridge delivery trace."""
-        ctrl = _get_assy_controller()
-        trace = ctrl.mes_outbound_trace
-        return {"count": len(trace), "observations": trace}
+        """R3: MES bridge delivery trace is not rewired yet (fail closed)."""
+        return _deferred_response(
+            "mes_trace",
+            "MES/output reintegration is R3; the legacy runtime is not allowed "
+            "to serve it",
+            mutation=False,
+        )
 
     @app.get("/assy-demo/version")
     def assy_demo_version() -> dict:
-        """VF-DM-DEMO-ASSY-MES-02/03: exact source SHA recorded/exposed and the
-        active additive MES contract version."""
+        """Exact source SHA + active additive MES contract version (read-only)."""
         import subprocess
         from virtual_factory.assembly.assy_mes_bridge import CONTRACT_VERSION
         sha = os.environ.get("VF_SOURCE_SHA", "")
@@ -404,6 +463,7 @@ def create_app(
             "source_sha": sha,
             "contract_version": CONTRACT_VERSION,
             "runtime": "assy-demo",
+            "authority": "canonical_tipa_runtime_session",
         }
 
     # ═══════════════════════════════════════════════════
@@ -412,10 +472,9 @@ def create_app(
 
     @app.post("/assy-demo/operation-command")
     def assy_demo_operation_command(body: dict) -> dict:
-        """Submit an operation command. Runtime decides; snapshot is truth."""
+        """OPS-03 thin same-session binding: the canonical runtime decides."""
         from fastapi.responses import JSONResponse
         from virtual_factory.assembly.line_runtime import AssyLineError
-        ctrl = _get_assy_controller()
         station_id = body.get("station_id", "")
         wip_id = body.get("wip_id", "")
         command = body.get("command", "")
@@ -425,21 +484,24 @@ def create_app(
                 status_code=400,
                 content={"detail": "station_id, wip_id and command are required"},
             )
+        experience = _get_assy_experience()
         try:
-            snap = ctrl.submit_operation_command(station_id, wip_id, command, payload)
+            return experience.operation_command(
+                body.get("sub_line_id", ""), station_id, wip_id, command, payload
+            )
         except AssyLineError as exc:
             return JSONResponse(
                 status_code=409,
                 content={"detail": str(exc), "status": "error"},
             )
-        return snap.to_dict()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/station-action")
     def assy_demo_station_action(body: dict) -> dict:
-        """Submit an exception station action (HOLD). Runtime decides."""
+        """OPS-03/OPS-04 thin same-session binding: runtime decides."""
         from fastapi.responses import JSONResponse
         from virtual_factory.assembly.line_runtime import AssyLineError
-        ctrl = _get_assy_controller()
         station_id = body.get("station_id", "")
         wip_id = body.get("wip_id", "")
         action = body.get("action", "")
@@ -448,88 +510,88 @@ def create_app(
                 status_code=400,
                 content={"detail": "station_id, wip_id and action are required"},
             )
+        experience = _get_assy_experience()
         try:
-            snap = ctrl.submit_station_action(station_id, wip_id, action)
+            return experience.station_action(
+                body.get("sub_line_id", ""), station_id, wip_id, action
+            )
         except AssyLineError as exc:
             return JSONResponse(
                 status_code=409,
                 content={"detail": str(exc), "status": "error"},
             )
-        return snap.to_dict()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/run-mode")
     def assy_demo_run_mode(body: dict) -> dict:
-        """Set global run mode (MANUAL/AUTO/ASSISTED) for the demo contexts."""
+        """Thin same-session binding: effective run mode on the six canonical lines."""
         from fastapi.responses import JSONResponse
         from virtual_factory.assembly.station_contracts import CompletionMode
-        ctrl = _get_assy_controller()
+        from virtual_factory.ui.assy_experience import SessionNotStarted
         mode = body.get("mode", "")
+        experience = _get_assy_experience()
         try:
-            parsed = CompletionMode(mode)
+            return experience.set_run_mode(mode)
+        except SessionNotStarted as exc:
+            return _experience_error_response(exc)
         except ValueError:
             return JSONResponse(
                 status_code=400,
                 content={"detail": f"Invalid run mode: {mode!r}"},
             )
-        return ctrl.set_run_mode(parsed).to_dict()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/select")
     def assy_demo_select(body: dict) -> dict:
-        """Select the active sub-line context for step/command endpoints.
+        """Select the presentation sub-line of the canonical session.
 
-        Additive M6-S04B binding: the detail view can render any sub-line, but
-        step/command endpoints operate on the selected context. This exposes the
-        existing DemoController.select_sub_line surface so operators can target
-        a specific sub-line in MANUAL E2E.
+        R2: presentation context only — never resets/reconstructs/forks any
+        runtime and never changes the parent run identity.
         """
         from fastapi.responses import JSONResponse
-        ctrl = _get_assy_controller()
         sub_line_id = body.get("sub_line_id", "")
         if not sub_line_id:
             return JSONResponse(
                 status_code=400,
                 content={"detail": "sub_line_id is required"},
             )
+        experience = _get_assy_experience()
         try:
-            ctrl.select_sub_line(sub_line_id)
-        except ValueError as exc:
-            return JSONResponse(
-                status_code=404,
-                content={"detail": str(exc)},
-            )
-        return ctrl.snapshot().to_dict()
+            return experience.select(sub_line_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
 
-    # ═══════════════════════════════════════════════════
-    # M6-S04B-I03 — Additive S04B Overview / Detail Endpoints
-    # ═══════════════════════════════════════════════════
+    # ── Frame A / Frame B projection endpoints (canonical session) ──
+    @app.get("/assy-demo/overview")
+    def assy_demo_overview() -> dict:
+        experience = _get_assy_experience()
+        try:
+            return experience.overview()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
-    _enable_s04b = os.environ.get("VF_ENABLE_S04B_OVERVIEW", "0") == "1"
+    @app.get("/assy-demo/sub-lines")
+    def assy_demo_sub_lines() -> list[dict]:
+        experience = _get_assy_experience()
+        return experience.overview()["sub_lines"]
 
-    if _enable_s04b:
-        @app.get("/assy-demo/overview")
-        def assy_demo_overview() -> dict:
-            ctrl = _get_assy_controller()
-            return ctrl.overview().to_dict()
+    @app.get("/assy-demo/sub-line/{sub_line_id}")
+    def assy_demo_sub_line_detail(sub_line_id: str) -> dict:
+        experience = _get_assy_experience()
+        try:
+            return experience.detail(sub_line_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
 
-        @app.get("/assy-demo/sub-lines")
-        def assy_demo_sub_lines() -> list[dict]:
-            ctrl = _get_assy_controller()
-            ov = ctrl.overview()
-            return [s.to_dict() for s in ov.sub_lines]
-
-        @app.get("/assy-demo/sub-line/{sub_line_id}")
-        def assy_demo_sub_line_detail(sub_line_id: str) -> dict:
-            from virtual_factory.assembly.demo_controller import DemoController
-            ctrl = _get_assy_controller()
-            try:
-                snap = ctrl.detail_for(sub_line_id)
-                return snap.to_dict()
-            except ValueError:
-                from fastapi.responses import JSONResponse
-                return JSONResponse(
-                    status_code=404,
-                    content={"detail": f"Sub-line not found: {sub_line_id!r}"},
-                )
+    @app.get("/assy-demo/identity")
+    def assy_demo_identity() -> dict:
+        """Canonical session/run/scenario/profile identity for the rich UI."""
+        experience = _get_assy_experience()
+        payload = experience.identity()
+        payload["note"] = _assy_experience_note
+        return payload
 
     # ═══════════════════════════════════════════════════
     # G6 — Shared hierarchical UI context (read-only, additive)

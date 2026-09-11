@@ -113,11 +113,17 @@ class WorkspaceMonitor:
         *,
         tipa_config_path: str | None = None,
     ) -> None:
+        self._tipa_config_path = _resolve_tipa_config(tipa_config_path)
         self._registry = registry or build_platform_registry(tipa_config_path)
         self._sessions: dict[str, RuntimeSession] = {}
         self._selected: str | None = None
 
     # ── registry / selector source ─────────────────────────────
+
+    @property
+    def tipa_config_path(self) -> str:
+        """The TIPA ASSY config path this monitor's registry factory uses."""
+        return self._tipa_config_path
 
     def workspace_ids(self) -> tuple[str, ...]:
         return self._registry.workspace_ids()
@@ -156,6 +162,16 @@ class WorkspaceMonitor:
     def session_identity(self, workspace_id: str) -> dict:
         session = self._session_for(workspace_id)
         return _session_identity_dict(session)
+
+    def live_session(self, workspace_id: str) -> RuntimeSession:
+        """Explicit public seam: the ONE live session for a workspace.
+
+        Returns the SAME object used by ``view``/``control``/``select`` (created
+        lazily through the G23 registry). Rich projections/adapters MUST use
+        this accessor instead of keeping their own session cache: one workspace
+        run authority, no second session/federation/runtime.
+        """
+        return self._session_for(workspace_id)
 
     # ── run control (only the selected workspace/session) ───────
 
@@ -240,9 +256,10 @@ def _tipa_view_extra(session: RuntimeSession) -> dict:
 
     The per-sub-line state/status/key values come READ-ONLY from the selected
     G22 ``RuntimeSession``'s own execution bridge (built lazily on first step).
-    The shell never creates a second runtime. ``/assy-demo`` is a SEPARATE
-    legacy demo runtime (its own controller); it is NOT the same session and
-    shares no identity/state with this shell's selected session.
+    The shell never creates a second runtime. ``/assy-demo`` is the RICH
+    PROJECTION of this SAME canonical session (R2): it renders the six canonical
+    runtimes (Frame A overview + Frame B 2D line) and its STEP/RESET act on this
+    same session, so shell and rich UI always show the same run/time.
     """
     from virtual_factory.federation import SUB_LINE_IDS, sub_line_path
 
@@ -285,19 +302,20 @@ def _tipa_view_extra(session: RuntimeSession) -> dict:
         "site_truth": False,
         "legacy_demo": {
             "page": "/assy-demo",
-            "shares_session": False,
-            "shares_identity": False,
+            "shares_session": True,
+            "shares_identity": True,
             "note": (
-                "/assy-demo is a SEPARATE legacy demo runtime (its own "
-                "controller). It does NOT share this shell's selected G22 "
-                "TIPA RuntimeSession identity or state."
+                "/assy-demo is the SAME canonical TIPA RuntimeSession as this "
+                "shell view (one run authority, six canonical sub-lines). It is "
+                "a rich projection of the selected session; opening it creates "
+                "no second ASSY runtime."
             ),
         },
         "ui_page": "/assy-demo",
         "ui_note": (
-            "Separate legacy demo runtime: /assy-demo is NOT the same runtime "
-            "or session as this shell's selected G22 TIPA RuntimeSession. "
-            "Identity/state are not shared."
+            "Same canonical session: /assy-demo projects this shell's selected "
+            "G22 TIPA RuntimeSession (same workspace_id/run_id/scenario). "
+            "STEP/RESET act on that same session."
         ),
     }
 

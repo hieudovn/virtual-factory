@@ -173,14 +173,16 @@ class TestFlowATipa:
         assert tipa_after["session"]["step_count"] == tipa_steps
         assert tipa_after["trace"] == tipa_trace
 
-    def test_a7_assy_demo_marked_separate_legacy_runtime(self):
+    def test_a7_assy_demo_same_canonical_session(self):
+        """R2: /assy-demo projects the SAME canonical session (one authority)."""
         mon = _monitor()
         view = mon.select("TIPA")
         assert view["ui_page"] == "/assy-demo"
         legacy = view["legacy_demo"]
-        assert legacy["shares_session"] is False
-        assert legacy["shares_identity"] is False
-        assert "SEPARATE" in legacy["note"] or "separate" in legacy["note"].lower()
+        assert legacy["shares_session"] is True
+        assert legacy["shares_identity"] is True
+        note = (legacy["note"] + view["ui_note"]).lower()
+        assert "same" in note and "canonical" in note
 
 
 # ═══════════════════════════════════════════════════════════════

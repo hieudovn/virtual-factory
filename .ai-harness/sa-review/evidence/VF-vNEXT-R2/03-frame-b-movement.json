@@ -1,0 +1,180 @@
+{
+  "accepted_positions": [
+    "PRE-ASSY",
+    "AP01",
+    "AP02",
+    "AP03",
+    "AP04",
+    "AP05",
+    "AP06",
+    "AP07",
+    "AP08",
+    "AP09",
+    "AP10",
+    "AP11"
+  ],
+  "ap04_join_at_step_5": true,
+  "frames": [
+    {
+      "active_operations": 0,
+      "genealogy": [],
+      "occupied": {
+        "AP01": "SSO2-0001",
+        "PRE-ASSY": "SSO2-0002"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "quality_events": 0,
+      "simulation_time_s": 120.0,
+      "station_contracts": 12,
+      "step": 1
+    },
+    {
+      "active_operations": 0,
+      "genealogy": [],
+      "occupied": {
+        "AP01": "SSO2-0002",
+        "AP02": "SSO2-0001",
+        "PRE-ASSY": "SSO2-0003"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "quality_events": 0,
+      "simulation_time_s": 240.0,
+      "station_contracts": 12,
+      "step": 2
+    },
+    {
+      "active_operations": 0,
+      "genealogy": [],
+      "occupied": {
+        "AP01": "SSO2-0003",
+        "AP02": "SSO2-0002",
+        "AP03": "SSO2-0001",
+        "PRE-ASSY": "SSO2-0004"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "quality_events": 0,
+      "simulation_time_s": 360.0,
+      "station_contracts": 12,
+      "step": 3
+    },
+    {
+      "active_operations": 0,
+      "genealogy": [],
+      "occupied": {
+        "AP01": "SSO2-0004",
+        "AP02": "SSO2-0003",
+        "AP03": "SSO2-0002",
+        "AP04": "SSO2-0001",
+        "PRE-ASSY": "SSO2-0005"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "quality_events": 0,
+      "simulation_time_s": 480.0,
+      "station_contracts": 12,
+      "step": 4
+    },
+    {
+      "active_operations": 0,
+      "genealogy": [
+        [
+          "MTR-0001",
+          [
+            "SSO2-0001",
+            "RSO2-0001"
+          ]
+        ]
+      ],
+      "occupied": {
+        "AP01": "SSO2-0005",
+        "AP02": "SSO2-0004",
+        "AP03": "SSO2-0003",
+        "AP04": "SSO2-0002",
+        "AP05": "MTR-0001",
+        "PRE-ASSY": "SSO2-0006"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "quality_events": 0,
+      "simulation_time_s": 600.0,
+      "station_contracts": 12,
+      "step": 5
+    }
+  ],
+  "genealogy_at_step_5": [
+    [
+      "MTR-0001",
+      [
+        "SSO2-0001",
+        "RSO2-0001"
+      ]
+    ]
+  ],
+  "note": "positions[] is the runtime conveyor's physical truth: each rendered WIP id equals conveyor.wip_at(position) on the canonical runtime.",
+  "positions_match_accepted": true,
+  "sub_line": "ASSY-SL01",
+  "wip_moved": true
+}

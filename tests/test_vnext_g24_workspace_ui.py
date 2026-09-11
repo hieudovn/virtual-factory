@@ -371,16 +371,17 @@ class TestG24C01TipaLiveProjection:
         # before step the session has no bridge yet (lazily built on step)
         assert view["sub_lines"] == []
 
-    def test_assy_demo_not_presented_as_same_session(self):
+    def test_assy_demo_presented_as_same_canonical_session(self):
+        """R2: /assy-demo is the rich projection of the SAME canonical session."""
         mon = _monitor()
         view = mon.select("TIPA")
         assert view["ui_page"] == "/assy-demo"
         legacy = view.get("legacy_demo", {})
-        assert legacy.get("shares_session") is False
-        assert legacy.get("shares_identity") is False
+        assert legacy.get("shares_session") is True
+        assert legacy.get("shares_identity") is True
         note = (legacy.get("note") or "") + (view.get("ui_note") or "")
-        assert "SEPARATE" in note or "separate" in note.lower()
-        assert "not" in note.lower()
+        assert "same" in note.lower()
+        assert "canonical" in note.lower()
 
     def test_step_increments_session_step_count(self):
         mon = _monitor()

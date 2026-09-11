@@ -319,15 +319,17 @@ const ctrl = {
   _liveStatus: 'INIT',
 
   async init() {
-    await this.call('reset', { scenario: this._scenario });
+    // R2: opening the rich UI must NOT reset/advance the canonical session.
+    // The page projects the SAME canonical TIPA RuntimeSession as /workspaces.
     await this.refreshOverview();
   },
 
   async reset() {
     this.stopAuto();
-    this._scenario = document.getElementById('scenario-select').value;
     this._selectionInitialized = false;
-    await this.call('reset', { scenario: this._scenario });
+    // R2: reset acts on the canonical session (same run id, fresh profile
+    // state). Scenario/profile is pinned run input — never sent as a mutation.
+    await this.call('reset');
     await this.refreshOverview();
   },
 
@@ -359,13 +361,58 @@ const ctrl = {
 
   setSpeed(val) { this._speed = parseFloat(val); if (this._autoTimer) { this.stopAuto(); this.startAuto(); } },
 
-  setScenario(val) { this._scenario = val; this.reset(); },
+  setScenario(val) {
+    // R2: scenario is pinned run input (R1). The selector is display-only;
+    // changing scenario requires a new canonical session (deferred to R4).
+    this._scenario = val;
+    const chip = document.getElementById('global-scenario');
+    if (chip) chip.textContent = val;
+    this.renderCanonicalNote('scenario is pinned run input (R2); no legacy scenario mutation');
+  },
+
+  renderCanonicalNote(msg) {
+    const el = document.getElementById('vf-canonical-identity');
+    if (el && msg) el.setAttribute('data-note', msg);
+  },
 
   async call(action, body) {
     const opts = body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : { method:'POST' };
     const resp = await fetch(`${API}/${action}`, opts);
-    if (!resp.ok) throw new Error(`${action}: ${resp.status}`);
+    if (!resp.ok) {
+      let payload = null;
+      try { payload = await resp.json(); } catch (_) { payload = null; }
+      if (payload && payload.status === 'deferred') {
+        // R2: explicit deferred capability (R3/R4) — no legacy runtime is
+        // created to satisfy it; surface it instead of fabricating state.
+        this.renderCanonicalNote(`deferred to ${payload.deferred_to}: ${payload.feature}`);
+        const st = document.getElementById('live-status');
+        if (st) { st.textContent = `\u25CB DEFERRED (${payload.deferred_to})`; }
+        return payload;
+      }
+      throw new Error(`${action}: ${resp.status}`);
+    }
     return resp.json();
+  },
+
+  renderCanonical(ov) {
+    const c = (ov && ov.canonical) || {};
+    this._scenario = c.scenario_id || this._scenario;
+    const el = document.getElementById('vf-canonical-identity');
+    if (el) {
+      el.textContent = `CANONICAL SESSION ${c.workspace_id || 'TIPA'} \u00B7 run ${c.run_id || '-'} \u00B7 scenario ${c.scenario_id || '-'} \u00B7 profile ${c.profile_id || '-'}`;
+      el.title = (c.note || '') + (c.selection_is_presentation_only ? ' (sub-line selection is presentation-only)' : '');
+    }
+    const chip = document.getElementById('global-scenario');
+    if (chip) chip.textContent = c.scenario_id || chip.textContent;
+    const scn = document.getElementById('scenario-display');
+    if (scn) scn.textContent = c.scenario_id || scn.textContent;
+    const sel = document.getElementById('scenario-select');
+    if (sel) {
+      // keep the pinned scenario visible but not-changeable in R2
+      if (c.scenario_id) sel.value = c.scenario_id;
+      sel.disabled = true;
+      sel.title = 'scenario is pinned run input (R2) — change deferred to R4';
+    }
   },
 
   async refreshOverview() {
@@ -390,8 +437,10 @@ const ctrl = {
 
   /* ── Frame A Card Render ── */
   renderOverview(ov) {
+    // R2: bind the canonical session identity (workspace/run/scenario/profile)
+    this.renderCanonical(ov);
     // Update shared top bar
-    document.getElementById('demo-step').textContent = `DEMO STEP ${String(ov.demo_step_number).padStart(3,'0')}`;
+    document.getElementById('demo-step').textContent = `CANONICAL STEP ${String(ov.demo_step_number).padStart(3,'0')}`;
     document.getElementById('global-scenario').textContent = ov.scenario || 'HAPPY_PATH';
     document.getElementById('total-created').textContent = ov.total_motors_created;
     document.getElementById('total-released').textContent = ov.total_motors_released;
@@ -800,7 +849,6 @@ const ctrlB = {
     MotionEngine.cancel();
     this._stepLocked = false;
     this._snapVersion = 0;
-    this._scenario = document.getElementById('fb-scenario-select').value;
     this._selectedStation = null;
     this._selectedWipId = null;
     this._contextType = null;
@@ -813,7 +861,9 @@ const ctrlB = {
     this._renderInspector(null);
     this._zoomLevel = 1; this._panX = 0; this._panY = 0;
     this._lastSnapshot = null;  // I07: discard stale snapshot
-    await this.call('reset', { scenario: this._scenario });
+    // R2: canonical same-session reset (same run id, fresh profile state);
+    // scenario/profile stays pinned run input — never sent as a mutation.
+    await this.call('reset');
     await this.refresh();
   },
 
@@ -855,7 +905,16 @@ const ctrlB = {
 
   setSpeed(val) { this._speed = parseFloat(val); if (this._autoTimer) { this.stopAuto(); this.startAuto(); } },
 
-  setScenario(val) { this._scenario = val; ctrl._scenario = val; const selA = document.getElementById('scenario-select'); if (selA) selA.value = val; this.reset(); },
+  setScenario(val) {
+    // R2: scenario is pinned run input — display only (no legacy reset).
+    this._scenario = val;
+    ctrl._scenario = val;
+    const selA = document.getElementById('scenario-select');
+    if (selA) { selA.value = val; selA.disabled = true; }
+    const selB = document.getElementById('fb-scenario-select');
+    if (selB) { selB.value = val; selB.disabled = true; }
+    ctrl.renderCanonicalNote('scenario is pinned run input (R2); no legacy scenario mutation');
+  },
 
   setRunMode(val) {
     this._runMode = val;
@@ -869,7 +928,17 @@ const ctrlB = {
   async call(action, body) {
     const opts = body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : { method:'POST' };
     const resp = await fetch(`${API}/${action}`, opts);
-    if (!resp.ok) throw new Error(`${action}: ${resp.status}`);
+    if (!resp.ok) {
+      let payload = null;
+      try { payload = await resp.json(); } catch (_) { payload = null; }
+      if (payload && payload.status === 'deferred') {
+        // R2: explicit deferred capability (R3/R4) — no legacy runtime is
+        // created to satisfy it; surface it instead of fabricating state.
+        ctrl.renderCanonicalNote(`deferred to ${payload.deferred_to}: ${payload.feature}`);
+        return payload;
+      }
+      throw new Error(`${action}: ${resp.status}`);
+    }
     return resp.json();
   },
 
@@ -1128,6 +1197,13 @@ const ctrlB = {
     document.getElementById('fb-sim-time').textContent = `t=${(snap.simulation_time_s||0).toFixed(0)}s`;
     document.getElementById('fb-dwell').textContent = `DWELL ${snap.dwell_number||0}`;
     document.getElementById('fb-scenario').textContent = snap.scenario || this._scenario;
+    if (snap.canonical) {
+      const el = document.getElementById('vf-canonical-identity');
+      if (el) {
+        el.textContent = `CANONICAL SESSION ${snap.canonical.workspace_id} \u00B7 run ${snap.canonical.run_id} \u00B7 scenario ${snap.canonical.scenario_id} \u00B7 profile ${snap.canonical.profile_id}`;
+        el.title = snap.canonical.note || '';
+      }
+    }
 
     const lsEl = document.getElementById('fb-line-state');
     const ls = snap.line_state || 'stopped';
@@ -1968,8 +2044,8 @@ const ctrlB = {
    ═══════════════════════════════════════ */
 const ctrlS04 = {
   _autoTimer: null, _speed: 1.0, _scenario: 'HAPPY_PATH',
-  async init() { await this.call('reset', { scenario: this._scenario }); this.render(await this.call('snapshot')); },
-  async reset() { this.stopAuto(); this._scenario = document.getElementById('scenario-select-s04').value; await this.call('reset', { scenario: this._scenario }); this.render(await this.call('snapshot')); },
+  async init() { await this.refreshOverview(); },
+  async reset() { this.stopAuto(); await this.call('reset'); this.render(await this.call('snapshot')); },
   async step() { this.render(await this.call('step')); },
   toggleAuto() { this._autoTimer ? this.stopAuto() : this.startAuto(); },
   startAuto() { document.getElementById('btn-auto-s04').textContent = '⏹ STOP'; document.getElementById('btn-pause-s04').disabled = false; this._autoTimer = setInterval(() => this.step(), Math.round(1000 / this._speed)); },
