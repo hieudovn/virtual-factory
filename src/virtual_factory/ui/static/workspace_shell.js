@@ -70,6 +70,8 @@
       })
       .then(function (meta) {
         workspaces = (meta && meta.workspaces) || [];
+        // Capture the prior selection BEFORE rebuilding the option list.
+        const previous = (selectEl.value || '').trim();
         selectEl.innerHTML = '';
         workspaces.forEach(function (info) {
           const opt = document.createElement('option');
@@ -77,11 +79,18 @@
           opt.textContent = info.workspace_id + (info.description ? ' — ' + info.description : '');
           selectEl.appendChild(opt);
         });
-        // Deterministic default: keep the current selection if still valid.
-        const cur = selectEl.value;
-        if (!cur && workspaces.length) {
-          selectEl.value = workspaces[0].workspace_id;
-          select(selectEl.value);
+        // Deterministic default: keep the previous selection if still valid,
+        // otherwise select the first workspace. Always call select() so the
+        // monitor view and the run-control target load immediately (G26 fix:
+        // previously the first load waited for the poll and left the
+        // run-control target showing "no workspace").
+        const stillValid = previous && workspaces.some(function (w) {
+          return w.workspace_id === previous;
+        });
+        const preferred = stillValid ? previous : (workspaces[0] && workspaces[0].workspace_id);
+        if (preferred) {
+          selectEl.value = preferred;
+          select(preferred);
         }
       })
       .catch(function (err) {
@@ -173,6 +182,11 @@
     $('ws-ctrl-step').disabled = !(st === 'running' || st === 'created');
     $('ws-ctrl-reset').disabled = (st === 'stopped' || st === 'failed');
     $('ws-ctrl-stop').disabled = !(st === 'created' || st === 'running' || st === 'paused');
+    // Backend also exposes new_attempt + replay (accepted lifecycle actions).
+    // Exposed here so a terminal (stopped) session can be recovered in-UI and
+    // deterministic replay can be demonstrated (G26 UAT readiness).
+    $('ws-ctrl-new').disabled = false;
+    $('ws-ctrl-replay').disabled = false;
   }
 
   function structureTable(structure) {
@@ -244,6 +258,8 @@
     $('ws-ctrl-step').disabled = true;
     $('ws-ctrl-reset').disabled = true;
     $('ws-ctrl-stop').disabled = true;
+    $('ws-ctrl-new').disabled = true;
+    $('ws-ctrl-replay').disabled = true;
     fetch('/vnext/workspaces/select', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -295,6 +311,8 @@
   $('ws-ctrl-step').addEventListener('click', function () { control('step'); });
   $('ws-ctrl-reset').addEventListener('click', function () { control('reset'); });
   $('ws-ctrl-stop').addEventListener('click', function () { control('stop'); });
+  $('ws-ctrl-new').addEventListener('click', function () { control('new_attempt'); });
+  $('ws-ctrl-replay').addEventListener('click', function () { control('replay'); });
 
   function boot() {
     loadWorkspaces();
