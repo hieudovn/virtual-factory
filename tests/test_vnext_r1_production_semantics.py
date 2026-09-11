@@ -537,6 +537,66 @@ class TestHoldFreezeIndependence:
         for sid, state in before.items():
             assert _line_state(federation.runtime(sid)) == state, sid
 
+    def test_session_reset_clears_domain_hold_state(self):
+        """R1-C01: canonical session reset clears the ASSY domain hold/freeze
+        state and returns all six sub-lines to the fresh profile baseline."""
+        session = _session("tipa-default")
+        session.advance()
+        federation = _federation(session)
+        bridge: AssyExecutionBridge = session.record.bridge
+        run_before = session.run_id
+        objects_before = {sid: id(federation.runtime(sid)) for sid in SUB_LINE_IDS}
+
+        # advance -> hold one line -> advance twice
+        bridge.hold_sub_line("ASSY-SL03")
+        assert bridge.held_sub_line_ids == ("ASSY-SL03",)
+        session.advance()
+        session.advance()
+        held_frozen = _line_state(federation.runtime("ASSY-SL03"))
+        assert federation.runtime("ASSY-SL03").simulation_time_s == 120.0
+        assert federation.runtime("ASSY-SL03").motor_count == 0
+        assert federation.runtime("ASSY-SL01").simulation_time_s == 360.0
+
+        # RuntimeSession.reset() -> the ASSY domain hold/freeze state is cleared
+        session.reset()
+        assert bridge.held_sub_line_ids == ()
+
+        # same-run-id reset semantics preserved + six lines at fresh baseline
+        assert session.run_id == run_before
+        assert {sid: id(federation.runtime(sid)) for sid in SUB_LINE_IDS} == objects_before
+        for sid in SUB_LINE_IDS:
+            runtime = federation.runtime(sid)
+            assert runtime.simulation_time_s == 0.0
+            assert runtime.conveyor.dwell_number == 0
+            assert runtime.wip_count == 7
+            assert runtime.rso2_buffer_size == 7
+            assert runtime.motor_count == 0
+            assert len(runtime.genealogy.all_records()) == 0
+        assert held_frozen != _line_state(federation.runtime("ASSY-SL03"))
+
+        # next advance: ALL SIX sub-lines participate again and progress together
+        first = session.advance()
+        assert first.status == "completed"
+        assert len(first.participants) == 6
+        assert set(first.participants) == {
+            f"TIPA/ASSY/{sid}" for sid in SUB_LINE_IDS
+        }
+        for sid in SUB_LINE_IDS:
+            runtime = federation.runtime(sid)
+            assert runtime.simulation_time_s == 120.0
+            assert runtime.conveyor.dwell_number == 1
+            assert runtime.wip_count == 7
+
+        # the previously held line now produces exactly like the other five
+        for _ in range(4):
+            session.advance()
+        summaries = {
+            sid: _line_summary(federation.runtime(sid)) for sid in SUB_LINE_IDS
+        }
+        assert len(set(summaries.values())) == 1, summaries
+        assert federation.runtime("ASSY-SL03").motor_count == 1
+        assert federation.runtime("ASSY-SL03").simulation_time_s == 600.0
+
 
 # ═══════════════════════════════════════════════════════════════
 # E. Determinism

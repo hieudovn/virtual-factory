@@ -144,5 +144,12 @@ class AssyExecutionBridge:
         # contract (same object, time back to 0). Never rebuilds run identity.
         # R1: a prepared sub-line is re-prepared from its immutable run profile
         # so the reset state is profile-consistent (same as a fresh run).
+        #
+        # R1-C01: the ASSY-domain HOLD/FREEZE state of the reset scopes is
+        # cleared as part of the reset, so a canonical session reset returns the
+        # whole session to its fresh profile baseline with every sub-line able to
+        # participate and progress again. It is capability-scoped on purpose: a
+        # full session reset (all six effective scopes) clears every domain hold.
+        self._held_sub_line_ids.difference_update(scope_ids)
         for sid in tuple(scope_ids):
             self._federation.reset_sub_line(sid)
