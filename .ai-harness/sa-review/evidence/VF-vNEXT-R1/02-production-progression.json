@@ -1,0 +1,1055 @@
+{
+  "ap04_proof": {
+    "genealogy_parents": [
+      "SSO2-0001",
+      "RSO2-0001"
+    ],
+    "motor_id": "MTR-0001",
+    "note": "AP04 motor creation + genealogy through the selected session path",
+    "reached_at_step": 5,
+    "target_time_s": 600.0
+  },
+  "hard_guard": "six lines with wip_count == 0 after meaningful stepping is FAIL; all six lines carry upstream inventory and an in-ASSY unit from step 1",
+  "profile_id": "tipa-assy-happy_path",
+  "progression": [
+    {
+      "lines": [
+        [
+          "ASSY-SL01",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 1,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0002"
+              ],
+              [
+                "AP01",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 120.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL02",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 1,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0002"
+              ],
+              [
+                "AP01",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 120.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL03",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 1,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0002"
+              ],
+              [
+                "AP01",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 120.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL04",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 1,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0002"
+              ],
+              [
+                "AP01",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 120.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL05",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 1,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0002"
+              ],
+              [
+                "AP01",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 120.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL06",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 1,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0002"
+              ],
+              [
+                "AP01",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 120.0,
+            "wip_count": 7
+          }
+        ]
+      ],
+      "participants": [
+        "TIPA/ASSY/ASSY-SL01",
+        "TIPA/ASSY/ASSY-SL02",
+        "TIPA/ASSY/ASSY-SL03",
+        "TIPA/ASSY/ASSY-SL04",
+        "TIPA/ASSY/ASSY-SL05",
+        "TIPA/ASSY/ASSY-SL06"
+      ],
+      "run_id": "TIPA-0001",
+      "step": 1,
+      "step_status": "completed",
+      "target_time_s": 120.0
+    },
+    {
+      "lines": [
+        [
+          "ASSY-SL01",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 2,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0003"
+              ],
+              [
+                "AP01",
+                "SSO2-0002"
+              ],
+              [
+                "AP02",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 240.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL02",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 2,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0003"
+              ],
+              [
+                "AP01",
+                "SSO2-0002"
+              ],
+              [
+                "AP02",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 240.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL03",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 2,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0003"
+              ],
+              [
+                "AP01",
+                "SSO2-0002"
+              ],
+              [
+                "AP02",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 240.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL04",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 2,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0003"
+              ],
+              [
+                "AP01",
+                "SSO2-0002"
+              ],
+              [
+                "AP02",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 240.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL05",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 2,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0003"
+              ],
+              [
+                "AP01",
+                "SSO2-0002"
+              ],
+              [
+                "AP02",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 240.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL06",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 2,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0003"
+              ],
+              [
+                "AP01",
+                "SSO2-0002"
+              ],
+              [
+                "AP02",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 240.0,
+            "wip_count": 7
+          }
+        ]
+      ],
+      "participants": [
+        "TIPA/ASSY/ASSY-SL01",
+        "TIPA/ASSY/ASSY-SL02",
+        "TIPA/ASSY/ASSY-SL03",
+        "TIPA/ASSY/ASSY-SL04",
+        "TIPA/ASSY/ASSY-SL05",
+        "TIPA/ASSY/ASSY-SL06"
+      ],
+      "run_id": "TIPA-0001",
+      "step": 2,
+      "step_status": "completed",
+      "target_time_s": 240.0
+    },
+    {
+      "lines": [
+        [
+          "ASSY-SL01",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 3,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0004"
+              ],
+              [
+                "AP01",
+                "SSO2-0003"
+              ],
+              [
+                "AP02",
+                "SSO2-0002"
+              ],
+              [
+                "AP03",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 360.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL02",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 3,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0004"
+              ],
+              [
+                "AP01",
+                "SSO2-0003"
+              ],
+              [
+                "AP02",
+                "SSO2-0002"
+              ],
+              [
+                "AP03",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 360.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL03",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 3,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0004"
+              ],
+              [
+                "AP01",
+                "SSO2-0003"
+              ],
+              [
+                "AP02",
+                "SSO2-0002"
+              ],
+              [
+                "AP03",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 360.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL04",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 3,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0004"
+              ],
+              [
+                "AP01",
+                "SSO2-0003"
+              ],
+              [
+                "AP02",
+                "SSO2-0002"
+              ],
+              [
+                "AP03",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 360.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL05",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 3,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0004"
+              ],
+              [
+                "AP01",
+                "SSO2-0003"
+              ],
+              [
+                "AP02",
+                "SSO2-0002"
+              ],
+              [
+                "AP03",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 360.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL06",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 3,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0004"
+              ],
+              [
+                "AP01",
+                "SSO2-0003"
+              ],
+              [
+                "AP02",
+                "SSO2-0002"
+              ],
+              [
+                "AP03",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 360.0,
+            "wip_count": 7
+          }
+        ]
+      ],
+      "participants": [
+        "TIPA/ASSY/ASSY-SL01",
+        "TIPA/ASSY/ASSY-SL02",
+        "TIPA/ASSY/ASSY-SL03",
+        "TIPA/ASSY/ASSY-SL04",
+        "TIPA/ASSY/ASSY-SL05",
+        "TIPA/ASSY/ASSY-SL06"
+      ],
+      "run_id": "TIPA-0001",
+      "step": 3,
+      "step_status": "completed",
+      "target_time_s": 360.0
+    },
+    {
+      "lines": [
+        [
+          "ASSY-SL01",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 4,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0005"
+              ],
+              [
+                "AP01",
+                "SSO2-0004"
+              ],
+              [
+                "AP02",
+                "SSO2-0003"
+              ],
+              [
+                "AP03",
+                "SSO2-0002"
+              ],
+              [
+                "AP04",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 480.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL02",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 4,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0005"
+              ],
+              [
+                "AP01",
+                "SSO2-0004"
+              ],
+              [
+                "AP02",
+                "SSO2-0003"
+              ],
+              [
+                "AP03",
+                "SSO2-0002"
+              ],
+              [
+                "AP04",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 480.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL03",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 4,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0005"
+              ],
+              [
+                "AP01",
+                "SSO2-0004"
+              ],
+              [
+                "AP02",
+                "SSO2-0003"
+              ],
+              [
+                "AP03",
+                "SSO2-0002"
+              ],
+              [
+                "AP04",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 480.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL04",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 4,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0005"
+              ],
+              [
+                "AP01",
+                "SSO2-0004"
+              ],
+              [
+                "AP02",
+                "SSO2-0003"
+              ],
+              [
+                "AP03",
+                "SSO2-0002"
+              ],
+              [
+                "AP04",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 480.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL05",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 4,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0005"
+              ],
+              [
+                "AP01",
+                "SSO2-0004"
+              ],
+              [
+                "AP02",
+                "SSO2-0003"
+              ],
+              [
+                "AP03",
+                "SSO2-0002"
+              ],
+              [
+                "AP04",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 480.0,
+            "wip_count": 7
+          }
+        ],
+        [
+          "ASSY-SL06",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 4,
+            "genealogy": [],
+            "motor_count": 0,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0005"
+              ],
+              [
+                "AP01",
+                "SSO2-0004"
+              ],
+              [
+                "AP02",
+                "SSO2-0003"
+              ],
+              [
+                "AP03",
+                "SSO2-0002"
+              ],
+              [
+                "AP04",
+                "SSO2-0001"
+              ]
+            ],
+            "rso2_buffer_size": 7,
+            "simulation_time_s": 480.0,
+            "wip_count": 7
+          }
+        ]
+      ],
+      "participants": [
+        "TIPA/ASSY/ASSY-SL01",
+        "TIPA/ASSY/ASSY-SL02",
+        "TIPA/ASSY/ASSY-SL03",
+        "TIPA/ASSY/ASSY-SL04",
+        "TIPA/ASSY/ASSY-SL05",
+        "TIPA/ASSY/ASSY-SL06"
+      ],
+      "run_id": "TIPA-0001",
+      "step": 4,
+      "step_status": "completed",
+      "target_time_s": 480.0
+    },
+    {
+      "lines": [
+        [
+          "ASSY-SL01",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 5,
+            "genealogy": [
+              [
+                "MTR-0001",
+                [
+                  "SSO2-0001",
+                  "RSO2-0001"
+                ]
+              ]
+            ],
+            "motor_count": 1,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0006"
+              ],
+              [
+                "AP01",
+                "SSO2-0005"
+              ],
+              [
+                "AP02",
+                "SSO2-0004"
+              ],
+              [
+                "AP03",
+                "SSO2-0003"
+              ],
+              [
+                "AP04",
+                "SSO2-0002"
+              ],
+              [
+                "AP05",
+                "MTR-0001"
+              ]
+            ],
+            "rso2_buffer_size": 6,
+            "simulation_time_s": 600.0,
+            "wip_count": 16
+          }
+        ],
+        [
+          "ASSY-SL02",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 5,
+            "genealogy": [
+              [
+                "MTR-0001",
+                [
+                  "SSO2-0001",
+                  "RSO2-0001"
+                ]
+              ]
+            ],
+            "motor_count": 1,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0006"
+              ],
+              [
+                "AP01",
+                "SSO2-0005"
+              ],
+              [
+                "AP02",
+                "SSO2-0004"
+              ],
+              [
+                "AP03",
+                "SSO2-0003"
+              ],
+              [
+                "AP04",
+                "SSO2-0002"
+              ],
+              [
+                "AP05",
+                "MTR-0001"
+              ]
+            ],
+            "rso2_buffer_size": 6,
+            "simulation_time_s": 600.0,
+            "wip_count": 16
+          }
+        ],
+        [
+          "ASSY-SL03",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 5,
+            "genealogy": [
+              [
+                "MTR-0001",
+                [
+                  "SSO2-0001",
+                  "RSO2-0001"
+                ]
+              ]
+            ],
+            "motor_count": 1,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0006"
+              ],
+              [
+                "AP01",
+                "SSO2-0005"
+              ],
+              [
+                "AP02",
+                "SSO2-0004"
+              ],
+              [
+                "AP03",
+                "SSO2-0003"
+              ],
+              [
+                "AP04",
+                "SSO2-0002"
+              ],
+              [
+                "AP05",
+                "MTR-0001"
+              ]
+            ],
+            "rso2_buffer_size": 6,
+            "simulation_time_s": 600.0,
+            "wip_count": 16
+          }
+        ],
+        [
+          "ASSY-SL04",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 5,
+            "genealogy": [
+              [
+                "MTR-0001",
+                [
+                  "SSO2-0001",
+                  "RSO2-0001"
+                ]
+              ]
+            ],
+            "motor_count": 1,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0006"
+              ],
+              [
+                "AP01",
+                "SSO2-0005"
+              ],
+              [
+                "AP02",
+                "SSO2-0004"
+              ],
+              [
+                "AP03",
+                "SSO2-0003"
+              ],
+              [
+                "AP04",
+                "SSO2-0002"
+              ],
+              [
+                "AP05",
+                "MTR-0001"
+              ]
+            ],
+            "rso2_buffer_size": 6,
+            "simulation_time_s": 600.0,
+            "wip_count": 16
+          }
+        ],
+        [
+          "ASSY-SL05",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 5,
+            "genealogy": [
+              [
+                "MTR-0001",
+                [
+                  "SSO2-0001",
+                  "RSO2-0001"
+                ]
+              ]
+            ],
+            "motor_count": 1,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0006"
+              ],
+              [
+                "AP01",
+                "SSO2-0005"
+              ],
+              [
+                "AP02",
+                "SSO2-0004"
+              ],
+              [
+                "AP03",
+                "SSO2-0003"
+              ],
+              [
+                "AP04",
+                "SSO2-0002"
+              ],
+              [
+                "AP05",
+                "MTR-0001"
+              ]
+            ],
+            "rso2_buffer_size": 6,
+            "simulation_time_s": 600.0,
+            "wip_count": 16
+          }
+        ],
+        [
+          "ASSY-SL06",
+          {
+            "conveyor_state": "stopped",
+            "dwell_number": 5,
+            "genealogy": [
+              [
+                "MTR-0001",
+                [
+                  "SSO2-0001",
+                  "RSO2-0001"
+                ]
+              ]
+            ],
+            "motor_count": 1,
+            "occupied_positions": [
+              [
+                "PRE-ASSY",
+                "SSO2-0006"
+              ],
+              [
+                "AP01",
+                "SSO2-0005"
+              ],
+              [
+                "AP02",
+                "SSO2-0004"
+              ],
+              [
+                "AP03",
+                "SSO2-0003"
+              ],
+              [
+                "AP04",
+                "SSO2-0002"
+              ],
+              [
+                "AP05",
+                "MTR-0001"
+              ]
+            ],
+            "rso2_buffer_size": 6,
+            "simulation_time_s": 600.0,
+            "wip_count": 16
+          }
+        ]
+      ],
+      "participants": [
+        "TIPA/ASSY/ASSY-SL01",
+        "TIPA/ASSY/ASSY-SL02",
+        "TIPA/ASSY/ASSY-SL03",
+        "TIPA/ASSY/ASSY-SL04",
+        "TIPA/ASSY/ASSY-SL05",
+        "TIPA/ASSY/ASSY-SL06"
+      ],
+      "run_id": "TIPA-0001",
+      "step": 5,
+      "step_status": "completed",
+      "target_time_s": 600.0
+    }
+  ],
+  "release_proof": {
+    "after_steps": 16,
+    "motor_count": 10,
+    "released_wips": [
+      "MTR-0001",
+      "MTR-0002"
+    ],
+    "simulation_time_s": 1920.0
+  },
+  "run_id": "TIPA-0001",
+  "scenario_id": "tipa-default"
+}

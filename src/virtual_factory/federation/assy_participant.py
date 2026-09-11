@@ -16,6 +16,16 @@ Contract (Issue #50 section B):
 - no direct cross-scope state access; ``commit_transfers`` rejects any inbound
   boundary exchange (ASSY sub-lines exchange nothing at G5 boundaries).
 
+VF-vNEXT-R1 — prepared-production mode (additive, opt-in):
+when the adapter is given the sub-line's shared run state + immutable run
+profile, ``natural_step`` executes the ACCEPTED six-sub-line production driver
+(feed replenishment -> on-demand RSO2 for AP04 -> ``execute_dwell()`` ->
+``index_line()`` when ``READY_TO_INDEX`` -> introduce the next SSO2 through the
+existing public entry) via the shared :func:`step_prepared_line` helper.
+Without run state the adapter keeps the frozen structural step above, so the G5
+standalone/federated parity semantics are unchanged. The adapter still owns no
+truth: positions, WIP, quality and genealogy stay in the wrapped runtime.
+
 Boundary rule (Issue #50): the adapter NEVER invents fractional dwell/index or
 rewrites ASSY time semantics to satisfy an arbitrary coordinator target. It
 reports success only when the natural advancement of the wrapped runtime lands
@@ -31,6 +41,11 @@ from typing import Sequence
 from virtual_factory.assembly import (
     AssyLineRuntime,
     ConveyorState,
+)
+from virtual_factory.assembly.assy_run_profile import (
+    AssyRunProfile,
+    AssySubLineRunState,
+    step_prepared_line,
 )
 from virtual_factory.composition import (
     BoundaryTransfer,
@@ -51,6 +66,9 @@ class AssySubLineAdapter:
         self,
         scope_path: StructuralPath,
         runtime: AssyLineRuntime,
+        *,
+        run_state: AssySubLineRunState | None = None,
+        run_profile: AssyRunProfile | None = None,
     ) -> None:
         if not isinstance(scope_path, StructuralPath):
             raise TypeError(
@@ -67,8 +85,32 @@ class AssySubLineAdapter:
                 "runtime must be an existing AssyLineRuntime, "
                 f"got {type(runtime).__name__}"
             )
+        if run_state is not None and run_profile is None:
+            raise TypeError(
+                "a run state requires the immutable run profile that owns its "
+                "feed/sequencing inputs"
+            )
         self._scope_path = scope_path
         self._runtime = runtime
+        self._run_state = run_state
+        self._run_profile = run_profile
+
+    # ── prepared-production state (R1) ────────────────────────
+
+    @property
+    def run_state(self) -> AssySubLineRunState | None:
+        """The per-sub-line run state (feed/sequencing) or ``None``."""
+        return self._run_state
+
+    @property
+    def run_profile(self) -> AssyRunProfile | None:
+        """The immutable run profile pinning this sub-line's run inputs."""
+        return self._run_profile
+
+    @property
+    def is_prepared(self) -> bool:
+        """Whether this adapter drives accepted production semantics."""
+        return self._run_state is not None and self._run_profile is not None
 
     # ── G4 participant protocol ──────────────────────────────
 
@@ -129,12 +171,27 @@ class AssySubLineAdapter:
     def natural_step(self) -> None:
         """Execute one natural ASSY advancement step (public ops only).
 
-        Mirrors the ASSY regression-oracle driver: one dwell, then one index
-        when the line is ready.
+        Unprepared (frozen G5 structural) mode mirrors the ASSY regression-oracle
+        driver: one dwell, then one index when the line is ready.
+
+        Prepared (R1) mode executes the accepted production driver through the
+        shared helper: optional bounded feed replenishment, on-demand RSO2 for
+        AP04, one dwell, one index when ready, then the next SSO2 introduction.
         """
-        self._runtime.execute_dwell()
-        if self._runtime.conveyor.state == ConveyorState.READY_TO_INDEX:
-            self._runtime.index_line()
+        if self._run_state is None or self._run_profile is None:
+            self._runtime.execute_dwell()
+            if self._runtime.conveyor.state == ConveyorState.READY_TO_INDEX:
+                self._runtime.index_line()
+            return
+        step_prepared_line(
+            self._runtime,
+            self._run_state,
+            feed_policy=(
+                self._run_profile.feed_policy
+                if self._run_profile.continuous_feed_enabled
+                else None
+            ),
+        )
 
 
 # Re-export for runtime-checkable protocol conformance assertions in tests.

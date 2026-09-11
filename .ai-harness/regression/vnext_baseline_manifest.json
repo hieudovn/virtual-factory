@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-G26.json",
-    "changed_files_base": "3c83176ce2a8a504637dfe674ea30b2332bc7968"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-R1.json",
+    "changed_files_base": "ed217c867dff048ee3774d139e53b8cfb1130251"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -343,6 +343,15 @@
       "purpose": "G25 Integrated Multi-Workspace Demo / MVP acceptance tests: FLOW A TIPA (select from registry, six live ASSY sub-lines from the selected G22 session, deterministic reset/new-attempt/replay, switch-away-no-mutation, /assy-demo separate legacy runtime); FLOW B SH-WTP (5-scope slice RAW-INTAKE -> T100 -> T106 -> T108 -> DIST-P108, live time/step/flow/tank/status, explicit fidelity/status/assumed topology, deterministic reset/new-attempt/replay, switch-away-no-mutation); platform invariants (one platform -> many independent Workspaces, no shared state/run_id/clock/truth, no cross-workspace coupling, RuntimeSession lifecycle reuse); frozen invariants (explicit_lagged/G4/G19 unchanged, ASSY oracle deterministic, SH-WTP assumptions never site truth).",
       "files": [
         "tests/test_vnext_g25_acceptance.py"
+      ]
+    },
+    {
+      "id": "r1_production_semantics",
+      "gate": "R1",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R1 Canonical TIPA Same-Session Production Semantics tests: the selected tipa-default RuntimeSession runs MEANINGFUL six-sub-line ASSY production (explicit immutable run profile; per-line effective scenario + accepted config/quality transforms applied before runtime construction; deterministic initial SSO2/RSO2 inventory and carrier/feed sequencing; shared production driver: feed replenish -> on-demand RSO2 for AP04 -> execute_dwell -> conditional index_line -> next SSO2 introduction); first meaningful step is non-empty on all six lines; bounded canonical run reaches AP04 motor creation + genealogy; exactly six isolated runtimes/configs/run-state holders with stable per-line seed mapping and no cross-line mutation; scenario targeting effective (HAPPY default; AP06/AP08/failed-final synthetic exceptions affect ONLY the accepted target line); one-line hold/freeze with the other five continuing; determinism of two fresh sessions; G22 lifecycle compatibility (profile-consistent reset keeping the run identity, new-attempt fresh identity with the same pinned inputs, replay bounded production-state equivalence); frozen guards (no AssyLineRuntime rewrite, no second runtime authority, G4 exact-boundary/no-fractional-dwell, legacy accepted demo regression-green). Gateway routing is NOT performed.",
+      "files": [
+        "tests/test_vnext_r1_production_semantics.py"
       ]
     },
     {

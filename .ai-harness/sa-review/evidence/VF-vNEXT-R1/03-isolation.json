@@ -1,0 +1,105 @@
+{
+  "cross_line_mutation": {
+    "advanced_sub_line": "ASSY-SL01",
+    "bridge_status": "completed",
+    "others_unchanged": true
+  },
+  "distinct_counts": {
+    "adapters": 6,
+    "configs": 6,
+    "run_states": 6,
+    "runtimes": 6,
+    "seeds": 6
+  },
+  "identity": {
+    "ASSY-SL01": {
+      "adapter_object_id": 1643332556624,
+      "config_object_id": 1643332761360,
+      "effective_scenario": "HAPPY_PATH",
+      "random_seed": 42,
+      "run_state_object_id": 1643332552080,
+      "runtime_object_id": 1643332052496,
+      "runtime_type": "AssyLineRuntime"
+    },
+    "ASSY-SL02": {
+      "adapter_object_id": 1643332555728,
+      "config_object_id": 1643332556048,
+      "effective_scenario": "HAPPY_PATH",
+      "random_seed": 43,
+      "run_state_object_id": 1643332560400,
+      "runtime_object_id": 1643331999248,
+      "runtime_type": "AssyLineRuntime"
+    },
+    "ASSY-SL03": {
+      "adapter_object_id": 1643332537616,
+      "config_object_id": 1643332566224,
+      "effective_scenario": "HAPPY_PATH",
+      "random_seed": 44,
+      "run_state_object_id": 1643332544272,
+      "runtime_object_id": 1643332297872,
+      "runtime_type": "AssyLineRuntime"
+    },
+    "ASSY-SL04": {
+      "adapter_object_id": 1643332548112,
+      "config_object_id": 1643332537872,
+      "effective_scenario": "HAPPY_PATH",
+      "random_seed": 45,
+      "run_state_object_id": 1643332539920,
+      "runtime_object_id": 1643333276176,
+      "runtime_type": "AssyLineRuntime"
+    },
+    "ASSY-SL05": {
+      "adapter_object_id": 1643332636688,
+      "config_object_id": 1643332548176,
+      "effective_scenario": "HAPPY_PATH",
+      "random_seed": 46,
+      "run_state_object_id": 1643332642896,
+      "runtime_object_id": 1643332761616,
+      "runtime_type": "AssyLineRuntime"
+    },
+    "ASSY-SL06": {
+      "adapter_object_id": 1643332648720,
+      "config_object_id": 1643332635856,
+      "effective_scenario": "HAPPY_PATH",
+      "random_seed": 47,
+      "run_state_object_id": 1643332636176,
+      "runtime_object_id": 1643332938256,
+      "runtime_type": "AssyLineRuntime"
+    }
+  },
+  "runtime_type_unchanged": true,
+  "seed_mapping_stable_across_initializations": {
+    "ASSY-SL01": [
+      42,
+      42
+    ],
+    "ASSY-SL02": [
+      43,
+      43
+    ],
+    "ASSY-SL03": [
+      44,
+      44
+    ],
+    "ASSY-SL04": [
+      45,
+      45
+    ],
+    "ASSY-SL05": [
+      46,
+      46
+    ],
+    "ASSY-SL06": [
+      47,
+      47
+    ]
+  },
+  "sub_line_ids": [
+    "ASSY-SL01",
+    "ASSY-SL02",
+    "ASSY-SL03",
+    "ASSY-SL04",
+    "ASSY-SL05",
+    "ASSY-SL06"
+  ]
+}

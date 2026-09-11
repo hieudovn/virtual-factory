@@ -54,6 +54,8 @@ class RuntimeSession:
         service: RunLifecycleService,
         workspace_id: str,
         scenario_id: str,
+        *,
+        profile: str | None = None,
     ) -> None:
         if not isinstance(service, RunLifecycleService):
             raise SessionError(
@@ -65,7 +67,12 @@ class RuntimeSession:
             raise SessionError("scenario_id must be a non-empty str")
         self._service = service
         self._scenario_id = scenario_id
-        self._run = service.create_run(workspace_id, scenario_id=scenario_id)
+        # Optional explicit run-input/profile identity (VF-vNEXT-R1). It is
+        # informational run identity only; the domain runtime stays the truth
+        # owner and the profile never becomes a second lifecycle authority.
+        self._run = service.create_run(
+            workspace_id, scenario_id=scenario_id, profile=profile
+        )
         # Authoritative workspace identity comes from the created run context;
         # any mismatch fails closed (never silently re-key).
         if self._run.context.workspace_id != workspace_id:
@@ -88,6 +95,11 @@ class RuntimeSession:
     @property
     def scenario_id(self) -> str:
         return self._scenario_id
+
+    @property
+    def profile_id(self) -> str | None:
+        """Pinned run-input/profile identity of the current attempt (if any)."""
+        return self._run.context.profile
 
     @property
     def state(self) -> RunState:
@@ -161,9 +173,21 @@ def build_tipa_session(
     scenario_id: str,
     workspace_id: str = "TIPA",
 ) -> RuntimeSession:
-    """Build a TIPA ASSY runtime session (6 sub-lines, one workspace)."""
+    """Build a TIPA ASSY runtime session (6 sub-lines, one workspace).
+
+    VF-vNEXT-R1: the session ``scenario_id`` is RESOLVED to an explicit, pinned
+    immutable ASSY run profile, so the selected canonical RuntimeSession runs
+    real six-sub-line production semantics (accepted HAPPY_PATH-style production
+    for ``tipa-default``) instead of advancing six empty clocks. The profile is
+    resolved ONCE and re-discovered deterministically per fresh attempt/replay
+    from the same pinned ``scenario_id`` (no hidden state carry-over).
+    """
+    from virtual_factory.assembly.assy_run_profile import build_tipa_run_profile
     from virtual_factory.federation import TipaAssyFederation, build_tipa_workspace
     from virtual_factory.runcontrol import AssyExecutionBridge, RunLifecycleService
+
+    # Fail closed before any runtime construction if the scenario is unknown.
+    run_profile = build_tipa_run_profile(scenario_id)
 
     workspace = build_tipa_workspace()
     if workspace.workspace_id != workspace_id:
@@ -174,8 +198,13 @@ def build_tipa_session(
 
     def bridge_factory():
         federation = TipaAssyFederation(config_path=config_path)
-        federation.initialize()
+        federation.initialize(run_profile=run_profile)
         return AssyExecutionBridge(federation)
 
     service = RunLifecycleService(workspace, bridge_factory)
-    return RuntimeSession(service, workspace_id, scenario_id)
+    return RuntimeSession(
+        service,
+        workspace_id,
+        scenario_id,
+        profile=run_profile.profile_id,
+    )
