@@ -1,0 +1,323 @@
+{
+  "gate": "VF-SHW-X2",
+  "windows": 120,
+  "admitted_scope_ids": [
+    "vf-shw-node-chem-dosing",
+    "vf-shw-node-dist-p108",
+    "vf-shw-node-line2-aggregate",
+    "vf-shw-node-network-demand",
+    "vf-shw-node-raw-intake",
+    "vf-shw-node-raw-source",
+    "vf-shw-node-sludge-t201",
+    "vf-shw-node-t100",
+    "vf-shw-node-t101",
+    "vf-shw-node-t102",
+    "vf-shw-node-t103",
+    "vf-shw-node-t104",
+    "vf-shw-node-t105",
+    "vf-shw-node-t106",
+    "vf-shw-node-t108",
+    "vf-shw-node-wash-t110"
+  ],
+  "executed_scope_ids": [
+    "vf-shw-node-chem-dosing",
+    "vf-shw-node-dist-p108",
+    "vf-shw-node-line2-aggregate",
+    "vf-shw-node-network-demand",
+    "vf-shw-node-raw-intake",
+    "vf-shw-node-raw-source",
+    "vf-shw-node-sludge-t201",
+    "vf-shw-node-t100",
+    "vf-shw-node-t101",
+    "vf-shw-node-t102",
+    "vf-shw-node-t103",
+    "vf-shw-node-t104",
+    "vf-shw-node-t105",
+    "vf-shw-node-t106",
+    "vf-shw-node-t108",
+    "vf-shw-node-wash-t110"
+  ],
+  "excluded_scope_ids": [
+    "vf-shw-node-auto-plc",
+    "vf-shw-node-elec-mcc",
+    "vf-shw-node-t107"
+  ],
+  "excluded_scopes_executed": [],
+  "line2_internals_executable": false,
+  "window_time_s": 7200.0,
+  "scope_families": {
+    "vf-shw-node-chem-dosing": "ratio_dosing_v1",
+    "vf-shw-node-dist-p108": "pump_curve_algebraic_v1",
+    "vf-shw-node-line2-aggregate": "aggregate_split_v1",
+    "vf-shw-node-network-demand": "boundary_condition_v1",
+    "vf-shw-node-raw-intake": "pump_flow_algebraic_v1",
+    "vf-shw-node-raw-source": "boundary_condition_v1",
+    "vf-shw-node-sludge-t201": "duty_cycle_rule_v1",
+    "vf-shw-node-t100": "volume_balance_first_order_v1",
+    "vf-shw-node-t101": "residence_accumulator_v1",
+    "vf-shw-node-t102": "dose_ratio_proxy_v1",
+    "vf-shw-node-t103": "dose_ratio_proxy_v1",
+    "vf-shw-node-t104": "residence_accumulator_v1",
+    "vf-shw-node-t105": "settling_proxy_v1",
+    "vf-shw-node-t106": "filter_loading_first_order_v1",
+    "vf-shw-node-t108": "volume_balance_first_order_v1",
+    "vf-shw-node-wash-t110": "recovery_balance_v1"
+  },
+  "scope_rows": [
+    {
+      "scope_id": "vf-shw-node-chem-dosing",
+      "canonical_id": "UNIT-SHW-CHEM-DOSING",
+      "vf_path": "shwtp/chemical/chem_dosing",
+      "fidelity_class": "logical_only",
+      "update_rule_family": "ratio_dosing_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "coag_dose_mg_l",
+        "dosing_active",
+        "pac_dose_mg_l",
+        "plant_flow_m3h",
+        "tank_level_l",
+        "time_s"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-dist-p108",
+      "canonical_id": "UNIT-SHW-DIST-P108",
+      "vf_path": "shwtp/dist_p108",
+      "fidelity_class": "synthetic_reference",
+      "update_rule_family": "pump_curve_algebraic_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "discharge_pressure_bar",
+        "hsp_speed_pct",
+        "inlet_flow_m3h",
+        "l2_flow_m3h",
+        "network_flow_m3h",
+        "time_s",
+        "x2_speed_producer"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-line2-aggregate",
+      "canonical_id": null,
+      "vf_path": "shwtp/line2/line2_aggregate",
+      "fidelity_class": "logical_only",
+      "update_rule_family": "aggregate_split_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "delivery_m3h",
+        "feed_m3h",
+        "split_fraction",
+        "time_s"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-network-demand",
+      "canonical_id": null,
+      "vf_path": "shwtp/network_demand",
+      "fidelity_class": "synthetic_reference",
+      "update_rule_family": "boundary_condition_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "delivered_total_m3",
+        "demand_met_fraction",
+        "excess_flow_m3h",
+        "network_flow_m3h",
+        "time_s"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-raw-intake",
+      "canonical_id": "UNIT-SHW-RAW-INTAKE",
+      "vf_path": "shwtp/raw_water/raw_intake",
+      "fidelity_class": "first_order",
+      "update_rule_family": "pump_flow_algebraic_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "intake_flow_m3h",
+        "pump_speed_pct",
+        "raw_flow_m3h",
+        "run_hours",
+        "screen_dp_kpa",
+        "time_s"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-raw-source",
+      "canonical_id": null,
+      "vf_path": "shwtp/raw_water/raw_source",
+      "fidelity_class": "synthetic_reference",
+      "update_rule_family": "boundary_condition_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "raw_flow_m3h",
+        "raw_ph",
+        "raw_turbidity_ntu",
+        "time_s"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-sludge-t201",
+      "canonical_id": "UNIT-SHW-SLUDGE-T201",
+      "vf_path": "shwtp/sludge/sludge_t201",
+      "fidelity_class": "logical_only",
+      "update_rule_family": "duty_cycle_rule_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "processed_m3h",
+        "sludge_in_m3h",
+        "time_s",
+        "volume_m3"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-t100",
+      "canonical_id": "UNIT-SHW-T100",
+      "vf_path": "shwtp/raw_water/t100",
+      "fidelity_class": "first_order",
+      "update_rule_family": "volume_balance_first_order_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "inflow_m3h",
+        "inflow_permitted",
+        "level_m",
+        "outflows_m3h",
+        "time_s",
+        "volume_m3",
+        "withdrawal_m3h"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-t101",
+      "canonical_id": "UNIT-SHW-L1-T101",
+      "vf_path": "shwtp/line1/l1_t101",
+      "fidelity_class": "logical_only",
+      "update_rule_family": "residence_accumulator_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "contact_time_s",
+        "inflow_m3h",
+        "outflow_m3h",
+        "outlet_enabled",
+        "time_s",
+        "turbidity_ntu",
+        "volume_m3"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-t102",
+      "canonical_id": "UNIT-SHW-L1-T102",
+      "vf_path": "shwtp/line1/l1_t102",
+      "fidelity_class": "logical_only",
+      "update_rule_family": "dose_ratio_proxy_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "dose_transport_delta_mg_l",
+        "inflow_m3h",
+        "pac_dose",
+        "time_s",
+        "turbidity_ntu"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-t103",
+      "canonical_id": "UNIT-SHW-L1-T103",
+      "vf_path": "shwtp/line1/l1_t103",
+      "fidelity_class": "synthetic_reference",
+      "update_rule_family": "dose_ratio_proxy_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "coag_dose",
+        "dose_transport_delta_mg_l",
+        "inflow_m3h",
+        "time_s",
+        "turbidity_ntu"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-t104",
+      "canonical_id": "UNIT-SHW-L1-T104",
+      "vf_path": "shwtp/line1/l1_t104",
+      "fidelity_class": "logical_only",
+      "update_rule_family": "residence_accumulator_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "floc_time_index_s",
+        "inflow_m3h",
+        "outflow_m3h",
+        "outlet_enabled",
+        "time_s",
+        "turbidity_ntu",
+        "volume_m3"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-t105",
+      "canonical_id": "UNIT-SHW-L1-T105",
+      "vf_path": "shwtp/line1/l1_t105",
+      "fidelity_class": "synthetic_reference",
+      "update_rule_family": "settling_proxy_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "inflow_m3h",
+        "outflow_m3h",
+        "sludge_out_m3h",
+        "time_s",
+        "turbidity_ntu",
+        "volume_m3"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-t106",
+      "canonical_id": "UNIT-SHW-L1-T106",
+      "vf_path": "shwtp/line1/l1_t106",
+      "fidelity_class": "first_order",
+      "update_rule_family": "filter_loading_first_order_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "backwash_count",
+        "backwash_step",
+        "filter_dp_kpa",
+        "filtered_flow_m3h",
+        "inflow_m3h",
+        "inlet_valve_pos_pct",
+        "time_s",
+        "turbidity_ntu",
+        "wash_out_m3h"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-t108",
+      "canonical_id": "UNIT-SHW-L1-T108",
+      "vf_path": "shwtp/line1/l1_t108",
+      "fidelity_class": "first_order",
+      "update_rule_family": "volume_balance_first_order_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "inflow_m3h",
+        "inflow_permitted",
+        "level_m",
+        "outflows_m3h",
+        "time_s",
+        "volume_m3",
+        "withdrawal_m3h"
+      ]
+    },
+    {
+      "scope_id": "vf-shw-node-wash-t110",
+      "canonical_id": "UNIT-SHW-WASH-T110",
+      "vf_path": "shwtp/line1/wash_t110",
+      "fidelity_class": "logical_only",
+      "update_rule_family": "recovery_balance_v1",
+      "time_s": 7200.0,
+      "telemetry_keys": [
+        "level_m",
+        "return_m3h",
+        "time_s",
+        "volume_m3",
+        "wash_in_m3h"
+      ]
+    }
+  ],
+  "verdict": "ALL_16_ADMITTED_SCOPES_EXECUTE_ONLY"
+}

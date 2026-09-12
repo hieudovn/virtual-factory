@@ -1,0 +1,20 @@
+{
+  "gate": "VF-SHW-X2",
+  "model": "whole_plant_x2",
+  "accepted_default_model": "g21_slice",
+  "session_class": "RuntimeSession",
+  "workspace_id": "shwtp",
+  "run_id": "shwtp-0001",
+  "scenario_id": "shwtp-x2-whole-plant",
+  "bridge_class": "ShwtpExecutionBridge",
+  "bridge_is_canonical": true,
+  "bridge_model_class": "WholePlantX2Runtime",
+  "bridge_model_driven_windows": true,
+  "participant_count": 16,
+  "admitted_scope_count": 16,
+  "window_index_after_one_step": 1,
+  "coupling_policy": "explicit_lagged",
+  "workspace_scope_count": 16,
+  "independent_sessions_share_no_model": true,
+  "verdict": "ONE_CANONICAL_SHWTP_SESSION_AUTHORITY"
+}

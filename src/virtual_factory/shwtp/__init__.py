@@ -124,7 +124,31 @@ from virtual_factory.shwtp.expansion import (
     build_shwtp_plant_slice,
 )
 from virtual_factory.shwtp.bridge import ShwtpExecutionBridge
-from virtual_factory.shwtp.session import build_shwtp_session
+from virtual_factory.shwtp.session import (
+    SHWTP_MODELS,
+    SHWTP_MODEL_G21_SLICE,
+    SHWTP_MODEL_WHOLE_PLANT_X2,
+    build_shwtp_session,
+    build_shwtp_whole_plant_session,
+)
+from virtual_factory.shwtp.whole_plant import (
+    SCOPE_PATHS as SHWTP_X2_SCOPE_PATHS,
+    SHWTP_WHOLE_PLANT_COUPLING_POLICY,
+    SHWTP_WHOLE_PLANT_WORKSPACE_ID,
+    ScopeRuntimeInfo,
+    WholePlantScenario,
+    WholePlantX2Error,
+    WholePlantX2Runtime,
+    build_shwtp_whole_plant,
+    build_shwtp_whole_plant_workspace,
+    whole_plant_scope_ids,
+)
+from virtual_factory.shwtp.x2_controls import (
+    C1_ACTIVE_CONTROLLER_IDS,
+    C1ControllerSet,
+    X2ControlError,
+    build_c1_controllers,
+)
 
 __all__ = [
     "SHWTP_EXECUTABLE_CANDIDATE_CANONICAL_IDS",
@@ -197,4 +221,22 @@ __all__ = [
     "build_shwtp_plant_slice",
     "ShwtpExecutionBridge",
     "build_shwtp_session",
+    "SHWTP_MODELS",
+    "SHWTP_MODEL_G21_SLICE",
+    "SHWTP_MODEL_WHOLE_PLANT_X2",
+    "build_shwtp_whole_plant_session",
+    "SHWTP_X2_SCOPE_PATHS",
+    "SHWTP_WHOLE_PLANT_COUPLING_POLICY",
+    "SHWTP_WHOLE_PLANT_WORKSPACE_ID",
+    "ScopeRuntimeInfo",
+    "WholePlantScenario",
+    "WholePlantX2Error",
+    "WholePlantX2Runtime",
+    "build_shwtp_whole_plant",
+    "build_shwtp_whole_plant_workspace",
+    "whole_plant_scope_ids",
+    "C1_ACTIVE_CONTROLLER_IDS",
+    "C1ControllerSet",
+    "X2ControlError",
+    "build_c1_controllers",
 ]
