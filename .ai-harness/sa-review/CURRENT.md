@@ -11,7 +11,7 @@ no G22 run identity change, no second lifecycle authority, no R4/R5/SH-WTP/gatew
 
 Previous head: 311109c3c6a8f3b6550dfef8659348e0bd70e28e
 Branch: feature/vf-vnext-r3-c01
-New head: (this implementation commit)
+New head: b6f04fc860e01fd62e256e3ba9ee8a020d2de9a8
 Harness preflight: PASSED
 
 Fixed:
@@ -43,7 +43,10 @@ Focused proof:
 
 Regression: C01 15 passed; R3 27; R1 40; R2 27; G22 session/replay 15;
 observation/MES contracts 77; full suite 2583 -> 2598 passed; canonical baseline
-(41 groups) recorded at the pushed head in the SA submission.
+(41 groups) 41/41 groups PASS at b6f04fc (`BASELINE PASSED: all required groups green`,
+`failed_groups: []`), including `checks_preflight` PASSED and
+`checks_changed_files` PASSED (21 files) and the new `r3c01_reset_generation`
+group (41 groups total; the R3 head had 40).
 
 Authority unchanged: vf_runtime_authorization NOT_AUTHORIZED;
 site_authorized_execution NOT_AUTHORIZED; whole_plant_runtime NOT_AUTHORIZED /

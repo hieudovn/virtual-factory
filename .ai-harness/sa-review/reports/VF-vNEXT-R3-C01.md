@@ -6,7 +6,7 @@ Issue: https://github.com/hieudovn/virtual-factory/issues/81
 - Repository: `hieudovn/virtual-factory`
 - Branch: `feature/vf-vnext-r3-c01`
 - Previous head (SA-reviewed R3 head): `311109c3c6a8f3b6550dfef8659348e0bd70e28e`
-- New head: `(this implementation commit)`
+- New head: `b6f04fc860e01fd62e256e3ba9ee8a020d2de9a8`
 - Expected base sha (origin/main): `f5261c8ca18cd4e01779c0274b55270ba028b4e5` · contract: `.ai-harness/tasks/VF-vNEXT-R3-C01.json`
 - Harness preflight: **PASSED**
 
@@ -69,7 +69,10 @@ authority, no redesign.**
   R3 head was 2583 → +15 C01 tests, no regression).
 - Canonical baseline (now 41 groups incl. `r3c01_reset_generation`, plus
   `checks_compile` / `checks_static_lint_type` / `checks_changed_files` /
-  `checks_preflight`): **recorded at the pushed head in the SA submission**.
+  `checks_preflight`): **41/41 groups PASS at b6f04fc (`BASELINE PASSED: all required groups green`,
+`failed_groups: []`), including `checks_preflight` PASSED and
+`checks_changed_files` PASSED (21 files) and the new `r3c01_reset_generation`
+group (41 groups total; the R3 head had 40)**.
 
 ## 5. Boundaries
 
