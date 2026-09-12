@@ -423,5 +423,11 @@ VF-SHW-X3 - Physical bounds + deep scope A two-PI runtime (Issue #98; design fre
   verdicts PASS, overall SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED; baseline group x3_whole_plant_runtime
   inserted before full_suite with the manifest gate context pointed at this contract/base.
 - Verdict: VF-SHW-X3 - READY FOR SA REVIEW; SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED
+- Head: implementation commit e3c2846d0a40d786dad8b398039f4eb6d92897a6 (PR #99, base main, not merged);
+  this docs/status pin is markdown-only and code-identical. Machine-derived at that head with a clean tree:
+  canonical baseline overall PASS, 46 groups, failed_groups [], x3_whole_plant_runtime PASS (64 passed),
+  x2_whole_plant_runtime PASS (85 passed), full_suite PASS (2864 passed), checks_changed_files PASS
+  (FILE VALIDATION PASSED (31 file(s))), checks_preflight PASS (PRECHECK PASSED); VF-DM CI push run
+  34701098691 SUCCESS at that head.
 - STOP: X4/X5 must NOT begin; no merge, no Issue #98 closure without explicit SA authorization for the exact
   PR head SHA.

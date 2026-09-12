@@ -7,6 +7,31 @@
   exact commit, never from `main`
 - **Gate type**: IMPLEMENTATION (no new topology, no second simulation engine, no merge)
 
+## 0. Head and verification pin
+
+| | |
+|---|---|
+| Implementation commit (all code + evidence + this report) | `e3c2846d0a40d786dad8b398039f4eb6d92897a6` |
+| Docs/status pin commit (markdown only, code-identical) | the commit that adds this line |
+| Pull request | #99 (`feature/vf-shw-x3` → `main`, base `main`, not merged) |
+
+Machine-derived verification **at the implementation head**, with a clean tree:
+
+```
+canonical baseline : overall PASS, 46 groups, failed_groups []
+  x3_whole_plant_runtime : PASS  (64 passed)
+  x2_whole_plant_runtime : PASS  (85 passed)
+  full_suite             : PASS  (2864 passed)
+  checks_changed_files   : PASS  (FILE VALIDATION PASSED (31 file(s)))
+  checks_preflight       : PASS  (PRECHECK PASSED)
+focused                : tests/test_vnext_x3_*.py 64 passed
+CI                     : VF-DM CI push run 34701098691 = SUCCESS at this head
+```
+
+The docs/status pin changes only markdown, so the reviewed code content is exactly the implementation commit;
+the pin exists so the SA has the exact SHA in the repo itself. No source, config, test or evidence file is
+touched after the baseline run.
+
 ## 1. Execution provenance (SA section 1)
 
 The X3 profile/model/control/budget modules and the bounded `whole_plant.py` hooks were authored **before**
