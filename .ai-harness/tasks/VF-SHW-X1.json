@@ -48,7 +48,6 @@
     "src/virtual_factory/shwtp/logical_runtime.py",
     "src/virtual_factory/shwtp/{federation,projection,evaluation,overlay,bridge,session}.py",
     "src/virtual_factory/{runcontrol,composition,discrete,core,assembly,ui}/",
-    "tests/",
     "docs/",
     "deploy/",
     "examples/",
@@ -57,6 +56,7 @@
     "configs/model_types/",
     "configs/workspaces/"
   ],
+  "forbidden_paths_note": "tests/ is intentionally NOT listed as a whole-directory forbidden entry: the required deliverable tests/test_vnext_x1_whole_plant_contracts.py is a NEW test module, so test protection is enforced at file granularity by allowed_paths (exactly one test file is allowed; every other changed test path fails the allowlist). This mirrors the accepted VF-vNEXT-R5 contract convention. No pre-existing test module is permitted to change.",
   "required_deliverables": [
     "configs/vnext/shwtp/shwtp_whole_plant_graph_v1.json",
     "configs/vnext/shwtp/shwtp_process_contracts_v1.json",
