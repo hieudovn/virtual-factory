@@ -845,3 +845,39 @@ html, body {
     transition: none !important;
   }
 }
+
+/* ═══════════════════════════════════════
+   G6 — Shared hierarchical context primitives
+   (additive; domain-agnostic; no layout assumptions)
+   ═══════════════════════════════════════ */
+.vf-context-section { margin: 6px 10px 4px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; background: rgba(255,255,255,0.03); }
+.vf-context-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; opacity: .7; text-transform: uppercase; margin-bottom: 4px; }
+.vf-context-note { font-size: 9px; opacity: .6; margin-top: 4px; }
+.vf-context-crumbs { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 2px 0; padding: 0; }
+.vf-context-crumb { display: inline-flex; align-items: center; font-size: 11px; }
+.vf-context-crumb:not(:last-child)::after { content: "/"; opacity: .4; margin: 0 3px; }
+.vf-context-crumb-btn { background: none; border: none; color: inherit; cursor: pointer; font-size: 11px; padding: 0; opacity: .8; text-decoration: underline dotted; }
+.vf-context-crumb-btn:hover { opacity: 1; }
+.vf-context-crumb-current { font-weight: 700; opacity: .95; }
+.vf-hierarchy-tree, .vf-hierarchy-children { list-style: none; margin: 0; padding: 0; }
+.vf-hierarchy-children { margin-left: 12px; }
+.vf-hierarchy-row { display: flex; align-items: center; gap: 4px; min-height: 20px; }
+.vf-hierarchy-caret, .vf-hierarchy-caret-spacer { width: 14px; background: none; border: none; color: inherit; cursor: pointer; padding: 0; text-align: center; font-size: 10px; flex-shrink: 0; }
+.vf-hierarchy-label { background: none; border: none; color: inherit; cursor: pointer; text-align: left; font-size: 12px; padding: 1px 2px; }
+.vf-hierarchy-label:hover { opacity: 1; }
+.vf-hierarchy-badge { font-size: 8px; text-transform: uppercase; letter-spacing: .04em; opacity: .75; border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; margin-left: 4px; white-space: nowrap; }
+.vf-hierarchy-node-workspace .vf-hierarchy-badge { color: #7c9cff; }
+.vf-hierarchy-node-container .vf-hierarchy-badge { color: #d3a84a; }
+.vf-hierarchy-node-executable .vf-hierarchy-badge { color: #4ecca3; }
+.vf-hierarchy-selected > .vf-hierarchy-row .vf-hierarchy-label { font-weight: 700; text-decoration: underline; }
+.vf-hierarchy-node.vf-hierarchy-collapsed > .vf-hierarchy-children { display: none; }
+
+/* ═══════════════════════════════════════════
+   G7 — run-control context (additive)
+   ═══════════════════════════════════════════ */
+.vf-run-control-section { margin: 6px 10px 4px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; background: rgba(255,255,255,0.03); }
+.vf-run-control-path { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+.vf-run-control-meta { font-size: 10px; opacity: .8; margin-bottom: 4px; }
+.vf-run-control-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+.vf-run-control-buttons button { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: inherit; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer; }
+.vf-run-control-buttons button:disabled { opacity: .4; cursor: default; }

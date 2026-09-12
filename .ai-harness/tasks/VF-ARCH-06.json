@@ -1,0 +1,93 @@
+{
+  "task_id": "VF-ARCH-06",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "ARCHITECTURE / DESIGN / ROADMAP GATE — DOCUMENTATION & EVIDENCE ONLY (NO PRODUCTION IMPLEMENTATION)",
+  "objective": "Freeze the SH WTP target mapping onto the completed vNext architecture (ARCH-01..05) and produce the ordered, dependency-aware implementation roadmap that follows the architecture program. Answer two questions: (1) can the frozen Platform->Workspace->Scope->Object, runtime composition, Observation/Event/Capability, UI, and migration rules represent SH WTP WITHOUT a new platform architecture decision? (2) what exact implementation gates follow, in what order, with what dependencies and acceptance evidence? Preserve: SH-WTP = Workspace; process areas/units = hierarchical Simulation Scopes (site topology evidence-dependent); Continuous/Batch/Discrete = archetypes, not one-engine-per-workspace; shared core owns execution/composition framework while SH-WTP domain physics stays domain-specific; PIM remains semantic authority (version-pinned, fail-closed); fidelity ceiling stays logical_only unless later evidence authorizes higher; legacy WTP mini-engines are reference/legacy, not target runtime; no invented site truth; ASSY regression protection kept throughout.",
+  "explicit_non_objectives": [
+    "No Workspace/Scope class implementation",
+    "No coordinator/ports implementation",
+    "No provenance-v2 implementation",
+    "No semantic loader/binding implementation",
+    "No ASSY migration implementation",
+    "No SH WTP runtime/domain model implementation",
+    "No deletion/refactor of legacy WTP mini-engines",
+    "No frontend component changes",
+    "No invented SH WTP site topology/parameters/control logic",
+    "No fidelity raise beyond accepted evidence",
+    "No PIM semantic contract changes",
+    "No beginning of any implementation gate"
+  ],
+  "required_branch": "",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-ARCH-06.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-06.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/01-current-sh-wtp-evidence-inventory.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/02-target-sh-wtp-hierarchy-mapping.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/03-continuous-runtime-mapping.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/04-pim-semantic-binding-dependency.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/05-observation-event-capability-readiness-mapping.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/06-ui-product-mapping.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/07-legacy-duplicate-wtp-disposition.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/08-vnext-implementation-roadmap.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/09-per-gate-acceptance-evidence.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-06/10-risks-stop-and-closure-assessment.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-06.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement Workspace/Scope classes",
+    "Implement coordinator/ports",
+    "Implement provenance-v2",
+    "Implement semantic loader/binding",
+    "Migrate ASSY",
+    "Implement SH WTP runtime/domain models",
+    "Delete or refactor legacy WTP mini-engines",
+    "Change frontend components",
+    "Invent SH WTP site topology/parameters/control logic",
+    "Raise fidelity beyond accepted evidence",
+    "Change PIM semantic contracts",
+    "Begin any implementation gate"
+  ],
+  "stop_conditions": [
+    "SH WTP cannot map to ARCH-01..05 without a new platform architecture decision",
+    "Accepted PIM/VF contracts conflict materially with the target mapping",
+    "Current WTP paths require an Owner/SA choice between incompatible architectures",
+    "Roadmap dependency order cannot avoid premature SH WTP/domain implementation",
+    "Closing architecture would hide an unresolved platform-level gap",
+    "Safe mapping requires inventing plant/site truth"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "SH WTP maps onto frozen architecture without new platform concepts", "rule": {"field": "mapping.no_new_concepts", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Current continuous/WTP seams and duplicate paths classified with clear future disposition", "rule": {"field": "disposition.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "PIM/semantic-binding dependencies explicit and consistent with accepted contracts", "rule": {"field": "pim_dependency.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Continuous observation/event/capability/UI mappings explicit and evidence-safe", "rule": {"field": "continuous_mappings.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Implementation roadmap ordered, dependency-aware and gate-sized", "rule": {"field": "roadmap.ordered", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Each future gate has clear acceptance evidence expectations", "rule": {"field": "gate_evidence.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "ASSY regression protection remains explicit", "rule": {"field": "assy_protection.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Architecture closure assessment explicit", "rule": {"field": "closure.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "No production code or implementation started", "rule": {"field": "production_code_changed", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

@@ -1,0 +1,31 @@
+{
+  "reset_face": {
+    "ASSY-SL01": 0.0,
+    "ASSY-SL02": 0.0,
+    "ASSY-SL03": 0.0,
+    "ASSY-SL04": 0.0,
+    "ASSY-SL05": 0.0,
+    "ASSY-SL06": 0.0
+  },
+  "rich_reset_fresh_profile_state": {
+    "motors_created": 0,
+    "scenario": "HAPPY_PATH",
+    "simulation_time_s": 0.0
+  },
+  "rich_reset_same_run_identity": true,
+  "rich_step_advances_shell_session": {
+    "equal": true,
+    "rich_time_after_rich_step": 720.0,
+    "shell_time_after_rich_step": 720.0
+  },
+  "selection": {
+    "run_id_unchanged": true,
+    "selected_detail_run_id": "TIPA-0001",
+    "selection_is_presentation_only": true,
+    "sl01_before_time_s": 600.0,
+    "sl01_detail_time_s": 600.0,
+    "step_count_unchanged": true,
+    "totals_unchanged": true
+  },
+  "shell_time_before_rich_step": 600.0
+}

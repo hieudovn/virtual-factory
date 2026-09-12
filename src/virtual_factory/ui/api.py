@@ -5,7 +5,83 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from virtual_factory.ui.runtime_service import RuntimeService
+# ═══════════════════════════════════════════════════════════════════════════
+# VF-vNEXT-R5 — Single Simulation System Consolidation (legacy authority removal)
+#
+# The active product path must create simulation state ONLY through the canonical
+# Workspace / RuntimeSession seam (/workspaces, /vnext/workspaces/*, /assy-demo/*).
+# The legacy simulation authorities were DE-AUTHORIZED here:
+#   1. the eager root-dashboard ``RuntimeService`` (experimental MVP-01 surface),
+#   2. the legacy G7 run-control service family (``/vnext/runs*``),
+#   3. the legacy ``/demo-assy-mes`` ``DemoController`` runtime path.
+# They remain reachable only as FAIL-CLOSED deprecated aliases: any request that
+# touches them returns HTTP 410 and constructs ZERO runtime/engine/controller
+# state. The reusable kernel/library classes are NOT deleted (classification in
+# the VF-vNEXT-R5 report); nothing here constructs them.
+# ═══════════════════════════════════════════════════════════════════════════
+LEGACY_AUTHORITY_REMOVED_CODE = "VF_LEGACY_AUTHORITY_DEAUTHORIZED"
+
+#: The legacy surfaces removed from the active product path in VF-vNEXT-R5.
+DEAUTHORIZED_LEGACY_SURFACES: tuple[str, ...] = (
+    "root_dashboard_runtime_service",
+    "legacy_g7_run_control",
+    "legacy_demo_assy_mes",
+)
+
+#: Canonical product paths that replace the removed authorities.
+CANONICAL_PRODUCT_PATHS: tuple[str, ...] = (
+    "/workspaces",
+    "/vnext/workspaces",
+    "/vnext/workspaces/{workspace_id}/view",
+    "/assy-demo",
+)
+
+
+def legacy_deprecation_payload(surface: str) -> dict:
+    """Machine-readable fail-closed payload for a de-authorized legacy route."""
+    return {
+        "error": "legacy_runtime_authority_deauthorized",
+        "code": LEGACY_AUTHORITY_REMOVED_CODE,
+        "surface": surface,
+        "detail": (
+            "This legacy simulation authority was de-authorized in VF-vNEXT-R5 and "
+            "constructs no runtime state. Use the canonical product paths instead."
+        ),
+        "canonical_paths": list(CANONICAL_PRODUCT_PATHS),
+        "legacy_runtime_authority": False,
+    }
+
+
+class LegacyRuntimeAuthorityDeauthorized(RuntimeError):
+    """A de-authorized legacy simulation authority was touched (VF-vNEXT-R5)."""
+
+    def __init__(self, surface: str) -> None:
+        self.surface = surface
+        RuntimeError.__init__(
+            self,
+            f"legacy runtime authority {surface!r} is de-authorized "
+            f"(VF-vNEXT-R5); canonical product paths: "
+            f"{', '.join(CANONICAL_PRODUCT_PATHS)}",
+        )
+
+
+class DeauthorizedRuntimeAuthority:
+    """Fail-closed placeholder standing in for a removed runtime authority.
+
+    Attribute access ALWAYS raises, so a provider that returned this object can
+    never construct, step or reset simulation state.
+    """
+
+    __slots__ = ("_surface",)
+
+    def __init__(self, surface: str) -> None:
+        object.__setattr__(self, "_surface", surface)
+
+    def __getattr__(self, name: str):
+        raise LegacyRuntimeAuthorityDeauthorized(object.__getattribute__(self, "_surface"))
+
+    def __repr__(self) -> str:  # pragma: no cover - diagnostic only
+        return f"<deauthorized legacy authority {object.__getattribute__(self, '_surface')!r}>"
 
 
 def create_app(
@@ -26,31 +102,32 @@ def create_app(
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
-    service = RuntimeService(
-        config_path=config_path,
-        scenario_path=scenario_path,
-        dt_s=dt_s,
-        mqtt_host=mqtt_host,
-        mqtt_port=mqtt_port,
-        mqtt_topic_prefix=mqtt_topic_prefix,
-        mqtt_client_id=mqtt_client_id,
-        mqtt_connect_retries=mqtt_connect_retries,
-        mqtt_connect_delay=mqtt_connect_delay,
-        opcua_endpoint=opcua_endpoint,
-    )
+    # VF-vNEXT-R5: NO RuntimeService (and no engine/runtime object) is created
+    # here any more. The construction inputs are retained for call-site
+    # compatibility with the de-authorized experimental continuous dashboard and
+    # create no authority: ``service`` is a fail-closed placeholder.
+    service = DeauthorizedRuntimeAuthority("root_dashboard_runtime_service")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        if auto_start:
-            service.start_loop()
-        try:
-            yield
-        finally:
-            await service.stop_loop()
-            service.disconnect_mqtt()
+        # The experimental continuous loop authority was removed in VF-vNEXT-R5:
+        # the app starts no simulation loop and therefore starts no runtime state.
+        # ``auto_start`` is accepted for call-site compatibility only; it must not
+        # be referenced here (a bare ``del`` would make it a local name and break
+        # startup with UnboundLocalError — caught by the R5 server smoke).
+        yield
 
     app = FastAPI(title="Virtual Factory Monitoring API", version="0.1.0", lifespan=lifespan)
     static_dir = Path(__file__).resolve().parent / "static"
+
+    @app.exception_handler(LegacyRuntimeAuthorityDeauthorized)
+    def _legacy_authority_removed(_request, exc: LegacyRuntimeAuthorityDeauthorized):
+        """HTTP 410 for every de-authorized legacy simulation authority."""
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=410, content=legacy_deprecation_payload(exc.surface)
+        )
 
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
@@ -219,36 +296,37 @@ def create_app(
 
     @app.post("/api/config/switch")
     async def config_switch(body: dict) -> dict:
-        """Switch to a different plant configuration at runtime and persist it."""
-        config_path = body.get("config_path", "")
-        if not config_path:
-            return {"status": "error", "message": "No config_path provided"}
-        from pathlib import Path
-        if not Path(config_path).exists():
-            return {"status": "error", "message": f"Config file not found: {config_path}"}
-        from virtual_factory.core.state_persistence import set_last_config
-        set_last_config(config_path)
-        result = await service.reload_config(config_path)
-        return {"status": "ok", "config": config_path, **result}
+        """Switch to a different plant configuration at runtime and persist it.
+
+        VF-vNEXT-R5: de-authorized — the root-dashboard runtime authority was
+        removed, so there is no live continuous configuration to switch. Fails
+        closed BEFORE any body validation (deterministic 410, no construction).
+        """
+        raise LegacyRuntimeAuthorityDeauthorized("root_dashboard_runtime_service")
 
     # ═══════════════════════════════════════════════════
     # VF-DM-DEMO-ASSY-MES-01 — TIPA ASSY Customer Demo Scenario v1
     # Minimal control surface: reset / start / pause / step / jam / recover.
     # ═══════════════════════════════════════════════════
 
-    _demo_controller: dict = {"instance": None}
-
     def _get_demo_controller():
-        if _demo_controller["instance"] is None:
-            from virtual_factory.assembly.demo_assy_mes.controller import DemoController
-            from virtual_factory.assembly.demo_assy_mes.runner import DemoRunner
-            _demo_controller["instance"] = DemoController(DemoRunner())
-        return _demo_controller["instance"]
+        """VF-vNEXT-R5: the active legacy DemoController runtime path is removed.
+
+        No request may construct a ``DemoController``/``DemoRunner``/legacy
+        composition. The module and its classes stay available as
+        reference/test-only code (nothing is deleted); this provider fails closed.
+        """
+        raise LegacyRuntimeAuthorityDeauthorized("legacy_demo_assy_mes")
 
     @app.get("/demo-assy-mes", include_in_schema=False)
-    def demo_asssy_page() -> FileResponse:
-        """Customer-facing TIPA ASSY demo page (VF-DM-DEMO-ASSY-MES-01-C02)."""
-        return FileResponse(static_dir / "demo_assy_mes.html")
+    def demo_asssy_page():
+        """Legacy TIPA ASSY demo page: de-authorized fail-closed alias (R5).
+
+        The legacy customer-demo page was backed by the removed DemoController
+        runtime path; the static asset stays in the repo as reference but the
+        route never serves an active legacy runtime surface again.
+        """
+        raise LegacyRuntimeAuthorityDeauthorized("legacy_demo_assy_mes")
 
     @app.post("/demo-assy-mes/reset")
     def demo_reset() -> dict:
@@ -284,31 +362,95 @@ def create_app(
     # M6-S04 — TIPA ASSY Demo Endpoints
     # ═══════════════════════════════════════════════════
 
-    _assy_controller: dict = {"instance": None}
+    _assy_experience_note = (
+        "R2: /assy-demo is the rich projection of the SAME canonical TIPA "
+        "RuntimeSession used by /workspaces (one run authority). No legacy "
+        "DemoController/AssyDemoComposition is instantiated on this path. "
+        "R3: observation/MES output (observations | mes-messages | mes-trace) "
+        "is a READ-ONLY downstream projection of that same session."
+    )
 
-    def _get_assy_controller():
-        if _assy_controller["instance"] is None:
-            from virtual_factory.assembly.demo_controller import DemoController
-            from virtual_factory.assembly.observation_bridge import (
-                build_assy_observation_pipeline,
+    def _get_assy_experience():
+        from virtual_factory.ui.assy_experience import CanonicalAssyExperience
+
+        return CanonicalAssyExperience(_get_workspace_monitor())
+
+    _assy_output: dict = {"instance": None}
+
+    def _get_assy_output():
+        """R3 canonical same-session output projection (memoized, read-only)."""
+        from virtual_factory.ui.assy_output import CanonicalAssyOutput
+
+        if _assy_output["instance"] is None:
+            _assy_output["instance"] = CanonicalAssyOutput(_get_assy_experience())
+        return _assy_output["instance"]
+
+    def _deferred_response(feature: str, reason: str, *, mutation: bool = True):
+        """Explicit deferred-unavailable (fail closed; never legacy runtime)."""
+        from fastapi.responses import JSONResponse
+        from virtual_factory.ui.assy_experience import DeferredUnavailable
+
+        exc = DeferredUnavailable(feature, reason)
+        return JSONResponse(
+            status_code=409 if mutation else 503,
+            content={
+                "status": "deferred",
+                "feature": exc.feature,
+                "deferred_to": exc.gate,
+                "reason": exc.reason,
+                "authority": "canonical_tipa_runtime_session",
+                "legacy_runtime_authority": False,
+            },
+        )
+
+    def _experience_error_response(exc: Exception):
+        from fastapi.responses import JSONResponse
+        from virtual_factory.ui.assy_experience import (
+            AssyExperienceError,
+            SessionNotStarted,
+        )
+
+        if isinstance(exc, SessionNotStarted):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "session_not_started",
+                    "detail": str(exc),
+                    "authority": "canonical_tipa_runtime_session",
+                },
             )
-            from virtual_factory.assembly.assy_mes_bridge import (
-                build_assy_mes_pipeline,
+        try:
+            from virtual_factory.ui.assy_output import (
+                CanonicalOutputError,
+                OutputMutationError,
             )
-            assy_config = os.environ.get(
-                "TIPA_ASSY_CONFIG",
-                str(Path(__file__).resolve().parent.parent.parent.parent / "configs" / "plants" / "tipa_assy_demo.yaml")
+        except Exception:  # pragma: no cover - import guard
+            CanonicalOutputError = OutputMutationError = ()  # type: ignore
+        if isinstance(exc, OutputMutationError):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "output_mutation_blocked",
+                    "detail": str(exc),
+                    "authority": "canonical_tipa_runtime_session",
+                    "legacy_runtime_authority": False,
+                },
             )
-            ctrl = DemoController(config_path=assy_config)
-            ctrl.initialize()
-            # M6-INT-01: attach the downstream observation pipeline (read-only).
-            pipeline = build_assy_observation_pipeline()
-            ctrl.attach_observation_bridge(pipeline.bridge)
-            # VF-DM-DEMO-ASSY-MES-02: attach the six-sub-line MES contract bridge.
-            mes_pipeline = build_assy_mes_pipeline()
-            ctrl.attach_mes_bridge(mes_pipeline.bridge)
-            _assy_controller["instance"] = ctrl
-        return _assy_controller["instance"]
+        if isinstance(exc, CanonicalOutputError):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "output_unavailable",
+                    "detail": str(exc),
+                    "authority": "canonical_tipa_runtime_session",
+                    "legacy_runtime_authority": False,
+                },
+            )
+        if isinstance(exc, AssyExperienceError):
+            return JSONResponse(
+                status_code=404, content={"detail": str(exc), "status": "error"}
+            )
+        raise exc
 
     @app.get("/assy-demo")
     def assy_demo_page() -> FileResponse:
@@ -320,30 +462,61 @@ def create_app(
 
     @app.post("/assy-demo/reset")
     def assy_demo_reset(body: dict | None = None) -> dict:
-        ctrl = _get_assy_controller()
-        scenario = (body or {}).get("scenario", "HAPPY_PATH")
-        from virtual_factory.assembly.demo_controller import DemoScenario
-        ctrl.set_scenario(DemoScenario(scenario))
-        snap = ctrl.reset()
-        return snap.to_dict()
+        """In-context reset of the SELECTED canonical TIPA session (R1-C01).
+
+        Scenario/profile is pinned run input (R1): a request for a DIFFERENT
+        scenario is deferred (no legacy mutate-then-reset semantics).
+        """
+        experience = _get_assy_experience()
+        requested = (body or {}).get("scenario")
+        if requested:
+            identity = experience.session_identity()
+            profile = identity.get("run_profile") or {}
+            if requested not in (
+                identity.get("scenario_id", ""),
+                profile.get("scenario"),
+            ):
+                # R4: a different scenario is a FRESH canonical run, never an
+                # in-place mutation of the active run's pinned identity.
+                try:
+                    result = experience.select_scenario(requested)
+                except Exception as exc:
+                    return _experience_error_response(exc)
+                result["legacy_runtime_authority"] = False
+                return result
+        try:
+            return experience.reset()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/step")
     def assy_demo_step() -> dict:
-        ctrl = _get_assy_controller()
-        snap = ctrl.step()
-        return snap.to_dict()
+        """Advance the SELECTED canonical TIPA session (one boundary)."""
+        experience = _get_assy_experience()
+        try:
+            return experience.step()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.get("/assy-demo/observations")
     def assy_demo_observations() -> dict:
-        """M6-INT-01: ordered P0 outbound observation trace (read-only)."""
-        ctrl = _get_assy_controller()
-        trace = ctrl.outbound_trace
-        return {"count": len(trace), "observations": trace}
+        """R3: canonical same-session P0 observation facts (READ-ONLY).
+
+        Re-enabled by R3: no longer a deferred 503. Polls the canonical
+        projection only — it never creates or steps a simulation runtime.
+        """
+        try:
+            return _get_assy_output().observations()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/snapshot")
     def assy_demo_snapshot() -> dict:
-        ctrl = _get_assy_controller()
-        return ctrl.snapshot().to_dict()
+        experience = _get_assy_experience()
+        try:
+            return experience.snapshot()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     # ═══════════════════════════════════════════════════
     # VF-DM-DEMO-ASSY-MES-02 — MES contract bridge endpoints
@@ -351,43 +524,91 @@ def create_app(
 
     @app.post("/assy-demo/jam")
     def assy_demo_jam(body: dict | None = None) -> dict:
-        """Deterministic AP05_JAM on the exception target sub-line."""
-        ctrl = _get_assy_controller()
-        sub_line_id = (body or {}).get("sub_line_id") or None
-        return ctrl.trigger_jam(sub_line_id).to_dict()
+        """R4: canonical AP05 jam on ONE selected sub-line (same session)."""
+        experience = _get_assy_experience()
+        payload = body or {}
+        sub_line_id = payload.get("sub_line_id") or None
+        try:
+            result = experience.jam(sub_line_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
+        result["legacy_runtime_authority"] = False
+        return result
 
     @app.post("/assy-demo/recover")
     def assy_demo_recover(body: dict | None = None) -> dict:
-        """Resolve the AP05_JAM after the deterministic 120 s downtime."""
-        ctrl = _get_assy_controller()
-        sub_line_id = (body or {}).get("sub_line_id") or None
-        return ctrl.recover(sub_line_id).to_dict()
+        """R4: canonical AP05 recovery on the same sub-line (fail closed)."""
+        experience = _get_assy_experience()
+        payload = body or {}
+        sub_line_id = payload.get("sub_line_id") or None
+        try:
+            result = experience.recover(sub_line_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
+        result["legacy_runtime_authority"] = False
+        return result
 
     @app.post("/assy-demo/run-to-terminal")
-    def assy_demo_run_to_terminal() -> dict:
-        """Run the demo until the exception target sub-line is terminal, then
-        emit per-sub-line OEE summaries."""
-        ctrl = _get_assy_controller()
-        return ctrl.run_to_terminal().to_dict()
+    def assy_demo_run_to_terminal(body: dict | None = None) -> dict:
+        """R4: bounded canonical run-to-terminal over the SAME session."""
+        experience = _get_assy_experience()
+        max_windows = (body or {}).get("max_windows", 32)
+        try:
+            result = experience.run_to_terminal(max_windows)
+        except Exception as exc:
+            return _experience_error_response(exc)
+        result["legacy_runtime_authority"] = False
+        return result
+
+    @app.get("/assy-demo/oee")
+    def assy_demo_oee() -> dict:
+        """R4: READ-ONLY OEE/final summary from canonical facts (idempotent)."""
+        try:
+            return _get_assy_output().oee_summary()
+        except Exception as exc:
+            return _experience_error_response(exc)
+
+    @app.post("/assy-demo/scenario")
+    def assy_demo_scenario(body: dict) -> dict:
+        """R4: scenario selection = FRESH canonical run (no in-place mutation)."""
+        experience = _get_assy_experience()
+        scenario_id = (body or {}).get("scenario_id")
+        if not scenario_id:
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "detail": "scenario_id is required",
+                    "status": "error",
+                },
+            )
+        try:
+            result = experience.select_scenario(scenario_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
+        result["legacy_runtime_authority"] = False
+        return result
 
     @app.get("/assy-demo/mes-messages")
     def assy_demo_mes_messages() -> dict:
-        """VF-DM-DEMO-ASSY-MES-02: delivered MES-compatible messages."""
-        ctrl = _get_assy_controller()
-        msgs = ctrl.mes_messages
-        return {"count": len(msgs), "messages": msgs}
+        """R3: canonical same-session MES messages (READ-ONLY)."""
+        try:
+            return _get_assy_output().mes_messages()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.get("/assy-demo/mes-trace")
     def assy_demo_mes_trace() -> dict:
-        """VF-DM-DEMO-ASSY-MES-02: ordered MES bridge delivery trace."""
-        ctrl = _get_assy_controller()
-        trace = ctrl.mes_outbound_trace
-        return {"count": len(trace), "observations": trace}
+        """R3: canonical same-session MES delivery trace (READ-ONLY)."""
+        try:
+            return _get_assy_output().mes_trace()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.get("/assy-demo/version")
     def assy_demo_version() -> dict:
-        """VF-DM-DEMO-ASSY-MES-02/03: exact source SHA recorded/exposed and the
-        active additive MES contract version."""
+        """Exact source SHA + active additive MES contract version (read-only)."""
         import subprocess
         from virtual_factory.assembly.assy_mes_bridge import CONTRACT_VERSION
         sha = os.environ.get("VF_SOURCE_SHA", "")
@@ -404,6 +625,7 @@ def create_app(
             "source_sha": sha,
             "contract_version": CONTRACT_VERSION,
             "runtime": "assy-demo",
+            "authority": "canonical_tipa_runtime_session",
         }
 
     # ═══════════════════════════════════════════════════
@@ -412,10 +634,9 @@ def create_app(
 
     @app.post("/assy-demo/operation-command")
     def assy_demo_operation_command(body: dict) -> dict:
-        """Submit an operation command. Runtime decides; snapshot is truth."""
+        """OPS-03 thin same-session binding: the canonical runtime decides."""
         from fastapi.responses import JSONResponse
         from virtual_factory.assembly.line_runtime import AssyLineError
-        ctrl = _get_assy_controller()
         station_id = body.get("station_id", "")
         wip_id = body.get("wip_id", "")
         command = body.get("command", "")
@@ -425,21 +646,24 @@ def create_app(
                 status_code=400,
                 content={"detail": "station_id, wip_id and command are required"},
             )
+        experience = _get_assy_experience()
         try:
-            snap = ctrl.submit_operation_command(station_id, wip_id, command, payload)
+            return experience.operation_command(
+                body.get("sub_line_id", ""), station_id, wip_id, command, payload
+            )
         except AssyLineError as exc:
             return JSONResponse(
                 status_code=409,
                 content={"detail": str(exc), "status": "error"},
             )
-        return snap.to_dict()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/station-action")
     def assy_demo_station_action(body: dict) -> dict:
-        """Submit an exception station action (HOLD). Runtime decides."""
+        """OPS-03/OPS-04 thin same-session binding: runtime decides."""
         from fastapi.responses import JSONResponse
         from virtual_factory.assembly.line_runtime import AssyLineError
-        ctrl = _get_assy_controller()
         station_id = body.get("station_id", "")
         wip_id = body.get("wip_id", "")
         action = body.get("action", "")
@@ -448,87 +672,459 @@ def create_app(
                 status_code=400,
                 content={"detail": "station_id, wip_id and action are required"},
             )
+        experience = _get_assy_experience()
         try:
-            snap = ctrl.submit_station_action(station_id, wip_id, action)
+            return experience.station_action(
+                body.get("sub_line_id", ""), station_id, wip_id, action
+            )
         except AssyLineError as exc:
             return JSONResponse(
                 status_code=409,
                 content={"detail": str(exc), "status": "error"},
             )
-        return snap.to_dict()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/run-mode")
     def assy_demo_run_mode(body: dict) -> dict:
-        """Set global run mode (MANUAL/AUTO/ASSISTED) for the demo contexts."""
+        """Thin same-session binding: effective run mode on the six canonical lines."""
         from fastapi.responses import JSONResponse
         from virtual_factory.assembly.station_contracts import CompletionMode
-        ctrl = _get_assy_controller()
+        from virtual_factory.ui.assy_experience import SessionNotStarted
         mode = body.get("mode", "")
+        experience = _get_assy_experience()
         try:
-            parsed = CompletionMode(mode)
+            return experience.set_run_mode(mode)
+        except SessionNotStarted as exc:
+            return _experience_error_response(exc)
         except ValueError:
             return JSONResponse(
                 status_code=400,
                 content={"detail": f"Invalid run mode: {mode!r}"},
             )
-        return ctrl.set_run_mode(parsed).to_dict()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/select")
     def assy_demo_select(body: dict) -> dict:
-        """Select the active sub-line context for step/command endpoints.
+        """Select the presentation sub-line of the canonical session.
 
-        Additive M6-S04B binding: the detail view can render any sub-line, but
-        step/command endpoints operate on the selected context. This exposes the
-        existing DemoController.select_sub_line surface so operators can target
-        a specific sub-line in MANUAL E2E.
+        R2: presentation context only — never resets/reconstructs/forks any
+        runtime and never changes the parent run identity.
         """
         from fastapi.responses import JSONResponse
-        ctrl = _get_assy_controller()
         sub_line_id = body.get("sub_line_id", "")
         if not sub_line_id:
             return JSONResponse(
                 status_code=400,
                 content={"detail": "sub_line_id is required"},
             )
+        experience = _get_assy_experience()
         try:
-            ctrl.select_sub_line(sub_line_id)
-        except ValueError as exc:
-            return JSONResponse(
+            return experience.select(sub_line_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
+
+    # ── Frame A / Frame B projection endpoints (canonical session) ──
+    @app.get("/assy-demo/overview")
+    def assy_demo_overview() -> dict:
+        experience = _get_assy_experience()
+        try:
+            return experience.overview()
+        except Exception as exc:
+            return _experience_error_response(exc)
+
+    @app.get("/assy-demo/sub-lines")
+    def assy_demo_sub_lines() -> list[dict]:
+        experience = _get_assy_experience()
+        return experience.overview()["sub_lines"]
+
+    @app.get("/assy-demo/sub-line/{sub_line_id}")
+    def assy_demo_sub_line_detail(sub_line_id: str) -> dict:
+        experience = _get_assy_experience()
+        try:
+            return experience.detail(sub_line_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
+
+    @app.get("/assy-demo/identity")
+    def assy_demo_identity() -> dict:
+        """Canonical session/run/scenario/profile identity for the rich UI."""
+        experience = _get_assy_experience()
+        payload = experience.identity()
+        payload["note"] = _assy_experience_note
+        return payload
+
+    # ═══════════════════════════════════════════════════
+    # G6 — Shared hierarchical UI context (read-only, additive)
+    # Projection of the accepted G1 Workspace/StructuralPath authority only.
+    # No run-control/replay/orchestration semantics.
+    # ═══════════════════════════════════════════════════
+    from fastapi.responses import JSONResponse as _JSONResponse
+
+    def _tipa_structural_workspace():
+        from virtual_factory.federation import build_tipa_workspace
+
+        return build_tipa_workspace()
+
+    def _continuous_structural_workspace():
+        from virtual_factory.runcontrol import build_continuous_workspace
+
+        return build_continuous_workspace()
+
+    def _structural_workspace(workspace: str):
+        """Resolve a workspace discriminator to its G1 Workspace (or None)."""
+        if workspace == "TIPA":
+            return _tipa_structural_workspace()
+        if workspace == "continuous":
+            return _continuous_structural_workspace()
+        return None
+
+    @app.get("/api/ui/hierarchy")
+    def ui_hierarchy(workspace: str = Query("TIPA")):
+        from virtual_factory.ui import hierarchy as ui_hierarchy_mod
+
+        ws = _structural_workspace(workspace)
+        if ws is None:
+            return _JSONResponse(
                 status_code=404,
+                content={
+                    "detail": (
+                        f"unknown workspace {workspace!r} for structural "
+                        f"hierarchy; supported: TIPA, continuous"
+                    )
+                },
+            )
+        return ui_hierarchy_mod.workspace_to_dict(ws)
+
+    @app.get("/api/ui/context")
+    def ui_context(
+        workspace: str = Query("TIPA"),
+        path: str | None = Query(None),
+        object_id: str | None = Query(None),
+    ):
+        from virtual_factory.ui import hierarchy as ui_hierarchy_mod
+
+        ws = _structural_workspace(workspace)
+        if ws is None:
+            return _JSONResponse(
+                status_code=404,
+                content={
+                    "detail": (
+                        f"unknown workspace {workspace!r} for structural "
+                        f"context; supported: TIPA, continuous"
+                    )
+                },
+            )
+        try:
+            scope_path = (
+                ui_hierarchy_mod.parse_path(path) if path else None
+            )
+            return ui_hierarchy_mod.structural_context(
+                ws,
+                scope_path=scope_path,
+                object_id=object_id,
+            )
+        except ui_hierarchy_mod.UiHierarchyError as exc:
+            return _JSONResponse(
+                status_code=400,
                 content={"detail": str(exc)},
             )
-        return ctrl.snapshot().to_dict()
 
-    # ═══════════════════════════════════════════════════
-    # M6-S04B-I03 — Additive S04B Overview / Detail Endpoints
-    # ═══════════════════════════════════════════════════
+    @app.get("/api/ui/context/continuous")
+    def ui_context_continuous():
+        """Truthful ROOT-ONLY context for the continuous dashboard.
 
-    _enable_s04b = os.environ.get("VF_ENABLE_S04B_OVERVIEW", "0") == "1"
+        The continuous runtime has no authoritative multi-level G1 hierarchy;
+        do not invent plant structure. The shared primitives may render only
+        the workspace root.
+        """
+        from virtual_factory.ui import hierarchy as ui_hierarchy_mod
 
-    if _enable_s04b:
-        @app.get("/assy-demo/overview")
-        def assy_demo_overview() -> dict:
-            ctrl = _get_assy_controller()
-            return ctrl.overview().to_dict()
+        plant_id = (service.status().get("plant_id") or "continuous")
+        return ui_hierarchy_mod.root_only_context(plant_id)
 
-        @app.get("/assy-demo/sub-lines")
-        def assy_demo_sub_lines() -> list[dict]:
-            ctrl = _get_assy_controller()
-            ov = ctrl.overview()
-            return [s.to_dict() for s in ov.sub_lines]
+    # ═══════════════════════════════════════════════
+    # G7 — legacy run-control family: DE-AUTHORIZED (VF-vNEXT-R5).
+    #
+    # The legacy family kept its OWN RunLifecycleService authority per workspace
+    # (``TIPA`` = a duplicate authority over an UNPREPARED federation, and
+    # ``continuous`` = a second continuous authority owning an extra
+    # RuntimeService per attempt). Both discriminators are removed from the
+    # active product path: the canonical TIPA authority is /vnext/workspaces/TIPA/*
+    # plus /assy-demo/*, and no continuous workspace is registered.
+    #
+    # The route decorators are kept so callers receive an explicit fail-closed
+    # deprecation (HTTP 410) instead of an ambiguous 404, and so the removal is
+    # auditable. NOTHING below constructs a lifecycle service or runtime.
+    # ═══════════════════════════════════════════════
 
-        @app.get("/assy-demo/sub-line/{sub_line_id}")
-        def assy_demo_sub_line_detail(sub_line_id: str) -> dict:
-            from virtual_factory.assembly.demo_controller import DemoController
-            ctrl = _get_assy_controller()
-            try:
-                snap = ctrl.detail_for(sub_line_id)
-                return snap.to_dict()
-            except ValueError:
-                from fastapi.responses import JSONResponse
-                return JSONResponse(
-                    status_code=404,
-                    content={"detail": f"Sub-line not found: {sub_line_id!r}"},
-                )
+    def _get_run_control_service(workspace: str = "TIPA"):
+        """Fail closed: the legacy G7 run-control authority no longer exists."""
+        raise LegacyRuntimeAuthorityDeauthorized("legacy_g7_run_control")
+
+    # ═══════════════════════════════════════════════
+    # Legacy G7 route surface (deprecated aliases only)
+    # One platform-level run authority PER WORKSPACE; domain runtimes stay
+    # authoritative. TIPA and continuous are independent workspace authorities
+    # (no cross-workspace mutation, no platform-global active run singleton).
+    # Legacy /step /start /stop /reset remain compatibility surfaces (not
+    # repointed). The ``workspace`` discriminator follows the existing G6
+    # ``?workspace=`` query-param convention (default: TIPA).
+    # ═══════════════════════════════════════════════
+
+    def _vnext_service(workspace: str):
+        svc = _get_run_control_service(workspace)
+        if svc is None:
+            return None, _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown workspace {workspace!r}"},
+            )
+        return svc, None
+
+    @app.post("/vnext/runs", status_code=201)
+    def vnext_create_run(body: dict, workspace: str = Query("TIPA")):
+        from virtual_factory.runcontrol import (
+            RunLifecycleError,
+            TargetResolutionError,
+        )
+
+        service, unknown = _vnext_service(workspace)
+        if service is None:
+            return unknown
+
+        target_path = body.get("target_path", "")
+        if not target_path:
+            return _JSONResponse(
+                status_code=400, content={"detail": "target_path is required"}
+            )
+        try:
+            record = service.create_run(
+                target_path,
+                scenario_id=body.get("scenario_id"),
+                model_id=body.get("model_id"),
+                profile=body.get("profile"),
+                random_seed=body.get("random_seed"),
+            )
+            return record.to_dict()
+        except (TargetResolutionError, ValueError) as exc:
+            return _JSONResponse(status_code=400, content={"detail": str(exc)})
+        except RunLifecycleError as exc:
+            return _JSONResponse(status_code=409, content={"detail": str(exc)})
+
+    @app.get("/vnext/runs/current")
+    def vnext_current_run(workspace: str = Query("TIPA")):
+        service, unknown = _vnext_service(workspace)
+        if service is None:
+            return unknown
+        record = service.current()
+        if record is None:
+            return _JSONResponse(
+                status_code=404, content={"detail": "no active run"}
+            )
+        return record.to_dict()
+
+    @app.get("/vnext/runs/{run_id}")
+    def vnext_get_run(run_id: str, workspace: str = Query("TIPA")):
+        service, unknown = _vnext_service(workspace)
+        if service is None:
+            return unknown
+        if not service.has_run(run_id):
+            return _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown/stale run_id {run_id!r}"},
+            )
+        return service.status(run_id)
+
+    def _vnext_mutate(
+        run_id: str,
+        operation: str,
+        workspace: str = "TIPA",
+        body: dict | None = None,
+    ):
+        service, unknown = _vnext_service(workspace)
+        if service is None:
+            return unknown
+        if not service.has_run(run_id):
+            return _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown/stale run_id {run_id!r}"},
+            )
+        from virtual_factory.runcontrol import (
+            ReplayUnavailableError,
+            RunLifecycleError,
+        )
+
+        try:
+            if operation == "start":
+                return service.start(run_id).to_dict()
+            if operation == "step":
+                return service.step(run_id).to_dict()
+            if operation == "pause":
+                return service.pause(run_id).to_dict()
+            if operation == "resume":
+                return service.resume(run_id).to_dict()
+            if operation == "stop":
+                return service.stop(run_id).to_dict()
+            if operation == "reset":
+                return service.reset(run_id).to_dict()
+            if operation == "restart":
+                return service.restart(run_id).to_dict()
+            if operation == "replay":
+                return service.replay(run_id).to_dict()
+        except ReplayUnavailableError as exc:
+            return _JSONResponse(status_code=409, content={"detail": str(exc)})
+        except RunLifecycleError as exc:
+            return _JSONResponse(status_code=409, content={"detail": str(exc)})
+        return _JSONResponse(
+            status_code=400, content={"detail": f"unknown operation {operation!r}"}
+        )
+
+    @app.post("/vnext/runs/{run_id}/start")
+    def vnext_start(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "start", workspace)
+
+    @app.post("/vnext/runs/{run_id}/step")
+    def vnext_step(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "step", workspace)
+
+    @app.post("/vnext/runs/{run_id}/pause")
+    def vnext_pause(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "pause", workspace)
+
+    @app.post("/vnext/runs/{run_id}/resume")
+    def vnext_resume(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "resume", workspace)
+
+    @app.post("/vnext/runs/{run_id}/stop")
+    def vnext_stop(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "stop", workspace)
+
+    @app.post("/vnext/runs/{run_id}/reset")
+    def vnext_reset(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "reset", workspace)
+
+    @app.post("/vnext/runs/{run_id}/restart")
+    def vnext_restart(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "restart", workspace)
+
+    @app.post("/vnext/runs/{run_id}/replay")
+    def vnext_replay(run_id: str, workspace: str = Query("TIPA")):
+        return _vnext_mutate(run_id, "replay", workspace)
+
+    # ═══════════════════════════════════════════════
+    # G24 — Multi-Workspace UI Switching + Monitoring Shell
+    # Additive observer/controller seam over the G23 WorkspaceRuntimeRegistry
+    # + G22 RuntimeSession. The shell page (`/workspaces`) lists the accepted
+    # workspaces (selector), selects a workspace, shows a read-only monitor
+    # view, and lets shared run controls act on the selected workspace session
+    # only. SH-WTP assumed topology/fidelity is never presented as site truth.
+    # No gateway routing / export / MES-PIM change here.
+    # ═══════════════════════════════════════════════
+    _workspace_monitor: dict = {"instance": None}
+
+    def _get_workspace_monitor():
+        if _workspace_monitor["instance"] is None:
+            from virtual_factory.ui.workspace_monitor import WorkspaceMonitor
+
+            tipa_config = os.environ.get(
+                "TIPA_ASSY_CONFIG",
+                str(
+                    Path(__file__).resolve().parent.parent.parent.parent
+                    / "configs" / "plants" / "tipa_assy_demo.yaml"
+                ),
+            )
+            _workspace_monitor["instance"] = WorkspaceMonitor(
+                tipa_config_path=tipa_config
+            )
+        return _workspace_monitor["instance"]
+
+    @app.get("/workspaces", include_in_schema=False)
+    def workspaces_page() -> FileResponse:
+        """G24 multi-workspace shell page (HTML/CSS/JS)."""
+        return FileResponse(static_dir / "workspace_shell.html")
+
+    @app.get("/static/workspace_shell.js", include_in_schema=False)
+    def workspace_shell_js_direct() -> FileResponse:
+        return FileResponse(
+            static_dir / "workspace_shell.js", media_type="application/javascript"
+        )
+
+    @app.get("/static/workspace_shell.css", include_in_schema=False)
+    def workspace_shell_css_direct() -> FileResponse:
+        return FileResponse(static_dir / "workspace_shell.css", media_type="text/css")
+
+    @app.get("/vnext/workspaces")
+    def vnext_workspaces():
+        """Registry-backed selector source (deterministic, orchestration only)."""
+        monitor = _get_workspace_monitor()
+        return monitor.workspace_list()
+
+    @app.get("/vnext/workspaces/{workspace_id}/view")
+    def vnext_workspace_view(workspace_id: str):
+        monitor = _get_workspace_monitor()
+        try:
+            return monitor.view(workspace_id)
+        except Exception as exc:
+            return _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown workspace {workspace_id!r}: {exc}"},
+            )
+
+    @app.post("/vnext/workspaces/select")
+    def vnext_workspace_select(body: dict):
+        monitor = _get_workspace_monitor()
+        workspace_id = (body or {}).get("workspace_id", "")
+        if not workspace_id:
+            return _JSONResponse(
+                status_code=400, content={"detail": "workspace_id is required"}
+            )
+        try:
+            return monitor.select(workspace_id)
+        except Exception as exc:
+            return _JSONResponse(
+                status_code=404,
+                content={"detail": f"unknown workspace {workspace_id!r}: {exc}"},
+            )
+
+    @app.post("/vnext/workspaces/{workspace_id}/new-run")
+    def vnext_workspace_new_run(workspace_id: str, body: dict):
+        """VF-vNEXT-R5 (audit I1): start a FRESH canonical run from the shell.
+
+        The shell's scenario / new-run control uses the SAME canonical seam as
+        the rich ASSY page (``WorkspaceMonitor.new_run`` -> the shared
+        ``build_tipa_scenario_run_factory``), so there is exactly ONE run-id
+        authority and every new run is pinned to its own immutable run context
+        (no cross-run profile contamination).
+        """
+        monitor = _get_workspace_monitor()
+        if not monitor.has(workspace_id):
+            return _JSONResponse(
+                status_code=404, content={"detail": f"unknown workspace {workspace_id!r}"}
+            )
+        scenario_id = (body or {}).get("scenario_id") or None
+        try:
+            return monitor.new_run(workspace_id, scenario_id)
+        except Exception as exc:
+            return _JSONResponse(
+                status_code=400,
+                content={"detail": f"new run refused for {workspace_id!r}: {exc}"},
+            )
+
+    @app.post("/vnext/workspaces/{workspace_id}/control")
+    def vnext_workspace_control(workspace_id: str, body: dict):
+        monitor = _get_workspace_monitor()
+        action = (body or {}).get("action", "")
+        if not action:
+            return _JSONResponse(
+                status_code=400, content={"detail": "action is required"}
+            )
+        try:
+            return monitor.control(workspace_id, action)
+        except Exception as exc:
+            return _JSONResponse(
+                status_code=400,
+                content={"detail": f"workspace {workspace_id!r}: {exc}"},
+            )
 
     return app

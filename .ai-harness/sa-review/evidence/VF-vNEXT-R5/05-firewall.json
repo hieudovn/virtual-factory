@@ -1,0 +1,21 @@
+{
+  "static": {
+    "forbidden_construction_needles_in_api": [],
+    "authority_construction_calls_in_ui_package": []
+  },
+  "dynamic": {
+    "create_app_constructions": {},
+    "deauthorized_families_zero_construction": true,
+    "canonical_counts": {
+      "RunLifecycleService": 2,
+      "RuntimeSession": 2,
+      "TipaAssyFederation": 1
+    }
+  },
+  "hidden_legacy_cache": {
+    "demo_singleton_removed": true,
+    "g7_singleton_removed": false,
+    "runtime_service_import_removed": false
+  },
+  "verdict": "FIREWALL_HELD"
+}

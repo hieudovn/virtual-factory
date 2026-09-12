@@ -1,0 +1,41 @@
+{
+  "status_code": 200,
+  "authority": "canonical_tipa_runtime_session",
+  "legacy_runtime_authority": false,
+  "canonical_run_id": "TIPA-0001",
+  "identity_run_id": "TIPA-0001",
+  "count": 6,
+  "sub_lines_covered": [
+    "ASSY-SL01",
+    "ASSY-SL02",
+    "ASSY-SL03",
+    "ASSY-SL04",
+    "ASSY-SL05",
+    "ASSY-SL06"
+  ],
+  "all_payload_run_ids_canonical": true,
+  "downtime_by_line": {
+    "ASSY-SL01": 0.0,
+    "ASSY-SL02": 0.0,
+    "ASSY-SL03": 120.0,
+    "ASSY-SL04": 0.0,
+    "ASSY-SL05": 0.0,
+    "ASSY-SL06": 0.0
+  },
+  "oee_by_line": {
+    "ASSY-SL01": 0.153846,
+    "ASSY-SL02": 0.153846,
+    "ASSY-SL03": 0.153846,
+    "ASSY-SL04": 0.153846,
+    "ASSY-SL05": 0.153846,
+    "ASSY-SL06": 0.153846
+  },
+  "faulted_line_downtime_120": true,
+  "other_lines_no_downtime": true,
+  "idempotent_keys": true,
+  "idempotent_count": true,
+  "simulation_time_unchanged": true,
+  "production_unchanged": true,
+  "positions_unchanged": true,
+  "PASS": true
+}

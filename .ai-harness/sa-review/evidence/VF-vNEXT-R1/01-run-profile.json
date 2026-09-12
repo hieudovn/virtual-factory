@@ -1,0 +1,35 @@
+{
+  "known_run_scenarios": [
+    "HAPPY_PATH",
+    "AP06_FAIL_RETEST_PASS",
+    "AP08_NG_REINSPECT_PASS",
+    "FAILED_FINAL"
+  ],
+  "note": "Immutable run INPUT. Simulation/synthetic profile inputs, never TIPA site truth. The profile owns no mutable simulation truth and no lifecycle authority.",
+  "provenance": "simulation_synthetic_profile_input",
+  "resolved_profile": {
+    "continuous_feed_enabled": true,
+    "feed_policy": {
+      "rso2_target": 6,
+      "sso2_low_watermark": 3,
+      "sso2_target": 10
+    },
+    "initial_rso2_inventory": 7,
+    "initial_sso2_inventory": 7,
+    "profile_id": "tipa-assy-happy_path",
+    "provenance": "simulation_synthetic_profile_input",
+    "scenario": "HAPPY_PATH",
+    "session_scenario_id": "tipa-default",
+    "target_sub_line_id": "",
+    "version": "1"
+  },
+  "session_scenario_aliases": {
+    "tipa-ap06-retest": "AP06_FAIL_RETEST_PASS",
+    "tipa-ap08-reinspect": "AP08_NG_REINSPECT_PASS",
+    "tipa-default": "HAPPY_PATH",
+    "tipa-failed-final": "FAILED_FINAL",
+    "tipa-happy-path": "HAPPY_PATH"
+  },
+  "session_scenario_id": "tipa-default",
+  "site_truth": false
+}

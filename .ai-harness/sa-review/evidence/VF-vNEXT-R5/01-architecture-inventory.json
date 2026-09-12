@@ -1,0 +1,583 @@
+{
+  "production_construction_sites": [
+    {
+      "file": "src/virtual_factory/assembly/assy_mes_bridge.py",
+      "line": 1481,
+      "symbol": "AssyDemoComposition",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "code": "composition = AssyDemoComposition("
+    },
+    {
+      "file": "src/virtual_factory/assembly/demo_assy_mes/__main__.py",
+      "line": 36,
+      "symbol": "DemoRunner",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "code": "runner = DemoRunner(pipeline=pipeline)"
+    },
+    {
+      "file": "src/virtual_factory/assembly/demo_controller.py",
+      "line": 86,
+      "symbol": "AssyDemoComposition",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "code": "self._composition = AssyDemoComposition("
+    },
+    {
+      "file": "src/virtual_factory/core/engine_factory.py",
+      "line": 83,
+      "symbol": "SimulationEngine",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY",
+      "code": "return SimulationEngine(config, dt_s=dt_s, scenario=scenario)"
+    },
+    {
+      "file": "src/virtual_factory/discrete/run_service.py",
+      "line": 107,
+      "symbol": "SimulationEngine",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY",
+      "code": "engine = DiscreteSimulationEngine("
+    },
+    {
+      "file": "src/virtual_factory/discrete/run_service.py",
+      "line": 107,
+      "symbol": "DiscreteSimulationEngine",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY",
+      "code": "engine = DiscreteSimulationEngine("
+    },
+    {
+      "file": "src/virtual_factory/federation/assy_host.py",
+      "line": 311,
+      "symbol": "TipaAssyFederation",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY",
+      "code": "f\"TipaAssyFederation(workspace={self.workspace.workspace_id if self.workspace else None!r}, \""
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 253,
+      "symbol": "TipaAssyFederation",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "code": "federation = TipaAssyFederation(config_path=config_path)"
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 257,
+      "symbol": "RunLifecycleService",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "code": "service = RunLifecycleService("
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 265,
+      "symbol": "RuntimeSession",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "code": "return RuntimeSession("
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 306,
+      "symbol": "TipaAssyFederation",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "code": "federation = TipaAssyFederation(config_path=config_path)"
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 312,
+      "symbol": "RunLifecycleService",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "code": "service = RunLifecycleService("
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 317,
+      "symbol": "RuntimeSession",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "code": "return RuntimeSession("
+    },
+    {
+      "file": "src/virtual_factory/shwtp/session.py",
+      "line": 38,
+      "symbol": "RunLifecycleService",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "code": "service = RunLifecycleService(workspace, bridge_factory)"
+    },
+    {
+      "file": "src/virtual_factory/shwtp/session.py",
+      "line": 39,
+      "symbol": "RuntimeSession",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "code": "return RuntimeSession(service, workspace_id, scenario_id)"
+    }
+  ],
+  "classification_counts": {
+    "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP": 8,
+    "KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY": 4,
+    "KEEP_AS_TEST_REFERENCE_ONLY": 3
+  },
+  "active_product_path_authority_constructions": [],
+  "api_authority_names_referenced": [],
+  "route_authority_map": [
+    {
+      "method": "GET",
+      "path": "/",
+      "line": 166,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "line": 170,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "line": 174,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/telemetry/latest",
+      "line": 178,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/telemetry/history",
+      "line": 186,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/alarms",
+      "line": 190,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/step",
+      "line": 196,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/run-steps",
+      "line": 200,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/start",
+      "line": 204,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/stop",
+      "line": 209,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/reset",
+      "line": 214,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "WEBSOCKET",
+      "path": "/ws/telemetry",
+      "line": 223,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plant-graph",
+      "line": 238,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/api/model-types",
+      "line": 242,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/pid/{controller_id}",
+      "line": 246,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fault",
+      "line": 252,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/api/opcua/status",
+      "line": 258,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/generate",
+      "line": 263,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/parse",
+      "line": 276,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/api/config/current",
+      "line": 291,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/api/config/switch",
+      "line": 296,
+      "authority": "DEAUTHORIZED_FAIL_CLOSED:root_dashboard_runtime_service"
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/reset",
+      "line": 330,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/start",
+      "line": 334,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/pause",
+      "line": 338,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/step",
+      "line": 342,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/jam",
+      "line": 346,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/recover",
+      "line": 350,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/demo-assy-mes/snapshot",
+      "line": 354,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/demo-assy-mes/messages",
+      "line": 358,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo",
+      "line": 454,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/static/{filename}",
+      "line": 458,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/reset",
+      "line": 462,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/step",
+      "line": 491,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/observations",
+      "line": 500,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/snapshot",
+      "line": 512,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/jam",
+      "line": 524,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/recover",
+      "line": 537,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/run-to-terminal",
+      "line": 550,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/oee",
+      "line": 562,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/scenario",
+      "line": 570,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/mes-messages",
+      "line": 592,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/mes-trace",
+      "line": 600,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/version",
+      "line": 608,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/operation-command",
+      "line": 634,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/station-action",
+      "line": 661,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/run-mode",
+      "line": 687,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/select",
+      "line": 707,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/overview",
+      "line": 728,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/sub-lines",
+      "line": 736,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/sub-line/{sub_line_id}",
+      "line": 741,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/identity",
+      "line": 749,
+      "authority": "CANONICAL_ASSY_EXPERIENCE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ui/hierarchy",
+      "line": 782,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ui/context",
+      "line": 799,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ui/context/continuous",
+      "line": 833,
+      "authority": "DEAUTHORIZED_FAIL_CLOSED:unknown"
+    },
+    {
+      "method": "GET",
+      "path": "/vnext/runs/current",
+      "line": 914,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "GET",
+      "path": "/vnext/runs/{run_id}",
+      "line": 926,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/start",
+      "line": 982,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/step",
+      "line": 986,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/pause",
+      "line": 990,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/resume",
+      "line": 994,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/stop",
+      "line": 998,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/reset",
+      "line": 1002,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/restart",
+      "line": 1006,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/replay",
+      "line": 1010,
+      "authority": "CANONICAL_WORKSPACE_MONITOR"
+    },
+    {
+      "method": "GET",
+      "path": "/vnext/workspaces",
+      "line": 1056,
+      "authority": "CANONICAL_WORKSPACE_MONITOR"
+    },
+    {
+      "method": "GET",
+      "path": "/vnext/workspaces/{workspace_id}/view",
+      "line": 1062,
+      "authority": "CANONICAL_WORKSPACE_MONITOR"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/workspaces/select",
+      "line": 1073,
+      "authority": "CANONICAL_WORKSPACE_MONITOR"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/workspaces/{workspace_id}/new-run",
+      "line": 1089,
+      "authority": "CANONICAL_WORKSPACE_MONITOR"
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/workspaces/{workspace_id}/control",
+      "line": 1113,
+      "authority": "CANONICAL_WORKSPACE_MONITOR"
+    }
+  ],
+  "registry": {
+    "registry_type": "WorkspaceRuntimeRegistry",
+    "registered_workspaces": [
+      "TIPA",
+      "shwtp"
+    ],
+    "continuous_workspace_registered": false,
+    "canonical_workspace_count": 2
+  },
+  "continuous_authority_components": [
+    {
+      "component": "ui/runtime_service.py (RuntimeService)",
+      "class": "KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY",
+      "authority_status": "NOT_AN_AUTHORITY_BY_ITSELF: no active product path constructs it"
+    },
+    {
+      "component": "core/simulation_engine.py + core/engine_factory.py",
+      "class": "KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY",
+      "authority_status": "domain engine library (used by canonical federation paths)"
+    },
+    {
+      "component": "discrete/run_service.py + discrete/engine.py",
+      "class": "KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY",
+      "authority_status": "domain engine library"
+    },
+    {
+      "component": "assembly/demo_controller.py + assembly/demo_composition.py + assembly/demo_assy_mes/*",
+      "class": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "authority_status": "reference/compat only; no product route constructs them (verified dynamically)"
+    },
+    {
+      "component": "root dashboard state routes (/status, /step, /telemetry/*, /alarms, /reset, /api/config/*, /api/ui/context/continuous)",
+      "class": "FAIL_CLOSED_DEPRECATED_ALIAS",
+      "authority_status": "HTTP 410 + zero construction"
+    },
+    {
+      "component": "legacy G7 run-control family (/vnext/runs*)",
+      "class": "FAIL_CLOSED_DEPRECATED_ALIAS",
+      "authority_status": "HTTP 410 + zero construction; duplicate TIPA + continuous discriminators removed"
+    },
+    {
+      "component": "legacy /demo-assy-mes routes",
+      "class": "FAIL_CLOSED_DEPRECATED_ALIAS",
+      "authority_status": "HTTP 410 + zero construction"
+    },
+    {
+      "component": "static assets index.html/demo_assy_mes.html/continuous_context.js/run_control_context.js",
+      "class": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "authority_status": "served pages only; all their state endpoints are 410 (never an authority)"
+    }
+  ]
+}

@@ -1,0 +1,388 @@
+{
+  "schema": "vf.vnext.g17a.workstream_independence_review.v1",
+  "version": "1.0.0",
+  "gate": "VF-vNEXT-G17A",
+  "kind": "PLANNING_REVIEW_ONLY",
+  "base": "732decd68a02af6f0ee1de1e830631747a99d060",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/68",
+  "external_pim_evidence": {
+    "pim_repository": "hieudovn/plant-intelligence-model",
+    "pim_evidence_commit": "d10049801a1eb022a7fa2e83badabefb92fb7412",
+    "evidence_verdict": "T108-DIST-EVIDENCE — STILL_INSUFFICIENT",
+    "blocked_dependency": "UNIT-SHW-L1-T108 -> UNIT-SHW-DIST-P108",
+    "blocked_reason": "PIM authority has NOT established (a) the exact unit-level T108 -> DIST-P108 relationship, nor (b) the exact ProcessConnection endpoint at DIST-P108. Names/descriptions must not be reinterpreted and F05 aggregation must not be treated as authority.",
+    "pim_not_modified": true
+  },
+  "authority": {
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED",
+    "whole_plant_runtime": "NOT_AUTHORIZED / NOT_IMPLEMENTED",
+    "statement": "G17A is a planning/review gate only. No decision in this artifact authorizes runtime execution, creates BoundaryPorts/CompositionBindings, adds federation participants, broadens G12C admission, adds Gauss-Seidel/iterative/multirate policy, invents plant values, or changes T106/T108/G4/G7/G14/G15/PIM. The recommended next gate is a planning recommendation only and must NOT be started in G17A."
+  },
+  "topology_distinction": {
+    "PIM_AUTHORITATIVE_TOPOLOGY": {
+      "meaning": "Topology derived from PIM semantic authority (canonical relations/exports).",
+      "status_for_t108_to_dist_p108": "STILL_BLOCKED — exact relation and ProcessConnection endpoint NOT ESTABLISHED by PIM.",
+      "rule": "Never fabricated by VF; never inferred from names/descriptions/aggregates."
+    },
+    "VF_SCENARIO_ASSUMED_TOPOLOGY": {
+      "meaning": "Topology carried as an explicit, versioned, provenance-bearing, reversible synthetic scenario assumption (simulation/design stage only).",
+      "status": "MAY_BE_CONSIDERED_FOR_FUTURE_BOUNDED_SYNTHETIC_REFERENCE_GATE",
+      "constraints": [
+        "PIM relation != VF scenario assumption",
+        "assumption is explicit / versioned / provenanced / reversible",
+        "CompositionGraph != semantic authority",
+        "no broad whole-plant runtime authorization",
+        "no silent promotion of assumption to site truth"
+      ],
+      "no_back_propagation": "VF assumptions never flow back into PIM/KG authority; no claim of measured/site-verified/source-mapped/calibrated truth."
+    }
+  },
+  "classification_vocabulary": {
+    "values": [
+      "CAN_PROCEED_INDEPENDENTLY",
+      "BLOCKED_BY_PIM_EVIDENCE",
+      "SHOULD_WAIT_FOR_RUNTIME_EXPANSION"
+    ],
+    "meaning": "Planning classification only. NOT runtime authorization."
+  },
+  "architecture_inspected": {
+    "g4_composition": "src/virtual_factory/composition/{graph,ports,transfer,participant,coordinator}.py — generic CompositionGraph (separate from containment, cycles allowed), typed BoundaryPort (material/utility/information/coordination), immutable detached BoundaryTransfer, mechanism-neutral ExecutableParticipant, deterministic fail-closed Coordinator (validate->advance->stage->validate-transfers->commit->finalize).",
+    "g7_run_control": "src/virtual_factory/runcontrol/{targets,lifecycle,assy_bridge,continuous_bridge}.py — hierarchical target resolution, RunLifecycleService (CREATED/RUNNING/PAUSED/STOPPED/FAILED), replay pins scenario_id + fresh run_id lineage, attempt isolation.",
+    "g5_federation": "src/virtual_factory/federation/{tipa_workspace,assy_participant,assy_host}.py — 6 ASSY sub-line participants via AssySubLineAdapter (no cross-scope value exchange at boundaries).",
+    "g14a_projection": "src/virtual_factory/shwtp/projection.py — exactly F01 T106->T108: 2 BoundaryPorts + 1 CompositionBinding, inert.",
+    "g14b_federation": "src/virtual_factory/shwtp/federation.py — T106->T108 explicit_lagged coupling (orchestration policy, NOT a CompositionGraph property); 2 participants with detached transfer.",
+    "g15_evaluation": "src/virtual_factory/shwtp/evaluation.py — SH-WTP-specific per-window evaluation rows + mass-balance residual; lag_windows=1 metadata.",
+    "g16_readiness": "configs/vnext/shwtp/shwtp_expansion_readiness.json — 29 per-unit decisions; next-slice DIST-P108 (now blocked).",
+    "frontend_inspection": "src/virtual_factory/ui/{api.py,hierarchy.py,runtime_service.py} + static/ — continuous dashboard (charts), assy-demo, G6 hierarchy UI, G7 /vnext/runs endpoints, /health, run_control_context.js. No CompositionGraph visualization, no generic federation inspection surface.",
+    "replay_provenance": "src/virtual_factory/provenance/{context,envelope,namespace,adapter}.py — RunContextV2 immutable identity; G7 replay over TIPA/continuous (federated replay NOT yet proven)."
+  },
+  "workstreams": [
+    {
+      "id": "WS-01",
+      "name": "multi-participant federation generalization (>2 executable participants)",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G4 Coordinator is N-participant deterministic; G5 registers 6 ASSY participants (no cross-scope exchange); G14B proves 2 participants WITH detached value exchange. >2 participants WITH exchange is NOT yet proven.",
+      "dependencies": ["G4 Coordinator", "G4 BoundaryTransfer", "G14B explicit_lagged precedent"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — additive above G4; must not change coordinator/transfer semantics or coupling-policy location.",
+      "rationale": "Pure platform capability testable with synthetic participants; directly de-risks whole-plant federation (many scopes exchanging at boundaries).",
+      "priority": "HIGH",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-02",
+      "name": "generic coordinator/runtime lifecycle hardening",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G4 Coordinator + G7 RunLifecycleService exist and are tested; hardening (edge cases, stale-window, duplicate registration, ordering) is platform work.",
+      "dependencies": ["G4", "G7"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — additive; must preserve fail-closed and no-rollback-claim semantics.",
+      "rationale": "Lifecycle/coordination correctness is mechanism-level and independent of plant truth.",
+      "priority": "MEDIUM",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-03",
+      "name": "deterministic replay across federated participants",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G7 replay exists for TIPA/continuous (pins scenario_id, fresh run_id + source_run_id lineage); G14B federation determinism proven per-test; no federated replay entrypoint yet.",
+      "dependencies": ["G7 RunLifecycleService", "G14B federation", "G15 evaluation trace"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — replay pins prior inputs and must never overwrite prior run or fabricate missing inputs.",
+      "rationale": "Deterministic replay is a verification capability, independent of plant truth.",
+      "priority": "HIGH",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-04",
+      "name": "federation diagnostics generalization beyond SH-WTP two-scope trace",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G15 diagnostics are SH-WTP-specific (hardcoded T106/T108 fields). No generic per-window diagnostic trace over arbitrary participants.",
+      "dependencies": ["G15 evaluation", "G4 Coordinator/WindowOutcome"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — read-only diagnostic layer; must not change runtime truth.",
+      "rationale": "Diagnostics generalization is platform work; no plant truth needed.",
+      "priority": "MEDIUM",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-05",
+      "name": "evaluation trace abstraction/generalization",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G15 ShwtpEvaluationRow/Summary are SH-WTP-specific schemas. No generic evaluation-row schema.",
+      "dependencies": ["G15 evaluation"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — schema-level generalization; must preserve exact-residual semantics where they exist.",
+      "rationale": "Platform-level trace schema, independent of plant truth.",
+      "priority": "MEDIUM",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-06",
+      "name": "scenario input handling",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "RunContextV2 carries scenario_id/scenario_version; G7 pins a single scenario authority per run; continuous/ASSY have scenario loaders. No variable per-window scenario scheduler (explicit G15 non-objective).",
+      "dependencies": ["G2 provenance", "G7 run control"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — scenario IDENTITY/version/pinning is mechanism; scenario VALUES that encode plant physics remain evidence-gated.",
+      "rationale": "Scenario input HANDLING is platform; scenario physics VALUES are plant-truth-gated (kept separate).",
+      "priority": "MEDIUM",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-07",
+      "name": "orchestration-policy abstraction (seam only, no new policy implementation)",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G14B froze explicit_lagged as an ORCHESTRATION policy NOT on CompositionGraph/BoundaryPort/Binding. No generic policy seam/interface yet.",
+      "dependencies": ["G14B coupling policy"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low if seam-only; HIGH if a new policy (Gauss-Seidel/iterative/multirate) is implemented — FORBIDDEN in this gate.",
+      "rationale": "Abstracting the policy SEAM preserves coupling policy as orchestration policy and de-risks future whole-plant coupling choices.",
+      "priority": "HIGH",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-08",
+      "name": "runtime inspection/introspection",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "Existing: /health, /vnext/runs (TIPA/continuous), assy-demo snapshots, continuous telemetry. No generic composition/federation run inspection surface.",
+      "dependencies": ["G7 RunLifecycleService", "G4 Coordinator"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — read-only additive projection.",
+      "rationale": "Inspection is read-only and mechanism-level.",
+      "priority": "MEDIUM",
+      "future_model": "Flash"
+    },
+    {
+      "id": "WS-09",
+      "name": "composition/topology visualization",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "CompositionGraph (G4) + G14A F01 graph exist and serialize deterministically. No UI renders them.",
+      "dependencies": ["G4 CompositionGraph", "G14A projection"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — read-only visualization; must not imply topology == execution order.",
+      "rationale": "Visualization of existing graphs is platform UI; no plant truth needed.",
+      "priority": "MEDIUM",
+      "future_model": "Flash"
+    },
+    {
+      "id": "WS-10",
+      "name": "run status / health state",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G7 RunState (CREATED/RUNNING/PAUSED/STOPPED/FAILED) + /health + run_control_context.js exist. No per-federated-window health projection.",
+      "dependencies": ["G7 RunLifecycleService"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — additive read-only projection.",
+      "rationale": "Run status/health is mechanism-level.",
+      "priority": "LOW",
+      "future_model": "Flash"
+    },
+    {
+      "id": "WS-11",
+      "name": "multi-scope runtime UI shell",
+      "classification": "SHOULD_WAIT_FOR_RUNTIME_EXPANSION",
+      "readiness": "G6 hierarchy UI + run_control_context.js already shell TIPA + continuous. A new generic multi-scope shell has no wider federated runtime to shell over yet.",
+      "dependencies": ["G6 hierarchy UI", "federation runtime expansion"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Medium — building a shell before the runtime exists risks inventing scope semantics.",
+      "rationale": "Value only materializes once the federated/whole-plant runtime exists; premature now.",
+      "priority": "LOW",
+      "future_model": "Flash"
+    },
+    {
+      "id": "WS-12",
+      "name": "alarms/events for simulation runtime",
+      "classification": "SHOULD_WAIT_FOR_RUNTIME_EXPANSION",
+      "readiness": "G3 observation/event/alarm fact mechanism exists (mechanism-neutral, downstream of runtime). No alarm/event surface over the SH-WTP federation runtime; domain alarm RULES are plant-truth-gated.",
+      "dependencies": ["G3 facts", "runtime expansion"],
+      "plant_truth_required": true,
+      "architecture_risk_if_done_now": "Medium — generic mechanism is safe but domain alarm rules would invent plant semantics.",
+      "rationale": "The fact mechanism (G3) already exists; the runtime-facing alarm surface and domain rules wait for runtime expansion + domain truth.",
+      "priority": "LOW",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-13",
+      "name": "online charts for current simulation values only",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "Continuous dashboard already charts current values; extending the same read-only charting to federation windows is additive UI.",
+      "dependencies": ["continuous dashboard", "G15 evaluation rows"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — read-only UI.",
+      "rationale": "Charting current simulation values is mechanism-level.",
+      "priority": "LOW",
+      "future_model": "Flash"
+    },
+    {
+      "id": "WS-14",
+      "name": "generic boundary/port monitoring",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G4 BoundaryTransfer/PortRef are inert and frozen; no read-only monitoring of staged/committed transfers yet.",
+      "dependencies": ["G4 transfer semantics"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — read-only observation over G4 transfers; must not add mutation.",
+      "rationale": "Monitoring declared boundary exchange is platform-level.",
+      "priority": "MEDIUM",
+      "future_model": "Flash"
+    },
+    {
+      "id": "WS-15",
+      "name": "failure propagation semantics across participants",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G4 Coordinator already fails closed (advance failure stops window; transfer validation failure prevents commit; commit failure stops further commits). Generalizing across >2 participants is platform work.",
+      "dependencies": ["G4 Coordinator"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — additive; must preserve fail-closed + no-false-rollback-claim.",
+      "rationale": "Failure propagation is mechanism-level; independent of plant truth.",
+      "priority": "HIGH",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-16",
+      "name": "participant attempt isolation / lifecycle invariants",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G7 attempt isolation (fresh run_id, terminal never reused), G13/G13B reset/attempt isolation, G14B fresh-attempt isolation all tested. Federated-level hardening is additive.",
+      "dependencies": ["G7 RunLifecycleService", "G14B federation"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — additive; must preserve fresh-identity invariants.",
+      "rationale": "Attempt isolation/lifecycle invariants are mechanism-level.",
+      "priority": "HIGH",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-17",
+      "name": "support for heterogeneous executable scope archetypes",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G4 participant is mechanism-neutral; G5 (discrete ASSY) and G14B (logical/first-order SH-WTP) already adapt to it. Adding archetype adapters is platform work.",
+      "dependencies": ["G4 ExecutableParticipant"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low — adapter-level; must not retype domain runtime behavior.",
+      "rationale": "Archetype MECHANISM is platform; specific domain runtimes remain evidence-gated.",
+      "priority": "MEDIUM",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-18",
+      "name": "future coupling-policy extension seam",
+      "classification": "CAN_PROCEED_INDEPENDENTLY",
+      "readiness": "G14B docstring explicitly reserves future sequential/Gauss-Seidel/iterative/adaptive/multirate policies ABOVE the unchanged composition graph. The SEAM (interface/registry) is not yet extracted.",
+      "dependencies": ["G14B coupling policy"],
+      "plant_truth_required": false,
+      "architecture_risk_if_done_now": "Low if seam-only; HIGH if a new policy is implemented — FORBIDDEN in this gate.",
+      "rationale": "The extension seam is platform; keeps coupling policy as orchestration policy.",
+      "priority": "HIGH",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-19",
+      "name": "whole-plant SH-WTP execution",
+      "classification": "BLOCKED_BY_PIM_EVIDENCE",
+      "readiness": "G16 classified whole-plant runtime NOT_AUTHORIZED / NOT_IMPLEMENTED; many units LogicalOnly with unknown plant values (GAP-SHW-001/003).",
+      "dependencies": ["T108->DIST-P108 authority", "PIM unit-level relations", "plant values"],
+      "plant_truth_required": true,
+      "architecture_risk_if_done_now": "HIGH — would require bypassing explicit boundary/projection gates and broadening site/runtime authority.",
+      "rationale": "Requires plant semantic authority and topology truth not yet established.",
+      "priority": "BLOCKED",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-20",
+      "name": "DIST-P108 runtime / projection / federation",
+      "classification": "BLOCKED_BY_PIM_EVIDENCE",
+      "readiness": "G16 marked DIST-P108 NEXT_SLICE_CANDIDATE but conditioned on PIM confirming the exact T108->DIST-P108 relation; verdict STILL_INSUFFICIENT.",
+      "dependencies": ["exact T108->DIST-P108 relation", "ProcessConnection endpoint"],
+      "plant_truth_required": true,
+      "architecture_risk_if_done_now": "HIGH — authoritative projection/federation would fabricate PIM canonical identity; a VF_SCENARIO_ASSUMED_TOPOLOGY instance is the only permitted future path (see recommended_next_gate).",
+      "rationale": "Blocked by unresolved plant semantic authority.",
+      "priority": "BLOCKED",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-21",
+      "name": "T110 runtime",
+      "classification": "BLOCKED_BY_PIM_EVIDENCE",
+      "readiness": "G12C admission = BLOCKED_PENDING_EVIDENCE (WASH-T110); G16 reaffirmed.",
+      "dependencies": ["T110 PIM evidence (REL-006 etc.)"],
+      "plant_truth_required": true,
+      "architecture_risk_if_done_now": "HIGH — G10/G12C frozen T110 below runtime admission.",
+      "rationale": "Blocked by PIM evidence.",
+      "priority": "BLOCKED",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-22",
+      "name": "Line 2 runtime",
+      "classification": "BLOCKED_BY_PIM_EVIDENCE",
+      "readiness": "G16 classified L2-T101/T105/T106/T108 REFERENCE_ONLY (PatternInferred).",
+      "dependencies": ["Line 2 PIM unit-level relations"],
+      "plant_truth_required": true,
+      "architecture_risk_if_done_now": "HIGH — PatternInferred promotion to runtime candidate is forbidden (G16).",
+      "rationale": "Blocked by PIM evidence.",
+      "priority": "BLOCKED",
+      "future_model": "Pro"
+    },
+    {
+      "id": "WS-23",
+      "name": "chemical/electrical/automation runtime",
+      "classification": "BLOCKED_BY_PIM_EVIDENCE",
+      "readiness": "G16 classified CHEM-DOSING / ELEC-MCC / AUTO-PLC REFERENCE_ONLY (IndustryExpected/PatternInferred).",
+      "dependencies": ["domain PIM unit-level relations + physics"],
+      "plant_truth_required": true,
+      "architecture_risk_if_done_now": "HIGH — would invent domain physics/control semantics.",
+      "rationale": "Blocked by PIM evidence.",
+      "priority": "BLOCKED",
+      "future_model": "Pro"
+    }
+  ],
+  "dependency_matrix": {
+    "note": "Rows depend on columns. Platform rows (WS-01..WS-18) depend only on accepted G4/G7/G14/G15 platform seams; plant rows (WS-19..WS-23) additionally depend on PIM authority.",
+    "platform_dependencies": ["G1 Workspace", "G2 RunContextV2", "G3 facts", "G4 composition", "G5 federation", "G7 run-control", "G14A projection", "G14B federation", "G15 evaluation"],
+    "blocked_plant_dependencies": ["UNIT-SHW-L1-T108 -> UNIT-SHW-DIST-P108", "WASH-T110 evidence", "Line 2 relations", "chemical/electrical/automation relations"]
+  },
+  "recommended_next_gate": {
+    "id": "VF-vNEXT-G18",
+    "title": "Generic scenario-topology overlay (VF_SCENARIO_ASSUMED_TOPOLOGY) capability",
+    "summary": "Build the smallest bounded platform mechanism to declare, version, provenance, and reversibly apply explicit synthetic scenario topology assumptions that are visibly distinct from PIM-authoritative topology. First illustrative use-case: carry T108 -> DIST-P108 as a VF_SCENARIO_ASSUMED_TOPOLOGY edge (NOT authoritative, NOT PIM-derived).",
+    "criteria_satisfaction": [
+      {"criterion": "independent of unresolved T108->DIST-P108 semantic authority", "satisfied": true, "note": "The mechanism is generic and does not resolve or depend on PIM authority; PIM is untouched."},
+      {"criterion": "materially reduces risk for future whole-plant federation", "satisfied": true, "note": "Enforces the assumed-vs-authoritative topology separation that whole-plant federation with incomplete PIM evidence requires."},
+      {"criterion": "does not broaden SH-WTP runtime authorization", "satisfied": true, "note": "Assumptions are synthetic-reference only; vf_runtime_authorization stays NOT_AUTHORIZED."},
+      {"criterion": "does not require new plant physics or topology truth", "satisfied": true, "note": "Assumptions are explicitly synthetic and reversible."},
+      {"criterion": "preserves CompositionGraph != execution order", "satisfied": true, "note": "Overlay is scenario-level provenance, not a CompositionGraph semantic."},
+      {"criterion": "preserves coupling policy as orchestration policy", "satisfied": true, "note": "No coupling-policy change; policy remains above the graph."},
+      {"criterion": "does not redesign G4", "satisfied": true, "note": "Additive above G4; G4 semantics unchanged."}
+    ],
+    "must_preserve": [
+      "PIM relation != VF scenario assumption",
+      "assumption is explicit / versioned / provenanced / reversible",
+      "CompositionGraph != semantic authority",
+      "no broad whole-plant runtime authorization",
+      "no silent promotion of assumption to site truth"
+    ],
+    "not_authorized_in_g17a": true,
+    "future_model": "Pro"
+  },
+  "deferred_blocked": [
+    "DIST-P108 authoritative runtime / projection / federation (BLOCKED_BY_PIM_EVIDENCE)",
+    "T110 runtime (BLOCKED_BY_PIM_EVIDENCE)",
+    "Line 2 runtime (BLOCKED_BY_PIM_EVIDENCE)",
+    "chemical/electrical/automation runtime (BLOCKED_BY_PIM_EVIDENCE)",
+    "whole-plant SH-WTP execution (BLOCKED_BY_PIM_EVIDENCE)",
+    "Gauss-Seidel / iterative / multirate policy implementation (FORBIDDEN; only the seam may be abstracted)",
+    "G4 redesign (no repo-proven blocker)"
+  ],
+  "architecture_invariants": [
+    "Containment hierarchy remains a tree; composition/connectivity is a separate graph.",
+    "CompositionGraph != execution order; coordinator ordering never depends on topological sort.",
+    "Coordinator is a composition service, not a domain simulation engine.",
+    "Inter-scope exchange only through declared boundary contracts/ports; detached immutable transfers.",
+    "Coupling policy is an orchestration policy, NOT a CompositionGraph/BoundaryPort/Binding property.",
+    "Runtime truth stays inside child runtimes; coordinator owns sequencing/context only.",
+    "PIM remains canonical semantic authority; boundary ports never fabricate PIM canonical IDs.",
+    "Run/provenance identity remains authoritative; no second run/provenance model.",
+    "G3 Observation/Event/Alarm remain downstream facts, never runtime authority.",
+    "AssyLineRuntime is never rewritten; continuous/compressor baselines preserved."
+  ],
+  "no_runtime_authorization": "G17A changed no runtime behavior. vf_runtime_authorization = NOT_AUTHORIZED; site_authorized_execution = NOT_AUTHORIZED; whole_plant_runtime = NOT_AUTHORIZED / NOT_IMPLEMENTED. The recommended next gate is a planning recommendation only and is NOT started in G17A."
+}
