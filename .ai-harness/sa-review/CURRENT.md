@@ -255,3 +255,46 @@ VF-SHW-X2 - Whole-Plant Shallow Runnable Model + C1 Functional Control (Issue #9
 - Implementation head: de268e5
 - Verdict: VF-SHW-X2 - READY FOR SA REVIEW; SHW_WHOLE_PLANT_SHALLOW_RUNTIME_READY
 - STOP: X3/X4/X5 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.
+
+---
+
+VF-SHW-X2-C01 - Canonical whole-plant default + authority labels + test rigour (Issue #94 comment 5645215200): CORRECTION
+- Previous head / technical base: 2492329 (X2 SHW_WHOLE_PLANT_SHALLOW_RUNTIME_READY, NOT_COMPLETE); branch feature/vf-shw-x2-c01
+- Harness preflight: PASSED; report: reports/VF-SHW-X2-C01.md; Issue #94 stays OPEN.
+- Finding A CLOSED (canonical default): whole_plant_x2 is now SHWTP_DEFAULT_MODEL for the normal shwtp session/runtime/
+  UI path (scenario shwtp-x2-whole-plant); build_shwtp_session() resolves to the whole plant, the registry description
+  is "SH-WTP canonical whole-plant runtime (X2: 16 scopes, 9 C1 controls)" and the SH-WTP view is model-agnostic
+  (live model rows + assumed topology, 16 contract-derived scopes as fallback). g21_slice is retained ONLY through the
+  explicit selector model="g21_slice" and build_shwtp_g21_slice_session(); its accepted behaviour stays green (same
+  canonical RuntimeSession/RunLifecycleService/ShwtpExecutionBridge seam; bridge model_driven_windows discriminator).
+  No second registry/session/runtime/clock/run identity/UI authority. Accepted G22/G23/G24/G25 assertions that pinned
+  the slice as the default are migrated to the explicit compatibility factory (incl. a compatibility-factory proof and
+  the 16-scope canonical structure in the UI view).
+- Finding B CLOSED (authority labels): site_truth=false, simulation_truth=synthetic_reference,
+  vf_runtime_authorization=NOT_AUTHORIZED, site_authorized_execution=NOT_AUTHORIZED are declared once
+  (AUTHORITY_LABELS) and threaded through every applicable projection - transfer payloads, monitor values and monitor
+  rows, control rows, balance report top level and every storage row, input wiring, provenance records, assumed
+  topology, runtime truth, ScopeRuntimeInfo - with a fail-closed require_authority_labels() guard that raises
+  WholePlantX2Error on a missing or mutated label. New artefact 07-authority-labels.json inventories 137 records plus
+  the SH-WTP view: labels_missing=[] and labels_drifted=[] -> FOUR_AUTHORITY_LABELS_ON_ALL_OUTPUTS.
+- Implementation vs authorization separated: runtime_truth() reports whole_plant_runtime=IMPLEMENTED_SYNTHETIC_REFERENCE
+  and whole_plant_runtime_authorization=NOT_AUTHORIZED. The X2 report contradiction (whole_plant_runtime reported as
+  NOT_AUTHORIZED / NOT_IMPLEMENTED while the runtime is implemented) is corrected in reports/VF-SHW-X2.md (explicit
+  CORRECTION note, section 7 marked SUPERSEDED). Historical reports (R1..X1) are unchanged: they predate the X2
+  runtime, so the phrase was accurate then.
+- Finding C CLOSED (test rigour): contract-signature test now proves deterministic loading AND mutation sensitivity of
+  the covered admission surface (graph process_role tamper -> different signature; scope fidelity_class tamper ->
+  different signature; control implementation_gate tamper -> rejected fail-closed on the deferred_modulator
+  annotation; active_in_x2=True on a C2 loop -> rejected); DP monotonicity asserted per cycle between resets via
+  _assert_monotone_between_resets plus a dedicated bite test; the weak T106/T108 conditional assertions replaced by
+  direct semantics assertions; input resolution checked against a strict mapping with exactly 1 declared fallback and
+  1 scenario parameter; new TestAuthorityLabels (labels on >100 records + bite tests for each missing key and for
+  mutated site_truth/vf_runtime_authorization) and TestCanonicalDefaultModel (default session -> WholePlantX2Runtime,
+  16 participants, window 1; G21 only via the explicit selector/factory).
+- Evidence: 07-authority-labels.json new; 01/02/04/05/06 regenerated; all verdicts green.
+- Regression: canonical baseline at 134cedb overall PASS, failed_groups [], 45/45 groups;
+  x2_whole_plant_runtime 42 -> 50 passed; x1_whole_plant_contracts 46 unchanged; checks_changed_files PASSED (19
+  files); full suite 2757 -> 2765 passed.
+- Implementation head: 134cedb
+- Verdict: VF-SHW-X2-C01 - READY FOR SA REVIEW; X2_CANONICAL_WHOLE_PLANT_DEFAULT_WITH_LABELS
+- STOP: X3/X4/X5 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.
