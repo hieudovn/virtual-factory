@@ -1,0 +1,778 @@
+{
+  "after_reset_advance": {
+    "all_six_participated": true,
+    "all_six_progressed_together": true,
+    "lines_after_first_advance": {
+      "ASSY-SL01": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL02": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL03": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL04": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL05": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL06": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      }
+    },
+    "lines_after_five_advances": {
+      "ASSY-SL01": {
+        "conveyor_state": "stopped",
+        "dwell_number": 5,
+        "genealogy_records": 1,
+        "motor_count": 1,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0006"
+          ],
+          [
+            "AP01",
+            "SSO2-0005"
+          ],
+          [
+            "AP02",
+            "SSO2-0004"
+          ],
+          [
+            "AP03",
+            "SSO2-0003"
+          ],
+          [
+            "AP04",
+            "SSO2-0002"
+          ],
+          [
+            "AP05",
+            "MTR-0001"
+          ]
+        ],
+        "rso2_buffer_size": 6,
+        "simulation_time_s": 600.0,
+        "wip_count": 16
+      },
+      "ASSY-SL02": {
+        "conveyor_state": "stopped",
+        "dwell_number": 5,
+        "genealogy_records": 1,
+        "motor_count": 1,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0006"
+          ],
+          [
+            "AP01",
+            "SSO2-0005"
+          ],
+          [
+            "AP02",
+            "SSO2-0004"
+          ],
+          [
+            "AP03",
+            "SSO2-0003"
+          ],
+          [
+            "AP04",
+            "SSO2-0002"
+          ],
+          [
+            "AP05",
+            "MTR-0001"
+          ]
+        ],
+        "rso2_buffer_size": 6,
+        "simulation_time_s": 600.0,
+        "wip_count": 16
+      },
+      "ASSY-SL03": {
+        "conveyor_state": "stopped",
+        "dwell_number": 5,
+        "genealogy_records": 1,
+        "motor_count": 1,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0006"
+          ],
+          [
+            "AP01",
+            "SSO2-0005"
+          ],
+          [
+            "AP02",
+            "SSO2-0004"
+          ],
+          [
+            "AP03",
+            "SSO2-0003"
+          ],
+          [
+            "AP04",
+            "SSO2-0002"
+          ],
+          [
+            "AP05",
+            "MTR-0001"
+          ]
+        ],
+        "rso2_buffer_size": 6,
+        "simulation_time_s": 600.0,
+        "wip_count": 16
+      },
+      "ASSY-SL04": {
+        "conveyor_state": "stopped",
+        "dwell_number": 5,
+        "genealogy_records": 1,
+        "motor_count": 1,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0006"
+          ],
+          [
+            "AP01",
+            "SSO2-0005"
+          ],
+          [
+            "AP02",
+            "SSO2-0004"
+          ],
+          [
+            "AP03",
+            "SSO2-0003"
+          ],
+          [
+            "AP04",
+            "SSO2-0002"
+          ],
+          [
+            "AP05",
+            "MTR-0001"
+          ]
+        ],
+        "rso2_buffer_size": 6,
+        "simulation_time_s": 600.0,
+        "wip_count": 16
+      },
+      "ASSY-SL05": {
+        "conveyor_state": "stopped",
+        "dwell_number": 5,
+        "genealogy_records": 1,
+        "motor_count": 1,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0006"
+          ],
+          [
+            "AP01",
+            "SSO2-0005"
+          ],
+          [
+            "AP02",
+            "SSO2-0004"
+          ],
+          [
+            "AP03",
+            "SSO2-0003"
+          ],
+          [
+            "AP04",
+            "SSO2-0002"
+          ],
+          [
+            "AP05",
+            "MTR-0001"
+          ]
+        ],
+        "rso2_buffer_size": 6,
+        "simulation_time_s": 600.0,
+        "wip_count": 16
+      },
+      "ASSY-SL06": {
+        "conveyor_state": "stopped",
+        "dwell_number": 5,
+        "genealogy_records": 1,
+        "motor_count": 1,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0006"
+          ],
+          [
+            "AP01",
+            "SSO2-0005"
+          ],
+          [
+            "AP02",
+            "SSO2-0004"
+          ],
+          [
+            "AP03",
+            "SSO2-0003"
+          ],
+          [
+            "AP04",
+            "SSO2-0002"
+          ],
+          [
+            "AP05",
+            "MTR-0001"
+          ]
+        ],
+        "rso2_buffer_size": 6,
+        "simulation_time_s": 600.0,
+        "wip_count": 16
+      }
+    },
+    "participant_count": 6,
+    "participants": [
+      "TIPA/ASSY/ASSY-SL01",
+      "TIPA/ASSY/ASSY-SL02",
+      "TIPA/ASSY/ASSY-SL03",
+      "TIPA/ASSY/ASSY-SL04",
+      "TIPA/ASSY/ASSY-SL05",
+      "TIPA/ASSY/ASSY-SL06"
+    ],
+    "status": "completed",
+    "target_time_s": 120.0
+  },
+  "before_reset": {
+    "held_line_after_step_1": {
+      "conveyor_state": "stopped",
+      "dwell_number": 1,
+      "genealogy_records": 0,
+      "motor_count": 0,
+      "occupied_positions": [
+        [
+          "PRE-ASSY",
+          "SSO2-0002"
+        ],
+        [
+          "AP01",
+          "SSO2-0001"
+        ]
+      ],
+      "rso2_buffer_size": 7,
+      "simulation_time_s": 120.0,
+      "wip_count": 7
+    },
+    "held_line_after_step_3": {
+      "conveyor_state": "stopped",
+      "dwell_number": 1,
+      "genealogy_records": 0,
+      "motor_count": 0,
+      "occupied_positions": [
+        [
+          "PRE-ASSY",
+          "SSO2-0002"
+        ],
+        [
+          "AP01",
+          "SSO2-0001"
+        ]
+      ],
+      "rso2_buffer_size": 7,
+      "simulation_time_s": 120.0,
+      "wip_count": 7
+    },
+    "held_line_was_frozen": true,
+    "held_sub_line_ids": [
+      "ASSY-SL03"
+    ],
+    "others_after_step_3": {
+      "ASSY-SL01": {
+        "conveyor_state": "stopped",
+        "dwell_number": 3,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0004"
+          ],
+          [
+            "AP01",
+            "SSO2-0003"
+          ],
+          [
+            "AP02",
+            "SSO2-0002"
+          ],
+          [
+            "AP03",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 360.0,
+        "wip_count": 7
+      },
+      "ASSY-SL02": {
+        "conveyor_state": "stopped",
+        "dwell_number": 3,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0004"
+          ],
+          [
+            "AP01",
+            "SSO2-0003"
+          ],
+          [
+            "AP02",
+            "SSO2-0002"
+          ],
+          [
+            "AP03",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 360.0,
+        "wip_count": 7
+      },
+      "ASSY-SL04": {
+        "conveyor_state": "stopped",
+        "dwell_number": 3,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0004"
+          ],
+          [
+            "AP01",
+            "SSO2-0003"
+          ],
+          [
+            "AP02",
+            "SSO2-0002"
+          ],
+          [
+            "AP03",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 360.0,
+        "wip_count": 7
+      },
+      "ASSY-SL05": {
+        "conveyor_state": "stopped",
+        "dwell_number": 3,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0004"
+          ],
+          [
+            "AP01",
+            "SSO2-0003"
+          ],
+          [
+            "AP02",
+            "SSO2-0002"
+          ],
+          [
+            "AP03",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 360.0,
+        "wip_count": 7
+      },
+      "ASSY-SL06": {
+        "conveyor_state": "stopped",
+        "dwell_number": 3,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0004"
+          ],
+          [
+            "AP01",
+            "SSO2-0003"
+          ],
+          [
+            "AP02",
+            "SSO2-0002"
+          ],
+          [
+            "AP03",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 360.0,
+        "wip_count": 7
+      }
+    },
+    "step_1_participants": [
+      "TIPA/ASSY/ASSY-SL01",
+      "TIPA/ASSY/ASSY-SL02",
+      "TIPA/ASSY/ASSY-SL03",
+      "TIPA/ASSY/ASSY-SL04",
+      "TIPA/ASSY/ASSY-SL05",
+      "TIPA/ASSY/ASSY-SL06"
+    ],
+    "step_2_participants": [
+      "TIPA/ASSY/ASSY-SL01",
+      "TIPA/ASSY/ASSY-SL02",
+      "TIPA/ASSY/ASSY-SL04",
+      "TIPA/ASSY/ASSY-SL05",
+      "TIPA/ASSY/ASSY-SL06"
+    ],
+    "step_3_participants": [
+      "TIPA/ASSY/ASSY-SL01",
+      "TIPA/ASSY/ASSY-SL02",
+      "TIPA/ASSY/ASSY-SL04",
+      "TIPA/ASSY/ASSY-SL05",
+      "TIPA/ASSY/ASSY-SL06"
+    ]
+  },
+  "held_line": "ASSY-SL03",
+  "note": "AssyExecutionBridge.reset(...) clears the held sub-line ids of the scopes it resets (capability-scoped), so a canonical session reset returns every sub-line to the fresh profile baseline and the next coordination window includes all six again. The frozen G22 same-run-id reset semantics are unchanged (same run identity, same runtime objects, time back to 0, profile-consistent state, no lifecycle change).",
+  "profile_id": "tipa-assy-happy_path",
+  "reset": {
+    "baseline_after_step_1_was_reached_before_reset": {
+      "ASSY-SL01": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL02": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL03": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL04": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL05": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL06": {
+        "conveyor_state": "stopped",
+        "dwell_number": 1,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0002"
+          ],
+          [
+            "AP01",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      }
+    },
+    "domain_hold_state_cleared": true,
+    "held_sub_line_ids_after_reset": [],
+    "profile_id_after": "tipa-assy-happy_path",
+    "run_id_after": "TIPA-0001",
+    "run_id_before": "TIPA-0001",
+    "runtime_objects_reused": true,
+    "same_run_identity_preserved": true,
+    "six_lines_fresh_profile_baseline": {
+      "ASSY-SL01": {
+        "conveyor_state": "stopped",
+        "dwell_number": 0,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 0.0,
+        "wip_count": 7
+      },
+      "ASSY-SL02": {
+        "conveyor_state": "stopped",
+        "dwell_number": 0,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 0.0,
+        "wip_count": 7
+      },
+      "ASSY-SL03": {
+        "conveyor_state": "stopped",
+        "dwell_number": 0,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 0.0,
+        "wip_count": 7
+      },
+      "ASSY-SL04": {
+        "conveyor_state": "stopped",
+        "dwell_number": 0,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 0.0,
+        "wip_count": 7
+      },
+      "ASSY-SL05": {
+        "conveyor_state": "stopped",
+        "dwell_number": 0,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 0.0,
+        "wip_count": 7
+      },
+      "ASSY-SL06": {
+        "conveyor_state": "stopped",
+        "dwell_number": 0,
+        "genealogy_records": 0,
+        "motor_count": 0,
+        "occupied_positions": [
+          [
+            "PRE-ASSY",
+            "SSO2-0001"
+          ]
+        ],
+        "rso2_buffer_size": 7,
+        "simulation_time_s": 0.0,
+        "wip_count": 7
+      }
+    }
+  },
+  "sequence": [
+    "advance",
+    "hold ASSY-SL03",
+    "advance",
+    "advance",
+    "RuntimeSession.reset()",
+    "advance",
+    "advance x4"
+  ],
+  "session_scenario_id": "tipa-default"
+}

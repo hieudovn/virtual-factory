@@ -1,0 +1,100 @@
+{
+  "all_ok": true,
+  "base": "http://127.0.0.1:8099",
+  "checks": [
+    {
+      "check": "cold_start_registry",
+      "detail": "['TIPA', 'shwtp']",
+      "ok": true
+    },
+    {
+      "check": "select_tipa",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "tipa_prepare_new_attempt",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "tipa_steps",
+      "detail": "120 steps, 0 non-200",
+      "ok": true
+    },
+    {
+      "check": "tipa_reset",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "tipa_replay",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "tipa_new_attempt",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "select_shwtp",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "shwtp_prepare_new_attempt",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "shwtp_steps",
+      "detail": "150 steps, 0 non-200",
+      "ok": true
+    },
+    {
+      "check": "shwtp_reset",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "shwtp_replay",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "shwtp_new_attempt",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "repeated_switching",
+      "detail": "20 switches",
+      "ok": true
+    },
+    {
+      "check": "bad_requests_handled",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "responsive_after",
+      "detail": "",
+      "ok": true
+    },
+    {
+      "check": "monitor_still_serves",
+      "detail": "",
+      "ok": true
+    }
+  ],
+  "elapsed_s": 101.147,
+  "statuses": {
+    "missing_action": 400,
+    "missing_workspace_id": 400,
+    "unknown_action": 400,
+    "unknown_workspace_view": 404
+  },
+  "steps_total": 270,
+  "switches": 20
+}

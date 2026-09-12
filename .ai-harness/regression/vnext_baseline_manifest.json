@@ -1,0 +1,464 @@
+{
+  "schema": "vf.vnext.g8.regression.manifest",
+  "version": "1.3.0",
+  "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
+  "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
+  "gate": {
+    "task_contract": ".ai-harness/tasks/VF-SHW-X0.json",
+    "changed_files_base": "f4dcca59112b1f68c94ede6ad50378c72eb0b8e0"
+  },
+  "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
+  "static_checks": {
+    "configured": false,
+    "note": "This repository configures no ruff/mypy/black/pyright/flake8 static/lint/type tool (pyproject.toml has only [tool.setuptools.*] and [tool.pytest.ini_options]). The G8 baseline does not invent one; the checks_static_lint_type command group verifies absence truthfully and fails if a configured static tool appears without baseline execution."
+  },
+  "groups": [
+    {
+      "id": "g1_workspace",
+      "gate": "G1",
+      "type": "pytest",
+      "purpose": "G1 workspace / Simulation Scope foundation: structural identity/path, container-only vs executable-capable, fail-closed hierarchy/reference validation.",
+      "files": [
+        "tests/test_workspace_foundation.py",
+        "tests/test_workspace_validation.py",
+        "tests/test_workspace_config.py"
+      ]
+    },
+    {
+      "id": "g2_provenance",
+      "gate": "G2",
+      "type": "pytest",
+      "purpose": "G2 provenance v2: immutable RunContextV2, simulation origin/status, envelope/namespace identity.",
+      "files": [
+        "tests/test_provenance_context.py",
+        "tests/test_provenance_envelope.py",
+        "tests/test_provenance_namespace.py",
+        "tests/test_run_context_adapter.py",
+        "tests/test_telemetry_provenance_threading.py"
+      ]
+    },
+    {
+      "id": "g3_observation_event_alarm",
+      "gate": "G3",
+      "type": "pytest",
+      "purpose": "G3 observation/event/alarm: domain truth vs immutable facts/projections, alarm event immutability, canonical provenance/time/identity fail-closed.",
+      "files": [
+        "tests/test_event_fact.py",
+        "tests/test_event_store.py",
+        "tests/test_alarm_event_facts.py",
+        "tests/test_observation_alignment.py",
+        "tests/test_m5_s01_envelope.py",
+        "tests/test_m5_s02_point_policy.py",
+        "tests/test_m5_s03_service.py",
+        "tests/test_m5_s04_projections.py",
+        "tests/test_m5_s05_gateway.py",
+        "tests/test_alarm_manager.py"
+      ]
+    },
+    {
+      "id": "g4_composition_coordinator",
+      "gate": "G4",
+      "type": "pytest",
+      "purpose": "G4 composition/coordinator: containment vs connectivity graph, coordinator as composition service, deterministic participant/commit ordering, exact-window semantics.",
+      "files": [
+        "tests/test_composition_ports.py",
+        "tests/test_composition_graph.py",
+        "tests/test_composition_transfer.py",
+        "tests/test_composition_coordinator.py"
+      ]
+    },
+    {
+      "id": "g5_federation",
+      "gate": "G5",
+      "type": "pytest",
+      "purpose": "G5 TIPA ASSY federation: six isolated executable sub-line scopes mapped correctly, no demo policy promoted, natural-boundary semantics.",
+      "files": [
+        "tests/test_federation_tipa_assy.py"
+      ]
+    },
+    {
+      "id": "g6_hierarchy_ui",
+      "gate": "G6",
+      "type": "pytest",
+      "purpose": "G6 shared hierarchy UI: path-qualified context authority, workspace/container vs executable distinction, ASSY + continuous hierarchy truthfulness.",
+      "files": [
+        "tests/test_ui_hierarchy.py"
+      ]
+    },
+    {
+      "id": "g7_run_control",
+      "gate": "G7",
+      "type": "pytest",
+      "purpose": "G7 hierarchical run control: one mutable active attempt per workspace, independent TIPA/continuous active runs, historical/superseded fail-closed, fresh attempt state, path-qualified continuous/PROCESS participant.",
+      "files": [
+        "tests/test_run_control.py"
+      ]
+    },
+    {
+      "id": "ui_api_dashboard",
+      "gate": "UI/API",
+      "type": "pytest",
+      "purpose": "Continuous dashboard + OPS interaction/overview + S04B gating API compatibility (legacy compatibility surfaces).",
+      "files": [
+        "tests/test_api.py",
+        "tests/test_demo_overview.py",
+        "tests/test_ops03_interaction.py",
+        "tests/test_ops04_c01.py"
+      ]
+    },
+    {
+      "id": "assy_oracle",
+      "gate": "ASSY",
+      "type": "pytest",
+      "purpose": "Complete ASSY regression oracle: SSO2 feed/queue ordering, PRE-ASSY token, AP04 RSO2 JOIN/genealogy, AP06 retest-in-place, AP08 reinspect, AP11 final QC, failed_final, LINE_OUT GOOD/REJECT, quality/checklist/measurement evidence, deterministic timestamps, six sub-lines, no FINISHED conveyor fabrication.",
+      "files": [
+        "tests/test_assy_line.py",
+        "tests/test_assy_demo.py",
+        "tests/test_demo_composition.py",
+        "tests/test_auto_equiv_01.py",
+        "tests/test_quality.py",
+        "tests/test_quality_records_projection.py",
+        "tests/test_demo_assy_mes_v1.py",
+        "tests/test_assy_mes_bridge_v1.py",
+        "tests/test_assy_mes_03_evidence.py",
+        "tests/test_m6_int_01.py",
+        "tests/test_sub_line_identity.py",
+        "tests/test_auto_timing.py",
+        "tests/test_auto_timing_runtime.py",
+        "tests/test_vf_contract_finality_01.py"
+      ]
+    },
+    {
+      "id": "continuous_compressor",
+      "gate": "CONTINUOUS",
+      "type": "pytest",
+      "purpose": "Continuous-process + compressor baseline: process dynamics, closed loop, PID, balance, engine/controller boundary, compressor train/states/operating states.",
+      "files": [
+        "tests/test_compressor_train.py",
+        "tests/test_compressor_states.py",
+        "tests/test_operating_states.py",
+        "tests/test_minimal_process_dynamics.py",
+        "tests/test_minimal_closed_loop.py",
+        "tests/test_demand_profile.py",
+        "tests/test_balance.py",
+        "tests/test_pid_controller.py",
+        "tests/test_engine_boundary.py",
+        "tests/test_controller_boundary.py"
+      ]
+    },
+    {
+      "id": "g8_cross_gate_invariants",
+      "gate": "G8",
+      "type": "pytest",
+      "purpose": "G8 cross-gate invariants (workspace/structural/run-control/UI-hierarchy alignment) plus the canonical-baseline entrypoint smoke tests (command-group failure path).",
+      "files": [
+        "tests/test_vnext_g8_invariants.py",
+        "tests/test_vnext_g8_entrypoint.py"
+      ]
+    },
+    {
+      "id": "g9_semantic_binding",
+      "gate": "G9",
+      "type": "pytest",
+      "purpose": "G9 semantic binding vNext: pinned source identity, fail-closed mapping cardinality/status, compatibility vs runtime authorization separation, pre-run admission (zero domain advancement), provenance threading of consumed semantic contract version/SHA.",
+      "files": [
+        "tests/test_semantic_binding.py"
+      ]
+    },
+    {
+      "id": "g10_shwtp_readiness",
+      "gate": "G10",
+      "type": "pytest",
+      "purpose": "G10 SH-WTP runtime readiness & scope freeze invariant tests: evidence-traceable inventory, fidelity ceiling, NOT_AUTHORIZED preservation, authz separation, container vs executable, boundary-contract provenance, containment vs connectivity, many-to-many topology, no G11 runtime.",
+      "files": [
+        "tests/test_vnext_g10_plan.py"
+      ]
+    },
+    {
+      "id": "g11_shwtp_structural",
+      "gate": "G11",
+      "type": "pytest",
+      "purpose": "G11 SH-WTP structural Workspace construction invariant tests: single deterministic root, G10 traceability, no invented topology, one containment parent per node, container/object/reference non-executable, T106/T108/T110 executable_candidate classification only with zero runtime, local vs canonical identity separation, metadata/fidelity preservation, NOT_AUTHORIZED, containment != connectivity, no G7 run-control participant, TIPA/continuous unchanged.",
+      "files": [
+        "tests/test_vnext_g11_shwtp.py"
+      ]
+    },
+    {
+      "id": "g12a_reference_graph",
+      "gate": "G12A",
+      "type": "pytest",
+      "purpose": "G12A generic Reference Connectivity Graph foundation invariant tests: deterministic order-independent build, external semantic endpoints (no StructuralPath), no BoundaryPort/PortRegistry, fan-out/fan-in/many-to-many/cycles, fail-closed duplicate edge id + duplicate logical relation + empty endpoint/relation type, provenance/confidence/status/gaps survive serialization, inert runtime_effect=none, no runtime/propagation API, no plant-specific hard-coding, no runtime projection.",
+      "files": [
+        "tests/test_vnext_g12a_reference_graph.py"
+      ]
+    },
+    {
+      "id": "g12b_shwtp_connectivity",
+      "gate": "G12B",
+      "type": "pytest",
+      "purpose": "G12B SH-WTP PIM reference connectivity materialization tests: exact PIM source pins, F01-F07 selection, canonical PROC-* endpoints (not G11 Scopes), raw relation types preserved (FLOWS_TO/DISCHARGES_TO/CONNECTED_TO), no six-class reclassification, F06/F07 not name-classified, REL-006 warning metadata preserved, no containment/PART_OF-derived edges, no G11 change, inert runtime_effect none, no BoundaryPort/G4/runtime projection, NOT_AUTHORIZED + PENDING_LATER_PIM_REVIEW frozen, deterministic serialization.",
+      "files": [
+        "tests/test_vnext_g12b_shwtp.py"
+      ]
+    },
+    {
+      "id": "g12c_admission_review",
+      "gate": "G12C",
+      "type": "pytest",
+      "purpose": "G12C SH-WTP synthetic runtime admission review tests: only T106/T108/T110 reviewed, explicit deterministic per-candidate admission (SYNTHETIC_REFERENCE_ALLOWED/STRUCTURAL_ONLY/BLOCKED_PENDING_EVIDENCE), fidelity ceiling not exceeded, no Parameterized/Calibrated fabrication, site NOT_AUTHORIZED, PIM pins unchanged, synthetic assumptions separated from PIM facts, no raw G12B relation runtime-classified, no BoundaryPort/G4/runtime implementation, smallest meaningful G13 slice (T108).",
+      "files": [
+        "tests/test_vnext_g12c_admission_review.py"
+      ]
+    },
+    {
+      "id": "g13_t108_runtime",
+      "gate": "G13",
+      "type": "pytest",
+      "purpose": "G13 SH-WTP T108 standalone synthetic first-order tank runtime tests: exact T108 target (shwtp/line1/l1_t108), only-T108 implementation, explicit config inputs (no hidden defaults), deterministic initial/repeated scenario, mass balance, fill/drain/empty-saturation/explicit-overflow, level=volume/area, reset, attempt isolation, invalid-config fail closed, synthetic first-order provenance (no site truth), no G12B relation projection, no G4/BoundaryPort/coordinator, T106 unimplemented, T110 blocked, workspace/container target not enabled.",
+      "files": [
+        "tests/test_vnext_g13_t108.py"
+      ]
+    },
+    {
+      "id": "g13b_t106_logical",
+      "gate": "G13B",
+      "type": "pytest",
+      "purpose": "G13B SH-WTP T106 standalone synthetic LogicalOnly pass-through runtime tests: locked T106 canonical/path (shwtp/line1/l1_t106), only-T106 added, deterministic init/sequence, output==input, exact dt time advance, zero inflow, invalid dt/inflow fail closed, reset, attempt isolation, detached snapshot, simulation/synthetic/logical_only provenance on step+snapshot, no site/measure labels, no filtration physics/quality/backwash fields, no G12B relation projection, no BoundaryPort/G4/coordinator, T108 unchanged/green, T110 blocked, workspace/container target not enabled.",
+      "files": [
+        "tests/test_vnext_g13b_t106.py"
+      ]
+    },
+    {
+      "id": "g14a_f01_projection",
+      "gate": "G14A",
+      "type": "pytest",
+      "purpose": "G14A SH-WTP T106->T108 runtime projection contract (F01 only) tests: exactly one projection, only REL-SHW-F01, exact PIM endpoints + T106/T108 VF paths, exactly two BoundaryPorts (OUT/IN MATERIAL m3/s volumetric_flow), check_port_compatibility PASS, exactly one CompositionBinding, deterministic graph + serialization, VF-local PortRefs, no generic FLOWS_TO auto-projection, F02-F07 absent, T110 absent, T106/T108 state unchanged on construct/inspect, no coordinator/run-control execution.",
+      "files": [
+        "tests/test_vnext_g14a_projection.py"
+      ]
+    },
+    {
+      "id": "g14b_federation",
+      "gate": "G14B",
+      "type": "pytest",
+      "purpose": "G14B SH-WTP T106->T108 explicit lagged federation tests: explicit_lagged policy visible + unsupported fail-closed + policy NOT on G4 graph/binding/ports; exactly T106+T108 participants; exactly one F01 binding; T110/F02-F07 absent; explicit initial T108 inflow required; first window uses initial inflow (not Q106[1]); boundary 1 commits Q106[1]; second window uses exactly Q106[1]; no same-window retroactive step; detached immutable transfer; exact PortRefs/binding/window/time; payload exact; stale/wrong window fails closed; deterministic replay; fresh attempt isolation; T106/T108 standalone unchanged; G14A unchanged; no direct T106-state read by T108; no workspace/container execution; authority unchanged.",
+      "files": [
+        "tests/test_vnext_g14b_federation.py"
+      ]
+    },
+    {
+      "id": "g15_evaluation",
+      "gate": "G15",
+      "type": "pytest",
+      "purpose": "G15 SH-WTP federated evaluation trace & diagnostics tests: one immutable trace row per completed window; deterministic trace + summary; exact run/window/time identity; explicit_lagged; lag_windows=1; first-window lag + second-window previous-output use; T106/T108 step values captured; committed-next inflow; volume/level/outflow/overflow exact; zero mass-balance residual (no invented tolerance); balanced/fill/drain/overflow cases; exact totals; min/max; attempt isolation; failed window not recorded as success; provenance truthful; authority unchanged.",
+      "files": [
+        "tests/test_vnext_g15_evaluation.py"
+      ]
+    },
+    {
+      "id": "g16_readiness",
+      "gate": "G16",
+      "type": "pytest",
+      "purpose": "G16 SH-WTP whole-plant federation expansion readiness review tests: source pins match G10/G12B; every reviewed unit exactly one decision; T106/T108 accepted existing runtime candidates; T110 blocked; no PatternInferred/IndustryExpected promotion to next slice; every future candidate has a boundary-contract plan; unknowns explicit; no fabricated site values; projection candidates reference exact PIM relation ids; no G4 binding created in G16; no generic FLOWS_TO auto-projection; whole-plant runtime NOT_AUTHORIZED/NOT_IMPLEMENTED; exactly one next-slice recommendation (not T110); no G14/G15 behavior changed; authority unchanged.",
+      "files": [
+        "tests/test_vnext_g16_readiness.py"
+      ]
+    },
+    {
+      "id": "g17a_workstream_review",
+      "gate": "G17A",
+      "type": "pytest",
+      "purpose": "G17A Post-G16 platform workstream independence review tests: external PIM blocker reference (d10049801a1eb022a7fa2e83badabefb92fb7412, T108-DIST-EVIDENCE STILL_INSUFFICIENT) + required VF base 732decd recorded; every required workstream has exactly one classification with full decision record; all 23 workstreams present; topology distinction (PIM_AUTHORITATIVE_TOPOLOGY blocked vs VF_SCENARIO_ASSUMED_TOPOLOGY future-only); exactly one recommended next gate satisfying all seven selection criteria; authority unchanged (NOT_AUTHORIZED); G17A changed no runtime behavior (frozen G4/G7/G14A/G14B/G15 constants/structures unchanged).",
+      "files": [
+        "tests/test_vnext_g17a_workstream_review.py"
+      ]
+    },
+    {
+      "id": "g18_scenario_overlay",
+      "gate": "G18",
+      "type": "pytest",
+      "purpose": "G18 Scenario-Assumed Topology Overlay tests: authoritative vs assumed topology distinguishable (distinct schema); assumed edge has explicit id/version/provenance (source_kind=vf_scenario_assumption, status=assumed/synthetic); deterministic round-trip serialization; malformed/ambiguous overlay fails closed (empty identity, duplicate id, duplicate logical assumption, wrong source_kind/status/schema); remove/replace reversible without altering PIM/reference baseline; no execution order implied; no coupling-policy field; no runtime/site authorization broadened (NOT_AUTHORIZED); T108->DIST-P108 fixture assumed-only (never DocumentConfirmed/site-verified); G14/G15/G17A behavior unchanged.",
+      "files": [
+        "tests/test_vnext_g18_scenario_overlay.py"
+      ]
+    },
+    {
+      "id": "g19_multi_participant",
+      "gate": "G19",
+      "type": "pytest",
+      "purpose": "G19 Generic Multi-Participant Federation Proof (>2) tests: 3+ synthetic participants coordinate over 2+ bindings in one window; >=2 transfers commit deterministically; no same-window feed-through under explicit_lagged; ordering independent of declaration/registration order; identity/workspace mismatch fails closed; failed window not reported completed; detached immutable transfers; identical inputs produce identical results; CompositionGraph != execution order; coupling policy stays orchestration policy; G14/G15/G18 unchanged.",
+      "files": [
+        "tests/test_vnext_g19_multi_participant.py"
+      ]
+    },
+    {
+      "id": "g20_gateway_binding",
+      "gate": "G20",
+      "type": "pytest",
+      "purpose": "G20 Generic Gateway/Workstation Observation Binding tests: N scopes -> 1 gateway; 1 scope -> N gateways allowed (no one-gateway-per-scope invariant); scope/runtime truth unchanged by gateway observation; messages preserve source scope + independent/idempotent identity; duplicate/invalid/ambiguous binding + identity mismatch fail closed; deterministic serialization independent of declaration order; gateway identity does not impersonate PIM/Scope identity; gateway topology is not execution order or containment hierarchy; ASSY MES bridge + G19/G18/G14/G15 unchanged.",
+      "files": [
+        "tests/test_vnext_g20_gateway_binding.py"
+      ]
+    },
+    {
+      "id": "g21_shwtp_expansion",
+      "gate": "G21",
+      "type": "pytest",
+      "purpose": "G21 SH-WTP Functional Simulation Expansion tests: coherent runnable multi-scope slice materially larger than T106->T108; >=4 executable scopes; assumed links explicit/versioned/reversible and distinct from PIM truth; fidelity/status explicit per scope; deterministic multi-window; no same-window feed-through under explicit_lagged; CompositionGraph != execution order; no mutable cross-scope state; no authority broadening; T106/T108 behavior unchanged; G20/G19/G18/G14/G15 unchanged.",
+      "files": [
+        "tests/test_vnext_g21_shwtp_expansion.py"
+      ]
+    },
+    {
+      "id": "g22_session_replay",
+      "gate": "G22",
+      "type": "pytest",
+      "purpose": "G22 Scenario/Run/Replay Integration tests: explicit session/run identity per Workspace; fresh new attempt has fresh runtime state and distinct attempt/run identity; deterministic replay reproduces equivalent outcome/trace; reset/new-attempt/replay semantics unambiguous; TIPA and SH-WTP sessions isolated; mismatched workspace/run/scenario identity fails closed; SH-WTP assumed topology/fidelity metadata survives replay unchanged; TIPA ASSY + G21/G20/G19/G18/G14/G15 unchanged.",
+      "files": [
+        "tests/test_vnext_g22_session.py"
+      ]
+    },
+    {
+      "id": "g23_workspace_registry",
+      "gate": "G23",
+      "type": "pytest",
+      "purpose": "G23 Multi-Workspace Runtime Selection tests: deterministic enumeration of TIPA + shwtp; select TIPA returns a TIPA RuntimeSession; select shwtp returns a SH-WTP RuntimeSession; two Workspace sessions isolated; switching does not mutate inactive session; fresh independent session for the same Workspace; unknown/ambiguous Workspace fails closed; registration order does not affect enumeration/selection; no cross-workspace runtime coupling; open for future Workspaces; G22/G21/G20/G19/G18 + TIPA ASSY unchanged.",
+      "files": [
+        "tests/test_vnext_g23_registry.py"
+      ]
+    },
+    {
+      "id": "g24_workspace_shell",
+      "gate": "G24",
+      "type": "pytest",
+      "purpose": "G24 + G24-C01 Multi-Workspace UI Switching + Monitoring Shell tests: selector from backend G23 registry; select TIPA reuses six-sub-line ASSY UI/runtime; select shwtp shows the accepted G21 5-scope slice with key flow/tank values; switching never mutates the inactive workspace session; each workspace view exposes minimum monitor fields; run control acts only on the selected workspace/session; unknown workspace/session/action fails closed; SH-WTP assumed topology/fidelity never presented as site truth; static shell page + FastAPI endpoints served; G24-C01: TIPA view reflects the SELECTED G22 RuntimeSession (live per-sub-line state/status/key values from the session's own bridge, no second runtime; /assy-demo explicitly labelled a separate legacy demo runtime); G23/G22/G21 + TIPA ASSY unchanged.",
+      "files": [
+        "tests/test_vnext_g24_workspace_ui.py"
+      ]
+    },
+    {
+      "id": "g25_acceptance",
+      "gate": "G25",
+      "type": "pytest",
+      "purpose": "G25 Integrated Multi-Workspace Demo / MVP acceptance tests: FLOW A TIPA (select from registry, six live ASSY sub-lines from the selected G22 session, deterministic reset/new-attempt/replay, switch-away-no-mutation, /assy-demo separate legacy runtime); FLOW B SH-WTP (5-scope slice RAW-INTAKE -> T100 -> T106 -> T108 -> DIST-P108, live time/step/flow/tank/status, explicit fidelity/status/assumed topology, deterministic reset/new-attempt/replay, switch-away-no-mutation); platform invariants (one platform -> many independent Workspaces, no shared state/run_id/clock/truth, no cross-workspace coupling, RuntimeSession lifecycle reuse); frozen invariants (explicit_lagged/G4/G19 unchanged, ASSY oracle deterministic, SH-WTP assumptions never site truth).",
+      "files": [
+        "tests/test_vnext_g25_acceptance.py"
+      ]
+    },
+    {
+      "id": "r1_production_semantics",
+      "gate": "R1",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R1 Canonical TIPA Same-Session Production Semantics tests: the selected tipa-default RuntimeSession runs MEANINGFUL six-sub-line ASSY production (explicit immutable run profile; per-line effective scenario + accepted config/quality transforms applied before runtime construction; deterministic initial SSO2/RSO2 inventory and carrier/feed sequencing; shared production driver: feed replenish -> on-demand RSO2 for AP04 -> execute_dwell -> conditional index_line -> next SSO2 introduction); first meaningful step is non-empty on all six lines; bounded canonical run reaches AP04 motor creation + genealogy; exactly six isolated runtimes/configs/run-state holders with stable per-line seed mapping and no cross-line mutation; scenario targeting effective (HAPPY default; AP06/AP08/failed-final synthetic exceptions affect ONLY the accepted target line); one-line hold/freeze with the other five continuing; determinism of two fresh sessions; G22 lifecycle compatibility (profile-consistent reset keeping the run identity, new-attempt fresh identity with the same pinned inputs, replay bounded production-state equivalence); frozen guards (no AssyLineRuntime rewrite, no second runtime authority, G4 exact-boundary/no-fractional-dwell, legacy accepted demo regression-green). Gateway routing is NOT performed.",
+      "files": [
+        "tests/test_vnext_r1_production_semantics.py"
+      ]
+    },
+    {
+      "id": "r2_same_session_rich_assy",
+      "gate": "R2",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R2 Canonical Same-Session Rich ASSY 2D Experience tests: ONE product-path TIPA simulation authority (the rich /assy-demo experience obtains the SAME canonical RuntimeSession that /workspaces uses via the WorkspaceMonitor live-session seam; exactly one federation is constructed and ZERO legacy DemoController objects are instantiated); Frame A overview is exactly the six canonical sub-lines with live values; Frame B is the accepted 2D physical projection built from detached snapshots of the canonical AssyLineRuntime public read surface (accepted 12-position list, positions[] physical truth = conveyor.wip_at, successive-snapshot WIP movement, AP04 join -> MTR-0001 genealogy, station/operation/quality inspector read models); sub-line selection is presentation-only; rich STEP/RESET act on the same session as the shell (reset keeps the R1-C01 same-run-id fresh-profile semantics); legacy-authority-only capabilities (observation/MES output, AP05 jam/recover, run-to-terminal/OEE, scenario mutation) fail closed as explicitly deferred with deferred_to R3/R4 and legacy_runtime_authority false; thin OPS-03/OPS-04 command and run-mode bindings act on the canonical runtime; held-one/five-continue is reflected in the overview/detail projections. No gateway/SH-WTP/Observation work is performed.",
+      "files": [
+        "tests/test_vnext_r2_same_session_rich_assy.py"
+      ]
+    },
+    {
+      "id": "r3_canonical_observation_mes",
+      "gate": "R3",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R3 canonical same-session Observation/MES output reintegration: one canonical session/federation (no second runtime, no legacy controller), canonical run identity + sub-line scope in fact/message identity, read-only polling with a hard mutation guard, poll idempotency, reset projection epoch, fresh new-attempt/replay output namespaces, held-one/five-continue output.",
+      "files": [
+        "tests/test_vnext_r3_canonical_observation_mes.py"
+      ]
+    },
+    {
+      "id": "r3c01_reset_generation",
+      "gate": "R3-C01",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R3-C01 authoritative canonical reset generation as the output projection epoch: reset_generation increments only on a successful RuntimeSession.reset(); the projection epoch is read from that seam (no poll-timing inference); poll at state S -> reset -> re-step to identical S without polling -> fresh epoch with collision-free newly emitted facts; new_attempt/replay restart at epoch 1; output stays read-only.",
+      "files": [
+        "tests/test_vnext_r3_c01_reset_generation.py"
+      ]
+    },
+    {
+      "id": "r4_canonical_parity",
+      "gate": "R4",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R4 ASSY full parity closure on the canonical runtime: canonical AP05 jam/recover owned by the execution bridge (one fault, five continue, Frame A/B same truth, issue/downtime output read from canonical fault), bounded canonical run-to-terminal with parity to manual stepping, read-only idempotent OEE from canonical facts (incl. canonical downtime), scenario selection as a FRESH canonical run (no in-place mutation), product-path cleanup, and no second runtime/session/federation/controller.",
+      "files": [
+        "tests/test_vnext_r4_canonical_parity.py"
+      ]
+    },
+    {
+      "id": "r5_single_system",
+      "gate": "R5",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R5 single simulation system consolidation: static + dynamic construction firewall (no standalone RuntimeService/DemoController/duplicate RunLifecycleService/standalone engine authority/hidden legacy cache on any active product path), fail-closed 410 + zero construction for the de-authorized legacy families (root dashboard, legacy G7 run-control, demo-assy-mes), one canonical session per workspace, attempt-bound TIPA profiles (no cross-run contamination), and the bounded shared-shell convergence I1/I3/I4/I5/I6.",
+      "files": [
+        "tests/test_vnext_r5_single_system.py"
+      ]
+    },
+    {
+      "id": "full_suite",
+      "gate": "FULL",
+      "type": "pytest",
+      "purpose": "Full repository suite: every pytest module under tests/.",
+      "directory": "tests"
+    },
+    {
+      "id": "checks_compile",
+      "gate": "CHECKS",
+      "type": "command",
+      "purpose": "Compile check actually used by the repo: python -m compileall over src, tests and the harness scripts.",
+      "cmd": [
+        "{python}",
+        "-m",
+        "compileall",
+        "-q",
+        "src",
+        "tests",
+        ".ai-harness/regression",
+        ".ai-harness/scripts"
+      ]
+    },
+    {
+      "id": "checks_static_lint_type",
+      "gate": "CHECKS",
+      "type": "command",
+      "purpose": "Truthful static/lint/type check: no ruff/mypy/black/pyright/flake8 is configured in this repo; the check verifies that (and fails if a configured static tool appears without baseline execution). Nothing is invented.",
+      "cmd": [
+        "{python}",
+        ".ai-harness/regression/check_repo_static_config.py"
+      ]
+    },
+    {
+      "id": "checks_changed_files",
+      "gate": "CHECKS",
+      "type": "command",
+      "kind": "changed_files",
+      "changed_files_output": ".ai-harness/traces/vnext_changed_files.txt",
+      "purpose": "Changed-file validation actually used by the repo: verify_changed_files.py against the CURRENT gate task contract allowlist for the diff of the current branch vs the current gate base (from the top-level gate context).",
+      "cmd": [
+        "{python}",
+        ".ai-harness/scripts/verify_changed_files.py",
+        "--task",
+        "{task_contract}",
+        "--changed-files",
+        "{changed_files_file}"
+      ]
+    },
+    {
+      "id": "checks_preflight",
+      "gate": "CHECKS",
+      "type": "command",
+      "purpose": "Harness preflight actually used by the repo: preflight.py against the CURRENT gate task contract (branch, clean tree, origin/main baseline). Runs last; requires a clean committed tree on the current gate branch.",
+      "cmd": [
+        "{python}",
+        ".ai-harness/scripts/preflight.py",
+        "--task",
+        "{task_contract}"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "held_line_after_5_parent_advances": {
+    "conveyor_state": "stopped",
+    "dwell_number": 1,
+    "genealogy": [],
+    "motor_count": 0,
+    "occupied_positions": [
+      [
+        "PRE-ASSY",
+        "SSO2-0002"
+      ],
+      [
+        "AP01",
+        "SSO2-0001"
+      ]
+    ],
+    "rso2_buffer_size": 7,
+    "simulation_time_s": 120.0,
+    "wip_count": 7
+  },
+  "held_line_after_release_time_s": 840.0,
+  "held_line_before": {
+    "conveyor_state": "stopped",
+    "dwell_number": 1,
+    "genealogy": [],
+    "motor_count": 0,
+    "occupied_positions": [
+      [
+        "PRE-ASSY",
+        "SSO2-0002"
+      ],
+      [
+        "AP01",
+        "SSO2-0001"
+      ]
+    ],
+    "rso2_buffer_size": 7,
+    "simulation_time_s": 120.0,
+    "wip_count": 7
+  },
+  "held_line_unchanged": true,
+  "held_sub_line": "ASSY-SL03",
+  "held_sub_line_ids_during": [
+    "ASSY-SL03"
+  ],
+  "note": "Held sub-lines are excluded from the coordination window, so their runtime is never touched; no generic coordinator/synchronization policy was added.",
+  "others_advanced": {
+    "ASSY-SL01": {
+      "after_motor_count": 2,
+      "after_time_s": 720.0,
+      "before_time_s": 120.0,
+      "changed": true
+    },
+    "ASSY-SL02": {
+      "after_motor_count": 2,
+      "after_time_s": 720.0,
+      "before_time_s": 120.0,
+      "changed": true
+    },
+    "ASSY-SL04": {
+      "after_motor_count": 2,
+      "after_time_s": 720.0,
+      "before_time_s": 120.0,
+      "changed": true
+    },
+    "ASSY-SL05": {
+      "after_motor_count": 2,
+      "after_time_s": 720.0,
+      "before_time_s": 120.0,
+      "changed": true
+    },
+    "ASSY-SL06": {
+      "after_motor_count": 2,
+      "after_time_s": 720.0,
+      "before_time_s": 120.0,
+      "changed": true
+    }
+  },
+  "others_mutually_equivalent_after": true
+}

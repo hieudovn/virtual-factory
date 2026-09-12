@@ -519,14 +519,20 @@ class TestAPIFeatureFlag:
         app = create_app()
         assert app is not None
 
-    def test_overview_route_absent_when_disabled(self, monkeypatch):
-        """S04B routes not registered when flag is 0."""
+    def test_overview_routes_are_canonical_and_flag_independent(self, monkeypatch):
+        """R2: the Frame A/B projection endpoints are canonical-session routes.
+
+        They are registered regardless of the legacy VF_ENABLE_S04B_OVERVIEW
+        flag because they now project the canonical TIPA RuntimeSession (no
+        legacy demo controller is instantiated on any flag setting).
+        """
         monkeypatch.setenv("VF_ENABLE_S04B_OVERVIEW", "0")
         from virtual_factory.ui.api import create_app
         app = create_app()
         routes = [r.path for r in app.routes]
-        assert "/assy-demo/overview" not in routes
-        assert "/assy-demo/sub-lines" not in routes
+        assert "/assy-demo/overview" in routes
+        assert "/assy-demo/sub-lines" in routes
+        assert "/assy-demo/sub-line/{sub_line_id}" in routes
 
     def test_overview_route_present_when_enabled(self, monkeypatch):
         """S04B routes registered when flag is 1."""

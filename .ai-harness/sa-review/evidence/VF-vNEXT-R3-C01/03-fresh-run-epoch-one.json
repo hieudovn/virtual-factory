@@ -1,0 +1,28 @@
+{
+  "stale_epoch_before_fresh_run": 3,
+  "stale_epoch_gt_one": true,
+  "new_attempt": {
+    "run_id": "TIPA-0002",
+    "canonical_run_id_in_envelope": "TIPA-0002",
+    "output_namespace_run_id": "TIPA-0002",
+    "projection_epoch": 1,
+    "session_reset_generation": 1,
+    "epoch_changes": 0,
+    "keys_in_epoch_one": true,
+    "payload_metadata_in_epoch_one": true,
+    "no_stale_epoch_in_keys": true,
+    "bridge_binding_epoch": 1
+  },
+  "replay": {
+    "run_id": "TIPA-0003",
+    "canonical_run_id_in_envelope": "TIPA-0003",
+    "output_namespace_run_id": "TIPA-0003",
+    "projection_epoch": 1,
+    "session_reset_generation": 1,
+    "keys_in_epoch_one": true,
+    "payload_metadata_in_epoch_one": true,
+    "no_stale_epoch_in_keys": true,
+    "bridge_binding_epoch": 1
+  },
+  "PASS": true
+}

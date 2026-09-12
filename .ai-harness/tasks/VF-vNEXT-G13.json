@@ -1,0 +1,91 @@
+{
+  "task_id": "VF-vNEXT-G13",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — SH-WTP T108 Standalone Synthetic First-Order Runtime (G13)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/61",
+  "objective": "Implement the first authorized SH-WTP executable slice only: UNIT-SHW-L1-T108 at VF StructuralPath shwtp/line1/l1_t108 as a standalone synthetic/reference first-order tank accumulator. Obey configs/vnext/shwtp/shwtp_synthetic_runtime_admission.json (review_status=COMPLETE, authorization_mode=CANDIDATE_SCOPED, first_authorized_slice=T108, T106 later/optional, T110 blocked, vf_runtime_authorization=NOT_AUTHORIZED, site_authorized_execution=NOT_AUTHORIZED). Explicit scenario/config inputs only (capacity_m3>0, tank_area_m2>0, 0<=initial_volume_m3<=capacity_m3, inflow_m3_s>=0, requested_outflow_m3_s>=0, dt_s>0); deterministic step with explicit overflow and empty-tank saturation; truthful provenance (OriginKind.SIMULATION, DataStatus.SYNTHETIC, Fidelity.FIRST_ORDER); reuse G1 StructuralPath + G2 RunContextV2/ProvenanceV2; standalone lifecycle (init/step/reset/detached snapshot, isolated attempts); exact-target restriction (only shwtp/line1/l1_t108, never workspace/container multi-scope). No T106/T110 runtime, no G4 composition, no federation, no plant-wide run, no PIM change, no legacy process_dynamics.py modification.",
+  "explicit_non_objectives": [
+    "No T106 runtime",
+    "No T110 runtime",
+    "No G4 runtime projection / BoundaryPort / PortDirection / PortCategory / CompositionBinding / coordinator ordering",
+    "No federation / plant-wide run / whole-workspace or container execution",
+    "No hydraulics/pressure/pump curve/valve Cv/headloss/quality/chemistry/control/interlock/calibration",
+    "No PIM change",
+    "No measured/site truth/SiteVerified/SourceMapped/ParameterizedReady/CalibratedReady claims",
+    "No modification of src/virtual_factory/equipment/process_dynamics.py or the legacy continuous engine",
+    "No new global SimulationEngine or G7 redesign",
+    "No G14 work"
+  ],
+  "required_branch": "feature/vf-vnext-g13",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G13.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G13.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G13/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "tests/test_vnext_g13_t108.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/equipment/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/semantic/",
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "configs/",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/runtime.py (T108 standalone synthetic first-order runtime)",
+    "tests/test_vnext_g13_t108.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G13/01-t108-runtime.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement T106 or T110 runtime",
+    "Convert G12B relations (FLOWS_TO/DISCHARGES_TO/CONNECTED_TO) into BoundaryPort/CompositionBinding/runtime port direction/coordinator ordering",
+    "Enable shwtp or shwtp/line1 as executable multi-scope targets",
+    "Modify legacy process_dynamics.py or the continuous engine",
+    "Introduce a new global SimulationEngine or redesign G7",
+    "Broaden runtime/site authorization",
+    "Modify PIM",
+    "Relabel synthetic assumptions as plant truth",
+    "Start G14"
+  ],
+  "stop_conditions": [
+    "Implementing T108 requires deciding an unstated plant parameter as truth",
+    "Runtime requires resolving ambiguous PIM relationships",
+    "A new global engine/lifecycle architecture must be introduced",
+    "G7 semantics must be redesigned",
+    "G4 semantics must change",
+    "T106 or T110 is required to make T108 executable",
+    "Site/runtime authorization must be broadened",
+    "PIM must be changed",
+    "A product decision beyond this frozen first-order accumulator is required"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Exact T108 path/canonical reference preserved; only T108 implemented", "rule": {"field": "plan.target", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "All behavior-affecting assumptions are explicit config/scenario inputs (no hidden defaults)", "rule": {"field": "plan.explicit_config", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Deterministic step with mass balance, fill/drain/empty-saturation/overflow, level=volume/area", "rule": {"field": "plan.step", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Lifecycle: fresh attempt init, deterministic step, in-context reset, detached snapshot, attempt isolation", "rule": {"field": "plan.lifecycle", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Provenance = simulation + synthetic + first_order; no site/measurement labels", "rule": {"field": "plan.provenance", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Fail closed on invalid config/target/RunContext mismatch", "rule": {"field": "plan.fail_closed", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "No G4/runtime projection of G12B relations; workspace/container target not enabled", "rule": {"field": "plan.no_projection", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Admission JSON authority preserved (COMPLETE/CANDIDATE_SCOPED/T108 first/T110 blocked/NOT_AUTHORIZED)", "rule": {"field": "plan.admission", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "New G13 tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "Complete canonical vNext baseline + G12C/G12B/G12A/G11/G10/G9/G7/G4/G2/G1/ASSY/continuous/UI/full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

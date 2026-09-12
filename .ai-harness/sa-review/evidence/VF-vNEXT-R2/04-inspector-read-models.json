@@ -1,0 +1,73 @@
+{
+  "canonical_sub_line": {
+    "effective_scenario": "HAPPY_PATH",
+    "runtime_object_id": 1963830054736,
+    "scope": "TIPA/ASSY/ASSY-SL01",
+    "sub_line_id": "ASSY-SL01",
+    "variant": "hydraulic"
+  },
+  "final_frame": {
+    "active_operations": 0,
+    "genealogy": [
+      [
+        "MTR-0001",
+        [
+          "SSO2-0001",
+          "RSO2-0001"
+        ]
+      ]
+    ],
+    "occupied": {
+      "AP01": "SSO2-0005",
+      "AP02": "SSO2-0004",
+      "AP03": "SSO2-0003",
+      "AP04": "SSO2-0002",
+      "AP05": "MTR-0001",
+      "PRE-ASSY": "SSO2-0006"
+    },
+    "positions": [
+      "PRE-ASSY",
+      "AP01",
+      "AP02",
+      "AP03",
+      "AP04",
+      "AP05",
+      "AP06",
+      "AP07",
+      "AP08",
+      "AP09",
+      "AP10",
+      "AP11"
+    ],
+    "quality_events": 0,
+    "simulation_time_s": 600.0,
+    "station_contracts": 12,
+    "step": 5
+  },
+  "note": "Station/WIP inspector, active operations, quality history and AP04 genealogy are detached projections of the same canonical runtime.",
+  "read_model_keys": [
+    "active_operations",
+    "actual_dwell_s",
+    "bottleneck_duration_s",
+    "bottleneck_station_id",
+    "canonical",
+    "canonical_sub_line",
+    "dwell_number",
+    "dwell_overrun_s",
+    "genealogy",
+    "line_state",
+    "nominal_dwell_s",
+    "plant_id",
+    "positions",
+    "production",
+    "production_line_id",
+    "quality_records",
+    "recent_quality_events",
+    "scenario",
+    "scope",
+    "simulation_time_s",
+    "station_contracts",
+    "sub_line_id",
+    "variant"
+  ]
+}

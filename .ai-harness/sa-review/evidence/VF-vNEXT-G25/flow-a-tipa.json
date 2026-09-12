@@ -1,0 +1,113 @@
+{
+  "flow": "A-TIPA",
+  "legacy_demo": {
+    "note": "/assy-demo is a SEPARATE legacy demo runtime (its own controller). It does NOT share this shell's selected G22 TIPA RuntimeSession identity or state.",
+    "page": "/assy-demo",
+    "shares_identity": false,
+    "shares_session": false
+  },
+  "replay_equivalent": true,
+  "runtime_kind": "selected_g22_session",
+  "session": {
+    "last_result": "completed",
+    "last_time_s": 240.0,
+    "run_id": "TIPA-0001",
+    "scenario_id": "tipa-default",
+    "state": "running",
+    "step_count": 2,
+    "workspace_id": "TIPA"
+  },
+  "site_truth": false,
+  "sub_line_count": 6,
+  "sub_lines": [
+    {
+      "conveyor_state": "stopped",
+      "motor_count": 0,
+      "rso2_buffer_size": 0,
+      "scope": "TIPA/ASSY/ASSY-SL01",
+      "simulation_time_s": 240.0,
+      "sub_line_id": "ASSY-SL01",
+      "variant": "hydraulic",
+      "wip_count": 0
+    },
+    {
+      "conveyor_state": "stopped",
+      "motor_count": 0,
+      "rso2_buffer_size": 0,
+      "scope": "TIPA/ASSY/ASSY-SL02",
+      "simulation_time_s": 240.0,
+      "sub_line_id": "ASSY-SL02",
+      "variant": "hydraulic",
+      "wip_count": 0
+    },
+    {
+      "conveyor_state": "stopped",
+      "motor_count": 0,
+      "rso2_buffer_size": 0,
+      "scope": "TIPA/ASSY/ASSY-SL03",
+      "simulation_time_s": 240.0,
+      "sub_line_id": "ASSY-SL03",
+      "variant": "hydraulic",
+      "wip_count": 0
+    },
+    {
+      "conveyor_state": "stopped",
+      "motor_count": 0,
+      "rso2_buffer_size": 0,
+      "scope": "TIPA/ASSY/ASSY-SL04",
+      "simulation_time_s": 240.0,
+      "sub_line_id": "ASSY-SL04",
+      "variant": "thermal",
+      "wip_count": 0
+    },
+    {
+      "conveyor_state": "stopped",
+      "motor_count": 0,
+      "rso2_buffer_size": 0,
+      "scope": "TIPA/ASSY/ASSY-SL05",
+      "simulation_time_s": 240.0,
+      "sub_line_id": "ASSY-SL05",
+      "variant": "thermal",
+      "wip_count": 0
+    },
+    {
+      "conveyor_state": "stopped",
+      "motor_count": 0,
+      "rso2_buffer_size": 0,
+      "scope": "TIPA/ASSY/ASSY-SL06",
+      "simulation_time_s": 240.0,
+      "sub_line_id": "ASSY-SL06",
+      "variant": "thermal",
+      "wip_count": 0
+    }
+  ],
+  "trace": [
+    {
+      "committed": [],
+      "participants": [
+        "TIPA/ASSY/ASSY-SL01",
+        "TIPA/ASSY/ASSY-SL02",
+        "TIPA/ASSY/ASSY-SL03",
+        "TIPA/ASSY/ASSY-SL04",
+        "TIPA/ASSY/ASSY-SL05",
+        "TIPA/ASSY/ASSY-SL06"
+      ],
+      "status": "completed",
+      "target_time_s": 120.0
+    },
+    {
+      "committed": [],
+      "participants": [
+        "TIPA/ASSY/ASSY-SL01",
+        "TIPA/ASSY/ASSY-SL02",
+        "TIPA/ASSY/ASSY-SL03",
+        "TIPA/ASSY/ASSY-SL04",
+        "TIPA/ASSY/ASSY-SL05",
+        "TIPA/ASSY/ASSY-SL06"
+      ],
+      "status": "completed",
+      "target_time_s": 240.0
+    }
+  ],
+  "workspace_id": "TIPA"
+}
