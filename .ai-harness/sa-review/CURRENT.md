@@ -85,5 +85,7 @@ R5-C01 correction (SA comment 5644417111) - root canonical entrypoint:
   (create_app / redirect / redirect+shell / shell counters all empty)
 - Evidence: evidence/VF-vNEXT-R5/08-root-entry.json -> ROOT_IS_CANONICAL_ENTRYPOINT
 - Browser smoke from / -> lands on /workspaces, shell rendered, 0 console errors, SCADA absent
-- Full suite: 2663 passed; baseline: recorded in the C01 status pin below
+- Full suite: 2663 passed; R5-C01 focused module: 32 passed
+- Implementation head: 6b2bc48
+- Canonical baseline at 6b2bc48: overall PASS, failed_groups [], 43/43 groups (incl. r5_single_system)
 - Verdict: VF-vNEXT-R5-C01 - READY FOR SA REVIEW
