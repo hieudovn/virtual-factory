@@ -113,12 +113,17 @@
       "update_rule_family": "aggregate_split_v1",
       "time_s": 7200.0,
       "telemetry_keys": [
+        "capacity_spill_m3h",
+        "declared_loss_m3h",
         "delivery_m3h",
         "feed_m3h",
+        "observed_loss_m3h",
+        "process_loss_audit_ok",
         "simulation_truth",
         "site_authorized_execution",
         "site_truth",
         "split_fraction",
+        "step_feed_m3h",
         "time_s",
         "vf_runtime_authorization"
       ]
@@ -342,7 +347,8 @@
         "turbidity_ntu",
         "vf_runtime_authorization",
         "wash_out_m3h",
-        "wash_return_m3h"
+        "wash_return_m3h",
+        "wash_water_limited_by_available_volume"
       ]
     },
     {

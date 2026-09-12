@@ -336,3 +336,40 @@ VF-SHW-X2-C02 - Runtime identity + WASH return + water ledger + level-inhibit ro
   deletion would fail the per-window tank balance). Focused modules 212 passed; full suite 2765 -> 2790 passed.
 - Verdict: VF-SHW-X2-C02 - READY FOR SA REVIEW; X2_RUNTIME_IDENTITY_AND_WATER_ACCOUNTING_CORRECTED
 - STOP: X3/X4/X5 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.
+
+---
+
+VF-SHW-X2-C03 - Physical conservation vs accounting reconciliation (Issue #94 comment 5645448466): CORRECTION
+- Required base: c3e7893 (C02 head). Same branch feature/vf-shw-x2-c01 / PR #96; harness preflight PASSED;
+  report: reports/VF-SHW-X2-C03.md.
+- SA finding reproduced before the fix with the exact methods: _bound_volume(-1, 10) -> volume 0, shortfall 1.0,
+  balance_report residual 0.0 and conserved TRUE, because _shortfall_m3 (water CREATED by the negative clamp) was
+  subtracted from the residual. A diagnostic correction term must never certify invented water.
+- Requirement 1 CLOSED: the residual no longer contains the created-water compensation term. balance_report now
+  separates conserved/physical_valid (no compensation, created water within the rounding tolerance, loss audit ok)
+  from accounting_reconciled (the created-water-subtracted view, explicitly labelled "NOT a physical-conservation
+  claim"). shortfall_m3/created_water_diagnostic_m3 are read LIVE from the scopes, and created_water_within_rounding
+  uses CREATED_WATER_TOLERANCE_M3 = 1e-9.
+- Requirement 2 CLOSED: new ScopeParticipant._available_outflow_rate = held/dt + inflow, and every real discharge is
+  bounded by it (the T106 backwash wash water now min(requested, available) with the explicit alarm
+  wash_water_limited_by_available_volume; T108/T100/T105/T110/T201 verified). No scope emits unavailable water and
+  repairs storage with a clamp - the clamp is only a float-noise guard whose output is a diagnostic.
+- Requirement 3 CLOSED by tests: the SA counterexample (created water 1.0 m3) now reports conserved=false /
+  physical_valid=false / created_water_within_rounding=false; 7 accepted scenarios (default, stopped/zero inflow,
+  backwash, DRY-FILTER forced backwash via t106_dp_initial_kpa=85 + t106_initial_volume_m3=0 through the real window
+  path, empty T108, tiny LINE2 capacity, overflowing T106) all keep shortfall <= 1e-9 with physical_valid=true; a
+  deliberate pre-C03 mutation shows accounting_reconciled=true while conserved=false (the claims are separate); a
+  bounded-discharge proof covers 3 extreme scenarios x 20 windows.
+- Requirement 4 CLOSED: audit_line2_process_loss() proves the LINE2 loss = declared law (feed x loss_fraction) plus
+  the modelled capacity spill max(0, feed x (1-loss) - capacity); the participant computes its delivery FROM the
+  declared law and records step_feed/declared_loss/capacity_spill/observed_loss/audit flags; the ledger uses
+  declared+spill so an arbitrary dropped delivery cannot be relabelled. Negative mutation check: feed 100 ->
+  delivered 50 is valid=false (both checks false) while 100 -> 99 (1 % loss) and the 89 m3 spill case are valid.
+- Requirement 5 CLOSED: 05-physical-oracles.json now requires physical_valid + created_water_within_rounding +
+  the loss audit (a reconciled residual alone can no longer yield PHYSICAL_ORACLES_SATISFIED), 10-water-ledger.json
+  requires physical validity per scenario, and the new 12-physical-validity.json reports
+  INVENTED_WATER_FAILS_PHYSICAL_VALIDITY with the counterexample (C02 oracle formula would have said true, the C03
+  oracle rejects it), the dry-filter proof and the declared-loss audit with its negative mutation.
+- Regression: x2_whole_plant_runtime 75 -> 84 passed; full suite 2790 -> 2799 passed; 12/12 evidence artefacts green.
+- Verdict: VF-SHW-X2-C03 - READY FOR SA REVIEW; INVENTED_WATER_FAILS_PHYSICAL_VALIDITY
+- STOP: X3/X4/X5 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.

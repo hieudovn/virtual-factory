@@ -64,6 +64,7 @@ ARTEFACTS = (
     "09-committed-process-input.json",
     "10-water-ledger.json",
     "11-level-inhibit.json",
+    "12-physical-validity.json",
 )
 
 EXPECTED_LABELS = {
@@ -381,6 +382,10 @@ def water_ledger() -> dict:
                 "residual_m3": water["residual_m3"],
                 "tolerance_m3": water["tolerance_m3"],
                 "conserved": water["conserved"],
+                "physical_valid": water["physical_valid"],
+                "created_water_m3": water["shortfall_m3"],
+                "created_water_within_rounding": water["created_water_within_rounding"],
+                "accounting_reconciled": water["accounting_reconciled"],
                 "worst_abs_residual_m3": round(worst, 12),
                 "plant_in_m3": water["plant_in_m3"],
                 "plant_out_m3": water["plant_out_m3"],
@@ -426,13 +431,151 @@ def water_ledger() -> dict:
         "verdict": "PLANT_WATER_CONSERVED_ON_WATER_ONLY"
         if (
             all(entry["conserved"] for entry in results)
+            and all(entry["physical_valid"] for entry in results)
+            and all(entry["created_water_within_rounding"] for entry in results)
             and all(abs(entry["residual_m3"]) <= entry["tolerance_m3"] for entry in results)
             and abs(water["residual_m3"]) <= 1e-6
+            and water["physical_valid"] is True
+            and water["created_water_within_rounding"] is True
+            and water["process_loss_declared_law_plus_spill"] is True
             and all(row["water_m3"] == 0.0 for row in information + outside)
         )
         else "PLANT_WATER_LEDGER_OPEN",
     }
 
+
+def physical_validity() -> dict:
+    """C03: invented water and unexplained losses must fail physical validity.
+
+    Contains the SA counterexample (0 initial water, 0 input, 1 m3 output) as an
+    oracle-level proof, the dry-filter forced-backwash proof, the bounded-outflow
+    proof and the LINE2 declared-loss audit with its negative mutation check.
+    """
+    from virtual_factory.shwtp.whole_plant import (
+        CREATED_WATER_TOLERANCE_M3,
+        WholePlantScenario,
+        audit_line2_process_loss,
+    )
+
+    # 1) the SA counterexample, reproduced with the exact model methods
+    counterexample_model = build_shwtp_whole_plant()
+    counterexample_scope = counterexample_model.participants["vf-shw-node-t106"]
+    counterexample_scope._volume_m3 = 0.0
+    counterexample_scope._initial_volume_m3 = 0.0
+    counterexample_scope._volume_in_m3 = 0.0
+    counterexample_scope._volume_out_m3 = 0.0
+    counterexample_scope._shortfall_m3 = 0.0
+    counterexample_scope._overflow_m3 = 0.0
+    clamped = counterexample_scope._bound_volume(-1.0, 10.0)
+    counterexample = counterexample_model.balance_report()["plant_water"]
+
+    # 2) a real dry filter driven through a forced backwash (real window path)
+    dry_model = build_shwtp_whole_plant(
+        scenario=WholePlantScenario(t106_initial_volume_m3=0.0, t106_dp_initial_kpa=85.0)
+    )
+    dry_filter = dry_model.participants["vf-shw-node-t106"]
+    limited_windows = 0
+    backwash_windows = 0
+    for index in range(1, 12):
+        dry_model.run_window(f"window-{index}")
+        values = dry_filter.monitor_values()
+        if values["wash_water_limited_by_available_volume"]:
+            limited_windows += 1
+        if values["backwash_step"] in ("BACKWASH", "SETTLE"):
+            backwash_windows += 1
+    dry_water = dry_model.balance_report()["plant_water"]
+
+    # 3) LINE2 declared-loss audit + negative mutation check
+    admissible = audit_line2_process_loss(
+        feed_m3h=100.0, delivered_m3h=99.0, loss_fraction=0.01, capacity_m3h=1000.0
+    )
+    dropped_delivery = audit_line2_process_loss(
+        feed_m3h=100.0, delivered_m3h=50.0, loss_fraction=0.01, capacity_m3h=1000.0
+    )
+    capacity_spill = audit_line2_process_loss(
+        feed_m3h=100.0, delivered_m3h=10.0, loss_fraction=0.01, capacity_m3h=10.0
+    )
+    spill_model = build_shwtp_whole_plant(
+        scenario=WholePlantScenario(line2_capacity_m3h=1.0, line2_split_fraction=0.5)
+    )
+    spill_windows = 0
+    for index in range(1, 12):
+        spill_model.run_window(f"window-{index}")
+        values = spill_model.participants["vf-shw-node-line2-aggregate"].monitor_values()
+        if values["capacity_spill_m3h"] > 0.0:
+            spill_windows += 1
+    spill_water = spill_model.balance_report()["plant_water"]
+
+    return {
+        "gate": "VF-SHW-X2-C03",
+        "created_water_tolerance_m3": CREATED_WATER_TOLERANCE_M3,
+        "counterexample": {
+            "setup": (
+                "initial water 0; external input 0; external output 1 m3 (the SA "
+                "isolated harness): the clamp records 1 m3 of CREATED water"
+            ),
+            "clamped_volume": clamped,
+            "created_water_m3": counterexample_scope._shortfall_m3,
+            "physical_residual_m3": counterexample_scope._shortfall_m3,
+            "c02_oracle_formula": "abs(residual - created_water) <= tolerance",
+            "c02_oracle_verdict": (
+                abs(counterexample_scope._shortfall_m3 - counterexample_scope._shortfall_m3)
+                <= counterexample["tolerance_m3"]
+            ),
+            "c03_oracle_formula": (
+                "abs(residual) <= tolerance AND created_water <= rounding_tolerance"
+            ),
+            "c03_oracle_verdict": (
+                abs(counterexample_scope._shortfall_m3) <= counterexample["tolerance_m3"]
+                and counterexample_scope._shortfall_m3 <= CREATED_WATER_TOLERANCE_M3
+            ),
+            "live_model_check": {
+                "residual_m3": counterexample["residual_m3"],
+                "created_water_within_rounding": counterexample["created_water_within_rounding"],
+                "physical_valid": counterexample["physical_valid"],
+                "conserved": counterexample["conserved"],
+                "accounting_reconciled": counterexample["accounting_reconciled"],
+            },
+        },
+        "dry_filter_forced_backwash": {
+            "backwash_windows": backwash_windows,
+            "wash_water_limited_windows": limited_windows,
+            "created_water_m3": dry_water["shortfall_m3"],
+            "physical_valid": dry_water["physical_valid"],
+            "conserved": dry_water["conserved"],
+            "bounded_outflow": "the wash discharge is limited to the water held (+ inflow)",
+        },
+        "bounded_outflow_rule": (
+            "every real discharge (transfer withdrawal, backwash wash water, sludge "
+            "processing, wash return) is min(requested, held/dt + inflow); an invalid "
+            "state never advances by inventing water"
+        ),
+        "line2_process_loss_audit": {
+            "declared_law": "delivery = max(0, min(feed * (1 - loss_fraction), capacity))",
+            "admissible_loss": "declared_loss + capacity_spill",
+            "admissible_example": admissible,
+            "negative_mutation_dropped_delivery": dropped_delivery,
+            "capacity_spill_example": capacity_spill,
+            "capacity_spill_windows_in_scenario": spill_windows,
+            "scenario_loss_audit_ok": spill_water["process_loss_declared_law_plus_spill"],
+        },
+        "verdict": "INVENTED_WATER_FAILS_PHYSICAL_VALIDITY"
+        if (
+            counterexample_scope._shortfall_m3 > CREATED_WATER_TOLERANCE_M3
+            and counterexample["conserved"] is False
+            and counterexample["physical_valid"] is False
+            and counterexample["created_water_within_rounding"] is False
+            and backwash_windows > 0
+            and limited_windows > 0
+            and dry_water["shortfall_m3"] <= CREATED_WATER_TOLERANCE_M3
+            and dry_water["physical_valid"] is True
+            and admissible["valid"] is True
+            and dropped_delivery["valid"] is False
+            and capacity_spill["valid"] is True
+            and spill_windows > 0
+        )
+        else "PHYSICAL_VALIDITY_COMPROMISED",
+    }
 
 def level_inhibit() -> dict:
     """C02-4: a high-level permissive inhibits the declared UPSTREAM path."""
@@ -747,7 +890,11 @@ def physical_oracles(model) -> dict:
             and negatives == 0
             and turbidity_ok
             and resets >= 1
-            and plant_water["bounded"] is True
+            # C03-5: a reconciled residual alone can NOT satisfy this verdict -
+            # physical validity (no created water, audited process loss) is required
+            and plant_water["physical_valid"] is True
+            and plant_water["created_water_within_rounding"] is True
+            and plant_water["process_loss_declared_law_plus_spill"] is True
         )
         else "PHYSICAL_ORACLE_VIOLATION",
     }
@@ -802,6 +949,7 @@ def main() -> int:
         "09-committed-process-input.json": committed_process_input(),
         "10-water-ledger.json": water_ledger(),
         "11-level-inhibit.json": level_inhibit(),
+        "12-physical-validity.json": physical_validity(),
     }
     for name, payload in results.items():
         (HERE / name).write_text(json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8")

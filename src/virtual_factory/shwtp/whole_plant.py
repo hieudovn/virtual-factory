@@ -177,12 +177,64 @@ BOUNDARY_ROLE: Mapping[str, str] = {
 PLANT_WATER_TOLERANCE_RELATIVE = 1e-9
 PLANT_WATER_TOLERANCE_ABSOLUTE_M3 = 1e-9
 
+#: Justified ROUNDING tolerance for artificially CREATED water (a negative volume
+#: clamped back to zero, VF-SHW-X2-C03). Any material creation invalidates physical
+#: conservation: the amount is reported as a diagnostic but is NEVER used to
+#: reconcile the balance.
+CREATED_WATER_TOLERANCE_M3 = 1e-9
+
+#: Rounding tolerance of the declared LINE2 process-loss audit.
+PROCESS_LOSS_TOLERANCE_M3 = 1e-9
+
+
+def audit_line2_process_loss(
+    *,
+    feed_m3h: float,
+    delivered_m3h: float,
+    loss_fraction: float,
+    capacity_m3h: float,
+) -> dict:
+    """Prove a LINE2 transfer's loss equals the DECLARED law + modelled spill (C03-4).
+
+    The declared law is ``delivery = max(0, min(feed * (1 - loss_fraction), capacity))``,
+    so an admissible loss is exactly ``feed * loss_fraction`` (the declared process
+    loss) plus ``max(0, feed * (1 - loss_fraction) - capacity)`` (the explicitly
+    modelled capacity spill). An arbitrary dropped delivery is NOT a valid process
+    loss and makes ``valid`` False.
+    """
+    feed = _nonneg(feed_m3h, "feed_m3h")
+    delivered = _nonneg(delivered_m3h, "delivered_m3h")
+    fraction = _num(loss_fraction, "loss_fraction")
+    if not 0.0 <= fraction <= 1.0:
+        raise WholePlantX2Error("loss_fraction must be within [0, 1]")
+    capacity = _nonneg(capacity_m3h, "capacity_m3h")
+    after_loss = feed * (1.0 - fraction)
+    declared_loss = feed * fraction
+    capacity_spill = max(0.0, after_loss - capacity)
+    expected_delivery = min(after_loss, capacity)
+    observed_loss = feed - delivered
+    delivery_matches_law = abs(delivered - expected_delivery) <= PROCESS_LOSS_TOLERANCE_M3
+    loss_matches_law = abs(observed_loss - (declared_loss + capacity_spill)) <= PROCESS_LOSS_TOLERANCE_M3
+    return {
+        "feed_m3h": round(feed, 12),
+        "delivered_m3h": round(delivered, 12),
+        "declared_loss_m3h": round(declared_loss, 12),
+        "capacity_spill_m3h": round(capacity_spill, 12),
+        "expected_delivery_m3h": round(expected_delivery, 12),
+        "observed_loss_m3h": round(observed_loss, 12),
+        "delivery_matches_declared_law": delivery_matches_law,
+        "loss_equals_declared_plus_spill": loss_matches_law,
+        "valid": bool(delivery_matches_law and loss_matches_law),
+    }
+
 
 def _empty_water_ledger() -> dict:
     return {
         "plant_in_m3": 0.0,
         "plant_out_m3": 0.0,
         "process_loss_m3": 0.0,
+        "process_loss_observed_m3": 0.0,
+        "process_loss_audit_failures": 0,
         "overflow_m3": 0.0,
         "shortfall_m3": 0.0,
         "in_transit_m3": 0.0,
@@ -490,6 +542,11 @@ class ScopeParticipant:
         A negative volume would CREATE water and an overflow would DESTROY it;
         both are recorded (``_shortfall_m3`` / ``_overflow_m3``) and alarmed so
         the plant water ledger can reconcile them explicitly (C02-3).
+
+        C03: the created amount is a DIAGNOSTIC, not a reconciliation term - a
+        material shortfall invalidates physical conservation (see
+        ``balance_report``). Callers must bound real outflows with
+        ``_available_outflow_rate`` so this clamp only ever absorbs float noise.
         """
         if volume < 0.0:
             self._shortfall_m3 += -volume
@@ -500,6 +557,19 @@ class ScopeParticipant:
             self._alarm("capacity_clamped")
             volume = capacity
         return volume
+
+    def _available_outflow_rate(self, dt_s: float, inflow_m3h: float = 0.0) -> float:
+        """Maximum admissible OUTFLOW rate: water actually held (+ inflow).
+
+        VF-SHW-X2-C03: a scope must never EMIT water it does not have and then
+        have the storage repaired by clamping a negative volume. Every real
+        withdrawal / backwash discharge is bounded by this rate; if the
+        requested rate exceeds it, the emitted flow is limited and the
+        limitation is alarmed (explicit diagnostics, never invented water).
+        """
+        dt_h = dt_s / 3600.0
+        held = (self._storage_volume() / dt_h) if dt_h > 0 else 0.0
+        return held + max(0.0, inflow_m3h)
 
     def _emit(
         self,
@@ -1139,6 +1209,7 @@ class FilterParticipant(ScopeParticipant):
         self._valve_pos_pct = 0.0
         self._wash_out_m3h = 0.0
         self._wash_return_m3h = 0.0
+        self._wash_water_limited = False
         self._inflow_inhibited = False
         self._last_step = "IDLE"
         self._backwash_count = 0
@@ -1171,22 +1242,29 @@ class FilterParticipant(ScopeParticipant):
                 min(120.0, self._dp_kpa + self.scenario.t106_dp_growth_kpa_per_s * dt_s), 9
             )
         if step == "BACKWASH" and self._last_step != "BACKWASH":
-            self._wash_out_m3h = self.scenario.t106_backwash_wash_flow_m3h
+            requested_wash_out = self.scenario.t106_backwash_wash_flow_m3h
         elif step == "SETTLE" and self._last_step == "BACKWASH":
-            self._wash_out_m3h = self.scenario.t106_backwash_wash_flow_m3h * 0.5
+            requested_wash_out = self.scenario.t106_backwash_wash_flow_m3h * 0.5
         else:
-            self._wash_out_m3h = 0.0
+            requested_wash_out = 0.0
+        dt_h = dt_s / 3600.0
+        # C02-2: the wash return is a COMMITTED process inflow delivered at the
+        # end of the previous window; it is consumed here exactly once.
+        wash_return = self._consume_process_flow("wash_return_flow_m3h")
+        self._wash_return_m3h = wash_return
+        # C03: the backwash wash-water discharge is bounded by the water the
+        # filter actually holds (+ what enters this window). A discharge is never
+        # allowed to invent water and be repaired by a clamp: the emitted flow is
+        # limited and the limitation is alarmed.
+        in_rate = self._inflow_m3h + wash_return
+        available_rate = self._available_outflow_rate(dt_s, in_rate)
+        self._wash_out_m3h = round(min(requested_wash_out, max(0.0, available_rate)), 9)
+        self._wash_water_limited = self._wash_out_m3h < requested_wash_out - 1e-12
+        if self._wash_water_limited:
+            self._alarm("wash_water_limited_by_available_volume")
         if step == "IDLE" and self._last_step == "SETTLE":
             self._dp_kpa = self.scenario.t106_dp_initial_kpa
             self._backwash_count += 1
-        dt_h = dt_s / 3600.0
-        # C02-2: the wash return is a COMMITTED process inflow delivered at the
-        # end of the previous window; it is consumed here exactly once (before
-        # the fix it was written into the transient controller commands and
-        # destroyed by the next prepare_window, so T106 always saw zero return).
-        wash_return = self._consume_process_flow("wash_return_flow_m3h")
-        self._wash_return_m3h = wash_return
-        in_rate = self._inflow_m3h + wash_return
         out_rate = self._filtered_flow_m3h + self._wash_out_m3h
         self._volume_m3 = self._bound_volume(
             self._volume_m3 + (in_rate - out_rate) * dt_h, self.capacity_m3
@@ -1234,6 +1312,7 @@ class FilterParticipant(ScopeParticipant):
             "inlet_valve_pos_pct": round(self._valve_pos_pct, 6),
             "filtered_path_inhibited": self._inflow_inhibited,
             "wash_out_m3h": round(self._wash_out_m3h, 6),
+            "wash_water_limited_by_available_volume": self._wash_water_limited,
             "backwash_step": self._last_step,
             "backwash_count": self._backwash_count,
             "turbidity_ntu": round(self._filtered_turbidity_ntu, 6),
@@ -1309,7 +1388,9 @@ class T108Participant(StorageTankParticipant):
         dt_h = dt_s / 3600.0
         available_rate = (self._volume_m3 / dt_h) if dt_h > 0 else 0.0
         pump_rate = self.scenario.t108_transfer_rated_flow_m3h * (speed / 100.0)
-        self._withdrawal_m3h = round(min(pump_rate, available_rate), 9)
+        # C03: the transfer withdrawal is bounded by the water actually held; a
+        # pump can never move water that is not there.
+        self._withdrawal_m3h = round(min(pump_rate, max(0.0, available_rate)), 9)
         if self._level_m <= self.level_band[0]:
             self._withdrawal_m3h = 0.0
             self._alarm("transfer_pump_lall_inhibit")
@@ -1548,6 +1629,11 @@ class Line2AggregateParticipant(ScopeParticipant):
         self._feed_m3h = 0.0
         self._delivery_m3h = 0.0
         self._split_fraction = 0.0
+        self._step_feed_m3h = 0.0
+        self._declared_loss_m3h = 0.0
+        self._capacity_spill_m3h = 0.0
+        self._observed_loss_m3h = 0.0
+        self._loss_audit_ok = True
 
     def _step(self, dt_s: float) -> tuple[BoundaryTransfer, ...]:
         fraction = _num(self._command("line2_split_fraction", self._split_fraction), "line2_split_fraction")
@@ -1556,7 +1642,24 @@ class Line2AggregateParticipant(ScopeParticipant):
             fraction = min(1.0, max(0.0, fraction))
         self._split_fraction = round(fraction, 9)
         capacity = self.scenario.line2_capacity_m3h
-        self._delivery_m3h = round(max(0.0, min(self._feed_m3h * (1.0 - self.scenario.line2_loss_fraction), capacity)), 9)
+        # C03-4: the delivery is produced by the DECLARED loss law
+        #   delivery = max(0, min(feed * (1 - loss_fraction), capacity))
+        # so the loss is the declared process loss plus an explicitly modelled
+        # capacity spill - never an unexplained dropped delivery.
+        audit = audit_line2_process_loss(
+            feed_m3h=self._feed_m3h,
+            delivered_m3h=max(0.0, min(self._feed_m3h * (1.0 - self.scenario.line2_loss_fraction), capacity)),
+            loss_fraction=self.scenario.line2_loss_fraction,
+            capacity_m3h=capacity,
+        )
+        self._step_feed_m3h = round(self._feed_m3h, 12)
+        self._declared_loss_m3h = round(audit["declared_loss_m3h"], 12)
+        self._capacity_spill_m3h = round(audit["capacity_spill_m3h"], 12)
+        self._observed_loss_m3h = round(audit["observed_loss_m3h"], 12)
+        self._loss_audit_ok = bool(audit["valid"])
+        if not self._loss_audit_ok:
+            self._alarm("line2_process_loss_audit_failed")
+        self._delivery_m3h = round(audit["expected_delivery_m3h"], 9)
         if self._feed_m3h > capacity:
             self._alarm("line2_capacity_exceeded")
         return (
@@ -1583,6 +1686,11 @@ class Line2AggregateParticipant(ScopeParticipant):
             "feed_m3h": round(self._feed_m3h, 6),
             "delivery_m3h": round(self._delivery_m3h, 6),
             "split_fraction": round(self._split_fraction, 6),
+            "step_feed_m3h": round(self._step_feed_m3h, 6),
+            "declared_loss_m3h": round(self._declared_loss_m3h, 9),
+            "capacity_spill_m3h": round(self._capacity_spill_m3h, 9),
+            "observed_loss_m3h": round(self._observed_loss_m3h, 9),
+            "process_loss_audit_ok": self._loss_audit_ok,
         }
 
 
@@ -1919,9 +2027,17 @@ class WholePlantX2Runtime:
         self._ledger["plant_out_m3"] += (
             self.participants["vf-shw-node-sludge-t201"].monitor_values()["processed_m3h"] * dt_h
         )
-        line2_fed = self._water_of(self._prev_transfers, LINE2_FEED_BINDING_ID)
-        line2_delivered = self._water_of(current, LINE2_DELIVERY_BINDING_ID)
-        self._ledger["process_loss_m3"] += max(0.0, line2_fed - line2_delivered)
+        # C03-4: the LINE2 loss is the DECLARED law plus the explicitly modelled
+        # capacity spill (audited at step time), never an unexplained dropped
+        # delivery that would be relabelled as valid process loss.
+        line2 = self.participants["vf-shw-node-line2-aggregate"]
+        line2_values = line2.monitor_values()
+        self._ledger["process_loss_m3"] += (
+            line2_values["declared_loss_m3h"] + line2_values["capacity_spill_m3h"]
+        ) * dt_h
+        self._ledger["process_loss_observed_m3"] += line2_values["observed_loss_m3h"] * dt_h
+        if not line2_values["process_loss_audit_ok"]:
+            self._ledger["process_loss_audit_failures"] += 1
         self._ledger["information_m3"] += self._information_inventory_m3
         self._ledger["source_availability_m3"] += self._source_availability_m3
         self._ledger["in_transit_m3"] = self._in_transit_m3
@@ -2113,15 +2229,23 @@ class WholePlantX2Runtime:
         return tuple(rows)
 
     def balance_report(self) -> dict:
-        """Ledger-based plant water balance (C02-3).
+        """Ledger-based plant water balance (C02-3) + physical validity (C03).
 
         The reconciliation is computed INDEPENDENTLY of the participants'
-        ``volume_in/volume_out`` counters: it uses the transfer ledger
-        (physical water only, on one consistent consumption basis at the control
-        volume), the storage volumes and the explicitly accounted clamps. The
-        residual must close within the documented float-rounding tolerance; any
-        modelled loss (LINE2 process loss, capacity overflow) is an explicit,
-        alarmed term instead of being absorbed by a percentage allowance.
+        ``volume_in/volume_out`` counters: it uses the transfer ledger (physical
+        water only, on one consistent consumption basis at the control volume),
+        the storage volumes and the explicitly accounted clamps.
+
+        VF-SHW-X2-C03 separates two DIFFERENT claims:
+
+        - **physical conservation** (``conserved`` / ``physical_valid``): the
+          water balance closes to float rounding **without** any compensation
+          term, no water was artificially CREATED (``shortfall_m3`` within a
+          justified rounding tolerance) and the declared process-loss audit holds.
+          An oracle must never certify invented water as conserved.
+        - **reconciled accounting** (``accounting_reconciled``): the same balance
+          once the diagnostic created-water amount is subtracted. This is
+          reported for diagnosis only and is NOT a physical-conservation claim.
         """
         storage_rows = [p.balance() for p in self.participants.values() if p.storage]
         stored_delta_m3 = round(
@@ -2133,13 +2257,22 @@ class WholePlantX2Runtime:
             12,
         )
         ledger = self._ledger
+        # created water is read LIVE: a clamp performed outside the window loop
+        # must be visible to the oracle (SA counterexample)
+        created_water_m3 = round(
+            sum(p._shortfall_m3 for p in self.participants.values()), 12
+        )
+        overflow_m3 = round(sum(p._overflow_m3 for p in self.participants.values()), 12)
+        process_loss_m3 = round(ledger["process_loss_m3"], 12)
+        process_loss_observed_m3 = round(ledger["process_loss_observed_m3"], 12)
+        audit_failures = int(ledger["process_loss_audit_failures"])
+        # NO compensation term: artificially created water must break conservation
         residual = round(
             (stored_delta_m3 + ledger["in_transit_m3"])
             - ledger["plant_in_m3"]
             + ledger["plant_out_m3"]
-            + ledger["process_loss_m3"]
-            + ledger["overflow_m3"]
-            - ledger["shortfall_m3"],
+            + process_loss_m3
+            + overflow_m3,
             12,
         )
         scale = max(
@@ -2149,7 +2282,16 @@ class WholePlantX2Runtime:
         tolerance_m3 = round(
             PLANT_WATER_TOLERANCE_RELATIVE * scale + PLANT_WATER_TOLERANCE_ABSOLUTE_M3, 15
         )
-        conserved = abs(residual) <= tolerance_m3
+        accounting_reconciled = abs(residual - created_water_m3) <= tolerance_m3
+        created_within_rounding = created_water_m3 <= CREATED_WATER_TOLERANCE_M3
+        loss_audit_ok = (
+            audit_failures == 0
+            and abs(process_loss_m3 - process_loss_observed_m3)
+            <= max(PROCESS_LOSS_TOLERANCE_M3, tolerance_m3)
+        )
+        physically_conserved = (
+            abs(residual) <= tolerance_m3 and created_within_rounding and loss_audit_ok
+        )
         return {
             "window_index": self._window_index,
             "storage_balances": [
@@ -2162,9 +2304,15 @@ class WholePlantX2Runtime:
                 "stored_delta_m3": stored_delta_m3,
                 "transit_inventory_m3": round(ledger["in_transit_m3"], 9),
                 "water_inside_m3": round(stored_delta_m3 + ledger["in_transit_m3"], 9),
-                "process_loss_m3": round(ledger["process_loss_m3"], 9),
-                "overflow_m3": round(ledger["overflow_m3"], 9),
-                "shortfall_m3": round(ledger["shortfall_m3"], 9),
+                "process_loss_m3": round(process_loss_m3, 9),
+                "process_loss_observed_m3": round(process_loss_observed_m3, 9),
+                "process_loss_declared_law_plus_spill": loss_audit_ok,
+                "process_loss_audit_failures": audit_failures,
+                "overflow_m3": round(overflow_m3, 9),
+                "shortfall_m3": created_water_m3,
+                "created_water_diagnostic_m3": created_water_m3,
+                "created_water_tolerance_m3": CREATED_WATER_TOLERANCE_M3,
+                "created_water_within_rounding": created_within_rounding,
                 "information_inventory_m3": round(ledger["information_m3"], 9),
                 "source_availability_m3": round(ledger["source_availability_m3"], 9),
                 "source_availability_note": (
@@ -2174,8 +2322,16 @@ class WholePlantX2Runtime:
                 "residual_m3": residual,
                 "closure_m3": residual,
                 "tolerance_m3": tolerance_m3,
-                "conserved": conserved,
-                "bounded": conserved,
+                # PHYSICAL claim: no compensation term, no created water, audit holds
+                "conserved": physically_conserved,
+                "physical_valid": physically_conserved,
+                # ACCOUNTING claim (diagnostic only): created water subtracted
+                "accounting_reconciled": accounting_reconciled,
+                "accounting_note": (
+                    "accounting_reconciled subtracts the created-water diagnostic and is "
+                    "NOT a physical-conservation claim"
+                ),
+                "bounded": physically_conserved,
             },
             "max_storage_residual_m3": max((abs(row["residual_m3"]) for row in storage_rows), default=0.0),
             **AUTHORITY_LABELS,

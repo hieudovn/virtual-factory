@@ -1,0 +1,91 @@
+{
+  "task_id": "VF-SHW-X2-C03",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "correction",
+  "gate_type": "CORRECTION gate (Issue #94 SA comment 5645448466): narrow completion of C02-3 - artificially created water must fail physical conservation, real discharges must be bounded by available water, and the LINE2 process loss must be the declared law plus a modelled spill. No config/contract/architecture/topology/control expansion; no C2, T107, UI, PIM or ASSY work; no merge.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/94",
+  "sa_decision_ref": "Issue #94 comment 5645448466 (SA counterexample: initial water 0, external input 0, external output 1 m3 still reported conserved because _shortfall_m3 was subtracted from the residual) - required base c3e7893adeead308cce72ac2a76ba24b497d6bdb, same C01 branch / PR #96",
+  "architecture_authority_ref": "VF-SHW-X2 + X2-C01/C02 report/evidence; the canonical session/bridge/run authority and the frozen X1 contract layer are unchanged",
+  "objective": "Make the plant water oracle physically honest: (1) keep created water visible as a diagnostic but never use it as a reconciliation term - any non-rounding artificial water creation fails physical validity/conserved/PASS, with accounting reconciliation clearly separated from physical conservation; (2) bound every real discharge (transfer withdrawal, backwash wash water, sludge processing, wash return) by the water actually available so no scope emits unavailable water and repairs storage with a clamp, with explicit diagnostics when the bound binds; (3) test the SA counterexample and a real zero/near-empty filter forced backwash, asserting created water stays within a justified rounding tolerance on every accepted scenario; (4) prove the LINE2 process loss equals the declared loss law plus the explicitly modelled capacity spill, with a negative mutation check proving an arbitrarily dropped delivery is not valid process loss; (5) propagate physical-validity failures into the evidence verdicts so a reconciled residual alone can never yield PHYSICAL_ORACLES_SATISFIED.",
+  "explicit_non_objectives": [
+    "No change to any frozen X1 config/contract (configs/** stays untouched)",
+    "No new scope, edge, topology, controller, control class or fidelity class",
+    "No new physical assumption beyond bounding an existing discharge by available water",
+    "No C2 activation, no PI/PID dynamics, no T107",
+    "No rich SH-WTP UI",
+    "No PIM or ASSY change",
+    "No new registry/session/runtime/UI authority",
+    "No X3/X4/X5 work",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-shw-x2-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "c3e7893adeead308cce72ac2a76ba24b497d6bdb",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X2-C03.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/whole_plant.py",
+    "tests/test_vnext_x2_whole_plant_runtime.py"
+  ],
+  "forbidden_paths": [
+    "configs/",
+    "src/virtual_factory/shwtp/contracts.py",
+    "src/virtual_factory/shwtp/x2_controls.py",
+    "src/virtual_factory/shwtp/session.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/expansion.py",
+    "src/virtual_factory/{runcontrol,composition,discrete,core,assembly,ui}/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/"
+  ],
+  "forbidden_paths_note": "tests/ is intentionally NOT listed as a whole-directory forbidden entry: the C03 corrections are covered by the existing X2 module (single-file allowlist). configs/, contracts.py, x2_controls.py and session.py are forbidden: C03 is confined to the physical model (bounded discharges + loss audit) and the oracle/report/evidence surface.",
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/whole_plant.py (bounded discharge helper + bounded wash-out/withdrawal with explicit diagnostics; physical-vs-accounting conservation split with created water as a diagnostic only; declared LAW + capacity-spill process loss with an audit)",
+    "tests/test_vnext_x2_whole_plant_runtime.py (C03 counterexample, dry-filter forced backwash, bounded-discharge proof, created-water tolerance per scenario, LINE2 audit + negative mutation)",
+    ".ai-harness/sa-review/evidence/VF-SHW-X2/12-physical-validity.json (new) + 05/10 regenerated with physical-validity-driven verdicts",
+    ".ai-harness/sa-review/reports/VF-SHW-X2-C03.md",
+    ".ai-harness/sa-review/CURRENT.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_x2_whole_plant_runtime.py"
+  ],
+  "required_smoke_checks": [
+    "Canonical baseline green at the pushed head",
+    "Full suite green at the pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Subtracting created water from the residual to certify physical conservation",
+    "Emitting water a scope does not hold and repairing the storage with a clamp",
+    "Relabelling an arbitrary dropped delivery as valid process loss",
+    "Increasing any percentage tolerance instead of accounting a modelled loss",
+    "Changing frozen config/contract, topology, controls or the session/lifecycle identity",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "A fix would require a genuinely new physical assumption (report BLOCKED FOR SA before choosing it)",
+    "A fix would require changing a frozen X1 config/contract or the frozen topology",
+    "Bounding a discharge would silently change accepted process behaviour beyond the invalid state"
+  ],
+  "acceptance_criteria": [
+    {"id": "X2C03-1", "phase": "final", "description": "Created water (shortfall) stays visible as a diagnostic but is never a reconciliation term: the SA counterexample (0 initial water, 0 input, 1 m3 output) reports conserved=false / physical_valid=false, and the report clearly distinguishes physical conservation from accounting reconciliation", "rule": {"field": "x2c03.created_water", "operator": "is_true", "expected": null}},
+    {"id": "X2C03-2", "phase": "final", "description": "Every real discharge is bounded by the water actually held (+ inflow) with explicit diagnostics; no scope emits unavailable water and repairs storage with a clamp, and a dry filter driven through a forced backwash creates no water", "rule": {"field": "x2c03.bounded_discharge", "operator": "is_true", "expected": null}},
+    {"id": "X2C03-3", "phase": "final", "description": "Every accepted scenario keeps created water within the justified rounding tolerance (not merely >= 0) and reports physical_valid=true", "rule": {"field": "x2c03.rounding_tolerance", "operator": "is_true", "expected": null}},
+    {"id": "X2C03-4", "phase": "final", "description": "The LINE2 process loss equals the declared loss law plus the explicitly modelled capacity spill on every accepted window, and a negative mutation (an arbitrarily dropped delivery) is rejected by the audit", "rule": {"field": "x2c03.loss_audit", "operator": "is_true", "expected": null}},
+    {"id": "X2C03-5", "phase": "final", "description": "Evidence verdicts propagate physical-validity failures: a reconciled residual alone cannot produce PHYSICAL_ORACLES_SATISFIED or PLANT_WATER_CONSERVED_ON_WATER_ONLY", "rule": {"field": "x2c03.evidence", "operator": "is_true", "expected": null}},
+    {"id": "X2C03-6", "phase": "final", "description": "No frozen config/contract, topology, control, session/lifecycle or UI surface changed; focused regression, canonical baseline and full suite are green at the pushed head", "rule": {"field": "x2c03.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

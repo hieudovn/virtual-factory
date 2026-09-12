@@ -1,0 +1,70 @@
+{
+  "gate": "VF-SHW-X2-C03",
+  "created_water_tolerance_m3": 1e-09,
+  "counterexample": {
+    "setup": "initial water 0; external input 0; external output 1 m3 (the SA isolated harness): the clamp records 1 m3 of CREATED water",
+    "clamped_volume": 0.0,
+    "created_water_m3": 1.0,
+    "physical_residual_m3": 1.0,
+    "c02_oracle_formula": "abs(residual - created_water) <= tolerance",
+    "c02_oracle_verdict": true,
+    "c03_oracle_formula": "abs(residual) <= tolerance AND created_water <= rounding_tolerance",
+    "c03_oracle_verdict": false,
+    "live_model_check": {
+      "residual_m3": 0.0,
+      "created_water_within_rounding": false,
+      "physical_valid": false,
+      "conserved": false,
+      "accounting_reconciled": false
+    }
+  },
+  "dry_filter_forced_backwash": {
+    "backwash_windows": 6,
+    "wash_water_limited_windows": 2,
+    "created_water_m3": 0.0,
+    "physical_valid": true,
+    "conserved": true,
+    "bounded_outflow": "the wash discharge is limited to the water held (+ inflow)"
+  },
+  "bounded_outflow_rule": "every real discharge (transfer withdrawal, backwash wash water, sludge processing, wash return) is min(requested, held/dt + inflow); an invalid state never advances by inventing water",
+  "line2_process_loss_audit": {
+    "declared_law": "delivery = max(0, min(feed * (1 - loss_fraction), capacity))",
+    "admissible_loss": "declared_loss + capacity_spill",
+    "admissible_example": {
+      "feed_m3h": 100.0,
+      "delivered_m3h": 99.0,
+      "declared_loss_m3h": 1.0,
+      "capacity_spill_m3h": 0.0,
+      "expected_delivery_m3h": 99.0,
+      "observed_loss_m3h": 1.0,
+      "delivery_matches_declared_law": true,
+      "loss_equals_declared_plus_spill": true,
+      "valid": true
+    },
+    "negative_mutation_dropped_delivery": {
+      "feed_m3h": 100.0,
+      "delivered_m3h": 50.0,
+      "declared_loss_m3h": 1.0,
+      "capacity_spill_m3h": 0.0,
+      "expected_delivery_m3h": 99.0,
+      "observed_loss_m3h": 50.0,
+      "delivery_matches_declared_law": false,
+      "loss_equals_declared_plus_spill": false,
+      "valid": false
+    },
+    "capacity_spill_example": {
+      "feed_m3h": 100.0,
+      "delivered_m3h": 10.0,
+      "declared_loss_m3h": 1.0,
+      "capacity_spill_m3h": 89.0,
+      "expected_delivery_m3h": 10.0,
+      "observed_loss_m3h": 90.0,
+      "delivery_matches_declared_law": true,
+      "loss_equals_declared_plus_spill": true,
+      "valid": true
+    },
+    "capacity_spill_windows_in_scenario": 10,
+    "scenario_loss_audit_ok": true
+  },
+  "verdict": "INVENTED_WATER_FAILS_PHYSICAL_VALIDITY"
+}

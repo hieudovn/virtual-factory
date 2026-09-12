@@ -132,8 +132,14 @@
     "transit_inventory_m3": 5.134633333,
     "water_inside_m3": -32.257033333,
     "process_loss_m3": 0.1428,
+    "process_loss_observed_m3": 0.1428,
+    "process_loss_declared_law_plus_spill": true,
+    "process_loss_audit_failures": 0,
     "overflow_m3": 0.0,
     "shortfall_m3": 0.0,
+    "created_water_diagnostic_m3": 0.0,
+    "created_water_tolerance_m3": 1e-09,
+    "created_water_within_rounding": true,
     "information_inventory_m3": 171.9372,
     "source_availability_m3": 90.0,
     "source_availability_note": "raw-source availability NOT pumped - outside the pumped-intake control volume, never part of the water inventory",
@@ -141,6 +147,9 @@
     "closure_m3": -1e-12,
     "tolerance_m3": 2.043809e-07,
     "conserved": true,
+    "physical_valid": true,
+    "accounting_reconciled": true,
+    "accounting_note": "accounting_reconciled subtracts the created-water diagnostic and is NOT a physical-conservation claim",
     "bounded": true
   },
   "negative_values_observed": 0,
@@ -163,8 +172,8 @@
     "first_window_downstream_emission_zero": true
   },
   "determinism": {
-    "trajectory_digest": "7b2d9d4a2e74f6d87e56e141e745cd46c4bc6abe32749b864e381aaa7a78c51b",
-    "independent_build_digest": "7b2d9d4a2e74f6d87e56e141e745cd46c4bc6abe32749b864e381aaa7a78c51b"
+    "trajectory_digest": "2ed71ab6c1a1a280cfd366e3a3cbbd5d6f1850460fafe5f693d38a75edc86617",
+    "independent_build_digest": "2ed71ab6c1a1a280cfd366e3a3cbbd5d6f1850460fafe5f693d38a75edc86617"
   },
   "verdict": "PHYSICAL_ORACLES_SATISFIED"
 }

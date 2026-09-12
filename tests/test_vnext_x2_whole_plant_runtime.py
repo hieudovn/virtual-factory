@@ -48,12 +48,15 @@ from virtual_factory.shwtp.session import (  # noqa: E402
 )
 from virtual_factory.shwtp.whole_plant import (  # noqa: E402
     AUTHORITY_LABELS,
+    CREATED_WATER_TOLERANCE_M3,
     SCOPE_PATHS,
     SHWTP_WHOLE_PLANT_DEFAULT_RUN_ID,
     SHWTP_WHOLE_PLANT_DEFAULT_STEP_S,
+    FilterParticipant,
     WholePlantScenario,
     WholePlantX2Error,
     WholePlantX2Runtime,
+    audit_line2_process_loss,
     authority_labels,
     build_shwtp_whole_plant,
     build_shwtp_whole_plant_workspace,
@@ -997,6 +1000,8 @@ class TestPlantWaterLedger:
         assert water["tolerance_m3"] <= 1e-6
         assert abs(water["residual_m3"]) <= water["tolerance_m3"]
         assert water["conserved"] is True
+        assert water["physical_valid"] is True
+        assert water["created_water_within_rounding"] is True
         # the ledger closes to float rounding, NOT to a percentage allowance
         assert abs(water["residual_m3"]) <= 1e-9
 
@@ -1020,6 +1025,7 @@ class TestPlantWaterLedger:
             (1, WholePlantScenario()),  # startup
             (30, WholePlantScenario(raw_flow_sp_m3h=0.0)),  # stopped / zero inflow
             (30, WholePlantScenario(t106_dp_initial_kpa=78.0)),  # backwash + recovery
+            (12, WholePlantScenario(t106_initial_volume_m3=0.0, t106_dp_initial_kpa=85.0)),  # dry filter backwash
             (30, WholePlantScenario(line2_split_fraction=0.5)),  # LINE2 active
             (40, WholePlantScenario(t108_initial_volume_m3=91.0, t108_transfer_rated_flow_m3h=10.0)),
             (30, WholePlantScenario(t106_capacity_m3=10.0, t106_initial_volume_m3=9.0)),  # overflow
@@ -1046,9 +1052,11 @@ class TestPlantWaterLedger:
             assert abs(water["residual_m3"]) <= water["tolerance_m3"], (index, water)
         assert worst <= 1e-6, (scenario.name, worst)
         water = model.balance_report()["plant_water"]
-        # every modelled loss is an EXPLICIT term, never a silent clamp
+        # every modelled loss is an EXPLICIT term, never a silent clamp, and no
+        # water may be artifically CREATED beyond float rounding (C03-3)
         assert water["overflow_m3"] >= 0.0
-        assert water["shortfall_m3"] >= 0.0
+        assert water["shortfall_m3"] <= CREATED_WATER_TOLERANCE_M3
+        assert water["created_water_within_rounding"] is True
         assert water["information_inventory_m3"] >= 0.0
         total = (
             water["water_inside_m3"]
@@ -1056,7 +1064,6 @@ class TestPlantWaterLedger:
             + water["plant_out_m3"]
             + water["process_loss_m3"]
             + water["overflow_m3"]
-            - water["shortfall_m3"]
         )
         assert total == pytest.approx(water["residual_m3"], abs=1e-9)
 
@@ -1168,6 +1175,239 @@ class TestLevelInhibitRouting:
             if "volume_m3" in values:
                 assert participant._volume_in_m3 >= 0.0
                 assert participant._overflow_m3 >= 0.0
-                assert participant._shortfall_m3 < 1e-6, (scope_id, participant._shortfall_m3)
+                assert participant._shortfall_m3 < CREATED_WATER_TOLERANCE_M3, (
+                    scope_id,
+                    participant._shortfall_m3,
+                )
                 monitored += 1
         assert monitored >= 5
+
+
+# ── VF-SHW-X2-C03 ────────────────────────────────────────────────────────
+#
+# C03-1/2/3  artificially CREATED water must fail physical conservation (it is a
+#            diagnostic, never a compensation term) and real outflows are bounded
+#            by the water actually available;
+# C03-4      a LINE2 loss is the declared law plus the modelled capacity spill,
+#            never an arbitrary dropped delivery relabelled as process loss.
+
+class TestPhysicalValidity:
+    """C03-1/2/3: physical conservation is not accounting reconciliation."""
+
+    def test_invented_water_is_never_certified_as_conserved(self):
+        """The SA counterexample: 0 initial water, 0 input, 1 m3 output."""
+        model = build_shwtp_whole_plant()
+        t106 = _t106(model)
+        t106._volume_m3 = 0.0
+        t106._initial_volume_m3 = 0.0
+        t106._volume_in_m3 = 0.0
+        t106._volume_out_m3 = 0.0
+        t106._shortfall_m3 = 0.0
+        t106._overflow_m3 = 0.0
+        # an (invalid) discharge of 1 m3 from a scope holding nothing
+        assert t106._bound_volume(-1.0, 10.0) == 0.0
+        assert t106._shortfall_m3 == pytest.approx(1.0)
+        water = model.balance_report()["plant_water"]
+        # the created amount stays VISIBLE as a diagnostic ...
+        assert water["created_water_diagnostic_m3"] == pytest.approx(1.0)
+        assert water["shortfall_m3"] == pytest.approx(1.0)
+        # ... and it can no longer certify conservation
+        assert water["created_water_within_rounding"] is False
+        assert water["conserved"] is False
+        assert water["physical_valid"] is False
+        assert water["bounded"] is False
+        # no compensation term was applied to the residual
+        assert water["residual_m3"] == pytest.approx(0.0)
+        assert "NOT a physical-conservation claim" in water["accounting_note"]
+
+    def test_accepted_scenarios_keep_created_water_within_rounding(self):
+        scenarios = [
+            WholePlantScenario(),
+            WholePlantScenario(raw_flow_sp_m3h=0.0),
+            WholePlantScenario(t106_dp_initial_kpa=78.0),
+            WholePlantScenario(t106_initial_volume_m3=0.0, t106_dp_initial_kpa=85.0),
+            WholePlantScenario(t108_initial_volume_m3=0.0, t108_transfer_rated_flow_m3h=10.0),
+            WholePlantScenario(line2_capacity_m3h=1.0),
+            WholePlantScenario(t106_capacity_m3=10.0, t106_initial_volume_m3=9.0),
+        ]
+        for scenario in scenarios:
+            model = build_shwtp_whole_plant(scenario=scenario)
+            for index in range(1, 15):
+                model.run_window(f"window-{index}")
+            water = model.balance_report()["plant_water"]
+            assert water["shortfall_m3"] <= CREATED_WATER_TOLERANCE_M3, scenario
+            assert water["created_water_within_rounding"] is True, scenario
+            assert water["conserved"] is True, scenario
+            assert water["physical_valid"] is True, scenario
+            assert water["process_loss_audit_failures"] == 0, scenario
+
+    def test_dry_filter_forced_backwash_cannot_invent_water(self):
+        """A real zero/near-empty filter driven through a forced backwash."""
+        model = build_shwtp_whole_plant(
+            scenario=WholePlantScenario(t106_initial_volume_m3=0.0, t106_dp_initial_kpa=85.0)
+        )
+        t106 = _t106(model)
+        delivered_previous = 0.0
+        saw_backwash = False
+        for index in range(1, 12):
+            volume_before = t106._volume_m3
+            model.run_window(f"window-{index}")
+            values = t106.monitor_values()
+            if values["backwash_step"] in ("BACKWASH", "SETTLE"):
+                saw_backwash = True
+                # the discharge can never exceed what the filter held (+ inflow)
+                assert values["wash_out_m3h"] * DT_H <= (
+                    volume_before + delivered_previous * DT_H + 1e-12
+                )
+            assert t106._volume_m3 >= 0.0
+            assert t106._shortfall_m3 <= CREATED_WATER_TOLERANCE_M3
+            delivered_previous = _flow_of(model, "vf-shw-edge-t105-t106")
+        assert saw_backwash, "the forced backwash never ran on the dry filter"
+        assert "wash_water_limited_by_available_volume" in t106.open_alarms
+        water = model.balance_report()["plant_water"]
+        assert water["shortfall_m3"] <= CREATED_WATER_TOLERANCE_M3
+        assert water["conserved"] is True
+        assert water["physical_valid"] is True
+
+    def test_accounting_reconciliation_never_certifies_physical_conservation(self, monkeypatch):
+        """A deliberate pre-C03 mutation: an unbounded discharge repaired by a clamp."""
+        model = build_shwtp_whole_plant(
+            scenario=WholePlantScenario(t106_initial_volume_m3=0.0, t106_dp_initial_kpa=85.0)
+        )
+        # restore the PRE-C03 behaviour (an unbounded wash discharge)
+        monkeypatch.setattr(
+            FilterParticipant, "_available_outflow_rate", lambda self, dt_s, inflow_m3h=0.0: 1e9
+        )
+        for index in range(1, 12):
+            model.run_window(f"window-{index}")
+        water = model.balance_report()["plant_water"]
+        assert water["shortfall_m3"] > CREATED_WATER_TOLERANCE_M3, "the mutation created no water"
+        assert water["created_water_within_rounding"] is False
+        assert water["conserved"] is False
+        assert water["physical_valid"] is False
+        # the two claims are clearly separated: accounting may reconcile while the
+        # physical claim FAILS (this is exactly why it must not certify PASS)
+        assert water["accounting_reconciled"] is True
+
+    def test_withdrawals_are_bounded_by_available_water(self):
+        """No storage scope may discharge more water than it holds (+ inflow)."""
+        from virtual_factory.shwtp.whole_plant import scope_path
+
+        scenarios = [
+            WholePlantScenario(t108_initial_volume_m3=0.0),
+            WholePlantScenario(line1_demand_m3h=200.0, network_demand_m3h=200.0),
+            WholePlantScenario(raw_flow_sp_m3h=0.0),
+        ]
+        discharge_keys = (
+            "withdrawal_m3h",
+            "processed_m3h",
+            "return_m3h",
+            "wash_out_m3h",
+            "sludge_out_m3h",
+            "drain_m3h",
+        )
+        for scenario in scenarios:
+            model = build_shwtp_whole_plant(scenario=scenario)
+            delivered_previous: dict[str, float] = {}
+            for index in range(1, 20):
+                before = {
+                    scope_id: participant._volume_m3
+                    for scope_id, participant in model.participants.items()
+                    if participant.storage
+                }
+                model.run_window(f"window-{index}")
+                for scope_id, participant in model.participants.items():
+                    if not participant.storage:
+                        continue
+                    values = participant.monitor_values()
+                    discharge = sum(values.get(key, 0.0) for key in discharge_keys)
+                    # the step-time inflow is what was delivered to this scope last window
+                    budget = before[scope_id] + delivered_previous.get(scope_id, 0.0) * DT_H
+                    assert discharge * DT_H <= budget + 1e-9, (scope_id, index, discharge, budget)
+                    assert participant._volume_m3 >= 0.0
+                delivered_previous = {}
+                for row in model.transfer_records():
+                    if row["transfer_kind"] != "physical_water":
+                        continue
+                    target = row["target_scope"]
+                    key = next(
+                        (scope_id for scope_id in model.participants if scope_path(scope_id).as_string() == target),
+                        None,
+                    )
+                    if key is None:
+                        continue
+                    delivered_previous[key] = delivered_previous.get(key, 0.0) + float(
+                        row["payload"].get("flow_m3h", 0.0)
+                    )
+            water = model.balance_report()["plant_water"]
+            assert water["shortfall_m3"] <= CREATED_WATER_TOLERANCE_M3, scenario
+            assert water["conserved"] is True, scenario
+
+
+class TestProcessLossAudit:
+    """C03-4: a LINE2 loss is the declared law + the modelled capacity spill."""
+
+    def test_declared_loss_law_holds_on_every_window(self, plant):
+        loss_fraction = plant.scenario.line2_loss_fraction
+        checked = 0
+        for row in plant.monitor_rows():
+            if row["scope_id"] != "vf-shw-node-line2-aggregate":
+                continue
+            values = row["values"]
+            assert values["process_loss_audit_ok"] is True
+            assert values["declared_loss_m3h"] == pytest.approx(
+                values["step_feed_m3h"] * loss_fraction, abs=1e-9
+            )
+            assert values["observed_loss_m3h"] == pytest.approx(
+                values["declared_loss_m3h"] + values["capacity_spill_m3h"], abs=1e-9
+            )
+            checked += 1
+        assert checked == 1
+        water = plant.balance_report()["plant_water"]
+        assert water["process_loss_declared_law_plus_spill"] is True
+        assert water["process_loss_m3"] == pytest.approx(water["process_loss_observed_m3"], abs=1e-9)
+
+    def test_capacity_spill_is_attributed_not_relabelled(self):
+        model = build_shwtp_whole_plant(
+            scenario=WholePlantScenario(line2_capacity_m3h=1.0, line2_split_fraction=0.5)
+        )
+        l2 = model.participants["vf-shw-node-line2-aggregate"]
+        spill_windows = 0
+        for index in range(1, 12):
+            model.run_window(f"window-{index}")
+            values = l2.monitor_values()
+            if values["capacity_spill_m3h"] > 0.0:
+                spill_windows += 1
+                assert values["delivery_m3h"] == pytest.approx(1.0, abs=1e-9)
+                assert values["observed_loss_m3h"] == pytest.approx(
+                    values["declared_loss_m3h"] + values["capacity_spill_m3h"], abs=1e-9
+                )
+                assert values["process_loss_audit_ok"] is True
+        assert spill_windows > 0, "the LINE2 capacity never bound"
+        assert "line2_capacity_exceeded" in l2.open_alarms
+        water = model.balance_report()["plant_water"]
+        assert water["process_loss_declared_law_plus_spill"] is True
+        assert water["conserved"] is True
+
+    def test_negative_mutation_a_dropped_delivery_is_not_valid_process_loss(self):
+        # an admissible loss: 1 % declared + no spill
+        valid = audit_line2_process_loss(
+            feed_m3h=100.0, delivered_m3h=99.0, loss_fraction=0.01, capacity_m3h=1000.0
+        )
+        assert valid["valid"] is True
+        assert valid["declared_loss_m3h"] == pytest.approx(1.0)
+        assert valid["observed_loss_m3h"] == pytest.approx(1.0)
+        # an arbitrary dropped delivery must NOT be relabelled as valid process loss
+        dropped = audit_line2_process_loss(
+            feed_m3h=100.0, delivered_m3h=50.0, loss_fraction=0.01, capacity_m3h=1000.0
+        )
+        assert dropped["valid"] is False
+        assert dropped["delivery_matches_declared_law"] is False
+        assert dropped["loss_equals_declared_plus_spill"] is False
+        # a modelled capacity spill IS admissible and is attributed separately
+        spilled = audit_line2_process_loss(
+            feed_m3h=100.0, delivered_m3h=10.0, loss_fraction=0.01, capacity_m3h=10.0
+        )
+        assert spilled["valid"] is True
+        assert spilled["capacity_spill_m3h"] == pytest.approx(89.0)
+        assert spilled["observed_loss_m3h"] == pytest.approx(90.0)
