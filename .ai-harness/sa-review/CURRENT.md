@@ -15,7 +15,7 @@ started.
 
 Base (technical branch point): 4fc81e72780fe14ba5532407fdc8113b44385617
 Branch: feature/vf-vnext-r2v
-Head: (final commit on this branch)
+Head: 12697dd9462e68e85761bee9fe25bfb68d18ce64
 Harness preflight: PASSED (branch + clean tree + expected_base_sha == origin/main)
 
 Validated (verdict ASSY_RICH_SIMULATION_VALIDATED):

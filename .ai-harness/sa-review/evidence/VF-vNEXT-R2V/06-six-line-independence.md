@@ -1,4 +1,4 @@
-Validation head: (final commit on this branch)
+Validation head: 12697dd9462e68e85761bee9fe25bfb68d18ce64
 Base (technical branch point): `4fc81e72780fe14ba5532407fdc8113b44385617`
 Branch: `feature/vf-vnext-r2v`
 Verdict: PASS

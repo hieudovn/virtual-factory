@@ -7,7 +7,7 @@ Issue: https://github.com/hieudovn/virtual-factory/issues/82
 - Branch: `feature/vf-vnext-r2v`
 - Base (technical branch point / validated source): `4fc81e72780fe14ba5532407fdc8113b44385617`
 - Contract commit: `db55c36` (`.ai-harness/tasks/VF-vNEXT-R2V.json`)
-- Validation head: (final commit on this branch)
+- Validation head: 12697dd9462e68e85761bee9fe25bfb68d18ce64
 - Authority refs: R0 (Issue #78, CLOSED/frozen) + R2 (Issue #80, accepted at 4fc81e72780fe14ba5532407fdc8113b44385617)
 
 ## 1. What was validated
