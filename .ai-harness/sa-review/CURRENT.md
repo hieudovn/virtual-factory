@@ -109,5 +109,7 @@ VF-vNEXT-UX01 - ASSY Structural Context Drawer & Sidebar Cleanup (Issue #87):
   STRUCTURE_DRAWER_WIRED_TO_CANONICAL_CONTEXT, 03-selection-non-mutation.json
   SELECTION_IS_PRESENTATION_ONLY, 04-browser-sanity.md + 5 screenshots).
 - Browser: all 8 required items observed; 0 console errors; 0 BLOCKER/MAJOR/MINOR.
-- Full suite: 2669 passed (base 2663). Baseline: recorded in the UX01 status pin below.
+- Full suite: 2669 passed (base 2663). R5-C01 baseline carry-over unchanged.
+- Implementation head: bf827d6
+- Canonical baseline at bf827d6: overall PASS, failed_groups [], 43/43 groups (incl. r5_single_system)
 - Verdict: VF-vNEXT-UX01 - READY FOR SA REVIEW; UX verdict ASSY_STRUCTURE_UX_CONSISTENT
