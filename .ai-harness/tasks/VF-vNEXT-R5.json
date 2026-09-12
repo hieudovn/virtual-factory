@@ -1,0 +1,91 @@
+{
+  "task_id": "VF-vNEXT-R5",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "blocked_for_sa",
+  "gate_type": "IMPLEMENTATION gate — Single Simulation System Consolidation + Shared VF Shell. Gate verdict reached in this execution: BLOCKED FOR SA (audit-level blocker on one competing authority).",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/84",
+  "architecture_authority_ref": "Issue #84 (SA task contract, authoritative) + Issue #78 (R0 CLOSED/frozen) + Issue #80 (R2) + Issue #82 (R2V) + Issue #81 (R3 + R3-C01) + Issue #83 (R4, ASSY_CANONICAL_PARITY_COMPLETE)",
+  "objective": "Finish the architectural recovery so the repository reflects ONE Virtual Factory simulation system (one active RuntimeSession per user-selectable Workspace; domain engines subordinate; no hidden legacy authority; no legacy runtime fallback behind any active product route), audit and fix the TIPA scenario attempt-binding seam, implement the bounded shared-shell convergence authorized by the R4 UI audit (I1/I3/I4/I5/I6), and preserve all R1-R4 ASSY parity. Report READY only if every competing authority can be de-authorized without losing proven capability and without product-surface expansion.",
+  "explicit_non_objectives": [
+    "No SH-WTP functional/whole-plant expansion (I2 dedicated SH-WTP process page NOT authorized)",
+    "No gateway/OPC/MQTT/Kafka production work",
+    "No PIM/MES repo change",
+    "No generic G4/coupling redesign",
+    "No broad G22 run-identity redesign",
+    "No ASSY visual simplification or AssyLineRuntime rewrite",
+    "No deletion of proven domain capability without replacement/equivalence proof",
+    "No rebase onto stale main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-vnext-r5",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "989deac2fe189e7e66c89d2c33218004e2b7d08c",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-R5.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R5.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R5/",
+    ".ai-harness/regression/vnext_baseline_manifest.json"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "tests/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R5/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R5/01-architecture-inventory.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R5/02-product-path-construction-proof.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R5/03-blocker-analysis.json",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R5.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement a partial consolidation that leaves an unreviewable half-migrated product path",
+    "Register a new user-selectable workspace or otherwise change the product surface without SA authorization",
+    "Delete or deprecate a proven capability that has no canonical equivalent",
+    "Expose executable source paths in this gate (no src/ or tests/ changes were made)",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "A competing runtime/engine authority must remain an active product authority",
+    "De-authorizing a competing authority would lose a proven capability that has no canonical equivalent",
+    "Consolidating the competing authority requires a product-surface decision (new/registered workspace, selector change) beyond a bounded R5 correction",
+    "Scenario attempt binding requires broad generic lifecycle redesign",
+    "Consolidation would require rewriting AssyLineRuntime or SH-WTP domain semantics",
+    "SH-WTP expansion would become necessary to complete consolidation"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "R5-A",
+      "phase": "final",
+      "description": "Repo-native inventory of every runtime/session/engine/controller construction site with a four-way classification (execution kernel/domain library; test/reference only; deprecate/remove active product reachability; delete only if proven redundant)",
+      "rule": {"field": "r5.architecture_inventory", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R5-B",
+      "phase": "final",
+      "description": "Product-path construction proof: canonical routes create exactly one session per workspace with one TIPA federation and six runtimes, and the non-canonical authorities that remain reachable are identified with hard evidence",
+      "rule": {"field": "r5.product_path_proof", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R5-C",
+      "phase": "final",
+      "description": "Blocker analysis: the remaining competing authority cannot be de-authorized in R5 without capability loss or an unauthorized product-surface change, with concrete options for the SA",
+      "rule": {"field": "r5.blocker_analysis", "operator": "is_true", "expected": null}
+    }
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

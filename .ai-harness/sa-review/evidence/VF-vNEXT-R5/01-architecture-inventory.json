@@ -1,0 +1,875 @@
+{
+  "production_construction_sites": [
+    {
+      "file": "src/virtual_factory/assembly/assy_mes_bridge.py",
+      "line": 1481,
+      "symbol": "AssyDemoComposition",
+      "kind": "LEGACY_DEMO_COMPOSITION",
+      "code": "composition = AssyDemoComposition(",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/assembly/demo_assy_mes/__main__.py",
+      "line": 36,
+      "symbol": "DemoRunner",
+      "kind": "LEGACY_DEMO_RUNNER",
+      "code": "runner = DemoRunner(pipeline=pipeline)",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "reachability": "CLI_REFERENCE_ONLY"
+    },
+    {
+      "file": "src/virtual_factory/assembly/demo_controller.py",
+      "line": 86,
+      "symbol": "AssyDemoComposition",
+      "kind": "LEGACY_DEMO_COMPOSITION",
+      "code": "self._composition = AssyDemoComposition(",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/core/engine_factory.py",
+      "line": 83,
+      "symbol": "SimulationEngine",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "return SimulationEngine(config, dt_s=dt_s, scenario=scenario)",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/discrete/run_service.py",
+      "line": 107,
+      "symbol": "SimulationEngine",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "engine = DiscreteSimulationEngine(",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/discrete/run_service.py",
+      "line": 107,
+      "symbol": "DiscreteSimulationEngine",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "engine = DiscreteSimulationEngine(",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 233,
+      "symbol": "RunLifecycleService",
+      "kind": "RUN_LIFECYCLE_ADMISSION_SEAM",
+      "code": "service = RunLifecycleService(workspace, bridge_factory)",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 241,
+      "symbol": "RuntimeSession",
+      "kind": "CANONICAL_SESSION_AUTHORITY",
+      "code": "return RuntimeSession(",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 284,
+      "symbol": "RunLifecycleService",
+      "kind": "RUN_LIFECYCLE_ADMISSION_SEAM",
+      "code": "service = RunLifecycleService(workspace, bridge_factory)",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/runcontrol/session.py",
+      "line": 285,
+      "symbol": "RuntimeSession",
+      "kind": "CANONICAL_SESSION_AUTHORITY",
+      "code": "return RuntimeSession(",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/shwtp/session.py",
+      "line": 38,
+      "symbol": "RunLifecycleService",
+      "kind": "RUN_LIFECYCLE_ADMISSION_SEAM",
+      "code": "service = RunLifecycleService(workspace, bridge_factory)",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/shwtp/session.py",
+      "line": 39,
+      "symbol": "RuntimeSession",
+      "kind": "CANONICAL_SESSION_AUTHORITY",
+      "code": "return RuntimeSession(service, workspace_id, scenario_id)",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 29,
+      "symbol": "RuntimeService",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "service = RuntimeService(",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 245,
+      "symbol": "DemoController",
+      "kind": "LEGACY_DEMO_CONTROLLER",
+      "code": "_demo_controller[\"instance\"] = DemoController(DemoRunner())",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 245,
+      "symbol": "DemoRunner",
+      "kind": "LEGACY_DEMO_RUNNER",
+      "code": "_demo_controller[\"instance\"] = DemoController(DemoRunner())",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 813,
+      "symbol": "RunLifecycleService",
+      "kind": "RUN_LIFECYCLE_ADMISSION_SEAM",
+      "code": "_run_control[workspace] = RunLifecycleService(ws, bridge_factory)",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 829,
+      "symbol": "RuntimeService",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "attempt_runtime = RuntimeService(",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 846,
+      "symbol": "RunLifecycleService",
+      "kind": "RUN_LIFECYCLE_ADMISSION_SEAM",
+      "code": "_run_control[workspace] = RunLifecycleService(ws, bridge_factory)",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/workspace_monitor.py",
+      "line": 71,
+      "symbol": "build_tipa_session",
+      "kind": "CANONICAL_SESSION_FACTORY",
+      "code": "return lambda: build_tipa_session(config_path, \"tipa-default\")",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/ui/workspace_monitor.py",
+      "line": 82,
+      "symbol": "build_shwtp_session",
+      "kind": "CANONICAL_SESSION_FACTORY",
+      "code": "return lambda: build_shwtp_session()",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/ui/workspace_monitor.py",
+      "line": 174,
+      "symbol": "build_tipa_scenario_run_factory",
+      "kind": "CANONICAL_SESSION_FACTORY",
+      "code": "self._tipa_run_factory = build_tipa_scenario_run_factory(",
+      "classification": "CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP",
+      "reachability": "IN_PROCESS_LIBRARY"
+    }
+  ],
+  "production_site_count": 21,
+  "active_product_path_sites": [
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 29,
+      "symbol": "RuntimeService",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "service = RuntimeService(",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 245,
+      "symbol": "DemoController",
+      "kind": "LEGACY_DEMO_CONTROLLER",
+      "code": "_demo_controller[\"instance\"] = DemoController(DemoRunner())",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 245,
+      "symbol": "DemoRunner",
+      "kind": "LEGACY_DEMO_RUNNER",
+      "code": "_demo_controller[\"instance\"] = DemoController(DemoRunner())",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 813,
+      "symbol": "RunLifecycleService",
+      "kind": "RUN_LIFECYCLE_ADMISSION_SEAM",
+      "code": "_run_control[workspace] = RunLifecycleService(ws, bridge_factory)",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 829,
+      "symbol": "RuntimeService",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "attempt_runtime = RuntimeService(",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    },
+    {
+      "file": "src/virtual_factory/ui/api.py",
+      "line": 846,
+      "symbol": "RunLifecycleService",
+      "kind": "RUN_LIFECYCLE_ADMISSION_SEAM",
+      "code": "_run_control[workspace] = RunLifecycleService(ws, bridge_factory)",
+      "classification": "DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY",
+      "reachability": "ACTIVE_HTTP_PRODUCT_ROUTE"
+    }
+  ],
+  "kernel_sites": [
+    {
+      "file": "src/virtual_factory/core/engine_factory.py",
+      "line": 83,
+      "symbol": "SimulationEngine",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "return SimulationEngine(config, dt_s=dt_s, scenario=scenario)",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/discrete/run_service.py",
+      "line": 107,
+      "symbol": "SimulationEngine",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "engine = DiscreteSimulationEngine(",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/discrete/run_service.py",
+      "line": 107,
+      "symbol": "DiscreteSimulationEngine",
+      "kind": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "code": "engine = DiscreteSimulationEngine(",
+      "classification": "KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    }
+  ],
+  "reference_only_sites": [
+    {
+      "file": "src/virtual_factory/assembly/assy_mes_bridge.py",
+      "line": 1481,
+      "symbol": "AssyDemoComposition",
+      "kind": "LEGACY_DEMO_COMPOSITION",
+      "code": "composition = AssyDemoComposition(",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    },
+    {
+      "file": "src/virtual_factory/assembly/demo_assy_mes/__main__.py",
+      "line": 36,
+      "symbol": "DemoRunner",
+      "kind": "LEGACY_DEMO_RUNNER",
+      "code": "runner = DemoRunner(pipeline=pipeline)",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "reachability": "CLI_REFERENCE_ONLY"
+    },
+    {
+      "file": "src/virtual_factory/assembly/demo_controller.py",
+      "line": 86,
+      "symbol": "AssyDemoComposition",
+      "kind": "LEGACY_DEMO_COMPOSITION",
+      "code": "self._composition = AssyDemoComposition(",
+      "classification": "KEEP_AS_TEST_REFERENCE_ONLY",
+      "reachability": "IN_PROCESS_LIBRARY"
+    }
+  ],
+  "test_reference_construction_counts": {
+    "AssyDemoComposition": 75,
+    "DemoController": 49,
+    "DemoRunner": 2,
+    "DiscreteSimulationEngine": 189,
+    "RunLifecycleService": 11,
+    "RuntimeService": 5,
+    "RuntimeSession": 2,
+    "SimulationEngine": 223,
+    "build_shwtp_session": 18,
+    "build_tipa_session": 15
+  },
+  "test_site_count": 589,
+  "note": "tests/** construction sites are TEST/REFERENCE ONLY and are not product authority; they are recorded as counts only.",
+  "route_authority_map": [
+    {
+      "method": "GET",
+      "path": "/",
+      "line": 90,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "line": 94,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "line": 98,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/telemetry/latest",
+      "line": 102,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/telemetry/history",
+      "line": 110,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/alarms",
+      "line": 114,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/step",
+      "line": 120,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/run-steps",
+      "line": 124,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/start",
+      "line": 128,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/stop",
+      "line": 133,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/reset",
+      "line": 138,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "WEBSOCKET",
+      "path": "/ws/telemetry",
+      "line": 147,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plant-graph",
+      "line": 162,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/model-types",
+      "line": 166,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/fault",
+      "line": 176,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/opcua/status",
+      "line": 182,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/generate",
+      "line": 187,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/parse",
+      "line": 200,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/config/current",
+      "line": 215,
+      "authorities": [
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/config/switch",
+      "line": 220,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER",
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/reset",
+      "line": 253,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/start",
+      "line": 257,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/pause",
+      "line": 261,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/step",
+      "line": 265,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/jam",
+      "line": 269,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/demo-assy-mes/recover",
+      "line": 273,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/demo-assy-mes/snapshot",
+      "line": 277,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/demo-assy-mes/messages",
+      "line": 281,
+      "authorities": [
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER",
+        "CANONICAL_ASSY_EXPERIENCE",
+        "CANONICAL_WORKSPACE_MONITOR"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo",
+      "line": 377,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/static/{filename}",
+      "line": 381,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/reset",
+      "line": 385,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/step",
+      "line": 414,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/observations",
+      "line": 423,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/snapshot",
+      "line": 435,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/jam",
+      "line": 447,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/recover",
+      "line": 460,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/run-to-terminal",
+      "line": 473,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/oee",
+      "line": 485,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/scenario",
+      "line": 493,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/mes-messages",
+      "line": 515,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/mes-trace",
+      "line": 523,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/version",
+      "line": 531,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/operation-command",
+      "line": 557,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/station-action",
+      "line": 584,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/run-mode",
+      "line": 610,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/assy-demo/select",
+      "line": 630,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/overview",
+      "line": 651,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/sub-lines",
+      "line": 659,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/sub-line/{sub_line_id}",
+      "line": 664,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/assy-demo/identity",
+      "line": 672,
+      "authorities": [
+        "CANONICAL_ASSY_EXPERIENCE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/ui/hierarchy",
+      "line": 705,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/ui/context",
+      "line": 722,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/ui/context/continuous",
+      "line": 756,
+      "authorities": [
+        "LEGACY_G7_RUN_CONTROL_SERVICE",
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/vnext/runs/current",
+      "line": 891,
+      "authorities": [
+        "LEGACY_G7_RUN_CONTROL_SERVICE",
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/vnext/runs/{run_id}",
+      "line": 903,
+      "authorities": [
+        "LEGACY_G7_RUN_CONTROL_SERVICE",
+        "ROOT_DASHBOARD_RUNTIME_SERVICE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/start",
+      "line": 959,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/step",
+      "line": 963,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/pause",
+      "line": 967,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/resume",
+      "line": 971,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/stop",
+      "line": 975,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/reset",
+      "line": 979,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/restart",
+      "line": 983,
+      "authorities": [
+        "STATIC_PAGE_OR_NO_STATE"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/runs/{run_id}/replay",
+      "line": 987,
+      "authorities": [
+        "CANONICAL_WORKSPACE_MONITOR"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/vnext/workspaces",
+      "line": 1033,
+      "authorities": [
+        "CANONICAL_WORKSPACE_MONITOR"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/vnext/workspaces/{workspace_id}/view",
+      "line": 1039,
+      "authorities": [
+        "CANONICAL_WORKSPACE_MONITOR"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/workspaces/select",
+      "line": 1050,
+      "authorities": [
+        "CANONICAL_WORKSPACE_MONITOR"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/vnext/workspaces/{workspace_id}/control",
+      "line": 1066,
+      "authorities": [
+        "CANONICAL_WORKSPACE_MONITOR"
+      ]
+    }
+  ],
+  "registry": {
+    "registry_type": "WorkspaceRuntimeRegistry",
+    "registered_workspaces": [
+      "TIPA",
+      "shwtp"
+    ],
+    "continuous_workspace_registered": false,
+    "canonical_workspace_count": 2
+  }
+}

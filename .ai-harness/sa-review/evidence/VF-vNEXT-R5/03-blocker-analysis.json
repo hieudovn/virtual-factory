@@ -1,0 +1,185 @@
+{
+  "verdict": "BLOCKED_FOR_SA",
+  "gate": "VF-vNEXT-R5",
+  "blocking_authorities": [
+    {
+      "id": "R5-BLOCK-1",
+      "authority": "ROOT_DASHBOARD_RUNTIME_SERVICE",
+      "construction_site": "src/virtual_factory/ui/api.py:29 (eager, at create_app time)",
+      "active_product_routes": [
+        "/",
+        "/health",
+        "/status",
+        "/telemetry/latest",
+        "/telemetry/history",
+        "/alarms",
+        "/step",
+        "/run-steps",
+        "/start",
+        "/stop",
+        "/reset",
+        "/ws/telemetry",
+        "/api/plant-graph",
+        "/api/model-types",
+        "/api/fault",
+        "/api/opcua/status",
+        "/api/ai/generate",
+        "/api/ai/parse",
+        "/api/config/current",
+        "/api/config/switch",
+        "/api/ui/hierarchy",
+        "/api/ui/context",
+        "/api/ui/context/continuous"
+      ],
+      "why_not_deauthorizable_in_r5": "The continuous-process product capability behind these routes (plant config load/switch, continuous run/step/reset, telemetry history, alarms, websocket streaming, MQTT/OPC-UA/AI tooling, ui context) has NO canonical equivalent: the canonical platform registry exposes only shwtp and TIPA, and create_app/WorkspaceMonitor have no continuous workspace, run id authority or scenario/model inputs on the canonical seam.",
+      "measured_runtime_services_constructed_on_root_dashboard_routes": 0,
+      "measured_eager_runtime_services_at_create_app": 1,
+      "authority_shape": "App-level singleton created eagerly by create_app() before any request, then reused by every dashboard route - so the dashboard owns simulation state independently of any RuntimeSession/run id authority."
+    },
+    {
+      "id": "R5-BLOCK-2",
+      "authority": "LEGACY_G7_RUN_CONTROL_SERVICE",
+      "construction_site": "src/virtual_factory/ui/api.py:813 (TIPA) and api.py:846 (continuous)",
+      "active_product_routes": [
+        "/vnext/runs",
+        "/vnext/runs/current",
+        "/vnext/runs/{run_id}",
+        "/vnext/runs/{run_id}/start|step|pause|resume|stop|reset|restart|replay"
+      ],
+      "why_not_deauthorizable_in_r5": "This family serves TWO workspaces from one API shape. TIPA here is a DUPLICATE lifecycle authority over an UNPREPARED federation (`TipaAssyFederation.initialize()` with no run profile, i.e. empty-clock semantics) that contradicts the canonical prepared TIPA path, and continuous here is a second RuntimeService authority per attempt. De-authorizing the TIPA discriminator is safe and loses nothing proven; de-authorizing the continuous discriminator removes the only run/replay orchestration surface for the continuous product, which is not available canonically. Splitting one public API family per workspace is a product-API decision for the SA.",
+      "measured_lifecycle_services_constructed_on_g7_routes": 2,
+      "sub_finding": "Legacy TIPA path calls federation.initialize() WITHOUT a run profile, so it can never be equivalent to the canonical prepared TIPA authority."
+    }
+  ],
+  "product_surface_decision_required": {
+    "question": "Must the continuous-process product (MVP-01 plant dashboard) be consolidated onto the canonical Workspace/RuntimeSession path, and if so how?",
+    "options": [
+      {
+        "id": "OPTION-1-REGISTER_CONTINUOUS_WORKSPACE",
+        "description": "Register a third canonical workspace ('continuous') in build_platform_registry with a canonical session factory (RunLifecycleService + ContinuousExecutionBridge over a per-attempt RuntimeService, reusing the accepted C03 pattern), rewire the root dashboard routes to that canonical session, and retire the G7 continuous discriminator.",
+        "capability_lost": "none (same engine, same product features)",
+        "why_SA_decision_required": "It changes the product surface: the workspace registry becomes 3 workspaces, the shell selector and /vnext/workspaces expose a new user-selectable workspace, create_app/WorkspaceMonitor must carry the continuous config/dt/mqtt/opcua inputs, and accepted G23/G24/G25 + root-dashboard expectations must be migrated. That is a milestone boundary decision, not a bounded correction.",
+        "recommended": true
+      },
+      {
+        "id": "OPTION-2-DEPRECATE_DASHBOARD_STATE_ROUTES",
+        "description": "Fail-closed the continuous state-creating routes (/step, /run-steps, /start, /stop, /reset) and keep only read-only surfaces.",
+        "capability_lost": "The entire MVP-01 continuous-process interactive product surface (run/step/reset + live telemetry/alarms/websocket) - a proven capability with no canonical replacement.",
+        "recommended": false
+      },
+      {
+        "id": "OPTION-3-GOVERNANCE_SCOPE_AMENDMENT",
+        "description": "The SA scopes the R5 firewall to workspace-platform product paths (/workspaces, /vnext/workspaces, /assy-demo, outputs/registry) and explicitly classifies the continuous dashboard + legacy G7 run-control as 'non-workspace legacy product surfaces, frozen, no new authority'.",
+        "capability_lost": "none, but the 'no competing authority behind any active product route' requirement must be amended explicitly.",
+        "recommended": false
+      }
+    ]
+  },
+  "unblocked_subset_ready_to_execute": [
+    "R5a-1 Attempt-binding fix: make RunLifecycleService bridge construction context-aware (bridge factory receives the attempt's RunContextV2) and resolve the TIPA profile from the attempt's pinned scenario_id instead of the mutable holder.",
+    "R5a-2 De-authorize /demo-assy-mes/* legacy DemoController routes (fail closed; module retained as reference/test).",
+    "R5a-3 De-authorize the duplicate TIPA discriminator of /vnext/runs* (fail closed with canonical redirect guidance); keep continuous pending OPTION decision.",
+    "R5a-4 Shell convergence I1 (scenario/new-run control on the canonical seam), I3 (responsive scope table), I4 (unavailable-action convention), I5 (shared glossary), I6 (remove unused G7 include on the canonical ASSY page).",
+    "R5a-5 Single-system firewall test module (static import scan + dynamic construction counters per active route family).",
+    "R5a-6 Evidence/regression: focused R5 + R1-R4 + full baseline + full suite."
+  ],
+  "measured_evidence": {
+    "total_non_static_routes_analyzed": 67,
+    "route_count_by_authority": {
+      "CANONICAL_ASSY_EXPERIENCE": 20,
+      "ROOT_DASHBOARD_RUNTIME_SERVICE": 19,
+      "STATIC_PAGE_OR_NO_STATE": 16,
+      "LEGACY_DEMO_ASSY_MES_CONTROLLER": 9,
+      "CANONICAL_WORKSPACE_MONITOR": 6,
+      "LEGACY_G7_RUN_CONTROL_SERVICE": 3
+    },
+    "canonical_sessions": 2,
+    "canonical_tipa_sessions": 1,
+    "canonical_shwtp_sessions": 1,
+    "canonical_lifecycle_services": 2,
+    "canonical_tipa_federations": 1,
+    "canonical_legacy_demo_controllers": 0,
+    "canonical_runtime_services": 0,
+    "root_dashboard_runtime_services_eager_at_create_app": 1,
+    "root_dashboard_runtime_services_constructed_by_dashboard_routes": 0,
+    "legacy_demo_controllers": 1,
+    "legacy_g7_lifecycle_services": 2
+  },
+  "canonical_path_verdict": {
+    "verdict": "CANONICAL_PRODUCT_PATH_IS_SINGLE_AUTHORITY",
+    "rule": "driving every canonical route family (/workspaces, /vnext/workspaces*, /assy-demo/*) constructs exactly one RuntimeSession per workspace (TIPA + shwtp), one TIPA federation, and zero legacy DemoController / standalone RuntimeService",
+    "measured": {
+      "total_non_static_routes_analyzed": 67,
+      "route_count_by_authority": {
+        "CANONICAL_ASSY_EXPERIENCE": 20,
+        "ROOT_DASHBOARD_RUNTIME_SERVICE": 19,
+        "STATIC_PAGE_OR_NO_STATE": 16,
+        "LEGACY_DEMO_ASSY_MES_CONTROLLER": 9,
+        "CANONICAL_WORKSPACE_MONITOR": 6,
+        "LEGACY_G7_RUN_CONTROL_SERVICE": 3
+      },
+      "canonical_sessions": 2,
+      "canonical_tipa_sessions": 1,
+      "canonical_shwtp_sessions": 1,
+      "canonical_lifecycle_services": 2,
+      "canonical_tipa_federations": 1,
+      "canonical_legacy_demo_controllers": 0,
+      "canonical_runtime_services": 0,
+      "root_dashboard_runtime_services_eager_at_create_app": 1,
+      "root_dashboard_runtime_services_constructed_by_dashboard_routes": 0,
+      "legacy_demo_controllers": 1,
+      "legacy_g7_lifecycle_services": 2
+    }
+  },
+  "attempt_binding_finding": {
+    "scenes": [
+      {
+        "scene": "A(tipa-default) created+advanced+stopped -> B(tipa-failed-final) created -> B.advance() builds B's bridge",
+        "profile_a": "tipa-assy-happy_path",
+        "profile_b": "tipa-assy-failed_final",
+        "federation_initializations_for_B": [
+          {
+            "run_profile": "tipa-assy-failed_final",
+            "profile_bound_to_attempt": true
+          }
+        ],
+        "profile_ids_used_for_B": [
+          "tipa-assy-failed_final"
+        ],
+        "error": null,
+        "attempt_bound": true
+      },
+      {
+        "scene": "A(tipa-default) created+advanced+stopped -> B(tipa-failed-final) created+advanced+stopped -> A.replay()+advance() (fresh attempt re-pinning A's scenario profile)",
+        "profile_a": "tipa-assy-happy_path",
+        "profile_b": "tipa-assy-failed_final",
+        "session_a_profile_after_replay": "tipa-assy-happy_path",
+        "federation_initializations_for_A_replay": [
+          {
+            "run_profile": "tipa-assy-failed_final",
+            "profile_bound_to_attempt": true
+          }
+        ],
+        "profile_ids_used_for_A_replay": [
+          "tipa-assy-failed_final"
+        ],
+        "error": null,
+        "attempt_bound": false
+      }
+    ],
+    "violations": 1,
+    "scenes_with_bridge_build_observed": 2,
+    "verdict": "ATTEMPT_BINDING_UNBOUND",
+    "ordering_invariant_measured": "The shared RunLifecycleService admits at most ONE nonterminal run (RunLifecycleError: 'cannot create a new run while active run ... is nonterminal'), so the most recently created session is always the only nonterminal one and the mutable holder happens to agree with it in the ordinary select->run flow. The binding is therefore order-dependent, not attempt-bound.",
+    "seam": "src/virtual_factory/runcontrol/session.py::build_tipa_scenario_run_factory: factory() sets holder['profile'] globally, bridge_factory() (zero-arg) reads holder.get('profile'); RunLifecycleService._bridge_for() calls the zero-arg factory, so any bridge build that is NOT the last-created session's first start (e.g. replay/new_attempt of an older run, or any interleaved flow) uses the last selected profile instead of that attempt's pinned context.scenario_id."
+  },
+  "stop_conditions_triggered": [
+    "De-authorizing a competing authority would lose a proven capability that has no canonical equivalent (continuous-process dashboard authority).",
+    "Consolidating the competing authority requires a product-surface decision (registering a new user-selectable workspace) beyond a bounded R5 correction."
+  ],
+  "authority_statements": {
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED",
+    "whole_plant_runtime": "NOT_AUTHORIZED / NOT_IMPLEMENTED"
+  }
+}

@@ -1,0 +1,242 @@
+{
+  "instrumented_types": [
+    "type",
+    "type",
+    "type",
+    "type",
+    "type",
+    "type",
+    "type"
+  ],
+  "app_construction": {
+    "counts": {
+      "RuntimeService": 1
+    },
+    "construction_sites": {
+      "RuntimeService": {
+        "api.py:29": 1
+      }
+    }
+  },
+  "phases": {
+    "canonical_product_path": {
+      "counts": {
+        "RunLifecycleService": 2,
+        "RuntimeSession": 2,
+        "RuntimeSession[TIPA]": 1,
+        "RuntimeSession[shwtp]": 1,
+        "TipaAssyFederation": 1
+      },
+      "construction_sites": {
+        "RunLifecycleService": {
+          "generate_evidence.py:185": 2
+        },
+        "RuntimeSession": {
+          "generate_evidence.py:185": 2
+        },
+        "TipaAssyFederation": {
+          "generate_evidence.py:185": 1
+        }
+      },
+      "requests": [
+        {
+          "request": "GET /workspaces",
+          "status": 200
+        },
+        {
+          "request": "GET /vnext/workspaces",
+          "status": 200
+        },
+        {
+          "request": "GET /vnext/workspaces/TIPA/view",
+          "status": 200
+        },
+        {
+          "request": "GET /vnext/workspaces/shwtp/view",
+          "status": 200
+        },
+        {
+          "request": "POST /assy-demo/reset",
+          "status": 200
+        },
+        {
+          "request": "POST /assy-demo/step",
+          "status": 200
+        },
+        {
+          "request": "POST /assy-demo/step",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/overview",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/sub-lines",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/identity",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/oee",
+          "status": 200
+        },
+        {
+          "request": "POST /assy-demo/snapshot",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/mes-messages",
+          "status": 200
+        }
+      ]
+    },
+    "root_dashboard_authority": {
+      "counts": {},
+      "construction_sites": {},
+      "requests": [
+        {
+          "request": "GET /",
+          "status": 200
+        },
+        {
+          "request": "GET /status",
+          "status": 200
+        },
+        {
+          "request": "POST /step",
+          "status": 200
+        },
+        {
+          "request": "GET /telemetry/latest",
+          "status": 200
+        },
+        {
+          "request": "GET /alarms",
+          "status": 200
+        },
+        {
+          "request": "GET /api/ui/context",
+          "status": 200
+        }
+      ]
+    },
+    "legacy_demo_assy_mes_authority": {
+      "counts": {
+        "DemoController": 1,
+        "DemoRunner": 1
+      },
+      "construction_sites": {
+        "DemoController": {
+          "generate_evidence.py:185": 1
+        },
+        "DemoRunner": {
+          "generate_evidence.py:185": 1
+        }
+      },
+      "requests": [
+        {
+          "request": "GET /demo-assy-mes",
+          "status": 200
+        },
+        {
+          "request": "POST /demo-assy-mes/reset",
+          "status": 200
+        },
+        {
+          "request": "POST /demo-assy-mes/step",
+          "status": 200
+        },
+        {
+          "request": "GET /demo-assy-mes/snapshot",
+          "status": 200
+        },
+        {
+          "request": "GET /demo-assy-mes/messages",
+          "status": 200
+        }
+      ]
+    },
+    "legacy_g7_run_control_authority": {
+      "counts": {
+        "RunLifecycleService": 2
+      },
+      "construction_sites": {
+        "RunLifecycleService": {
+          "generate_evidence.py:185": 2
+        }
+      },
+      "requests": [
+        {
+          "request": "GET /vnext/runs/current?workspace=TIPA",
+          "status": 404
+        },
+        {
+          "request": "POST /vnext/runs?workspace=TIPA",
+          "status": 400
+        },
+        {
+          "request": "GET /vnext/runs/current?workspace=continuous",
+          "status": 404
+        },
+        {
+          "request": "POST /vnext/runs?workspace=continuous",
+          "status": 400
+        }
+      ]
+    }
+  },
+  "attempt_binding": {
+    "scenes": [
+      {
+        "scene": "A(tipa-default) created+advanced+stopped -> B(tipa-failed-final) created -> B.advance() builds B's bridge",
+        "profile_a": "tipa-assy-happy_path",
+        "profile_b": "tipa-assy-failed_final",
+        "federation_initializations_for_B": [
+          {
+            "run_profile": "tipa-assy-failed_final",
+            "profile_bound_to_attempt": true
+          }
+        ],
+        "profile_ids_used_for_B": [
+          "tipa-assy-failed_final"
+        ],
+        "error": null,
+        "attempt_bound": true
+      },
+      {
+        "scene": "A(tipa-default) created+advanced+stopped -> B(tipa-failed-final) created+advanced+stopped -> A.replay()+advance() (fresh attempt re-pinning A's scenario profile)",
+        "profile_a": "tipa-assy-happy_path",
+        "profile_b": "tipa-assy-failed_final",
+        "session_a_profile_after_replay": "tipa-assy-happy_path",
+        "federation_initializations_for_A_replay": [
+          {
+            "run_profile": "tipa-assy-failed_final",
+            "profile_bound_to_attempt": true
+          }
+        ],
+        "profile_ids_used_for_A_replay": [
+          "tipa-assy-failed_final"
+        ],
+        "error": null,
+        "attempt_bound": false
+      }
+    ],
+    "violations": 1,
+    "scenes_with_bridge_build_observed": 2,
+    "verdict": "ATTEMPT_BINDING_UNBOUND",
+    "ordering_invariant_measured": "The shared RunLifecycleService admits at most ONE nonterminal run (RunLifecycleError: 'cannot create a new run while active run ... is nonterminal'), so the most recently created session is always the only nonterminal one and the mutable holder happens to agree with it in the ordinary select->run flow. The binding is therefore order-dependent, not attempt-bound.",
+    "seam": "src/virtual_factory/runcontrol/session.py::build_tipa_scenario_run_factory: factory() sets holder['profile'] globally, bridge_factory() (zero-arg) reads holder.get('profile'); RunLifecycleService._bridge_for() calls the zero-arg factory, so any bridge build that is NOT the last-created session's first start (e.g. replay/new_attempt of an older run, or any interleaved flow) uses the last selected profile instead of that attempt's pinned context.scenario_id."
+  },
+  "registry": {
+    "registry_type": "WorkspaceRuntimeRegistry",
+    "registered_workspaces": [
+      "TIPA",
+      "shwtp"
+    ],
+    "continuous_workspace_registered": false,
+    "canonical_workspace_count": 2
+  }
+}
