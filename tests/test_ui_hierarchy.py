@@ -233,6 +233,107 @@ class TestAssySelectionNoRuntimeReconstruction:
 
 
 # ═══════════════════════════════════════════════════════════
+# 7b. VF-vNEXT-UX01 — Structure / Model drawer (sidebar cleanup)
+# ═══════════════════════════════════════════════════════════
+
+class TestAssyStructureDrawerUX01:
+    """The structural context is a drawer opened from the top bar, not a pinned
+    sidebar block, and it only changes the presentation/monitoring context."""
+
+    DRAWER_ID = 'id="vf-structure-drawer"'
+
+    def _html(self) -> str:
+        return _client().get("/assy-demo").text
+
+    def _sidebar(self, html: str) -> str:
+        start = html.index('<nav id="vf-sidebar">')
+        return html[start:html.index("</nav>", start)]
+
+    def test_structural_context_is_not_pinned_in_the_sidebar(self):
+        html = self._html()
+        sidebar = self._sidebar(html)
+        assert "vf-hierarchy-section" not in sidebar
+        assert "Structural context" not in sidebar
+        # the accepted sidebar blocks stay (Line Overview / Legend / Actions)
+        for label in ("Line Overview", "Legend", "Reset Line", "Clear Alarms", "Export"):
+            assert label in sidebar, label
+
+    def test_structure_drawer_is_closed_by_default_and_topbar_triggered(self):
+        html = self._html()
+        assert self.DRAWER_ID in html
+        assert 'id="vf-structure-btn"' in html
+        assert 'aria-expanded="false"' in html
+        assert 'aria-hidden="true"' in html
+        drawer = html[html.index(self.DRAWER_ID):]
+        assert 'class="vf-drawer"' in drawer          # no `open` class at load
+        assert "vf-drawer.open" not in drawer
+        # the hierarchy mounts live inside the drawer
+        assert 'id="vf-hierarchy-section"' in drawer
+        assert 'id="vf-hierarchy-nav"' in drawer
+        assert 'id="vf-context-crumbs"' in drawer
+
+    def test_drawer_reuses_the_visual_language_and_secondary_metadata(self):
+        css = (UI_STATIC / "assy_demo.css").read_text(encoding="utf-8")
+        assert ".vf-drawer {" in css
+        assert ".vf-drawer.open { display: flex; }" in css
+        for token in ("var(--vf-bg-popup)", "var(--vf-radius-lg)", "var(--vf-shadow-lg)"):
+            assert token in css, token
+        html = self._html()
+        for meta in ("WORKSPACE", "CONTAINER", "EXECUTABLE"):
+            assert f'<span class="vf-drawer-meta-k">{meta}</span>' in html, meta
+        assert "structural metadata only" in html
+
+    def test_drawer_toggle_is_presentation_only(self):
+        js = (UI_STATIC / "assy_context.js").read_text(encoding="utf-8")
+        assert "function wireDrawer()" in js
+        assert "uiToggleStructure" in js
+        assert "vf-structure-drawer" in js
+        # still the ONE authoritative select seam, still fail-closed, no mutation calls
+        assert js.count("fetch('/assy-demo/select'") == 1
+        assert "if (!res.ok)" in js
+        for forbidden in ("/assy-demo/step", "/assy-demo/reset", "/assy-demo/scenario", "reset("):
+            assert forbidden not in js, forbidden
+
+    def test_drawer_hierarchy_minimum_is_the_canonical_context(self):
+        ctx = _client().get("/api/ui/context").json()
+        assert ctx["workspace"]["path"] == "TIPA"
+        assert [scope["scope_id"] for scope in ctx["hierarchy"]] == ["ASSY"]
+        leaves = [child["path"] for child in ctx["hierarchy"][0]["children"]]
+        assert leaves == [f"TIPA/ASSY/{sid}" for sid in SUB_LINE_IDS]
+
+    def test_drawer_selection_keeps_run_session_and_time(self):
+        c = _client()
+
+        def _rows():
+            payload = c.get("/assy-demo/sub-lines").json()
+            return payload["sub_lines"] if isinstance(payload, dict) else payload
+
+        before_identity = c.get("/assy-demo/identity").json()
+        before_rows = _rows()
+
+        ok = c.post("/assy-demo/select", json={"sub_line_id": "ASSY-SL03"})
+        assert ok.status_code == 200
+
+        after_identity = c.get("/assy-demo/identity").json()
+        after_rows = _rows()
+
+        for key in ("run_id", "workspace_id", "scenario_id", "profile_id"):
+            if key in before_identity:
+                assert before_identity[key] == after_identity.get(key), key
+
+        def _normalized(rows):
+            # every projected per-sub-line field must be identical across the
+            # selection (time / dwell / WIP state); only selection-scoped keys may
+            # differ, and the drawer must not change any of them either.
+            return [
+                {k: v for k, v in row.items() if "select" not in k.lower()}
+                for row in rows
+            ]
+
+        assert _normalized(before_rows) == _normalized(after_rows)
+
+
+# ═══════════════════════════════════════════════════════════
 # 8. Continuous root-only context + retained behavior
 # ═══════════════════════════════════════════════════════════
 

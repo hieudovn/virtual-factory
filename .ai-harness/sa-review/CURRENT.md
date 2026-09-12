@@ -89,3 +89,25 @@ R5-C01 correction (SA comment 5644417111) - root canonical entrypoint:
 - Implementation head: 6b2bc48
 - Canonical baseline at 6b2bc48: overall PASS, failed_groups [], 43/43 groups (incl. r5_single_system)
 - Verdict: VF-vNEXT-R5-C01 - READY FOR SA REVIEW
+
+---
+
+VF-vNEXT-UX01 - ASSY Structural Context Drawer & Sidebar Cleanup (Issue #87):
+- Previous head / required base: 4105e3a
+- Branch: feature/vf-vnext-ux01; harness preflight: PASSED
+- Delivered: the fixed Structural Context block is gone from the default left sidebar (sidebar keeps
+  Line Overview / Legend / Actions); the hierarchy now lives in an on-demand Structure / Model drawer
+  opened from the top bar (closed by default, Esc/close button, same visual language); minimum
+  hierarchy TIPA -> ASSY Line -> ASSY-SL01..ASSY-SL06; WORKSPACE / CONTAINER / EXECUTABLE are secondary
+  badges only.
+- Selection is presentation-only: the drawer reuses the ONE existing POST /assy-demo/select seam
+  (fail-closed, single call site); measured same run_id, identical step, byte-identical sub-line
+  projection, no new session/federation/runtime. Frame A (6 cards) and Frame B (rich 2D) unchanged.
+- No runtime/lifecycle/route authority change; no Python source change; no SH-WTP work.
+- Evidence: evidence/VF-vNEXT-UX01/ (generate_evidence.py + 01-sidebar-cleanup.json
+  STRUCTURAL_CONTEXT_REMOVED_FROM_SIDEBAR, 02-drawer-and-hierarchy.json
+  STRUCTURE_DRAWER_WIRED_TO_CANONICAL_CONTEXT, 03-selection-non-mutation.json
+  SELECTION_IS_PRESENTATION_ONLY, 04-browser-sanity.md + 5 screenshots).
+- Browser: all 8 required items observed; 0 console errors; 0 BLOCKER/MAJOR/MINOR.
+- Full suite: 2669 passed (base 2663). Baseline: recorded in the UX01 status pin below.
+- Verdict: VF-vNEXT-UX01 - READY FOR SA REVIEW; UX verdict ASSY_STRUCTURE_UX_CONSISTENT

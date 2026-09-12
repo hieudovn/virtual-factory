@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TIPA ASSY Demo — M6-S04B</title>
-<link rel="stylesheet" href="/static/assy_demo.css">
+<link rel="stylesheet" href="/static/assy_demo.css?v=ux01">
 </head>
 <body>
 <div id="app">
@@ -41,11 +41,51 @@
     </div>
 
     <div class="vf-tb-right">
+      <!-- VF-vNEXT-UX01: Structure / Model drawer trigger (structural context moved
+           out of the pinned sidebar; presentation/metadata only). -->
+      <button class="vf-tb-icon-btn" id="vf-structure-btn" type="button"
+              title="Structure / Model" aria-controls="vf-structure-drawer"
+              aria-expanded="false" onclick="uiToggleStructure()">▤</button>
       <button class="vf-tb-icon-btn" title="Overview" onclick="closeFrameB();ctrl.refreshOverview();">⊞</button>
       <button class="vf-tb-icon-btn" title="Settings">⚙</button>
       <button class="vf-tb-icon-btn" title="Help">?</button>
     </div>
   </header>
+
+  <!-- ═════════════════════════════════════
+       STRUCTURE / MODEL DRAWER (VF-vNEXT-UX01)
+       The scope hierarchy is no longer pinned in the left sidebar: it is opened
+       on demand from the top bar. Selecting a sub-line only changes the
+       presentation/monitoring context (same run id, no step, no reset, no new
+       session/federation/runtime). WORKSPACE / CONTAINER / EXECUTABLE are
+       secondary structural metadata, never the primary content.
+       ═════════════════════════════════════ -->
+  <aside id="vf-structure-drawer" class="vf-drawer" aria-hidden="true"
+         aria-label="Structure / Model">
+    <div class="vf-drawer-header">
+      <div>
+        <div class="vf-drawer-title">Structure / Model</div>
+        <div class="vf-drawer-sub">TIPA → ASSY Line → sub-lines</div>
+      </div>
+      <button type="button" id="vf-structure-close" class="vf-drawer-close"
+              title="Close">✕</button>
+    </div>
+    <div class="vf-drawer-body">
+      <div id="vf-hierarchy-section" class="vf-hierarchy-section">
+        <div id="vf-context-crumbs" class="vf-context-crumbs"></div>
+        <div id="vf-hierarchy-nav" class="vf-hierarchy-nav"></div>
+        <div class="vf-context-note">Selecting a sub-line sets the monitoring context
+          only: same run id, no step, no reset, no new runtime.</div>
+      </div>
+      <div class="vf-drawer-meta">
+        <span class="vf-drawer-meta-k">WORKSPACE</span>
+        <span class="vf-drawer-meta-k">CONTAINER</span>
+        <span class="vf-drawer-meta-k">EXECUTABLE</span>
+        <span class="vf-drawer-meta-note">structural metadata only — selecting a
+          container never implies execution</span>
+      </div>
+    </div>
+  </aside>
 
   <!-- ═══════════════════════════════════════
        MAIN CONTENT: Sidebar + Canvas
@@ -81,13 +121,8 @@
         <button class="vf-btn" onclick="console.log('Export')">⬇ Export</button>
       </div>
 
-      <!-- G6 additive: shared structural hierarchy context (read-only) -->
-      <div id="vf-hierarchy-section" class="vf-hierarchy-section" style="display:none;">
-        <div class="vf-context-title">Structural context</div>
-        <div id="vf-context-crumbs" class="vf-context-crumbs"></div>
-        <div id="vf-hierarchy-nav" class="vf-hierarchy-nav"></div>
-        <div class="vf-context-note">Selecting a sub-line sets monitoring/context; it never reconstructs a runtime.</div>
-      </div>
+      <!-- VF-vNEXT-UX01: the structural context is NOT pinned here any more.
+           The hierarchy lives in #vf-structure-drawer, opened from the top bar. -->
 
       <!-- G7 additive: run-control context (read-only + minimal controls) -->
       <div id="vf-run-control-section" class="vf-run-control-section" style="display:none;">
@@ -393,6 +428,6 @@
 
 <script src="/static/assy_demo.js"></script>
 <script src="/static/hierarchy.js"></script>
-<script src="/static/assy_context.js"></script>
+<script src="/static/assy_context.js?v=ux01"></script>
 </body>
 </html>

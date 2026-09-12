@@ -23,7 +23,42 @@
 (function () {
   'use strict';
 
+  // ── VF-vNEXT-UX01: Structure / Model drawer ───────────────
+  // The drawer is a PRESENTATION surface: opening/closing it and selecting a
+  // sub-line issue no step/reset/scenario call and create no session,
+  // federation or runtime. Selecting a sub-line reuses the existing
+  // authoritative /assy-demo/select seam (below), which only sets the
+  // monitoring/context selection (same run id, no time advance).
+  function wireDrawer() {
+    const drawer = document.getElementById('vf-structure-drawer');
+    const trigger = document.getElementById('vf-structure-btn');
+    const closeBtn = document.getElementById('vf-structure-close');
+    if (!drawer || !trigger) return; // no drawer on this page
+
+    function setOpen(open) {
+      const isOpen = !!open;
+      drawer.classList.toggle('open', isOpen);
+      drawer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    // Inline top-bar convention on this page: globals called from onclick.
+    window.uiToggleStructure = function () {
+      setOpen(!drawer.classList.contains('open'));
+    };
+    window.uiCloseStructure = function () { setOpen(false); };
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () { setOpen(false); });
+    }
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') setOpen(false);
+    });
+    setOpen(false); // closed by default: nothing structural is pinned on screen
+  }
+
   function boot() {
+    wireDrawer();
+
     const navMount = document.getElementById('vf-hierarchy-nav');
     const crumbMount = document.getElementById('vf-context-crumbs');
     const section = document.getElementById('vf-hierarchy-section');

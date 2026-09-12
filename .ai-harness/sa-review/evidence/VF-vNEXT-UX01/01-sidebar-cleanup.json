@@ -1,0 +1,14 @@
+{
+  "sidebar_contains_hierarchy_section": false,
+  "sidebar_contains_structural_context_text": false,
+  "sidebar_contains_hierarchy_mount_ids": false,
+  "sidebar_retained_blocks": [
+    "Line Overview",
+    "Legend",
+    "Reset Line",
+    "Clear Alarms",
+    "Export"
+  ],
+  "dead_run_control_markup_untouched": true,
+  "verdict": "STRUCTURAL_CONTEXT_REMOVED_FROM_SIDEBAR"
+}
