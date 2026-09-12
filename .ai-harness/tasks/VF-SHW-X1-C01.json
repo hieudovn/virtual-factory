@@ -1,0 +1,101 @@
+{
+  "task_id": "VF-SHW-X1-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "correction",
+  "gate_type": "CORRECTION gate (Issue #91 SA comment 5644974241): fix two contract-level inconsistencies inside the frozen VF-SHW-X1 contract layer. No runtime, no PID implementation, no UI, no PIM change, no X2 start.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/91",
+  "sa_decision_ref": "Issue #91 comment 5644974241 (Finding A: X2 process contract depends on a C2 loop; Finding B: T100 low/high interlock direction) - previous head ec57d7d",
+  "architecture_authority_ref": "VF-SHW-X1 report/evidence (SHW_WHOLE_PLANT_CONTRACTS_FROZEN) + X0 freeze; contract layer only, the canonical architecture is unchanged",
+  "objective": "Make the X2 admission self-sufficient at contract level: (1) no process input of an X2-admitted scope may require a C2 controller output - every controller-sourced X2 input must be produced by an X2-active C1 control or carry an explicit declared X2 fallback/default, while the deferred PI/PID loops stay C2 + inactive + later-gate and are annotated as such; (2) the T100 (and T108) level-action contracts must name the correct upstream/downstream actuator ownership and direction (low/low-low protects downstream withdrawal and keeps upstream refill permitted; high/high-high inhibits upstream intake and keeps downstream withdrawal permitted); (3) focused fail-closed validation plus evidence for both rules.",
+  "explicit_non_objectives": [
+    "No runtime implementation and no whole-plant runtime start",
+    "No PI/PID dynamics, no controller evaluation, no X2 activation of any C2 loop",
+    "No UI work",
+    "No PIM write or PIM semantic change",
+    "No new PIM canonical id",
+    "No new control added to the X2 active C1 set",
+    "No ASSY change and no change to other SH-WTP modules",
+    "No X2 implementation start",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-shw-x1-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "ec57d7dc87fe3f407076d8829093f920d5f7d879",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X1-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "configs/vnext/shwtp/shwtp_process_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_control_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_x2_admission_manifest_v1.json",
+    "src/virtual_factory/shwtp/contracts.py",
+    "tests/test_vnext_x1_whole_plant_contracts.py"
+  ],
+  "forbidden_paths": [
+    "configs/vnext/shwtp/shwtp_whole_plant_graph_v1.json",
+    "configs/vnext/shwtp/shwtp_readiness_scope.json",
+    "configs/vnext/shwtp/shwtp_expansion_readiness.json",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/expansion.py",
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/logical_runtime.py",
+    "src/virtual_factory/shwtp/{federation,projection,evaluation,overlay,bridge,session}.py",
+    "src/virtual_factory/{runcontrol,composition,discrete,core,assembly,ui}/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/",
+    "configs/plants/",
+    "configs/model_types/",
+    "configs/workspaces/"
+  ],
+  "forbidden_paths_note": "tests/ is intentionally NOT listed as a whole-directory forbidden entry (the required corrections are covered by the existing X1 test module, so test changes must be confined to tests/test_vnext_x1_whole_plant_contracts.py through the allowlist); no other test module may change. The frozen whole-plant graph is NOT edited: the correction only changes process-input ownership/provenance, control-level actuator ownership/direction and the admission classification of the affected scope.",
+  "required_deliverables": [
+    "configs/vnext/shwtp/shwtp_process_contracts_v1.json (X2 producer resolution for every controller-sourced input; explicit raw-intake X2 speed command; explicit DIST-P108 X2 fallback default)",
+    "configs/vnext/shwtp/shwtp_control_contracts_v1.json (X2 actuator commands on the owning C1 controls; corrected T100/T108 actuator ownership + level_action_policy; deferred C2 annotations)",
+    "configs/vnext/shwtp/shwtp_x2_admission_manifest_v1.json (X1-C01 invariants + DIST-P108 control-level correction)",
+    "src/virtual_factory/shwtp/contracts.py (fail-closed X2 input-resolution validator + level-action direction validator + read-only audit helpers)",
+    "tests/test_vnext_x1_whole_plant_contracts.py (focused X1-C01 tests + negative fixtures)",
+    ".ai-harness/sa-review/evidence/VF-SHW-X1/05-x2-io-resolution.json",
+    ".ai-harness/sa-review/evidence/VF-SHW-X1/01..04 regenerated",
+    ".ai-harness/sa-review/reports/VF-SHW-X1-C01.md",
+    ".ai-harness/sa-review/CURRENT.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_x1_whole_plant_contracts.py"
+  ],
+  "required_smoke_checks": [
+    "Canonical baseline green at the pushed head",
+    "Full suite green at the pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Activating or evaluating any C2 loop in X2",
+    "Adding a new X2-active control",
+    "Changing the frozen whole-plant graph or its signature",
+    "Runtime, session, bridge, engine or controller construction",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "A correction would require changing the frozen whole-plant graph topology or adding a PIM semantic identity",
+    "The X2-safe behaviour cannot be declared without inventing a materially different product behaviour",
+    "A correction would require activating a C2 loop in X2",
+    "A required actuator owner does not exist in the frozen contracts"
+  ],
+  "acceptance_criteria": [
+    {"id": "X1C01-1", "phase": "final", "description": "Every process input of an X2-admitted scope resolves to an X2 producer (process node, scenario boundary, X2-active C1 control or explicit declared X2 fallback/default) and no admitted scope requires a C2 controller output", "rule": {"field": "x1c01.io_resolution", "operator": "is_true", "expected": null}},
+    {"id": "X1C01-2", "phase": "final", "description": "RAW-INTAKE has an explicit X2-safe C1 actuator behaviour (C1 duty/standby owns RUN/STOP + a deterministic declared synthetic/reference fixed or rule-based speed/flow command) and the C2 raw-flow-pi stays inactive and only modulates in X4", "rule": {"field": "x1c01.raw_intake", "operator": "is_true", "expected": null}},
+    {"id": "X1C01-3", "phase": "final", "description": "T100 low/low-low and high/high-high actions identify the correct actuator ownership/direction (low protects downstream withdrawal, upstream refill permitted; high inhibits upstream intake, downstream withdrawal permitted) and no site-truth claim is made", "rule": {"field": "x1c01.t100_direction", "operator": "is_true", "expected": null}},
+    {"id": "X1C01-4", "phase": "final", "description": "The same defect class is closed everywhere it occurs in the admitted set (T106, T108, DIST-P108), the deferred C2 loops stay deferred, V1-V12 evidence is green, the 44/44 baseline is green and the full suite is green", "rule": {"field": "x1c01.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

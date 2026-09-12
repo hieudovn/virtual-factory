@@ -1,0 +1,95 @@
+{
+  "five_continued": true,
+  "frozen_2d_projection": {
+    "occupied": {
+      "AP01": "SSO2-0001",
+      "PRE-ASSY": "SSO2-0002"
+    },
+    "simulation_time_s": 120.0
+  },
+  "held_line_frozen": true,
+  "held_sub_line_ids": [
+    "ASSY-SL03"
+  ],
+  "hold_state_read_model": {
+    "held_sub_line_ids": [
+      "ASSY-SL03"
+    ],
+    "sub_lines": {
+      "ASSY-SL01": {
+        "held": false,
+        "motor_count": 2,
+        "simulation_time_s": 720.0,
+        "wip_count": 17
+      },
+      "ASSY-SL02": {
+        "held": false,
+        "motor_count": 2,
+        "simulation_time_s": 720.0,
+        "wip_count": 17
+      },
+      "ASSY-SL03": {
+        "held": true,
+        "motor_count": 0,
+        "simulation_time_s": 120.0,
+        "wip_count": 7
+      },
+      "ASSY-SL04": {
+        "held": false,
+        "motor_count": 2,
+        "simulation_time_s": 720.0,
+        "wip_count": 17
+      },
+      "ASSY-SL05": {
+        "held": false,
+        "motor_count": 2,
+        "simulation_time_s": 720.0,
+        "wip_count": 17
+      },
+      "ASSY-SL06": {
+        "held": false,
+        "motor_count": 2,
+        "simulation_time_s": 720.0,
+        "wip_count": 17
+      }
+    }
+  },
+  "rows": {
+    "ASSY-SL01": {
+      "line_state": "stopped",
+      "motors_created": 2,
+      "simulation_time_s": 720.0,
+      "wips_on_line": 7
+    },
+    "ASSY-SL02": {
+      "line_state": "stopped",
+      "motors_created": 2,
+      "simulation_time_s": 720.0,
+      "wips_on_line": 7
+    },
+    "ASSY-SL03": {
+      "line_state": "stopped",
+      "motors_created": 0,
+      "simulation_time_s": 120.0,
+      "wips_on_line": 2
+    },
+    "ASSY-SL04": {
+      "line_state": "stopped",
+      "motors_created": 2,
+      "simulation_time_s": 720.0,
+      "wips_on_line": 7
+    },
+    "ASSY-SL05": {
+      "line_state": "stopped",
+      "motors_created": 2,
+      "simulation_time_s": 720.0,
+      "wips_on_line": 7
+    },
+    "ASSY-SL06": {
+      "line_state": "stopped",
+      "motors_created": 2,
+      "simulation_time_s": 720.0,
+      "wips_on_line": 7
+    }
+  }
+}

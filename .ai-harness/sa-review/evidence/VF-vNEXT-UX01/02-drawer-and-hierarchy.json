@@ -1,0 +1,56 @@
+{
+  "trigger": {
+    "present": true,
+    "aria_expanded_false_at_load": true,
+    "handler": true
+  },
+  "drawer": {
+    "present": true,
+    "closed_by_default_markup": true,
+    "aria_hidden_true": true,
+    "close_button": true,
+    "esc_close_wired": true,
+    "mounts_inside_drawer": true
+  },
+  "visual_language": {
+    "drawer_rule": true,
+    "open_rule": true,
+    "reuses_tokens": [
+      "var(--vf-bg-popup)",
+      "var(--vf-radius-lg)",
+      "var(--vf-shadow-lg)"
+    ],
+    "scoped_hierarchy_overrides": true
+  },
+  "secondary_metadata": {
+    "kinds_as_badges": [
+      "WORKSPACE",
+      "CONTAINER",
+      "EXECUTABLE"
+    ],
+    "note_present": true
+  },
+  "minimum_hierarchy": {
+    "workspace": "TIPA",
+    "containers": [
+      "ASSY"
+    ],
+    "executable_leaves": [
+      "TIPA/ASSY/ASSY-SL01",
+      "TIPA/ASSY/ASSY-SL02",
+      "TIPA/ASSY/ASSY-SL03",
+      "TIPA/ASSY/ASSY-SL04",
+      "TIPA/ASSY/ASSY-SL05",
+      "TIPA/ASSY/ASSY-SL06"
+    ],
+    "matches_required_shape": true
+  },
+  "verdict": "STRUCTURE_DRAWER_WIRED_TO_CANONICAL_CONTEXT",
+  "browser_screenshots": [
+    "shot-01-default-sidebar-clean.png",
+    "shot-02-drawer-open-hierarchy.png",
+    "shot-03-subline-selected-from-drawer.png",
+    "shot-04-frame-b-no-regress.png",
+    "shot-05-frame-b-after-drawer-selection.png"
+  ]
+}

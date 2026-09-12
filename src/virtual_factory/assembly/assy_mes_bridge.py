@@ -35,9 +35,9 @@ WIP/terminal-quality state (never hard-coded in the projection).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 from virtual_factory.assembly.demo_composition import AssyDemoComposition
 from virtual_factory.assembly.line_runtime import (
@@ -258,6 +258,13 @@ class AssyMesBridge:
     gateways: list[ObservationGatewayProtocol]
     model_id: str = MODEL_ID
 
+    # R3 additive seam (canonical same-session output projection): when bound,
+    # emitted messages carry the canonical parent-session identity and the
+    # projection epoch.  Read-only metadata: it never changes runtime truth,
+    # the demo lifecycle derivation or delivery idempotency.  Unbound → legacy
+    # behaviour is byte-for-byte unchanged.
+    canonical: Optional[Mapping[str, Any]] = None
+
     # run tracking (sub_line_id → generation)
     _run_generation: dict[str, int] = field(default_factory=dict)
     _last_sim_time: dict[str, float] = field(default_factory=dict)
@@ -276,12 +283,31 @@ class AssyMesBridge:
     _downtime_confirmed: set[str] = field(default_factory=set)  # run_id
     _oee_emitted: set[str] = field(default_factory=set)          # run_id
 
+    # R4 canonical fault read path: when the composition exposes the canonical
+    # fault read model (``composition.faults``) this bridge only READS canonical
+    # fault truth — it never owns simulation fault state. ``_canonical_faults``
+    # is the last read model, ``_canonical_fault_emitted`` is emission
+    # bookkeeping (idempotency), and ``_canonical_downtime`` feeds OEE.
+    _canonical_faults: Optional[dict[str, dict[str, Any]]] = None
+    _canonical_fault_emitted: dict[tuple[str, str], tuple] = field(
+        default_factory=dict
+    )
+    _canonical_downtime: dict[tuple[str, str], float] = field(default_factory=dict)
+
     # ── Run identity ──
 
     def run_id_for(self, sub_line_id: str) -> str:
         """Stable run id per sub-line; generation bumps on reset."""
         gen = self._run_generation.get(sub_line_id, 1)
         return f"{sub_line_id}:R{gen}"
+
+    def projection_epoch_for(self, sub_line_id: str) -> int:
+        """Projection epoch (source generation) for a sub-line (R3).
+
+        Subordinate projection metadata scoping message identity after a reset
+        of the SAME canonical run id; never a run/lifecycle identity.
+        """
+        return self._run_generation.get(sub_line_id, 1)
 
     def reset_all(self) -> None:
         """Explicit reset: bump every sub-line generation and clear runtime
@@ -296,6 +322,8 @@ class AssyMesBridge:
         self._baseline_emitted.clear()
         self._downtime_confirmed.clear()
         self._oee_emitted.clear()
+        self._canonical_fault_emitted.clear()
+        self._canonical_downtime.clear()
 
     # ── Control surface (deterministic demo fault) ──
 
@@ -322,8 +350,15 @@ class AssyMesBridge:
 
     def emit_oee(self, sub_line_id: str, runtime: AssyLineRuntime) -> None:
         """Emit the end-of-run mes.oee_summary once per (sub-line, run)."""
-        run_id = self.run_id_for(sub_line_id)
-        oee_key = f"{run_id}"
+        # R4: prefer the canonical parent-session run id when bound, so the OEE
+        # fact identity and the canonical downtime lookup use the same key.
+        run_id = str(
+            (self.canonical or {}).get("canonical_run_id")
+            or self.run_id_for(sub_line_id)
+        )
+        # R4: with a canonical run id shared by all six sub-lines the guard must
+        # be keyed per (run, sub-line) — one OEE summary per canonical sub-line.
+        oee_key = f"{run_id}|{sub_line_id}"
         if oee_key in self._oee_emitted:
             return
         reality = self._oee_fact_reality(runtime, sub_line_id, run_id)
@@ -342,12 +377,25 @@ class AssyMesBridge:
         reset_all() produce a new run generation → new keys.
         """
         results: list[DeliveryResult] = []
+        canonical_faults = getattr(composition, "faults", None)
+        self._canonical_faults = (
+            canonical_faults if isinstance(canonical_faults, dict) else None
+        )
         for sub_line_id, ctx in composition.contexts.items():
             runtime = ctx.runtime
             run_id = self._resolve_run(sub_line_id, runtime)
+            if self._canonical_faults:
+                fault_read = self._canonical_faults.get(sub_line_id) or {}
+                downtime = float(fault_read.get("downtime_s") or 0.0)
+                if fault_read.get("raised_at_s") is not None and downtime > 0:
+                    key = (run_id, sub_line_id)
+                    self._canonical_downtime[key] = max(
+                        self._canonical_downtime.get(key, 0.0), downtime
+                    )
             self._emit_demo_lifecycle(
                 sub_line_id, runtime, run_id, results,
                 demo_step_number=composition.demo_step_number,
+                canonical_faults=self._canonical_faults,
             )
             facts = self._collect_facts(runtime, ctx, run_id)
             facts.sort(key=lambda f: (
@@ -384,6 +432,11 @@ class AssyMesBridge:
         else:
             self._last_sim_time[sub_line_id] = max(
                 sim_time, last if last is not None else sim_time)
+        canonical_run_id = (self.canonical or {}).get("canonical_run_id")
+        if canonical_run_id:
+            # R3: the canonical parent-session run id supersedes the legacy
+            # sub-line-local synthetic generation as the effective run id.
+            return str(canonical_run_id)
         return self.run_id_for(sub_line_id)
 
     # ── Operational state / exception / downtime (findings 1-3) ──
@@ -395,14 +448,21 @@ class AssyMesBridge:
         run_id: str,
         results: list[DeliveryResult],
         demo_step_number: int = 0,
+        canonical_faults: Optional[dict[str, dict[str, Any]]] = None,
     ) -> None:
-        """Emit operational run_status baseline + deterministic AP05_JAM
-        exception/downtime lifecycle.  Quality HOLD never becomes a line fault.
+        """Emit operational run_status baseline + AP05_JAM lifecycle.
 
-        The faulted sub-line is frozen (the controller excludes it from
-        stepping) and recovery is emitted only after the deterministic 120 s
-        downtime interval (>= 1 composition step since the jam).
+        R4: when ``canonical_faults`` (the canonical fault read model) is given,
+        the issue/downtime lifecycle is derived READ-ONLY from canonical truth
+        and no projection-owned fault state is used. Without it the accepted
+        legacy demo lifecycle behaviour is unchanged.
         """
+        if canonical_faults is not None:
+            self._emit_canonical_lifecycle(
+                sub_line_id, runtime, run_id, results,
+                canonical_faults.get(sub_line_id) or {},
+            )
+            return
         station_order = {pos: i for i, pos in enumerate(runtime.conveyor.positions)}
 
         # Baseline operational RUNNING once per run (all sub-lines).
@@ -501,6 +561,104 @@ class AssyMesBridge:
             self._downtime_confirmed.add(run_id)
             self._fault.pop(sub_line_id, None)
 
+    # ── R4: canonical fault read path (projection reads, never owns) ──
+
+    def _emit_canonical_lifecycle(
+        self,
+        sub_line_id: str,
+        runtime: AssyLineRuntime,
+        run_id: str,
+        results: list[DeliveryResult],
+        fault: dict[str, Any],
+    ) -> None:
+        """Emit run-status/issue/downtime facts from the CANONICAL fault truth.
+
+        The canonical execution bridge owns the fault lifecycle; this bridge only
+        reads it and keeps its own delivery bookkeeping (idempotency). No
+        projection-owned fault state is used on this path.
+        """
+        if run_id not in self._baseline_emitted:
+            self._baseline_emitted.add(run_id)
+            results.extend(self._deliver(
+                run_id, f"{sub_line_id}:operational:running:init",
+                self._run_status_reality(
+                    runtime, sub_line_id, run_id,
+                    event_id=f"{sub_line_id}:operational:running:init",
+                    line_state="running",
+                    sim_time=runtime.simulation_time_s,
+                    reason_code="",
+                    conveyor_state=runtime.conveyor.state.value)))
+
+        state = fault.get("state")
+        raised_at = fault.get("raised_at_s")
+        resolved_at = fault.get("resolved_at_s")
+        signature = (state, raised_at, resolved_at)
+        key = (run_id, sub_line_id)
+        if self._canonical_fault_emitted.get(key) == signature:
+            return  # already emitted for this canonical fault state
+        reason = str(fault.get("reason_code") or "AP05_JAM")
+        station = str(fault.get("station_id") or "AP05")
+
+        if state == "FAULT" and raised_at is not None:
+            jam_t = float(raised_at)
+            downtime_s = float(fault.get("downtime_s") or DEMO_DOWNTIME_S)
+            for event_id, line_state in (
+                (f"{sub_line_id}:operational:fault", "fault"),
+                (f"{sub_line_id}:operational:stopped", "stopped"),
+            ):
+                results.extend(self._deliver(
+                    run_id, event_id,
+                    self._run_status_reality(
+                        runtime, sub_line_id, run_id, event_id=event_id,
+                        line_state=line_state, sim_time=jam_t,
+                        reason_code=reason,
+                        conveyor_state=runtime.conveyor.state.value)))
+            results.extend(self._deliver(
+                run_id, f"exception:{sub_line_id}:{station}:raised",
+                self._issue_reality(
+                    runtime, sub_line_id, run_id,
+                    event_id=f"exception:{sub_line_id}:{station}:raised",
+                    event_type=EVENT_EXCEPTION_RAISED, station_id=station,
+                    reason_code=reason, sim_time=jam_t)))
+            results.extend(self._deliver(
+                run_id, f"downtime:{sub_line_id}:{station}:start",
+                self._downtime_reality(
+                    runtime, sub_line_id, run_id,
+                    event_id=f"downtime:{sub_line_id}:{station}:start",
+                    event_type=EVENT_DOWNTIME_START, sim_time=jam_t,
+                    downtime_start_s=jam_t, downtime_end_s=jam_t + downtime_s,
+                    downtime_s=downtime_s)))
+        elif state == "RUNNING" and resolved_at is not None:
+            resolve_t = float(resolved_at)
+            downtime_s = float(fault.get("downtime_s") or DEMO_DOWNTIME_S)
+            results.extend(self._deliver(
+                run_id, f"exception:{sub_line_id}:{station}:resolved",
+                self._issue_reality(
+                    runtime, sub_line_id, run_id,
+                    event_id=f"exception:{sub_line_id}:{station}:resolved",
+                    event_type=EVENT_EXCEPTION_RESOLVED, station_id=station,
+                    reason_code=reason, sim_time=resolve_t)))
+            results.extend(self._deliver(
+                run_id, f"{sub_line_id}:operational:running",
+                self._run_status_reality(
+                    runtime, sub_line_id, run_id,
+                    event_id=f"{sub_line_id}:operational:running",
+                    line_state="running", sim_time=resolve_t,
+                    reason_code="",
+                    conveyor_state=runtime.conveyor.state.value)))
+            results.extend(self._deliver(
+                run_id, f"downtime:{sub_line_id}:{station}:end",
+                self._downtime_reality(
+                    runtime, sub_line_id, run_id,
+                    event_id=f"downtime:{sub_line_id}:{station}:end",
+                    event_type=EVENT_DOWNTIME_END, sim_time=resolve_t,
+                    downtime_start_s=resolve_t - downtime_s,
+                    downtime_end_s=resolve_t,
+                    downtime_s=downtime_s)))
+        else:
+            return
+        self._canonical_fault_emitted[key] = signature
+
     # ── Fact collection (authoritative sources) ──
 
     def _collect_facts(
@@ -588,6 +746,51 @@ class AssyMesBridge:
 
     # ── Fact → RealityInput builders ──
 
+    def _canonical_identity(self, sub_line_id: str) -> dict[str, Any]:
+        """Canonical same-session projection identity (empty when unbound).
+
+        Carries the canonical parent-session identity (workspace / run /
+        scenario / profile) plus the projection-only ``source_run_key``
+        (legacy sub-line-local key, subordinate — never a second lifecycle
+        authority) and the ``projection_epoch`` that scopes message identity
+        after a reset of the SAME canonical run id.
+        """
+        if not self.canonical:
+            return {}
+        ident: dict[str, Any] = dict(self.canonical)
+        ident.setdefault("source_run_key", self.run_id_for(sub_line_id))
+        ident.setdefault(
+            "projection_epoch", self._run_generation.get(sub_line_id, 1)
+        )
+        workspace_id = ident.get("workspace_id")
+        if workspace_id:
+            ident["scope_path"] = f"{workspace_id}/ASSY/{sub_line_id}"
+        return ident
+
+    def _scoped_source_event_id(
+        self, source_event_id: str, reality: RealityInput,
+    ) -> str:
+        """Scope a fact id by source scope + projection epoch (canonical only).
+
+        Identity shape: ``canonical_run_id`` + source scope/sub_line_id +
+        projection epoch + ``source_event_id``.  The canonical run id is shared
+        by all six sub-lines and is preserved across a same-run reset, so both
+        the source scope and the projection epoch must participate in message
+        identity (unique per line, distinct before/after reset).  Unbound →
+        unchanged.
+        """
+        if not self.canonical:
+            return source_event_id
+        epoch = reality.context.get("projection_epoch", 1)
+        scope = (
+            reality.context.get("sub_line_id")
+            or reality.context.get("subline_id")
+            or ""
+        )
+        if scope:
+            return f"E{epoch}:{scope}:{source_event_id}"
+        return f"E{epoch}:{source_event_id}"
+
     def _base_reality(
         self,
         runtime: AssyLineRuntime,
@@ -607,10 +810,12 @@ class AssyMesBridge:
             "semantic_type": semantic_type,
             "station_id": station_id,
             "subline_id": sub_line_id,
+            "sub_line_id": sub_line_id,
             "production_line_id": "ASSY",
             "plant_id": "TIPA",
             "contract_version": CONTRACT_VERSION,
         }
+        context.update(self._canonical_identity(sub_line_id))
         if extra_context:
             context.update({k: v for k, v in extra_context.items() if v is not None})
         return RealityInput(
@@ -1077,8 +1282,11 @@ class AssyMesBridge:
         """Reconciled per sub-line/run OEE from authoritative counters.
 
         planned_s = run_s + downtime_s; actual_count = good + reject.
-        downtime_s is 120 s only if the confirmed AP05_JAM downtime occurred
-        in this run; OEE < 100 % via downtime (A<1) and/or reject (Q<1).
+        R4: downtime_s comes from the CANONICAL fault lifecycle when the
+        canonical fault read model is bound (``_canonical_downtime``); otherwise
+        the accepted legacy demo rule applies (120 s only if a confirmed
+        AP05_JAM downtime occurred in this run). OEE < 100 % via downtime (A<1)
+        and/or reject (Q<1).
         """
         good = 0
         reject = 0
@@ -1089,7 +1297,15 @@ class AssyMesBridge:
             elif runtime.get_current_quality_status(wip_id) == QualityStatus.FAILED_FINAL:
                 reject += 1
         actual = good + reject
-        downtime_s = DEMO_DOWNTIME_S if run_id in self._downtime_confirmed else 0.0
+        canonical_downtime = self._canonical_downtime.get((run_id, sub_line_id))
+        if canonical_downtime is not None:
+            # R4: canonical fault lifecycle owns the downtime contribution of
+            # THIS sub-line (keyed per run + sub-line).
+            downtime_s = float(canonical_downtime)
+        elif run_id in self._downtime_confirmed:
+            downtime_s = DEMO_DOWNTIME_S
+        else:
+            downtime_s = 0.0
         planned_s = float(runtime.simulation_time_s)
         run_s = planned_s - downtime_s
         ideal_cycle_s = DEMO_IDEAL_CYCLE_S
@@ -1135,6 +1351,9 @@ class AssyMesBridge:
         DELIVERED is skipped; a FAILED gateway is retried on the next poll.
         """
         results: list[DeliveryResult] = []
+        source_event_id = self._scoped_source_event_id(source_event_id, reality)
+        if source_event_id != reality.source_event_id:
+            reality = replace(reality, source_event_id=source_event_id)
         delivered = self._delivered.setdefault(run_id, set())
         envelopes = self.service.collect(reality)
         for envelope in envelopes:
@@ -1179,11 +1398,16 @@ class AssyMesPipeline:
 def build_assy_mes_pipeline(
     gateways: Optional[list[ObservationGatewayProtocol]] = None,
     model_id: str = MODEL_ID,
+    canonical: Optional[Mapping[str, Any]] = None,
 ) -> AssyMesPipeline:
     """Build the VF-DM-DEMO-ASSY-MES-02 pipeline.
 
     Default gateway: in-memory (test/demo).  Callers may supply
     InMemory / Jsonl / MQTT gateways.
+
+    R3 additive: ``canonical`` binds the pipeline to the canonical TIPA
+    parent-session identity (read-only metadata); ``None`` keeps the legacy
+    sub-line-local run identity.
     """
     service = ObservationService(
         points=build_assy_mes_observation_points(),
@@ -1201,6 +1425,7 @@ def build_assy_mes_pipeline(
         router=router,
         gateways=gw,
         model_id=model_id,
+        canonical=canonical,
     )
     return AssyMesPipeline(
         service=service,

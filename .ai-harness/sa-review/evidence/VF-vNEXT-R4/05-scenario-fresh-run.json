@@ -1,0 +1,35 @@
+{
+  "status_code": 200,
+  "status": "fresh_run",
+  "legacy_runtime_authority": false,
+  "previous_run_id": "TIPA-0001",
+  "previous_scenario_id": "tipa-default",
+  "fresh_run_id": "TIPA-0002",
+  "fresh_scenario_id": "FAILED_FINAL",
+  "fresh_profile_id": "tipa-assy-failed_final",
+  "fresh_run_id_differs": true,
+  "identity_consistent": true,
+  "shell_step_count_after_fresh_run": 0,
+  "previous_run_history": [
+    {
+      "workspace_id": "TIPA",
+      "run_id": "TIPA-0001",
+      "scenario_id": "tipa-default",
+      "state": "running"
+    }
+  ],
+  "previous_run_snapshot_time_s": 240.0,
+  "unknown_scenario": {
+    "status_code": 404,
+    "identity_unchanged": true
+  },
+  "scenario_effect": {
+    "rejects": 1,
+    "reason_codes": [
+      "failed_final"
+    ],
+    "target_motors_released": 0,
+    "target_quality_holds": 1
+  },
+  "PASS": true
+}

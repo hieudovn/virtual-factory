@@ -1,0 +1,207 @@
+{
+  "assumed_topology": [
+    {
+      "canonical_id": "UNIT-SHW-RAW-INTAKE",
+      "current_values": {
+        "inflow_m3_s": 2.0
+      },
+      "fidelity": "logical_only",
+      "inbound_link_assumed": false,
+      "role": "source",
+      "scope": "shwtp/raw_water/raw_intake",
+      "status": "scenario_assumed",
+      "time_s": 4.0
+    },
+    {
+      "canonical_id": "UNIT-SHW-T100",
+      "current_values": {
+        "inflow_m3_s": 2.0
+      },
+      "fidelity": "logical_only",
+      "inbound_link_assumed": true,
+      "role": "junction",
+      "scope": "shwtp/raw_water/t100",
+      "status": "scenario_assumed",
+      "time_s": 4.0
+    },
+    {
+      "canonical_id": "UNIT-SHW-L1-T106",
+      "current_values": {
+        "inflow_m3_s": 2.0,
+        "last_input_flow_m3_s": 2.0,
+        "last_output_flow_m3_s": 2.0,
+        "time_s": 4.0
+      },
+      "fidelity": "logical_only",
+      "inbound_link_assumed": true,
+      "role": "filter",
+      "scope": "shwtp/line1/l1_t106",
+      "status": "accepted",
+      "time_s": 4.0
+    },
+    {
+      "canonical_id": "UNIT-SHW-DIST-P108",
+      "current_values": {
+        "last_received_m3_s": 1.5,
+        "received_count": 4
+      },
+      "fidelity": "logical_only",
+      "inbound_link_assumed": true,
+      "role": "distribution_sink",
+      "scope": "shwtp/dist_p108",
+      "status": "scenario_assumed",
+      "time_s": 4.0
+    }
+  ],
+  "flow": "B-SH-WTP",
+  "replay_equivalent": true,
+  "runtime": "SH-WTP G21 plant slice",
+  "scope_count": 5,
+  "scopes": [
+    {
+      "canonical_id": "UNIT-SHW-RAW-INTAKE",
+      "current_values": {
+        "inflow_m3_s": 2.0
+      },
+      "fidelity": "logical_only",
+      "inbound_link_assumed": false,
+      "role": "source",
+      "scope": "shwtp/raw_water/raw_intake",
+      "status": "scenario_assumed"
+    },
+    {
+      "canonical_id": "UNIT-SHW-T100",
+      "current_values": {
+        "inflow_m3_s": 2.0
+      },
+      "fidelity": "logical_only",
+      "inbound_link_assumed": true,
+      "role": "junction",
+      "scope": "shwtp/raw_water/t100",
+      "status": "scenario_assumed"
+    },
+    {
+      "canonical_id": "UNIT-SHW-L1-T106",
+      "current_values": {
+        "inflow_m3_s": 2.0,
+        "last_input_flow_m3_s": 2.0,
+        "last_output_flow_m3_s": 2.0,
+        "time_s": 4.0
+      },
+      "fidelity": "logical_only",
+      "inbound_link_assumed": true,
+      "role": "filter",
+      "scope": "shwtp/line1/l1_t106",
+      "status": "accepted"
+    },
+    {
+      "canonical_id": "UNIT-SHW-L1-T108",
+      "current_values": {
+        "inflow_m3_s": 2.0,
+        "level_m": 2.5,
+        "requested_outflow_m3_s": 1.5,
+        "time_s": 4.0,
+        "volume_m3": 50.0
+      },
+      "fidelity": "first_order",
+      "inbound_link_assumed": false,
+      "role": "clean_water_tank",
+      "scope": "shwtp/line1/l1_t108",
+      "status": "accepted"
+    },
+    {
+      "canonical_id": "UNIT-SHW-DIST-P108",
+      "current_values": {
+        "last_received_m3_s": 1.5,
+        "received_count": 4
+      },
+      "fidelity": "logical_only",
+      "inbound_link_assumed": true,
+      "role": "distribution_sink",
+      "scope": "shwtp/dist_p108",
+      "status": "scenario_assumed"
+    }
+  ],
+  "session": {
+    "last_result": "completed",
+    "last_time_s": 4.0,
+    "run_id": "shwtp-0001",
+    "scenario_id": "shwtp-g21-slice",
+    "state": "running",
+    "step_count": 4,
+    "workspace_id": "shwtp"
+  },
+  "site_truth": false,
+  "trace": [
+    {
+      "committed": [
+        "shwtp/line1/l1_t106",
+        "shwtp/line1/l1_t108",
+        "shwtp/raw_water/raw_intake",
+        "shwtp/raw_water/t100"
+      ],
+      "participants": [
+        "shwtp/dist_p108",
+        "shwtp/line1/l1_t106",
+        "shwtp/line1/l1_t108",
+        "shwtp/raw_water/raw_intake",
+        "shwtp/raw_water/t100"
+      ],
+      "status": "completed",
+      "target_time_s": 1.0
+    },
+    {
+      "committed": [
+        "shwtp/line1/l1_t106",
+        "shwtp/line1/l1_t108",
+        "shwtp/raw_water/raw_intake",
+        "shwtp/raw_water/t100"
+      ],
+      "participants": [
+        "shwtp/dist_p108",
+        "shwtp/line1/l1_t106",
+        "shwtp/line1/l1_t108",
+        "shwtp/raw_water/raw_intake",
+        "shwtp/raw_water/t100"
+      ],
+      "status": "completed",
+      "target_time_s": 2.0
+    },
+    {
+      "committed": [
+        "shwtp/line1/l1_t106",
+        "shwtp/line1/l1_t108",
+        "shwtp/raw_water/raw_intake",
+        "shwtp/raw_water/t100"
+      ],
+      "participants": [
+        "shwtp/dist_p108",
+        "shwtp/line1/l1_t106",
+        "shwtp/line1/l1_t108",
+        "shwtp/raw_water/raw_intake",
+        "shwtp/raw_water/t100"
+      ],
+      "status": "completed",
+      "target_time_s": 3.0
+    },
+    {
+      "committed": [
+        "shwtp/line1/l1_t106",
+        "shwtp/line1/l1_t108",
+        "shwtp/raw_water/raw_intake",
+        "shwtp/raw_water/t100"
+      ],
+      "participants": [
+        "shwtp/dist_p108",
+        "shwtp/line1/l1_t106",
+        "shwtp/line1/l1_t108",
+        "shwtp/raw_water/raw_intake",
+        "shwtp/raw_water/t100"
+      ],
+      "status": "completed",
+      "target_time_s": 4.0
+    }
+  ],
+  "ui_note": "VF simulated SH-WTP slice only. Assumed/scenario topology and fidelity labels are NOT site truth; PIM remains authoritative.",
+  "workspace_id": "shwtp"
+}

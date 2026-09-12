@@ -1,0 +1,92 @@
+{
+  "task_id": "VF-vNEXT-R5-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "correction",
+  "gate_type": "CORRECTION gate (no redesign) — VF-vNEXT-R5-C01: make the repository root the canonical Virtual Factory entrypoint and stop serving the experimental Continuous dashboard there. Small, bounded correction on top of the R5 consolidation head.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/84",
+  "sa_decision_ref": "Issue #84 SA decision comment 5644417111 (R5-C01 correction)",
+  "architecture_authority_ref": "Issue #84 (R5 consolidation, head 7558aaa) + Issue #78 (R0 frozen)",
+  "objective": "GET / must become the CANONICAL VF entrypoint: redirect / -> /workspaces (the canonical Workspace Shell), stop serving the legacy continuous dashboard (index.html) at root, keep the continuous static assets reference-only, register no continuous workspace, restore/rebuild nothing from Continuous, prove with a regression that GET / resolves to the canonical shell and constructs ZERO runtime state, and preserve every R1-R5 regression with a green baseline and full suite.",
+  "explicit_non_objectives": [
+    "No redesign and no new feature work",
+    "No continuous workspace registration and no Continuous restore/rebuild",
+    "No SH-WTP expansion",
+    "No changes to the canonical rich ASSY UI, the workspace shell behaviour, or the de-authorized legacy families beyond the root entrypoint",
+    "No gateway/OPC/MQTT/Kafka work and no PIM/MES change",
+    "No deletion of the retained reference-only static assets",
+    "No rebase onto stale main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-vnext-r5-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "7558aaa31132ebeff6ef3c618b6d9198d9078177",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-R5-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/ui/api.py",
+    "tests/test_api.py",
+    "tests/test_ui_hierarchy.py",
+    "tests/test_vnext_r5_single_system.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/ui/static/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/federation/",
+    "src/virtual_factory/protocols/",
+    "configs/",
+    "deploy/",
+    "docs/",
+    "examples/",
+    "simulators/",
+    "tests/test_run_control.py",
+    "tests/test_demo_assy_mes_v1.py",
+    "tests/test_vnext_r4_canonical_parity.py"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/ui/api.py (GET / -> 307 redirect to /workspaces; no dashboard at root; create_app docstring de-staled)",
+    "tests/test_vnext_r5_single_system.py (root-entry regression + zero-construction proof)",
+    "tests/test_api.py (root test migrated)",
+    "tests/test_ui_hierarchy.py (legacy dashboard page test migrated to reference-only)",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R5/08-root-entry.json",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R5.md (R5-C01 section)"
+  ],
+  "required_tests": [
+    "tests/test_vnext_r5_single_system.py",
+    "tests/test_api.py",
+    "tests/test_ui_hierarchy.py"
+  ],
+  "required_smoke_checks": [
+    "Browser smoke STARTING FROM / : must land in the canonical workspace shell with no severe console errors",
+    "Canonical baseline green at the pushed head (all 43 groups incl. r5_single_system)"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Serving the legacy continuous dashboard at root",
+    "Constructing any runtime state while resolving the root entrypoint",
+    "Registering a continuous workspace or restoring Continuous behaviour",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "The correction would require touching SH-WTP, the rich ASSY UI, or a de-authorized legacy family beyond the root entrypoint",
+    "Preserving R1-R5 regressions would require a redesign",
+    "The root entrypoint cannot be made canonical without constructing runtime state"
+  ],
+  "acceptance_criteria": [
+    {"id": "R5C01-1", "phase": "final", "description": "GET / is the canonical entrypoint: redirects to /workspaces and serves no continuous dashboard", "rule": {"field": "r5c01.root_redirect", "operator": "is_true", "expected": null}},
+    {"id": "R5C01-2", "phase": "final", "description": "Resolving GET / constructs ZERO runtime state (no RuntimeService/session/engine/controller)", "rule": {"field": "r5c01.zero_construction", "operator": "is_true", "expected": null}},
+    {"id": "R5C01-3", "phase": "final", "description": "Legacy continuous dashboard assets retained reference-only (present in repo, not served at root); no continuous workspace registered", "rule": {"field": "r5c01.reference_only", "operator": "is_true", "expected": null}},
+    {"id": "R5C01-4", "phase": "final", "description": "Regression added; browser smoke from / reaches the canonical shell without severe console errors", "rule": {"field": "r5c01.browser", "operator": "is_true", "expected": null}},
+    {"id": "R5C01-5", "phase": "final", "description": "R1-R5 preserved: full suite and the 43-group canonical baseline green at the pushed head", "rule": {"field": "r5c01.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

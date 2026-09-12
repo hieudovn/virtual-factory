@@ -1,0 +1,81 @@
+{
+  "task_id": "VF-vNEXT-G24-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "CORRECTION gate — G24-C01 Workspace Shell reflects the selected G22 TIPA RuntimeSession",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/75",
+  "objective": "Correction on the G24 head (899e851167de768669769dfe650bb46e011024d7): the Workspace Shell's TIPA view must reflect the SELECTED G22 TIPA RuntimeSession. Add a read-only projection of the 6 ASSY sub-lines read from the selected session's own execution bridge/federation (simulation time, conveyor state, WIP/motor counts, RSO2 buffer). The shell TIPA view must show live per-sub-line state/status/key values after stepping the selected session. The shell must NOT create a second runtime. /assy-demo may remain as the legacy rich UI but must be explicitly labelled a SEPARATE legacy demo runtime (not the same session, identity/state not shared) whenever the shell is not actually sharing that runtime/session.",
+  "explicit_non_objectives": [
+    "No ASSY runtime rewrite",
+    "No ASSY UI rewrite",
+    "No legacy-controller unification (would be a large redesign)",
+    "No G22/G23 semantics change",
+    "No G25"
+  ],
+  "required_branch": "feature/vf-vnext-g24-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G24-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G24-C01.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G24-C01/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/runcontrol/assy_bridge.py",
+    "src/virtual_factory/ui/workspace_monitor.py",
+    "src/virtual_factory/ui/static/workspace_shell.js",
+    "tests/test_vnext_g24_workspace_ui.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/runcontrol/lifecycle.py",
+    "src/virtual_factory/runcontrol/registry.py",
+    "src/virtual_factory/runcontrol/session.py",
+    "src/virtual_factory/runcontrol/continuous_bridge.py",
+    "src/virtual_factory/shwtp/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/federation/",
+    "src/virtual_factory/ui/static/assy_demo.html",
+    "src/virtual_factory/ui/static/assy_demo.js",
+    "src/virtual_factory/ui/static/assy_demo.css",
+    "src/virtual_factory/ui/static/index.html",
+    "src/virtual_factory/ui/static/app.js",
+    "src/virtual_factory/ui/api.py",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/runcontrol/assy_bridge.py (read-only AssyExecutionBridge.sub_line_views())",
+    "src/virtual_factory/ui/workspace_monitor.py (TIPA view: live per-sub-line values from selected session bridge; /assy-demo labelled separate legacy demo runtime)",
+    "src/virtual_factory/ui/static/workspace_shell.js (render live per-sub-line table; label /assy-demo as separate legacy runtime)",
+    "tests/test_vnext_g24_workspace_ui.py (C01 tests)"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Rewrite the ASSY runtime",
+    "Rewrite the ASSY UI",
+    "Unify the legacy demo controller",
+    "Change G22/G23 semantics",
+    "Present /assy-demo as the same session as the shell",
+    "Start G25"
+  ],
+  "stop_conditions": [
+    "The correction would require a large legacy-controller redesign"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Stepping the selected TIPA session changes the shell's per-sub-line values/status correctly", "rule": {"field": "c01.live", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Exactly 6 ASSY sub-lines projected", "rule": {"field": "c01.six", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Shell runtime identity is the selected G22 session", "rule": {"field": "c01.identity", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "/assy-demo not presented as same-session (explicitly separate legacy demo runtime)", "rule": {"field": "c01.legacy", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "ASSY oracle + full canonical baseline + full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

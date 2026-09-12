@@ -1,0 +1,88 @@
+{
+  "task_id": "VF-ARCH-01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "ARCHITECTURE / DESIGN GATE — DOCUMENTATION & EVIDENCE ONLY (NO PRODUCTION IMPLEMENTATION)",
+  "objective": "Freeze the platform structural model that all later Virtual Factory vNext work must use: VF Platform -> Workspace -> Simulation Scope -> Simulation Object, with tree-like management/navigation hierarchy, graph-based physical/information/dependency connectivity, and standalone or federated execution of a scope. Repo-first: inspect actual TIPA ASSY identity hierarchy, AssyDemoComposition and per-sub-line runtime contexts, generic runtime/workspace/config abstractions, UI context/sub-line selection, and accepted evidence/docs.",
+  "explicit_non_objectives": [
+    "No production runtime or UI code changes",
+    "No clock synchronization algorithm",
+    "No typed boundary port payloads",
+    "No coordinator scheduling",
+    "No observation/event schema",
+    "No provenance implementation",
+    "No capability registry schema",
+    "No UI component implementation",
+    "No semantic loader/binding",
+    "No SH WTP runtime/domain models",
+    "No ASSY runtime refactor",
+    "No frontend framework migration"
+  ],
+  "required_branch": "",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-ARCH-01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-01.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-01/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-ARCH-01/01-current-state-repo-inventory.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-01/02-terminology-and-definitions.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-01/03-structural-model.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-01/04-standalone-federated-and-hierarchy-vs-graph.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-01/05-archetype-execution-and-reference-mappings.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-01/06-migration-impact-and-decisions.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-01.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Modify production runtime or UI code (src/, configs/, simulators/, tests/)",
+    "Decide clock synchronization algorithm",
+    "Decide typed boundary port payloads",
+    "Decide coordinator scheduling",
+    "Decide observation/event schema",
+    "Decide provenance implementation",
+    "Decide capability registry schema",
+    "Decide UI implementation",
+    "Decide semantic binding",
+    "Decide SH WTP runtime",
+    "Refactor AssyLineRuntime",
+    "Start ARCH-02"
+  ],
+  "stop_conditions": [
+    "Accepted ASSY semantics cannot map to Workspace/Scope/Object without breaking domain behavior",
+    "Existing repo already contains a competing generic hierarchy abstraction whose authority conflicts with this proposal",
+    "Scope identity cannot be separated cleanly from PIM canonical identity or output namespace",
+    "Standalone/federated reuse would require a domain-runtime rewrite",
+    "A structural decision requires choosing ARCH-02 runtime synchronization/port semantics prematurely"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Definitions mutually exclusive and sufficient", "rule": {"field": "definitions.complete", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "TIPA/ASSY maps cleanly without flattening or rewrite assumptions", "rule": {"field": "tipa_assy.clean_map", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "SH WTP maps conceptually without special-case structural rules", "rule": {"field": "sh_wtp.conceptual_map", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Hierarchy vs graph is explicit", "rule": {"field": "hierarchy_vs_graph.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Standalone/federated scope is explicit", "rule": {"field": "standalone_federated.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Identity boundaries are explicit", "rule": {"field": "identity.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Archetype vs execution mechanism is explicit", "rule": {"field": "archetype_execution.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "All implementation details belonging to later gates remain deferred", "rule": {"field": "non_decisions.deferred", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "No production code changed", "rule": {"field": "production_code_changed", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

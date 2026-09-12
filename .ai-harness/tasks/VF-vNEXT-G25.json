@@ -1,0 +1,76 @@
+{
+  "task_id": "VF-vNEXT-G25",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "ACCEPTANCE / HARDENING gate — Integrated Multi-Workspace Demo / MVP Acceptance (G25)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/76",
+  "objective": "Acceptance/hardening of the integrated multi-workspace MVP on the accepted architecture (no new architecture). Prove, end-to-end through the Workspace Shell backend (G23 registry + G22 RuntimeSession): FLOW A TIPA (select TIPA, six live ASSY sub-lines from the selected session, deterministic reset/new-attempt/replay, switch-away-no-mutation, /assy-demo a separate legacy runtime); FLOW B SH-WTP (select shwtp, RAW-INTAKE -> T100 -> T106 -> T108 -> DIST-P108, live time/step/flow/tank/status, fidelity/status/assumed explicit, deterministic reset/new-attempt/replay, switch-away-no-mutation). Re-prove platform invariants: one platform -> many independent Workspaces; no shared state/run_id/clock/truth; no cross-workspace runtime coupling; RuntimeSession lifecycle reused; explicit_lagged/G4/G19 unchanged; ASSY oracle green; SH-WTP assumptions never site truth. Deliver integrated acceptance tests, deterministic traces/evidence, and a milestone acceptance report (MVP CAN / deferred / authority NOT_AUTHORIZED). Full canonical regression + full suite green.",
+  "explicit_non_objectives": [
+    "No gateway routing",
+    "No production OPC/MQTT/Kafka/REST export",
+    "No multi-gateway",
+    "No store-and-forward",
+    "No SH-WTP whole-plant/site-faithful",
+    "No T110/Line2",
+    "No distributed execution",
+    "No advanced coupling policy",
+    "No broad UI redesign",
+    "No PIM/MES changes",
+    "No authority broadening"
+  ],
+  "required_branch": "feature/vf-vnext-g25",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G25.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G25.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G25/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "tests/test_vnext_g25_acceptance.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/shwtp/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/federation/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "tests/test_vnext_g25_acceptance.py (integrated acceptance tests for both flows + invariants)",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G25/ (deterministic traces/evidence)",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G25.md (milestone acceptance report)"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Open new architecture",
+    "Broaden authority",
+    "Change domain semantics",
+    "Add gateway routing / export",
+    "Broad UI redesign",
+    "Start a further gate"
+  ],
+  "stop_conditions": [
+    "Acceptance requires a new product/architecture decision"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "FLOW A TIPA end-to-end accepted (six live sub-lines, deterministic reset/new-attempt/replay, no-mutation switch, separate legacy /assy-demo)", "rule": {"field": "g25.flow_a", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "FLOW B SH-WTP end-to-end accepted (5-scope slice, live values, explicit fidelity/assumed, deterministic replay, no-mutation switch)", "rule": {"field": "g25.flow_b", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Platform invariants re-proven (independence, no shared state/clock/truth, no cross-workspace coupling, lifecycle reuse)", "rule": {"field": "g25.invariants", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "explicit_lagged/G4/G19 unchanged; ASSY oracle green; SH-WTP assumptions never site truth", "rule": {"field": "g25.frozen", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Deterministic traces/evidence + milestone acceptance report", "rule": {"field": "g25.evidence", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Full canonical regression + full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

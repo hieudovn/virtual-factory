@@ -1,0 +1,108 @@
+{
+  "task_id": "VF-vNEXT-R5",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "implementation",
+  "gate_type": "IMPLEMENTATION gate — Single Simulation System Consolidation + Shared VF Shell, executed after the SA decision on Issue #84 comment 5644148465 (Continuous/MVP-01 is an experimental surface and NOT a required capability): de-authorize every competing legacy authority, fix the attempt-binding defect, prove the firewall, land the bounded shared-shell convergence.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/84",
+  "sa_decision_ref": "Issue #84 SA decision comment 5644148465 (authorizes R5a-1..R5a-6; Continuous NOT canonicalized)",
+  "architecture_authority_ref": "Issue #84 (SA task contract) + Issue #78 (R0 CLOSED/frozen) + Issue #79 (R1) + Issue #80 (R2) + Issue #82 (R2V) + Issue #81 (R3 + R3-C01) + Issue #83 (R4, ASSY_CANONICAL_PARITY_COMPLETE)",
+  "objective": "Make the repository reflect ONE Virtual Factory simulation system: every active product path creates simulation state only through the canonical Workspace/RuntimeSession seam (/workspaces, /vnext/workspaces/*, /assy-demo/*); the legacy authorities (eager root-dashboard RuntimeService, legacy G7 run-control family including the duplicate unprepared TIPA discriminator, legacy /demo-assy-mes DemoController path) are de-authorized fail-closed with zero runtime construction; TIPA attempts are bound to their own immutable run context (no cross-run profile contamination); the bounded shared-shell convergence I1/I3/I4/I5/I6 is delivered; all R1-R4 ASSY parity is preserved.",
+  "explicit_non_objectives": [
+    "No third continuous Workspace registration and no Continuous canonicalization/rebuild",
+    "No SH-WTP functional/whole-plant expansion (audit item I2 dedicated SH-WTP page NOT authorized)",
+    "No gateway/OPC/MQTT/Kafka production work",
+    "No PIM/MES repo change",
+    "No generic G4/coupling redesign and no broad G22 run-identity redesign",
+    "No AssyLineRuntime rewrite and no ASSY visual simplification",
+    "No deletion of proven domain capability (reusable kernel/library/reference code is retained)",
+    "No rebase onto stale main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-vnext-r5",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "989deac2fe189e7e66c89d2c33218004e2b7d08c",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-R5.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/ui/api.py",
+    "src/virtual_factory/ui/workspace_monitor.py",
+    "src/virtual_factory/ui/static/assy_demo.html",
+    "src/virtual_factory/ui/static/workspace_shell.html",
+    "src/virtual_factory/ui/static/workspace_shell.js",
+    "src/virtual_factory/ui/static/workspace_shell.css",
+    "src/virtual_factory/runcontrol/lifecycle.py",
+    "src/virtual_factory/runcontrol/session.py",
+    "tests/test_api.py",
+    "tests/test_run_control.py",
+    "tests/test_ui_hierarchy.py",
+    "tests/test_demo_assy_mes_v1.py",
+    "tests/test_vnext_r4_canonical_parity.py",
+    "tests/test_vnext_r5_single_system.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/federation/",
+    "src/virtual_factory/assembly/line_runtime.py",
+    "src/virtual_factory/protocols/",
+    "configs/",
+    "deploy/",
+    "docs/",
+    "examples/",
+    "simulators/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/ui/api.py (de-authorized legacy authorities, fail-closed 410, zero runtime construction)",
+    "src/virtual_factory/runcontrol/lifecycle.py (attempt-context-aware bridge seam)",
+    "src/virtual_factory/runcontrol/session.py (attempt-bound TIPA profiles, no ambient holder)",
+    "src/virtual_factory/ui/static/workspace_shell.{html,js,css} (audit I1/I3/I4/I5)",
+    "src/virtual_factory/ui/static/assy_demo.html (audit I6)",
+    "tests/test_vnext_r5_single_system.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R5/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R5/01..07 evidence JSON/MD",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R5.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_r5_single_system.py",
+    "tests/test_api.py",
+    "tests/test_run_control.py",
+    "tests/test_ui_hierarchy.py",
+    "tests/test_demo_assy_mes_v1.py",
+    "tests/test_vnext_r4_canonical_parity.py"
+  ],
+  "required_smoke_checks": [
+    "Browser sanity on the canonical pages (/workspaces shell + /assy-demo rich 2D) at the pushed head: no console errors, shell scenario/NEW RUN works, rich 2D parity intact",
+    "Canonical baseline (all required groups incl. the new r5_single_system group) green at the pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Registering or canonicalizing a continuous workspace",
+    "Deleting proven kernel/library/reference capability that no canonical replacement covers",
+    "Leaving any active product route able to construct simulation state outside the canonical seam",
+    "Building a SH-WTP process canvas or expanding SH-WTP scope",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "A competing authority cannot be de-authorized without losing a proven capability that has no canonical replacement",
+    "Preserving R4 ASSY parity would require rewriting AssyLineRuntime or redesigning G22/G4",
+    "Completion would require SH-WTP expansion",
+    "Attempt binding cannot be fixed without a broad generic lifecycle redesign"
+  ],
+  "acceptance_criteria": [
+    {"id": "R5-1", "phase": "final", "description": "R5a-1: attempt-binding defect fixed — no mutable ambient profile holder; bridge/profile bound to each attempt's immutable run context; A -> B -> replay/new_attempt each uses its own profile; no cross-run contamination", "rule": {"field": "r5.attempt_binding", "operator": "is_true", "expected": null}},
+    {"id": "R5-2", "phase": "final", "description": "Eager root-dashboard RuntimeService authority removed; stateful dashboard routes create no simulation state; no continuous workspace registered; old routes fail closed (410) with zero runtime construction", "rule": {"field": "r5.continuous_deauthorized", "operator": "is_true", "expected": null}},
+    {"id": "R5-3", "phase": "final", "description": "Legacy G7 both discriminators (duplicate unprepared TIPA + continuous) de-authorized; canonical TIPA only via /vnext/workspaces/TIPA/* + /assy-demo/*", "rule": {"field": "r5.g7_deauthorized", "operator": "is_true", "expected": null}},
+    {"id": "R5-4", "phase": "final", "description": "Legacy /demo-assy-mes DemoController runtime path de-authorized (module retained as reference)", "rule": {"field": "r5.demo_assy_mes_deauthorized", "operator": "is_true", "expected": null}},
+    {"id": "R5-5", "phase": "final", "description": "Shared shell I1/I3/I4/I5/I6 implemented; I2 NOT done", "rule": {"field": "r5.shell_convergence", "operator": "is_true", "expected": null}},
+    {"id": "R5-6", "phase": "final", "description": "Firewall proof: active product paths construct no standalone RuntimeService, no DemoController, no duplicate RunLifecycleService, no standalone engine authority, no hidden legacy session/runtime cache", "rule": {"field": "r5.firewall", "operator": "is_true", "expected": null}},
+    {"id": "R5-7", "phase": "final", "description": "Preserved: R4 ASSY parity, 6 sub-lines, rich 2D, scenario fresh-run, jam/recover, OEE, Observation/MES, SH-WTP canonical monitor behaviour", "rule": {"field": "r5.preserved", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
