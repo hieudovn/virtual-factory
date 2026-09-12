@@ -1,5 +1,6 @@
 {
   "authority": "canonical_tipa_runtime_session",
+  "note": "R3-C01: projection epoch = canonical RuntimeSession reset_generation (authoritative; no poll-timing inference)",
   "run_id": "TIPA-0001",
   "observation_points": [
     "assy.operation_completion",
@@ -18,10 +19,10 @@
   "operation_completions": 546,
   "ap04_genealogy_facts": 72,
   "ap04_genealogy_sample": {
-    "message_key": "TIPA-0001|E1:ASSY-SL01:MTR-0001|assy.ap04_genealogy|1.0",
+    "message_key": "TIPA-0001|E2:ASSY-SL01:MTR-0001|assy.ap04_genealogy|1.0",
     "payload": {
-      "observation_id": "b76d64da-f1bb-42ae-a57a-441934e0bfb3",
-      "idempotency_key": "TIPA-0001|E1:ASSY-SL01:MTR-0001|assy.ap04_genealogy|1.0",
+      "observation_id": "12765532-469d-488a-aceb-c5840121022e",
+      "idempotency_key": "TIPA-0001|E2:ASSY-SL01:MTR-0001|assy.ap04_genealogy|1.0",
       "run_id": "TIPA-0001",
       "simulation_time_s": 480.0,
       "occurred_at": null,
@@ -41,14 +42,14 @@
       "wip_id": "MTR-0001"
     },
     "simulation_time_s": 480.0,
-    "source_event_id": "E1:ASSY-SL01:MTR-0001"
+    "source_event_id": "E2:ASSY-SL01:MTR-0001"
   },
   "quality_facts": 138,
   "quality_sample": {
-    "message_key": "TIPA-0001|E1:ASSY-SL01:QR-0001|assy.quality_result|1.0",
+    "message_key": "TIPA-0001|E2:ASSY-SL01:QR-0001|assy.quality_result|1.0",
     "payload": {
-      "observation_id": "ec5e8071-2041-4630-af5c-7ccd1989b9ea",
-      "idempotency_key": "TIPA-0001|E1:ASSY-SL01:QR-0001|assy.quality_result|1.0",
+      "observation_id": "603c654a-0483-4fc4-b869-3b677880c8e4",
+      "idempotency_key": "TIPA-0001|E2:ASSY-SL01:QR-0001|assy.quality_result|1.0",
       "run_id": "TIPA-0001",
       "simulation_time_s": 840.0,
       "occurred_at": null,
@@ -68,10 +69,10 @@
   },
   "releases": 24,
   "release_sample": {
-    "message_key": "TIPA-0001|E1:ASSY-SL01:release:MTR-0001|assy.ap11_release|1.0",
+    "message_key": "TIPA-0001|E2:ASSY-SL01:release:MTR-0001|assy.ap11_release|1.0",
     "payload": {
-      "observation_id": "b3601896-60c6-4625-989e-b28cd41fccaf",
-      "idempotency_key": "TIPA-0001|E1:ASSY-SL01:release:MTR-0001|assy.ap11_release|1.0",
+      "observation_id": "1f0a75e7-0cff-462f-9903-bfd41fed0090",
+      "idempotency_key": "TIPA-0001|E2:ASSY-SL01:release:MTR-0001|assy.ap11_release|1.0",
       "run_id": "TIPA-0001",
       "simulation_time_s": 1680.0,
       "occurred_at": null,
@@ -104,5 +105,7 @@
   "all_facts_carry_canonical_run_id_in_payload": true,
   "all_message_keys_start_with_canonical_run_id": true,
   "all_source_event_ids_carry_epoch_and_scope": true,
+  "projection_epoch": 2,
+  "epoch_source": "canonical_session_reset_generation",
   "PASS": true
 }

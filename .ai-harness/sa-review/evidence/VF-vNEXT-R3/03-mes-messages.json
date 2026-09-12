@@ -26,7 +26,7 @@
   "all_keys_equal_idempotency_key": true,
   "all_payloads_carry_common_contract_fields": true,
   "sample": {
-    "message_key": "TIPA-0001|E1:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
+    "message_key": "TIPA-0001|E2:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
     "message_type": "mes.run_status",
     "schema_name": "vf.mes.run_status",
     "schema_version": "1.0",
@@ -35,8 +35,8 @@
       "causation_id": ""
     },
     "payload": {
-      "observation_id": "c8c90e35-f533-468a-9c47-cf978d8a81a0",
-      "idempotency_key": "TIPA-0001|E1:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
+      "observation_id": "de6dabd3-bdfa-49b0-b965-fb8ec0f3c805",
+      "idempotency_key": "TIPA-0001|E2:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
       "run_id": "TIPA-0001",
       "simulation_time_s": 2400.0,
       "occurred_at": "2026-01-01T00:40:00+00:00",
@@ -53,16 +53,16 @@
   },
   "trace_sample": {
     "gateway_id": "inmemory",
-    "message_key": "TIPA-0001|E1:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
+    "message_key": "TIPA-0001|E2:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
     "message_type": "mes.run_status",
     "schema_name": "vf.mes.run_status",
     "run_id": "TIPA-0001",
-    "source_event_id": "E1:ASSY-SL01:ASSY-SL01:operational:running:init",
+    "source_event_id": "E2:ASSY-SL01:ASSY-SL01:operational:running:init",
     "simulation_time_s": 2400.0,
     "subject_id": null,
     "payload": {
-      "observation_id": "c8c90e35-f533-468a-9c47-cf978d8a81a0",
-      "idempotency_key": "TIPA-0001|E1:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
+      "observation_id": "de6dabd3-bdfa-49b0-b965-fb8ec0f3c805",
+      "idempotency_key": "TIPA-0001|E2:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
       "run_id": "TIPA-0001",
       "simulation_time_s": 2400.0,
       "occurred_at": "2026-01-01T00:40:00+00:00",

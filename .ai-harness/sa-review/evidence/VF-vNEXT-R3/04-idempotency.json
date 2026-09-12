@@ -12,10 +12,10 @@
   "step_then_poll_delivered": 30,
   "step_then_poll_only_new_facts": true,
   "step_then_poll_new_keys_sample": [
-    "TIPA-0001|E1:ASSY-SL01:EXEC-00011|assy.operation_completion|1.0",
-    "TIPA-0001|E1:ASSY-SL01:EXEC-00012|assy.operation_completion|1.0",
-    "TIPA-0001|E1:ASSY-SL01:EXEC-00013|assy.operation_completion|1.0",
-    "TIPA-0001|E1:ASSY-SL01:EXEC-00014|assy.operation_completion|1.0"
+    "TIPA-0001|E2:ASSY-SL01:EXEC-00011|assy.operation_completion|1.0",
+    "TIPA-0001|E2:ASSY-SL01:EXEC-00012|assy.operation_completion|1.0",
+    "TIPA-0001|E2:ASSY-SL01:EXEC-00013|assy.operation_completion|1.0",
+    "TIPA-0001|E2:ASSY-SL01:EXEC-00014|assy.operation_completion|1.0"
   ],
   "no_duplicate_keys_overall": true,
   "PASS": true

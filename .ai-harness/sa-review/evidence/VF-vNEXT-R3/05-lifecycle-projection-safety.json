@@ -2,11 +2,11 @@
   "reset": {
     "same_canonical_run_id": true,
     "reset_poll_run_id": "TIPA-0001",
-    "epoch_before": 1,
-    "epoch_after_reset_poll": 2,
-    "epoch_after": 2,
+    "epoch_before": 2,
+    "epoch_after_reset_poll": 3,
+    "epoch_after": 3,
     "epoch_resets": 1,
-    "epoch_source": "canonical_session_reset_detection",
+    "epoch_source": "canonical_session_reset_generation",
     "post_reset_new_keys": 60,
     "post_reset_keys_all_new_epoch": true,
     "no_collision_with_pre_reset_keys": true

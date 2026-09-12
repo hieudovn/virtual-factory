@@ -81,6 +81,12 @@ class RuntimeSession:
                 f"run context is {self._run.context.workspace_id!r}"
             )
         self._trace: list[StepResult] = []
+        # VF-vNEXT-R3-C01: monotonic in-context reset generation of the CURRENT
+        # run. It is the ONE authoritative reset epoch for downstream
+        # projections (read-only metadata): it is incremented exactly when
+        # ``reset()`` succeeds, keeps the same run identity, and starts at 1 for
+        # every fresh attempt/replay. It never becomes a lifecycle/run identity.
+        self._reset_generation: int = 1
 
     # ── identity ────────────────────────────────────────────────
 
@@ -119,6 +125,20 @@ class RuntimeSession:
         """The current run record (white-box inspection for tests/bridges)."""
         return self._run
 
+    @property
+    def reset_generation(self) -> int:
+        """Monotonic reset generation of the current run (R3-C01).
+
+        1 for a fresh run; incremented once per successful in-context
+        ``reset()``. Projection metadata only — never a run/lifecycle identity.
+        """
+        return self._reset_generation
+
+    @property
+    def reset_epoch(self) -> int:
+        """Alias of ``reset_generation`` (canonical projection epoch)."""
+        return self._reset_generation
+
     # ── orchestration ───────────────────────────────────────────
 
     def advance(self) -> StepResult:
@@ -134,6 +154,9 @@ class RuntimeSession:
         """In-context reset: same run identity, fresh runtime state."""
         self._service.reset(self._run.context.run_id)
         self._trace = []
+        # R3-C01: the reset succeeded → advance the canonical reset generation
+        # (only after the service call returns, so a failure never bumps it).
+        self._reset_generation += 1
 
     def stop(self) -> None:
         """Stop the current attempt (terminal; history preserved)."""
@@ -145,6 +168,8 @@ class RuntimeSession:
             self.stop()
         self._run = self._service.restart(self._run.context.run_id)
         self._trace = []
+        # R3-C01: a fresh canonical run starts its own reset generation at 1.
+        self._reset_generation = 1
         return self._run.context.run_id
 
     def replay(self) -> str:
@@ -153,6 +178,8 @@ class RuntimeSession:
             self.stop()
         self._run = self._service.replay(self._run.context.run_id)
         self._trace = []
+        # R3-C01: a fresh canonical run starts its own reset generation at 1.
+        self._reset_generation = 1
         return self._run.context.run_id
 
     # ── trace ───────────────────────────────────────────────────

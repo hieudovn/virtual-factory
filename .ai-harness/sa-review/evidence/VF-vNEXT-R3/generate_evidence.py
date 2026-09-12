@@ -189,6 +189,9 @@ def evidence_b() -> dict:
     out = _output_run(steps=20)
     body = out.observations()
     run_id = body["canonical"]["run_id"]
+    # R3-C01: the projection epoch is the canonical session reset generation
+    # (authoritative), so epoch expectations are derived, never hard-coded.
+    epoch = body["canonical"]["output_namespace"]["projection_epoch"]
     observations = body["observations"]
     by_family: dict[str, int] = {}
     for obs in observations:
@@ -201,7 +204,11 @@ def evidence_b() -> dict:
     ]
     final_qc = [o for o in observations if o["payload"].get("event_type") == "AP11_FINAL_QC_PASS"]
     payload = {
-        "authority": body["authority"],
+        "authority": PROJECTION_AUTHORITY,
+        "note": (
+            "R3-C01: projection epoch = canonical RuntimeSession reset_generation "
+            "(authoritative; no poll-timing inference)"
+        ),
         "run_id": run_id,
         "observation_points": body["observation_points"],
         "count": body["count"],
@@ -241,9 +248,11 @@ def evidence_b() -> dict:
             o["message_key"].startswith(run_id) for o in observations
         ),
         "all_source_event_ids_carry_epoch_and_scope": all(
-            str(o["source_event_id"]).startswith("E1:ASSY-SL")
+            str(o["source_event_id"]).startswith(f"E{epoch}:ASSY-SL")
             for o in observations
         ),
+        "projection_epoch": epoch,
+        "epoch_source": body["canonical"]["output_namespace"]["epoch_source"],
     }
     payload["PASS"] = (
         payload["operation_completions"] > 0

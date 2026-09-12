@@ -43,8 +43,11 @@
       "output_namespace": {
         "canonical_run_id": "TIPA-0001",
         "namespace_is_canonical_run": true,
-        "projection_epoch": 1,
-        "epoch_source": "canonical_session_reset_detection",
+        "projection_epoch": 2,
+        "session_reset_generation": 2,
+        "epoch_source": "canonical_session_reset_generation",
+        "epoch_changes": 0,
+        "epoch_resets": 0,
         "source_run_keys": {
           "ASSY-SL01": "ASSY-SL01:R1",
           "ASSY-SL02": "ASSY-SL02:R1",
@@ -54,14 +57,13 @@
           "ASSY-SL06": "ASSY-SL06:R1"
         },
         "projection_epochs": {
-          "ASSY-SL01": 1,
-          "ASSY-SL02": 1,
-          "ASSY-SL03": 1,
-          "ASSY-SL04": 1,
-          "ASSY-SL05": 1,
-          "ASSY-SL06": 1
-        },
-        "epoch_resets": 0
+          "ASSY-SL01": 2,
+          "ASSY-SL02": 2,
+          "ASSY-SL03": 2,
+          "ASSY-SL04": 2,
+          "ASSY-SL05": 2,
+          "ASSY-SL06": 2
+        }
       },
       "provenance": "simulation_synthetic"
     },
@@ -76,8 +78,11 @@
       "output_namespace": {
         "canonical_run_id": "TIPA-0001",
         "namespace_is_canonical_run": true,
-        "projection_epoch": 1,
-        "epoch_source": "canonical_session_reset_detection",
+        "projection_epoch": 2,
+        "session_reset_generation": 2,
+        "epoch_source": "canonical_session_reset_generation",
+        "epoch_changes": 0,
+        "epoch_resets": 0,
         "source_run_keys": {
           "ASSY-SL01": "ASSY-SL01:R1",
           "ASSY-SL02": "ASSY-SL02:R1",
@@ -87,14 +92,13 @@
           "ASSY-SL06": "ASSY-SL06:R1"
         },
         "projection_epochs": {
-          "ASSY-SL01": 1,
-          "ASSY-SL02": 1,
-          "ASSY-SL03": 1,
-          "ASSY-SL04": 1,
-          "ASSY-SL05": 1,
-          "ASSY-SL06": 1
-        },
-        "epoch_resets": 0
+          "ASSY-SL01": 2,
+          "ASSY-SL02": 2,
+          "ASSY-SL03": 2,
+          "ASSY-SL04": 2,
+          "ASSY-SL05": 2,
+          "ASSY-SL06": 2
+        }
       },
       "provenance": "simulation_synthetic"
     },
@@ -109,8 +113,11 @@
       "output_namespace": {
         "canonical_run_id": "TIPA-0001",
         "namespace_is_canonical_run": true,
-        "projection_epoch": 1,
-        "epoch_source": "canonical_session_reset_detection",
+        "projection_epoch": 2,
+        "session_reset_generation": 2,
+        "epoch_source": "canonical_session_reset_generation",
+        "epoch_changes": 0,
+        "epoch_resets": 0,
         "source_run_keys": {
           "ASSY-SL01": "ASSY-SL01:R1",
           "ASSY-SL02": "ASSY-SL02:R1",
@@ -120,14 +127,13 @@
           "ASSY-SL06": "ASSY-SL06:R1"
         },
         "projection_epochs": {
-          "ASSY-SL01": 1,
-          "ASSY-SL02": 1,
-          "ASSY-SL03": 1,
-          "ASSY-SL04": 1,
-          "ASSY-SL05": 1,
-          "ASSY-SL06": 1
-        },
-        "epoch_resets": 0
+          "ASSY-SL01": 2,
+          "ASSY-SL02": 2,
+          "ASSY-SL03": 2,
+          "ASSY-SL04": 2,
+          "ASSY-SL05": 2,
+          "ASSY-SL06": 2
+        }
       },
       "provenance": "simulation_synthetic"
     }

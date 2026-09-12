@@ -252,8 +252,12 @@ class TestObservationFacts:
             out.experience.step()
         body = out.observations()
         assert _scopes(body["observations"]) == set(SUB_LINE_IDS)
+        # R3-C01: the projection epoch is the canonical session reset generation
+        # (authoritative), so the expected token is epoch-relative.
+        epoch = body["canonical"]["output_namespace"]["projection_epoch"]
+        assert epoch == out.experience.session.reset_generation
         for obs in body["observations"]:
-            assert str(obs["source_event_id"]).startswith("E1:ASSY-SL")
+            assert str(obs["source_event_id"]).startswith(f"E{epoch}:ASSY-SL")
             assert "ASSY-SL" in obs["message_key"]
         namespace = body["canonical"]["output_namespace"]
         assert set(namespace["source_run_keys"]) == set(SUB_LINE_IDS)

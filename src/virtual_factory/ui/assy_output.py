@@ -77,9 +77,11 @@ class CanonicalAssyOutput:
         self._mes: Optional[AssyMesBridge] = None
         self._federation: Any = None
         self._namespace_run_id: str = ""
-        self._epoch: int = 1
+        #: Last projection epoch bound into the output bridges. R3-C01: it is
+        #: READ from the canonical session reset generation, never inferred.
+        self._epoch: Optional[int] = None
+        self._epoch_changes: int = 0
         self._last_snapshot: Optional[dict[str, Any]] = None
-        self._epoch_resets: int = 0
         self._last_poll: dict[str, int] = {
             "observations_delivered": 0,
             "mes_delivered": 0,
@@ -101,9 +103,55 @@ class CanonicalAssyOutput:
 
     # ── Identity binding ──
 
+    # ── Canonical reset generation (R3-C01) ──
+
+    def _session_reset_generation(self) -> int:
+        """Authoritative canonical reset generation of the current run.
+
+        The projection epoch is READ from the canonical ``RuntimeSession``
+        (incremented exactly when the session's own ``reset()`` succeeds), so
+        output correctness never depends on polling timing.  A session without
+        the lifecycle seam fails closed rather than falling back to inference.
+        """
+        value = getattr(self.session, "reset_generation", None)
+        if value is None:
+            raise CanonicalOutputError(
+                "the canonical session exposes no reset_generation; R3-C01 "
+                "requires the authoritative canonical lifecycle seam"
+            )
+        return int(value)
+
+    def _sync_projection_epoch(self) -> bool:
+        """Adopt the canonical reset generation as the projection epoch.
+
+        Returns True when the epoch changed since the previous observation.
+        A same-run reset advances the generation (collision-free new epoch); a
+        fresh canonical run (new attempt / replay) restarts it at 1 and is
+        re-bound by ``_ensure_bridges`` together with the fresh namespace.
+        """
+        current = self._session_reset_generation()
+        if self._epoch is None:
+            self._epoch = current
+            return False
+        if current == self._epoch:
+            return False
+        previous = self._epoch
+        self._epoch = current
+        if current > previous:
+            self._epoch_changes += 1
+            if self._mes is not None:
+                # explicit projection re-baseline (projection state only)
+                self._mes.reset_all()
+            return True
+        # current < previous → fresh canonical run re-baselined the generation
+        return True
+
     def binding(self) -> dict[str, Any]:
         """Canonical parent-session identity bound into the output bridges."""
         ident = self._experience.session_identity()
+        epoch = self._epoch
+        if epoch is None:
+            epoch = self._session_reset_generation()
         return {
             "canonical_run_id": str(ident.get("run_id") or ""),
             "workspace_id": str(
@@ -112,29 +160,49 @@ class CanonicalAssyOutput:
             "scenario_id": str(ident.get("scenario_id") or ""),
             "profile_id": str(ident.get("profile_id") or ""),
             "run_state": str(ident.get("run_state") or ""),
-            "projection_epoch": self._epoch,
+            "projection_epoch": epoch,
+            "projection_epoch_source": "canonical_session_reset_generation",
             "authority": PROJECTION_AUTHORITY,
             "provenance": PROJECTION_PROVENANCE,
             "site_truth": False,
         }
+
+    def _require_federation(self) -> Any:
+        """Resolve the ONE canonical federation (never constructs a second)."""
+        try:
+            self._federation = self._experience.require_federation()
+        except SessionNotStarted as exc:
+            raise CanonicalOutputError(str(exc)) from exc
+        return self._federation
+
+    def _bind(self) -> dict[str, Any]:
+        """Read-only bind: canonical federation + authoritative epoch + bridges."""
+        self._require_federation()
+        self._sync_projection_epoch()
+        return self._ensure_bridges()
 
     def _ensure_bridges(self) -> dict[str, Any]:
         """Materialize (or re-bind) the output bridges on the canonical session.
 
         Uses the R2 experience seam: the projection is materialized from the
         session's OWN federation — never a second session/federation/runtime.
+        R3-C01: the binding is recomputed AFTER the epoch is (re)resolved, so a
+        fresh canonical run can never carry stale prior-run epoch metadata into
+        a newly created bridge.
         """
+        if self._federation is None:
+            self._federation = self._experience.require_federation()
         binding = self.binding()
         run_id = binding["canonical_run_id"]
-        self._federation = self._experience.require_federation()
         if run_id != self._namespace_run_id:
             # new canonical run (fresh attempt / replay) → fresh output namespace
             self._observations = None
             self._mes = None
             self._namespace_run_id = run_id
-            self._epoch = 1
+            self._epoch = self._session_reset_generation()
+            self._epoch_changes = 0
             self._last_snapshot = None
-            self._epoch_resets = 0
+            binding = self.binding()  # recompute after the epoch change
         if self._observations is None or self._mes is None:
             self._observations = build_assy_observation_pipeline(
                 canonical=binding
@@ -180,50 +248,14 @@ class CanonicalAssyOutput:
 
     # ── Poll (downstream only) ──
 
-    def _advance_epoch_if_reset(self, before: dict[str, Any]) -> bool:
-        """Detect a same-run-id canonical reset and bump the projection epoch.
-
-        A canonical reset keeps the run id (G22 semantics are untouched) and
-        moves the domain clock/step counter back.  The projection epoch is
-        projection metadata only — it scopes fact identity after the reset and
-        never touches runtime truth.  Detection is poll-to-poll: a reset that
-        is never observed before the session is re-stepped to the same state
-        yields identical facts (documented residual limitation; removing it
-        would require changing G22 run identity semantics).
-        """
-        last = self._last_snapshot
-        if last is None:
-            return False
-        regressed = False
-        if float(before["last_time_s"] or 0.0) < float(last["last_time_s"] or 0.0):
-            regressed = True
-        elif int(before["step_count"]) < int(last["step_count"]):
-            regressed = True
-        else:
-            for sub_line_id, line in before["sub_lines"].items():
-                previous = last["sub_lines"].get(sub_line_id)
-                if previous is None:
-                    continue
-                if line["simulation_time_s"] < previous["simulation_time_s"]:
-                    regressed = True
-                    break
-        if not regressed:
-            return False
-        self._epoch += 1
-        self._epoch_resets += 1
-        if self._mes is not None:
-            # explicit projection re-baseline (projection state only)
-            self._mes.reset_all()
-        return True
-
     def poll(self) -> dict[str, int]:
         """Poll both canonical output bridges once. Never mutates truth."""
-        try:
-            self._federation = self._experience.require_federation()
-        except SessionNotStarted as exc:
-            raise CanonicalOutputError(str(exc)) from exc
+        self._require_federation()
         before = self._truth_snapshot()
-        self._advance_epoch_if_reset(before)
+        # R3-C01: authoritative epoch is read AFTER the federation exists and
+        # BEFORE any bridge is (re)created, so a fresh-run rebinding can never
+        # carry stale prior-run epoch metadata.
+        self._sync_projection_epoch()
         self._ensure_bridges()
         composition = self._composition()
         obs_results = self._observations.poll(composition)
@@ -272,17 +304,19 @@ class CanonicalAssyOutput:
                     self._namespace_run_id == str(ident.get("run_id") or "")
                 ),
                 "projection_epoch": self._epoch,
-                "epoch_source": "canonical_session_reset_detection",
+                "session_reset_generation": self._session_reset_generation(),
+                "epoch_source": "canonical_session_reset_generation",
+                "epoch_changes": self._epoch_changes,
+                "epoch_resets": self._epoch_changes,
                 "source_run_keys": source_keys,
                 "projection_epochs": epochs,
-                "epoch_resets": self._epoch_resets,
             },
             "poll": dict(self._last_poll),
         }
 
     def identity(self) -> dict[str, Any]:
         """Canonical output identity (never polls, never steps)."""
-        self._ensure_bridges()
+        self._bind()
         payload = {"canonical": self.canonical_envelope()}
         payload["legacy_runtime_authority"] = False
         return payload
