@@ -14,7 +14,7 @@ NOT authorized and NOT started.
 
 Base (technical branch point): 75725508d2894f5afaa1ec10134e64a8874e86df
 Branch: feature/vf-vnext-r4
-Head: (this implementation commit)
+Head: 3df5ed07f790174da775997d4bca9b34837214b8
 Harness preflight: PASSED
 Verdict: ASSY_CANONICAL_PARITY_COMPLETE
 
@@ -47,7 +47,10 @@ Audit (separate): reports/VF-CROSS-WORKSPACE-UI-AUDIT.md — 0 BLOCKER, 0 MAJOR,
 fixed in R4.
 
 Regression: R4 focused 27; full suite 2598 -> 2625 passed; canonical baseline
-(42 groups) recorded at the pushed head in the SA submission; R1/R2/R2V/R3/R3-C01 + observation/MES contract suites green.
+(42 groups) 42/42 groups PASS at 3df5ed0 (`BASELINE PASSED: all required groups green`,
+`failed_groups: []`), including `checks_preflight` PASSED and
+`checks_changed_files` PASSED (30 files) and the new `r4_canonical_parity` group
+(42 groups total; the R3-C01 head had 41), and re-verified at the final pushed head.; R1/R2/R2V/R3/R3-C01 + observation/MES contract suites green.
 
 Authority unchanged: vf_runtime_authorization NOT_AUTHORIZED;
 site_authorized_execution NOT_AUTHORIZED; whole_plant_runtime NOT_AUTHORIZED /

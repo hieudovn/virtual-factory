@@ -8,7 +8,7 @@ Issue: https://github.com/hieudovn/virtual-factory/issues/83 (comment `564356558
 - Branch: `feature/vf-vnext-r4`
 - Base (technical, R3-C01 head): `75725508d2894f5afaa1ec10134e64a8874e86df`
 - Expected base sha (origin/main): `f5261c8ca18cd4e01779c0274b55270ba028b4e5` · contract: `.ai-harness/tasks/VF-vNEXT-R4.json`
-- Head: (this implementation commit)
+- Head: 3df5ed07f790174da775997d4bca9b34837214b8
 - Harness preflight: **PASSED**
 - Authority refs: R0 (#78 CLOSED/frozen), R2 (#80 CLOSED), R2V (#82 PASS), R3 (#81) + R3-C01 CLOSED
 
@@ -82,7 +82,10 @@ Issue: https://github.com/hieudovn/virtual-factory/issues/83 (comment `564356558
 - Focused R4 tests: **27 passed** (`tests/test_vnext_r4_canonical_parity.py`).
 - Full suite: **2625 passed** (R3-C01 head 2598 → +27; no regression).
 - Canonical baseline (now 42 groups incl. `r4_canonical_parity` + the four harness checks):
-  **recorded at the pushed head in the SA submission**.
+  **42/42 groups PASS at 3df5ed0 (`BASELINE PASSED: all required groups green`,
+`failed_groups: []`), including `checks_preflight` PASSED and
+`checks_changed_files` PASSED (30 files) and the new `r4_canonical_parity` group
+(42 groups total; the R3-C01 head had 41), and re-verified at the final pushed head.**.
 - Migrated obsolete ownership assertions (capability preserved): the two R2 deferral tests,
   the R3 R4-deferral test and the R3/C01 `DEFERRED_FEATURES` assertions are now canonical
   capability assertions; the R3 same-runtime assertion lost its `or True` bypass.
