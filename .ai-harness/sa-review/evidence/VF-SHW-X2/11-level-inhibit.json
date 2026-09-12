@@ -1,0 +1,25 @@
+{
+  "gate": "VF-SHW-X2-C02",
+  "t108_high_level": {
+    "inhibit_window": 18,
+    "inflow_permitted": false,
+    "t108_inflow_enable_output": false,
+    "t106_filtered_path_inhibited": true,
+    "t106_filtered_flow_m3h": 0.0,
+    "t105_holds_its_water": true,
+    "windows_integrating_inflow_while_inhibited": 1,
+    "balance_mismatches": [],
+    "alarm": true
+  },
+  "t100_high_level_audit": {
+    "inhibit_window": 26,
+    "intake_enable_output": false,
+    "intake_pump_flow_m3h": 0.0,
+    "windows_integrating_intake_while_inhibited": 4,
+    "overflow_accounted_m3": 3.075,
+    "alarm": false
+  },
+  "balance_mismatches": [],
+  "defect_before_fix": "T108 replaced its already received inflow with zero when inflow_enable was false (deleting committed water) and T106 kept forwarding into the closed path",
+  "verdict": "LEVEL_INHIBIT_ROUTED_TO_THE_UPSTREAM_PATH"
+}

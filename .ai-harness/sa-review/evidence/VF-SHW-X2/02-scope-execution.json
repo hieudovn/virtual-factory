@@ -308,6 +308,7 @@
       "time_s": 7200.0,
       "telemetry_keys": [
         "inflow_m3h",
+        "outflow_held_by_downstream_inhibit",
         "outflow_m3h",
         "simulation_truth",
         "site_authorized_execution",
@@ -331,6 +332,7 @@
         "backwash_step",
         "filter_dp_kpa",
         "filtered_flow_m3h",
+        "filtered_path_inhibited",
         "inflow_m3h",
         "inlet_valve_pos_pct",
         "simulation_truth",
@@ -339,7 +341,8 @@
         "time_s",
         "turbidity_ntu",
         "vf_runtime_authorization",
-        "wash_out_m3h"
+        "wash_out_m3h",
+        "wash_return_m3h"
       ]
     },
     {

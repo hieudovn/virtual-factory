@@ -8,6 +8,14 @@ Produces repo-native, machine-derived evidence for the Issue #94 oracles:
   04-io-resolution.json        runtime resolution of every contract input
   05-physical-oracles.json     balance, bounds, plausibility, determinism
   06-provenance-ledger.json    runtime transfer provenance (PIM-known/assumed)
+  07-authority-labels.json     the four authority labels on every projection
+
+VF-SHW-X2-C02 additions:
+
+  08-lifecycle-identity.json    runtime identity from the active attempt context
+  09-committed-process-input.json  WASH return consumed once at the correct lag
+  10-water-ledger.json         ledger-based water conservation on water only
+  11-level-inhibit.json        high-level permissive inhibits the upstream path
 
 Run:  python .ai-harness/sa-review/evidence/VF-SHW-X2/generate_evidence.py
 """
@@ -52,6 +60,10 @@ ARTEFACTS = (
     "05-physical-oracles.json",
     "06-provenance-ledger.json",
     "07-authority-labels.json",
+    "08-lifecycle-identity.json",
+    "09-committed-process-input.json",
+    "10-water-ledger.json",
+    "11-level-inhibit.json",
 )
 
 EXPECTED_LABELS = {
@@ -109,6 +121,10 @@ def session_authority() -> dict:
         "bridge_is_canonical": isinstance(bridge, ShwtpExecutionBridge),
         "bridge_model_class": type(model).__name__,
         "bridge_model_driven_windows": bool(getattr(model, "model_driven_windows", False)),
+        "attempt_run_id": session.record.context.run_id,
+        "model_run_id": model.run_id,
+        "model_run_id_is_the_attempt_identity": model.run_id == session.record.context.run_id,
+        "model_never_uses_a_fixed_default_run_id": model.run_id != "run-shwtp-whole-plant-x2",
         "participant_count": len(model.participants),
         "admitted_scope_count": len(contracts.admission.executable_scope_ids),
         "window_index_after_one_step": model.window_index,
@@ -190,6 +206,363 @@ def authority_labels(contracts, model) -> dict:
         "verdict": "FOUR_AUTHORITY_LABELS_ON_ALL_OUTPUTS"
         if not missing and not drifted
         else "AUTHORITY_LABEL_GAP",
+    }
+
+
+# ── VF-SHW-X2-C02 artefacts ──────────────────────────────────────────────
+
+def lifecycle_identity() -> dict:
+    """C02-1: the model identity is the ACTIVE lifecycle attempt's identity."""
+    from virtual_factory import runcontrol
+    from virtual_factory.shwtp import session as session_module
+
+    session = build_shwtp_session()
+    session.advance()
+    attempt = session.record.context.run_id
+    model = session.record.bridge.model
+    transfers = model.transfer_records()
+
+    session.reset()
+    session.advance()
+    after_reset = session.record.context.run_id
+    reset_model = session.record.bridge.model
+    reset_transfers = reset_model.transfer_records()
+
+    issued: list[dict] = []
+    for name, transition in (("new_attempt", session.new_attempt), ("replay", session.replay)):
+        new_id = transition()
+        session.advance()
+        attempt_model = session.record.bridge.model
+        issued.append(
+            {
+                "transition": name,
+                "issued_run_id": new_id,
+                "differs_from_first_attempt": new_id != attempt,
+                "model_run_id": attempt_model.run_id,
+                "transfer_run_ids": sorted({row["run_id"] for row in attempt_model.transfer_records()}),
+                "old_identity_leaked": attempt in {row["run_id"] for row in attempt_model.transfer_records()},
+            }
+        )
+
+    fail_closed = {}
+    for label, call in (
+        ("zero_arg_bridge_factory", session_module._require_attempt_bound_bridge),
+        ("ambient_run_id_kwarg", lambda: session_module._resolve_model("whole_plant_x2", {"run_id": "run-fixed"})),
+    ):
+        try:
+            call()
+            fail_closed[label] = "DID_NOT_FAIL"
+        except runcontrol.SessionError:
+            fail_closed[label] = "FAILED_CLOSED"
+
+    return {
+        "gate": "VF-SHW-X2-C02",
+        "attempt_run_id": attempt,
+        "model_run_id": model.run_id,
+        "model_matches_attempt": model.run_id == attempt,
+        "participant_run_ids": sorted({p.run_id for p in model.participants.values()}),
+        "transfer_run_ids": sorted({row["run_id"] for row in transfers}),
+        "transfer_run_id_matches_attempt": all(row["run_id"] == attempt for row in transfers),
+        "transfer_window_ids_match_attempt": all(row["window_id"].startswith(attempt) for row in transfers),
+        "runtime_truth_run_id": model.runtime_truth()["run_id"],
+        "runtime_truth_run_id_source": model.runtime_truth()["run_id_source"],
+        "reset_preserves_attempt_identity": after_reset == attempt,
+        "reset_transfer_identity_preserved": all(row["run_id"] == attempt for row in reset_transfers),
+        "lifecycle_issued_transitions": issued,
+        "fail_closed": fail_closed,
+        "verdict": "RUNTIME_IDENTITY_BOUND_TO_THE_ACTIVE_ATTEMPT"
+        if (
+            model.run_id == attempt
+            and all(row["run_id"] == attempt for row in transfers)
+            and after_reset == attempt
+            and all(row["run_id"] == attempt for row in reset_transfers)
+            and all(
+                entry["differs_from_first_attempt"]
+                and entry["model_run_id"] == entry["issued_run_id"]
+                and not entry["old_identity_leaked"]
+                for entry in issued
+            )
+            and all(value == "FAILED_CLOSED" for value in fail_closed.values())
+        )
+        else "RUNTIME_IDENTITY_NOT_BOUND",
+    }
+
+
+def committed_process_input() -> dict:
+    """C02-2: the committed WASH return is consumed once at the correct lag."""
+    from virtual_factory.shwtp.whole_plant import WholePlantScenario
+
+    model = build_shwtp_whole_plant(scenario=WholePlantScenario(t106_dp_initial_kpa=78.0))
+    lag_rows: list[dict] = []
+    received = returned = 0.0
+    mismatches: list[dict] = []
+    delivered_previous = 0.0
+    for index in range(1, 25):
+        model.run_window(f"window-{index}")
+        values = model.participants["vf-shw-node-t106"].monitor_values()
+        consumed = values["wash_return_m3h"]
+        received += sum(
+            float(row["payload"]["flow_m3h"])
+            for row in model.transfer_records()
+            if row["binding_id"] == "vf-shw-edge-t106-wash"
+        ) * (SHWTP_WHOLE_PLANT_DEFAULT_STEP_S / 3600.0)
+        returned += sum(
+            float(row["payload"]["flow_m3h"])
+            for row in model.transfer_records()
+            if row["binding_id"] == "vf-shw-edge-wash-t106"
+        ) * (SHWTP_WHOLE_PLANT_DEFAULT_STEP_S / 3600.0)
+        if consumed != delivered_previous:
+            mismatches.append({"window": index, "consumed": consumed, "delivered": delivered_previous})
+        if consumed > 0.0 or delivered_previous > 0.0:
+            lag_rows.append({"window": index, "consumed_m3h": consumed, "delivered_previous_m3h": delivered_previous})
+        delivered_previous = sum(
+            float(row["payload"]["flow_m3h"])
+            for row in model.transfer_records()
+            if row["binding_id"] == "vf-shw-edge-wash-t106"
+        )
+
+    return {
+        "gate": "VF-SHW-X2-C02",
+        "windows": 24,
+        "positive_return_windows": lag_rows,
+        "consumed_equals_delivered_previous_windows": len(lag_rows),
+        "lag_mismatches": mismatches,
+        "wash_water_received_m3": round(received, 9),
+        "wash_water_returned_m3": round(returned, 9),
+        "return_never_exceeds_received": returned <= received + 1e-9,
+        "defect_before_fix": (
+            "the committed wash return was written into the transient controller command "
+            "dictionary and destroyed by the next prepare_window, so T106 always consumed 0"
+        ),
+        "verdict": "COMMITTED_PROCESS_INPUT_CONSUMED_AT_THE_CORRECT_LAG"
+        if (lag_rows and not mismatches and returned > 0.0 and returned <= received + 1e-9)
+        else "COMMITTED_PROCESS_INPUT_STILL_LOST",
+    }
+
+
+def water_ledger() -> dict:
+    """C02-3: the conservation oracle counts water only, on one ledger basis."""
+    from virtual_factory.shwtp.whole_plant import WholePlantScenario
+
+    scenarios = {
+        "startup": (1, WholePlantScenario()),
+        "stopped_zero_inflow": (30, WholePlantScenario(raw_flow_sp_m3h=0.0)),
+        "backwash_recovery": (30, WholePlantScenario(t106_dp_initial_kpa=78.0)),
+        "line2_active": (30, WholePlantScenario(line2_split_fraction=0.5)),
+        "t108_high_inhibit": (
+            40,
+            WholePlantScenario(t108_initial_volume_m3=91.0, t108_transfer_rated_flow_m3h=10.0),
+        ),
+        "capacity_overflow": (30, WholePlantScenario(t106_capacity_m3=10.0, t106_initial_volume_m3=9.0)),
+        "empty_tanks": (
+            30,
+            WholePlantScenario(
+                t100_initial_volume_m3=0.0,
+                t105_initial_volume_m3=0.0,
+                t106_initial_volume_m3=0.0,
+                t108_initial_volume_m3=0.0,
+                sludge_t201_initial_volume_m3=0.0,
+            ),
+        ),
+    }
+    results: list[dict] = []
+    for name, (windows, scenario) in scenarios.items():
+        model = build_shwtp_whole_plant(scenario=scenario)
+        worst = 0.0
+        for index in range(1, windows + 1):
+            model.run_window(f"window-{index}")
+            water = model.balance_report()["plant_water"]
+            worst = max(worst, abs(water["residual_m3"]))
+        water = model.balance_report()["plant_water"]
+        results.append(
+            {
+                "scenario": name,
+                "windows": windows,
+                "residual_m3": water["residual_m3"],
+                "tolerance_m3": water["tolerance_m3"],
+                "conserved": water["conserved"],
+                "worst_abs_residual_m3": round(worst, 12),
+                "plant_in_m3": water["plant_in_m3"],
+                "plant_out_m3": water["plant_out_m3"],
+                "process_loss_m3": water["process_loss_m3"],
+                "overflow_m3": water["overflow_m3"],
+                "shortfall_m3": water["shortfall_m3"],
+            }
+        )
+
+    model = build_shwtp_whole_plant()
+    for index in range(1, WINDOWS + 1):
+        model.run_window(f"window-{index}")
+    rows = model.transfer_records()
+    information = [row for row in rows if row["transfer_kind"] == "information"]
+    outside = [row for row in rows if row["transfer_kind"] == "source_availability_outside_boundary"]
+    physical = [row for row in rows if row["transfer_kind"] == "physical_water"]
+    water = model.balance_report()["plant_water"]
+    information_flow = sum(float(row["payload"]["flow_m3h"]) for row in information) * (
+        SHWTP_WHOLE_PLANT_DEFAULT_STEP_S / 3600.0
+    )
+    return {
+        "gate": "VF-SHW-X2-C02",
+        "basis": water["basis"],
+        "ledger_120_windows": water,
+        "transfer_classification": {
+            "physical_water_rows": len(physical),
+            "information_rows": len(information),
+            "source_availability_rows": len(outside),
+            "information_signal_flow_m3_if_counted_as_water": round(information_flow, 9),
+            "information_rows_carry_zero_water_m3": all(row["water_m3"] == 0.0 for row in information),
+            "source_availability_rows_carry_zero_water_m3": all(row["water_m3"] == 0.0 for row in outside),
+        },
+        "previous_oracle": {
+            "allowance": "5% of the input-proportional residual",
+            "reported_closure_m3": -2.7398,
+            "note": (
+                "the previous oracle summed flow on ALL received transfers (including "
+                "information signals) for the in-transit inventory and accepted a 5% "
+                "allowance, so a real deficit was hidden"
+            ),
+        },
+        "scenarios": results,
+        "verdict": "PLANT_WATER_CONSERVED_ON_WATER_ONLY"
+        if (
+            all(entry["conserved"] for entry in results)
+            and all(abs(entry["residual_m3"]) <= entry["tolerance_m3"] for entry in results)
+            and abs(water["residual_m3"]) <= 1e-6
+            and all(row["water_m3"] == 0.0 for row in information + outside)
+        )
+        else "PLANT_WATER_LEDGER_OPEN",
+    }
+
+
+def level_inhibit() -> dict:
+    """C02-4: a high-level permissive inhibits the declared UPSTREAM path."""
+    from virtual_factory.shwtp.whole_plant import WholePlantScenario
+
+    dt_h = SHWTP_WHOLE_PLANT_DEFAULT_STEP_S / 3600.0
+    t108_model = build_shwtp_whole_plant(
+        scenario=WholePlantScenario(t108_initial_volume_m3=91.0, t108_transfer_rated_flow_m3h=10.0)
+    )
+    t108 = t108_model.participants["vf-shw-node-t108"]
+    t108_flip = None
+    t108_integrated_while_inhibited = 0
+    delivered_previous = 0.0
+    mismatches: list[dict] = []
+    for index in range(1, 20):
+        volume_in_before = t108._volume_in_m3
+        volume_before = t108._volume_m3
+        t108_model.run_window(f"window-{index}")
+        values = t108.monitor_values()
+        expected_in = delivered_previous * dt_h
+        if abs((t108._volume_in_m3 - volume_in_before) - expected_in) > 1e-9:
+            mismatches.append({"window": index, "scope": "t108"})
+        if abs((t108._volume_m3 - volume_before) - (delivered_previous - values["withdrawal_m3h"]) * dt_h) > 1e-9:
+            mismatches.append({"window": index, "scope": "t108_volume"})
+        if values["inflow_permitted"] is False:
+            if t108_flip is None:
+                t108_flip = index
+            if delivered_previous > 0.0:
+                t108_integrated_while_inhibited += 1
+        delivered_previous = sum(
+            float(row["payload"]["flow_m3h"])
+            for row in t108_model.transfer_records()
+            if row["binding_id"] == "vf-shw-edge-t106-t108"
+        )
+
+    t108_state = {
+        "inhibit_window": t108_flip,
+        "inflow_permitted": t108.monitor_values()["inflow_permitted"],
+        "t108_inflow_enable_output": next(
+            row["outputs"].get("inflow_enable")
+            for row in t108_model.control_rows()
+            if row["controller_id"] == "vf-shw-ctrl-t108-permissive"
+        ),
+        "t106_filtered_path_inhibited": t108_model.participants["vf-shw-node-t106"].monitor_values()[
+            "filtered_path_inhibited"
+        ],
+        "t106_filtered_flow_m3h": t108_model.participants["vf-shw-node-t106"].monitor_values()[
+            "filtered_flow_m3h"
+        ],
+        "t105_holds_its_water": t108_model.participants["vf-shw-node-t105"].monitor_values()[
+            "outflow_held_by_downstream_inhibit"
+        ],
+        "windows_integrating_inflow_while_inhibited": t108_integrated_while_inhibited,
+        "balance_mismatches": mismatches,
+        "alarm": "inhibit_upstream_intake" in t108.open_alarms,
+    }
+
+    t100_model = build_shwtp_whole_plant(
+        scenario=WholePlantScenario(t100_initial_volume_m3=60.0, t100_capacity_m3=70.0, line1_demand_m3h=5.0)
+    )
+    t100 = t100_model.participants["vf-shw-node-t100"]
+    t100_flip = None
+    t100_integrated_while_inhibited = 0
+    delivered_previous = 0.0
+    overflow_accounted = 0.0
+    for index in range(1, 40):
+        volume_before = t100._volume_m3
+        volume_in_before = t100._volume_in_m3
+        overflow_before = t100._overflow_m3
+        t100_model.run_window(f"window-{index}")
+        values = t100.monitor_values()
+        if abs((t100._volume_in_m3 - volume_in_before) - delivered_previous * dt_h) > 1e-9:
+            mismatches.append({"window": index, "scope": "t100_inflow"})
+        if (
+            abs(
+                (t100._volume_m3 - volume_before)
+                + (t100._overflow_m3 - overflow_before)
+                - (delivered_previous - values["withdrawal_m3h"]) * dt_h
+            )
+            > 1e-9
+        ):
+            mismatches.append({"window": index, "scope": "t100_volume"})
+        if values["inflow_permitted"] is False:
+            if t100_flip is None:
+                t100_flip = index
+            if delivered_previous > 0.0:
+                t100_integrated_while_inhibited += 1
+        delivered_previous = sum(
+            float(row["payload"]["flow_m3h"])
+            for row in t100_model.transfer_records()
+            if row["binding_id"] == "vf-shw-edge-intake-t100"
+        )
+    overflow_accounted = t100._overflow_m3
+    t100_state = {
+        "inhibit_window": t100_flip,
+        "intake_enable_output": next(
+            row["outputs"].get("intake_enable")
+            for row in t100_model.control_rows()
+            if row["controller_id"] == "vf-shw-ctrl-t100-permissive"
+        ),
+        "intake_pump_flow_m3h": t100_model.participants["vf-shw-node-raw-intake"].monitor_values()[
+            "intake_flow_m3h"
+        ],
+        "windows_integrating_intake_while_inhibited": t100_integrated_while_inhibited,
+        "overflow_accounted_m3": round(overflow_accounted, 9),
+        "alarm": "inhibit_upstream_intake" in t100.open_alarms,
+    }
+
+    return {
+        "gate": "VF-SHW-X2-C02",
+        "t108_high_level": t108_state,
+        "t100_high_level_audit": t100_state,
+        "balance_mismatches": mismatches,
+        "defect_before_fix": (
+            "T108 replaced its already received inflow with zero when inflow_enable was "
+            "false (deleting committed water) and T106 kept forwarding into the closed path"
+        ),
+        "verdict": "LEVEL_INHIBIT_ROUTED_TO_THE_UPSTREAM_PATH"
+        if (
+            t108_flip is not None
+            and t108_state["t106_filtered_path_inhibited"]
+            and t108_state["t106_filtered_flow_m3h"] == 0.0
+            and t108_state["t105_holds_its_water"]
+            and t108_integrated_while_inhibited > 0
+            and t100_flip is not None
+            and t100_state["intake_enable_output"] is False
+            and t100_integrated_while_inhibited > 0
+            and not mismatches
+        )
+        else "LEVEL_INHIBIT_STILL_DELETES_WATER",
     }
 
 
@@ -425,6 +798,10 @@ def main() -> int:
         "05-physical-oracles.json": physical_oracles(model),
         "06-provenance-ledger.json": provenance_ledger(contracts, model),
         "07-authority-labels.json": authority_labels(contracts, model),
+        "08-lifecycle-identity.json": lifecycle_identity(),
+        "09-committed-process-input.json": committed_process_input(),
+        "10-water-ledger.json": water_ledger(),
+        "11-level-inhibit.json": level_inhibit(),
     }
     for name, payload in results.items():
         (HERE / name).write_text(json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8")

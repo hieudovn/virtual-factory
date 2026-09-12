@@ -49,6 +49,7 @@ from virtual_factory.shwtp.session import (  # noqa: E402
 from virtual_factory.shwtp.whole_plant import (  # noqa: E402
     AUTHORITY_LABELS,
     SCOPE_PATHS,
+    SHWTP_WHOLE_PLANT_DEFAULT_RUN_ID,
     SHWTP_WHOLE_PLANT_DEFAULT_STEP_S,
     WholePlantScenario,
     WholePlantX2Error,
@@ -778,3 +779,395 @@ class TestProvenance:
             model.run_window("")
         with pytest.raises(WholePlantX2Error):
             model.run_window(None)
+
+
+# ── VF-SHW-X2-C02 ────────────────────────────────────────────────────────
+#
+# C02-1  runtime identity comes from the active lifecycle attempt context;
+# C02-2  committed process input (WASH return) is consumed at the correct lag;
+# C02-3  the plant conservation oracle counts water only (ledger-based);
+# C02-4  a high-level permissive inhibits the declared UPSTREAM path instead of
+#        deleting already-received water.
+
+STEP_S = SHWTP_WHOLE_PLANT_DEFAULT_STEP_S
+DT_H = STEP_S / 3600.0
+
+
+def _t106(model):
+    return model.participants["vf-shw-node-t106"]
+
+
+def _t100(model):
+    return model.participants["vf-shw-node-t100"]
+
+
+def _t108(model):
+    return model.participants["vf-shw-node-t108"]
+
+
+def _t105(model):
+    return model.participants["vf-shw-node-t105"]
+
+
+def _controller(model, controller_id) -> dict:
+    rows = {row["controller_id"]: row for row in model.control_rows()}
+    assert controller_id in rows, f"controller {controller_id!r} not evaluated"
+    return rows[controller_id]
+
+
+def _flow_of(model, binding_id: str) -> float:
+    rows = [row for row in model.transfer_records() if row["binding_id"] == binding_id]
+    return sum(float(row["payload"]["flow_m3h"]) for row in rows)
+
+
+class TestLifecycleRunIdentity:
+    """C02-1: the model identity is the ACTIVE attempt's identity."""
+
+    def test_transfers_carry_the_active_attempt_run_id(self):
+        session = build_shwtp_session()
+        session.advance()
+        run_id = session.record.context.run_id
+        model = session.record.bridge.model
+        assert isinstance(model, WholePlantX2Runtime)
+        assert model.run_id == run_id
+        assert model.runtime_truth()["run_id"] == run_id
+        assert model.runtime_truth()["run_id_source"] == "attempt_context"
+        assert {participant.run_id for participant in model.participants.values()} == {run_id}
+        rows = model.transfer_records()
+        assert rows, "no transfer was recorded for the first window"
+        assert {row["run_id"] for row in rows} == {run_id}
+        assert all(row["window_id"].startswith(run_id) for row in rows)
+        assert model.run_id != SHWTP_WHOLE_PLANT_DEFAULT_RUN_ID
+
+    def test_reset_preserves_the_attempt_identity(self):
+        session = build_shwtp_session()
+        session.advance()
+        run_id = session.record.context.run_id
+        session.reset()
+        assert session.record.context.run_id == run_id
+        session.advance()
+        model = session.record.bridge.model
+        assert model.run_id == run_id
+        assert model.window_index == 1
+        assert {row["run_id"] for row in model.transfer_records()} == {run_id}
+
+    def test_new_attempt_and_replay_issue_lifecycle_identities(self):
+        session = build_shwtp_session()
+        session.advance()
+        first = session.record.context.run_id
+        for transition in (session.new_attempt, session.replay):
+            issued = transition()
+            assert issued != first
+            assert session.record.context.run_id == issued
+            session.advance()
+            model = session.record.bridge.model
+            assert model.run_id == issued
+            rows = model.transfer_records()
+            assert rows
+            assert {row["run_id"] for row in rows} == {issued}
+            # no transfer of an older attempt identity leaks into this attempt
+            assert first not in {row["run_id"] for row in rows}
+
+    def test_attempt_bound_bridge_fails_closed_without_a_context(self):
+        from virtual_factory import runcontrol
+        from virtual_factory.shwtp import session as session_module
+
+        with pytest.raises(runcontrol.SessionError):
+            session_module._require_attempt_bound_bridge()
+        # an explicit ambient run_id is rejected: identity is attempt-bound only
+        with pytest.raises(runcontrol.SessionError):
+            session_module._resolve_model(SHWTP_MODEL_WHOLE_PLANT_X2, {"run_id": "run-fixed"})
+
+
+class TestCommittedProcessInputLag:
+    """C02-2: the WASH return survives prepare_window and is consumed once."""
+
+    def test_wash_return_is_consumed_exactly_once_at_the_correct_lag(self):
+        # a low initial DP forces an early backwash -> wash water -> T110 -> T106
+        model = build_shwtp_whole_plant(scenario=WholePlantScenario(t106_dp_initial_kpa=78.0))
+        delivered_previous = 0.0
+        saw_return = False
+        for index in range(1, 25):
+            model.run_window(f"window-{index}")
+            values = _t106(model).monitor_values()
+            # the COMMITTED wash return of the previous window is consumed now
+            assert values["wash_return_m3h"] == pytest.approx(delivered_previous, abs=1e-9), index
+            delivered_previous = _flow_of(model, "vf-shw-edge-wash-t106")
+            if delivered_previous > 0.0:
+                saw_return = True
+        assert saw_return, "the WASH return never reached T106"
+        # and it really enters the filter water accounting (mass, not "non-negative")
+        model2 = build_shwtp_whole_plant(scenario=WholePlantScenario(t106_dp_initial_kpa=78.0))
+        for index in range(1, 25):
+            t106 = _t106(model2)
+            delivered_previous = _flow_of(model2, "vf-shw-edge-wash-t106")
+            sample = delivered_previous > 0.0
+            inflow_previous = _flow_of(model2, "vf-shw-edge-t105-t106")
+            volume_in_before = t106._volume_in_m3
+            volume_before = t106._volume_m3
+            model2.run_window(f"window-{index}")
+            values = t106.monitor_values()
+            if not sample:
+                continue
+            assert values["wash_return_m3h"] == pytest.approx(delivered_previous, abs=1e-9)
+            assert t106._volume_in_m3 - volume_in_before == pytest.approx(
+                (inflow_previous + delivered_previous) * DT_H, abs=1e-9
+            )
+            assert t106._volume_m3 - volume_before == pytest.approx(
+                (inflow_previous + delivered_previous - values["filtered_flow_m3h"] - values["wash_out_m3h"])
+                * DT_H,
+                abs=1e-9,
+            )
+
+    def test_recovery_loop_never_returns_more_wash_water_than_it_received(self):
+        model = build_shwtp_whole_plant(scenario=WholePlantScenario(t106_dp_initial_kpa=78.0))
+        received = returned = 0.0
+        for index in range(1, 40):
+            model.run_window(f"window-{index}")
+            received += _flow_of(model, "vf-shw-edge-t106-wash") * DT_H
+            returned += _flow_of(model, "vf-shw-edge-wash-t106") * DT_H
+            assert model.participants["vf-shw-node-wash-t110"]._volume_m3 >= 0.0
+        assert returned > 0.0, "the WASH recovery loop never returned water"
+        assert returned <= received + 1e-9
+
+    def test_committed_input_survives_prepare_window(self):
+        model = build_shwtp_whole_plant()
+        filter_participant = _t106(model)
+        model.run_window("window-1")
+        # a committed process input MUST survive the next prepare_window, which
+        # replaces the transient controller commands (the C02-2 defect)
+        filter_participant._process_input["wash_return_flow_m3h"] = 3.0
+        filter_participant.prepare_window(
+            "window-2", {"backwash_step": "IDLE", "inlet_valve_pos": 100.0}, {}
+        )
+        assert filter_participant._process_input["wash_return_flow_m3h"] == 3.0
+        # consumed exactly once
+        assert filter_participant._consume_process_flow("wash_return_flow_m3h") == 3.0
+        assert filter_participant._consume_process_flow("wash_return_flow_m3h") == 0.0
+
+
+class TestPlantWaterLedger:
+    """C02-3: conservation is a ledger-based water balance, not a tolerance."""
+
+    def test_information_bindings_carry_no_water(self, plant):
+        rows = plant.transfer_records()
+        information = [row for row in rows if row["transfer_kind"] == "information"]
+        assert information, "no information binding was recorded"
+        # the SA reproduction: a 60 m3/h information signal is NOT 1 m3 of water - the
+        # plant-flow information binding already carries a multi-m3/h signal value
+        assert max(float(row["payload"]["flow_m3h"]) for row in information) > 40.0
+        assert plant.information_inventory_m3 > 1.0
+        assert all(row["water_m3"] == 0.0 for row in information)
+        physical = [
+            row
+            for row in rows
+            if row["transfer_kind"] == "physical_water" and row["boundary"] != "exit"
+        ]
+        assert plant.in_transit_m3 == pytest.approx(sum(row["water_m3"] for row in physical), abs=1e-12)
+        # counting the information signals as water would inflate the inventory
+        inflated = sum(row["water_m3"] for row in physical) + plant.information_inventory_m3
+        assert inflated > plant.in_transit_m3
+
+    def test_source_availability_outside_the_boundary_is_not_inventory(self, plant):
+        rows = [row for row in plant.transfer_records() if row["binding_id"] == "vf-shw-edge-raw-source-intake"]
+        assert rows
+        assert all(row["transfer_kind"] == "source_availability_outside_boundary" for row in rows)
+        assert all(row["water_m3"] == 0.0 for row in rows)
+        assert plant.balance_report()["plant_water"]["source_availability_m3"] > 0.0
+        # availability is a raw signal: the pump takes only part of it
+        availability = float(rows[0]["payload"]["flow_m3h"])
+        intake = _flow_of(plant, "vf-shw-edge-intake-t100")
+        assert availability > intake
+
+    def test_transfer_classification_is_load_bearing(self):
+        kind = WholePlantX2Runtime._transfer_kind
+        assert kind("vf-shw-info-t101-demand-t100") == "information"
+        assert kind("vf-shw-info-line2-split-t100") == "information"
+        assert kind("vf-shw-info-t100-plant-flow-chem") == "information"
+        assert kind("vf-shw-edge-raw-source-intake") == "source_availability_outside_boundary"
+        assert kind("vf-shw-edge-intake-t100") == "physical_water"
+        assert kind("vf-shw-edge-t108-dist") == "physical_water"
+        assert kind("vf-shw-edge-wash-t106") == "physical_water"
+
+    def test_plant_water_ledger_is_conserved_over_the_run(self, plant):
+        water = plant.balance_report()["plant_water"]
+        assert water["plant_in_m3"] > 0.0
+        assert water["plant_out_m3"] > 0.0
+        assert water["process_loss_m3"] > 0.0
+        assert water["tolerance_m3"] <= 1e-6
+        assert abs(water["residual_m3"]) <= water["tolerance_m3"]
+        assert water["conserved"] is True
+        # the ledger closes to float rounding, NOT to a percentage allowance
+        assert abs(water["residual_m3"]) <= 1e-9
+
+    def test_a_percentage_allowance_would_hide_water(self, plant):
+        water = plant.balance_report()["plant_water"]
+        # the previous oracle accepted 5% of the input; the deficit that hid was
+        # 0.55 m3 of water, i.e. materially larger than the float tolerance.
+        hidden = 0.05 * water["plant_in_m3"] + 0.05
+        assert hidden > 3.0
+        assert abs(water["residual_m3"]) < 1e-6
+
+    def test_information_inventory_would_break_the_ledger_if_counted(self, plant):
+        water = plant.balance_report()["plant_water"]
+        assert water["conserved"] is True
+        # counting the information signals as water would leave a material residual
+        assert abs(water["residual_m3"] + water["information_inventory_m3"]) > 1.0
+
+    @pytest.mark.parametrize(
+        "windows,scenario",
+        [
+            (1, WholePlantScenario()),  # startup
+            (30, WholePlantScenario(raw_flow_sp_m3h=0.0)),  # stopped / zero inflow
+            (30, WholePlantScenario(t106_dp_initial_kpa=78.0)),  # backwash + recovery
+            (30, WholePlantScenario(line2_split_fraction=0.5)),  # LINE2 active
+            (40, WholePlantScenario(t108_initial_volume_m3=91.0, t108_transfer_rated_flow_m3h=10.0)),
+            (30, WholePlantScenario(t106_capacity_m3=10.0, t106_initial_volume_m3=9.0)),  # overflow
+            (
+                30,
+                WholePlantScenario(
+                    t100_initial_volume_m3=0.0,
+                    t105_initial_volume_m3=0.0,
+                    t106_initial_volume_m3=0.0,
+                    t108_initial_volume_m3=0.0,
+                    sludge_t201_initial_volume_m3=0.0,
+                ),
+            ),  # empty tanks
+        ],
+    )
+    def test_plant_water_ledger_is_conserved_in_boundary_scenarios(self, windows, scenario):
+        model = build_shwtp_whole_plant(scenario=scenario)
+        worst = 0.0
+        for index in range(1, windows + 1):
+            model.run_window(f"window-{index}")
+            water = model.balance_report()["plant_water"]
+            worst = max(worst, abs(water["residual_m3"]))
+            assert water["conserved"] is True, (index, scenario.name, water)
+            assert abs(water["residual_m3"]) <= water["tolerance_m3"], (index, water)
+        assert worst <= 1e-6, (scenario.name, worst)
+        water = model.balance_report()["plant_water"]
+        # every modelled loss is an EXPLICIT term, never a silent clamp
+        assert water["overflow_m3"] >= 0.0
+        assert water["shortfall_m3"] >= 0.0
+        assert water["information_inventory_m3"] >= 0.0
+        total = (
+            water["water_inside_m3"]
+            - water["plant_in_m3"]
+            + water["plant_out_m3"]
+            + water["process_loss_m3"]
+            + water["overflow_m3"]
+            - water["shortfall_m3"]
+        )
+        assert total == pytest.approx(water["residual_m3"], abs=1e-9)
+
+
+class TestLevelInhibitRouting:
+    """C02-4: a high-level permissive inhibits the UPSTREAM path (no deletion)."""
+
+    def test_t108_high_level_inhibits_the_upstream_filter_path(self):
+        # a low transfer capacity makes T108 rise into LAHH deterministically
+        model = build_shwtp_whole_plant(
+            scenario=WholePlantScenario(t108_initial_volume_m3=91.0, t108_transfer_rated_flow_m3h=10.0)
+        )
+        flip = None
+        for index in range(1, 20):
+            model.run_window(f"window-{index}")
+            if _controller(model, "vf-shw-ctrl-t108-permissive")["outputs"]["inflow_enable"] is False:
+                flip = index
+                break
+        assert flip is not None, "T108 never reached the high-level inhibit"
+        t108 = _t108(model).monitor_values()
+        t106 = _t106(model).monitor_values()
+        t105 = _t105(model).monitor_values()
+        assert t108["inflow_permitted"] is False
+        # the declared upstream actuator PATH is closed instead of the water being deleted
+        assert t106["filtered_path_inhibited"] is True
+        assert t106["filtered_flow_m3h"] == 0.0
+        assert t105["outflow_held_by_downstream_inhibit"] is True
+        assert _flow_of(model, "vf-shw-edge-t106-t108") == 0.0
+        assert "inhibit_upstream_intake" in _t108(model).open_alarms
+        # the backwash sequence keeps exclusive ownership of the valve signal
+        assert _controller(model, "vf-shw-ctrl-backwash-sequence")["outputs"]["inlet_valve_pos"] in (0.0, 100.0)
+
+    def test_delivered_water_is_never_deleted_at_the_receiving_tank(self):
+        """T108 keeps and balances every committed inflow across the transition."""
+        model = build_shwtp_whole_plant(
+            scenario=WholePlantScenario(t108_initial_volume_m3=91.0, t108_transfer_rated_flow_m3h=10.0)
+        )
+        t108 = _t108(model)
+        delivered_previous = 0.0
+        saw_inhibit = saw_delivery_while_inhibited = False
+        for index in range(1, 20):
+            volume_before = t108._volume_m3
+            volume_in_before = t108._volume_in_m3
+            model.run_window(f"window-{index}")
+            values = t108.monitor_values()
+            # the water T108 integrates THIS window is the inflow delivered last window
+            assert t108._volume_in_m3 - volume_in_before == pytest.approx(delivered_previous * DT_H, abs=1e-9)
+            assert t108._volume_m3 - volume_before == pytest.approx(
+                (delivered_previous - values["withdrawal_m3h"]) * DT_H, abs=1e-9
+            )
+            if values["inflow_permitted"] is False:
+                saw_inhibit = True
+                if delivered_previous > 0.0:
+                    saw_delivery_while_inhibited = True
+            delivered_previous = _flow_of(model, "vf-shw-edge-t106-t108")
+            assert t108._volume_m3 >= 0.0
+        assert saw_inhibit, "the T108 high-level inhibit was never active"
+        assert saw_delivery_while_inhibited, (
+            "no window integrated a committed inflow while the inhibit was active "
+            "(the pre-C02 defect deleted exactly this water)"
+        )
+
+    def test_t100_high_level_inhibits_the_upstream_intake_pump(self):
+        model = build_shwtp_whole_plant(scenario=WholePlantScenario(t100_initial_volume_m3=90.0))
+        model.run_window("window-1")
+        assert _controller(model, "vf-shw-ctrl-t100-permissive")["outputs"]["intake_enable"] is False
+        model.run_window("window-2")
+        # inhibited at the SOURCE: the pump delivers nothing into the plant
+        assert _t100(model).monitor_values()["inflow_permitted"] is False
+        assert _flow_of(model, "vf-shw-edge-intake-t100") == 0.0
+        assert model.participants["vf-shw-node-raw-intake"].monitor_values()["intake_flow_m3h"] == 0.0
+        assert "inhibit_upstream_intake" in _t100(model).open_alarms
+
+    def test_t100_never_deletes_a_received_intake(self):
+        model = build_shwtp_whole_plant(
+            scenario=WholePlantScenario(t100_initial_volume_m3=60.0, t100_capacity_m3=70.0, line1_demand_m3h=5.0)
+        )
+        t100 = _t100(model)
+        delivered_previous = 0.0
+        saw_inhibit = saw_integrated_after_inhibit = False
+        for index in range(1, 40):
+            volume_before = t100._volume_m3
+            volume_in_before = t100._volume_in_m3
+            overflow_before = t100._overflow_m3
+            model.run_window(f"window-{index}")
+            values = t100.monitor_values()
+            assert t100._volume_in_m3 - volume_in_before == pytest.approx(delivered_previous * DT_H, abs=1e-9)
+            # any capacity overflow is an EXPLICIT accounted term, never a silent loss
+            assert (t100._volume_m3 - volume_before) + (t100._overflow_m3 - overflow_before) == pytest.approx(
+                (delivered_previous - values["withdrawal_m3h"]) * DT_H, abs=1e-9
+            )
+            if values["inflow_permitted"] is False:
+                saw_inhibit = True
+                if delivered_previous > 0.0:
+                    saw_integrated_after_inhibit = True
+            delivered_previous = _flow_of(model, "vf-shw-edge-intake-t100")
+        assert saw_inhibit, "T100 never reached its high-level inhibit"
+        assert saw_integrated_after_inhibit, (
+            "no window integrated a committed intake while the inhibit was active"
+        )
+        # and the upstream pump was actually stopped (not merely reported)
+        assert _controller(model, "vf-shw-ctrl-t100-permissive")["outputs"]["intake_enable"] is False
+
+    def test_the_audit_finds_no_other_deleting_tank(self, plant):
+        """Every storage scope integrates exactly what the ledger delivered."""
+        monitored = 0
+        for scope_id, participant in plant.participants.items():
+            values = participant.monitor_values()
+            if "volume_m3" in values:
+                assert participant._volume_in_m3 >= 0.0
+                assert participant._overflow_m3 >= 0.0
+                assert participant._shortfall_m3 < 1e-6, (scope_id, participant._shortfall_m3)
+                monitored += 1
+        assert monitored >= 5

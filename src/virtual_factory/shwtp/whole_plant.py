@@ -153,6 +153,43 @@ X2_INFORMATION_EDGE_IDS: tuple[str, ...] = (
     "vf-shw-info-t100-plant-flow-chem",
 )
 
+#: Bindings that carry raw-source AVAILABILITY outside the plant control volume:
+#: the pumped-intake boundary starts at the intake discharge, so water the intake
+#: does not pump never enters the plant and must not enter the inventory (C02-3).
+OUTSIDE_BOUNDARY_BINDINGS: frozenset[str] = frozenset({"vf-shw-edge-raw-source-intake"})
+
+#: The plant control volume: IN at the pumped-intake discharge, OUT at the
+#: network discharge (plus the sludge tank outflow, which emits no transfer).
+INTAKE_BINDING_ID = "vf-shw-edge-intake-t100"
+NETWORK_BINDING_ID = "vf-shw-edge-dist-demand"
+LINE2_FEED_BINDING_ID = "vf-shw-edge-t100-line2"
+LINE2_DELIVERY_BINDING_ID = "vf-shw-edge-line2-dist"
+#: Boundary role per binding (everything else is internal): ``entry`` water
+#: enters the control volume, ``exit`` water has left it.
+BOUNDARY_ROLE: Mapping[str, str] = {
+    INTAKE_BINDING_ID: "entry",
+    NETWORK_BINDING_ID: "exit",
+}
+
+#: Documented NUMERICAL (float rounding) tolerance for the ledger reconciliation.
+#: This is not a model-approximation allowance: the ledger must close to rounding
+#: error, and any modelled loss is an explicit (alarmed) ledger term instead.
+PLANT_WATER_TOLERANCE_RELATIVE = 1e-9
+PLANT_WATER_TOLERANCE_ABSOLUTE_M3 = 1e-9
+
+
+def _empty_water_ledger() -> dict:
+    return {
+        "plant_in_m3": 0.0,
+        "plant_out_m3": 0.0,
+        "process_loss_m3": 0.0,
+        "overflow_m3": 0.0,
+        "shortfall_m3": 0.0,
+        "in_transit_m3": 0.0,
+        "information_m3": 0.0,
+        "source_availability_m3": 0.0,
+    }
+
 
 class WholePlantX2Error(ValueError):
     """Raised when an X2 whole-plant invariant is violated (fail closed)."""
@@ -334,11 +371,20 @@ class ScopeParticipant:
         self._time_s = 0.0
         self._window: str | None = None
         self._commands: Mapping[str, Any] = {}
+        #: COMMITTED process inputs (delivered by the previous window) - kept
+        #: separate from the transient controller commands in ``_commands`` so a
+        #: ``prepare_window`` can never discard them before consumption (C02-2).
+        self._process_input: dict[str, Any] = {}
         self._inbound: list[BoundaryTransfer] = []
         self._alarms: set[str] = set()
         self._volume_in_m3 = 0.0
         self._volume_out_m3 = 0.0
         self._initial_volume_m3 = 0.0
+        #: explicitly ACCOUNTED volume clamps (never silent, never tolerated):
+        #: water that had to leave a full tank, and water created by clamping a
+        #: negative volume to zero.
+        self._overflow_m3 = 0.0
+        self._shortfall_m3 = 0.0
         self.reset()
 
     # lifecycle -----------------------------------------------------------
@@ -346,10 +392,13 @@ class ScopeParticipant:
         self._time_s = 0.0
         self._window = None
         self._commands = {}
+        self._process_input = {}
         self._inbound = []
         self._alarms = set()
         self._volume_in_m3 = 0.0
         self._volume_out_m3 = 0.0
+        self._overflow_m3 = 0.0
+        self._shortfall_m3 = 0.0
         self._reset_state()
 
     def _reset_state(self) -> None:
@@ -365,6 +414,10 @@ class ScopeParticipant:
         if not isinstance(window_id, str) or not window_id.strip():
             raise WholePlantX2Error("window_id must be a non-empty str")
         self._window = window_id
+        # ``commands`` is THIS window's transient controller command set.
+        # Committed process inputs live in ``self._process_input`` and are
+        # deliberately NOT cleared here: they carry the previous window's
+        # committed process data (the correct explicit_lagged lag, C02-2).
         self._commands = dict(commands)
         self._feedback = dict(feedback)
 
@@ -411,6 +464,42 @@ class ScopeParticipant:
 
     def _command(self, signal: str, default: Any = None) -> Any:
         return self._commands.get(signal, default)
+
+    def _consume_process_input(self, signal: str, default: Any = None) -> Any:
+        """Consume a COMMITTED process input exactly once (correct lag).
+
+        ``_commands`` holds the CURRENT window's transient controller commands
+        and is replaced by every ``prepare_window``. A committed process datum
+        (e.g. a physical inflow delivered at the end of the previous window)
+        must survive that replacement and be consumed exactly once by the next
+        step: it lives in ``self._process_input`` (C02-2).
+        """
+        if signal in self._process_input:
+            return self._process_input.pop(signal)
+        return default
+
+    def _consume_process_flow(self, signal: str, default: float = 0.0) -> float:
+        value = self._consume_process_input(signal, None)
+        if value is None:
+            return default
+        return _nonneg(value, signal)
+
+    def _bound_volume(self, volume: float, capacity: float | None) -> float:
+        """Bound a storage volume, ACCOUNTING every clamp (no silent loss).
+
+        A negative volume would CREATE water and an overflow would DESTROY it;
+        both are recorded (``_shortfall_m3`` / ``_overflow_m3``) and alarmed so
+        the plant water ledger can reconcile them explicitly (C02-3).
+        """
+        if volume < 0.0:
+            self._shortfall_m3 += -volume
+            self._alarm("negative_volume_clamped")
+            volume = 0.0
+        if capacity is not None and volume > capacity:
+            self._overflow_m3 += volume - capacity
+            self._alarm("capacity_clamped")
+            volume = capacity
+        return volume
 
     def _emit(
         self,
@@ -468,6 +557,8 @@ class ScopeParticipant:
             "volume_in_m3": round(self._volume_in_m3, 9),
             "volume_out_m3": round(self._volume_out_m3, 9),
             "volume_delta_m3": round(self._storage_volume() - self._initial_volume_m3, 9),
+            "overflow_m3": round(self._overflow_m3, 9),
+            "shortfall_m3": round(self._shortfall_m3, 9),
             "residual_m3": round(
                 (self._storage_volume() - self._initial_volume_m3) - (self._volume_in_m3 - self._volume_out_m3),
                 9,
@@ -622,13 +713,9 @@ class StorageTankParticipant(ScopeParticipant):
 
     def _integrate(self, dt_s: float, inflow_m3h: float, outflow_m3h: float) -> None:
         dt_h = dt_s / 3600.0
-        self._volume_m3 = self._volume_m3 + (inflow_m3h - outflow_m3h) * dt_h
-        if self._volume_m3 < 0.0:
-            self._volume_m3 = 0.0
-            self._alarm("negative_volume_clamped")
-        if self._volume_m3 > self.capacity_m3:
-            self._volume_m3 = self.capacity_m3
-            self._alarm("capacity_clamped")
+        self._volume_m3 = self._bound_volume(
+            self._volume_m3 + (inflow_m3h - outflow_m3h) * dt_h, self.capacity_m3
+        )
         self._volume_in_m3 += inflow_m3h * dt_h
         self._volume_out_m3 += outflow_m3h * dt_h
         self._level_m = round(self._volume_m3 / self.area_m2, 9)
@@ -667,9 +754,24 @@ class T100Participant(StorageTankParticipant):
 
     def _step(self, dt_s: float) -> tuple[BoundaryTransfer, ...]:
         outlet_enabled = bool(self._command("outlet_enable", True))
-        demand = _nonneg(self._command("line1_demand_m3h", self.scenario.line1_demand_m3h), "line1_demand")
-        split = self._command("line2_split_fraction", 0.0)
-        split_fraction = _num(split, "line2_split_fraction")
+        # committed declared process inputs are consumed exactly once per window
+        # and only then fall back to the transient controller command/scenario
+        committed_demand = self._consume_process_input("line1_demand_m3h", None)
+        committed_split = self._consume_process_input("line2_split_fraction", None)
+        demand_command = self._command("line1_demand_m3h")
+        split_command = self._command("line2_split_fraction")
+        demand = _nonneg(
+            demand_command
+            if demand_command is not None
+            else (committed_demand if committed_demand is not None else self.scenario.line1_demand_m3h),
+            "line1_demand",
+        )
+        split_fraction = _num(
+            split_command
+            if split_command is not None
+            else (committed_split if committed_split is not None else 0.0),
+            "line2_split_fraction",
+        )
         if not 0.0 <= split_fraction <= 1.0:
             self._alarm("split_fraction_out_of_range")
             split_fraction = min(1.0, max(0.0, split_fraction))
@@ -677,11 +779,14 @@ class T100Participant(StorageTankParticipant):
         available_m3 = self._volume_m3
         dt_h = dt_s / 3600.0 if dt_s > 0 else 0.0
         available_rate = (available_m3 / dt_h) if dt_h > 0 else 0.0
-        headroom_rate = ((self.capacity_m3 - self._volume_m3) / dt_h) if dt_h > 0 else 0.0
 
-        self._inflow_m3h = self._inflow_m3h  # committed this window
+        # C02-4 audit: the level permissive does NOT delete water that has
+        # already been received. The frozen ownership routes the high-level
+        # inhibit to the UPSTREAM intake actuator (``intake_enable``), which the
+        # raw-intake participant honours at the source; this flag is only the
+        # reporting/alarm state.
         self._inflow_permitted = self._level_m < self.level_band[2]
-        intake = self._inflow_m3h if self._inflow_permitted else 0.0
+        intake = self._inflow_m3h
 
         l1_feed = 0.0
         l2_feed = 0.0
@@ -721,9 +826,9 @@ class T100Participant(StorageTankParticipant):
                 self._inflow_m3h = _nonneg(transfer.payload["flow_m3h"], "intake_flow_m3h")
                 self._turbidity_ntu = _nonneg(transfer.payload.get("turbidity_ntu", 0.0), "turbidity_ntu")
             elif transfer.target.port_id == "l1_demand_in":
-                self._commands = {**self._commands, "line1_demand_m3h": transfer.payload.get("l1_demand_m3h", 0.0)}
+                self._process_input["line1_demand_m3h"] = transfer.payload.get("l1_demand_m3h", 0.0)
             elif transfer.target.port_id == "l2_split_in":
-                self._commands = {**self._commands, "line2_split_fraction": transfer.payload.get("split_fraction", 0.0)}
+                self._process_input["line2_split_fraction"] = transfer.payload.get("split_fraction", 0.0)
 
 
 class ResidenceParticipant(ScopeParticipant):
@@ -772,13 +877,9 @@ class ResidenceParticipant(ScopeParticipant):
             self._alarm("outlet_inhibited_by_residence_interlock")
         self._outflow_m3h = self._inflow_m3h if outlet_enabled else 0.0
         dt_h = dt_s / 3600.0
-        self._volume_m3 = self._volume_m3 + (self._inflow_m3h - self._outflow_m3h) * dt_h
-        if self._volume_m3 < 0.0:
-            self._volume_m3 = 0.0
-            self._alarm("negative_volume_clamped")
-        if self._volume_m3 > self.capacity_m3:
-            self._volume_m3 = self.capacity_m3
-            self._alarm("capacity_clamped")
+        self._volume_m3 = self._bound_volume(
+            self._volume_m3 + (self._inflow_m3h - self._outflow_m3h) * dt_h, self.capacity_m3
+        )
         self._volume_in_m3 += self._inflow_m3h * dt_h
         self._volume_out_m3 += self._outflow_m3h * dt_h
         if self._inflow_m3h > 1e-9:
@@ -952,6 +1053,7 @@ class ClarifierParticipant(ScopeParticipant):
         self._turbidity_in_ntu = 0.0
         self._turbidity_out_ntu = 0.0
         self._sludge_total_m3 = 0.0
+        self._outflow_held_by_downstream_inhibit = False
 
     def _storage_volume(self) -> float:
         return self._volume_m3
@@ -961,13 +1063,21 @@ class ClarifierParticipant(ScopeParticipant):
         dt_h = dt_s / 3600.0
         available_rate = (self._volume_m3 / dt_h) if dt_h > 0 else 0.0
         self._sludge_out_m3h = round(min(withdrawal, max(0.0, available_rate)), 9)
-        self._outflow_m3h = self._inflow_m3h
+        # C02-4: the frozen T108 high-level inhibit closes the T106 filtered-water
+        # inflow PATH; the filter cannot forward what it does not receive, so the
+        # upstream clarifier HOLDS its water instead of pushing it into a closed
+        # path (no deletion at the receiver, no silent overflow).
+        inflow_enable = bool(self._command("inflow_enable", True))
+        self._outflow_held_by_downstream_inhibit = not inflow_enable
+        if self._outflow_held_by_downstream_inhibit:
+            self._alarm("outflow_held_by_downstream_inhibit")
+            self._outflow_m3h = 0.0
+        else:
+            self._outflow_m3h = self._inflow_m3h
         total_out = self._outflow_m3h + self._sludge_out_m3h
-        dt_h = dt_s / 3600.0
-        self._volume_m3 = max(0.0, self._volume_m3 + (self._inflow_m3h - total_out) * dt_h)
-        if self._volume_m3 > self.capacity_m3:
-            self._volume_m3 = self.capacity_m3
-            self._alarm("capacity_clamped")
+        self._volume_m3 = self._bound_volume(
+            self._volume_m3 + (self._inflow_m3h - total_out) * dt_h, self.capacity_m3
+        )
         self._volume_in_m3 += self._inflow_m3h * dt_h
         self._volume_out_m3 += total_out * dt_h
         self._sludge_total_m3 += self._sludge_out_m3h * dt_h
@@ -1001,6 +1111,7 @@ class ClarifierParticipant(ScopeParticipant):
             "volume_m3": round(self._volume_m3, 6),
             "inflow_m3h": round(self._inflow_m3h, 6),
             "outflow_m3h": round(self._outflow_m3h, 6),
+            "outflow_held_by_downstream_inhibit": self._outflow_held_by_downstream_inhibit,
             "sludge_out_m3h": round(self._sludge_out_m3h, 6),
             "turbidity_ntu": round(self._turbidity_out_ntu, 6),
         }
@@ -1027,6 +1138,8 @@ class FilterParticipant(ScopeParticipant):
         self._dp_kpa = self.scenario.t106_dp_initial_kpa
         self._valve_pos_pct = 0.0
         self._wash_out_m3h = 0.0
+        self._wash_return_m3h = 0.0
+        self._inflow_inhibited = False
         self._last_step = "IDLE"
         self._backwash_count = 0
 
@@ -1039,7 +1152,18 @@ class FilterParticipant(ScopeParticipant):
         self._valve_pos_pct = self._clamp(valve_pos, 0.0, 100.0, "valve_pos_out_of_range")
         dt_h = dt_s / 3600.0
         open_valve = self._valve_pos_pct >= 100.0
-        self._filtered_flow_m3h = self._inflow_m3h if open_valve else 0.0
+        # C02-4: the frozen T108 high-level permissive owns the UPSTREAM T106
+        # filtered-water inflow path (``inflow_enable``). The inhibit closes that
+        # path: the filter forwards nothing to T108 while it is active. The
+        # permissive never deletes water at the receiving tank; the backwash
+        # sequence keeps exclusive ownership of ``inlet_valve_pos``, and while a
+        # backwash/settle phase runs the sequence already stops filtered
+        # production, so the two agree (no double ownership of one actuator).
+        inflow_enable = bool(self._command("inflow_enable", True))
+        self._inflow_inhibited = not inflow_enable
+        if self._inflow_inhibited:
+            self._alarm("filtered_path_inhibited_by_downstream_level")
+        self._filtered_flow_m3h = self._inflow_m3h if (open_valve and inflow_enable) else 0.0
         efficiency = self.scenario.t106_filter_efficiency if open_valve else 0.0
         self._filtered_turbidity_ntu = round(max(0.0, self._inbound_turbidity_ntu * (1.0 - efficiency)), 9)
         if open_valve and self._filtered_flow_m3h > 0.0:
@@ -1056,10 +1180,17 @@ class FilterParticipant(ScopeParticipant):
             self._dp_kpa = self.scenario.t106_dp_initial_kpa
             self._backwash_count += 1
         dt_h = dt_s / 3600.0
-        wash_return = _nonneg(self._command("wash_return_flow_m3h", 0.0), "wash_return_flow_m3h")
+        # C02-2: the wash return is a COMMITTED process inflow delivered at the
+        # end of the previous window; it is consumed here exactly once (before
+        # the fix it was written into the transient controller commands and
+        # destroyed by the next prepare_window, so T106 always saw zero return).
+        wash_return = self._consume_process_flow("wash_return_flow_m3h")
+        self._wash_return_m3h = wash_return
         in_rate = self._inflow_m3h + wash_return
         out_rate = self._filtered_flow_m3h + self._wash_out_m3h
-        self._volume_m3 = max(0.0, min(self.capacity_m3, self._volume_m3 + (in_rate - out_rate) * dt_h))
+        self._volume_m3 = self._bound_volume(
+            self._volume_m3 + (in_rate - out_rate) * dt_h, self.capacity_m3
+        )
         self._volume_in_m3 += in_rate * dt_h
         self._volume_out_m3 += out_rate * dt_h
         self._last_step = step
@@ -1088,18 +1219,20 @@ class FilterParticipant(ScopeParticipant):
                     "turbidity_ntu",
                 )
             elif transfer.target.port_id == "wash_in":
-                self._commands = {
-                    **self._commands,
-                    "wash_return_flow_m3h": transfer.payload.get("flow_m3h", 0.0),
-                }
+                # C02-2: committed process inflow (consumed once by the next step)
+                self._process_input["wash_return_flow_m3h"] = _nonneg(
+                    transfer.payload.get("flow_m3h", 0.0), "wash_return_flow_m3h"
+                )
 
     def monitor_values(self) -> dict:
         return {
             "time_s": round(self._time_s, 6),
             "inflow_m3h": round(self._inflow_m3h, 6),
+            "wash_return_m3h": round(self._wash_return_m3h, 6),
             "filtered_flow_m3h": round(self._filtered_flow_m3h, 6),
             "filter_dp_kpa": round(self._dp_kpa, 6),
             "inlet_valve_pos_pct": round(self._valve_pos_pct, 6),
+            "filtered_path_inhibited": self._inflow_inhibited,
             "wash_out_m3h": round(self._wash_out_m3h, 6),
             "backwash_step": self._last_step,
             "backwash_count": self._backwash_count,
@@ -1132,7 +1265,9 @@ class RecoveryParticipant(ScopeParticipant):
         dt_h = dt_s / 3600.0
         available_rate = (self._volume_m3 / dt_h) if dt_h > 0 else 0.0
         self._return_m3h = round(min(max_return, max(0.0, available_rate)), 9)
-        self._volume_m3 = max(0.0, min(self.capacity_m3, self._volume_m3 + (self._wash_in_m3h - self._return_m3h) * dt_h))
+        self._volume_m3 = self._bound_volume(
+            self._volume_m3 + (self._wash_in_m3h - self._return_m3h) * dt_h, self.capacity_m3
+        )
         self._volume_in_m3 += self._wash_in_m3h * dt_h
         self._volume_out_m3 += self._return_m3h * dt_h
         return (
@@ -1178,12 +1313,14 @@ class T108Participant(StorageTankParticipant):
         if self._level_m <= self.level_band[0]:
             self._withdrawal_m3h = 0.0
             self._alarm("transfer_pump_lall_inhibit")
-        inflow = self._inflow_m3h if inflow_enabled else 0.0
         self._inflow_permitted = inflow_enabled
         if not inflow_enabled:
             self._alarm("inhibit_upstream_intake")
         self._outflows = {"vf-shw-node-dist-p108": self._withdrawal_m3h}
-        self._integrate(dt_s, inflow, self._withdrawal_m3h)
+        # C02-4: the received inflow is NEVER deleted at the receiving tank. The
+        # high-level action inhibits the UPSTREAM T106 actuator; whatever was
+        # already committed must be integrated (explicit_lagged, conservation).
+        self._integrate(dt_s, self._inflow_m3h, self._withdrawal_m3h)
         self._band_alarms(self._level_m)
         return (
             self._emit(
@@ -1379,8 +1516,8 @@ class SludgeSinkParticipant(ScopeParticipant):
         self._processed_m3h = round(
             min(self.scenario.sludge_processed_flow_m3h, max(0.0, available_rate)) if pump_running else 0.0, 9
         )
-        self._volume_m3 = max(
-            0.0, min(self.capacity_m3, self._volume_m3 + (self._sludge_in_m3h - self._processed_m3h) * dt_h)
+        self._volume_m3 = self._bound_volume(
+            self._volume_m3 + (self._sludge_in_m3h - self._processed_m3h) * dt_h, self.capacity_m3
         )
         self._volume_in_m3 += self._sludge_in_m3h * dt_h
         self._volume_out_m3 += self._processed_m3h * dt_h
@@ -1616,17 +1753,24 @@ class WholePlantX2Runtime:
     wiring: tuple[BindingSpec, ...]
     provenance_index: dict[str, dict]
     communication_step_s: float
+    #: the attempt identity this model instance belongs to (from the run
+    #: lifecycle context; the model never mints a run id of its own, C02-1).
+    run_id: str = SHWTP_WHOLE_PLANT_DEFAULT_RUN_ID
     coupling_policy: str = SHWTP_WHOLE_PLANT_COUPLING_POLICY
     #: the bridge must use this model's own window entry (C1 evaluation first).
     model_driven_windows: bool = True
     _window_index: int = 0
     _transfers: tuple[dict, ...] = ()
+    _prev_transfers: tuple[dict, ...] = ()
     _control_snapshot: dict = field(default_factory=dict)
     _feedback: dict = field(default_factory=dict)
     _plant_in_m3: float = 0.0
     _plant_out_m3: float = 0.0
     _storage_residual_bound_m3: float = 0.05
-    _lag_inventory_m3: float = 0.0
+    _in_transit_m3: float = 0.0
+    _information_inventory_m3: float = 0.0
+    _source_availability_m3: float = 0.0
+    _ledger: dict = field(default_factory=_empty_water_ledger)
     _seen_windows: set[str] = field(default_factory=set)
 
     # execution -----------------------------------------------------------
@@ -1656,18 +1800,41 @@ class WholePlantX2Runtime:
         self._window_index = index
         self._seen_windows.add(window_id)
         self._record_transfers()
+        self._update_water_ledger()
         self._record_committed()
         return outcome
 
     def _record_transfers(self) -> None:
-        """Detached runtime transfer ledger of the last window (provenance source)."""
+        """Detached runtime transfer ledger of the last window (provenance source).
+
+        Every row is classified (C02-3):
+
+        - ``physical_water`` - water inside the plant control volume;
+        - ``information`` - a signal that carries NO water (a 60 m3/h
+          INFORMATION binding is 0 m3 of inventory, it is a signal value);
+        - ``source_availability_outside_boundary`` - raw-source availability at
+          the source, i.e. OUTSIDE the pumped-intake boundary; the water the
+          intake does not pump never enters the plant and must not be counted
+          (no double-counting of source availability).
+
+        Only ``physical_water`` rows may ever enter the plant water inventory.
+        """
+        dt_h = self.communication_step_s / 3600.0
         records: list[dict] = []
         for participant in sorted(self.participants.values(), key=lambda p: p.scope_id):
             for transfer in participant._inbound:
+                kind = self._transfer_kind(transfer.binding_id)
+                flow_m3h = float(transfer.payload.get("flow_m3h", 0.0))
                 records.append(
                     {
                         "transfer_id": transfer.transfer_id,
+                        "run_id": transfer.run_id,
                         "binding_id": transfer.binding_id,
+                        "transfer_kind": kind,
+                        "boundary": BOUNDARY_ROLE.get(transfer.binding_id, "internal")
+                        if kind == "physical_water"
+                        else kind,
+                        "water_m3": round(flow_m3h * dt_h, 12) if kind == "physical_water" else 0.0,
                         "source_scope": transfer.source.owner_scope.as_string(),
                         "target_scope": transfer.target.owner_scope.as_string(),
                         "source_port": transfer.source.port_id,
@@ -1679,13 +1846,104 @@ class WholePlantX2Runtime:
                     }
                 )
         self._transfers = tuple(sorted(records, key=lambda row: row["transfer_id"]))
-        self._lag_inventory_m3 = sum(
-            float(row["payload"].get("flow_m3h", 0.0)) for row in records
-        ) * (self.communication_step_s / 3600.0)
+        # Water inside the plant control volume that is committed but not yet
+        # consumed: every physical transfer except the boundary DISCHARGE to the
+        # network (already outside the volume) - information and source
+        # availability are excluded by construction (C02-3).
+        self._in_transit_m3 = round(
+            sum(
+                row["water_m3"]
+                for row in records
+                if row["transfer_kind"] == "physical_water" and row["boundary"] != "exit"
+            ),
+            12,
+        )
+        self._information_inventory_m3 = round(
+            sum(
+                float(row["payload"].get("flow_m3h", 0.0)) * dt_h
+                for row in records
+                if row["transfer_kind"] == "information"
+            ),
+            12,
+        )
+        self._source_availability_m3 = round(
+            sum(
+                float(row["payload"].get("flow_m3h", 0.0)) * dt_h
+                for row in records
+                if row["transfer_kind"] == "source_availability_outside_boundary"
+            ),
+            12,
+        )
+
+    @staticmethod
+    def _transfer_kind(binding_id: str) -> str:
+        if binding_id in X2_INFORMATION_EDGE_IDS:
+            return "information"
+        if binding_id in OUTSIDE_BOUNDARY_BINDINGS:
+            return "source_availability_outside_boundary"
+        return "physical_water"
 
     @property
-    def lag_inventory_m3(self) -> float:
-        return self._lag_inventory_m3
+    def in_transit_m3(self) -> float:
+        """Physical water inside the boundary, committed but not yet consumed."""
+        return self._in_transit_m3
+
+    @property
+    def information_inventory_m3(self) -> float:
+        """Information-signal inventory of the last window (NEVER water)."""
+        return self._information_inventory_m3
+
+    def _update_water_ledger(self) -> None:
+        """Cumulative ledger-based plant water balance (C02-3).
+
+        Control volume: from the pumped-INTAKE discharge to the network / sludge
+        discharge. Every term is computed on ONE consistent basis (emission at
+        the control-volume boundary) from the transfer ledger plus explicit
+        clamp accounting:
+
+        - IN   = the intake discharge (what the pump actually delivers);
+        - OUT  = the DIST discharge to the network + the sludge tank outflow;
+        - LOSS = declared LINE2 process loss (+ any L2 capacity spill) - the only
+          modelled loss, and it is explicit and alarmed;
+        - WATER INSIDE = storage volumes + the in-transit physical transfers of
+          the current window;
+        - OVERFLOW / SHORTFALL = explicitly accounted clamps (never silent).
+
+        Source AVAILABILITY that the intake does not pump is outside the volume
+        and information bindings carry no water: neither may enter the balance.
+        """
+        dt_h = self.communication_step_s / 3600.0
+        current = self._transfers
+        self._ledger["plant_in_m3"] += self._water_of(current, INTAKE_BINDING_ID)
+        self._ledger["plant_out_m3"] += self._water_of(current, NETWORK_BINDING_ID)
+        self._ledger["plant_out_m3"] += (
+            self.participants["vf-shw-node-sludge-t201"].monitor_values()["processed_m3h"] * dt_h
+        )
+        line2_fed = self._water_of(self._prev_transfers, LINE2_FEED_BINDING_ID)
+        line2_delivered = self._water_of(current, LINE2_DELIVERY_BINDING_ID)
+        self._ledger["process_loss_m3"] += max(0.0, line2_fed - line2_delivered)
+        self._ledger["information_m3"] += self._information_inventory_m3
+        self._ledger["source_availability_m3"] += self._source_availability_m3
+        self._ledger["in_transit_m3"] = self._in_transit_m3
+        self._ledger["overflow_m3"] = round(
+            sum(p._overflow_m3 for p in self.participants.values()), 12
+        )
+        self._ledger["shortfall_m3"] = round(
+            sum(p._shortfall_m3 for p in self.participants.values()), 12
+        )
+        self._prev_transfers = current
+
+    @staticmethod
+    def _water_of(rows: Sequence[Mapping[str, Any]], binding_id: str) -> float:
+        """Physical water (m3) carried by one binding in a window ledger."""
+        return round(
+            sum(
+                float(row["water_m3"])
+                for row in rows
+                if row["binding_id"] == binding_id and row["transfer_kind"] == "physical_water"
+            ),
+            12,
+        )
 
     def _control_commands(self) -> dict[str, Any]:
         """Evaluate the frozen C1 set from COMMITTED state (explicit_lagged)."""
@@ -1805,6 +2063,10 @@ class WholePlantX2Runtime:
         return {
             "model": WHOLE_PLANT_X2_SCHEMA,
             "workspace_id": SHWTP_WHOLE_PLANT_WORKSPACE_ID,
+            #: the attempt identity of the ACTIVE lifecycle context (C02-1); the
+            #: model never mints its own run id.
+            "run_id": self.run_id,
+            "run_id_source": "attempt_context",
             "coupling_policy": self.coupling_policy,
             "window_index": self._window_index,
             "communication_step_s": self.communication_step_s,
@@ -1851,28 +2113,69 @@ class WholePlantX2Runtime:
         return tuple(rows)
 
     def balance_report(self) -> dict:
+        """Ledger-based plant water balance (C02-3).
+
+        The reconciliation is computed INDEPENDENTLY of the participants'
+        ``volume_in/volume_out`` counters: it uses the transfer ledger
+        (physical water only, on one consistent consumption basis at the control
+        volume), the storage volumes and the explicitly accounted clamps. The
+        residual must close within the documented float-rounding tolerance; any
+        modelled loss (LINE2 process loss, capacity overflow) is an explicit,
+        alarmed term instead of being absorbed by a percentage allowance.
+        """
         storage_rows = [p.balance() for p in self.participants.values() if p.storage]
-        stored_delta_m3 = sum(
-            p._storage_volume() - getattr(p, "_initial_volume_m3", 0.0)
-            for p in self.participants.values()
-            if p.storage
+        stored_delta_m3 = round(
+            sum(
+                p._storage_volume() - getattr(p, "_initial_volume_m3", 0.0)
+                for p in self.participants.values()
+                if p.storage
+            ),
+            12,
         )
-        residual = self._plant_in_m3 - self._plant_out_m3 - stored_delta_m3
+        ledger = self._ledger
+        residual = round(
+            (stored_delta_m3 + ledger["in_transit_m3"])
+            - ledger["plant_in_m3"]
+            + ledger["plant_out_m3"]
+            + ledger["process_loss_m3"]
+            + ledger["overflow_m3"]
+            - ledger["shortfall_m3"],
+            12,
+        )
+        scale = max(
+            1.0,
+            abs(ledger["plant_in_m3"]) + abs(ledger["plant_out_m3"]) + abs(stored_delta_m3),
+        )
+        tolerance_m3 = round(
+            PLANT_WATER_TOLERANCE_RELATIVE * scale + PLANT_WATER_TOLERANCE_ABSOLUTE_M3, 15
+        )
+        conserved = abs(residual) <= tolerance_m3
         return {
             "window_index": self._window_index,
             "storage_balances": [
                 {**row, **AUTHORITY_LABELS} for row in storage_rows
             ],
             "plant_water": {
-                "plant_in_m3": round(self._plant_in_m3, 9),
-                "plant_out_m3": round(self._plant_out_m3, 9),
-                "stored_delta_m3": round(stored_delta_m3, 9),
-                "transit_inventory_m3": round(self._lag_inventory_m3, 9),
-                "residual_m3": round(residual, 9),
-                "closure_m3": round(residual - self._lag_inventory_m3, 9),
-                "storage_residual_bound_m3": self._storage_residual_bound_m3,
-                "bounded": abs(residual - self._lag_inventory_m3)
-                <= max(self._storage_residual_bound_m3, 0.05 * max(self._plant_in_m3, 1.0)),
+                "basis": "control volume = pumped-intake discharge .. network/sludge discharge; IN/OUT at the boundary, water inside = storage + in-transit",
+                "plant_in_m3": round(ledger["plant_in_m3"], 9),
+                "plant_out_m3": round(ledger["plant_out_m3"], 9),
+                "stored_delta_m3": stored_delta_m3,
+                "transit_inventory_m3": round(ledger["in_transit_m3"], 9),
+                "water_inside_m3": round(stored_delta_m3 + ledger["in_transit_m3"], 9),
+                "process_loss_m3": round(ledger["process_loss_m3"], 9),
+                "overflow_m3": round(ledger["overflow_m3"], 9),
+                "shortfall_m3": round(ledger["shortfall_m3"], 9),
+                "information_inventory_m3": round(ledger["information_m3"], 9),
+                "source_availability_m3": round(ledger["source_availability_m3"], 9),
+                "source_availability_note": (
+                    "raw-source availability NOT pumped - outside the pumped-intake "
+                    "control volume, never part of the water inventory"
+                ),
+                "residual_m3": residual,
+                "closure_m3": residual,
+                "tolerance_m3": tolerance_m3,
+                "conserved": conserved,
+                "bounded": conserved,
             },
             "max_storage_residual_m3": max((abs(row["residual_m3"]) for row in storage_rows), default=0.0),
             **AUTHORITY_LABELS,
@@ -1948,11 +2251,15 @@ class WholePlantX2Runtime:
             participant.reset()
         self._window_index = 0
         self._transfers = ()
+        self._prev_transfers = ()
         self._control_snapshot = {}
         self._feedback = {}
         self._plant_in_m3 = 0.0
         self._plant_out_m3 = 0.0
-        self._lag_inventory_m3 = 0.0
+        self._in_transit_m3 = 0.0
+        self._information_inventory_m3 = 0.0
+        self._source_availability_m3 = 0.0
+        self._ledger = _empty_water_ledger()
         self._seen_windows = set()
         self._record_transfers()
         self._record_committed()
@@ -2160,6 +2467,7 @@ def build_shwtp_whole_plant(
         wiring=wiring,
         provenance_index=_provenance_index(manifest),
         communication_step_s=step,
+        run_id=run_id,
     )
     # deterministic initial feedback for window-1 explicit_lagged evaluation
     runtime._record_committed()

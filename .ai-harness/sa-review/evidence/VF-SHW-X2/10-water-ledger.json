@@ -1,0 +1,130 @@
+{
+  "gate": "VF-SHW-X2-C02",
+  "basis": "control volume = pumped-intake discharge .. network/sludge discharge; IN/OUT at the boundary, water inside = storage + in-transit",
+  "ledger_120_windows": {
+    "basis": "control volume = pumped-intake discharge .. network/sludge discharge; IN/OUT at the boundary, water inside = storage + in-transit",
+    "plant_in_m3": 66.9375,
+    "plant_out_m3": 99.051733333,
+    "stored_delta_m3": -37.391666666667,
+    "transit_inventory_m3": 5.134633333,
+    "water_inside_m3": -32.257033333,
+    "process_loss_m3": 0.1428,
+    "overflow_m3": 0.0,
+    "shortfall_m3": 0.0,
+    "information_inventory_m3": 171.9372,
+    "source_availability_m3": 90.0,
+    "source_availability_note": "raw-source availability NOT pumped - outside the pumped-intake control volume, never part of the water inventory",
+    "residual_m3": -1e-12,
+    "closure_m3": -1e-12,
+    "tolerance_m3": 2.043809e-07,
+    "conserved": true,
+    "bounded": true
+  },
+  "transfer_classification": {
+    "physical_water_rows": 17,
+    "information_rows": 3,
+    "source_availability_rows": 1,
+    "information_signal_flow_m3_if_counted_as_water": 1.4388,
+    "information_rows_carry_zero_water_m3": true,
+    "source_availability_rows_carry_zero_water_m3": true
+  },
+  "previous_oracle": {
+    "allowance": "5% of the input-proportional residual",
+    "reported_closure_m3": -2.7398,
+    "note": "the previous oracle summed flow on ALL received transfers (including information signals) for the in-transit inventory and accepted a 5% allowance, so a real deficit was hidden"
+  },
+  "scenarios": [
+    {
+      "scenario": "startup",
+      "windows": 1,
+      "residual_m3": -1e-12,
+      "tolerance_m3": 2.52e-09,
+      "conserved": true,
+      "worst_abs_residual_m3": 1e-12,
+      "plant_in_m3": 0.0,
+      "plant_out_m3": 0.033333333,
+      "process_loss_m3": 0.0,
+      "overflow_m3": 0.0,
+      "shortfall_m3": 0.0
+    },
+    {
+      "scenario": "stopped_zero_inflow",
+      "windows": 30,
+      "residual_m3": -0.0,
+      "tolerance_m3": 5.4393067e-08,
+      "conserved": true,
+      "worst_abs_residual_m3": 1e-12,
+      "plant_in_m3": 0.0,
+      "plant_out_m3": 24.093066667,
+      "process_loss_m3": 0.0348,
+      "overflow_m3": 0.0,
+      "shortfall_m3": 0.0
+    },
+    {
+      "scenario": "backwash_recovery",
+      "windows": 30,
+      "residual_m3": -0.0,
+      "tolerance_m3": 5.4955567e-08,
+      "conserved": true,
+      "worst_abs_residual_m3": 1e-12,
+      "plant_in_m3": 16.3125,
+      "plant_out_m3": 24.093066667,
+      "process_loss_m3": 0.0348,
+      "overflow_m3": 0.0,
+      "shortfall_m3": 0.0
+    },
+    {
+      "scenario": "line2_active",
+      "windows": 30,
+      "residual_m3": -0.0,
+      "tolerance_m3": 6.5345167e-08,
+      "conserved": true,
+      "worst_abs_residual_m3": 1e-12,
+      "plant_in_m3": 16.3125,
+      "plant_out_m3": 29.082666667,
+      "process_loss_m3": 0.087,
+      "overflow_m3": 0.0,
+      "shortfall_m3": 0.0
+    },
+    {
+      "scenario": "t108_high_inhibit",
+      "windows": 40,
+      "residual_m3": 1.4e-11,
+      "tolerance_m3": 4.0910233e-08,
+      "conserved": true,
+      "worst_abs_residual_m3": 1.4e-11,
+      "plant_in_m3": 21.9375,
+      "plant_out_m3": 9.631066667,
+      "process_loss_m3": 0.0468,
+      "overflow_m3": 0.0,
+      "shortfall_m3": 0.0
+    },
+    {
+      "scenario": "capacity_overflow",
+      "windows": 30,
+      "residual_m3": -0.0,
+      "tolerance_m3": 5.4955567e-08,
+      "conserved": true,
+      "worst_abs_residual_m3": 1e-12,
+      "plant_in_m3": 16.3125,
+      "plant_out_m3": 24.093066667,
+      "process_loss_m3": 0.0348,
+      "overflow_m3": 0.0,
+      "shortfall_m3": 0.0
+    },
+    {
+      "scenario": "empty_tanks",
+      "windows": 30,
+      "residual_m3": 0.0,
+      "tolerance_m3": 3.30625e-08,
+      "conserved": true,
+      "worst_abs_residual_m3": 0.0,
+      "plant_in_m3": 16.3125,
+      "plant_out_m3": 0.0,
+      "process_loss_m3": 0.0,
+      "overflow_m3": 0.0,
+      "shortfall_m3": 0.0
+    }
+  ],
+  "verdict": "PLANT_WATER_CONSERVED_ON_WATER_ONLY"
+}

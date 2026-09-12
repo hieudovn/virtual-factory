@@ -1,0 +1,45 @@
+{
+  "gate": "VF-SHW-X2-C02",
+  "attempt_run_id": "shwtp-0001",
+  "model_run_id": "shwtp-0001",
+  "model_matches_attempt": true,
+  "participant_run_ids": [
+    "shwtp-0001"
+  ],
+  "transfer_run_ids": [
+    "shwtp-0001"
+  ],
+  "transfer_run_id_matches_attempt": true,
+  "transfer_window_ids_match_attempt": true,
+  "runtime_truth_run_id": "shwtp-0001",
+  "runtime_truth_run_id_source": "attempt_context",
+  "reset_preserves_attempt_identity": true,
+  "reset_transfer_identity_preserved": true,
+  "lifecycle_issued_transitions": [
+    {
+      "transition": "new_attempt",
+      "issued_run_id": "shwtp-0002",
+      "differs_from_first_attempt": true,
+      "model_run_id": "shwtp-0002",
+      "transfer_run_ids": [
+        "shwtp-0002"
+      ],
+      "old_identity_leaked": false
+    },
+    {
+      "transition": "replay",
+      "issued_run_id": "shwtp-0003",
+      "differs_from_first_attempt": true,
+      "model_run_id": "shwtp-0003",
+      "transfer_run_ids": [
+        "shwtp-0003"
+      ],
+      "old_identity_leaked": false
+    }
+  ],
+  "fail_closed": {
+    "zero_arg_bridge_factory": "FAILED_CLOSED",
+    "ambient_run_id_kwarg": "FAILED_CLOSED"
+  },
+  "verdict": "RUNTIME_IDENTITY_BOUND_TO_THE_ACTIVE_ATTEMPT"
+}

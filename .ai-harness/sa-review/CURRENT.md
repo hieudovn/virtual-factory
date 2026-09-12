@@ -298,3 +298,41 @@ VF-SHW-X2-C01 - Canonical whole-plant default + authority labels + test rigour (
 - Implementation head: 134cedb
 - Verdict: VF-SHW-X2-C01 - READY FOR SA REVIEW; X2_CANONICAL_WHOLE_PLANT_DEFAULT_WITH_LABELS
 - STOP: X3/X4/X5 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.
+
+---
+
+VF-SHW-X2-C02 - Runtime identity + WASH return + water ledger + level-inhibit routing (Issue #94 comment 5645344049): CORRECTION
+- Required base: aae3482 (C01 head). Same branch feature/vf-shw-x2-c01 / PR #96; harness preflight PASSED; report: reports/VF-SHW-X2-C02.md.
+- C02-1 CLOSED (runtime identity): the model/participants/transfers are built per attempt from that attempt's own immutable
+  run context via the existing RunLifecycleService bridge_factory_ctx seam (the TIPA seam) - no new lifecycle authority and
+  no second run-id minter. runtime_truth() reports run_id + run_id_source=attempt_context; every detached ledger row carries
+  run_id. Evidence 08-lifecycle-identity.json: attempt shwtp-0001 == model shwtp-0001; RESET preserves the identity;
+  new_attempt -> shwtp-0002 and replay -> shwtp-0003 with all transfers re-issued and no old-id leakage; the zero-arg bridge
+  factory and an ambient run_id kwarg both FAIL CLOSED (SessionError). Stale session docstring corrected
+  (whole_plant_x2 is the canonical default; g21_slice is an explicit compatibility selector).
+- C02-2 CLOSED (WASH return): committed process input now lives in its own rail (_process_input, written by _commit,
+  surviving prepare_window) and is consumed exactly once by the next step; the transient controller commands (_commands)
+  stay separate. FilterParticipant consumes the delivered wash_in flow and exposes wash_return_m3h; T100's committed
+  line1_demand_m3h/line2_split_fraction use the same rail. Evidence 09-committed-process-input.json (forced early backwash):
+  2 positive-return windows with consumed == delivered-previous and lag_mismatches=[], 0.125 m3 received / 0.0833 m3 returned,
+  return never exceeds what was received. Before the fix the return was destroyed by the next prepare_window (consumed 0 forever).
+- C02-3 CLOSED (conservation oracle): the control volume is the pumped-intake discharge .. network/sludge discharge; every
+  transfer row is classified physical_water / information / source_availability_outside_boundary (the latter two carry 0 m3
+  water - the old oracle summed flow on ALL received transfers, so a 60 m3/h information signal became 1 m3 of inventory).
+  The balance is ledger-based (IN = intake discharge, OUT = network discharge + sludge outflow, LOSS = declared LINE2 loss,
+  water inside = storage delta + physical in-transit) with explicit overflow/shortfall accounting and a documented
+  float-rounding tolerance. 120-window residual = -1e-12 (tolerance 2.04e-07, conserved true) vs the previous
+  closure=-2.7398 m3 accepted under a 5% allowance (a real ~0.55 m3 water deficit was hidden). Scenario matrix green:
+  startup, stopped/zero inflow, backwash/recovery, LINE2 active, T108 high inhibit, capacity overflow, empty tanks.
+- C02-4 CLOSED (level inhibit routing): T108 no longer deletes received inflow - it always integrates it, and the frozen
+  upstream actuator path is closed instead (T106 filtered_flow=0 + filtered_path_inhibited; T105 holds its water). Command
+  priority recorded: the backwash sequence keeps exclusive ownership of inlet_valve_pos; the inhibit closes the path.
+  T100 audit: intake never deleted; the t100-permissive stops the raw-intake pump at the source (0 m3/h). Evidence
+  11-level-inhibit.json: T108 inhibit at window 18 with 1 accumulated-inflow-integrated window at the transition and
+  balance_mismatches=[]; T100 inhibit at window 26 with 4 such windows and 3.075 m3 of capacity overflow EXPLICITLY
+  accounted (alarm + ledger term, no silent clamping).
+- Tests: tests/test_vnext_x2_whole_plant_runtime.py 50 -> 75 passed (+25 C02 tests incl. bite tests: classification is
+  load-bearing, information counted as water would break the ledger, a percentage allowance would hide the deficit,
+  deletion would fail the per-window tank balance). Focused modules 212 passed; full suite 2765 -> 2790 passed.
+- Verdict: VF-SHW-X2-C02 - READY FOR SA REVIEW; X2_RUNTIME_IDENTITY_AND_WATER_ACCOUNTING_CORRECTED
+- STOP: X3/X4/X5 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.

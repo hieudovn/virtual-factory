@@ -1,0 +1,23 @@
+{
+  "gate": "VF-SHW-X2-C02",
+  "windows": 24,
+  "positive_return_windows": [
+    {
+      "window": 22,
+      "consumed_m3h": 4.0,
+      "delivered_previous_m3h": 4.0
+    },
+    {
+      "window": 23,
+      "consumed_m3h": 1.0,
+      "delivered_previous_m3h": 1.0
+    }
+  ],
+  "consumed_equals_delivered_previous_windows": 2,
+  "lag_mismatches": [],
+  "wash_water_received_m3": 0.125,
+  "wash_water_returned_m3": 0.083333333,
+  "return_never_exceeds_received": true,
+  "defect_before_fix": "the committed wash return was written into the transient controller command dictionary and destroyed by the next prepare_window, so T106 always consumed 0",
+  "verdict": "COMMITTED_PROCESS_INPUT_CONSUMED_AT_THE_CORRECT_LAG"
+}
