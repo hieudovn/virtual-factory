@@ -1,0 +1,89 @@
+{
+  "task_id": "VF-vNEXT-G10",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "PLANNING/READINESS FREEZE GATE — SH-WTP Runtime Readiness & Scope Freeze (G10)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/55",
+  "objective": "Produce a deterministic, evidence-traceable SH-WTP runtime-readiness/scope plan (planning/config/test artifacts ONLY) that tells the next gate exactly what may be constructed, at what fidelity ceiling, behind which boundary contracts, without inventing plant truth and without overriding PIM runtime authorization (NOT_AUTHORIZED). Repo-first reading of the pinned PIM export (hieudovn/plant-intelligence-model @ ec7f1266...; SHW-PIM-VF-EXPORT-v0.1 v0.1 SHW-PH03-v0.1; semantic SHA f23f3c46...; artifact hash ea3361a4...). No SH-WTP runtime/topology/physics/control implementation; no G11 construction.",
+  "explicit_non_objectives": [
+    "No SH-WTP runtime implementation",
+    "No physics/control implementation",
+    "No PIM modification (PIM stays canonical semantic/evidence authority)",
+    "No invented Area/Production Unit/Process Unit names",
+    "No site-faithful control/interlock assumption",
+    "No fabricated hydraulic/quality parameters",
+    "No ParameterizedReady or CalibratedReady fabrication",
+    "No universal execution/fidelity policy beyond the frozen progressive-refinement principle",
+    "No production runtime code in src/virtual_factory",
+    "No G11+ construction"
+  ],
+  "required_branch": "feature/vf-vnext-g10",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G10.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G10.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G10/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "configs/vnext/",
+    "tests/test_vnext_g10_plan.py"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "docs/",
+    "deploy/",
+    "simulators/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "Dockerfile",
+    "configs/plants/",
+    "configs/model_types/",
+    "configs/faults/",
+    "configs/scenarios/",
+    "tests/test_semantic_binding.py",
+    "tests/test_run_control.py"
+  ],
+  "required_deliverables": [
+    "configs/vnext/shwtp/shwtp_readiness_scope.json",
+    "configs/vnext/shwtp/PLAN.md",
+    "tests/test_vnext_g10_plan.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G10/01-readiness-scope-freeze.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement SH-WTP runtime/topology/physics/control",
+    "Modify PIM",
+    "Override vf_runtime_authorization: NOT_AUTHORIZED",
+    "Invent SH-WTP Area/Unit/topology names",
+    "Fabricate hydraulic/quality/control parameters",
+    "Claim ParameterizedReady or CalibratedReady",
+    "Flatten SH-WTP into a single A->B->C chain",
+    "Start G11+ construction",
+    "Push directly to main"
+  ],
+  "stop_conditions": [
+    "PIM evidence does not support a proposed scope/relationship and a product decision is required",
+    "Implementation would require changing PIM",
+    "Current NOT_AUTHORIZED must be overridden",
+    "PM must invent SH-WTP topology/Area/Unit names",
+    "A site-faithful control/interlock assumption is required",
+    "A hydraulic/quality parameter must be fabricated",
+    "A universal execution/fidelity policy must be chosen beyond the frozen progressive-refinement principle",
+    "Production runtime code is required in G10"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Deterministic evidence-traceable SH-WTP scope/readiness inventory exists", "rule": {"field": "plan.inventory", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Boundary-contract freeze v0 distinguishes PIM-supported / VF synthetic / unknown", "rule": {"field": "plan.boundary_contracts", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Fidelity/readiness matrix has no fabricated ParameterizedReady/CalibratedReady", "rule": {"field": "plan.fidelity_matrix", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "G11 admission plan distinguishes structural construction / synthetic-reference / site-authorized execution", "rule": {"field": "plan.g11_admission", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "NOT_AUTHORIZED preserved; structural planning != runtime authorization", "rule": {"field": "plan.authz_separation", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "New G10 plan/invariant tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Complete canonical vNext baseline + full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "No production runtime code / no G11 construction", "rule": {"field": "no_runtime", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

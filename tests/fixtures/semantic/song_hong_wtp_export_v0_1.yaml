@@ -1,0 +1,26 @@
+# Mirrored REFERENCE fixture of the pinned SH-WTP PIM export (validation evidence
+# only — NOT a second PIM semantic authority, and NOT runtime authorization).
+#
+# Exact pins (Issue #54):
+#   PIM repo main          : ec7f1266d4a19e5201b689874a2a7a75a022fc5c
+#   export_package_id      : SHW-PIM-VF-EXPORT-v0.1
+#   export_version         : v0.1
+#   source_model_version   : SHW-PH03-v0.1
+#   semantic_model_identity_sha : f23f3c4614f50a1a2e3805f7e887433feb934915
+#   export_artifact_hash_baseline_sha : ea3361a4aca9d25927a4a76c792f3af184e1aabb
+#   vf_runtime_authorization: NOT_AUTHORIZED
+#
+# PIM owns canonical ids; this fixture records the pins and the frozen
+# compatibility/authorization split only. No signal-level mappings are claimed
+# because VF has no SH-WTP runtime signals (G10 is NOT authorized).
+mode: required
+source:
+  producer_id: "song-hong-wtp-pim"
+  artifact_id: "SHW-PIM-VF-EXPORT-v0.1"
+  version: "v0.1"
+  artifact_hash: "ea3361a4aca9d25927a4a76c792f3af184e1aabb"
+  semantic_identity_sha: "f23f3c4614f50a1a2e3805f7e887433feb934915"
+  source_model_version: "SHW-PH03-v0.1"
+compatibility: compatible_with_constraints
+runtime_authorization: NOT_AUTHORIZED
+mappings: []

@@ -1,0 +1,69 @@
+{
+  "task_id": "VF-vNEXT-G18-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "CORRECTION gate — G18 from_dict fail-closed provenance/reversibility (G18-C01)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/69",
+  "objective": "Correction on the G18 head (45e931a1db0f4333239037b0041763d4ce522e06): AssumedTopologyEdge.from_dict() must fail closed when source_kind, status, or reversible are omitted from the input dict, instead of silently defaulting them to assumed values. Keep the exact current allowed values unchanged (source_kind=vf_scenario_assumption, status=assumed/synthetic, reversible=True). Add tests that omission of each field fails closed; valid round-trip must still pass. No redesign, no scope expansion, no G19.",
+  "explicit_non_objectives": [
+    "No redesign",
+    "No scope expansion",
+    "No change to allowed values",
+    "No new overlay behavior",
+    "No G19"
+  ],
+  "required_branch": "feature/vf-vnext-g18-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G18-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G18-C01.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G18-C01/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/connectivity/scenario_overlay.py",
+    "tests/test_vnext_g18_scenario_overlay.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/connectivity/reference_graph.py",
+    "src/virtual_factory/connectivity/__init__.py",
+    "src/virtual_factory/shwtp/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/connectivity/scenario_overlay.py (from_dict fail-closed on missing source_kind/status/reversible)",
+    "tests/test_vnext_g18_scenario_overlay.py (omission tests + round-trip)",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G18-C01/01-from-dict-fail-closed.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Change the allowed values of source_kind/status/reversible",
+    "Redesign the overlay",
+    "Expand scope",
+    "Start G19"
+  ],
+  "stop_conditions": [
+    "The correction would require changing frozen G4 semantics",
+    "The correction would change the allowed provenance values"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "from_dict fails closed when source_kind is omitted", "rule": {"field": "c01.source_kind", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "from_dict fails closed when status is omitted", "rule": {"field": "c01.status", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "from_dict fails closed when reversible is omitted", "rule": {"field": "c01.reversible", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Allowed values unchanged (vf_scenario_assumption / assumed/synthetic / reversible=True)", "rule": {"field": "c01.values", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Valid round-trip serialization still passes", "rule": {"field": "c01.round_trip", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "G18 tests + full canonical baseline + full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

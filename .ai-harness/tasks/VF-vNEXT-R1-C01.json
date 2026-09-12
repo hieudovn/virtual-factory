@@ -1,0 +1,87 @@
+{
+  "task_id": "VF-vNEXT-R1-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "CORRECTION gate — R1 reset must clear ASSY domain hold/freeze state (R1-C01)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/79",
+  "parent_gate_ref": "VF-vNEXT-R1 (head 77ab1def956d9b3d5aefd7304413dedd77206597)",
+  "objective": "Make the canonical TIPA session reset clear the ASSY domain hold/freeze state: AssyExecutionBridge.reset(...) must clear the held sub-line ids for the scopes it resets, while preserving the frozen G22 same-run-id reset semantics (same run identity, same runtime objects, time back to 0, profile-consistent fresh domain state for all six sub-lines). After reset, the six sub-lines must return to the fresh profile baseline and the next advance must have all six lines participate and progress again. R1 production/profile/scenario/isolation behaviour must be preserved exactly.",
+  "explicit_non_objectives": [
+    "No change to generic G22 lifecycle semantics",
+    "No R2 rich UI migration",
+    "No R3 Observation/MES/output work",
+    "No SH-WTP work",
+    "No gateway/OPC/MQTT expansion",
+    "No architecture redesign",
+    "No AssyLineRuntime change",
+    "No change to the R1 run profile/feed/scenario/targeting semantics",
+    "No rebase onto repository main"
+  ],
+  "required_branch": "feature/vf-vnext-r1-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "77ab1def956d9b3d5aefd7304413dedd77206597",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-R1-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R1-C01.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R1-C01/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/runcontrol/assy_bridge.py",
+    "tests/test_vnext_r1_production_semantics.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/federation/",
+    "src/virtual_factory/runcontrol/lifecycle.py",
+    "src/virtual_factory/runcontrol/session.py",
+    "src/virtual_factory/runcontrol/registry.py",
+    "src/virtual_factory/runcontrol/targets.py",
+    "src/virtual_factory/runcontrol/continuous_bridge.py",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/core/",
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/shwtp/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/runcontrol/assy_bridge.py (reset clears the scope's domain hold/freeze state)",
+    "tests/test_vnext_r1_production_semantics.py (C01 regression test: advance -> hold one line -> RuntimeSession.reset() -> held ids empty -> advance -> all six participate and progress)",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R1-C01/ (deterministic hold-reset proof)",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R1-C01.md (correction report)"
+  ],
+  "required_tests": [
+    "tests/test_vnext_r1_production_semantics.py"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Change generic G22 lifecycle semantics",
+    "Broaden authority",
+    "Open new architecture",
+    "Start R2/R3/SH-WTP/gateway work",
+    "Start the next gate",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "Clearing the hold state would require changing the frozen G22 reset/lifecycle contract",
+    "Correct implementation requires touching outside the allowlist materially",
+    "The accepted R1 production/profile/scenario/isolation behaviour cannot be preserved"
+  ],
+  "acceptance_criteria": [
+    {"id": "C01-A01", "phase": "final", "description": "AssyExecutionBridge.reset clears the held sub-line ids for the reset scopes", "rule": {"field": "r1c01.reset_clears_hold", "operator": "is_true", "expected": null}},
+    {"id": "C01-A02", "phase": "final", "description": "Same-run-id reset semantics preserved (identity + runtime objects + profile-consistent fresh baseline)", "rule": {"field": "r1c01.reset_semantics_preserved", "operator": "is_true", "expected": null}},
+    {"id": "C01-A03", "phase": "final", "description": "After reset + advance, all six sub-lines participate and progress again", "rule": {"field": "r1c01.six_participate_after_reset", "operator": "is_true", "expected": null}},
+    {"id": "C01-A04", "phase": "final", "description": "R1 production/profile/scenario/isolation behaviour preserved (R1 tests + full suite + canonical baseline green)", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "C01-A05", "phase": "final", "description": "Working tree clean and branch/head pushed; no R2 started", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

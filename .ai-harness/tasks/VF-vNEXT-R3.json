@@ -1,0 +1,149 @@
+{
+  "task_id": "VF-vNEXT-R3",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — Canonical Same-Session Observation / MES Output Reintegration. The ONLY authorized implementation gate.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/81",
+  "architecture_authority_ref": "https://github.com/hieudovn/virtual-factory/issues/78 (R0 CLOSED, frozen) + Issue #80 (R2 CLOSED; accepted base 4fc81e72780fe14ba5532407fdc8113b44385617) + Issue #82 (R2V PASS, ASSY_RICH_SIMULATION_VALIDATED)",
+  "objective": "Restore ASSY outbound Observation/MES/data projection on top of the SAME canonical TIPA RuntimeSession accepted in R1/R2: WorkspaceMonitor -> ONE TIPA RuntimeSession -> AssyExecutionBridge -> TipaAssyFederation -> exactly 6 AssyLineRuntime truths -> READ-ONLY observation/output projection (ObservationService/ObservationRouter, MESProjection/ProjectedMessage, in-memory/demo gateway evidence). No output path may construct, own, advance, reset or fork simulation truth. Carry canonical run/session identity (workspace_id, canonical run_id, pinned scenario_id/profile id, sub_line/scope, simulation time, provenance=simulation/synthetic) with the legacy sub-line-local source key retained only as a subordinate compatibility key. Re-enable /assy-demo/observations, /assy-demo/mes-messages, /assy-demo/mes-trace as canonical non-deferred endpoints. AP05 jam/recover/run-to-terminal/OEE and scenario mutation stay deferred to R4. Transport scope stays demo/in-memory only.",
+  "explicit_non_objectives": [
+    "No R4 parity closure (jam/recover/run-to-terminal/OEE/scenario mutation)",
+    "No R5 runtime consolidation / generic legacy simulator consolidation",
+    "No SH-WTP expansion",
+    "No gateway/protocol expansion (production MQTT/Kafka/OPC/REST routing, store-forward, multi-gateway)",
+    "No external/PIM MES repo change",
+    "No rewrite of AssyLineRuntime or ASSY domain facts",
+    "No R1 production driver or generic G4 coordinator change",
+    "No change to G22 reset/new-attempt/replay run identity semantics",
+    "No new observation/MES model invented for vNext",
+    "No rebase onto stale main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-vnext-r3",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "4fc81e72780fe14ba5532407fdc8113b44385617",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-R3.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R3.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/assembly/observation_bridge.py",
+    "src/virtual_factory/assembly/assy_mes_bridge.py",
+    "src/virtual_factory/ui/assy_output.py",
+    "src/virtual_factory/ui/assy_experience.py",
+    "src/virtual_factory/ui/api.py",
+    "tests/test_vnext_r3_canonical_observation_mes.py",
+    "tests/test_vnext_r2_same_session_rich_assy.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/domain/",
+    "src/virtual_factory/assembly/assy_line_runtime.py",
+    "src/virtual_factory/assembly/demo_controller.py",
+    "src/virtual_factory/assembly/demo_composition.py",
+    "src/virtual_factory/federation/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/protocols/",
+    "configs/",
+    "deploy/",
+    "examples/",
+    "docs/",
+    "simulators/"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/01-same-session-output-identity.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/02-observation-facts.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/03-mes-messages.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/04-idempotency.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/05-lifecycle-projection-safety.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/06-held-one-five-continue-output.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/07-no-simulation-mutation.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/08-api-endpoints.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/generate_evidence.py",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R3.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_r3_canonical_observation_mes.py"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Create a second runtime/session/federation/controller on any output path",
+    "Output-owned lifecycle or output-driven step/reset",
+    "Rewrite domain facts",
+    "Implement production transport/gateway work",
+    "Pull R4 work forward",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "Existing Observation/MES contracts cannot carry canonical run identity without a breaking redesign",
+    "Correct reset idempotency requires changing G22 run identity semantics",
+    "Reuse requires legacy controller/composition to remain active authority",
+    "Output reintegration requires stepping/mutating simulation during poll",
+    "Production transport/gateway work becomes necessary",
+    "R2 base cannot be reproduced"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "R3-01",
+      "phase": "final",
+      "description": "Same-session output identity: shell, rich UI and output adapter reference the same canonical RuntimeSession.run_id and the same six runtime objects; exactly one federation; no legacy controller",
+      "rule": {"field": "r3.same_session_identity", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R3-02",
+      "phase": "final",
+      "description": "Observation facts emitted from canonical runtime truth (operation completion, AP04 genealogy, AP06/AP08 quality, AP11 final QC/release) with canonical run provenance",
+      "rule": {"field": "r3.observations", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R3-03",
+      "phase": "final",
+      "description": "MES message families produced from canonical truth with canonical run identity in message identity/provenance",
+      "rule": {"field": "r3.mes_messages", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R3-04",
+      "phase": "final",
+      "description": "Idempotency: repeated poll without stepping delivers no duplicates; step-then-poll yields only newly available facts/messages",
+      "rule": {"field": "r3.idempotency", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R3-05",
+      "phase": "final",
+      "description": "Lifecycle projection safety: reset of the same canonical run id uses a fresh projection epoch without pre-reset collision; new_attempt/replay fresh run ids get fresh output namespaces; no checkpoint carry-over",
+      "rule": {"field": "r3.lifecycle_projection", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R3-06",
+      "phase": "final",
+      "description": "Held-one/five-continue reflected in output: held sub-line emits no new time-dependent facts while the other five still progress/output; release resumes coherently",
+      "rule": {"field": "r3.held_one_continue", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R3-07",
+      "phase": "final",
+      "description": "No simulation mutation by the output path: polling does not change step count, simulation time, WIP, genealogy or quality state and never constructs legacy authority",
+      "rule": {"field": "r3.no_mutation", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R3-08",
+      "phase": "final",
+      "description": "/assy-demo/observations, /mes-messages, /mes-trace return canonical non-deferred data with canonical run identity (no 503, legacy_runtime_authority false)",
+      "rule": {"field": "r3.api_endpoints", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R3-09",
+      "phase": "final",
+      "description": "R1/R2 regression preserved: R1 + R2 suites green, observation/MES contract regressions green, full suite and complete canonical baseline green",
+      "rule": {"field": "r3.regression", "operator": "is_true", "expected": null}
+    }
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "run_ids": {
+    "shell": "TIPA-0001",
+    "rich": "TIPA-0001",
+    "jam": "TIPA-0001",
+    "recover": "TIPA-0001",
+    "run_to_terminal": "TIPA-0001",
+    "oee": "TIPA-0001",
+    "observations": "TIPA-0001",
+    "mes_messages": "TIPA-0001"
+  },
+  "one_run_id_everywhere": true,
+  "sub_line_ids": [
+    "ASSY-SL01",
+    "ASSY-SL02",
+    "ASSY-SL03",
+    "ASSY-SL04",
+    "ASSY-SL05",
+    "ASSY-SL06"
+  ],
+  "sub_line_count": 6,
+  "federations_constructed": [
+    "D:\\Project\\Github\\virtual-factory\\configs\\plants\\tipa_assy_demo.yaml"
+  ],
+  "sessions_constructed": [
+    "RuntimeSession"
+  ],
+  "legacy_controllers_constructed": [],
+  "exactly_one_federation": true,
+  "exactly_one_session": true,
+  "no_legacy_controller": true,
+  "oee_summaries": 6,
+  "observation_count": 474,
+  "mes_message_count": 730,
+  "PASS": true
+}

@@ -1,0 +1,51 @@
+# Generic CONTINUOUS structural fixture — illustrative only.
+# Proves the generic Workspace -> Scope -> Object foundation can express a
+# nested continuous process hierarchy with container-only AND executable-capable
+# scopes. Ids are generic placeholders. This is NOT an SH-WTP model and claims
+# NO site truth, no SiteVerified/SourceMapped evidence, and no fidelity beyond
+# logical_only.
+workspace:
+  id: generic-continuous
+  name: Generic continuous example (illustrative, not SH-WTP site truth)
+  description: >
+    Illustrative structural fixture for the continuous archetype. No water
+    treatment site topology is asserted; object refs are generic placeholders.
+  scopes:
+    - id: AREA-1
+      mode: container_only
+      archetype: continuous
+      display_name: Process area 1 (container)
+      children:
+        - id: UNIT-101
+          mode: executable_capable
+          archetype: continuous
+          display_name: Unit 101 (continuous)
+          objects:
+            - { id: TK-101, object_type: tank }
+            - { id: P-101, object_type: pump }
+            - { id: V-101, object_type: control_valve }
+            - { id: FT-101, object_type: flow_transmitter }
+            - { id: LT-101, object_type: level_transmitter }
+        - id: UNIT-102
+          mode: executable_capable
+          archetype: continuous
+          display_name: Unit 102 (continuous)
+          objects:
+            - { id: TK-102, object_type: tank }
+            - { id: P-102, object_type: pump }
+            - { id: V-102, object_type: control_valve }
+    - id: AREA-2
+      mode: container_only
+      archetype: continuous
+      display_name: Process area 2 (container)
+      children:
+        - id: UNIT-201
+          mode: executable_capable
+          archetype: continuous
+          display_name: Unit 201 (continuous)
+          objects:
+            - { id: TK-201, object_type: tank }
+            - { id: P-201, object_type: pump }
+    - id: UTIL-1
+      mode: container_only
+      display_name: Utilities (container-only, no children yet)

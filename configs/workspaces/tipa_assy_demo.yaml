@@ -1,0 +1,72 @@
+# Representative STRUCTURAL fixture only — no runtime, no AssyLineRuntime change.
+# Proves the generic Workspace -> Scope -> Object foundation can express the
+# lossless TIPA -> ASSY -> ASSY-SL01..06 hierarchy (ARCH-01 / ARCH-05).
+# TIPA = Workspace; ASSY = child Scope (container-only composition);
+# ASSY-SL01..06 = child Scopes (executable-capable); objects = representative refs.
+workspace:
+  id: TIPA
+  name: TIPA ASSY demo (structural fixture)
+  description: >
+    Representative structural fixture mirroring the canonical ASSY identity.
+    It is NOT a runtime; object refs below are representative placeholders.
+    No SH-WTP / other-TIPA-line content is invented here.
+  scopes:
+    - id: ASSY
+      mode: container_only
+      archetype: discrete
+      display_name: ASSY production line
+      children:
+        - id: ASSY-SL01
+          mode: executable_capable
+          archetype: discrete
+          display_name: ASSY-SL01 — Hydraulic
+          objects:
+            - { id: SSO2, object_type: producer }
+            - { id: AP04, object_type: station }
+            - { id: AP06, object_type: station }
+            - { id: AP11, object_type: station }
+        - id: ASSY-SL02
+          mode: executable_capable
+          archetype: discrete
+          display_name: ASSY-SL02 — Hydraulic
+          objects:
+            - { id: SSO2, object_type: producer }
+            - { id: AP04, object_type: station }
+            - { id: AP06, object_type: station }
+            - { id: AP11, object_type: station }
+        - id: ASSY-SL03
+          mode: executable_capable
+          archetype: discrete
+          display_name: ASSY-SL03 — Hydraulic
+          objects:
+            - { id: SSO2, object_type: producer }
+            - { id: AP04, object_type: station }
+            - { id: AP06, object_type: station }
+            - { id: AP11, object_type: station }
+        - id: ASSY-SL04
+          mode: executable_capable
+          archetype: discrete
+          display_name: ASSY-SL04 — Thermal
+          objects:
+            - { id: SSO2, object_type: producer }
+            - { id: AP04, object_type: station }
+            - { id: AP06, object_type: station }
+            - { id: AP11, object_type: station }
+        - id: ASSY-SL05
+          mode: executable_capable
+          archetype: discrete
+          display_name: ASSY-SL05 — Thermal
+          objects:
+            - { id: SSO2, object_type: producer }
+            - { id: AP04, object_type: station }
+            - { id: AP06, object_type: station }
+            - { id: AP11, object_type: station }
+        - id: ASSY-SL06
+          mode: executable_capable
+          archetype: discrete
+          display_name: ASSY-SL06 — Thermal
+          objects:
+            - { id: SSO2, object_type: producer }
+            - { id: AP04, object_type: station }
+            - { id: AP06, object_type: station }
+            - { id: AP11, object_type: station }

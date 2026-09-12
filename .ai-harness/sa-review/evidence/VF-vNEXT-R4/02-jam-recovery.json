@@ -1,0 +1,127 @@
+{
+  "target_sub_line": "ASSY-SL03",
+  "before_fault": {
+    "ASSY-SL01": {
+      "simulation_time_s": 360.0,
+      "motors_created": 0
+    },
+    "ASSY-SL02": {
+      "simulation_time_s": 360.0,
+      "motors_created": 0
+    },
+    "ASSY-SL03": {
+      "simulation_time_s": 360.0,
+      "motors_created": 0
+    },
+    "ASSY-SL04": {
+      "simulation_time_s": 360.0,
+      "motors_created": 0
+    },
+    "ASSY-SL05": {
+      "simulation_time_s": 360.0,
+      "motors_created": 0
+    },
+    "ASSY-SL06": {
+      "simulation_time_s": 360.0,
+      "motors_created": 0
+    }
+  },
+  "jam": {
+    "sub_line_id": "ASSY-SL03",
+    "state": "FAULT",
+    "reason_code": "AP05_JAM",
+    "station_id": "AP05",
+    "raised_at_s": 360.0,
+    "raised_window_seq": 3,
+    "resolved_at_s": null,
+    "downtime_s": 120.0,
+    "conveyor_state": "stopped"
+  },
+  "jammed_sub_line_ids": [
+    "ASSY-SL03"
+  ],
+  "after_fault": {
+    "ASSY-SL01": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    },
+    "ASSY-SL02": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    },
+    "ASSY-SL03": {
+      "simulation_time_s": 360.0,
+      "motors_created": 0
+    },
+    "ASSY-SL04": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    },
+    "ASSY-SL05": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    },
+    "ASSY-SL06": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    }
+  },
+  "target_frozen": true,
+  "five_lines_continue": true,
+  "frame_b_matches_fault_truth": true,
+  "issue_facts": [
+    {
+      "event_type": "EXCEPTION_RAISED",
+      "station_id": "AP05",
+      "run_id": "TIPA-0001",
+      "simulation_time_s": 360.0,
+      "reason_code": "AP05_JAM"
+    }
+  ],
+  "downtime_facts": [
+    {
+      "event_type": "DOWNTIME_START",
+      "downtime_s": 120.0,
+      "run_id": "TIPA-0001"
+    }
+  ],
+  "canonical_fault_owner": {
+    "jammed_sub_line_ids": [
+      "ASSY-SL03"
+    ],
+    "fault": {
+      "sub_line_id": "ASSY-SL03",
+      "state": "FAULT",
+      "reason_code": "AP05_JAM",
+      "station_id": "AP05",
+      "raised_at_s": 360.0,
+      "raised_window_seq": 3,
+      "resolved_at_s": null,
+      "downtime_s": 120.0,
+      "conveyor_state": "stopped"
+    }
+  },
+  "projection_owns_fault_state": false,
+  "recover": {
+    "sub_line_id": "ASSY-SL03",
+    "state": "RUNNING",
+    "reason_code": "AP05_JAM",
+    "station_id": "AP05",
+    "raised_at_s": 360.0,
+    "raised_window_seq": 3,
+    "resolved_at_s": 480.0,
+    "downtime_s": 120.0,
+    "conveyor_state": "stopped"
+  },
+  "jammed_after_recover": [],
+  "resumed_times": {
+    "ASSY-SL01": 840.0,
+    "ASSY-SL02": 840.0,
+    "ASSY-SL03": 840.0,
+    "ASSY-SL04": 840.0,
+    "ASSY-SL05": 840.0,
+    "ASSY-SL06": 840.0
+  },
+  "resumed_line_caught_up": true,
+  "PASS": true
+}
