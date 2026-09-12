@@ -1,0 +1,90 @@
+{
+  "all_six_live": true,
+  "canonical_step": 5,
+  "exactly_six_canonical": true,
+  "one_parent_run": true,
+  "parent_run_id": "TIPA-0001",
+  "pinned_scenario": "tipa-default",
+  "rows": [
+    {
+      "effective_scenario": "HAPPY_PATH",
+      "line_state": "stopped",
+      "motors_created": 1,
+      "motors_released": 0,
+      "run_state": "running",
+      "scope": "TIPA/ASSY/ASSY-SL01",
+      "simulation_time_s": 600.0,
+      "sub_line_id": "ASSY-SL01",
+      "variant": "hydraulic",
+      "wips_on_line": 6
+    },
+    {
+      "effective_scenario": "HAPPY_PATH",
+      "line_state": "stopped",
+      "motors_created": 1,
+      "motors_released": 0,
+      "run_state": "running",
+      "scope": "TIPA/ASSY/ASSY-SL02",
+      "simulation_time_s": 600.0,
+      "sub_line_id": "ASSY-SL02",
+      "variant": "hydraulic",
+      "wips_on_line": 6
+    },
+    {
+      "effective_scenario": "HAPPY_PATH",
+      "line_state": "stopped",
+      "motors_created": 1,
+      "motors_released": 0,
+      "run_state": "running",
+      "scope": "TIPA/ASSY/ASSY-SL03",
+      "simulation_time_s": 600.0,
+      "sub_line_id": "ASSY-SL03",
+      "variant": "hydraulic",
+      "wips_on_line": 6
+    },
+    {
+      "effective_scenario": "HAPPY_PATH",
+      "line_state": "stopped",
+      "motors_created": 1,
+      "motors_released": 0,
+      "run_state": "running",
+      "scope": "TIPA/ASSY/ASSY-SL04",
+      "simulation_time_s": 600.0,
+      "sub_line_id": "ASSY-SL04",
+      "variant": "thermal",
+      "wips_on_line": 6
+    },
+    {
+      "effective_scenario": "HAPPY_PATH",
+      "line_state": "stopped",
+      "motors_created": 1,
+      "motors_released": 0,
+      "run_state": "running",
+      "scope": "TIPA/ASSY/ASSY-SL05",
+      "simulation_time_s": 600.0,
+      "sub_line_id": "ASSY-SL05",
+      "variant": "thermal",
+      "wips_on_line": 6
+    },
+    {
+      "effective_scenario": "HAPPY_PATH",
+      "line_state": "stopped",
+      "motors_created": 1,
+      "motors_released": 0,
+      "run_state": "running",
+      "scope": "TIPA/ASSY/ASSY-SL06",
+      "simulation_time_s": 600.0,
+      "sub_line_id": "ASSY-SL06",
+      "variant": "thermal",
+      "wips_on_line": 6
+    }
+  ],
+  "sub_line_ids": [
+    "ASSY-SL01",
+    "ASSY-SL02",
+    "ASSY-SL03",
+    "ASSY-SL04",
+    "ASSY-SL05",
+    "ASSY-SL06"
+  ]
+}

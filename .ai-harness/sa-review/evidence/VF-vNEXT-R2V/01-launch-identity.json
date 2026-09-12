@@ -1,0 +1,54 @@
+{
+  "authority": "canonical_tipa_runtime_session",
+  "federations_after_open": 1,
+  "federations_before_open": 0,
+  "opening_rich_ui_advances_time": false,
+  "overview_rows_on_open": 6,
+  "profile_id": "tipa-assy-happy_path",
+  "rich_identity": {
+    "authority": "canonical_tipa_runtime_session",
+    "note": "Same canonical TIPA RuntimeSession as /workspaces: one run authority, six canonical AssyLineRuntime truths. Scenario/profile is pinned run input; projections are detached read models. No second simulation runtime exists.",
+    "profile_id": "tipa-assy-happy_path",
+    "run_id": "TIPA-0001",
+    "run_profile": {
+      "continuous_feed_enabled": true,
+      "feed_policy": {
+        "rso2_target": 6,
+        "sso2_low_watermark": 3,
+        "sso2_target": 10
+      },
+      "initial_rso2_inventory": 7,
+      "initial_sso2_inventory": 7,
+      "profile_id": "tipa-assy-happy_path",
+      "provenance": "simulation_synthetic_profile_input",
+      "scenario": "HAPPY_PATH",
+      "session_scenario_id": "tipa-default",
+      "target_sub_line_id": "",
+      "version": "1"
+    },
+    "run_state": "created",
+    "scenario_id": "tipa-default",
+    "selected_sub_line_id": "ASSY-SL01",
+    "selection_is_presentation_only": true,
+    "simulation_time_s": null,
+    "site_truth": false,
+    "started": false,
+    "step_count": 0,
+    "workspace_id": "TIPA"
+  },
+  "rich_page_status": 200,
+  "same_run_id": true,
+  "same_scenario_id": true,
+  "same_workspace_id": true,
+  "shell_time_after_open": null,
+  "shell_view": {
+    "profile_id": "tipa-assy-happy_path",
+    "run_id": "TIPA-0001",
+    "scenario_id": "tipa-default",
+    "workspace_id": "TIPA"
+  },
+  "single_runtime_authority": true,
+  "step_count_after_open": 0,
+  "step_count_before": 0,
+  "workspace_selector_ok": true
+}

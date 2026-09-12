@@ -1,0 +1,460 @@
+{
+  "accepted_positions": [
+    "PRE-ASSY",
+    "AP01",
+    "AP02",
+    "AP03",
+    "AP04",
+    "AP05",
+    "AP06",
+    "AP07",
+    "AP08",
+    "AP09",
+    "AP10",
+    "AP11"
+  ],
+  "ap04_join": {
+    "at_ap05": true,
+    "genealogy": [
+      [
+        "MTR-0001",
+        [
+          "SSO2-0001",
+          "RSO2-0001"
+        ]
+      ]
+    ],
+    "motor": "MTR-0001",
+    "step": 5,
+    "visible_in_frame": [
+      [
+        "MTR-0001",
+        [
+          "SSO2-0001",
+          "RSO2-0001"
+        ]
+      ]
+    ]
+  },
+  "first_position_of_sso2_0001": "AP01",
+  "frames": [
+    {
+      "genealogy": [],
+      "motors_created": 0,
+      "occupied": {
+        "AP01": "SSO2-0001",
+        "PRE-ASSY": "SSO2-0002"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "simulation_time_s": 120.0,
+      "step": 1
+    },
+    {
+      "genealogy": [],
+      "motors_created": 0,
+      "occupied": {
+        "AP01": "SSO2-0002",
+        "AP02": "SSO2-0001",
+        "PRE-ASSY": "SSO2-0003"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "simulation_time_s": 240.0,
+      "step": 2
+    },
+    {
+      "genealogy": [],
+      "motors_created": 0,
+      "occupied": {
+        "AP01": "SSO2-0003",
+        "AP02": "SSO2-0002",
+        "AP03": "SSO2-0001",
+        "PRE-ASSY": "SSO2-0004"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "simulation_time_s": 360.0,
+      "step": 3
+    },
+    {
+      "genealogy": [],
+      "motors_created": 0,
+      "occupied": {
+        "AP01": "SSO2-0004",
+        "AP02": "SSO2-0003",
+        "AP03": "SSO2-0002",
+        "AP04": "SSO2-0001",
+        "PRE-ASSY": "SSO2-0005"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "simulation_time_s": 480.0,
+      "step": 4
+    },
+    {
+      "genealogy": [
+        [
+          "MTR-0001",
+          [
+            "SSO2-0001",
+            "RSO2-0001"
+          ]
+        ]
+      ],
+      "motors_created": 1,
+      "occupied": {
+        "AP01": "SSO2-0005",
+        "AP02": "SSO2-0004",
+        "AP03": "SSO2-0003",
+        "AP04": "SSO2-0002",
+        "AP05": "MTR-0001",
+        "PRE-ASSY": "SSO2-0006"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "simulation_time_s": 600.0,
+      "step": 5
+    },
+    {
+      "genealogy": [
+        [
+          "MTR-0001",
+          [
+            "SSO2-0001",
+            "RSO2-0001"
+          ]
+        ],
+        [
+          "MTR-0002",
+          [
+            "SSO2-0002",
+            "RSO2-0002"
+          ]
+        ]
+      ],
+      "motors_created": 2,
+      "occupied": {
+        "AP01": "SSO2-0006",
+        "AP02": "SSO2-0005",
+        "AP03": "SSO2-0004",
+        "AP04": "SSO2-0003",
+        "AP05": "MTR-0002",
+        "AP06": "MTR-0001",
+        "PRE-ASSY": "SSO2-0007"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "simulation_time_s": 720.0,
+      "step": 6
+    },
+    {
+      "genealogy": [
+        [
+          "MTR-0001",
+          [
+            "SSO2-0001",
+            "RSO2-0001"
+          ]
+        ],
+        [
+          "MTR-0002",
+          [
+            "SSO2-0002",
+            "RSO2-0002"
+          ]
+        ],
+        [
+          "MTR-0003",
+          [
+            "SSO2-0003",
+            "RSO2-0003"
+          ]
+        ]
+      ],
+      "motors_created": 3,
+      "occupied": {
+        "AP01": "SSO2-0007",
+        "AP02": "SSO2-0006",
+        "AP03": "SSO2-0005",
+        "AP04": "SSO2-0004",
+        "AP05": "MTR-0003",
+        "AP06": "MTR-0002",
+        "AP07": "MTR-0001",
+        "PRE-ASSY": "SSO2-0008"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "simulation_time_s": 840.0,
+      "step": 7
+    },
+    {
+      "genealogy": [
+        [
+          "MTR-0001",
+          [
+            "SSO2-0001",
+            "RSO2-0001"
+          ]
+        ],
+        [
+          "MTR-0002",
+          [
+            "SSO2-0002",
+            "RSO2-0002"
+          ]
+        ],
+        [
+          "MTR-0003",
+          [
+            "SSO2-0003",
+            "RSO2-0003"
+          ]
+        ],
+        [
+          "MTR-0004",
+          [
+            "SSO2-0004",
+            "RSO2-0004"
+          ]
+        ]
+      ],
+      "motors_created": 4,
+      "occupied": {
+        "AP01": "SSO2-0008",
+        "AP02": "SSO2-0007",
+        "AP03": "SSO2-0006",
+        "AP04": "SSO2-0005",
+        "AP05": "MTR-0004",
+        "AP06": "MTR-0003",
+        "AP07": "MTR-0002",
+        "AP08": "MTR-0001",
+        "PRE-ASSY": "SSO2-0009"
+      },
+      "positions": [
+        "PRE-ASSY",
+        "AP01",
+        "AP02",
+        "AP03",
+        "AP04",
+        "AP05",
+        "AP06",
+        "AP07",
+        "AP08",
+        "AP09",
+        "AP10",
+        "AP11"
+      ],
+      "simulation_time_s": 960.0,
+      "step": 8
+    }
+  ],
+  "motor_moves_downstream": {
+    "step5": "MTR-0001",
+    "step6": "MTR-0001",
+    "step7": "MTR-0001",
+    "step8": "MTR-0001"
+  },
+  "positions_match_accepted": true,
+  "rendered_matches_positions_truth": true,
+  "rendered_occupied_at_step8": [
+    [
+      "PRE-ASSY",
+      "SSO2-0009"
+    ],
+    [
+      "AP01",
+      "SSO2-0008"
+    ],
+    [
+      "AP02",
+      "SSO2-0007"
+    ],
+    [
+      "AP03",
+      "SSO2-0006"
+    ],
+    [
+      "AP04",
+      "SSO2-0005"
+    ],
+    [
+      "AP05",
+      "MTR-0004"
+    ],
+    [
+      "AP06",
+      "MTR-0003"
+    ],
+    [
+      "AP07",
+      "MTR-0002"
+    ],
+    [
+      "AP08",
+      "MTR-0001"
+    ]
+  ],
+  "route_basis": [
+    "PRE-ASSY",
+    "AP01",
+    "AP02",
+    "AP03",
+    "AP04",
+    "AP05",
+    "AP06",
+    "AP07",
+    "AP08",
+    "AP09",
+    "AP10",
+    "AP11"
+  ],
+  "sub_line": "ASSY-SL01",
+  "truth_pairs_rendered_vs_runtime": [
+    [
+      "PRE-ASSY",
+      "SSO2-0009",
+      "SSO2-0009"
+    ],
+    [
+      "AP01",
+      "SSO2-0008",
+      "SSO2-0008"
+    ],
+    [
+      "AP02",
+      "SSO2-0007",
+      "SSO2-0007"
+    ],
+    [
+      "AP03",
+      "SSO2-0006",
+      "SSO2-0006"
+    ],
+    [
+      "AP04",
+      "SSO2-0005",
+      "SSO2-0005"
+    ],
+    [
+      "AP05",
+      "MTR-0004",
+      "MTR-0004"
+    ],
+    [
+      "AP06",
+      "MTR-0003",
+      "MTR-0003"
+    ],
+    [
+      "AP07",
+      "MTR-0002",
+      "MTR-0002"
+    ],
+    [
+      "AP08",
+      "MTR-0001",
+      "MTR-0001"
+    ],
+    [
+      "AP09",
+      null,
+      null
+    ],
+    [
+      "AP10",
+      null,
+      null
+    ],
+    [
+      "AP11",
+      null,
+      null
+    ]
+  ],
+  "wip_moves": true
+}

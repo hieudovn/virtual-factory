@@ -1,0 +1,67 @@
+{
+  "new_attempt": {
+    "fresh_run_id": true,
+    "rich_identity_follows": true,
+    "state_equivalent_to_pre_attempt": true
+  },
+  "replay": {
+    "deterministic_state_equivalent": true,
+    "fresh_run_id": true,
+    "state": [
+      [
+        "ASSY-SL01",
+        240.0,
+        3,
+        0
+      ],
+      [
+        "ASSY-SL02",
+        240.0,
+        3,
+        0
+      ],
+      [
+        "ASSY-SL03",
+        240.0,
+        3,
+        0
+      ],
+      [
+        "ASSY-SL04",
+        240.0,
+        3,
+        0
+      ],
+      [
+        "ASSY-SL05",
+        240.0,
+        3,
+        0
+      ],
+      [
+        "ASSY-SL06",
+        240.0,
+        3,
+        0
+      ]
+    ]
+  },
+  "reset": {
+    "all_six_at_zero": true,
+    "detail_time_s": 0.0,
+    "motors_zero": true,
+    "same_run_id": true,
+    "scenario": "HAPPY_PATH"
+  },
+  "step": {
+    "shell_step_advanced_same_session": true,
+    "time_after_s": 360.0,
+    "time_before_s": 240.0
+  },
+  "switch_isolation": {
+    "shwtp_existed": true,
+    "tipa_run_unchanged": true,
+    "tipa_step_count_unchanged": true,
+    "tipa_time_unchanged": true
+  }
+}

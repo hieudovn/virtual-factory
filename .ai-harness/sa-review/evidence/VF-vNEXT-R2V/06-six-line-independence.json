@@ -1,0 +1,205 @@
+{
+  "before_hold_times": {
+    "ASSY-SL01": 120.0,
+    "ASSY-SL02": 120.0,
+    "ASSY-SL03": 120.0,
+    "ASSY-SL04": 120.0,
+    "ASSY-SL05": 120.0,
+    "ASSY-SL06": 120.0
+  },
+  "five_continue_in_frame_a": true,
+  "frame_a_while_held": {
+    "ASSY-SL03": [
+      120.0,
+      2,
+      0,
+      "stopped"
+    ],
+    "others": {
+      "ASSY-SL01": [
+        720.0,
+        2
+      ],
+      "ASSY-SL02": [
+        720.0,
+        2
+      ],
+      "ASSY-SL04": [
+        720.0,
+        2
+      ],
+      "ASSY-SL05": [
+        720.0,
+        2
+      ],
+      "ASSY-SL06": [
+        720.0,
+        2
+      ]
+    }
+  },
+  "frame_b_other_advanced": {
+    "advanced": true,
+    "motors_created": 2,
+    "occupied": {
+      "AP01": "SSO2-0006",
+      "AP02": "SSO2-0005",
+      "AP03": "SSO2-0004",
+      "AP04": "SSO2-0003",
+      "AP05": "MTR-0002",
+      "AP06": "MTR-0001",
+      "PRE-ASSY": "SSO2-0007"
+    },
+    "simulation_time_s": 720.0,
+    "sub_line": "ASSY-SL01"
+  },
+  "frame_b_sl03_frozen": {
+    "frozen_at_120": true,
+    "occupied": {
+      "AP01": "SSO2-0001",
+      "PRE-ASSY": "SSO2-0002"
+    },
+    "simulation_time_s": 120.0
+  },
+  "held_sub_line_ids_after_release": [],
+  "held_sub_line_ids_while_held": [
+    "ASSY-SL03"
+  ],
+  "projection_frames_while_held": [
+    {
+      "ASSY-SL01": [
+        240.0,
+        0
+      ],
+      "ASSY-SL02": [
+        240.0,
+        0
+      ],
+      "ASSY-SL03": [
+        120.0,
+        0
+      ],
+      "ASSY-SL04": [
+        240.0,
+        0
+      ],
+      "ASSY-SL05": [
+        240.0,
+        0
+      ],
+      "ASSY-SL06": [
+        240.0,
+        0
+      ]
+    },
+    {
+      "ASSY-SL01": [
+        360.0,
+        0
+      ],
+      "ASSY-SL02": [
+        360.0,
+        0
+      ],
+      "ASSY-SL03": [
+        120.0,
+        0
+      ],
+      "ASSY-SL04": [
+        360.0,
+        0
+      ],
+      "ASSY-SL05": [
+        360.0,
+        0
+      ],
+      "ASSY-SL06": [
+        360.0,
+        0
+      ]
+    },
+    {
+      "ASSY-SL01": [
+        480.0,
+        0
+      ],
+      "ASSY-SL02": [
+        480.0,
+        0
+      ],
+      "ASSY-SL03": [
+        120.0,
+        0
+      ],
+      "ASSY-SL04": [
+        480.0,
+        0
+      ],
+      "ASSY-SL05": [
+        480.0,
+        0
+      ],
+      "ASSY-SL06": [
+        480.0,
+        0
+      ]
+    },
+    {
+      "ASSY-SL01": [
+        600.0,
+        1
+      ],
+      "ASSY-SL02": [
+        600.0,
+        1
+      ],
+      "ASSY-SL03": [
+        120.0,
+        0
+      ],
+      "ASSY-SL04": [
+        600.0,
+        1
+      ],
+      "ASSY-SL05": [
+        600.0,
+        1
+      ],
+      "ASSY-SL06": [
+        600.0,
+        1
+      ]
+    },
+    {
+      "ASSY-SL01": [
+        720.0,
+        2
+      ],
+      "ASSY-SL02": [
+        720.0,
+        2
+      ],
+      "ASSY-SL03": [
+        120.0,
+        0
+      ],
+      "ASSY-SL04": [
+        720.0,
+        2
+      ],
+      "ASSY-SL05": [
+        720.0,
+        2
+      ],
+      "ASSY-SL06": [
+        720.0,
+        2
+      ]
+    }
+  ],
+  "release_resumes": {
+    "resumed": true,
+    "sl03_time_after_release": 840.0
+  },
+  "sl03_frozen_in_frame_a": true
+}

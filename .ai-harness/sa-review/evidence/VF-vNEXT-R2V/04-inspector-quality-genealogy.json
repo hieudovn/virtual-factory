@@ -1,0 +1,70 @@
+{
+  "active_operations_present": true,
+  "ap04_genealogy_visible": true,
+  "deferred_classification": {
+    "jam": 409,
+    "mes_messages": 503,
+    "mes_trace": 503,
+    "observations": 503,
+    "recover": 409,
+    "run_to_terminal": 409,
+    "scenario_change": 409
+  },
+  "genealogy_present": true,
+  "quality_events_present": true,
+  "quality_records_sample": [],
+  "read_model_keys": [
+    "active_operations",
+    "actual_dwell_s",
+    "bottleneck_duration_s",
+    "bottleneck_station_id",
+    "canonical",
+    "canonical_sub_line",
+    "dwell_number",
+    "dwell_overrun_s",
+    "genealogy",
+    "line_state",
+    "nominal_dwell_s",
+    "plant_id",
+    "positions",
+    "production",
+    "production_line_id",
+    "quality_records",
+    "recent_quality_events",
+    "scenario",
+    "scope",
+    "simulation_time_s",
+    "station_contracts",
+    "sub_line_id",
+    "variant"
+  ],
+  "selection": {
+    "presentation_only": true,
+    "selected_sub_line_id": "ASSY-SL01",
+    "selection_is_presentation_only_flagged": true,
+    "sl01_detail_time_s_before": 720.0,
+    "sl02_detail_time_s": 720.0
+  },
+  "station_contract_fields": [
+    "allowed_commands",
+    "capabilities",
+    "checklist_items",
+    "checklist_required_for_action",
+    "decision_actions",
+    "default_mode",
+    "exception_actions",
+    "final_disposition_actions",
+    "normal_action",
+    "required_action",
+    "station_id"
+  ],
+  "station_contracts": 12,
+  "thin_ops_bindings": {
+    "operation_command_missing_fields": 400,
+    "operation_command_stale_target": 409,
+    "run_mode_assisted": 200,
+    "run_mode_invalid": 400,
+    "run_mode_manual": 200,
+    "station_action_stale_target": 409
+  }
+}
