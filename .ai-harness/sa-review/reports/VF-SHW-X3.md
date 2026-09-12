@@ -12,8 +12,8 @@
 | | |
 |---|---|
 | Implementation commit (all source, config, tests, contract, manifest, CURRENT) | `e3c2846d0a40d786dad8b398039f4eb6d92897a6` |
-| Evidence/report commit (this artefact set + the acceptance rules; no source change) | the commit after the implementation commit on this branch |
-| Docs/status pin commit (markdown only, code-identical) | the head of the branch (see the SA review inbox) |
+| Evidence/acceptance commit (evidence artefacts + report + the `x3.*` rules; no source change) | `c105ec8b143b9abff04a1bc46ee7d6e1e5b89eb0` |
+| Docs/status pin commit (markdown only, code-identical) | this commit — its SHA is the PR #99 head reported to the SA |
 | Pull request | #99 (`feature/vf-shw-x3` → `main`, base `main`, not merged) |
 
 Machine-derived verification **at the implementation head**, with a clean tree:
