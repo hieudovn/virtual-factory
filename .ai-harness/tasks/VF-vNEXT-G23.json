@@ -1,0 +1,84 @@
+{
+  "task_id": "VF-vNEXT-G23",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — Multi-Workspace Runtime Selection (G23)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/74",
+  "objective": "Create the smallest generic Workspace runtime registry/selector seam so the platform can expose and select between the accepted independent Workspaces TIPA and shwtp, preserving strict runtime/session isolation and without UI yet. Deterministic enumeration; TIPA -> accepted 6-sub-line ASSY session factory; shwtp -> accepted G21/G22 session factory; selecting a Workspace creates/returns a session for that Workspace only; no shared state/run_id/clock/scenario/truth across Workspaces; switching never mutates/merges/reuses the inactive session; unknown/ambiguous id fails closed; registry is orchestration/platform metadata only; no cross-workspace CompositionGraph edge or runtime coupling; deterministic ordering independent of registration order; architecture open for future Workspaces; G22 semantics unchanged. Backend/platform selection only (prepares a future G24 workspace selector/UI).",
+  "explicit_non_objectives": [
+    "No UI / workspace selector widgets",
+    "No gateway routing/transport",
+    "No MES/PIM modification",
+    "No G4 redesign",
+    "No TIPA or SH-WTP domain semantics change",
+    "No merge of clocks/runs across Workspaces",
+    "No T110/Line2/new plant physics",
+    "No G24"
+  ],
+  "required_branch": "feature/vf-vnext-g23",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G23.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G23.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G23/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/runcontrol/registry.py",
+    "src/virtual_factory/runcontrol/__init__.py",
+    "tests/test_vnext_g23_registry.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/runcontrol/lifecycle.py",
+    "src/virtual_factory/runcontrol/assy_bridge.py",
+    "src/virtual_factory/runcontrol/continuous_bridge.py",
+    "src/virtual_factory/runcontrol/targets.py",
+    "src/virtual_factory/runcontrol/session.py",
+    "src/virtual_factory/shwtp/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/runcontrol/registry.py (WorkspaceRuntimeRegistry + WorkspaceRuntimeInfo + WorkspaceRegistryError)",
+    "tests/test_vnext_g23_registry.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G23/01-workspace-registry.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Add UI/workspace selector widgets",
+    "Implement gateway routing/transport",
+    "Modify MES or PIM",
+    "Redesign G4",
+    "Alter TIPA or SH-WTP domain semantics",
+    "Merge clocks/runs across Workspaces",
+    "Add T110/Line2/new plant physics",
+    "Start G24"
+  ],
+  "stop_conditions": [
+    "Selection requires changing frozen Workspace/session identity semantics",
+    "Selection requires a new product decision"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Deterministic enumeration of TIPA + shwtp", "rule": {"field": "g23.enumerate", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Select TIPA returns a TIPA RuntimeSession", "rule": {"field": "g23.tipa", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Select shwtp returns a SH-WTP RuntimeSession", "rule": {"field": "g23.shwtp", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Two Workspace sessions isolated", "rule": {"field": "g23.isolation", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Switching does not mutate inactive session", "rule": {"field": "g23.switch", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Fresh independent session for same Workspace", "rule": {"field": "g23.fresh", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Unknown/ambiguous Workspace fails closed", "rule": {"field": "g23.fail_closed", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Registration order does not affect enumeration/selection", "rule": {"field": "g23.order", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "No cross-workspace runtime coupling", "rule": {"field": "g23.coupling", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "Open for future Workspaces + G22/G21/G20/G19/G18 + TIPA ASSY + canonical baseline + full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

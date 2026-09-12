@@ -1,0 +1,113 @@
+{
+  "all_sections_pass": true,
+  "evidence": "VF-SHW-X3",
+  "expected_verdicts": {
+    "01": "X3_SURFACE_MATERIALIZED_16_SCOPES_TWO_PI",
+    "02": "PLANT_WATER_IDENTITY_CLOSED_FROM_TICK_ZERO",
+    "03": "RESERVATIONS_ARE_CAPACITY_TOKENS_NOT_WATER",
+    "04": "TWO_PI_ACTUATOR_RESPONSE_AND_ARBITRATION_VERIFIED",
+    "05": "PUMP_ENVELOPE_FEASIBLE_WITH_EXPLICIT_UNITS",
+    "06": "MUTATIONS_VIOLATE_THE_PHYSICAL_ENVELOPE",
+    "07": "X3_CANONICAL_WITH_X2_AND_G21_COMPATIBILITY",
+    "10": "ENERGY_FROM_ACHIEVED_FLOW_ON_THE_FROZEN_PUMP_LAW",
+    "11": "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED"
+  },
+  "issue": "https://github.com/hieudovn/virtual-factory/issues/98",
+  "overall": "SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED",
+  "verdicts": {
+    "01": "X3_SURFACE_MATERIALIZED_16_SCOPES_TWO_PI",
+    "02": "PLANT_WATER_IDENTITY_CLOSED_FROM_TICK_ZERO",
+    "03": "RESERVATIONS_ARE_CAPACITY_TOKENS_NOT_WATER",
+    "04": "TWO_PI_ACTUATOR_RESPONSE_AND_ARBITRATION_VERIFIED",
+    "05": "PUMP_ENVELOPE_FEASIBLE_WITH_EXPLICIT_UNITS",
+    "06": "MUTATIONS_VIOLATE_THE_PHYSICAL_ENVELOPE",
+    "07": "X3_CANONICAL_WITH_X2_AND_G21_COMPATIBILITY",
+    "10": "ENERGY_FROM_ACHIEVED_FLOW_ON_THE_FROZEN_PUMP_LAW",
+    "11": "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED"
+  },
+  "x3": {
+    "flow_limits": true,
+    "mutations": true,
+    "pi_response": true,
+    "pump_energy": true,
+    "regression": true,
+    "scope_control": true,
+    "water_identity": true
+  },
+  "x3c01": {
+    "actuator_tracking": true,
+    "energy_from_actual_flow": true
+  },
+  "x3c02": {
+    "independent_energy_oracle": true,
+    "pump_power_law": true
+  },
+  "acceptance": [
+    {
+      "id": "X3C02-1",
+      "description": "The realized operating point applies the FROZEN D6 law on the actual committed flow: pump hydraulic power rho*g*Q_actual*H(n,Q_actual), electric power pump/eta_total + no_load (so the energy later dissipated through the throttle is included in the electricity), useful system power rho*g*Q_actual*Hreq and throttle dissipation reported separately, pump = useful + throttle on every positive feasible flow, head/motor feasibility and the declared OFF/idle simplification retained, the frozen curve unreplaced and allocation and energy on the same law",
+      "result": "PASS",
+      "evidence": "field=x3c02.pump_power_law operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3C02-2",
+      "description": "The independent energy oracle does not call or consume any production realized_point/power/energy helper: it joins the committed physical discharge water records with the commanded speed by tick and binding, reconstructs the actual flow and evaluates H, Hreq, pump/useful/throttle power and electric energy directly from the frozen parameters, reproduces the ledger per pump, and both the capacity-Q substitution and the H-to-Hreq power substitution differ enough to fail acceptance",
+      "result": "PASS",
+      "evidence": "field=x3c02.independent_energy_oracle operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3C01-1",
+      "description": "Regression: the accepted control correction stays green - protective ownership decided before normal PI integration, integral held from the first protected scan, actual stopped value committed and tracked, trip/interlock release preloaded from it, C1 release resuming through the ordinary slew from the actual last value (bounded ramp, not a bumpless claim), every ordinary reopening inside valve 10 pp/s and pump 5 pp/s, MANUAL and changed-PV continuity preserved",
+      "result": "PASS",
+      "evidence": "field=x3c01.actuator_tracking operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3C01-2",
+      "description": "Regression: energy is still integrated only from the ACHIEVED pumped throughput of each tick (never from a capacity/envelope point), with OFF distinguished from energized zero flow and an explicitly declared idle-loss rule",
+      "result": "PASS",
+      "evidence": "field=x3c01.energy_from_actual_flow operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-1",
+      "description": "Regression: 16 admitted scopes on deterministic global 1-second windows in one attempt-bound session with exactly two active C2 PI loops and the deferred loops unavailable",
+      "result": "PASS",
+      "evidence": "field=x3.scope_control operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-2",
+      "description": "Regression: the full-run independent water identity still closes from tick zero with no created water and no compensation term",
+      "result": "PASS",
+      "evidence": "field=x3.water_identity operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-3",
+      "description": "Regression: flow limiting and reservation semantics are unchanged (capacity tokens, no double count, queue bound, no hidden loss or deadlock)",
+      "result": "PASS",
+      "evidence": "field=x3.flow_limits operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-4",
+      "description": "Regression: the two PIs drive the real actuators with feasible SP tracking, disturbance rejection, saturation with a reason and recovery inside one ongoing attempt",
+      "result": "PASS",
+      "evidence": "field=x3.pi_response operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-5",
+      "description": "Regression: pump envelope feasibility, OFF exactly zero flow and zero energy, unit-explicit energy and unmodelled energy declared unavailable, evaluated on REALIZED operating points under the corrected frozen power law",
+      "result": "PASS",
+      "evidence": "field=x3.pump_energy operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-6",
+      "description": "Regression: physical-envelope mutations still fail the oracle or fail safely",
+      "result": "PASS",
+      "evidence": "field=x3.mutations operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-7",
+      "description": "Regression: canonical X3 1 s default, X2-60s zero-C2 and G21 compatibility, deterministic reset/attempt/replay, no protected path changed",
+      "result": "PASS",
+      "evidence": "field=x3.regression operator=is_true expected=None actual=True \u2192 PASS"
+    }
+  ]
+}

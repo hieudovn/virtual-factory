@@ -1,0 +1,87 @@
+{
+  "task_id": "VF-vNEXT-G14A",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — SH-WTP T106->T108 Runtime Projection Contract (G14A, F01 only)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/64",
+  "objective": "Create the smallest explicit, evidence-traceable, INERT runtime projection contract for exactly one accepted PIM relationship: REL-SHW-F01 (PROC-SHW-L1-T106-OUT-FLOW --FLOWS_TO--> PROC-SHW-L1-T108-IN-FLOW, DocumentConfirmed). Project exactly two G4 BoundaryPorts (T106 out/material/m3/s/volumetric_flow, T108 in/material/m3/s/volumetric_flow) and exactly one G4 CompositionBinding (T106 out -> T108 in), producing an inert CompositionGraph plus a deterministic ProjectionRecord carrying PIM pins, relation id, exact PIM/VF endpoints, PortRefs, evidence status, authorization scope, and site/runtime disclaimer. Cross-check accepted G12B connectivity.py / G12C admission JSON / T106 logical_runtime.py / T108 runtime.py / G4 ports-graph. Only F01; no F02-F07, no T110, no generic FLOWS_TO auto-projection, no execution/federation/coordinator/run-control/shared clock/workspace run. No PIM/G7/G4-semantics/T106/T108 behavior change.",
+  "explicit_non_objectives": [
+    "No T106->T108 federated stepping / execution / value transfer",
+    "No coordinator advance / scheduling / shared clock / run-control orchestration",
+    "No Workspace/container run target / plant-wide runtime",
+    "No multi-producer merge",
+    "No T110 or any non-F01 relation projection",
+    "No generic FLOWS_TO => material-binding auto-projection rule",
+    "No modification of T106/T108 behavior, equations, or provenance",
+    "No G4 semantics change / G7 change / PIM change",
+    "No site-faithful behavior",
+    "No G14B"
+  ],
+  "required_branch": "feature/vf-vnext-g14a",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G14A.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G14A.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G14A/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/projection.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "tests/test_vnext_g14a_projection.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/logical_runtime.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/semantic/",
+    "src/virtual_factory/equipment/",
+    "configs/",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/projection.py (F01 projection contract, inert)",
+    "tests/test_vnext_g14a_projection.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G14A/01-f01-projection-contract.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Project any relation other than REL-SHW-F01",
+    "Create a generic FLOWS_TO auto-projection helper",
+    "Reference T110",
+    "Execute/federate the binding or advance coordinator/run-control",
+    "Modify T106/T108 behavior or G4 semantics or G7 or PIM",
+    "Broaden runtime/site authority",
+    "Start G14B"
+  ],
+  "stop_conditions": [
+    "Any relation other than F01 must be interpreted",
+    "Filtered-water/flow semantics cannot be justified from accepted G12C/G13/G13B artifacts",
+    "G4 semantics must change",
+    "A generic projection taxonomy must be invented",
+    "T106/T108 behavior must change",
+    "PIM must change",
+    "Site/runtime authority must broaden",
+    "Actual federation/execution is required"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Exactly one projection; references only REL-SHW-F01 with exact PIM endpoints and evidence", "rule": {"field": "plan.projection", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Exactly two BoundaryPorts (T106 OUT MATERIAL m3/s volumetric_flow; T108 IN MATERIAL m3/s volumetric_flow) with VF-local PortRefs", "rule": {"field": "plan.ports", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Exactly one CompositionBinding; check_port_compatibility passes; graph validates deterministically", "rule": {"field": "plan.binding", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Deterministic serialization; projection record carries pins/authorization/disclaimer", "rule": {"field": "plan.serialization", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Inert: no execution/coordinator/run-control; no T106/T108 state mutation on construct/inspect", "rule": {"field": "plan.inert", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "No F02-F07 / T110 / generic auto-projection; fail closed on pin/port mismatch", "rule": {"field": "plan.no_auto", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "New G14A tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Complete canonical vNext baseline + G13B/G13/G12C/B/A/G11/G10/G9/G7/G4/G2/G1/ASSY/continuous/UI/full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

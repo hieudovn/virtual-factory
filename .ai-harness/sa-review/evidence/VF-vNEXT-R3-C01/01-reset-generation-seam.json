@@ -1,0 +1,23 @@
+{
+  "seam": "RuntimeSession.reset_generation / reset_epoch (runcontrol/session.py)",
+  "initial_generation": 1,
+  "after_first_reset": 2,
+  "after_second_reset": 3,
+  "monotonic_within_run": true,
+  "run_id": "TIPA-0001",
+  "run_id_unchanged_by_reset": true,
+  "failed_reset_raised": true,
+  "generation_after_failed_reset": 3,
+  "failed_reset_did_not_advance": true,
+  "new_attempt_run_id": "TIPA-0002",
+  "generation_after_new_attempt": 1,
+  "generation_after_reset_in_new_run": 2,
+  "replay_run_id": "TIPA-0003",
+  "generation_after_replay": 1,
+  "fresh_runs_start_at_one": true,
+  "adapter_has_no_epoch_inference": true,
+  "adapter_epoch_equals_session_generation": true,
+  "epoch_source_reported": "canonical_session_reset_generation",
+  "read_only_output_does_not_change_generation": true,
+  "PASS": true
+}

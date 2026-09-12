@@ -1,0 +1,365 @@
+{
+  "dimensional_conversion": {
+    "achievable_flow_at_80pct_m3h": 48.096000000000004,
+    "configured_r_s2_m5": 79266.06,
+    "declared_loss": "0.0006 bar per (m3/h)^2",
+    "expected_r_s2_m5": 79266.05504587154,
+    "matches": true,
+    "wrong_value_would_pin_m3h": 0.66
+  },
+  "energy": {
+    "per_pump_electric_j": {
+      "dist-hsp": 4139123.001819,
+      "raw-intake-pump": 3063771.102483,
+      "t108-transfer-pump": 1602610.981859
+    },
+    "per_pump_running_s": {
+      "dist-hsp": 1200.0,
+      "raw-intake-pump": 1141.0,
+      "t108-transfer-pump": 1200.0
+    },
+    "pump_operating_points": {
+      "dist-hsp": {
+        "electric_w": 1116.7901647908575,
+        "feasible": true,
+        "flow_m3h": 7.05672,
+        "motor_rating_w": 11000.0,
+        "off": false,
+        "reason": "ok"
+      },
+      "raw-intake-pump": {
+        "electric_w": 2685.163104717548,
+        "feasible": true,
+        "flow_m3h": 33.75,
+        "motor_rating_w": 5500.0,
+        "off": false,
+        "reason": "ok"
+      },
+      "t108-transfer-pump": {
+        "electric_w": 250.0,
+        "feasible": true,
+        "flow_m3h": 0.0,
+        "motor_rating_w": 7500.0,
+        "off": false,
+        "reason": "energized_zero_flow_no_lift_head"
+      }
+    },
+    "total_energy_j": 8805505.086161,
+    "unavailable_energy": [
+      "chem-dosing dosing pumps (reagent dosing energy not modelled)",
+      "sludge-t201 processing pump (duty-cycle abstraction; energy marked unavailable)",
+      "any gravity/regulated-feed abstraction without a declared pump"
+    ]
+  },
+  "envelope": {
+    "dist-hsp": [
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": true,
+        "power_ok": true,
+        "speed_pct": 0
+      },
+      {
+        "electric_w": 409.54175255714284,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 6.0120000000000005,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 10
+      },
+      {
+        "electric_w": 476.33402045714286,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 12.024000000000001,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 20
+      },
+      {
+        "electric_w": 657.6273190428572,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 18.035999999999998,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 30
+      },
+      {
+        "electric_w": 1010.6721636571431,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 24.048000000000002,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 40
+      },
+      {
+        "electric_w": 1592.7190696428572,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 30.06,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 50
+      },
+      {
+        "electric_w": 2461.018552342857,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 36.071999999999996,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 60
+      },
+      {
+        "electric_w": 3672.8211271,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 42.083999999999996,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 70
+      },
+      {
+        "electric_w": 5285.377309257145,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 48.096000000000004,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 80
+      },
+      {
+        "electric_w": 7355.937614157145,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 54.108,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 90
+      },
+      {
+        "electric_w": 9941.752557142858,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 60.12,
+        "motor_rating_w": 11000.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 100
+      }
+    ],
+    "raw-intake-pump": [
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": true,
+        "power_ok": true,
+        "speed_pct": 0
+      },
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 10
+      },
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 20
+      },
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 30
+      },
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 40
+      },
+      {
+        "electric_w": 1243.3984726142307,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 30.06,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 50
+      },
+      {
+        "electric_w": 1930.1925606773907,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 36.071999999999996,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 60
+      },
+      {
+        "electric_w": 2888.6854088534487,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 42.083999999999996,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 70
+      },
+      {
+        "electric_w": 4164.160143827889,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 48.096000000000004,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 80
+      },
+      {
+        "electric_w": 5500.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 51.12879026755863,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 90
+      },
+      {
+        "electric_w": 5499.999999999999,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 41.382019210700626,
+        "motor_rating_w": 5500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 100
+      }
+    ],
+    "t108-transfer-pump": [
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": true,
+        "power_ok": true,
+        "speed_pct": 0
+      },
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 10
+      },
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 20
+      },
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 30
+      },
+      {
+        "electric_w": 0.0,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 0.0,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 40
+      },
+      {
+        "electric_w": 1272.6949184277678,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 30.06,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 50
+      },
+      {
+        "electric_w": 2017.2168190431828,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 36.071999999999996,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 60
+      },
+      {
+        "electric_w": 3056.274856165795,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 42.083999999999996,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 70
+      },
+      {
+        "electric_w": 4438.958385880138,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 48.096000000000004,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 80
+      },
+      {
+        "electric_w": 6214.356764270742,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 54.108,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 90
+      },
+      {
+        "electric_w": 7499.999999999999,
+        "head_ok": true,
+        "max_feasible_flow_m3h": 53.26097182518671,
+        "motor_rating_w": 7500.0,
+        "off_is_zero": null,
+        "power_ok": true,
+        "speed_pct": 100
+      }
+    ]
+  },
+  "h0_m_synthetic": {
+    "dist-hsp": 40.77,
+    "raw-intake-pump": 30.0,
+    "t108-transfer-pump": 35.0
+  },
+  "verdict": "PUMP_ENVELOPE_FEASIBLE_WITH_EXPLICIT_UNITS"
+}

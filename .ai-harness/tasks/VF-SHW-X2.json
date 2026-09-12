@@ -1,0 +1,108 @@
+{
+  "task_id": "VF-SHW-X2",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "implementation",
+  "gate_type": "IMPLEMENTATION gate (Issue #94): whole-plant shallow runnable model + C1 functional control, strictly from the frozen X1 contracts and the X2 admission manifest. No PI/PID, no T107, no rich UI, no second session authority, no PIM change, no merge.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/94",
+  "sa_decision_ref": "Issue #94 (SA Task Contract, authoritative). X1/#91 CLOSED with SHW_WHOLE_PLANT_CONTRACTS_FROZEN + X2_SAFE_C1_ACTUATOR_BEHAVIOUR_FROZEN; accepted technical base eba4c58",
+  "architecture_authority_ref": "X0 design freeze + X1 contract layer; frozen chain 'SH-WTP Workspace -> ONE RuntimeSession -> RunLifecycleService -> ShwtpExecutionBridge -> whole-plant composition/coordinator -> Area/Process participants -> C1 controllers/actuators -> runtime truth'",
+  "objective": "Turn the X1 contract layer into an executable deterministic synthetic/reference whole-plant model: 16 admitted scopes as composition participants (explicit_lagged, no same-window feed-through), the 9 frozen X2-active C1 controls as deterministic rule/sequence logic (including the mandatory X1-C01 actuator commands), the frozen topology/provenance (3 PIM-known + 15 assumed edges), balance/bounds/non-negativity guarantees and the required oracles - while preserving exactly ONE canonical SH-WTP RuntimeSession and the existing G13/G13B/G14/G15/G21/G22/G23/G24/G25 behaviour.",
+  "explicit_non_objectives": [
+    "No PI/PID dynamics, no integrator/derivative/scan loop of any kind",
+    "No T107 activation (T107 stays excluded from X2)",
+    "No rich SH-WTP UI (Frame A/Frame B are X5/X6)",
+    "No second RuntimeSession / RunLifecycleService / run id / clock authority",
+    "No independent Area/Process sessions",
+    "No gateway/OPC/MQTT/Kafka work",
+    "No PIM write and no new canonical PIM id",
+    "No site-faithful or calibrated claims",
+    "No ASSY change",
+    "No X3/X4/X5 start",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-shw-x2",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "eba4c58f013d684eff2c127967d0d610a25f1762",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X2.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/whole_plant.py",
+    "src/virtual_factory/shwtp/x2_controls.py",
+    "src/virtual_factory/shwtp/bridge.py",
+    "src/virtual_factory/shwtp/session.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "tests/test_vnext_x2_whole_plant_runtime.py"
+  ],
+  "forbidden_paths": [
+    "configs/",
+    "src/virtual_factory/shwtp/contracts.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/expansion.py",
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/logical_runtime.py",
+    "src/virtual_factory/shwtp/{federation,projection,evaluation,overlay}.py",
+    "src/virtual_factory/{runcontrol,composition,discrete,core,assembly,ui}/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/"
+  ],
+  "forbidden_paths_note": "tests/ is intentionally NOT a whole-directory forbidden entry (the new X2 test module is a required deliverable, so the allowlist confines changes to that single test file); every other test module is protected by the allowlist and none may change. The frozen X1 contracts/configs and the accepted SH-WTP runtime modules must not change: X2 is implemented additively next to them.",
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/whole_plant.py (16 admitted scope participants + whole-plant model + provenance/balance/monitor projections)",
+    "src/virtual_factory/shwtp/x2_controls.py (the 9 frozen X2-active C1 controllers, deterministic, contract-derived, no PID)",
+    "src/virtual_factory/shwtp/bridge.py (canonical bridge drives either the accepted G21 slice or the X2 whole plant)",
+    "src/virtual_factory/shwtp/session.py (ONE RuntimeSession per session; explicit model selector; whole-plant session factory)",
+    "src/virtual_factory/shwtp/__init__.py (X2 exports)",
+    "tests/test_vnext_x2_whole_plant_runtime.py (the 18 Issue #94 oracles)",
+    ".ai-harness/sa-review/evidence/VF-SHW-X2/{generate_evidence.py,01..06}",
+    ".ai-harness/sa-review/reports/VF-SHW-X2.md",
+    ".ai-harness/sa-review/CURRENT.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_x2_whole_plant_runtime.py"
+  ],
+  "required_smoke_checks": [
+    "Canonical baseline green at the pushed head (new x2_whole_plant_runtime group included)",
+    "Full suite green at the pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Evaluating any PI/PID equation, integrator, derivative term or controller scan loop",
+    "Activating T107 or any excluded scope",
+    "Adding scopes, controls, edges, fidelity or topology outside the X2 admission manifest",
+    "Creating a second RuntimeSession/RunLifecycleService/run-id/clock authority",
+    "Complexifying the platform lifecycle/session architecture",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "The admission manifest cannot be implemented without changing the platform lifecycle/session/run architecture",
+    "Runtime behaviour needs a topology/scope/control choice not frozen in X1",
+    "A C2 loop appears necessary merely to make X2 runnable",
+    "A required X1 contract proves physically inconsistent rather than merely parameterizable",
+    "An existing canonical RuntimeSession/bridge semantic must be replaced"
+  ],
+  "acceptance_criteria": [
+    {"id": "X2-1", "phase": "final", "description": "Exactly one canonical SH-WTP RuntimeSession/run authority drives the whole-plant model through the accepted bridge", "rule": {"field": "x2.session", "operator": "is_true", "expected": null}},
+    {"id": "X2-2", "phase": "final", "description": "All 16 admitted scopes execute as contracted; no excluded scope (T107 / ELEC-MCC / AUTO-PLC / LINE2 internals) executes", "rule": {"field": "x2.scopes", "operator": "is_true", "expected": null}},
+    {"id": "X2-3", "phase": "final", "description": "All 9 frozen C1 controls are active and zero C2 loop evaluation occurs", "rule": {"field": "x2.controls", "operator": "is_true", "expected": null}},
+    {"id": "X2-4", "phase": "final", "description": "Every X2 process input resolves at runtime without hidden fallback invention (X2-active C1, process node, scenario or explicit declared fallback)", "rule": {"field": "x2.io", "operator": "is_true", "expected": null}},
+    {"id": "X2-5", "phase": "final", "description": "Storage/plant water balance is exact/bounded, no negative flow or volume exists, and all states stay within declared bounds", "rule": {"field": "x2.balance", "operator": "is_true", "expected": null}},
+    {"id": "X2-6", "phase": "final", "description": "Deterministic trajectory for identical inputs/reset; explicit_lagged with no same-window feed-through", "rule": {"field": "x2.determinism", "operator": "is_true", "expected": null}},
+    {"id": "X2-7", "phase": "final", "description": "Plausibility: filtered turbidity <= settled turbidity; filter DP non-decreasing between backwashes and reset after a valid backwash", "rule": {"field": "x2.plausibility", "operator": "is_true", "expected": null}},
+    {"id": "X2-8", "phase": "final", "description": "Assumed-edge provenance is visible in runtime records; every output stays site_truth=false / synthetic_reference", "rule": {"field": "x2.provenance", "operator": "is_true", "expected": null}},
+    {"id": "X2-9", "phase": "final", "description": "X1-C01 actuator behaviour is preserved exactly (RAW-INTAKE 75/0, T106 valve 100/0, T108 70/0, DIST-P108 80 fallback, T100/T108 direction)", "rule": {"field": "x2.actuators", "operator": "is_true", "expected": null}},
+    {"id": "X2-10", "phase": "final", "description": "R1-R5/UX01/X0/X1 regression and the full suite remain green", "rule": {"field": "x2.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "task_id": "VF-vNEXT-G12B",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — SH-WTP PIM Reference Connectivity Materialization (G12B)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/59",
+  "objective": "Materialize the exact SH-WTP PIM connectivity relationship facts (the F01-F07 process/connectivity slice) into the accepted generic G12A ReferenceConnectivityGraph, preserving raw PIM relation types (FLOWS_TO / DISCHARGES_TO / CONNECTED_TO) verbatim and preserving PIM epistemic status/warnings without reclassifying into the six runtime-oriented planning classes. PROC-* / ProcessConnection entities are allowed as ReferenceEndpoint without being G11 Scopes. No PIM change, no runtime projection, no G4 change, no containment change, runtime_effect = none on every edge. Deterministic serialization + source summary.",
+  "explicit_non_objectives": [
+    "No PIM modification",
+    "No six-class runtime semantic reclassification (material_flow/chemical_flow/sludge_waste_flow/utility_energy_flow/control_information_flow/dependency_constraint)",
+    "No PROC-* materialization into containment; no PROC-* -> Unit/Scope PART_OF mapping; no runtime owner inference",
+    "No relation inferred from PART_OF/containment/names/process order/engineering intuition",
+    "No BoundaryPort / PortDirection / PortCategory / CompositionBinding / coordinator / run-control / state propagation / runtime behavior",
+    "No G4 semantics change",
+    "No runtime projection",
+    "No execution authorization change",
+    "No G13 work"
+  ],
+  "required_branch": "feature/vf-vnext-g12b",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G12B.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G12B.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G12B/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "tests/test_vnext_g12b_shwtp.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/semantic/",
+    "src/virtual_factory/shwtp/structural.py",
+    "configs/",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/connectivity.py (SH-WTP PIM reference connectivity materialization)",
+    "tests/test_vnext_g12b_shwtp.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G12B/01-pim-reference-connectivity.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Modify PIM",
+    "Reclassify F01-F07 into the six runtime planning classes",
+    "Materialize PROC-* into containment or map via PART_OF",
+    "Infer relations from PART_OF/containment/names/order/intuition",
+    "Create BoundaryPort/PortDirection/PortCategory/CompositionBinding/coordinator/run-control",
+    "Modify G4 semantics or the generic G12A connectivity module",
+    "Change execution authorization",
+    "Start G13"
+  ],
+  "stop_conditions": [
+    "Exact PIM relationship facts cannot be identified deterministically",
+    "Inferring semantic meaning from endpoint names is required",
+    "Choosing a runtime relation class is required",
+    "PIM must be modified",
+    "PROC-* must be promoted into G11 containment",
+    "Runtime projection/ports/G4 changes are required",
+    "Any execution authorization must change"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Exact PIM source pins preserved", "rule": {"field": "plan.pins", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Selected F01-F07 relationship ids match the pinned slice", "rule": {"field": "plan.selection", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Endpoints preserve canonical PIM ids; PROC-* accepted as non-Scope endpoints", "rule": {"field": "plan.endpoints", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Raw PIM relation types preserved exactly (FLOWS_TO/DISCHARGES_TO/CONNECTED_TO)", "rule": {"field": "plan.raw_types", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "No six-class reclassification; F06/F07 not classified from names", "rule": {"field": "plan.no_reclassify", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Warning/review/known-but-unconstrained metadata preserved", "rule": {"field": "plan.warnings", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "No containment/runtime coupling; every edge inert (runtime_effect none)", "rule": {"field": "plan.inert", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Authorization frozen (NOT_AUTHORIZED / PENDING_LATER_PIM_REVIEW)", "rule": {"field": "plan.authorization", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Deterministic serialization independent of declaration order", "rule": {"field": "plan.serialization", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "New G12B tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "Complete canonical vNext baseline + G12A/G11/G10/G9/G7/G4/ASSY/continuous/UI/full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A12", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

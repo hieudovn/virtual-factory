@@ -36,8 +36,8 @@ Invariants (locked):
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Optional
+from dataclasses import dataclass, field, replace
+from typing import Any, Mapping, Optional
 
 from virtual_factory.assembly.line_runtime import (
     AssyLineRuntime,
@@ -205,6 +205,13 @@ class AssyObservationBridge:
     gateways: list[ObservationGatewayProtocol]
     model_id: str = MODEL_ID
 
+    # R3 additive seam (canonical same-session output projection): when bound,
+    # emitted facts carry the canonical parent-session identity and the
+    # projection epoch.  Read-only metadata: it never changes runtime truth,
+    # poll semantics or delivery idempotency ordering.  Unbound → legacy
+    # behaviour is byte-for-byte unchanged.
+    canonical: Optional[Mapping[str, Any]] = None
+
     # run tracking (sub_line_id → current generation)
     _run_generation: dict[str, int] = field(default_factory=dict)
     _last_sim_time: dict[str, float] = field(default_factory=dict)
@@ -220,6 +227,14 @@ class AssyObservationBridge:
         """Stable run id per sub-line; generation bumps on reset."""
         gen = self._run_generation.get(sub_line_id, 1)
         return f"{sub_line_id}:R{gen}"
+
+    def projection_epoch_for(self, sub_line_id: str) -> int:
+        """Projection epoch (source generation) for a sub-line (R3).
+
+        Subordinate projection metadata scoping fact identity after a reset of
+        the SAME canonical run id; never a run/lifecycle identity.
+        """
+        return self._run_generation.get(sub_line_id, 1)
 
     # ── Public surface ──
 
@@ -277,6 +292,11 @@ class AssyObservationBridge:
         else:
             self._last_sim_time[sub_line_id] = max(
                 sim_time, last if last is not None else sim_time)
+        canonical_run_id = (self.canonical or {}).get("canonical_run_id")
+        if canonical_run_id:
+            # R3: the canonical parent-session run id supersedes the legacy
+            # sub-line-local synthetic generation as the effective run id.
+            return str(canonical_run_id)
         return self.run_id_for(sub_line_id)
 
     # ── Fact collection (authoritative sources) ──
@@ -526,6 +546,47 @@ class AssyObservationBridge:
             "attempt": 1,
         }
 
+    def _canonical_identity(self, sub_line_id: str) -> dict[str, Any]:
+        """Canonical same-session projection identity (empty when unbound).
+
+        Carries the canonical parent-session identity (workspace / run /
+        scenario / profile) plus the projection-only ``source_run_key``
+        (legacy sub-line-local key, subordinate — never a second lifecycle
+        authority) and the ``projection_epoch`` that scopes fact identity
+        after a reset of the SAME canonical run id.
+        """
+        if not self.canonical:
+            return {}
+        ident: dict[str, Any] = dict(self.canonical)
+        ident.setdefault("source_run_key", self.run_id_for(sub_line_id))
+        ident.setdefault(
+            "projection_epoch", self._run_generation.get(sub_line_id, 1)
+        )
+        workspace_id = ident.get("workspace_id")
+        if workspace_id:
+            ident["scope_path"] = f"{workspace_id}/ASSY/{sub_line_id}"
+        return ident
+
+    def _scoped_source_event_id(
+        self, source_event_id: str, reality: RealityInput,
+    ) -> str:
+        """Scope a fact id by source scope + projection epoch (canonical only).
+
+        Identity shape: ``canonical_run_id`` + source scope/sub_line_id +
+        projection epoch + ``source_event_id``.  The canonical run id is shared
+        by all six sub-lines and is preserved across a same-run reset, so both
+        the source scope and the projection epoch must participate in fact
+        identity (unique per line, distinct before/after reset).  Unbound →
+        unchanged.
+        """
+        if not self.canonical:
+            return source_event_id
+        epoch = reality.context.get("projection_epoch", 1)
+        scope = reality.context.get("sub_line_id") or ""
+        if scope:
+            return f"E{epoch}:{scope}:{source_event_id}"
+        return f"E{epoch}:{source_event_id}"
+
     def _base_context(
         self, ctx: Any, semantic_type: str, station_id: str, **extra: Any,
     ) -> dict:
@@ -536,6 +597,7 @@ class AssyObservationBridge:
             "variant": ctx.identity.variant,
             "production_line_id": ctx.identity.production_line_id,
         }
+        context.update(self._canonical_identity(ctx.identity.sub_line_id))
         context.update({k: v for k, v in extra.items() if v is not None})
         return context
 
@@ -553,6 +615,9 @@ class AssyObservationBridge:
         DELIVERED is skipped; a FAILED gateway is retried on the next poll.
         """
         results: list[DeliveryResult] = []
+        source_event_id = self._scoped_source_event_id(source_event_id, reality)
+        if source_event_id != reality.source_event_id:
+            reality = replace(reality, source_event_id=source_event_id)
         delivered = self._delivered.setdefault(run_id, set())
         envelopes = self.service.collect(reality)
         for envelope in envelopes:
@@ -597,11 +662,16 @@ class AssyObservationPipeline:
 def build_assy_observation_pipeline(
     gateways: Optional[list[ObservationGatewayProtocol]] = None,
     model_id: str = MODEL_ID,
+    canonical: Optional[Mapping[str, Any]] = None,
 ) -> AssyObservationPipeline:
     """Build the M6-INT-01 observation pipeline.
 
     Default gateway: in-memory (test/demo).  Callers may supply
     InMemory / Jsonl / MQTT gateways.
+
+    R3 additive: ``canonical`` binds the pipeline to the canonical TIPA
+    parent-session identity (read-only metadata); ``None`` keeps the legacy
+    sub-line-local run identity.
     """
     service = ObservationService(
         points=build_assy_observation_points(),
@@ -619,6 +689,7 @@ def build_assy_observation_pipeline(
         router=router,
         gateways=gw,
         model_id=model_id,
+        canonical=canonical,
     )
     return AssyObservationPipeline(
         service=service,

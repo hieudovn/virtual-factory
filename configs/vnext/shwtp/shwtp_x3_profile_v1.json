@@ -1,0 +1,147 @@
+{
+  "schema": "vf.shwtp.x3.profile.v1",
+  "profile_id": "shwtp-x3-physical-bounds-two-pi",
+  "version": "1",
+  "provenance": "VF synthetic_reference implementation parameterization of the SA design freeze (Issue #97 D1-D9). Tank capacities/areas are derived from the accepted X2 scenario; pipe/valve/tank-margin/pump/head/motor ratings and PI gains are explicit X3 parameters chosen by the PM inside the frozen design (D8). No site rating is verified.",
+  "site_truth": false,
+  "simulation_truth": "synthetic_reference",
+  "time": {
+    "tick_s": 1.0,
+    "coupling_policy": "explicit_lagged",
+    "note": "global deterministic 1-second coordinator windows; the two PI loops scan once per tick"
+  },
+  "constants": {
+    "rho_kg_m3": 1000.0,
+    "g_m_s2": 9.81,
+    "bar_pa": 100000.0,
+    "m3h_per_m3s": 3600.0
+  },
+  "units": {
+    "internal": ["m3", "s", "m3/s", "m", "Pa", "W", "J"],
+    "processor_interface": ["m3/h", "%", "bar", "kPa", "mg/L"],
+    "note": "all mixed-unit arithmetic happens at the named boundaries (m3h_per_m3s, bar_pa)"
+  },
+  "tanks": {
+    "vf-shw-node-t100": {"area_m2": 20.0, "capacity_m3": 200.0, "initial_volume_m3": 60.0, "level_band_m": [0.5, 0.8, 3.5, 4.0]},
+    "vf-shw-node-t101": {"area_m2": 3.0, "capacity_m3": 30.0, "initial_volume_m3": 0.0, "level_band_m": [0.01, 0.02, 9.5, 9.9]},
+    "vf-shw-node-t104": {"area_m2": 3.0, "capacity_m3": 30.0, "initial_volume_m3": 0.0, "level_band_m": [0.01, 0.02, 9.5, 9.9]},
+    "vf-shw-node-t105": {"area_m2": 30.0, "capacity_m3": 150.0, "initial_volume_m3": 60.0, "level_band_m": [0.2, 0.5, 4.5, 4.9]},
+    "vf-shw-node-t106": {"area_m2": 4.0, "capacity_m3": 40.0, "initial_volume_m3": 10.0, "level_band_m": [0.1, 0.25, 9.0, 9.8]},
+    "vf-shw-node-t108": {"area_m2": 20.0, "capacity_m3": 100.0, "initial_volume_m3": 50.0, "level_band_m": [1.0, 1.4, 4.0, 4.6]},
+    "vf-shw-node-wash-t110": {"area_m2": 15.0, "capacity_m3": 30.0, "initial_volume_m3": 0.0, "level_band_m": [0.02, 0.05, 1.9, 1.98]},
+    "vf-shw-node-sludge-t201": {"area_m2": 20.0, "capacity_m3": 80.0, "initial_volume_m3": 10.0, "level_band_m": [0.05, 0.1, 3.5, 3.95]},
+    "note": "Hmax = Vmax/A; the four level bands are physical alarm hints, the operative alarm limits differ from the physical capacity (D3)"
+  },
+  "edges": {
+    "vf-shw-edge-raw-source-intake": {"max_flow_m3_s": 0.0125},
+    "vf-shw-edge-intake-t100": {"max_flow_m3_s": 0.0167},
+    "vf-shw-edge-t100-l1": {"max_flow_m3_s": 0.0125},
+    "vf-shw-edge-t100-line2": {"max_flow_m3_s": 0.006},
+    "vf-shw-edge-t101-t102": {"max_flow_m3_s": 0.0125, "trunk": "line1_process_trunk"},
+    "vf-shw-edge-t102-t103": {"max_flow_m3_s": 0.0125, "trunk": "line1_process_trunk"},
+    "vf-shw-edge-t103-t104": {"max_flow_m3_s": 0.0125, "trunk": "line1_process_trunk"},
+    "vf-shw-edge-t104-t105": {"max_flow_m3_s": 0.0125, "trunk": "line1_process_trunk"},
+    "vf-shw-edge-t105-t106": {"max_flow_m3_s": 0.0125, "trunk": "line1_process_trunk"},
+    "vf-shw-edge-t105-sludge": {"max_flow_m3_s": 0.002},
+    "vf-shw-edge-t106-t108": {"max_flow_m3_s": 0.0125},
+    "vf-shw-edge-t106-wash": {"max_flow_m3_s": 0.005},
+    "vf-shw-edge-wash-t106": {"max_flow_m3_s": 0.005},
+    "vf-shw-edge-t108-dist": {"max_flow_m3_s": 0.02},
+    "vf-shw-edge-dist-demand": {"max_flow_m3_s": 0.03},
+    "vf-shw-edge-line2-dist": {"max_flow_m3_s": 0.006},
+    "vf-shw-edge-chem-t102": {"max_flow_m3_s": 0.0},
+    "vf-shw-edge-chem-t103": {"max_flow_m3_s": 0.0},
+    "note": "no rating may mean infinity: every water edge declares an explicit capacity no greater than the adjoining process capacity unless documented"
+  },
+  "trunks": {
+    "line1_process_trunk": {"max_flow_m3_s": 0.0125, "note": "aggregate shared capacity of the LINE1 process chain"}
+  },
+  "valves": {
+    "vf-shw-node-t106": {"q_valve_max_m3_s": 0.0125, "slew_pct_per_s": 10.0, "min_open_pct": 0.0, "max_open_pct": 100.0}
+  },
+  "pumps": {
+    "raw-intake-pump": {
+      "scope_id": "vf-shw-node-raw-intake", "signal": "pump_speed_cmd", "powered": true,
+      "h0_m": 30.0, "k_s2_m5": 200.0, "h_static_m": 5.0, "r_s2_m5": 100.0,
+      "q_rated_m3_s": 0.0167, "speed_min_pct": 0.0, "speed_max_pct": 100.0, "slew_pct_per_s": 5.0,
+      "eta_total": 0.65, "no_load_w": 300.0, "motor_rating_w": 5500.0
+    },
+    "t108-transfer-pump": {
+      "scope_id": "vf-shw-node-t108", "signal": "transfer_pump_speed_cmd", "powered": true,
+      "h0_m": 35.0, "k_s2_m5": 150.0, "h_static_m": 8.0, "r_s2_m5": 150.0,
+      "q_rated_m3_s": 0.0167, "speed_min_pct": 0.0, "speed_max_pct": 100.0, "slew_pct_per_s": 5.0,
+      "eta_total": 0.7, "no_load_w": 250.0, "motor_rating_w": 7500.0,
+      "note": "h0 35 m keeps the shut-off head above the 8 m static lift at the 50 % bias speed so the level PV has authority in both directions; 100 % delivers >= 51 m3/h which covers the 36 m3/h line-1 feed"
+    },
+    "dist-hsp": {
+      "scope_id": "vf-shw-node-dist-p108", "signal": "hsp_speed_cmd", "powered": true,
+      "h0_m": 40.77, "k_s2_m5": 0.0, "h_static_m": 0.0, "r_s2_m5": 79266.06,
+      "q_rated_m3_s": 0.0167, "speed_min_pct": 0.0, "speed_max_pct": 100.0, "slew_pct_per_s": 5.0,
+      "eta_total": 0.7, "no_load_w": 400.0, "motor_rating_w": 11000.0,
+      "note": "Hstatic 0 and k=0 keep the accepted flat 4 bar X2 pump curve (40.77 m); r = 0.0006 bar per (m3/h)^2 converted at the named boundary: 60 Pa/(m3/h)^2 * 3600^2 / 9810 = 79266.06 s^2/m^5"
+    }
+  },
+  "controllers": {
+    "vf-shw-ctrl-f106-inlet-flow-pi": {
+      "kind": "C2_PI",
+      "pv": "f106_inlet_flow_m3_s",
+      "mv": "f106_inlet_valve_pct",
+      "sp_m3_s": 0.008,
+      "sp_admissible_m3_s": [0.001, 0.0125],
+      "kp_pct_per_m3_s": 2000.0,
+      "ki_pct_per_m3_s_s": 200.0,
+      "kb_per_s": 0.1,
+      "bias_pct": 90.0,
+      "manual_default_pct": 90.0,
+      "tracking_time_s": 10.0,
+      "output_min_pct": 0.0,
+      "output_max_pct": 100.0,
+      "slew_pct_per_s": 10.0,
+      "rationale": "SP 0.008 m3/s = 28.8 m3/h is the LINE1 steady-state flow of the balanced nominal operating point (intake 33.75 m3/h at the accepted 75 % duty speed minus the 20 % LINE2 split of the 36 m3/h T100 withdrawal); bias 90 % (40.5 m3/h) sits above it so the loop trims in both directions"
+    },
+    "vf-shw-ctrl-t108-level-pi": {
+      "kind": "C2_PI",
+      "pv": "t108_level_m",
+      "mv": "t108_transfer_pump_speed_pct",
+      "sp_m": 2.5,
+      "sp_admissible_m": [1.2, 3.6],
+      "kp_pct_per_m": 20.0,
+      "ki_pct_per_m_s": 2.0,
+      "kb_per_s": 0.1,
+      "bias_pct": 48.0,
+      "manual_default_pct": 48.0,
+      "tracking_time_s": 10.0,
+      "output_min_pct": 0.0,
+      "output_max_pct": 100.0,
+      "slew_pct_per_s": 5.0,
+      "rationale": "synthetic tuning: 20 %/(m) gives 12 m3/h of trim per metre of level error and the 48 % bias places the nominal operating point ON the balance point (28.8 m3/h filtered inflow / 60 m3/h rated transfer), so the loop trims instead of ramping. The declared response is a damped trim with a documented settling horizon, not a claim of site tuning."
+    }
+  },
+  "deferred_loops": {
+    "vf-shw-ctrl-dist-pressure-pi": "explicitly DEFERRED (D1): DIST keeps the declared fixed 80 % synthetic command subject to trips and physical feasibility",
+    "vf-shw-ctrl-raw-flow-pi": "deferred to X4 (RAW/T100 C2 stays X4)",
+    "vf-shw-ctrl-t100-level-pi": "deferred to X4",
+    "vf-shw-ctrl-f106-inlet-flow-pi": "ACTIVE in X3",
+    "vf-shw-ctrl-t108-level-pi": "ACTIVE in X3"
+  },
+  "queue": {
+    "max_transfers_per_edge": 1,
+    "max_queued_volume_m3": 40.0,
+    "note": "one tick of in-transit inventory per edge; queued water is physical inventory counted once (no unbounded buffer)"
+  },
+  "energy": {
+    "unavailable": [
+      "chem-dosing dosing pumps (reagent dosing energy not modelled)",
+      "sludge-t201 processing pump (duty-cycle abstraction; energy marked unavailable)",
+      "any gravity/regulated-feed abstraction without a declared pump"
+    ],
+    "note": "unmodelled energy is unavailable, never fabricated (D6)"
+  },
+  "acceptance": {
+    "flow_steady_error_frac_of_sp": 0.05,
+    "level_steady_error_m": 0.05,
+    "nominal_settling_window_s": 1800,
+    "oscillation_check_s": 900,
+    "note": "settling horizon covers the declared cold start of the LINE1 chain (60 s intake rest timer + 300 s T101 residence + 300 s T104 residence + filter lag) before the PI loops see any flow; the two loops are then evaluated over a >=600 s steady window for the flow error and the level band. The declared bands apply to the NOMINAL operating point (flow SP 0.008 m3/s, level SP 2.5 m); an off-nominal level setpoint of the same loop is documented to settle inside a 0.10 m band with this synthetic tuning (the loop is deliberately not tuned to an unverified site)."
+  }
+}

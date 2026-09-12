@@ -484,12 +484,29 @@ class TestStateOrderingC02:
 
 
 class TestCustomerPage:
-    def test_customer_page_route_renders(self):
-        """GET /demo-assy-mes returns the customer-facing HTML page."""
+    def test_customer_page_route_is_deauthorized(self):
+        """VF-vNEXT-R5: the legacy /demo-assy-mes DemoController path is removed.
+
+        The module/classes stay as reference/test-only code (this file still
+        drives ``DemoController``/``DemoRunner`` directly), but the HTTP family is
+        a fail-closed deprecated alias and constructs no controller.
+        """
         from fastapi.testclient import TestClient
         from virtual_factory.ui.api import create_app
         client = TestClient(create_app(config_path="configs/plants/continuous_mvp_01.yaml", dt_s=1.0))
-        resp = client.get("/demo-assy-mes")
-        assert resp.status_code == 200
-        assert "TIPA ASSY" in resp.text
-        assert "PRE-ASSY" in resp.text
+        for method, path in (
+            ("get", "/demo-assy-mes"),
+            ("post", "/demo-assy-mes/reset"),
+            ("post", "/demo-assy-mes/start"),
+            ("post", "/demo-assy-mes/pause"),
+            ("post", "/demo-assy-mes/step"),
+            ("post", "/demo-assy-mes/jam"),
+            ("post", "/demo-assy-mes/recover"),
+            ("get", "/demo-assy-mes/snapshot"),
+            ("get", "/demo-assy-mes/messages"),
+        ):
+            response = getattr(client, method)(path)
+            assert response.status_code == 410, (method, path)
+            body = response.json()
+            assert body["code"] == "VF_LEGACY_AUTHORITY_DEAUTHORIZED"
+            assert body["surface"] == "legacy_demo_assy_mes"

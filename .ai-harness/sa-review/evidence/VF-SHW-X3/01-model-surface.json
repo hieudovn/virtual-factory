@@ -1,0 +1,42 @@
+{
+  "acceptance": {
+    "flow_steady_error_frac_of_sp": 0.05,
+    "level_steady_error_m": 0.05,
+    "nominal_settling_window_s": 1800
+  },
+  "active_c2_loop_ids": [
+    "vf-shw-ctrl-f106-inlet-flow-pi",
+    "vf-shw-ctrl-t108-level-pi"
+  ],
+  "authority_labels_present": true,
+  "c1_active_controllers": 9,
+  "coupling_policy": "explicit_lagged",
+  "deferred_loops": {
+    "vf-shw-ctrl-dist-pressure-pi": "explicitly DEFERRED (D1): DIST keeps the declared fixed 80 % synthetic command subject to trips and physical feasibility",
+    "vf-shw-ctrl-f106-inlet-flow-pi": "ACTIVE in X3",
+    "vf-shw-ctrl-raw-flow-pi": "deferred to X4 (RAW/T100 C2 stays X4)",
+    "vf-shw-ctrl-t100-level-pi": "deferred to X4",
+    "vf-shw-ctrl-t108-level-pi": "ACTIVE in X3"
+  },
+  "edges": 18,
+  "energy_unavailable": [
+    "chem-dosing dosing pumps (reagent dosing energy not modelled)",
+    "sludge-t201 processing pump (duty-cycle abstraction; energy marked unavailable)",
+    "any gravity/regulated-feed abstraction without a declared pump"
+  ],
+  "exactly_two_active_c2": true,
+  "participants_are_exactly_the_admitted_scopes": true,
+  "profile_id": "shwtp-x3-physical-bounds-two-pi",
+  "profile_version": "1",
+  "pumps": 3,
+  "queue": {
+    "max_queued_volume_m3": 40.0,
+    "max_transfers_per_edge": 1
+  },
+  "scopes": 16,
+  "tanks": 8,
+  "tick_s": 1.0,
+  "trunks": 1,
+  "valves": 1,
+  "verdict": "X3_SURFACE_MATERIALIZED_16_SCOPES_TWO_PI"
+}

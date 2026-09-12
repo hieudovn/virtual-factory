@@ -1,0 +1,129 @@
+{
+  "task_id": "VF-SHW-X3-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "implementation",
+  "gate_type": "CORRECTION gate inside Issue #98 / PR #99: fix the two blocking SA findings against the reviewed X3 head c3f4b23 - (C01-1) the final physical actuator must be the controller's tracked actuator so protective trip/interlock/C1 entry and release obey the declared valve 10 pp/s and pump 5 pp/s slew on ordinary reopening, hold the integral from the first protected scan and keep requested-vs-applied provenance; (C01-2) energy must be integrated from the ACHIEVED pumped throughput of the tick (realized operating point against the frozen pump/system laws, with head/motor feasibility enforced on the realized point, OFF distinguished from powered-zero-flow/insufficient-head and no invented useful hydraulic power) instead of the pre-allocation capacity point.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/98",
+  "sa_decision_ref": "Issue #98 SA review comment 5646905334 (VF-SHW-X3 CHANGES REQUIRED at head c3f4b231bb83bbd48f2c8a66f7dda13efd7ef290) authorizing VF-SHW-X3-C01 on the same branch/PR, with the mandatory regression/evidence repairs (per-tick command continuity at every trip/interlock/backwash entry and release for both loops including MANUAL and a changed PV; SP steps and saturation recovery inside ONE ongoing attempt; per-tick actual Q/speed/H/Hreq/power/energy export and an independent energy recomputation from physical transfers with a capacity-Q mutation that must fail acceptance).",
+  "architecture_authority_ref": "Issue #97 D1-D9 design freeze, the accepted X3 implementation at c3f4b23, the frozen X1 contract layer (untouched) and the accepted X2 runtime (behaviour preserved). The correction stays inside the existing control layer, pump model and runtime; no new engine, topology, loop or fidelity scope.",
+  "objective": "Close both blocking SA findings with measurement-backed proof: (C01-1) make PIController track the ACTUAL realized actuator value, determine protective ownership (trip / interlock / C1 backwash / permissive) BEFORE normal PI integration, hold the integral from the FIRST protected scan, commit one final actual MV into actuator tracking, preload the release from that actual stopped value and run the back-calculation against the final realized command so any ordinary reopening/re-starting is slew-limited (valve 10 pp/s, pump 5 pp/s); (C01-2) separate the allocation capacity point from the realized operating point, derive the realized point from the committed physical pumped throughput of the tick with the frozen pump/system laws, integrate power/energy from the realized points, enforce head/motor feasibility on the realized point, distinguish OFF from powered-zero-flow/insufficient-head, declare the idle-loss rule explicitly, and export per-tick Q/speed/H/Hreq/power/energy so an independent recomputation from the physical transfer records reproduces the ledger and a rated/capacity-Q substitution fails acceptance.",
+  "explicit_non_objectives": [
+    "No new process graph edge, scope, authority, fidelity class, control loop or C2 loop",
+    "No change to the frozen X1 configs/contracts (configs/vnext/shwtp/*_v1.json graph/process/control/admission untouched)",
+    "No change to accepted X2 behaviour or to the accepted X2 physical oracles",
+    "No change to runcontrol/composition/lifecycle authority, ASSY/PIM, docs/, deploy/, simulators/",
+    "No redefinition of the water identity or its tolerances (the C01 changes must keep the full-run identity closing)",
+    "No merge, no Issue #98 closure, no X4/X5",
+    "No relaxation of an actuator limit, tolerance or acceptance band to make a finding disappear"
+  ],
+  "required_branch": "feature/vf-shw-x3",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "c3f4b231bb83bbd48f2c8a66f7dda13efd7ef290",
+  "working_tree_requirement": "clean_or_read_only",
+  "execution_ordering_disclosure": "This correction contract is created BEFORE the C01 edits (preflight runs on the clean reviewed head c3f4b23); the earlier X3 ordering deviation (implementation written before the X3 contract existed) stays recorded in the X3 contract and the report. Nothing is backdated.",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X3-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/x3_controls.py",
+    "src/virtual_factory/shwtp/physical_budget.py",
+    "src/virtual_factory/shwtp/x3_whole_plant.py",
+    "src/virtual_factory/shwtp/x3_profile.py",
+    "configs/vnext/shwtp/shwtp_x3_profile_v1.json",
+    "tests/test_vnext_x3_two_pi_control.py",
+    "tests/test_vnext_x3_physical_bounds.py",
+    "tests/test_vnext_x3_reservations.py",
+    "tests/test_vnext_x3_session_wiring.py"
+  ],
+  "forbidden_paths": [
+    "configs/vnext/shwtp/shwtp_whole_plant_graph_v1.json",
+    "configs/vnext/shwtp/shwtp_process_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_control_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_x2_admission_manifest_v1.json",
+    "src/virtual_factory/shwtp/contracts.py",
+    "src/virtual_factory/shwtp/x2_controls.py",
+    "src/virtual_factory/shwtp/whole_plant.py",
+    "src/virtual_factory/shwtp/session.py",
+    "src/virtual_factory/ui/workspace_monitor.py",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/pim/",
+    "src/virtual_factory/core/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/",
+    "main"
+  ],
+  "forbidden_paths_note": "The correction is deliberately confined to the four existing X3 modules: no accepted X2/G21/G23/G24/G25 test module may be edited, no new test module and no new baseline group is added (the existing x3_whole_plant_runtime group already covers all four modules). That confinement is enforced by the EXHAUSTIVE allowlist above, which permits only those four modules and therefore rejects any other path; tests/ is deliberately NOT a whole-directory forbidden entry because the harness forbidden check is evaluated independently of the allowlist and would contradict the four explicitly allowlisted modules (see allowlist_correction). whole_plant.py, session.py and workspace_monitor.py are frozen for this correction because neither finding requires touching them.",
+  "allowlist_correction": {
+    "date": "2026-09-13",
+    "trigger": "The canonical 46-group baseline at the correction head 109e3f23e148e8f33fd57a22309cd21d19921a89 FAILED exactly one group, checks_changed_files (exit 1): 'Forbidden path changed: tests/test_vnext_x3_physical_bounds.py (matches tests/)' and 'Forbidden path changed: tests/test_vnext_x3_two_pi_control.py (matches tests/)'. Every other group PASSED, including x3_whole_plant_runtime, full_suite and checks_preflight (PRECHECK PASSED).",
+    "defect": "The original forbidden_paths carried the whole-directory entry tests/ while allowed_paths explicitly allowlisted the four X3 test modules. .ai-harness/scripts/verify_changed_files.py evaluates the forbidden list unconditionally, before and independently of the allowlist, so the contract contradicted itself and failed on files it explicitly permitted. The accepted X3 contract (VF-SHW-X3.json) documents the opposite rule verbatim: 'tests/ is deliberately not a whole-directory forbidden entry'.",
+    "change": "Removed the single entry \"tests/\" from forbidden_paths. No other field of this contract was modified, no allowlist entry was added, and no code, test, evidence or report file was touched by this amendment commit.",
+    "enforcement_equivalence": "Not a scope widening. The allowlist is exhaustive (a path outside allowed_paths is a violation), so all 16 changed paths of the correction were already inside the original allowlist; independent recomputation against the original contract gives outside_allowlist=[] and the two reported files as the ONLY forbidden hits, both caused solely by the blanket tests/ prefix. After the amendment the permitted set is byte-identical to the original intent, and every other forbidden entry (frozen X1 configs, contracts.py, x2_controls.py, whole_plant.py, session.py, workspace_monitor.py, runcontrol/, composition/, assembly/, pim/, core/, docs/, deploy/, examples/, simulators/, main) is unchanged.",
+    "disclosure": "NOT an SA-authorized scope change and NOT hidden: the failed baseline (BASELINE FAILED groups: checks_changed_files, machine-readable results .ai-harness/traces/vnext_baseline_x3c01_h1.json) is reported as a FAILED run in .ai-harness/sa-review/reports/VF-SHW-X3-C01.md and in the C01 verification comment on PR #99. Because this amendment changes the tree, the full 46-group baseline is re-run at the new head and only that re-run is reported as the gate result for the corrected head.",
+    "authorization": "Implemented under AGENTS.md preflight/report discipline; the SA retains the decision on accepting this contract correction. No merge, no Issue #98 closure, no X4/X5."
+  },
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/x3_controls.py: actual-actuator tracking (commit one final realized MV per tick), protective ownership decided before normal PI integration, integral held from the first protected scan, release preloaded from the actual stopped value, back-calculation against the final realized command, provenance (requested vs applied vs pi_output) preserved for trip / interlock / C1 override / MANUAL",
+    "src/virtual_factory/shwtp/physical_budget.py: capacity point (allocation only) separated from the realized operating point evaluated at the ACHIEVED flow, with head/motor feasibility on the realized point, explicit OFF vs powered-zero-flow/insufficient-head states and a declared idle-loss rule",
+    "src/virtual_factory/shwtp/x3_whole_plant.py: actual pumped throughput per pump taken from the committed physical transfers, realized points for energy integration and reporting, per-tick export of actual Q / speed / H / Hreq / P_hyd / P_elec / energy delta, and the realized-feasibility alarm/verdict basis",
+    "tests/test_vnext_x3_two_pi_control.py: per-tick command-continuity tests at trip/interlock/backwash entry and release for BOTH loops (including MANUAL and a changed PV during the stop), asserting tracked actual MV, first-tick integral hold and slew-limited release; feasible SP step and unreachable->reachable recovery executed INSIDE one ongoing attempt retaining controller state",
+    "tests/test_vnext_x3_physical_bounds.py: realized energy tests (energy integrated from achieved flow, independent recomputation from physical transfers across startup / zero available water / full receiver / narrowed downstream capacity) and a capacity-Q substitution mutation that must fail",
+    ".ai-harness/sa-review/evidence/VF-SHW-X3/generate_evidence.py + regenerated numbered artefacts including the per-tick actual operating-point export, the independent energy recomputation and the x3c01 acceptance block",
+    ".ai-harness/sa-review/reports/VF-SHW-X3-C01.md (or an updated VF-SHW-X3.md with an explicit C01 section) reporting per-finding proof, the machine-derived numbers and the residual deviations",
+    ".ai-harness/sa-review/CURRENT.md: the C01 entry with the exact new pushed head and the machine-derived gate results",
+    ".ai-harness/regression/vnext_baseline_manifest.json: kept valid at the corrected head (gate context pointed at this contract; the x3_whole_plant_runtime group unchanged in content)"
+  ],
+  "required_tests": [
+    "tests/test_vnext_x3_two_pi_control.py",
+    "tests/test_vnext_x3_physical_bounds.py",
+    "tests/test_vnext_x3_reservations.py",
+    "tests/test_vnext_x3_session_wiring.py"
+  ],
+  "required_smoke_checks": [
+    "Focused X3 modules green at the corrected head",
+    "Canonical baseline green at the exact pushed head (46 groups)",
+    "Full suite green at the exact pushed head",
+    "Evidence generator green including the independent energy recomputation and the capacity-Q mutation",
+    "VF-DM CI green at the exact pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Making the release jump disappear by widening the slew limit, the tolerance or an acceptance band",
+    "Reporting the capacity/envelope point as the actual operating point",
+    "Integrating energy from a pre-allocation or rated-flow point",
+    "Inventing useful hydraulic power for a powered pump that moves no water",
+    "Declaring the defect fixed from a test that waits long enough for the discontinuity to be invisible",
+    "Proving step response or saturation recovery with two independently initialised models",
+    "Changing frozen X1/X2 behaviour or a protected path to make the correction easier",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "A required fix would need a new control architecture, topology, loop or fidelity scope (report BLOCKED FOR SA)",
+    "The frozen pump/system law cannot parameterize the realized operating point without an unverifiable rating (report BLOCKED FOR SA)",
+    "A protected path (X1/X2/runcontrol/composition/PIM/ASSY) must change",
+    "The water identity can no longer close without a compensation term"
+  ],
+  "acceptance_criteria": [
+    {"id": "X3C01-1", "phase": "final", "description": "The final physical actuator is the controller's tracked actuator across trip, interlock, C1 backwash/permissive entry and release for both loops: protective ownership is decided before normal PI integration, the integral is held from the first protected scan, the actual stopped value is committed into actuator tracking, the release is preloaded from that actual value and every ordinary reopening/re-starting step obeys the declared valve 10 pp/s and pump 5 pp/s slew (protective stopping alone may bypass slew); requested-vs-applied provenance is preserved", "rule": {"field": "x3c01.actuator_tracking", "operator": "is_true", "expected": null}},
+    {"id": "X3C01-2", "phase": "final", "description": "Energy is integrated from the realized operating point of the ACHIEVED pumped throughput of each tick (actual speed + frozen pump/system laws), with head and motor feasibility enforced on the realized point, OFF distinguished from powered-zero-flow/insufficient-head, an explicitly declared idle-loss rule and no invented useful hydraulic power; an independent recomputation from the physical transfer records reproduces the ledger across startup, zero available water, full receiver and narrowed downstream capacity, and a rated/capacity-flow substitution fails", "rule": {"field": "x3c01.energy_from_actual_flow", "operator": "is_true", "expected": null}},
+    {"id": "X3-1", "phase": "final", "description": "Regression: 16 admitted scopes on deterministic global 1-second windows in one attempt-bound session with exactly two active C2 PI loops and the deferred loops unavailable", "rule": {"field": "x3.scope_control", "operator": "is_true", "expected": null}},
+    {"id": "X3-2", "phase": "final", "description": "Regression: the full-run independent water identity still closes from tick zero with no created water and no compensation term", "rule": {"field": "x3.water_identity", "operator": "is_true", "expected": null}},
+    {"id": "X3-3", "phase": "final", "description": "Regression: flow limiting and reservation semantics are unchanged (capacity tokens, no double count, queue bound, no hidden loss or deadlock)", "rule": {"field": "x3.flow_limits", "operator": "is_true", "expected": null}},
+    {"id": "X3-4", "phase": "final", "description": "Regression: the two PIs drive the real actuators with feasible SP tracking, disturbance rejection, saturation with a reason and recovery inside one ongoing attempt", "rule": {"field": "x3.pi_response", "operator": "is_true", "expected": null}},
+    {"id": "X3-5", "phase": "final", "description": "Regression: pump envelope feasibility, OFF exactly zero flow and zero energy, unit-explicit energy and unmodelled energy declared unavailable - now evaluated on REALIZED operating points", "rule": {"field": "x3.pump_energy", "operator": "is_true", "expected": null}},
+    {"id": "X3-6", "phase": "final", "description": "Regression: physical-envelope mutations still fail the oracle or fail safely", "rule": {"field": "x3.mutations", "operator": "is_true", "expected": null}},
+    {"id": "X3-7", "phase": "final", "description": "Regression: canonical X3 1 s default, X2-60s zero-C2 and G21 compatibility, deterministic reset/attempt/replay, no protected path changed", "rule": {"field": "x3.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

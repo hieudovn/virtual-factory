@@ -1,0 +1,91 @@
+{
+  "task_id": "VF-ARCH-03",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "ARCHITECTURE / DESIGN GATE — DOCUMENTATION & EVIDENCE ONLY (NO PRODUCTION IMPLEMENTATION)",
+  "objective": "Freeze the platform contracts that sit between runtime truth and product/UI projections: Runtime State -> Observation -> Monitoring / Live Series / Export / Integration, and Runtime Activity -> Event -> Alarm, plus the minimum capability/readiness model for workspace/scope composition. Prevent: (1) UI/telemetry becoming a second mutable truth; (2) Event/Alarm duplicate parallel stores; (3) capability God Registry or workspace-name hard-coding; (4) workspace readiness becoming a competing evaluator instead of aggregation.",
+  "explicit_non_objectives": [
+    "No production Observation/Event/Alarm classes or DB schemas",
+    "No production capability registry classes",
+    "No dashboard/widget implementation",
+    "No UI navigation/layout (ARCH-04)",
+    "No historian/storage engine",
+    "No alarm workflow/notification engine",
+    "No TIPA/ASSY migration implementation",
+    "No SH WTP runtime/domain models",
+    "No semantic loader/binding implementation",
+    "No provenance persistence implementation",
+    "No real plant-control/acknowledgement authority",
+    "No advanced RBAC",
+    "No frontend framework migration"
+  ],
+  "required_branch": "",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-ARCH-03.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-03.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-03/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-ARCH-03/01-current-state-observation-event-capability-inventory.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-03/02-runtime-state-vs-observation-authority.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-03/03-event-and-alarm-model.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-03/04-capability-namespaces-and-states.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-03/05-readiness-aggregation.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-03/06-provenance-evidence-and-series-boundaries.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-03/07-assy-shwt-mapping-and-decisions.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-03.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement production Observation/Event/Alarm classes or DB schemas",
+    "Implement production capability registry classes",
+    "Implement dashboard/widget",
+    "Design UI navigation/layout (ARCH-04)",
+    "Implement historian/storage engine",
+    "Implement alarm workflow/notification engine",
+    "Implement TIPA/ASSY migration",
+    "Implement SH WTP runtime/domain models",
+    "Implement semantic loader/binding",
+    "Fabricate site truth or source mapping"
+  ],
+  "stop_conditions": [
+    "Existing repo contains a competing accepted observation/event authority that materially conflicts with the target pipeline",
+    "Alarm cannot be represented safely as an Event specialization without breaking accepted semantics",
+    "Capability/readiness semantics require a breaking Owner/SA decision not already frozen",
+    "Provenance/evidence separation conflicts with accepted PIM/VF contracts",
+    "Completing this gate requires choosing ARCH-04 UI architecture prematurely",
+    "A safe model requires fabricating site truth, source mapping or readiness not supported by evidence"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Source-of-truth boundaries explicit and non-overlapping", "rule": {"field": "sot.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Observation clearly downstream of runtime truth", "rule": {"field": "observation.downstream", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Event/Alarm relationship explicit", "rule": {"field": "event_alarm.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Monitoring/live-series/run-result/historian boundaries explicit", "rule": {"field": "series_boundaries.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Capability namespaces avoid workspace-name hard-coding", "rule": {"field": "capability_namespaces.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Capability state semantics explicit", "rule": {"field": "capability_states.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Readiness aggregation deterministic and does not hide blockers", "rule": {"field": "readiness_aggregation.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Provenance and evidence explicitly separated", "rule": {"field": "provenance_evidence.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "ASSY and SH WTP map conceptually without rewrite or invented plant truth", "rule": {"field": "mappings.conceptual", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "Later UI/implementation concerns deferred", "rule": {"field": "non_decisions.deferred", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "No production code changed", "rule": {"field": "production_code_changed", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}
