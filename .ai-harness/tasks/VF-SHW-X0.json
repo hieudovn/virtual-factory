@@ -1,0 +1,89 @@
+{
+  "task_id": "VF-SHW-X0",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "design_freeze",
+  "gate_type": "DESIGN / AUDIT ONLY gate (Issue #89): freeze the SH-WTP whole-plant simulation and control architecture plus the implementation sequence before any expansion coding. No source/runtime implementation, no UI implementation, no PIM mutation.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/89",
+  "sa_decision_ref": "Issue #89 (SA Task Contract, authoritative); required base f4dcca5 (UX01 CLOSED, verdict ASSY_STRUCTURE_UX_CONSISTENT)",
+  "architecture_authority_ref": "Issue #78 (R0 frozen) + Issue #89 frozen architecture chain + accepted SH-WTP structural skeleton (G10/G11/G12B/G13/G13B/G14A/G14B/G15/G18/G21/G22)",
+  "objective": "Produce the repo-first VF-SHW-X0 design report that freezes: (1) current SH-WTP asset/process/runtime inventory; (2) Area -> Process -> Unit mapping; (3) known/assumed/unknown topology matrix; (4) PIM-supported fidelity ceiling vs proposed VF synthetic/reference fidelity; (5) Deep Scope A (LINE1 downstream treatment, T106->T108 centered); (6) Deep Scope B (RAW WATER intake, T100 centered); (7) proposed Key Assets per deep scope; (8) whole-plant C0/C1/C2 control matrix; (9) proposed PI/PID loops (PV/SP/MV, limits, anti-windup, AUTO/MANUAL, permissive/interlock, synthetic tuning status); (10) process/state-variable contracts; (11) Frame A / Frame B UI information architecture; (12) refined X1..X7 gate sequence with dependencies and STOP assessment. Control truth must remain synthetic/reference with site_truth=false.",
+  "explicit_non_objectives": [
+    "No source/runtime implementation of any kind",
+    "No UI implementation",
+    "No PIM write and no PIM semantic/code change (escalate to PIM SA instead)",
+    "No new canonical PIM IDs",
+    "No site-faithful or site-calibrated claims",
+    "No PLC/DCS vendor emulation",
+    "No new RuntimeSession/workspace authority",
+    "No gateway/protocol work (OPC UA, MQTT, Kafka)",
+    "No ASSY change",
+    "No X1 implementation start",
+    "No rebase onto stale main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-shw-x0",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "f4dcca59112b1f68c94ede6ad50378c72eb0b8e0",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X0.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "tests/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/",
+    "reports/",
+    "tools/"
+  ],
+  "required_deliverables": [
+    ".ai-harness/tasks/VF-SHW-X0.json (this contract)",
+    ".ai-harness/sa-review/reports/VF-SHW-X0.md (the 12-section design freeze report)",
+    ".ai-harness/sa-review/evidence/VF-SHW-X0/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/VF-SHW-X0/01-inventory.json",
+    ".ai-harness/sa-review/evidence/VF-SHW-X0/02-topology-matrix.json",
+    ".ai-harness/sa-review/evidence/VF-SHW-X0/03-control-matrix.json",
+    ".ai-harness/sa-review/evidence/VF-SHW-X0/04-no-new-pim-id-proof.json",
+    ".ai-harness/sa-review/evidence/VF-SHW-X0/05-no-code-change-proof.json"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [
+    "Canonical baseline green at the pushed head (design-only gate: no executable source change)",
+    "Full suite count unchanged from the accepted base f4dcca5 (2669 passed)"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Writing any source/runtime/UI code",
+    "Writing to the PIM repository or mutating PIM semantics",
+    "Introducing a canonical PIM ID that does not already exist in the repo",
+    "Claiming site truth, site calibration or vendor/PLC-equivalent control",
+    "Creating a second RuntimeSession authority",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "A required PIM semantic or code change is necessary to complete the design (STOP FOR SA / PIM SA)",
+    "The frozen architecture would have to be reinterpreted or a second run authority introduced",
+    "A real product/architecture decision remains that cannot be resolved with a documented VF-assumed default"
+  ],
+  "acceptance_criteria": [
+    {"id": "X0-1", "phase": "final", "description": "All 12 required X0 deliverables present and repo-cited", "rule": {"field": "x0.deliverables_complete", "operator": "is_true", "expected": null}},
+    {"id": "X0-2", "phase": "final", "description": "No new canonical PIM ID invented (every canonical ID used by the design already exists in the repo)", "rule": {"field": "x0.no_new_pim_ids", "operator": "is_true", "expected": null}},
+    {"id": "X0-3", "phase": "final", "description": "Control truth frozen as synthetic/reference with site_truth=false and vf_runtime_authorization unchanged", "rule": {"field": "x0.control_truth", "operator": "is_true", "expected": null}},
+    {"id": "X0-4", "phase": "final", "description": "Deep scopes A and B frozen with proposed Key Assets and C0/C1/C2/loop contracts", "rule": {"field": "x0.deep_scopes_frozen", "operator": "is_true", "expected": null}},
+    {"id": "X0-5", "phase": "final", "description": "X1..X7 sequence validated/refined with dependencies and no reinterpretation of the frozen architecture", "rule": {"field": "x0.sequence_refined", "operator": "is_true", "expected": null}},
+    {"id": "X0-6", "phase": "final", "description": "Design-only proof: no executable source change; baseline and full suite unchanged", "rule": {"field": "x0.design_only", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

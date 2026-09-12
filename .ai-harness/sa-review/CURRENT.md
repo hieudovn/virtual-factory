@@ -113,3 +113,27 @@ VF-vNEXT-UX01 - ASSY Structural Context Drawer & Sidebar Cleanup (Issue #87):
 - Implementation head: bf827d6
 - Canonical baseline at bf827d6: overall PASS, failed_groups [], 43/43 groups (incl. r5_single_system)
 - Verdict: VF-vNEXT-UX01 - READY FOR SA REVIEW; UX verdict ASSY_STRUCTURE_UX_CONSISTENT
+
+---
+
+VF-SHW-X0 - Whole-Plant Simulation & Control Design Freeze (Issue #89): DESIGN / AUDIT ONLY
+- Previous head / required base: f4dcca5
+- Branch: feature/vf-shw-x0; harness preflight: PASSED
+- Report: reports/VF-SHW-X0.md (12 required deliverables: runtime inventory; Area->Process->Unit mapping;
+  known/assumed/unknown topology matrix E1..E15; PIM fidelity ceiling vs proposed VF synthetic/reference
+  fidelity; Deep Scope A frozen = LINE1 downstream T106->T108-centred filtration/clean-water; Deep Scope B
+  frozen = RAW WATER RAW-INTAKE+T100-centred; Key Assets per deep scope with PIM reference vs VF-local
+  synthetic identity; whole-plant C0/C1/C2 control matrix; 12 loop contracts with the full PI/PID minimum;
+  process/state-variable contract per scope; Frame A/Frame B SH-WTP UI information architecture; refined
+  X1..X7 sequence with dependencies; STOP assessment = no blocking decision, no PIM change required).
+- Frozen labels: site_truth=false, simulation_truth=synthetic_reference, vf_runtime_authorization=NOT_AUTHORIZED;
+  no PLC/DCS vendor emulation; no site-faithful claim; control truth gap GAP-SHW-002 stays open.
+- Evidence: evidence/VF-SHW-X0/ (generate_evidence.py + 01-inventory INVENTORY_DERIVED_FROM_REPO,
+  02-topology-matrix TOPOLOGY_MATRIX_FROZEN, 03-control-matrix (machine-readable C0/C1/C2 + loop contracts),
+  04-no-new-pim-id-proof NO_NEW_PIM_ID_INTRODUCED (47 canonical IDs used, all pre-existing),
+  05-no-code-change-proof DESIGN_ONLY_NO_CODE_CHANGE).
+- X1..X7 refinements: X3/X4 independent after X2; X5 depends on X2 (not on X3/X4) so Frame A can run in
+  parallel; X6 depends on X3+X4+X5; X1 carries the PIM escalation checkpoint; X7 gates on plausibility oracles.
+- Design-only: no src/tests/configs/docs/simulators/scripts change; baseline and full suite unchanged from f4dcca5.
+- Verdict: VF-SHW-X0 - READY FOR SA REVIEW; SHW_WHOLE_PLANT_DESIGN_FROZEN
+- STOP: X1 (and any other implementation) must NOT begin; SH-WTP expansion is design-frozen only.
