@@ -201,6 +201,65 @@
       "valve_pi_output_pct": 64.000001111
     }
   ],
+  "setpoint_sweep": {
+    "flow": {
+      "actuator_responds": true,
+      "high": {
+        "flow_error_frac": 0.0,
+        "flow_measured_m3_s": 0.009,
+        "flow_sp_m3_s": 0.009,
+        "level_error_m": 0.021943999999999964,
+        "level_measured_m": 2.521871,
+        "level_sp_m": 2.5,
+        "pump_applied_pct": 62.692537999999914,
+        "valve_applied_by": "pi_flow_output",
+        "valve_applied_pct": 72.0000011111111,
+        "water_physical_valid": true
+      },
+      "low": {
+        "flow_error_frac": 0.0,
+        "flow_measured_m3_s": 0.006,
+        "flow_sp_m3_s": 0.006,
+        "level_error_m": 0.01284900000000011,
+        "level_measured_m": 2.487048,
+        "level_sp_m": 2.5,
+        "pump_applied_pct": 48.38578399999998,
+        "valve_applied_by": "pi_flow_output",
+        "valve_applied_pct": 48.00000105555571,
+        "water_physical_valid": true
+      }
+    },
+    "level": {
+      "actuator_responds": true,
+      "high": {
+        "flow_error_frac": 0.0,
+        "flow_measured_m3_s": 0.008,
+        "flow_sp_m3_s": 0.008,
+        "level_error_m": 0.0729350000000002,
+        "level_measured_m": 2.626906,
+        "level_sp_m": 2.7,
+        "pump_applied_pct": 67.09005836754308,
+        "valve_applied_by": "pi_flow_output",
+        "valve_applied_pct": 64.0000011111112,
+        "water_physical_valid": true
+      },
+      "inside_documented_band": true,
+      "low": {
+        "flow_error_frac": 0.0,
+        "flow_measured_m3_s": 0.008,
+        "flow_sp_m3_s": 0.008,
+        "level_error_m": 0.0694189999999999,
+        "level_measured_m": 2.230496,
+        "level_sp_m": 2.3,
+        "pump_applied_pct": 58.20600798865574,
+        "valve_applied_by": "pi_flow_output",
+        "valve_applied_pct": 64.0000011111112,
+        "water_physical_valid": true
+      },
+      "off_nominal_band_m": 0.1
+    },
+    "two_distinct_setpoints_per_loop": true
+  },
   "verdict": "TWO_PI_ACTUATOR_RESPONSE_AND_ARBITRATION_VERIFIED",
   "water_physical_valid": true
 }

@@ -18,6 +18,8 @@ Key machine-derived numbers:
 - control: last PI-owned window tick 5400, flow error 0.0000% of SP, level error 0.0292 m, backwash at tick 3356 with the integral held
 - pumps: total energy 11.821 MJ; DIST loss conversion configured 79266.06 s^2/m^5 vs expected 79266.06 s^2/m^5
 - identity: canonical model whole_plant_x3 at 1.0 s, X2 compatible at 60.0 s, G21 scopes 5
+- setpoint sweep: flow 0.00600 -> 0.00900 m3/s (valve 48.00 -> 72.00 %), level 2.2305 -> 2.6269 m (pump 58.21 -> 67.09 %)
+- acceptance: 7/7 criteria PASS (X3-1..X3-7 via .ai-harness/scripts/evaluate_acceptance.py, phase=final, rules x3.scope_control .. x3.regression)
 
 Every number above is produced by `generate_evidence.py` from the committed model at
 the reported head; no value is transcribed by hand.

@@ -20,5 +20,58 @@
     "05": "PUMP_ENVELOPE_FEASIBLE_WITH_EXPLICIT_UNITS",
     "06": "MUTATIONS_VIOLATE_THE_PHYSICAL_ENVELOPE",
     "07": "X3_CANONICAL_WITH_X2_AND_G21_COMPATIBILITY"
-  }
+  },
+  "x3": {
+    "flow_limits": true,
+    "mutations": true,
+    "pi_response": true,
+    "pump_energy": true,
+    "regression": true,
+    "scope_control": true,
+    "water_identity": true
+  },
+  "acceptance": [
+    {
+      "id": "X3-1",
+      "description": "16 admitted scopes run on deterministic global 1-second windows in one attempt-bound RuntimeSession/bridge with exactly two active C2 PI loops; the deferred pressure/RAW/T100/chlorine loops are explicitly unavailable and T107 stays out",
+      "result": "PASS",
+      "evidence": "field=x3.scope_control operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-2",
+      "description": "Full-run independent water identity closes from tick zero (stored + in-transit + initial stocks - cumulative external in + cumulative external out + declared physical losses) through startup, steady operation, disturbances and stop/reset/replay; created water is always a physical failure beyond rounding",
+      "result": "PASS",
+      "evidence": "field=x3.water_identity operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-3",
+      "description": "Every X3 flow is limited before transfer by source water, reserved receiver capacity, edge/shared-trunk/valve/pump ratings and hydraulic feasibility; a reservation is a capacity token with documented identity/units/acquire-release/queue/cancellation and no double count, and no hidden water loss or deadlock",
+      "result": "PASS",
+      "evidence": "field=x3.flow_limits operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-4",
+      "description": "The two PIs drive the real actuators: the valve changes the measured inlet flow and the pump changes the measured T108 level; feasible SP tracking within the documented settling horizon, disturbance rejection, unreachable-SP saturation with a reason and recovery, interlock/backwash behaviour and AUTO/MANUAL bumpless continuity",
+      "result": "PASS",
+      "evidence": "field=x3.pi_response operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-5",
+      "description": "Pump head/motor feasibility over the operating envelope, OFF is exactly zero flow and zero energy, energy is integrated with explicit units, and unmodelled energy is unavailable rather than fabricated",
+      "result": "PASS",
+      "evidence": "field=x3.pump_energy operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-6",
+      "description": "Mutations of the physical envelope (invented water, dropped delivery, excess shared-pipe flow, impossible head, motor overload, missing/duplicated initialisation water) fail the oracle/tests; dry/full downstream and queue-pressure cases fail safely without deleting or inventing water",
+      "result": "PASS",
+      "evidence": "field=x3.mutations operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3-7",
+      "description": "Canonical default is the X3 whole-plant profile at 1 s with deterministic trajectories across reset/new attempt/replay; explicit X2-60s zero-C2 and G21 slice compatibility remain green; no frozen X1 config, X2 behaviour, runcontrol, composition, ASSY or PIM change",
+      "result": "PASS",
+      "evidence": "field=x3.regression operator=is_true expected=None actual=True \u2192 PASS"
+    }
+  ]
 }

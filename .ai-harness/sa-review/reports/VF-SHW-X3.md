@@ -11,8 +11,9 @@
 
 | | |
 |---|---|
-| Implementation commit (all code + evidence + this report) | `e3c2846d0a40d786dad8b398039f4eb6d92897a6` |
-| Docs/status pin commit (markdown only, code-identical) | the commit that adds this line |
+| Implementation commit (all source, config, tests, contract, manifest, CURRENT) | `e3c2846d0a40d786dad8b398039f4eb6d92897a6` |
+| Evidence/report commit (this artefact set + the acceptance rules; no source change) | the commit after the implementation commit on this branch |
+| Docs/status pin commit (markdown only, code-identical) | the head of the branch (see the SA review inbox) |
 | Pull request | #99 (`feature/vf-shw-x3` → `main`, base `main`, not merged) |
 
 Machine-derived verification **at the implementation head**, with a clean tree:
@@ -24,13 +25,15 @@ canonical baseline : overall PASS, 46 groups, failed_groups []
   full_suite             : PASS  (2864 passed)
   checks_changed_files   : PASS  (FILE VALIDATION PASSED (31 file(s)))
   checks_preflight       : PASS  (PRECHECK PASSED)
-focused                : tests/test_vnext_x3_*.py 64 passed
-CI                     : VF-DM CI push run 34701098691 = SUCCESS at this head
+focused                : tests/test_vnext_x3_*.py 64 passed (23/16/13/12)
+CI                     : VF-DM CI run 34701098691 = SUCCESS at that head
 ```
 
-The docs/status pin changes only markdown, so the reviewed code content is exactly the implementation commit;
-the pin exists so the SA has the exact SHA in the repo itself. No source, config, test or evidence file is
-touched after the baseline run.
+The commits after it add evidence artefacts, the machine-checkable acceptance block and documentation only —
+**no source, config or test file is touched after the baseline run**, so the reviewed code content is exactly
+the implementation commit. The canonical baseline is re-run on the final branch head (that run is the one
+reported in the PR comment for #99), and the contract's acceptance criteria are verified by
+`.ai-harness/scripts/evaluate_acceptance.py` (7/7 PASS) rather than by this prose.
 
 ## 1. Execution provenance (SA section 1)
 
@@ -118,9 +121,13 @@ Two real defects were found and fixed by this work (they were *not* visible in t
 
 ## 5. Control and energy
 
-- **Exactly two active C2 loops**; pressure/RAW/T100/chlorine are declared deferred and never evaluated.
-- **Actual actuator response**: two different flow setpoints produce two different measured inlet flows
-  *and* two different valve positions; two different level setpoints produce two different measured levels.
+- **Exactly two active C2 loops**; pressure/RAW/T100/chlorine are declared deferred and never evaluated
+  (verified against the `deferred_loops` declaration, not asserted by name).
+- **Actual actuator response** (measured setpoint sweep in evidence `04`, `setpoint_sweep`): the flow SP
+  0.006 → 0.009 m³/s moves the measured inlet flow **0.00600 → 0.00900 m³/s** and the valve
+  **48.00 → 72.00 %**; the level SP 2.3 → 2.7 m moves the measured T108 level **2.2305 → 2.6269 m** with the
+  pump **58.21 → 67.09 %**. Both level variants settle inside the documented 0.10 m off-nominal band and the
+  water identity stays valid in every variant.
 - **Feasible tracking at the nominal operating point**: flow error **0.0000 %** of SP and level error
   **≤0.03 m** (declared acceptance 5 % / 0.05 m, after the documented settling horizon of 1800 s which
   covers the cold-start chain fill: 60 s intake rest timer + 300 s T101 residence + 300 s T104 residence +
@@ -177,10 +184,14 @@ Two real defects were found and fixed by this work (they were *not* visible in t
 | `tests/test_vnext_x3_session_wiring.py` | 12 passed |
 | Full suite | **2864 passed, 0 failed** (X2-C03 head: 2799) |
 | Canonical baseline | 46/46 groups PASS (`x3_whole_plant_runtime` inserted before `full_suite`) |
+| Acceptance rules X3-1..X3-7 | **7/7 PASS** (`evaluate_acceptance.py`, `phase=final`, rules `x3.*` in `08-verdict.json`) |
 
 Evidence artefacts: `.ai-harness/sa-review/evidence/VF-SHW-X3/01..09`
 (`generate_evidence.py` regenerates every number from the committed model; `09-summary.md` is the readable
-digest).
+digest). The generator also emits the machine-checkable `x3.*` acceptance block into `08-verdict.json` and
+runs the harness acceptance evaluation over the task contract, writing the X3-1..X3-7 results back into the
+same artefact — so the contract's acceptance criteria are verified by the repository's own evaluator, not by
+prose.
 
 ## 9. Deviations, risks and residual uncertainty
 

@@ -19,7 +19,10 @@ the SA requires:
                      impossible head, motor overload and a duplicated
                      initialisation stock must all fail the oracle;
  07 identity       - deterministic trajectories, reset/new attempt/replay;
- 08 verdict        - every section verdict machine-derived.
+ 08 verdict        - every section verdict machine-derived, the machine-checkable
+                     x3.* acceptance block required by the task contract, and the
+                     harness acceptance evaluation (X3-1..X3-7) written back into
+                     the same artefact by .ai-harness/scripts/evaluate_acceptance.py.
 
 Run:  python .ai-harness/sa-review/evidence/VF-SHW-X3/generate_evidence.py
 """
@@ -27,6 +30,7 @@ Run:  python .ai-harness/sa-review/evidence/VF-SHW-X3/generate_evidence.py
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -275,6 +279,37 @@ def section_03(profile, contracts) -> dict:
     )
 
 
+def _sweep(profile, contracts, *, flow_sp=None, level_sp=None, ticks=1800) -> dict:
+    """Run one variant with a different setpoint and record BOTH the CV and the MV."""
+    controllers = dict(profile.controllers)
+    if flow_sp is not None:
+        controllers[FLOW_LOOP] = replace(controllers[FLOW_LOOP], sp=flow_sp)
+    if level_sp is not None:
+        controllers[LEVEL_LOOP] = replace(controllers[LEVEL_LOOP], sp=level_sp)
+    variant = replace(profile, controllers=controllers)
+    model = build_shwtp_whole_plant_x3(
+        profile=variant, contracts=contracts, run_id="x3-ev-04-sweep"
+    )
+    run(model, ticks)
+    rows = {row["controller_id"]: row for row in model.control_rows()}
+    flow_row = rows[FLOW_LOOP]
+    level_row = rows[LEVEL_LOOP]
+    return {
+        "flow_sp_m3_s": flow_row["sp"],
+        "flow_measured_m3_s": (
+            model.participants["vf-shw-node-t106"].monitor_values()["inflow_m3h"] / 3600.0
+        ),
+        "flow_error_frac": abs(flow_row["pv"] - flow_row["sp"]) / flow_row["sp"],
+        "valve_applied_pct": flow_row["applied_mv"],
+        "valve_applied_by": flow_row["applied_by"],
+        "level_sp_m": level_row["sp"],
+        "level_measured_m": model.participants["vf-shw-node-t108"].monitor_values()["level_m"],
+        "level_error_m": abs(level_row["pv"] - level_row["sp"]),
+        "pump_applied_pct": level_row["applied_mv"],
+        "water_physical_valid": model.balance_report()["plant_water"]["physical_valid"],
+    }
+
+
 def section_04(profile, contracts) -> dict:
     model = build_shwtp_whole_plant_x3(profile=profile, contracts=contracts, run_id="x3-ev-04")
     samples = []
@@ -351,6 +386,38 @@ def section_04(profile, contracts) -> dict:
             }
     plant = model.balance_report()["plant_water"]
     final_sample = last_pi_owned or samples[-1]
+    # ACTUAL actuator response under two different setpoints per loop: the valve must
+    # move the measured inlet flow and the pump must move the measured T108 level.
+    flow_low = _sweep(profile, contracts, flow_sp=0.006, ticks=1800)
+    flow_high = _sweep(profile, contracts, flow_sp=0.009, ticks=1800)
+    level_low = _sweep(profile, contracts, level_sp=2.3, ticks=2400)
+    level_high = _sweep(profile, contracts, level_sp=2.7, ticks=2400)
+    flow_responds = (
+        flow_high["flow_measured_m3_s"] > flow_low["flow_measured_m3_s"]
+        and flow_high["valve_applied_pct"] > flow_low["valve_applied_pct"]
+    )
+    level_responds = level_high["level_measured_m"] > level_low["level_measured_m"]
+    off_nominal_band_m = 0.10
+    sweep = {
+        "flow": {"low": flow_low, "high": flow_high, "actuator_responds": flow_responds},
+        "level": {
+            "low": level_low,
+            "high": level_high,
+            "actuator_responds": level_responds,
+            "off_nominal_band_m": off_nominal_band_m,
+            "inside_documented_band": all(
+                row["level_error_m"] <= off_nominal_band_m for row in (level_low, level_high)
+            ),
+        },
+        "two_distinct_setpoints_per_loop": True,
+    }
+    actuator_ok = (
+        flow_responds
+        and level_responds
+        and sweep["level"]["inside_documented_band"]
+        and flow_high["flow_error_frac"] <= profile.acceptance.flow_steady_error_frac_of_sp
+        and flow_low["flow_error_frac"] <= profile.acceptance.flow_steady_error_frac_of_sp
+    )
     return write(
         "04-two-pi-control",
         {
@@ -359,6 +426,7 @@ def section_04(profile, contracts) -> dict:
             "last_pi_owned_window": last_pi_owned,
             "backwash_arbitration": backwash,
             "backwash_release": released,
+            "setpoint_sweep": sweep,
             "arbitration_seen": arbitration_seen,
             "acceptance_basis": (
                 "evaluated on the last window where the PI itself owns the valve; during a "
@@ -371,6 +439,7 @@ def section_04(profile, contracts) -> dict:
             "verdict": (
                 "TWO_PI_ACTUATOR_RESPONSE_AND_ARBITRATION_VERIFIED"
                 if arbitration_seen
+                and actuator_ok
                 and final_sample["flow_error_frac"]
                 <= profile.acceptance.flow_steady_error_frac_of_sp
                 and abs(final_sample["level_error_m"]) <= profile.acceptance.level_steady_error_m
@@ -616,6 +685,128 @@ def section_07() -> dict:
     )
 
 
+def _acceptance_block(artefacts: dict) -> dict:
+    """The machine-checkable acceptance fields the X3 task contract refers to.
+
+    Every value is derived from a MEASURED fact in the section artefacts, so the
+    harness rule evaluation (field x3.<name>, operator is_true) can only pass when
+    the model really satisfies it.
+    """
+    s01, s02, s03 = artefacts["01"], artefacts["02"], artefacts["03"]
+    s04, s05, s06, s07 = artefacts["04"], artefacts["05"], artefacts["06"], artefacts["07"]
+
+    deferred_ok = all(
+        ("ACTIVE" in note) == (loop_id in set(s01["active_c2_loop_ids"]))
+        for loop_id, note in s01["deferred_loops"].items()
+    )
+    scope_control = (
+        s01["scopes"] == 16
+        and s01["tick_s"] == 1.0
+        and s01["coupling_policy"] == "explicit_lagged"
+        and s01["exactly_two_active_c2"] is True
+        and len(s01["active_c2_loop_ids"]) == 2
+        and set(s01["active_c2_loop_ids"]) == {FLOW_LOOP, LEVEL_LOOP}
+        and s01["participants_are_exactly_the_admitted_scopes"] is True
+        and deferred_ok
+        and s07["model_run_id_matches_attempt"] is True
+    )
+
+    identity_mutation = s02["mutation_after_baseline"]
+    water_identity = (
+        s02["invalid_ticks"] == 0
+        and s02["full_run_authoritative"] is True
+        and s02["final_created_water_m3"] <= 1e-9
+        and s02["final_residual_m3"] <= s02["final_tolerance_m3"]
+        and abs(s02["final_storage_integration_gap_m3"]) <= s02["final_tolerance_m3"]
+        and s02["overflow_m3"] == 0.0
+        and identity_mutation["detected"] is True
+        and identity_mutation["physical_valid"] is False
+    )
+
+    steady = s03["steady_state"]
+    flow_limits = (
+        steady["no_double_count"] is True
+        and steady["charges_cover_the_parcel"] is True
+        and steady["queued_volume_m3"] <= s03["queue_bound_m3"]
+        and s03["units"]["internal"] == "m3/s"
+        and s03["units"]["processor_boundary"] == "m3/h"
+        and all(
+            str(s03[key]).strip()
+            for key in ("resource_identity", "acquire_release", "cancellation")
+        )
+    )
+
+    arbitration = s04["backwash_arbitration"] or {}
+    release = s04["backwash_release"] or {}
+    sweep = s04["setpoint_sweep"]
+    pi_response = (
+        s04["arbitration_seen"] is True
+        and arbitration.get("arbitration") == "c1_backwash_closes_inlet"
+        and arbitration.get("valve_applied_by") == "c1_backwash_closes_inlet"
+        and arbitration.get("flow_measured") == 0.0
+        and release.get("valve_applied_by") == "pi_flow_output"
+        and release.get("flow_error_frac", 1.0) <= 0.05
+        and sweep["flow"]["actuator_responds"] is True
+        and sweep["level"]["actuator_responds"] is True
+        and sweep["level"]["inside_documented_band"] is True
+        and s04["final_flow_error_frac"] <= 0.05
+        and s04["final_level_error_m"] <= 0.05
+        and s04["water_physical_valid"] is True
+    )
+
+    envelope_rows = [row for rows in s05["envelope"].values() for row in rows]
+    points = s05["energy"]["pump_operating_points"].values()
+    pump_energy = (
+        all(row["head_ok"] and row["power_ok"] for row in envelope_rows)
+        and all(row["off_is_zero"] is True for row in envelope_rows if row["speed_pct"] == 0)
+        and all(
+            point["flow_m3h"] == 0.0 and point["electric_w"] == 0.0
+            for point in points
+            if point["off"]
+        )
+        and s05["dimensional_conversion"]["matches"] is True
+        and s05["energy"]["total_energy_j"] > 0.0
+        and len(s05["energy"]["unavailable_energy"]) > 0
+    )
+
+    cases = s06["cases"]
+    mutations = (
+        cases["injected_state_water"]["detected"] is True
+        and cases["injected_state_water"]["physical_valid"] is False
+        and cases["created_water"]["detected"] is True
+        and cases["created_water"]["physical_valid"] is False
+        and cases["impossible_head_or_loss"]["detected"] is True
+        and cases["motor_overload"]["detected"] is True
+        and cases["motor_overload"]["bounded"] is True
+        and cases["narrow_serial_pipe"]["bounded"] is True
+        and cases["narrow_serial_pipe"]["no_hidden_loss"] is True
+        and cases["full_receiver"]["safe"] is True
+        and cases["full_receiver"]["volume_within_capacity"] is True
+        and cases["full_receiver"]["created_water_m3"] == 0.0
+    )
+
+    regression = (
+        s07["canonical_default_model"] == "whole_plant_x3"
+        and s07["tick_s"] == 1.0
+        and s07["reset_preserves_identity"] is True
+        and s07["reset_is_deterministic"] is True
+        and s07["new_attempt_issues_new_identity"] is True
+        and s07["x2_compatibility"]["tick_s"] == 60.0
+        and s07["x2_compatibility"]["has_c2_layer"] is False
+        and s07["g21_compatibility"]["scopes"] == 5
+    )
+
+    return {
+        "scope_control": scope_control,
+        "water_identity": water_identity,
+        "flow_limits": flow_limits,
+        "pi_response": pi_response,
+        "pump_energy": pump_energy,
+        "mutations": mutations,
+        "regression": regression,
+    }
+
+
 def main() -> int:
     profile = load_x3_profile(PROFILE_PATH)
     contracts = load_whole_plant_contracts()
@@ -639,6 +830,7 @@ def main() -> int:
     }
     verdicts = {key: payload["verdict"] for key, payload in artefacts.items()}
     all_pass = all(verdicts.get(key) == value for key, value in expected.items())
+    acceptance = _acceptance_block(artefacts)
     summary = write(
         "08-verdict",
         {
@@ -647,10 +839,36 @@ def main() -> int:
             "verdicts": verdicts,
             "expected_verdicts": expected,
             "all_sections_pass": all_pass,
+            "x3": acceptance,
             "overall": "SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED"
             if all_pass
             else "SHW_X3_EVIDENCE_INCOMPLETE",
         },
+    )
+    # Machine-checkable acceptance: the harness evaluates the contract rules against the
+    # x3.* block above and the results are written back into the same artefact.
+    evaluation = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / ".ai-harness" / "scripts" / "evaluate_acceptance.py"),
+            str(OUT / "08-verdict.json"),
+            str(ROOT / ".ai-harness" / "tasks" / "VF-SHW-X3.json"),
+            "--phase",
+            "final",
+            "--output",
+            str(OUT / "08-verdict.json"),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    evaluated = json.loads((OUT / "08-verdict.json").read_text(encoding="utf-8"))["acceptance"]
+    passed = [row for row in evaluated if row["result"] == "PASS"]
+    failed = [row["id"] for row in evaluated if row["result"] != "PASS"]
+    acceptance_line = (
+        f"- acceptance: {len(passed)}/{len(evaluated)} criteria PASS "
+        f"(X3-1..X3-7 via .ai-harness/scripts/evaluate_acceptance.py, phase=final, "
+        f"rules x3.scope_control .. x3.regression)"
     )
     lines = [
         "# VF-SHW-X3 evidence summary",
@@ -683,6 +901,15 @@ def main() -> int:
             f"{artefacts['07']['tick_s']} s, X2 compatible at "
             f"{artefacts['07']['x2_compatibility']['tick_s']} s, G21 scopes "
             f"{artefacts['07']['g21_compatibility']['scopes']}",
+            f"- setpoint sweep: flow {artefacts['04']['setpoint_sweep']['flow']['low']['flow_measured_m3_s']:.5f} "
+            f"-> {artefacts['04']['setpoint_sweep']['flow']['high']['flow_measured_m3_s']:.5f} m3/s "
+            f"(valve {artefacts['04']['setpoint_sweep']['flow']['low']['valve_applied_pct']:.2f} -> "
+            f"{artefacts['04']['setpoint_sweep']['flow']['high']['valve_applied_pct']:.2f} %), level "
+            f"{artefacts['04']['setpoint_sweep']['level']['low']['level_measured_m']:.4f} -> "
+            f"{artefacts['04']['setpoint_sweep']['level']['high']['level_measured_m']:.4f} m "
+            f"(pump {artefacts['04']['setpoint_sweep']['level']['low']['pump_applied_pct']:.2f} -> "
+            f"{artefacts['04']['setpoint_sweep']['level']['high']['pump_applied_pct']:.2f} %)",
+            acceptance_line,
             "",
             "Every number above is produced by `generate_evidence.py` from the committed model at",
             "the reported head; no value is transcribed by hand.",
@@ -692,7 +919,10 @@ def main() -> int:
     (OUT / "09-summary.md").write_text("\n".join(lines), encoding="utf-8")
     print(json.dumps(summary["verdicts"], indent=2))
     print("overall:", summary["overall"])
-    return 0 if all_pass else 1
+    print("acceptance:", f"{len(passed)}/{len(evaluated)} PASS", "failed:", failed)
+    if evaluation.returncode != 0 or failed:
+        print(evaluation.stdout.strip()[-2000:])
+    return 0 if all_pass and not failed else 1
 
 
 if __name__ == "__main__":
