@@ -180,3 +180,41 @@ VF-SHW-X1 - Whole-Plant Process Graph + Scope/Fidelity/Control Contracts (Issue 
   checks_preflight)
 - Verdict: VF-SHW-X1 - READY FOR SA REVIEW; SHW_WHOLE_PLANT_CONTRACTS_FROZEN
 - STOP: X2 must NOT begin. X2 is authorized only by the SA and only against this admission manifest.
+
+---
+
+VF-SHW-X1-C01 - X2-safe actuator ownership + level-action direction (Issue #91 comment 5644974241): CORRECTION
+- Previous head / technical base: ec57d7d (X1 contract layer, SHW_WHOLE_PLANT_CONTRACTS_FROZEN); branch feature/vf-shw-x1-c01
+- Harness preflight: PASSED; report: reports/VF-SHW-X1-C01.md
+- Finding A CLOSED class-wide (4 sites, not 1): raw-intake pump_speed_cmd now produced in X2 by the X2-active C1
+  duty/standby controller raw-pump-duty with an explicit deterministic fixed synthetic-reference speed command
+  (RUN -> 75 %, STOP -> 0 %, is_feedback_controlled_in_x2 = false); the same class found at T106 inlet_valve_pos
+  (C1 backwash sequence, discrete OPEN/CLOSED), T108 transfer_pump_speed_cmd (C1 t108-permissive, fixed speed) and
+  DIST-P108 hsp_speed_cmd (explicit declared X2 fallback/default, 80 % synthetic reference). All five C2 PI/PID
+  loops stay C2 + inactive + later gate and now carry x2_status + x2_replacement. No C2 activated; X2-active C1
+  set still 9; no new control added.
+- Finding B CLOSED: vf-shw-ctrl-t100-permissive now declares actuator_ownership (upstream raw-intake intake_enable,
+  downstream t101 outlet_enable) and a structured level_action_policy - low/low-low inhibits/reduces DOWNSTREAM
+  withdrawal with upstream refill permitted, high/high-high inhibits UPSTREAM intake with downstream withdrawal
+  permitted; the contradictory "LALL -> stop intake pump(s)" wording is removed and replaced by an explicit
+  no-trip statement. t108-permissive gets the same ownership/policy (low -> dist-p108 transfer_enable, high ->
+  t106 inflow_enable) and the deferred t100-level-pi protective wording is aligned. VF synthetic/reference only;
+  site_truth=false; no site-truth claim.
+- Validation: two new fail-closed validators in contracts.py - _validate_x2_io_resolution (every X2-admitted input
+  must resolve to an X2 producer: process node / scenario boundary / X2-active C1 / explicit x2_fallback_default
+  with mode+value+rule+provenance; a C2-sourced input without a fallback is rejected; deferred-modulator
+  annotations cross-checked) and _validate_level_action_direction (actuator ownership + exactly one direction per
+  action + graph-reachability of the target scope + matching actuator signal; a low level tripping the upstream
+  intake is rejected). Read-only helpers x2_io_resolution_audit / level_action_audit.
+- Evidence: 05-x2-io-resolution.json X2_SAFE_C1_ACTUATOR_BEHAVIOUR_FROZEN (29/29 admitted inputs resolved,
+  inputs_requiring_a_c2_output = []); 01..04 regenerated; validation matrix now V1..V12 ALL_X1_VALIDATIONS_PASS.
+- Bounded surface: frozen graph UNTOUCHED (19 nodes / 25 edges / same signature); admission gains 2 X1-C01
+  invariants (16) and the DIST-P108 control-level label is corrected to X2_fallback_default+C2(X3) (its only loop
+  is a deferred C2); raw-flow-pi owning scope corrected to raw-intake; contract-only, no runtime/PID/UI/PIM change.
+- Tests: tests/test_vnext_x1_whole_plant_contracts.py 35 -> 46 passed (11 new incl. 4 negative fixtures that prove
+  the validators reject a C2 dependency without fallback, a low-level upstream intake trip, a downstream action on
+  an upstream scope and an incomplete fallback).
+- Regression: canonical baseline at f0f9f30 overall PASS, failed_groups [], 44/44 groups; full suite 2704 -> 2715 passed.
+- Implementation head: f0f9f30
+- Verdict: VF-SHW-X1-C01 - READY FOR SA REVIEW; X2_SAFE_C1_ACTUATOR_BEHAVIOUR_FROZEN
+- STOP: X2 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.
