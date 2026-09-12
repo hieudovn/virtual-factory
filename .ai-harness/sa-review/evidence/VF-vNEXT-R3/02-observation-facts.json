@@ -1,0 +1,108 @@
+{
+  "authority": "canonical_tipa_runtime_session",
+  "run_id": "TIPA-0001",
+  "observation_points": [
+    "assy.operation_completion",
+    "assy.ap04_genealogy",
+    "assy.quality_result",
+    "assy.ap11_final_qc",
+    "assy.ap11_release"
+  ],
+  "count": 780,
+  "by_family": {
+    "mes.execution_event": 546,
+    "mes.genealogy_relationship": 72,
+    "mes.quality_result": 138,
+    "mes.release": 24
+  },
+  "operation_completions": 546,
+  "ap04_genealogy_facts": 72,
+  "ap04_genealogy_sample": {
+    "message_key": "TIPA-0001|E1:ASSY-SL01:MTR-0001|assy.ap04_genealogy|1.0",
+    "payload": {
+      "observation_id": "b76d64da-f1bb-42ae-a57a-441934e0bfb3",
+      "idempotency_key": "TIPA-0001|E1:ASSY-SL01:MTR-0001|assy.ap04_genealogy|1.0",
+      "run_id": "TIPA-0001",
+      "simulation_time_s": 480.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0001",
+      "station_id": "AP04",
+      "event_type": "AP04_JOIN",
+      "child_wip_id": "MTR-0001",
+      "parent_wip_ids": [
+        "SSO2-0001",
+        "RSO2-0001"
+      ],
+      "component_ids": [],
+      "join_station": "AP04",
+      "join_time_s": 480.0,
+      "relationship_type": "assembly_join",
+      "wip_id": "MTR-0001"
+    },
+    "simulation_time_s": 480.0,
+    "source_event_id": "E1:ASSY-SL01:MTR-0001"
+  },
+  "quality_facts": 138,
+  "quality_sample": {
+    "message_key": "TIPA-0001|E1:ASSY-SL01:QR-0001|assy.quality_result|1.0",
+    "payload": {
+      "observation_id": "ec5e8071-2041-4630-af5c-7ccd1989b9ea",
+      "idempotency_key": "TIPA-0001|E1:ASSY-SL01:QR-0001|assy.quality_result|1.0",
+      "run_id": "TIPA-0001",
+      "simulation_time_s": 840.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0001",
+      "station_id": "AP06",
+      "event_type": "QUALITY_RESULT",
+      "record_id": "QR-0001",
+      "wip_id": "MTR-0001",
+      "check_type": "TEST",
+      "disposition": "PASS",
+      "attempt_number": 1,
+      "reason_code": "",
+      "is_terminal": false,
+      "terminal_state": ""
+    }
+  },
+  "releases": 24,
+  "release_sample": {
+    "message_key": "TIPA-0001|E1:ASSY-SL01:release:MTR-0001|assy.ap11_release|1.0",
+    "payload": {
+      "observation_id": "b3601896-60c6-4625-989e-b28cd41fccaf",
+      "idempotency_key": "TIPA-0001|E1:ASSY-SL01:release:MTR-0001|assy.ap11_release|1.0",
+      "run_id": "TIPA-0001",
+      "simulation_time_s": 1680.0,
+      "occurred_at": null,
+      "subject_type": "wip",
+      "subject_id": "MTR-0001",
+      "station_id": "AP11",
+      "event_type": "AP11_RELEASE",
+      "wip_id": "MTR-0001",
+      "release_time_s": 1680.0
+    }
+  },
+  "ap11_final_qc": 30,
+  "per_scope_counts": {
+    "ASSY-SL01": 130,
+    "ASSY-SL02": 130,
+    "ASSY-SL03": 130,
+    "ASSY-SL04": 130,
+    "ASSY-SL05": 130,
+    "ASSY-SL06": 130
+  },
+  "scopes_covered": [
+    "ASSY-SL01",
+    "ASSY-SL02",
+    "ASSY-SL03",
+    "ASSY-SL04",
+    "ASSY-SL05",
+    "ASSY-SL06"
+  ],
+  "all_facts_carry_canonical_run_id": true,
+  "all_facts_carry_canonical_run_id_in_payload": true,
+  "all_message_keys_start_with_canonical_run_id": true,
+  "all_source_event_ids_carry_epoch_and_scope": true,
+  "PASS": true
+}

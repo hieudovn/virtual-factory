@@ -1,0 +1,52 @@
+{
+  "authority": "canonical_tipa_runtime_session",
+  "provenance": "simulation_synthetic",
+  "shell_run_id": "TIPA-0001",
+  "rich_run_id": "TIPA-0001",
+  "output_run_id": "TIPA-0001",
+  "mes_run_id": "TIPA-0001",
+  "same_run_id_across_shell_rich_output": true,
+  "workspace_id": "TIPA",
+  "scenario_id": "tipa-default",
+  "profile_id": "tipa-assy-happy_path",
+  "sub_line_ids": [
+    "ASSY-SL01",
+    "ASSY-SL02",
+    "ASSY-SL03",
+    "ASSY-SL04",
+    "ASSY-SL05",
+    "ASSY-SL06"
+  ],
+  "sub_line_count": 6,
+  "detail_runtime_object_ids": {
+    "ASSY-SL01": 2796478922384,
+    "ASSY-SL02": 2796479006288,
+    "ASSY-SL03": 2796478826832,
+    "ASSY-SL04": 2796478824912,
+    "ASSY-SL05": 2796476842128,
+    "ASSY-SL06": 2796478869712
+  },
+  "adapter_runtime_object_ids": {
+    "ASSY-SL01": 2796478922384,
+    "ASSY-SL02": 2796479006288,
+    "ASSY-SL03": 2796478826832,
+    "ASSY-SL04": 2796478824912,
+    "ASSY-SL05": 2796476842128,
+    "ASSY-SL06": 2796478869712
+  },
+  "same_six_runtime_objects": true,
+  "adapter_federation_is_experience_federation": true,
+  "federations_constructed_on_api_path": [
+    "D:\\Project\\Github\\virtual-factory\\configs\\plants\\tipa_assy_demo.yaml"
+  ],
+  "sessions_constructed_on_api_path": [
+    "RuntimeSession"
+  ],
+  "legacy_controllers_constructed": [],
+  "exactly_one_federation": true,
+  "exactly_one_session": true,
+  "no_legacy_controller": true,
+  "site_truth": false,
+  "selection_is_presentation_only": true,
+  "PASS": true
+}

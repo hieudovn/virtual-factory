@@ -38,10 +38,9 @@ from virtual_factory.workspace import StructuralPath
 CANONICAL_TIPA_WORKSPACE = "TIPA"
 
 #: Deferred capabilities -> the gate that owns them.
+#: R3 output (observations / mes_messages / mes_trace) is NO LONGER deferred:
+#: it is served read-only by ``virtual_factory.ui.assy_output``.
 DEFERRED_FEATURES: dict[str, str] = {
-    "observations": "R3",
-    "mes_messages": "R3",
-    "mes_trace": "R3",
     "jam": "R4",
     "recover": "R4",
     "run_to_terminal": "R4",
@@ -143,6 +142,15 @@ class CanonicalAssyExperience:
                 "the canonical TIPA session has no runtime projection yet"
             )
         return federation
+
+    def require_federation(self):
+        """Public R3 seam: the ONE canonical federation (never constructs one).
+
+        Materializes the session's own runtime projection when it does not
+        exist yet (no time advance, no second runtime) and fails closed with
+        ``SessionNotStarted`` otherwise.
+        """
+        return self._require_federation()
 
     # ── identity envelope ──────────────────────────────────────
 

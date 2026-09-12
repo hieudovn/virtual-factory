@@ -35,9 +35,9 @@ WIP/terminal-quality state (never hard-coded in the projection).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 from virtual_factory.assembly.demo_composition import AssyDemoComposition
 from virtual_factory.assembly.line_runtime import (
@@ -258,6 +258,13 @@ class AssyMesBridge:
     gateways: list[ObservationGatewayProtocol]
     model_id: str = MODEL_ID
 
+    # R3 additive seam (canonical same-session output projection): when bound,
+    # emitted messages carry the canonical parent-session identity and the
+    # projection epoch.  Read-only metadata: it never changes runtime truth,
+    # the demo lifecycle derivation or delivery idempotency.  Unbound → legacy
+    # behaviour is byte-for-byte unchanged.
+    canonical: Optional[Mapping[str, Any]] = None
+
     # run tracking (sub_line_id → generation)
     _run_generation: dict[str, int] = field(default_factory=dict)
     _last_sim_time: dict[str, float] = field(default_factory=dict)
@@ -282,6 +289,14 @@ class AssyMesBridge:
         """Stable run id per sub-line; generation bumps on reset."""
         gen = self._run_generation.get(sub_line_id, 1)
         return f"{sub_line_id}:R{gen}"
+
+    def projection_epoch_for(self, sub_line_id: str) -> int:
+        """Projection epoch (source generation) for a sub-line (R3).
+
+        Subordinate projection metadata scoping message identity after a reset
+        of the SAME canonical run id; never a run/lifecycle identity.
+        """
+        return self._run_generation.get(sub_line_id, 1)
 
     def reset_all(self) -> None:
         """Explicit reset: bump every sub-line generation and clear runtime
@@ -384,6 +399,11 @@ class AssyMesBridge:
         else:
             self._last_sim_time[sub_line_id] = max(
                 sim_time, last if last is not None else sim_time)
+        canonical_run_id = (self.canonical or {}).get("canonical_run_id")
+        if canonical_run_id:
+            # R3: the canonical parent-session run id supersedes the legacy
+            # sub-line-local synthetic generation as the effective run id.
+            return str(canonical_run_id)
         return self.run_id_for(sub_line_id)
 
     # ── Operational state / exception / downtime (findings 1-3) ──
@@ -588,6 +608,51 @@ class AssyMesBridge:
 
     # ── Fact → RealityInput builders ──
 
+    def _canonical_identity(self, sub_line_id: str) -> dict[str, Any]:
+        """Canonical same-session projection identity (empty when unbound).
+
+        Carries the canonical parent-session identity (workspace / run /
+        scenario / profile) plus the projection-only ``source_run_key``
+        (legacy sub-line-local key, subordinate — never a second lifecycle
+        authority) and the ``projection_epoch`` that scopes message identity
+        after a reset of the SAME canonical run id.
+        """
+        if not self.canonical:
+            return {}
+        ident: dict[str, Any] = dict(self.canonical)
+        ident.setdefault("source_run_key", self.run_id_for(sub_line_id))
+        ident.setdefault(
+            "projection_epoch", self._run_generation.get(sub_line_id, 1)
+        )
+        workspace_id = ident.get("workspace_id")
+        if workspace_id:
+            ident["scope_path"] = f"{workspace_id}/ASSY/{sub_line_id}"
+        return ident
+
+    def _scoped_source_event_id(
+        self, source_event_id: str, reality: RealityInput,
+    ) -> str:
+        """Scope a fact id by source scope + projection epoch (canonical only).
+
+        Identity shape: ``canonical_run_id`` + source scope/sub_line_id +
+        projection epoch + ``source_event_id``.  The canonical run id is shared
+        by all six sub-lines and is preserved across a same-run reset, so both
+        the source scope and the projection epoch must participate in message
+        identity (unique per line, distinct before/after reset).  Unbound →
+        unchanged.
+        """
+        if not self.canonical:
+            return source_event_id
+        epoch = reality.context.get("projection_epoch", 1)
+        scope = (
+            reality.context.get("sub_line_id")
+            or reality.context.get("subline_id")
+            or ""
+        )
+        if scope:
+            return f"E{epoch}:{scope}:{source_event_id}"
+        return f"E{epoch}:{source_event_id}"
+
     def _base_reality(
         self,
         runtime: AssyLineRuntime,
@@ -607,10 +672,12 @@ class AssyMesBridge:
             "semantic_type": semantic_type,
             "station_id": station_id,
             "subline_id": sub_line_id,
+            "sub_line_id": sub_line_id,
             "production_line_id": "ASSY",
             "plant_id": "TIPA",
             "contract_version": CONTRACT_VERSION,
         }
+        context.update(self._canonical_identity(sub_line_id))
         if extra_context:
             context.update({k: v for k, v in extra_context.items() if v is not None})
         return RealityInput(
@@ -1135,6 +1202,9 @@ class AssyMesBridge:
         DELIVERED is skipped; a FAILED gateway is retried on the next poll.
         """
         results: list[DeliveryResult] = []
+        source_event_id = self._scoped_source_event_id(source_event_id, reality)
+        if source_event_id != reality.source_event_id:
+            reality = replace(reality, source_event_id=source_event_id)
         delivered = self._delivered.setdefault(run_id, set())
         envelopes = self.service.collect(reality)
         for envelope in envelopes:
@@ -1179,11 +1249,16 @@ class AssyMesPipeline:
 def build_assy_mes_pipeline(
     gateways: Optional[list[ObservationGatewayProtocol]] = None,
     model_id: str = MODEL_ID,
+    canonical: Optional[Mapping[str, Any]] = None,
 ) -> AssyMesPipeline:
     """Build the VF-DM-DEMO-ASSY-MES-02 pipeline.
 
     Default gateway: in-memory (test/demo).  Callers may supply
     InMemory / Jsonl / MQTT gateways.
+
+    R3 additive: ``canonical`` binds the pipeline to the canonical TIPA
+    parent-session identity (read-only metadata); ``None`` keeps the legacy
+    sub-line-local run identity.
     """
     service = ObservationService(
         points=build_assy_mes_observation_points(),
@@ -1201,6 +1276,7 @@ def build_assy_mes_pipeline(
         router=router,
         gateways=gw,
         model_id=model_id,
+        canonical=canonical,
     )
     return AssyMesPipeline(
         service=service,

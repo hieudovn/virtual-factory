@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-R2.json",
-    "changed_files_base": "4f866323fc73a1f73f6d513d5c91220d14a997b3"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-R3.json",
+    "changed_files_base": "4fc81e72780fe14ba5532407fdc8113b44385617"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -364,6 +364,15 @@
       ]
     },
     {
+      "id": "r3_canonical_observation_mes",
+      "gate": "R3",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R3 canonical same-session Observation/MES output reintegration: one canonical session/federation (no second runtime, no legacy controller), canonical run identity + sub-line scope in fact/message identity, read-only polling with a hard mutation guard, poll idempotency, reset projection epoch, fresh new-attempt/replay output namespaces, held-one/five-continue output.",
+      "files": [
+        "tests/test_vnext_r3_canonical_observation_mes.py"
+      ]
+    },
+    {
       "id": "full_suite",
       "gate": "FULL",
       "type": "pytest",
@@ -426,4 +435,3 @@
     }
   ]
 }
-

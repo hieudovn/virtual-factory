@@ -1,0 +1,63 @@
+{
+  "before_hold": {
+    "ASSY-SL01": 6,
+    "ASSY-SL02": 6,
+    "ASSY-SL03": 6,
+    "ASSY-SL04": 6,
+    "ASSY-SL05": 6,
+    "ASSY-SL06": 6
+  },
+  "after_hold_window": {
+    "ASSY-SL01": 21,
+    "ASSY-SL02": 21,
+    "ASSY-SL03": 6,
+    "ASSY-SL04": 21,
+    "ASSY-SL05": 21,
+    "ASSY-SL06": 21
+  },
+  "held_sub_line": "ASSY-SL03",
+  "held_line_new_facts": 0,
+  "other_lines_new_facts": {
+    "ASSY-SL01": 15,
+    "ASSY-SL02": 15,
+    "ASSY-SL04": 15,
+    "ASSY-SL05": 15,
+    "ASSY-SL06": 15
+  },
+  "frame_a_while_held": {
+    "ASSY-SL01": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    },
+    "ASSY-SL02": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    },
+    "ASSY-SL03": {
+      "simulation_time_s": 360.0,
+      "motors_created": 0
+    },
+    "ASSY-SL04": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    },
+    "ASSY-SL05": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    },
+    "ASSY-SL06": {
+      "simulation_time_s": 720.0,
+      "motors_created": 2
+    }
+  },
+  "after_release": {
+    "ASSY-SL01": 28,
+    "ASSY-SL02": 28,
+    "ASSY-SL03": 28,
+    "ASSY-SL04": 28,
+    "ASSY-SL05": 28,
+    "ASSY-SL06": 28
+  },
+  "held_line_resumes": true,
+  "PASS": true
+}

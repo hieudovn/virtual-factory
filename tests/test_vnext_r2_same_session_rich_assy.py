@@ -332,14 +332,21 @@ class TestDeferredFailClosed:
         "path",
         ["/assy-demo/observations", "/assy-demo/mes-messages", "/assy-demo/mes-trace"],
     )
-    def test_r3_output_endpoints_are_deferred_not_legacy(self, path):
+    def test_r3_output_endpoints_are_canonical_not_legacy(self, path):
+        """R3 superseded the R2 deferral: the endpoints now serve the SAME
+        canonical session read-only (migrated ownership assertion, Issue #81)."""
         c = _client()
+        c.post("/assy-demo/reset")
+        c.post("/assy-demo/step")
         resp = c.get(path)
-        assert resp.status_code == 503
+        assert resp.status_code == 200
         body = resp.json()
-        assert body["status"] == "deferred"
-        assert body["deferred_to"] == "R3"
+        assert body["status"] == "ok"
+        assert body["authority"] == "canonical_tipa_runtime_session"
         assert body["legacy_runtime_authority"] is False
+        assert body["canonical"]["run_id"] == (
+            c.get("/assy-demo/identity").json()["canonical"]["run_id"]
+        )
 
     def test_scenario_mutation_is_deferred_but_same_scenario_reset_is_allowed(self):
         c = _client()

@@ -1,0 +1,156 @@
+{
+  "identity_run_id": "TIPA-0001",
+  "identity": {
+    "authority": "canonical_tipa_runtime_session",
+    "workspace_id": "TIPA",
+    "run_id": "TIPA-0001",
+    "scenario_id": "tipa-default",
+    "profile_id": "tipa-assy-happy_path",
+    "run_state": "running",
+    "step_count": 4,
+    "simulation_time_s": 480.0,
+    "started": true,
+    "selected_sub_line_id": "ASSY-SL01",
+    "selection_is_presentation_only": true,
+    "run_profile": {
+      "profile_id": "tipa-assy-happy_path",
+      "version": "1",
+      "session_scenario_id": "tipa-default",
+      "scenario": "HAPPY_PATH",
+      "target_sub_line_id": "",
+      "initial_sso2_inventory": 7,
+      "initial_rso2_inventory": 7,
+      "continuous_feed_enabled": true,
+      "feed_policy": {
+        "sso2_target": 10,
+        "sso2_low_watermark": 3,
+        "rso2_target": 6
+      },
+      "provenance": "simulation_synthetic_profile_input"
+    },
+    "site_truth": false,
+    "note": "Same canonical TIPA RuntimeSession as /workspaces: one run authority, six canonical AssyLineRuntime truths. Scenario/profile is pinned run input; projections are detached read models. No second simulation runtime exists."
+  },
+  "endpoints": {
+    "/assy-demo/observations": {
+      "status_code": 200,
+      "status": "ok",
+      "authority": "canonical_tipa_runtime_session",
+      "legacy_runtime_authority": false,
+      "count": 60,
+      "canonical_run_id": "TIPA-0001",
+      "matches_identity": true,
+      "output_namespace": {
+        "canonical_run_id": "TIPA-0001",
+        "namespace_is_canonical_run": true,
+        "projection_epoch": 1,
+        "epoch_source": "canonical_session_reset_detection",
+        "source_run_keys": {
+          "ASSY-SL01": "ASSY-SL01:R1",
+          "ASSY-SL02": "ASSY-SL02:R1",
+          "ASSY-SL03": "ASSY-SL03:R1",
+          "ASSY-SL04": "ASSY-SL04:R1",
+          "ASSY-SL05": "ASSY-SL05:R1",
+          "ASSY-SL06": "ASSY-SL06:R1"
+        },
+        "projection_epochs": {
+          "ASSY-SL01": 1,
+          "ASSY-SL02": 1,
+          "ASSY-SL03": 1,
+          "ASSY-SL04": 1,
+          "ASSY-SL05": 1,
+          "ASSY-SL06": 1
+        },
+        "epoch_resets": 0
+      },
+      "provenance": "simulation_synthetic"
+    },
+    "/assy-demo/mes-messages": {
+      "status_code": 200,
+      "status": "ok",
+      "authority": "canonical_tipa_runtime_session",
+      "legacy_runtime_authority": false,
+      "count": 97,
+      "canonical_run_id": "TIPA-0001",
+      "matches_identity": true,
+      "output_namespace": {
+        "canonical_run_id": "TIPA-0001",
+        "namespace_is_canonical_run": true,
+        "projection_epoch": 1,
+        "epoch_source": "canonical_session_reset_detection",
+        "source_run_keys": {
+          "ASSY-SL01": "ASSY-SL01:R1",
+          "ASSY-SL02": "ASSY-SL02:R1",
+          "ASSY-SL03": "ASSY-SL03:R1",
+          "ASSY-SL04": "ASSY-SL04:R1",
+          "ASSY-SL05": "ASSY-SL05:R1",
+          "ASSY-SL06": "ASSY-SL06:R1"
+        },
+        "projection_epochs": {
+          "ASSY-SL01": 1,
+          "ASSY-SL02": 1,
+          "ASSY-SL03": 1,
+          "ASSY-SL04": 1,
+          "ASSY-SL05": 1,
+          "ASSY-SL06": 1
+        },
+        "epoch_resets": 0
+      },
+      "provenance": "simulation_synthetic"
+    },
+    "/assy-demo/mes-trace": {
+      "status_code": 200,
+      "status": "ok",
+      "authority": "canonical_tipa_runtime_session",
+      "legacy_runtime_authority": false,
+      "count": 97,
+      "canonical_run_id": "TIPA-0001",
+      "matches_identity": true,
+      "output_namespace": {
+        "canonical_run_id": "TIPA-0001",
+        "namespace_is_canonical_run": true,
+        "projection_epoch": 1,
+        "epoch_source": "canonical_session_reset_detection",
+        "source_run_keys": {
+          "ASSY-SL01": "ASSY-SL01:R1",
+          "ASSY-SL02": "ASSY-SL02:R1",
+          "ASSY-SL03": "ASSY-SL03:R1",
+          "ASSY-SL04": "ASSY-SL04:R1",
+          "ASSY-SL05": "ASSY-SL05:R1",
+          "ASSY-SL06": "ASSY-SL06:R1"
+        },
+        "projection_epochs": {
+          "ASSY-SL01": 1,
+          "ASSY-SL02": 1,
+          "ASSY-SL03": 1,
+          "ASSY-SL04": 1,
+          "ASSY-SL05": 1,
+          "ASSY-SL06": 1
+        },
+        "epoch_resets": 0
+      },
+      "provenance": "simulation_synthetic"
+    }
+  },
+  "r4_endpoints_still_deferred": {
+    "/assy-demo/jam": {
+      "status_code": 409,
+      "status": "deferred",
+      "deferred_to": "R4",
+      "legacy_runtime_authority": false
+    },
+    "/assy-demo/recover": {
+      "status_code": 409,
+      "status": "deferred",
+      "deferred_to": "R4",
+      "legacy_runtime_authority": false
+    },
+    "/assy-demo/run-to-terminal": {
+      "status_code": 409,
+      "status": "deferred",
+      "deferred_to": "R4",
+      "legacy_runtime_authority": false
+    }
+  },
+  "PASS": true
+}

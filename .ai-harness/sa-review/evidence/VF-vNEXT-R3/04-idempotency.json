@@ -1,0 +1,22 @@
+{
+  "initial_observation_count": 60,
+  "initial_delivered": 60,
+  "repeat_poll_count": 60,
+  "repeat_poll_delivered": 0,
+  "repeat_poll_has_no_duplicate_keys": true,
+  "repeat_poll_key_order_stable": true,
+  "mes_repeat_poll_count": 97,
+  "mes_repeat_poll_delivered": 0,
+  "mes_count_unchanged": true,
+  "step_then_poll_count": 90,
+  "step_then_poll_delivered": 30,
+  "step_then_poll_only_new_facts": true,
+  "step_then_poll_new_keys_sample": [
+    "TIPA-0001|E1:ASSY-SL01:EXEC-00011|assy.operation_completion|1.0",
+    "TIPA-0001|E1:ASSY-SL01:EXEC-00012|assy.operation_completion|1.0",
+    "TIPA-0001|E1:ASSY-SL01:EXEC-00013|assy.operation_completion|1.0",
+    "TIPA-0001|E1:ASSY-SL01:EXEC-00014|assy.operation_completion|1.0"
+  ],
+  "no_duplicate_keys_overall": true,
+  "PASS": true
+}

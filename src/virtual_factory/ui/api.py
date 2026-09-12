@@ -287,13 +287,25 @@ def create_app(
     _assy_experience_note = (
         "R2: /assy-demo is the rich projection of the SAME canonical TIPA "
         "RuntimeSession used by /workspaces (one run authority). No legacy "
-        "DemoController/AssyDemoComposition is instantiated on this path."
+        "DemoController/AssyDemoComposition is instantiated on this path. "
+        "R3: observation/MES output (observations | mes-messages | mes-trace) "
+        "is a READ-ONLY downstream projection of that same session."
     )
 
     def _get_assy_experience():
         from virtual_factory.ui.assy_experience import CanonicalAssyExperience
 
         return CanonicalAssyExperience(_get_workspace_monitor())
+
+    _assy_output: dict = {"instance": None}
+
+    def _get_assy_output():
+        """R3 canonical same-session output projection (memoized, read-only)."""
+        from virtual_factory.ui.assy_output import CanonicalAssyOutput
+
+        if _assy_output["instance"] is None:
+            _assy_output["instance"] = CanonicalAssyOutput(_get_assy_experience())
+        return _assy_output["instance"]
 
     def _deferred_response(feature: str, reason: str, *, mutation: bool = True):
         """Explicit deferred-unavailable (fail closed; never legacy runtime)."""
@@ -327,6 +339,33 @@ def create_app(
                     "status": "session_not_started",
                     "detail": str(exc),
                     "authority": "canonical_tipa_runtime_session",
+                },
+            )
+        try:
+            from virtual_factory.ui.assy_output import (
+                CanonicalOutputError,
+                OutputMutationError,
+            )
+        except Exception:  # pragma: no cover - import guard
+            CanonicalOutputError = OutputMutationError = ()  # type: ignore
+        if isinstance(exc, OutputMutationError):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "output_mutation_blocked",
+                    "detail": str(exc),
+                    "authority": "canonical_tipa_runtime_session",
+                    "legacy_runtime_authority": False,
+                },
+            )
+        if isinstance(exc, CanonicalOutputError):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "output_unavailable",
+                    "detail": str(exc),
+                    "authority": "canonical_tipa_runtime_session",
+                    "legacy_runtime_authority": False,
                 },
             )
         if isinstance(exc, AssyExperienceError):
@@ -377,13 +416,15 @@ def create_app(
 
     @app.get("/assy-demo/observations")
     def assy_demo_observations() -> dict:
-        """R3: observation/MES output is not rewired yet (fail closed)."""
-        return _deferred_response(
-            "observations",
-            "observation/MES reintegration is R3; the legacy runtime is not "
-            "allowed to serve it",
-            mutation=False,
-        )
+        """R3: canonical same-session P0 observation facts (READ-ONLY).
+
+        Re-enabled by R3: no longer a deferred 503. Polls the canonical
+        projection only — it never creates or steps a simulation runtime.
+        """
+        try:
+            return _get_assy_output().observations()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.post("/assy-demo/snapshot")
     def assy_demo_snapshot() -> dict:
@@ -426,23 +467,19 @@ def create_app(
 
     @app.get("/assy-demo/mes-messages")
     def assy_demo_mes_messages() -> dict:
-        """R3: MES contract output is not rewired yet (fail closed)."""
-        return _deferred_response(
-            "mes_messages",
-            "MES/output reintegration is R3; the legacy runtime is not allowed "
-            "to serve it",
-            mutation=False,
-        )
+        """R3: canonical same-session MES messages (READ-ONLY)."""
+        try:
+            return _get_assy_output().mes_messages()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.get("/assy-demo/mes-trace")
     def assy_demo_mes_trace() -> dict:
-        """R3: MES bridge delivery trace is not rewired yet (fail closed)."""
-        return _deferred_response(
-            "mes_trace",
-            "MES/output reintegration is R3; the legacy runtime is not allowed "
-            "to serve it",
-            mutation=False,
-        )
+        """R3: canonical same-session MES delivery trace (READ-ONLY)."""
+        try:
+            return _get_assy_output().mes_trace()
+        except Exception as exc:
+            return _experience_error_response(exc)
 
     @app.get("/assy-demo/version")
     def assy_demo_version() -> dict:

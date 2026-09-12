@@ -1,62 +1,68 @@
 # SA REVIEW INBOX
 
-Task: VF-vNEXT-R2
-Status: READY FOR SA REVIEW (Canonical Same-Session Rich ASSY 2D Experience)
+Task: VF-vNEXT-R3
+Status: READY FOR SA REVIEW (Canonical Same-Session Observation / MES Output Reintegration)
 Parent: TIPA ASSY recovery sequence R1..R4 (R0 / Issue #78 CLOSED - architecture frozen)
-Prerequisite: R1-C01 accepted head 4f86632; Issue #80 + SA amendment comment 5629686166
+Prerequisite: R2 accepted head 4fc81e72780fe14ba5532407fdc8113b44385617 (Issue #80); R2V PASS (Issue #82); Issue #81
 
 Gate type:
-IMPLEMENTATION gate. The accepted rich TIPA ASSY experience (Frame A six-sub-line
-overview + Frame B existing 2D physical line + station/WIP inspector read models)
-now projects the SAME canonical TIPA RuntimeSession used by /workspaces. ONE
-product-path TIPA run authority; no legacy DemoController authority; no second
-session/federation/runtime. R3 Observation/MES/output, R4, SH-WTP and gateway are
-NOT authorized and NOT started.
+IMPLEMENTATION gate — the ONLY authorized implementation gate. ASSY outbound
+Observation/MES projection restored READ-ONLY on top of the SAME canonical TIPA
+RuntimeSession accepted in R1/R2. One run authority; no second runtime/session/
+federation/controller; no output-owned lifecycle; no output-driven step/reset.
+R4/R5, SH-WTP expansion and gateway/protocol expansion are NOT authorized and NOT
+started.
 
-Base: technical base (branch point) = 4f866323fc73a1f73f6d513d5c91220d14a997b3
-Branch: feature/vf-vnext-r2
-Head: ab8b943e38be8ef16997b67b2572ed722b91bc41 (local == origin)
+Base (technical branch point): 4fc81e72780fe14ba5532407fdc8113b44385617
+Branch: feature/vf-vnext-r3
+Head: (final commit on this branch)
 Harness preflight: PASSED
 
-Implemented:
-- src/virtual_factory/ui/assy_experience.py (NEW): CanonicalAssyExperience --
-  same-session rich projection/control adapter (Frame A via accepted
-  build_summary/AssyOverviewSnapshot; Frame B detached build_snapshot; canonical
-  identity envelope; presentation-only selection; THIN same-session OPS-03/OPS-04
-  command + run-mode bindings; explicit deferred seam; hold/freeze read model).
-- src/virtual_factory/ui/workspace_monitor.py: public live_session() seam (the ONE
-  live session shared with /workspaces) + tipa_config_path + TIPA view metadata
-  corrected to shares_session/shares_identity = true (canonical note).
-- src/virtual_factory/ui/api.py: /assy-demo served by the canonical experience;
-  _get_assy_controller()/legacy controller authority removed; reset/step/snapshot/
-  select/overview/sub-lines/sub-line/identity canonicalized; observation/MES/jam/
-  recover/run-to-terminal/scenario-change fail closed as explicit deferred
-  (503/409 with legacy_runtime_authority=false); NO legacy runtime fallback.
-- ui/static/assy_demo.js + .html: binding-only edits (canonical identity bar, no
-  reset on page open, pinned scenario selectors disabled, deferred surfaced).
-- tests/test_vnext_r2_same_session_rich_assy.py (NEW, 27 tests).
-- Migrated legacy OWNERSHIP assertions only (G24/G25 metadata; demo_overview
-  route-flag gating) per the SA amendment; OPS-03/OPS-04 API suites pass unchanged.
+Delivered:
+- src/virtual_factory/ui/assy_output.py (NEW): CanonicalAssyOutput read-only
+  same-session output adapter (canonical binding; composition shim over
+  federation.sub_lines; projection namespace + epoch; hard read-only mutation guard;
+  observations()/mes_messages()/mes_trace()/identity()).
+- Additive canonical seam in assembly/observation_bridge.py + assembly/assy_mes_bridge.py
+  (canonical ran id supersedes the legacy ASSY-SLxx:R<n> generation; canonical identity
+  in the fact context; source_run_key + projection_epoch + scope in fact identity;
+  default/unbound behaviour unchanged).
+- ui/assy_experience.py require_federation() seam; DEFERRED_FEATURES no longer defers
+  R3 output (jam/recover/run-to-terminal/scenario_change stay R4).
+- ui/api.py: /assy-demo/observations | /mes-messages | /mes-trace serve the canonical
+  projection (no longer 503); memoized canonical output adapter; fail-closed
+  output_unavailable/output_mutation_blocked responses.
+- tests/test_vnext_r3_canonical_observation_mes.py (NEW, 27 tests); migrated the
+  obsolete R2 ownership assertion for the R3 endpoints.
+- Evidence .ai-harness/sa-review/evidence/VF-vNEXT-R3/ (01..08 JSON + generator);
+  report .ai-harness/sa-review/reports/VF-vNEXT-R3.md; manifest gate context + new
+  baseline group r3_canonical_observation_mes.
 
-Evidence (deterministic, evidence/VF-vNEXT-R2/): same-session identity; Frame A six
-canonical live rows; Frame B 12 accepted positions with successive WIP movement +
-AP04 genealogy; inspector/quality read models; selection presentation-only; rich
-STEP/RESET == shell session; held-one/five-continue reflected on UI; deferred
-fail-closed endpoints; exactly ONE federation constructed and ZERO legacy
-controllers instantiated; static UI binding facts.
+Verified (evidence 01..08, all PASS):
+- same canonical run id across shell/rich/output; same six runtime objects; exactly ONE
+  federation + ONE session + ZERO legacy controllers on the API path;
+- 780 canonical facts over 20 steps (546 operation completions, 72 AP04 genealogy with
+  child MTR-0001, 138 quality, 30 AP11 final-QC, 24 releases; 130 per sub-line x 6);
+- 1159 MES messages across 7 families covering all six sub-lines, canonical run id in
+  every key/payload, contract tipa-assy-demo-v1.1;
+- poll idempotency (repeat poll delivers 0; step-then-poll delivers only new facts);
+- reset same run id -> fresh projection epoch with no pre-reset collision; NEW ATTEMPT
+  (TIPA-0002) and REPLAY (TIPA-0003) fresh output namespaces, deterministic content;
+- hold ASSY-SL03 -> 0 new facts on the held line while the other five advance; release
+  resumes;
+- polling changes nothing (step count/time/positions/genealogy/production/quality) and
+  the injected-mutation guard raises OutputMutationError;
+- /assy-demo R3 endpoints return 200 canonical data (legacy_runtime_authority false);
+  jam/recover/run-to-terminal remain 409 R4.
 
-Regression: R2 focused 27 passed; full suite 2556 passed; complete canonical
-baseline PASS (39 groups) at the pushed head (see report).
+Regression: R3 focused 27 passed; R1 40 passed; R2 + observation/MES contract suites
+passed unchanged; full suite 2556 -> 2583 passed; canonical baseline (40 groups)
+machine-derived at the pushed head (see report / SA submission).
 
-Frozen boundaries preserved: no AssyLineRuntime rewrite; no R1 semantics change;
-no generic coordinator/lifecycle redesign; no R3 Observation/MES work; no
-gateway/OPC/MQTT; no SH-WTP; no broad visual redesign; no rebase onto main.
+Frozen boundaries preserved: no AssyLineRuntime / R1 profile / G4 coordinator change;
+no federation/runcontrol change; no G22 reset semantics change; no SH-WTP; no
+gateway/protocol work; no R4/R5; no rebase onto main; no merge.
 
 Authority unchanged: vf_runtime_authorization NOT_AUTHORIZED;
 site_authorized_execution NOT_AUTHORIZED; whole_plant_runtime NOT_AUTHORIZED /
 NOT_IMPLEMENTED.
-
-Report: .ai-harness/sa-review/reports/VF-vNEXT-R2.md
-Evidence: .ai-harness/sa-review/evidence/VF-vNEXT-R2/
-
-Next gate started: NO (R3 NOT started)
