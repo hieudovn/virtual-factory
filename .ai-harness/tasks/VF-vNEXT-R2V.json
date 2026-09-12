@@ -1,0 +1,152 @@
+{
+  "task_id": "VF-vNEXT-R2V",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "VALIDATION gate — ASSY Functional & UI Validation before R3 (R2V). NO product code change.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/82",
+  "architecture_authority_ref": "https://github.com/hieudovn/virtual-factory/issues/78 (R0 CLOSED, frozen) + Issue #80 (R2 CLOSED at 4fc81e7)",
+  "objective": "Confirm by functional + browser/UI evidence that the rebuilt canonical ASSY experience at the R2 head (4fc81e72780fe14ba5532407fdc8113b44385617) still preserves the previously accepted rich ASSY simulation configuration/capabilities and the agreed six-independent-sub-line behaviour, now running on ONE canonical TIPA RuntimeSession. Validation only: launch/navigation/identity, Frame A six live sub-lines, Frame B 2D physical parity (12 positions, WIP motion, AP04 join, rendered==positions[] truth), interaction/inspector parity, lifecycle (STEP/RESET/NEW ATTEMPT/REPLAY + SH-WTP switch isolation), mandatory visible six-line independence (hold one / five continue / release resumes) and visual sanity with defect classification.",
+  "explicit_non_objectives": [
+    "No product code change",
+    "No redesign",
+    "No R3 Observation/MES/output work",
+    "No R4 work",
+    "No gateway/SH-WTP expansion",
+    "No new test configuration to make the gate pass",
+    "No rebase onto main",
+    "No automatic correction of any defect found (SA authorization required)"
+  ],
+  "required_branch": "feature/vf-vnext-r2v",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "4fc81e72780fe14ba5532407fdc8113b44385617",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-R2V.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R2V.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/",
+    ".ai-harness/regression/vnext_baseline_manifest.json"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "tests/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/01-launch-identity.{md,json}",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/02-six-line-overview.{md,json}",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/03-2d-wip-motion.{md,json}",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/04-inspector-quality-genealogy.{md,json}",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/05-lifecycle.{md,json}",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/06-six-line-independence.{md,json}",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/07-visual-sanity.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R2V/generate_evidence.py",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R2V.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Modify product code",
+    "Redesign",
+    "Start R3",
+    "Broaden authority",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "Any BLOCKER or MAJOR functional/visual defect is found",
+    "Validation shows the rich experience is not actually bound to the canonical session",
+    "A second runtime/controller/session authority is observed on the product path"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "V01",
+      "phase": "final",
+      "description": "Launch/navigation/identity: shell and rich UI share one workspace/run/scenario/profile; opening rich UI does not advance time or create another runtime",
+      "rule": {
+        "field": "r2v.identity",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "V02",
+      "phase": "final",
+      "description": "Frame A: exactly six live sub-lines with independent state under one parent run",
+      "rule": {
+        "field": "r2v.frame_a",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "V03",
+      "phase": "final",
+      "description": "Frame B: 2D layout, 12 accepted positions, visible WIP movement, AP04 join + genealogy, rendered == positions[] truth",
+      "rule": {
+        "field": "r2v.frame_b",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "V04",
+      "phase": "final",
+      "description": "Inspector/quality/genealogy read models + retained OPS-03/OPS-04 thin bindings behave; selection is presentation-only",
+      "rule": {
+        "field": "r2v.inspector",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "V05",
+      "phase": "final",
+      "description": "Lifecycle: STEP same session; RESET same run_id baseline; NEW ATTEMPT fresh run_id; REPLAY deterministic; SH-WTP switch isolation",
+      "rule": {
+        "field": "r2v.lifecycle",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "V06",
+      "phase": "final",
+      "description": "Six-line independence visible: hold ASSY-SL03, five continue, Frame B frozen, release resumes",
+      "rule": {
+        "field": "r2v.independence",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "V07",
+      "phase": "final",
+      "description": "Visual sanity: readable Frame A/B, no major clipping, understandable WIP motion, usable identity/controls, no stale inspector, no severe console errors; defects classified",
+      "rule": {
+        "field": "r2v.visual",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "V08",
+      "phase": "final",
+      "description": "Regressions (R1, R2, OPS-03/04, G22, G25/G26, full suite) and complete canonical baseline green at the pushed head",
+      "rule": {
+        "field": "regression.green",
+        "operator": "is_true",
+        "expected": null
+      }
+    }
+  ],
+  "authorization": {
+    "may_open_pr": false,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
