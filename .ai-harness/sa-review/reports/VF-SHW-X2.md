@@ -17,10 +17,19 @@
 | Full suite | **2757 passed** (X1-C01 head 2715 + 42) |
 | Evidence verdicts | `ONE_CANONICAL_SHWTP_SESSION_AUTHORITY` · `ALL_16_ADMITTED_SCOPES_EXECUTE_ONLY` · `NINE_C1_ACTIVE_ZERO_C2_EVALUATION` · `EVERY_X2_INPUT_RESOLVED_AT_RUNTIME` · `PHYSICAL_ORACLES_SATISFIED` · `RUNTIME_PROVENANCE_VISIBLE` |
 
-**Frozen truth labels (unchanged):** `site_truth=false` · `simulation_truth=synthetic_reference` ·
-`vf_runtime_authorization=NOT_AUTHORIZED` · `site_authorized_execution=NOT_AUTHORIZED` ·
-`whole_plant_runtime=NOT_AUTHORIZED / NOT_IMPLEMENTED`. `NOT_AUTHORIZED` means **no site-authorized/site-faithful claim**;
-the synthetic demo runtime is explicitly allowed to execute (Issue #94).
+**Frozen truth labels:** `site_truth=false` · `simulation_truth=synthetic_reference` ·
+`vf_runtime_authorization=NOT_AUTHORIZED` · `site_authorized_execution=NOT_AUTHORIZED`.
+`NOT_AUTHORIZED` means **no site-authorized/site-faithful claim**; the synthetic demo runtime is explicitly allowed
+to execute (Issue #94).
+
+> **CORRECTION (VF-SHW-X2-C01).** An earlier revision of this report stated
+> `whole_plant_runtime=NOT_AUTHORIZED / NOT_IMPLEMENTED`. That conflated **implementation state** with
+> **authorization state** and was wrong: the X2 shallow runtime **is implemented** as a synthetic reference
+> (`whole_plant_runtime=IMPLEMENTED_SYNTHETIC_REFERENCE`) while it is **not authorized** for site execution
+> (`whole_plant_runtime_authorization=NOT_AUTHORIZED`). The two states are now reported separately and are
+> asserted separately on every runtime projection (see `evidence/VF-SHW-X2/07-authority-labels.json`).
+> Sections 7 and §11 of this report that describe the *default model* are superseded by
+> `reports/VF-SHW-X2-C01.md`.
 
 ---
 
@@ -105,7 +114,12 @@ PIM-known edges, `assumption_id` + `reversible` for the 15 assumed edges, `evide
 runtime ledger of a window; the 3 excluded edges never appear; the 3 contract-declared input relations are labelled
 `contract_declared_input`. No assumed edge is ever presented as PIM-known; no PIM id is invented.
 
-## 7. Canonical session integration (oracle 1) — and the one deliberate interpretation
+## 7. Canonical session integration (oracle 1) — superseded by VF-SHW-X2-C01
+
+> **SUPERSEDED.** The SA correction (Issue #94 comment `5645215200`) required the whole-plant model to become the
+> **canonical default** of the `shwtp` session/runtime path, with `g21_slice` retained only as an explicit
+> compatibility selector. See `reports/VF-SHW-X2-C01.md` for the accepted arrangement. The text below records the
+> pre-correction state only.
 
 `build_shwtp_whole_plant_session()` returns **ONE** `RuntimeSession` (one `RunLifecycleService`, one run identity,
 one bridge) whose canonical `ShwtpExecutionBridge` drives the whole-plant model; `session.advance()` drives real

@@ -76,8 +76,12 @@
         "dosing_active",
         "pac_dose_mg_l",
         "plant_flow_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "tank_level_l",
-        "time_s"
+        "time_s",
+        "vf_runtime_authorization"
       ]
     },
     {
@@ -93,7 +97,11 @@
         "inlet_flow_m3h",
         "l2_flow_m3h",
         "network_flow_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
+        "vf_runtime_authorization",
         "x2_speed_producer"
       ]
     },
@@ -107,8 +115,12 @@
       "telemetry_keys": [
         "delivery_m3h",
         "feed_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "split_fraction",
-        "time_s"
+        "time_s",
+        "vf_runtime_authorization"
       ]
     },
     {
@@ -123,7 +135,11 @@
         "demand_met_fraction",
         "excess_flow_m3h",
         "network_flow_m3h",
-        "time_s"
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
+        "time_s",
+        "vf_runtime_authorization"
       ]
     },
     {
@@ -139,7 +155,11 @@
         "raw_flow_m3h",
         "run_hours",
         "screen_dp_kpa",
-        "time_s"
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
+        "time_s",
+        "vf_runtime_authorization"
       ]
     },
     {
@@ -153,7 +173,11 @@
         "raw_flow_m3h",
         "raw_ph",
         "raw_turbidity_ntu",
-        "time_s"
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
+        "time_s",
+        "vf_runtime_authorization"
       ]
     },
     {
@@ -165,8 +189,12 @@
       "time_s": 7200.0,
       "telemetry_keys": [
         "processed_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "sludge_in_m3h",
         "time_s",
+        "vf_runtime_authorization",
         "volume_m3"
       ]
     },
@@ -182,7 +210,11 @@
         "inflow_permitted",
         "level_m",
         "outflows_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
+        "vf_runtime_authorization",
         "volume_m3",
         "withdrawal_m3h"
       ]
@@ -199,8 +231,12 @@
         "inflow_m3h",
         "outflow_m3h",
         "outlet_enabled",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
         "turbidity_ntu",
+        "vf_runtime_authorization",
         "volume_m3"
       ]
     },
@@ -215,8 +251,12 @@
         "dose_transport_delta_mg_l",
         "inflow_m3h",
         "pac_dose",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
-        "turbidity_ntu"
+        "turbidity_ntu",
+        "vf_runtime_authorization"
       ]
     },
     {
@@ -230,8 +270,12 @@
         "coag_dose",
         "dose_transport_delta_mg_l",
         "inflow_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
-        "turbidity_ntu"
+        "turbidity_ntu",
+        "vf_runtime_authorization"
       ]
     },
     {
@@ -246,8 +290,12 @@
         "inflow_m3h",
         "outflow_m3h",
         "outlet_enabled",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
         "turbidity_ntu",
+        "vf_runtime_authorization",
         "volume_m3"
       ]
     },
@@ -261,9 +309,13 @@
       "telemetry_keys": [
         "inflow_m3h",
         "outflow_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "sludge_out_m3h",
         "time_s",
         "turbidity_ntu",
+        "vf_runtime_authorization",
         "volume_m3"
       ]
     },
@@ -281,8 +333,12 @@
         "filtered_flow_m3h",
         "inflow_m3h",
         "inlet_valve_pos_pct",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
         "turbidity_ntu",
+        "vf_runtime_authorization",
         "wash_out_m3h"
       ]
     },
@@ -298,7 +354,11 @@
         "inflow_permitted",
         "level_m",
         "outflows_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
+        "vf_runtime_authorization",
         "volume_m3",
         "withdrawal_m3h"
       ]
@@ -313,7 +373,11 @@
       "telemetry_keys": [
         "level_m",
         "return_m3h",
+        "simulation_truth",
+        "site_authorized_execution",
+        "site_truth",
         "time_s",
+        "vf_runtime_authorization",
         "volume_m3",
         "wash_in_m3h"
       ]

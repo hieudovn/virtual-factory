@@ -94,7 +94,7 @@ def build_platform_registry(
     registry.register(
         SHWTP_WORKSPACE_ID,
         _shwtp_session_factory(),
-        description="SH-WTP G21/G22 plant slice (5 scopes)",
+        description="SH-WTP canonical whole-plant runtime (X2: 16 scopes, 9 C1 controls)",
     )
     registry.register(
         TIPA_WORKSPACE_ID,
@@ -396,56 +396,111 @@ def _tipa_view_extra(session: RuntimeSession) -> dict:
 
 
 def _shwtp_view_extra(session: RuntimeSession) -> dict:
-    """SH-WTP monitor: accepted G21 5-scope slice + key flow/tank values.
+    """SH-WTP monitor: the canonical SH-WTP model (X2 whole plant by default).
 
-    Assumed topology/fidelity is carried explicitly and never labelled as site
-    truth: the view sets ``site_truth: false`` and lists every scope's
-    fidelity/status. Flow/tank values come from the live slice (read-only) when
-    it exists, otherwise the structure is still shown.
+    The view is model-agnostic and read-only: structure and current values come
+    from the live model's own projections (``scopes`` / ``monitor_rows``), so the
+    canonical default (X2 whole plant) and the G21 compatibility slice both
+    render truthfully. Assumed topology/fidelity and the four mandatory
+    truth/authorization labels are carried explicitly; nothing is labelled as
+    site truth.
     """
-    from virtual_factory.shwtp.expansion import PLANT_SLICE_SCOPES
-
     record = session.record
-    structure = [scope.to_dict() for scope in PLANT_SLICE_SCOPES]
-    values: list[dict] = []
-    assumed: list[dict] = []
-
-    for scope in PLANT_SLICE_SCOPES:
-        row: dict = {
-            "scope": scope.vf_path,
-            "canonical_id": scope.canonical_id,
-            "role": scope.role,
-            "fidelity": scope.fidelity,
-            "status": scope.status,
-            "inbound_link_assumed": scope.inbound_link_assumed,
-        }
-        if scope.status == "scenario_assumed" or scope.inbound_link_assumed:
-            assumed.append(row)
-        values.append(row)
-
-    # Live current values (read-only) when the session has built its slice.
     bridge = record.bridge
-    if bridge is not None and getattr(bridge, "slice", None) is not None:
-        slice_ = bridge.slice
-        rows = slice_.monitor_rows()
-        for row in rows:
-            scope_path = row.get("vf_path")
-            for item in values:
-                if item["scope"] == scope_path:
-                    item["time_s"] = row.get("time_s")
-                    item["current_values"] = row.get("values", {})
-                    break
+    model = getattr(bridge, "model", None) if bridge is not None else None
+    if model is None:
+        model = getattr(bridge, "slice", None) if bridge is not None else None
+
+    if model is not None and hasattr(model, "monitor_rows"):
+        model_label = (
+            "SH-WTP X2 whole plant"
+            if getattr(model, "model_driven_windows", False)
+            else "SH-WTP G21 plant slice"
+        )
+        rows = tuple(model.monitor_rows())
+        assumed = (
+            list(model.assumed_topology())
+            if hasattr(model, "assumed_topology")
+            else [row for row in rows if row.get("status") == "scenario_assumed"]
+        )
+        structure = [
+            {
+                "scope_id": row.get("scope_id"),
+                "canonical_id": row.get("canonical_id"),
+                "vf_path": row.get("vf_path"),
+                "process_role": row.get("process_role", row.get("role")),
+                "fidelity_class": row.get("fidelity_class", row.get("fidelity")),
+                "status": row.get("status", "synthetic_reference"),
+                "update_rule_family": row.get("update_rule_family"),
+            }
+            for row in rows
+        ]
+        values = [
+            {
+                "scope": row.get("vf_path"),
+                "canonical_id": row.get("canonical_id"),
+                "role": row.get("process_role", row.get("role")),
+                "fidelity": row.get("fidelity_class", row.get("fidelity")),
+                "status": row.get("status", "synthetic_reference"),
+                "time_s": row.get("time_s"),
+                "current_values": row.get("values", {}),
+                "open_alarms": list(row.get("open_alarms", ())),
+            }
+            for row in rows
+        ]
+    else:
+        # No live model yet: describe the CANONICAL default model from the frozen
+        # contracts without building a runtime (read-only metadata projection).
+        from virtual_factory.shwtp.whole_plant import (
+            whole_plant_assumed_topology,
+            whole_plant_scope_metadata,
+        )
+
+        model_label = "SH-WTP X2 whole plant"
+        metadata = whole_plant_scope_metadata()
+        assumed = list(whole_plant_assumed_topology())
+        structure = [
+            {
+                "scope_id": row.scope_id,
+                "canonical_id": row.canonical_id,
+                "vf_path": row.vf_path,
+                "process_role": row.process_role,
+                "fidelity_class": row.fidelity_class,
+                "status": "synthetic_reference",
+                "update_rule_family": row.update_rule_family,
+            }
+            for row in metadata
+        ]
+        values = [
+            {
+                "scope": row.vf_path,
+                "canonical_id": row.canonical_id,
+                "role": row.process_role,
+                "fidelity": row.fidelity_class,
+                "status": "synthetic_reference",
+                "current_values": {},
+                "open_alarms": [],
+            }
+            for row in metadata
+        ]
+
+    authority = {
+        "site_truth": False,
+        "simulation_truth": "synthetic_reference",
+        "vf_runtime_authorization": "NOT_AUTHORIZED",
+        "site_authorized_execution": "NOT_AUTHORIZED",
+    }
 
     return {
-        "runtime": "SH-WTP G21 plant slice",
+        "runtime": model_label,
         "structure": structure,
         "values": values,
-        "site_truth": False,
         "assumed_topology": assumed,
+        **authority,
         "ui_page": None,
         "ui_note": (
-            "VF simulated SH-WTP slice only. Assumed/scenario topology and "
-            "fidelity labels are NOT site truth; PIM remains authoritative."
+            "VF simulated SH-WTP model only (synthetic/reference). Assumed/scenario "
+            "topology and fidelity labels are NOT site truth; PIM remains authoritative."
         ),
     }
 

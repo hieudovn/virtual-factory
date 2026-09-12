@@ -9,7 +9,11 @@
       "volume_out_m3": 86.4,
       "volume_delta_m3": -20.025,
       "residual_m3": 0.0,
-      "conservation_kind": "volume_balance"
+      "conservation_kind": "volume_balance",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t101",
@@ -18,7 +22,11 @@
       "volume_out_m3": 68.4,
       "volume_delta_m3": 3.0,
       "residual_m3": 0.0,
-      "conservation_kind": "mass_flow_continuity"
+      "conservation_kind": "mass_flow_continuity",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t104",
@@ -27,7 +35,11 @@
       "volume_out_m3": 66.6,
       "volume_delta_m3": 0.0,
       "residual_m3": 0.0,
-      "conservation_kind": "mass_flow_continuity"
+      "conservation_kind": "mass_flow_continuity",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t105",
@@ -36,7 +48,11 @@
       "volume_out_m3": 67.733333333,
       "volume_delta_m3": -1.733333333,
       "residual_m3": 0.0,
-      "conservation_kind": "volume_balance"
+      "conservation_kind": "volume_balance",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t106",
@@ -45,7 +61,11 @@
       "volume_out_m3": 60.725,
       "volume_delta_m3": 4.675,
       "residual_m3": 0.0,
-      "conservation_kind": "volume_balance"
+      "conservation_kind": "volume_balance",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t108",
@@ -54,7 +74,11 @@
       "volume_out_m3": 84.0,
       "volume_delta_m3": -23.4,
       "residual_m3": -0.0,
-      "conservation_kind": "volume_balance"
+      "conservation_kind": "volume_balance",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-wash-t110",
@@ -63,7 +87,11 @@
       "volume_out_m3": 0.125,
       "volume_delta_m3": 0.0,
       "residual_m3": 0.0,
-      "conservation_kind": "volume_balance"
+      "conservation_kind": "volume_balance",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-sludge-t201",
@@ -72,7 +100,11 @@
       "volume_out_m3": 1.733333333,
       "volume_delta_m3": -0.033333333,
       "residual_m3": 0.0,
-      "conservation_kind": "volume_balance"
+      "conservation_kind": "volume_balance",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     }
   ],
   "max_storage_residual_m3": 0.0,

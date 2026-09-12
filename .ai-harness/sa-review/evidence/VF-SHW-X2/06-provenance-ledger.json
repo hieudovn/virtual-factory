@@ -13,7 +13,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-intake-t100",
@@ -27,7 +29,9 @@
       "evidence_status": "DocumentConfirmed",
       "reversible": null,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t100-l1",
@@ -41,7 +45,9 @@
       "evidence_status": "DocumentConfirmed",
       "reversible": null,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t100-line2",
@@ -55,7 +61,9 @@
       "evidence_status": "PatternInferred",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t101-t102",
@@ -69,7 +77,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t102-t103",
@@ -83,7 +93,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t103-t104",
@@ -97,7 +109,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t104-t105",
@@ -111,7 +125,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t105-t106",
@@ -125,7 +141,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t105-sludge",
@@ -139,7 +157,9 @@
       "evidence_status": "PatternInferred",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t106-t108",
@@ -153,7 +173,9 @@
       "evidence_status": "DocumentConfirmed",
       "reversible": null,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t106-wash",
@@ -167,7 +189,9 @@
       "evidence_status": "PatternInferred",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-wash-t106",
@@ -181,7 +205,9 @@
       "evidence_status": "PatternInferred",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-t108-dist",
@@ -195,7 +221,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-dist-demand",
@@ -209,7 +237,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-line2-dist",
@@ -223,7 +253,9 @@
       "evidence_status": "VF-assumed",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-chem-t102",
@@ -237,7 +269,9 @@
       "evidence_status": "PatternInferred",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-edge-chem-t103",
@@ -251,7 +285,9 @@
       "evidence_status": "PatternInferred",
       "reversible": true,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-info-t101-demand-t100",
@@ -265,7 +301,9 @@
       "evidence_status": "VF-contract",
       "reversible": null,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-info-line2-split-t100",
@@ -279,7 +317,9 @@
       "evidence_status": "VF-contract",
       "reversible": null,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "binding_id": "vf-shw-info-t100-plant-flow-chem",
@@ -293,7 +333,9 @@
       "evidence_status": "VF-contract",
       "reversible": null,
       "site_truth": false,
-      "simulation_truth": "synthetic_reference"
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     }
   ],
   "transfer_rows_in_last_window": 21,

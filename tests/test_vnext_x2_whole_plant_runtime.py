@@ -42,17 +42,51 @@ from virtual_factory.shwtp.contracts import load_whole_plant_contracts  # noqa: 
 from virtual_factory.shwtp.session import (  # noqa: E402
     SHWTP_MODEL_G21_SLICE,
     SHWTP_MODEL_WHOLE_PLANT_X2,
+    build_shwtp_g21_slice_session,
     build_shwtp_session,
     build_shwtp_whole_plant_session,
 )
 from virtual_factory.shwtp.whole_plant import (  # noqa: E402
+    AUTHORITY_LABELS,
     SCOPE_PATHS,
     SHWTP_WHOLE_PLANT_DEFAULT_STEP_S,
     WholePlantScenario,
     WholePlantX2Error,
+    WholePlantX2Runtime,
+    authority_labels,
     build_shwtp_whole_plant,
     build_shwtp_whole_plant_workspace,
+    require_authority_labels,
 )
+
+AUTHORITY_KEYS = (
+    "site_truth",
+    "simulation_truth",
+    "vf_runtime_authorization",
+    "site_authorized_execution",
+)
+EXPECTED_AUTHORITY = {
+    "site_truth": False,
+    "simulation_truth": "synthetic_reference",
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED",
+}
+
+
+def _assert_monotone_between_resets(series: list[tuple[int, float]], resets: list[int]) -> None:
+    """Filter DP must never decrease between two backwash resets."""
+    previous_window = 0
+    previous_value = None
+    for reset_window in [*resets, series[-1][0] + 1]:
+        for window, value in [row for row in series if previous_window < row[0] < reset_window]:
+            if previous_value is not None and value < previous_value - 1e-9:
+                raise AssertionError(
+                    f"filter DP decreased between backwashes at window {window}: "
+                    f"{previous_value!r} -> {value!r}"
+                )
+            previous_value = value
+        previous_window = reset_window
+        previous_value = None
 
 WINDOWS = 120
 EXCLUDED_SCOPE_IDS = ("vf-shw-node-t107", "vf-shw-node-elec-mcc", "vf-shw-node-auto-plc")
@@ -76,6 +110,21 @@ EXCLUDED_EDGE_IDS = (
 @pytest.fixture(scope="module")
 def contracts():
     return load_whole_plant_contracts()
+
+
+@pytest.fixture()
+def workdir():
+    """A writable scratch directory (the OS temp dir is not writable here)."""
+    import shutil
+    import tempfile
+
+    base = ROOT / ".ai-harness" / "traces"
+    base.mkdir(parents=True, exist_ok=True)
+    path = Path(tempfile.mkdtemp(prefix="shwx2-", dir=str(base)))
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
 
 
 @pytest.fixture(scope="module")
@@ -262,13 +311,35 @@ class TestInputResolution:
 
     def test_no_contract_input_is_produced_by_a_c2_loop(self, plant, contracts):
         c2_ids = {c.controller_id for c in contracts.controls if c.control_class == "C2"}
-        for row in plant.input_wiring():
+        rows = plant.input_wiring()
+        for row in rows:
             if row["x2_producer_class"] == "x2_fallback_default":
                 continue
             assert row["declared_source"] not in c2_ids, row
         # the one fallback input is the frozen DIST-P108 high-service pump
-        fallbacks = [row for row in plant.input_wiring() if row["x2_producer_class"] == "x2_fallback_default"]
-        assert [row["scope_id"] for row in fallbacks] == ["vf-shw-node-dist-p108"]
+        fallbacks = [row for row in rows if row["x2_producer_class"] == "x2_fallback_default"]
+        assert [(row["scope_id"], row["signal"]) for row in fallbacks] == [
+            ("vf-shw-node-dist-p108", "hsp_speed_cmd")
+        ]
+
+    def test_runtime_resolution_matches_the_declared_producer_class(self, plant):
+        expected = {
+            "process_node": "coordinated_transfer",
+            "x2_active_controller": "c1_control_command",
+            "x2_fallback_default": "declared_x2_fallback",
+            "scenario": "scenario_parameter",
+        }
+        rows = plant.input_wiring()
+        assert rows
+        for row in rows:
+            assert row["runtime_resolution"] == expected[row["x2_producer_class"]], row
+        counts = {}
+        for row in rows:
+            counts[row["x2_producer_class"]] = counts.get(row["x2_producer_class"], 0) + 1
+        assert counts.get("x2_fallback_default") == 1
+        assert counts.get("scenario") == 1
+        assert counts.get("x2_active_controller", 0) >= 8
+        assert counts.get("process_node", 0) >= 15
 
     def test_controller_commands_reach_their_declared_scopes(self, plant, contracts):
         raw_intake = plant.participants["vf-shw-node-raw-intake"]
@@ -321,13 +392,20 @@ class TestBalanceAndBounds:
 
     def test_t106_and_t108_accepted_semantics_preserved(self, plant):
         # T108 remains a first_order volume-balance tank; T106 remains a
-        # first_order filtering scope with a logical pass-through of flow.
+        # first_order filtering scope.
         t108 = plant.participants["vf-shw-node-t108"]
         t106 = plant.participants["vf-shw-node-t106"]
         assert t108.contract["update_rule_family"] == "volume_balance_first_order_v1"
         assert t106.contract["update_rule_family"] == "filter_loading_first_order_v1"
         t108_values = t108.monitor_values()
-        assert t108_values["outflow_m3h"] if "outflow_m3h" in t108_values else True
+        # the accepted T108 volume-balance state is present and consistent
+        assert set(("volume_m3", "level_m", "inflow_m3h", "withdrawal_m3h")) <= set(t108_values)
+        assert t108_values["volume_m3"] == pytest.approx(
+            t108_values["level_m"] * plant.scenario.t108_area_m2, abs=1e-6
+        )
+        t106_values = t106.monitor_values()
+        assert set(("filter_dp_kpa", "filtered_flow_m3h", "inlet_valve_pos_pct")) <= set(t106_values)
+        assert t106_values["inlet_valve_pos_pct"] in (100.0, 0.0)
 
 
 # ── oracles 11 / 12 / 17 / 18: process + control behaviour ───────────────
@@ -349,31 +427,40 @@ class TestProcessAndControlBehaviour:
 
     def test_filter_dp_grows_between_backwashes_and_resets_after(self):
         model = build_shwtp_whole_plant()
-        previous = model.participants["vf-shw-node-t106"].monitor_values()["filter_dp_kpa"]
-        resets = 0
-        non_monotone = 0
+        series: list[tuple[int, float]] = []
+        resets: list[int] = []
+        previous = model.scenario.t106_dp_initial_kpa
         backwashes = 0
         wash_flow_seen = 0.0
         for index in range(1, 200):
             model.run_window(f"window-{index}")
             values = model.participants["vf-shw-node-t106"].monitor_values()
             current = values["filter_dp_kpa"]
+            series.append((index, current))
             if current < previous - 1e-9:
-                resets += 1
+                # a decrease is ONLY legal as a completed backwash reset
                 assert values["backwash_step"] == "IDLE"
-                assert abs(current - model.scenario.t106_dp_initial_kpa) <= 1e-6
-            elif current == previous:
-                pass
-            else:
-                non_monotone += 0  # growth is expected
+                assert current == pytest.approx(model.scenario.t106_dp_initial_kpa, abs=1e-6)
+                resets.append(index)
+            elif current > previous + 1e-9:
+                # growth is only legal while the filter is actually filtering
+                assert values["inlet_valve_pos_pct"] == 100.0
+                assert values["filtered_flow_m3h"] > 0.0
             previous = current
             backwashes = max(backwashes, values["backwash_count"])
             if values["backwash_step"] == "BACKWASH":
                 wash_flow_seen = max(wash_flow_seen, values["wash_out_m3h"])
-        assert resets >= 1, "a valid backwash must reset the filter DP"
+        assert resets, "a valid backwash must reset the filter DP"
         assert backwashes >= 1
         assert wash_flow_seen > 0.0, "backwash must produce wash water"
-        assert non_monotone == 0
+        _assert_monotone_between_resets(series, resets)
+
+    def test_dp_monotonicity_check_bites_on_a_violation(self):
+        series = [(1, 25.0), (2, 30.0), (3, 28.0), (4, 40.0)]
+        with pytest.raises(AssertionError):
+            _assert_monotone_between_resets(series, [])
+        series_ok = [(1, 25.0), (2, 30.0), (3, 20.0), (4, 22.0)]
+        _assert_monotone_between_resets(series_ok, [3])
 
     def test_wash_water_recovery_returns_to_t106(self, plant):
         wash = plant.participants["vf-shw-node-wash-t110"].monitor_values()
@@ -497,14 +584,135 @@ class TestDeterminism:
         after = _trajectory(model, 6)
         assert before == after
 
-    def test_contract_signature_is_stable(self, contracts):
-        assert contracts.signature == load_whole_plant_contracts().signature
-        assert json.dumps(sorted(contracts.admission.executable_scope_ids)) == json.dumps(
-            sorted(contracts.admission.executable_scope_ids)
-        )
+    def test_contract_signature_is_deterministic_and_mutation_sensitive(self, contracts, workdir):
+        """The frozen contract layer must load to a stable ADMISSION signature.
+
+        The signature deliberately covers the admission/identity surface (node
+        role, scope fidelity/family, edge category, control class/gate/activity,
+        admission manifest) - not every parameter value. The mutations below each
+        target a covered field, so the signature must change.
+        """
+        from virtual_factory.shwtp.contracts import load_whole_plant_contracts
+
+        # deterministic across loads
+        assert load_whole_plant_contracts().signature == contracts.signature
+        # graph node role is covered
+        graph = json.loads((ROOT / "configs" / "vnext" / "shwtp" / "shwtp_whole_plant_graph_v1.json").read_text(encoding="utf-8"))
+        graph["nodes"][0]["process_role"] = "tampered_role"
+        path = workdir / "graph_tampered.json"
+        path.write_text(json.dumps(graph), encoding="utf-8")
+        assert load_whole_plant_contracts(graph_path=path).signature != contracts.signature
+        # scope fidelity_class is covered
+        process = json.loads((ROOT / "configs" / "vnext" / "shwtp" / "shwtp_process_contracts_v1.json").read_text(encoding="utf-8"))
+        next(s for s in process["contracts"] if s["scope_id"] == "vf-shw-node-t100")["fidelity_class"] = "logical_only"
+        process_path = workdir / "process_tampered.json"
+        process_path.write_text(json.dumps(process), encoding="utf-8")
+        assert load_whole_plant_contracts(process_contracts_path=process_path).signature != contracts.signature
+        # control implementation_gate is cross-checked against the process
+        # contract's deferred_modulator annotation -> a gate mutation is rejected
+        from virtual_factory.shwtp.contracts import ShwtpContractError
+
+        control = json.loads((ROOT / "configs" / "vnext" / "shwtp" / "shwtp_control_contracts_v1.json").read_text(encoding="utf-8"))
+        next(c for c in control["controls"] if c["controller_id"] == "vf-shw-ctrl-f106-inlet-flow-pi")["implementation_gate"] = "X4"
+        control_path = workdir / "control_tampered.json"
+        control_path.write_text(json.dumps(control), encoding="utf-8")
+        with pytest.raises(ShwtpContractError, match="deferred_modulator annotation"):
+            load_whole_plant_contracts(control_contracts_path=control_path)
+        # C2 activity is covered too: activating a C2 loop in X2 is rejected
+        control2 = json.loads((ROOT / "configs" / "vnext" / "shwtp" / "shwtp_control_contracts_v1.json").read_text(encoding="utf-8"))
+        next(c for c in control2["controls"] if c["controller_id"] == "vf-shw-ctrl-t108-level-pi")["active_in_x2"] = True
+        control2_path = workdir / "control_active_c2.json"
+        control2_path.write_text(json.dumps(control2), encoding="utf-8")
+        with pytest.raises(ShwtpContractError):
+            load_whole_plant_contracts(control_contracts_path=control2_path)
 
 
-# ── oracles 15 / 16: provenance ──────────────────────────────────────────
+# ── oracles 15 / 16: provenance + mandatory authorization labels ────────
+
+class TestAuthorityLabels:
+    def test_authority_labels_constant_matches_the_frozen_vocabulary(self):
+        assert authority_labels() == EXPECTED_AUTHORITY
+        assert set(AUTHORITY_LABELS) == set(AUTHORITY_KEYS)
+
+    def test_every_runtime_projection_carries_the_four_labels(self, plant):
+        records: list[tuple[str, dict]] = []
+        for row in plant.monitor_rows():
+            records.append(("monitor_row", row))
+            records.append(("monitor_values", row["values"]))
+        for row in plant.control_rows():
+            records.append(("control_row", row))
+        for row in plant.input_wiring():
+            records.append(("input_wiring", row))
+        for row in plant.provenance_records():
+            records.append(("provenance", row))
+        for row in plant.transfer_records():
+            records.append(("transfer_payload", dict(row["payload"])))
+        balance = plant.balance_report()
+        records.append(("balance_report", balance))
+        for row in balance["storage_balances"]:
+            records.append(("balance_row", row))
+        records.append(("runtime_truth", plant.runtime_truth()))
+        for row in plant.assumed_topology():
+            records.append(("assumed_topology", row))
+        assert len(records) > 100
+        for where, record in records:
+            for key, expected in EXPECTED_AUTHORITY.items():
+                assert key in record, (where, key)
+                assert record[key] == expected, (where, key, record[key])
+
+    def test_label_guard_fails_closed(self):
+        good = dict(EXPECTED_AUTHORITY)
+        require_authority_labels(good, where="test")
+        for key in AUTHORITY_KEYS:
+            broken = dict(good)
+            broken.pop(key)
+            with pytest.raises(WholePlantX2Error):
+                require_authority_labels(broken, where="test")
+        mutated = dict(good, site_truth=True)
+        with pytest.raises(WholePlantX2Error):
+            require_authority_labels(mutated, where="test")
+        mutated = dict(good, vf_runtime_authorization="AUTHORIZED")
+        with pytest.raises(WholePlantX2Error):
+            require_authority_labels(mutated, where="test")
+
+    def test_implementation_state_is_separate_from_authorization_state(self, plant):
+        truth = plant.runtime_truth()
+        assert truth["whole_plant_runtime_implementation"] == "IMPLEMENTED_SYNTHETIC_REFERENCE"
+        assert truth["whole_plant_runtime_authorization"] == "NOT_AUTHORIZED"
+        assert truth["site_truth"] is False
+        assert truth["simulation_truth"] == "synthetic_reference"
+
+
+class TestCanonicalDefaultModel:
+    def test_default_session_resolves_to_the_whole_plant_model(self):
+        from virtual_factory.shwtp.session import SHWTP_DEFAULT_MODEL
+
+        assert SHWTP_DEFAULT_MODEL == "whole_plant_x2"
+        session = build_shwtp_session()
+        assert isinstance(session, RuntimeSession)
+        assert session.workspace_id == "shwtp"
+        session.advance()
+        model = session.record.bridge.model
+        assert isinstance(model, WholePlantX2Runtime)
+        assert len(model.participants) == EXPECTED_SCOPE_COUNT
+        assert model.window_index == 1
+
+    def test_g21_slice_is_available_only_through_the_explicit_selector(self):
+        explicit = build_shwtp_session(model="g21_slice")
+        explicit.advance()
+        assert len(explicit.record.bridge.model.scopes) == 5
+        compatibility = build_shwtp_g21_slice_session()
+        compatibility.advance()
+        assert len(compatibility.record.bridge.model.scopes) == 5
+        # the canonical default is NOT the slice
+        default = build_shwtp_session()
+        default.advance()
+        assert not hasattr(default.record.bridge.model, "scopes") or len(
+            default.record.bridge.model.participants
+        ) == EXPECTED_SCOPE_COUNT
+
+
+# ── provenance ──────────────────────────────────────────────────────────
 
 class TestProvenance:
     def test_runtime_transfers_carry_graph_provenance(self, plant, contracts):
@@ -561,10 +769,12 @@ class TestProvenance:
         assert len(SCOPE_PATHS) == EXPECTED_SCOPE_COUNT
         assert workspace.workspace_id == "shwtp"
 
-    def test_fail_closed_on_window_order(self):
+    def test_fail_closed_on_invalid_or_repeated_window_id(self):
         model = build_shwtp_whole_plant()
         model.run_window("window-1")
         with pytest.raises(WholePlantX2Error):
-            model.run_window("window-3")
+            model.run_window("window-1")
         with pytest.raises(WholePlantX2Error):
-            model.run_window("nonsense")
+            model.run_window("")
+        with pytest.raises(WholePlantX2Error):
+            model.run_window(None)

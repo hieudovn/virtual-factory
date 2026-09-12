@@ -1,7 +1,8 @@
 {
   "gate": "VF-SHW-X2",
-  "model": "whole_plant_x2",
-  "accepted_default_model": "g21_slice",
+  "canonical_default_model": "whole_plant_x2",
+  "accepted_compatibility_model": "g21_slice",
+  "default_session_model_is_whole_plant": true,
   "session_class": "RuntimeSession",
   "workspace_id": "shwtp",
   "run_id": "shwtp-0001",
@@ -15,6 +16,20 @@
   "window_index_after_one_step": 1,
   "coupling_policy": "explicit_lagged",
   "workspace_scope_count": 16,
-  "independent_sessions_share_no_model": true,
+  "runtime_truth": {
+    "model": "vf.shwtp.x2.whole_plant_runtime.v1",
+    "workspace_id": "shwtp",
+    "coupling_policy": "explicit_lagged",
+    "window_index": 1,
+    "communication_step_s": 60.0,
+    "scope_count": 16,
+    "c1_controller_count": 9,
+    "whole_plant_runtime_implementation": "IMPLEMENTED_SYNTHETIC_REFERENCE",
+    "whole_plant_runtime_authorization": "NOT_AUTHORIZED",
+    "site_truth": false,
+    "simulation_truth": "synthetic_reference",
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED"
+  },
   "verdict": "ONE_CANONICAL_SHWTP_SESSION_AUTHORITY"
 }

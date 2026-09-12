@@ -122,20 +122,30 @@ class TestSelectShwtp:
         mon = _monitor()
         view = mon.select("shwtp")
         assert view["workspace_id"] == "shwtp"
-        assert view["runtime"] == "SH-WTP G21 plant slice"
+        assert view["runtime"] == "SH-WTP X2 whole plant"
 
-    def test_shwtp_shows_accepted_five_scope_slice(self):
+    def test_shwtp_shows_canonical_whole_plant_with_g21_compatibility(self):
+        from virtual_factory.shwtp.whole_plant import whole_plant_scope_metadata
+
         mon = _monitor()
         view = mon.select("shwtp")
         scopes = [row["vf_path"] for row in view["structure"]]
-        expected = [
+        assert len(scopes) == 16
+        assert set(scopes) == {row.vf_path for row in whole_plant_scope_metadata()}
+        for path in (
             RAW_INTAKE_SCOPE_PATH.as_string(),
             T100_SCOPE_PATH.as_string(),
             SHWTP_T106_SCOPE_PATH.as_string(),
             SHWTP_T108_SCOPE_PATH.as_string(),
             DIST_P108_SCOPE_PATH.as_string(),
-        ]
-        assert scopes == expected
+        ):
+            assert path in scopes, path
+        # the accepted G21 compatibility factory still exposes the 5-scope slice
+        from virtual_factory.shwtp import build_shwtp_g21_slice_session
+
+        slice_session = build_shwtp_g21_slice_session()
+        slice_session.advance()
+        assert len(slice_session.record.bridge.slice.scopes) == 5
         assert len(PLANT_SLICE_SCOPES) == 5
 
     def test_shwtp_view_has_minimum_fields(self):
@@ -144,7 +154,7 @@ class TestSelectShwtp:
         assert "identity" in view
         assert "session" in view
         assert "simulation" in view
-        assert len(view["structure"]) == 5
+        assert len(view["structure"]) == 16
         assert isinstance(view["values"], list)
         assert isinstance(view["trace"], list)
 
@@ -231,21 +241,25 @@ class TestShwtpTruth:
         mon = _monitor()
         view = mon.select("shwtp")
         assert view["site_truth"] is False
+        assert view["simulation_truth"] == "synthetic_reference"
+        assert view["vf_runtime_authorization"] == "NOT_AUTHORIZED"
+        assert view["site_authorized_execution"] == "NOT_AUTHORIZED"
         assert isinstance(view.get("assumed_topology"), list)
+        assert view["assumed_topology"], "assumed edges must be listed explicitly"
         assert view.get("ui_page") is None
-        # scenario-assumed scopes carry status/fidelity markers
+        # contract-derived fidelity/status markers per scope (never site truth)
         raw = next(
             r for r in view["structure"]
             if r["vf_path"] == RAW_INTAKE_SCOPE_PATH.as_string()
         )
-        assert raw["status"] == "scenario_assumed"
-        assert raw["fidelity"] == "logical_only"
+        assert raw["status"] == "synthetic_reference"
+        assert raw["fidelity_class"] == "first_order"
         t108 = next(
             r for r in view["structure"]
             if r["vf_path"] == SHWTP_T108_SCOPE_PATH.as_string()
         )
-        assert t108["status"] == "accepted"
-        assert t108["fidelity"] == "first_order"
+        assert t108["status"] == "synthetic_reference"
+        assert t108["fidelity_class"] == "first_order"
 
     def test_observer_only_monitor_rows_do_not_mutate(self):
         slice_ = build_shwtp_plant_slice()

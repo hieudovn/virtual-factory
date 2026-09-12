@@ -69,6 +69,38 @@ SHWTP_WHOLE_PLANT_DEFAULT_RUN_ID = "run-shwtp-whole-plant-x2"
 SHWTP_WHOLE_PLANT_DEFAULT_STEP_S = 60.0
 WHOLE_PLANT_X2_SCHEMA = "vf.shwtp.x2.whole_plant_runtime.v1"
 
+#: Mandatory X2 truth/authorization labels carried by EVERY runtime output.
+SITE_TRUTH = False
+SIMULATION_TRUTH = "synthetic_reference"
+VF_RUNTIME_AUTHORIZATION = "NOT_AUTHORIZED"
+SITE_AUTHORIZED_EXECUTION = "NOT_AUTHORIZED"
+#: Implementation state is kept SEPARATE from authorization state.
+WHOLE_PLANT_RUNTIME_IMPLEMENTATION = "IMPLEMENTED_SYNTHETIC_REFERENCE"
+WHOLE_PLANT_RUNTIME_AUTHORIZATION = "NOT_AUTHORIZED"
+
+AUTHORITY_LABELS: Mapping[str, Any] = {
+    "site_truth": SITE_TRUTH,
+    "simulation_truth": SIMULATION_TRUTH,
+    "vf_runtime_authorization": VF_RUNTIME_AUTHORIZATION,
+    "site_authorized_execution": SITE_AUTHORIZED_EXECUTION,
+}
+
+
+def authority_labels() -> dict:
+    """The four mandatory labels (detached copy; read-only projection)."""
+    return dict(AUTHORITY_LABELS)
+
+
+def require_authority_labels(record: Mapping[str, Any], *, where: str) -> None:
+    """Fail closed when a runtime output drifts from the mandatory labels."""
+    for key, expected in AUTHORITY_LABELS.items():
+        if key not in record:
+            raise WholePlantX2Error(f"{where} is missing the mandatory label {key!r}")
+        if record[key] != expected:
+            raise WholePlantX2Error(
+                f"{where} declares {key}={record[key]!r}; the mandatory value is {expected!r}"
+            )
+
 #: VF-local scope path segments (G1 StructuralPath) per admitted PIM id.
 SCOPE_PATHS: dict[str, tuple[str, ...]] = {
     "vf-shw-node-raw-source": ("raw_water", "raw_source"),
@@ -273,8 +305,7 @@ class ScopeRuntimeInfo:
             "conservation_kind": self.conservation_kind,
             "control_ids": list(self.control_ids),
             "x2_admitted": self.x2_admitted,
-            "site_truth": False,
-            "simulation_truth": "synthetic_reference",
+            **AUTHORITY_LABELS,
         }
 
 
@@ -395,10 +426,10 @@ class ScopeParticipant:
             "flow_m3h": round(_nonneg(flow_m3h, "flow_m3h"), 9),
             "scope_id": self.scope_id,
             "fidelity_class": self.family_fidelity,
-            "site_truth": False,
-            "simulation_truth": "synthetic_reference",
+            **AUTHORITY_LABELS,
             **{key: value for key, value in sorted(signals.items()) if value is not None},
         }
+        require_authority_labels(payload, where=f"transfer payload from {self.scope_id!r}")
         return BoundaryTransfer(
             transfer_id=f"{window}::{binding_id}",
             source=PortRef(self.scope_path, source_port),
@@ -428,7 +459,7 @@ class ScopeParticipant:
         return tuple(sorted(self._alarms))
 
     def monitor_values(self) -> dict:
-        return {"time_s": round(self._time_s, 6)}
+        return {"time_s": round(self._time_s, 6), **AUTHORITY_LABELS}
 
     def balance(self) -> dict:
         return {
@@ -1596,14 +1627,25 @@ class WholePlantX2Runtime:
     _plant_out_m3: float = 0.0
     _storage_residual_bound_m3: float = 0.05
     _lag_inventory_m3: float = 0.0
+    _seen_windows: set[str] = field(default_factory=set)
 
     # execution -----------------------------------------------------------
     def run_window(self, window_id: str) -> WindowOutcome:
-        index = _window_index(window_id)
-        if index != self._window_index + 1:
+        """Execute the next deterministic window of this model instance.
+
+        The model owns its window SEQUENCE (``self._window_index + 1``): the
+        caller's window id is provenance metadata (the run lifecycle supplies
+        ``<run-id>-w<n>``). A repeated window id on the same instance fails
+        closed; a caller-induced numbering reset (new attempt / replay) does not
+        disturb the model's own deterministic sequence.
+        """
+        if not isinstance(window_id, str) or not window_id.strip():
+            raise WholePlantX2Error("window_id must be a non-empty str")
+        if window_id in self._seen_windows:
             raise WholePlantX2Error(
-                f"window {window_id!r} is out of order; expected window-{self._window_index + 1}"
+                f"window {window_id!r} has already been executed by this model instance"
             )
+        index = self._window_index + 1
         commands = self._control_commands()
         feedback = dict(self._feedback)
         for participant in self.participants.values():
@@ -1612,6 +1654,7 @@ class WholePlantX2Runtime:
         if outcome.status != "completed":
             raise WholePlantX2Error(f"window {window_id!r} failed: {outcome.failure}")
         self._window_index = index
+        self._seen_windows.add(window_id)
         self._record_transfers()
         self._record_committed()
         return outcome
@@ -1742,6 +1785,36 @@ class WholePlantX2Runtime:
         }
 
     # projections ---------------------------------------------------------
+    def assumed_topology(self) -> tuple[dict, ...]:
+        """Assumed edges actually in use (read-only, labelled)."""
+        return tuple(
+            {
+                "scope": row["source_scope_id"],
+                "target_scope": row["target_scope_id"],
+                "binding_id": row["binding_id"],
+                "assumption_id": row["assumption_id"],
+                "reversible": True,
+                **AUTHORITY_LABELS,
+            }
+            for row in self.provenance_records()
+            if row["edge_category"] == "vf_scenario_assumption"
+        )
+
+    def runtime_truth(self) -> dict:
+        """The ONE authoritative X2 runtime-truth/authorization projection."""
+        return {
+            "model": WHOLE_PLANT_X2_SCHEMA,
+            "workspace_id": SHWTP_WHOLE_PLANT_WORKSPACE_ID,
+            "coupling_policy": self.coupling_policy,
+            "window_index": self._window_index,
+            "communication_step_s": self.communication_step_s,
+            "scope_count": len(self.participants),
+            "c1_controller_count": len(self.controls.active_controller_ids),
+            "whole_plant_runtime_implementation": WHOLE_PLANT_RUNTIME_IMPLEMENTATION,
+            "whole_plant_runtime_authorization": WHOLE_PLANT_RUNTIME_AUTHORIZATION,
+            **AUTHORITY_LABELS,
+        }
+
     def monitor_rows(self) -> tuple[dict, ...]:
         rows: list[dict] = []
         for info in self.scopes:
@@ -1750,8 +1823,12 @@ class WholePlantX2Runtime:
             participant = self.participants[info.scope_id]
             row = info.to_dict()
             row["time_s"] = round(participant.current_time_s, 6)
-            row["values"] = participant.monitor_values()
+            values = dict(participant.monitor_values())
+            values.update(AUTHORITY_LABELS)
+            require_authority_labels(values, where=f"monitor values for {info.scope_id!r}")
+            row["values"] = values
             row["open_alarms"] = list(participant.open_alarms)
+            require_authority_labels(row, where=f"monitor row for {info.scope_id!r}")
             rows.append(row)
         return tuple(rows)
 
@@ -1768,6 +1845,7 @@ class WholePlantX2Runtime:
                     "outputs": dict(payload.get("outputs", {})),
                     "detail": dict(payload.get("detail", {})),
                     "open_alarms": list(self.controls.open_alarms().get(controller_id, ())),
+                    **AUTHORITY_LABELS,
                 }
             )
         return tuple(rows)
@@ -1782,7 +1860,9 @@ class WholePlantX2Runtime:
         residual = self._plant_in_m3 - self._plant_out_m3 - stored_delta_m3
         return {
             "window_index": self._window_index,
-            "storage_balances": storage_rows,
+            "storage_balances": [
+                {**row, **AUTHORITY_LABELS} for row in storage_rows
+            ],
             "plant_water": {
                 "plant_in_m3": round(self._plant_in_m3, 9),
                 "plant_out_m3": round(self._plant_out_m3, 9),
@@ -1795,6 +1875,7 @@ class WholePlantX2Runtime:
                 <= max(self._storage_residual_bound_m3, 0.05 * max(self._plant_in_m3, 1.0)),
             },
             "max_storage_residual_m3": max((abs(row["residual_m3"]) for row in storage_rows), default=0.0),
+            **AUTHORITY_LABELS,
         }
 
     def input_wiring(self) -> tuple[dict, ...]:
@@ -1828,6 +1909,7 @@ class WholePlantX2Runtime:
                         "declared_source": source,
                         "x2_producer_class": producer_class,
                         "runtime_resolution": self._runtime_resolution(info.scope_id, signal, source),
+                        **AUTHORITY_LABELS,
                     }
                 )
         return tuple(rows)
@@ -1855,6 +1937,7 @@ class WholePlantX2Runtime:
                 "target_scope_id": spec.target_scope_id,
                 "information": spec.information,
                 **self.provenance_index.get(spec.binding_id, {}),
+                **AUTHORITY_LABELS,
             }
             for spec in self.wiring
         )
@@ -1870,6 +1953,7 @@ class WholePlantX2Runtime:
         self._plant_in_m3 = 0.0
         self._plant_out_m3 = 0.0
         self._lag_inventory_m3 = 0.0
+        self._seen_windows = set()
         self._record_transfers()
         self._record_committed()
 
@@ -1884,10 +1968,10 @@ class WholePlantX2Runtime:
 
 
 def _window_index(window_id: str) -> int:
-    """Window number of a model window id.
+    """Window number carried by a window id (model or run-lifecycle form).
 
-    Accepts the model's own ``window-<n>`` form and the canonical run-lifecycle
-    form ``<run-id>-w<n>`` (the bridge passes the lifecycle window id through).
+    The model does not depend on this value (its own sequence is authoritative);
+    it exists for provenance/evidence and for callers that build ids themselves.
     """
     if not isinstance(window_id, str):
         raise WholePlantX2Error(f"window id must be a str, got {type(window_id).__name__}")
@@ -1910,8 +1994,6 @@ def _provenance_index(manifest: WholePlantContracts) -> dict[str, dict]:
             "assumption_id": edge.assumption_id,
             "evidence_status": edge.evidence_status,
             "reversible": edge.reversible if edge.assumption_id else None,
-            "site_truth": False,
-            "simulation_truth": "synthetic_reference",
         }
     for binding_id in X2_INFORMATION_EDGE_IDS:
         index[binding_id] = {
@@ -1920,8 +2002,6 @@ def _provenance_index(manifest: WholePlantContracts) -> dict[str, dict]:
             "assumption_id": None,
             "evidence_status": "VF-contract",
             "reversible": None,
-            "site_truth": False,
-            "simulation_truth": "synthetic_reference",
         }
     return index
 
@@ -2096,6 +2176,47 @@ def _dist_fallback_speed(contract: Mapping[str, Any]) -> float:
                 )
             return _nonneg(fallback["value"], "dist fallback speed")
     raise WholePlantX2Error("DIST-P108 must declare an hsp_speed_cmd input")
+
+
+def whole_plant_scope_metadata(contracts: WholePlantContracts | None = None) -> tuple[ScopeRuntimeInfo, ...]:
+    """The 16 admitted scopes' runtime metadata (contract-derived, builds nothing)."""
+    manifest = contracts or load_whole_plant_contracts()
+    return tuple(
+        ScopeRuntimeInfo(
+            scope_id=scope.scope_id,
+            canonical_id=scope.canonical_id,
+            vf_path=scope_path(scope.scope_id).as_string(),
+            process_role=scope.process_role,
+            fidelity_class=scope.fidelity_class,
+            update_rule_family=scope.update_rule_family,
+            conservation_kind=scope.conservation_kind,
+            control_ids=tuple(scope.control_ids),
+            x2_admitted=True,
+        )
+        for scope in sorted(manifest.scopes, key=lambda s: s.scope_id)
+        if scope.x2_admitted
+    )
+
+
+def whole_plant_assumed_topology(contracts: WholePlantContracts | None = None) -> tuple[dict, ...]:
+    """The assumed edges in use, as a detached read-only projection."""
+    manifest = contracts or load_whole_plant_contracts()
+    used = set(manifest.admission.assumed_edges_used)
+    rows = []
+    for edge in sorted(manifest.edges, key=lambda e: e.edge_id):
+        if edge.edge_id not in used or edge.category != "vf_scenario_assumption":
+            continue
+        rows.append(
+            {
+                "scope": scope_path(edge.source).as_string(),
+                "target_scope": scope_path(edge.target).as_string(),
+                "binding_id": edge.edge_id,
+                "assumption_id": edge.assumption_id,
+                "reversible": True,
+                **AUTHORITY_LABELS,
+            }
+        )
+    return tuple(rows)
 
 
 def whole_plant_scope_ids() -> tuple[str, ...]:

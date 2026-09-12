@@ -36,7 +36,11 @@ SHWTP_MODEL_G21_SLICE = "g21_slice"
 SHWTP_MODEL_WHOLE_PLANT_X2 = "whole_plant_x2"
 SHWTP_MODELS = (SHWTP_MODEL_G21_SLICE, SHWTP_MODEL_WHOLE_PLANT_X2)
 
+#: The canonical default model of the ``shwtp`` workspace (X2, VF-SHW-X2-C01).
+SHWTP_DEFAULT_MODEL = SHWTP_MODEL_WHOLE_PLANT_X2
+
 X2_SESSION_SCENARIO_ID = "shwtp-x2-whole-plant"
+G21_SESSION_SCENARIO_ID = "shwtp-g21-slice"
 
 
 def _resolve_model(model: str, model_kwargs: dict):
@@ -48,12 +52,17 @@ def _resolve_model(model: str, model_kwargs: dict):
 
 
 def build_shwtp_session(
-    scenario_id: str = "shwtp-g21-slice",
+    scenario_id: str = X2_SESSION_SCENARIO_ID,
     workspace_id: str = "shwtp",
-    model: str = SHWTP_MODEL_G21_SLICE,
+    model: str = SHWTP_DEFAULT_MODEL,
     **model_kwargs,
 ) -> RuntimeSession:
-    """Build a SH-WTP runtime session over the selected frozen model."""
+    """Build the canonical SH-WTP runtime session over the selected model.
+
+    The canonical default is the X2 whole-plant model (``whole_plant_x2``); the
+    accepted G21 slice stays reachable through the explicit compatibility
+    selector (``model="g21_slice"``) or ``build_shwtp_g21_slice_session()``.
+    """
     workspace, builder = _resolve_model(model, model_kwargs)
     if workspace.workspace_id != workspace_id:
         raise SessionError(
@@ -78,5 +87,19 @@ def build_shwtp_whole_plant_session(
         scenario_id=scenario_id,
         workspace_id=workspace_id,
         model=SHWTP_MODEL_WHOLE_PLANT_X2,
+        **model_kwargs,
+    )
+
+
+def build_shwtp_g21_slice_session(
+    scenario_id: str = G21_SESSION_SCENARIO_ID,
+    workspace_id: str = "shwtp",
+    **model_kwargs,
+) -> RuntimeSession:
+    """Compatibility factory for the accepted G21 5-scope slice session."""
+    return build_shwtp_session(
+        scenario_id=scenario_id,
+        workspace_id=workspace_id,
+        model=SHWTP_MODEL_G21_SLICE,
         **model_kwargs,
     )

@@ -125,13 +125,16 @@ from virtual_factory.shwtp.expansion import (
 )
 from virtual_factory.shwtp.bridge import ShwtpExecutionBridge
 from virtual_factory.shwtp.session import (
+    SHWTP_DEFAULT_MODEL,
     SHWTP_MODELS,
     SHWTP_MODEL_G21_SLICE,
     SHWTP_MODEL_WHOLE_PLANT_X2,
+    build_shwtp_g21_slice_session,
     build_shwtp_session,
     build_shwtp_whole_plant_session,
 )
 from virtual_factory.shwtp.whole_plant import (
+    AUTHORITY_LABELS,
     SCOPE_PATHS as SHWTP_X2_SCOPE_PATHS,
     SHWTP_WHOLE_PLANT_COUPLING_POLICY,
     SHWTP_WHOLE_PLANT_WORKSPACE_ID,
@@ -139,8 +142,10 @@ from virtual_factory.shwtp.whole_plant import (
     WholePlantScenario,
     WholePlantX2Error,
     WholePlantX2Runtime,
+    authority_labels,
     build_shwtp_whole_plant,
     build_shwtp_whole_plant_workspace,
+    require_authority_labels,
     whole_plant_scope_ids,
 )
 from virtual_factory.shwtp.x2_controls import (
@@ -222,9 +227,14 @@ __all__ = [
     "ShwtpExecutionBridge",
     "build_shwtp_session",
     "SHWTP_MODELS",
+    "SHWTP_DEFAULT_MODEL",
     "SHWTP_MODEL_G21_SLICE",
     "SHWTP_MODEL_WHOLE_PLANT_X2",
     "build_shwtp_whole_plant_session",
+    "build_shwtp_g21_slice_session",
+    "AUTHORITY_LABELS",
+    "authority_labels",
+    "require_authority_labels",
     "SHWTP_X2_SCOPE_PATHS",
     "SHWTP_WHOLE_PLANT_COUPLING_POLICY",
     "SHWTP_WHOLE_PLANT_WORKSPACE_ID",

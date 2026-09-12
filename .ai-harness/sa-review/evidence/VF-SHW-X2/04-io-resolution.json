@@ -8,203 +8,319 @@
       "signal": "dose_demand_ratio",
       "declared_source": "vf-shw-ctrl-dose-ratio",
       "x2_producer_class": "x2_active_controller",
-      "runtime_resolution": "c1_control_command"
+      "runtime_resolution": "c1_control_command",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-chem-dosing",
       "signal": "plant_flow",
       "declared_source": "vf-shw-node-t100",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-dist-p108",
       "signal": "outlet_flow",
       "declared_source": "vf-shw-node-t108",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-dist-p108",
       "signal": "l2_delivery_flow",
       "declared_source": "vf-shw-node-line2-aggregate",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-dist-p108",
       "signal": "hsp_speed_cmd",
       "declared_source": "vf-shw-ctrl-dist-pressure-pi",
       "x2_producer_class": "x2_fallback_default",
-      "runtime_resolution": "declared_x2_fallback"
+      "runtime_resolution": "declared_x2_fallback",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-line2-aggregate",
       "signal": "l2_feed_flow",
       "declared_source": "vf-shw-node-t100",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-line2-aggregate",
       "signal": "l2_split_fraction",
       "declared_source": "vf-shw-ctrl-line2-split",
       "x2_producer_class": "x2_active_controller",
-      "runtime_resolution": "c1_control_command"
+      "runtime_resolution": "c1_control_command",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-network-demand",
       "signal": "network_flow",
       "declared_source": "vf-shw-node-dist-p108",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-raw-intake",
       "signal": "raw_flow",
       "declared_source": "vf-shw-node-raw-source",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-raw-intake",
       "signal": "pump_speed_cmd",
       "declared_source": "vf-shw-ctrl-raw-pump-duty",
       "x2_producer_class": "x2_active_controller",
-      "runtime_resolution": "c1_control_command"
+      "runtime_resolution": "c1_control_command",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-raw-source",
       "signal": "scenario_raw_flow_sp",
       "declared_source": "scenario",
       "x2_producer_class": "scenario",
-      "runtime_resolution": "scenario_parameter"
+      "runtime_resolution": "scenario_parameter",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-sludge-t201",
       "signal": "sludge_out_flow",
       "declared_source": "vf-shw-node-t105",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t100",
       "signal": "intake_flow",
       "declared_source": "vf-shw-node-raw-intake",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t100",
       "signal": "l1_demand",
       "declared_source": "vf-shw-node-t101",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t100",
       "signal": "l2_split_fraction",
       "declared_source": "vf-shw-node-line2-aggregate",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t101",
       "signal": "l1_feed_flow",
       "declared_source": "vf-shw-node-t100",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t102",
       "signal": "t101_out_flow",
       "declared_source": "vf-shw-node-t101",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t102",
       "signal": "pac_dose",
       "declared_source": "vf-shw-ctrl-dose-ratio",
       "x2_producer_class": "x2_active_controller",
-      "runtime_resolution": "c1_control_command"
+      "runtime_resolution": "c1_control_command",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t103",
       "signal": "t102_out_flow",
       "declared_source": "vf-shw-node-t102",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t103",
       "signal": "coag_dose",
       "declared_source": "vf-shw-ctrl-dose-ratio",
       "x2_producer_class": "x2_active_controller",
-      "runtime_resolution": "c1_control_command"
+      "runtime_resolution": "c1_control_command",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t104",
       "signal": "t103_out_flow",
       "declared_source": "vf-shw-node-t103",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t105",
       "signal": "t104_out_flow",
       "declared_source": "vf-shw-node-t104",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t105",
       "signal": "sludge_withdrawal",
       "declared_source": "vf-shw-ctrl-sludge-duty",
       "x2_producer_class": "x2_active_controller",
-      "runtime_resolution": "c1_control_command"
+      "runtime_resolution": "c1_control_command",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t106",
       "signal": "t105_out_flow",
       "declared_source": "vf-shw-node-t105",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t106",
       "signal": "settled_turbidity_proxy",
       "declared_source": "vf-shw-node-t105",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t106",
       "signal": "inlet_valve_pos",
       "declared_source": "vf-shw-ctrl-backwash-sequence",
       "x2_producer_class": "x2_active_controller",
-      "runtime_resolution": "c1_control_command"
+      "runtime_resolution": "c1_control_command",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t108",
       "signal": "filtered_flow",
       "declared_source": "vf-shw-node-t106",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-t108",
       "signal": "transfer_pump_speed_cmd",
       "declared_source": "vf-shw-ctrl-t108-permissive",
       "x2_producer_class": "x2_active_controller",
-      "runtime_resolution": "c1_control_command"
+      "runtime_resolution": "c1_control_command",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     },
     {
       "scope_id": "vf-shw-node-wash-t110",
       "signal": "wash_out_flow",
       "declared_source": "vf-shw-node-t106",
       "x2_producer_class": "process_node",
-      "runtime_resolution": "coordinated_transfer"
+      "runtime_resolution": "coordinated_transfer",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     }
   ],
   "explicit_fallbacks": [
@@ -213,7 +329,11 @@
       "signal": "hsp_speed_cmd",
       "declared_source": "vf-shw-ctrl-dist-pressure-pi",
       "x2_producer_class": "x2_fallback_default",
-      "runtime_resolution": "declared_x2_fallback"
+      "runtime_resolution": "declared_x2_fallback",
+      "site_truth": false,
+      "simulation_truth": "synthetic_reference",
+      "vf_runtime_authorization": "NOT_AUTHORIZED",
+      "site_authorized_execution": "NOT_AUTHORIZED"
     }
   ],
   "producer_class_counts": {

@@ -77,7 +77,8 @@ class TestSelection:
         tipa = reg.select("TIPA")
         assert tipa.scenario_id == "tipa-default"
         shwtp = reg.select("shwtp")
-        assert shwtp.scenario_id == "shwtp-g21-slice"
+        # canonical default model of the shwtp workspace (VF-SHW-X2-C01)
+        assert shwtp.scenario_id == "shwtp-x2-whole-plant"
 
 
 class TestIsolation:

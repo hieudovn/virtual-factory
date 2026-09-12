@@ -1,0 +1,19 @@
+{
+  "gate": "VF-SHW-X2",
+  "expected_labels": {
+    "site_truth": false,
+    "simulation_truth": "synthetic_reference",
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED"
+  },
+  "records_checked": 137,
+  "monitor_view_checked": 1,
+  "labels_missing": [],
+  "labels_drifted": [],
+  "implementation_vs_authorization": {
+    "whole_plant_runtime": "IMPLEMENTED_SYNTHETIC_REFERENCE",
+    "whole_plant_runtime_authorization": "NOT_AUTHORIZED",
+    "note": "implementation state and authorization state are reported separately"
+  },
+  "verdict": "FOUR_AUTHORITY_LABELS_ON_ALL_OUTPUTS"
+}

@@ -1,0 +1,107 @@
+{
+  "task_id": "VF-SHW-X2-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "correction",
+  "gate_type": "CORRECTION gate (Issue #94 SA comment 5645215200): three corrections inside the VF-SHW-X2 implementation. No frozen config/contract change, no scope/topology/control/fidelity expansion, no C2/PI/PID, no T107, no rich UI, no PIM/ASSY change, no X3/X4/X5, no merge.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/94",
+  "sa_decision_ref": "Issue #94 comment 5645215200 (Finding A: whole_plant_x2 must be the canonical default of the shwtp session/runtime path with g21_slice retained only as an explicit compatibility selector; Finding B: the four authority labels must be present and verified on runtime outputs; Finding C: replace weak/tautological tests) - previous head 2492329",
+  "architecture_authority_ref": "VF-SHW-X2 report/evidence on top of the accepted X1/X1-C01 contract layer; the single canonical session/bridge/run authority is unchanged",
+  "objective": "Make the X2 whole-plant runtime the canonical default of the normal shwtp session/runtime/UI resolution path while keeping g21_slice reachable only through an explicit compatibility selector/factory with unchanged accepted behaviour; thread and verify the four authority labels (site_truth=false, simulation_truth=synthetic_reference, vf_runtime_authorization=NOT_AUTHORIZED, site_authorized_execution=NOT_AUTHORIZED) through every X2 transfer/monitor/control/runtime-truth projection with fail-closed assertions, keeping implementation state (IMPLEMENTED_SYNTHETIC_REFERENCE) separate from authorization state (NOT_AUTHORIZED) and correcting the report contradiction; and replace the weak/tautological tests (contract signature, DP monotonicity, conditional assertions) with tests that fail when the named invariant is deliberately violated.",
+  "explicit_non_objectives": [
+    "No change to any frozen X1 config/contract (configs/** stays untouched)",
+    "No new scope, no topology change, no control-class change, no fidelity-class upgrade",
+    "No C2 activation, no PI/PID dynamics, no T107",
+    "No rich SH-WTP UI (X5/X6)",
+    "No PIM change and no PIM semantic change",
+    "No ASSY change",
+    "No parallel registry/session/runtime/UI authority",
+    "No X3/X4/X5 work",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-shw-x2-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "2492329c8e07e54f81eb73e8ce9626c65927929d",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X2-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/whole_plant.py",
+    "src/virtual_factory/shwtp/session.py",
+    "src/virtual_factory/shwtp/bridge.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "src/virtual_factory/ui/workspace_monitor.py",
+    "tests/test_vnext_x2_whole_plant_runtime.py",
+    "tests/test_vnext_g22_session.py",
+    "tests/test_vnext_g23_registry.py",
+    "tests/test_vnext_g24_workspace_ui.py",
+    "tests/test_vnext_g25_acceptance.py"
+  ],
+  "forbidden_paths": [
+    "configs/",
+    "src/virtual_factory/shwtp/contracts.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/expansion.py",
+    "src/virtual_factory/shwtp/x2_controls.py",
+    "src/virtual_factory/{runcontrol,composition,discrete,core,assembly}/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/"
+  ],
+  "forbidden_paths_note": "tests/ is intentionally NOT listed as a whole-directory forbidden entry: making whole_plant_x2 the canonical default necessarily migrates the accepted G22/G23/G24/G25 assertions that pinned the G21 slice as the default, so those four modules are individually allowlisted. The frozen X1 contract layer (configs/** and contracts.py) is NOT edited; the frozen X2-active C1 set (x2_controls.py) is NOT edited. ui/workspace_monitor.py is allowlisted only as the single canonical SH-WTP view resolution point (no new UI authority, no new page); every other UI module stays forbidden.",
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/session.py (whole_plant_x2 as the canonical default model; g21_slice retained only as an explicit compatibility selector + build_shwtp_g21_slice_session factory)",
+    "src/virtual_factory/shwtp/whole_plant.py (authority-label constants + fail-closed require_authority_labels guard threaded through every transfer/monitor/control/balance/input-wiring/provenance/runtime-truth projection; runtime_truth() separating implementation from authorization; whole_plant_scope_metadata/whole_plant_assumed_topology)",
+    "src/virtual_factory/shwtp/bridge.py (model-agnostic canonical bridge with an explicit model_driven_windows discriminator)",
+    "src/virtual_factory/shwtp/__init__.py (X2 + label exports incl. the G21 compatibility factory)",
+    "src/virtual_factory/ui/workspace_monitor.py (canonical default resolution; model-agnostic SH-WTP view that surfaces the assumed topology and the four authority labels)",
+    "tests/test_vnext_x2_whole_plant_runtime.py (canonical-default proof; four-label proofs + bite tests; mutation-sensitive contract signature; real T106/T108 semantics; strict input-resolution mapping; per-cycle DP monotonicity + bite test)",
+    "tests/test_vnext_g22_session.py, tests/test_vnext_g23_registry.py, tests/test_vnext_g24_workspace_ui.py, tests/test_vnext_g25_acceptance.py (migrated to the canonical default + compatibility-factory proof)",
+    ".ai-harness/sa-review/evidence/VF-SHW-X2/07-authority-labels.json (new) and 01/02/03/04/05/06 regenerated",
+    ".ai-harness/sa-review/reports/VF-SHW-X2-C01.md + corrected reports/VF-SHW-X2.md",
+    ".ai-harness/sa-review/CURRENT.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_x2_whole_plant_runtime.py",
+    "tests/test_vnext_g22_session.py",
+    "tests/test_vnext_g23_registry.py",
+    "tests/test_vnext_g24_workspace_ui.py",
+    "tests/test_vnext_g25_acceptance.py"
+  ],
+  "required_smoke_checks": [
+    "Canonical baseline green at the pushed head",
+    "Full suite green at the pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Creating a second registry/session/runtime/UI authority for SH-WTP",
+    "Changing any frozen X1 config/contract or the whole-plant graph signature",
+    "Adding a scope, an edge, a control, a control class or a fidelity class",
+    "Activating or evaluating any C2 loop in X2",
+    "Editing a frozen X1 config or the X2 C1 control set",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "Making the whole plant the canonical default would require changing a frozen X1 config/contract",
+    "The accepted G21 slice behaviour cannot be preserved through an explicit compatibility selector",
+    "A required authority label cannot be attached to a projection without changing its accepted semantics",
+    "A correction would require a new scope/topology/control/fidelity or a C2 activation"
+  ],
+  "acceptance_criteria": [
+    {"id": "X2C01-1", "phase": "final", "description": "whole_plant_x2 is the canonical default of the normal shwtp session/runtime/UI path (one RuntimeSession, one run identity, one bridge, 16 admitted scopes) and g21_slice is reachable only through an explicit compatibility selector/factory whose accepted behaviour stays green", "rule": {"field": "x2c01.canonical_default", "operator": "is_true", "expected": null}},
+    {"id": "X2C01-2", "phase": "final", "description": "The four authority labels (site_truth=false, simulation_truth=synthetic_reference, vf_runtime_authorization=NOT_AUTHORIZED, site_authorized_execution=NOT_AUTHORIZED) are present and verified on every applicable X2 transfer/monitor/control/runtime-truth/balance/input-wiring/provenance/assumed-topology projection and on the SH-WTP view, with a fail-closed guard that rejects a missing or mutated label", "rule": {"field": "x2c01.authority_labels", "operator": "is_true", "expected": null}},
+    {"id": "X2C01-3", "phase": "final", "description": "Implementation state and authorization state are reported separately (whole_plant_runtime=IMPLEMENTED_SYNTHETIC_REFERENCE, whole_plant_runtime_authorization=NOT_AUTHORIZED) and the report contradiction is corrected", "rule": {"field": "x2c01.implementation_vs_authorization", "operator": "is_true", "expected": null}},
+    {"id": "X2C01-4", "phase": "final", "description": "Weak/tautological tests are replaced by tests that fail when the named invariant is deliberately violated: contract signature (mutations of covered admission fields change it / are rejected), DP monotonicity (per-cycle assertions + a bite test), and no remaining conditional assertion that proves nothing", "rule": {"field": "x2c01.test_rigour", "operator": "is_true", "expected": null}},
+    {"id": "X2C01-5", "phase": "final", "description": "No frozen config/contract, scope, topology, control, fidelity or PIM/ASSY surface changed; the canonical baseline and the full suite are green at the pushed head", "rule": {"field": "x2c01.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

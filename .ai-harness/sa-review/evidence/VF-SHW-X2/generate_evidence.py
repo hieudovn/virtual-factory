@@ -31,9 +31,10 @@ from virtual_factory.shwtp import x2_controls as x2_controls_module  # noqa: E40
 from virtual_factory.shwtp.bridge import ShwtpExecutionBridge  # noqa: E402
 from virtual_factory.shwtp.contracts import load_whole_plant_contracts  # noqa: E402
 from virtual_factory.shwtp.session import (  # noqa: E402
+    SHWTP_DEFAULT_MODEL,
     SHWTP_MODEL_G21_SLICE,
     SHWTP_MODEL_WHOLE_PLANT_X2,
-    build_shwtp_whole_plant_session,
+    build_shwtp_session,
 )
 from virtual_factory.shwtp.whole_plant import (  # noqa: E402
     SCOPE_PATHS,
@@ -50,7 +51,15 @@ ARTEFACTS = (
     "04-io-resolution.json",
     "05-physical-oracles.json",
     "06-provenance-ledger.json",
+    "07-authority-labels.json",
 )
+
+EXPECTED_LABELS = {
+    "site_truth": False,
+    "simulation_truth": "synthetic_reference",
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED",
+}
 
 
 def _digest(path: Path) -> str:
@@ -80,15 +89,18 @@ def _trajectory_digest(model, windows: int) -> str:
 
 
 def session_authority() -> dict:
+    from virtual_factory.shwtp.session import SHWTP_DEFAULT_MODEL
+
     contracts = load_whole_plant_contracts()
-    session = build_shwtp_whole_plant_session()
+    session = build_shwtp_session()  # canonical default construction
     session.advance()
     bridge = session.record.bridge
     model = bridge.model
     return {
         "gate": "VF-SHW-X2",
-        "model": SHWTP_MODEL_WHOLE_PLANT_X2,
-        "accepted_default_model": SHWTP_MODEL_G21_SLICE,
+        "canonical_default_model": SHWTP_DEFAULT_MODEL,
+        "accepted_compatibility_model": SHWTP_MODEL_G21_SLICE,
+        "default_session_model_is_whole_plant": SHWTP_DEFAULT_MODEL == SHWTP_MODEL_WHOLE_PLANT_X2,
         "session_class": type(session).__name__,
         "workspace_id": session.workspace_id,
         "run_id": session.run_id,
@@ -102,12 +114,82 @@ def session_authority() -> dict:
         "window_index_after_one_step": model.window_index,
         "coupling_policy": model.coupling_policy,
         "workspace_scope_count": len(SCOPE_PATHS),
-        "independent_sessions_share_no_model": build_shwtp_whole_plant_session().record.create_run
-        if False
-        else True,
+        "runtime_truth": dict(model.runtime_truth()),
         "verdict": "ONE_CANONICAL_SHWTP_SESSION_AUTHORITY"
-        if isinstance(bridge, ShwtpExecutionBridge) and model.window_index == 1
+        if (
+            isinstance(bridge, ShwtpExecutionBridge)
+            and model.window_index == 1
+            and type(model).__name__ == "WholePlantX2Runtime"
+            and len(model.participants) == 16
+        )
         else "SESSION_AUTHORITY_BROKEN",
+    }
+
+
+def authority_labels(contracts, model) -> dict:
+    records: list[dict] = []
+    for row in model.monitor_rows():
+        records.append({"where": "monitor_row", "record": row})
+        records.append({"where": "monitor_values", "record": row["values"]})
+    for row in model.control_rows():
+        records.append({"where": "control_row", "record": row})
+    for row in model.input_wiring():
+        records.append({"where": "input_wiring", "record": row})
+    for row in model.provenance_records():
+        records.append({"where": "provenance_record", "record": row})
+    for row in model.transfer_records():
+        records.append({"where": "transfer_payload", "record": dict(row["payload"])})
+    for row in model.assumed_topology():
+        records.append({"where": "assumed_topology", "record": row})
+    balance = model.balance_report()
+    records.append({"where": "balance_report", "record": balance})
+    for row in balance["storage_balances"]:
+        records.append({"where": "balance_row", "record": row})
+    records.append({"where": "runtime_truth", "record": model.runtime_truth()})
+
+    missing: list[dict] = []
+    drifted: list[dict] = []
+    for entry in records:
+        for key, expected in EXPECTED_LABELS.items():
+            if key not in entry["record"]:
+                missing.append({"where": entry["where"], "label": key})
+            elif entry["record"][key] != expected:
+                drifted.append(
+                    {"where": entry["where"], "label": key, "value": entry["record"][key]}
+                )
+    view_records = 0
+    try:
+        from virtual_factory.ui.workspace_monitor import build_platform_registry
+
+        registry = build_platform_registry()
+        session = registry.select("shwtp")
+        session.advance()
+        from virtual_factory.ui.workspace_monitor import WorkspaceMonitor
+
+        monitor = WorkspaceMonitor(registry=registry)
+        view = monitor.view("shwtp")
+        view_records = 1
+        for key, expected in EXPECTED_LABELS.items():
+            if view.get(key) != expected:
+                drifted.append({"where": "monitor_view", "label": key, "value": view.get(key)})
+    except Exception as exc:  # noqa: BLE001 - evidence must report the failure, not hide it
+        drifted.append({"where": "monitor_view", "label": "unavailable", "value": str(exc)})
+
+    return {
+        "gate": "VF-SHW-X2",
+        "expected_labels": EXPECTED_LABELS,
+        "records_checked": len(records),
+        "monitor_view_checked": view_records,
+        "labels_missing": missing,
+        "labels_drifted": drifted,
+        "implementation_vs_authorization": {
+            "whole_plant_runtime": "IMPLEMENTED_SYNTHETIC_REFERENCE",
+            "whole_plant_runtime_authorization": "NOT_AUTHORIZED",
+            "note": "implementation state and authorization state are reported separately",
+        },
+        "verdict": "FOUR_AUTHORITY_LABELS_ON_ALL_OUTPUTS"
+        if not missing and not drifted
+        else "AUTHORITY_LABEL_GAP",
     }
 
 
@@ -342,6 +424,7 @@ def main() -> int:
         "04-io-resolution.json": io_resolution(model),
         "05-physical-oracles.json": physical_oracles(model),
         "06-provenance-ledger.json": provenance_ledger(contracts, model),
+        "07-authority-labels.json": authority_labels(contracts, model),
     }
     for name, payload in results.items():
         (HERE / name).write_text(json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8")

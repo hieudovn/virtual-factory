@@ -1,4 +1,4 @@
-"""VF-vNEXT-G22 — Scenario / Run / Replay Integration tests.
+﻿"""VF-vNEXT-G22 â€” Scenario / Run / Replay Integration tests.
 
 Proves (Issue #73 required): explicit session/run identity per Workspace;
 fresh new attempt has fresh runtime state and distinct attempt/run identity;
@@ -19,7 +19,7 @@ from virtual_factory.runcontrol import (
     SessionError,
     build_tipa_session,
 )
-from virtual_factory.shwtp import build_shwtp_session
+from virtual_factory.shwtp import build_shwtp_session, build_shwtp_g21_slice_session
 from virtual_factory.runcontrol.lifecycle import RunLifecycleService
 from virtual_factory.shwtp.expansion import PLANT_SLICE_SCOPES
 
@@ -62,20 +62,20 @@ class TestTipaSession:
 
 class TestShwtpSession:
     def test_shwtp_deterministic_replay(self):
-        s = build_shwtp_session()
+        s = build_shwtp_g21_slice_session()
         t1 = s.run_all(4)
         s.replay()
         t2 = s.run_all(4)
         assert [_trace_key(r) for r in t1] == [_trace_key(r) for r in t2]
 
     def test_shwtp_session_identity(self):
-        s = build_shwtp_session()
+        s = build_shwtp_g21_slice_session()
         assert s.workspace_id == "shwtp"
         assert s.run_id
         assert s.scenario_id == "shwtp-g21-slice"
 
     def test_shwtp_overlay_and_fidelity_survive_replay(self):
-        s = build_shwtp_session()
+        s = build_shwtp_g21_slice_session()
         s.advance()
         before_overlay = s.record.bridge.slice.overlay.serialize()
         s.replay()
@@ -87,7 +87,7 @@ class TestShwtpSession:
 
 class TestFreshAttempt:
     def test_new_attempt_fresh_identity_and_state(self):
-        s = build_shwtp_session()
+        s = build_shwtp_g21_slice_session()
         s.advance()
         s.advance()
         old_run = s.run_id
@@ -102,7 +102,7 @@ class TestFreshAttempt:
         assert _t108_volume(s) != old_volume
 
     def test_reset_same_identity_fresh_state(self):
-        s = build_shwtp_session()
+        s = build_shwtp_g21_slice_session()
         s.advance()
         s.advance()
         run_before = s.run_id
@@ -116,7 +116,7 @@ class TestFreshAttempt:
 class TestIsolation:
     def test_tipa_and_shwtp_isolated(self):
         tipa = build_tipa_session(TIPA_CONFIG, "tipa-default")
-        shwtp = build_shwtp_session()
+        shwtp = build_shwtp_g21_slice_session()
         assert tipa.workspace_id == "TIPA"
         assert shwtp.workspace_id == "shwtp"
         assert tipa.run_id != shwtp.run_id
@@ -132,7 +132,7 @@ class TestFailClosed:
             build_tipa_session(TIPA_CONFIG, "tipa-default", workspace_id="WRONG")
 
     def test_invalid_run_id_fails_closed(self):
-        s = build_shwtp_session()
+        s = build_shwtp_g21_slice_session()
         with pytest.raises(RunLifecycleError):
             s._service.step("bogus-run-id")
 
@@ -175,3 +175,4 @@ class TestG21G20G19G18G14G15Unchanged:
         proj = build_shwtp_f01_projection()
         assert len(proj.ports) == 2
         assert len(proj.graph.bindings) == 1
+

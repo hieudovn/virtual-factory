@@ -190,14 +190,28 @@ class TestFlowATipa:
 # ═══════════════════════════════════════════════════════════════
 
 class TestFlowBShwtp:
-    def test_b1_select_shwtp_five_scope_slice(self):
+    def test_b1_select_shwtp_canonical_whole_plant(self):
+        """The canonical shwtp view is the X2 whole plant (VF-SHW-X2-C01).
+
+        The accepted G21 5-scope slice remains reachable through the explicit
+        compatibility factory (proved in the same test).
+        """
         mon = _monitor()
         view = mon.select("shwtp")
         assert view["workspace_id"] == "shwtp"
-        assert view["runtime"] == "SH-WTP G21 plant slice"
-        order = [v["scope"] for v in view["values"]]
-        assert order == [p.as_string() for p in SHWTP_SCOPE_ORDER]
+        assert view["runtime"] == "SH-WTP X2 whole plant"
+        scopes = [v["scope"] for v in view["values"]]
+        assert len(scopes) == 16
+        # the canonical RAW-INTAKE -> T100 -> ... -> DIST-P108 path is present
+        for path in (p.as_string() for p in SHWTP_SCOPE_ORDER):
+            assert path in scopes, path
         assert len(PLANT_SLICE_SCOPES) == 5
+        # explicit compatibility path: the accepted G21 slice session still works
+        from virtual_factory.shwtp import build_shwtp_g21_slice_session
+
+        slice_session = build_shwtp_g21_slice_session()
+        slice_session.advance()
+        assert len(slice_session.record.bridge.slice.scopes) == 5
 
     def test_b2_run_chain_live_time_step_flow_tank_status(self):
         mon = _monitor()
@@ -215,9 +229,13 @@ class TestFlowBShwtp:
         assert "current_values" in t106 and "current_values" in t108
         assert "volume_m3" in t108["current_values"]
         assert "level_m" in t108["current_values"]
-        # status/fidelity explicit per scope
+        # status/fidelity explicit per scope (contract-derived, never site truth)
         assert t108["fidelity"] == "first_order"
-        assert t108["status"] == "accepted"
+        assert t108["status"] == "synthetic_reference"
+        assert view["site_truth"] is False
+        assert view["simulation_truth"] == "synthetic_reference"
+        assert view["vf_runtime_authorization"] == "NOT_AUTHORIZED"
+        assert view["site_authorized_execution"] == "NOT_AUTHORIZED"
 
     def test_b3_fidelity_status_assumed_topology_explicit(self):
         mon = _monitor()
@@ -225,7 +243,10 @@ class TestFlowBShwtp:
         assert view["site_truth"] is False
         assumed = view["assumed_topology"]
         assert len(assumed) >= 1
-        assumed_scopes = {a["scope"] for a in assumed}
+        assumed_scopes = set()
+        for row in assumed:
+            assumed_scopes.add(row["scope"])
+            assumed_scopes.add(row["target_scope"])
         assert RAW_INTAKE_SCOPE_PATH.as_string() in assumed_scopes
         assert DIST_P108_SCOPE_PATH.as_string() in assumed_scopes
         # PIM remains authoritative (assumptions are not site truth)
