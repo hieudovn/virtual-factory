@@ -1,0 +1,161 @@
+{
+  "task_id": "VF-vNEXT-R4",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — ASSY Full Parity Closure on ONE canonical TIPA RuntimeSession (final ASSY capability/parity gate before R5). Includes the authorized SA amendment: VF Cross-Workspace UI Consistency Audit (REVIEW/REPORT ONLY).",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/83",
+  "architecture_authority_ref": "Issue #83 (SA task contract, authoritative) + Issue #83 comment 5643565581 (cross-workspace UI consistency audit, review/report only) + Issue #78 (R0 CLOSED/frozen) + Issue #80 (R2 CLOSED) + Issue #82 (R2V PASS) + Issue #81/#83 R3 + R3-C01 CLOSED",
+  "objective": "Close the remaining ASSY functional parity gap on ONE canonical TIPA RuntimeSession: canonical AP05 jam/recover (freeze exactly one selected sub-line, five continue, same fault truth in Frame A/B and Observation/MES issue/downtime output, no projection-owned fault state), bounded canonical run-to-terminal with parity to manual stepping, READ-ONLY idempotent OEE/final summary from canonical facts, scenario selection as a FRESH canonical run (never in-place mutation of an active run's pinned identity), preserved rich UI/2D/observation-MES behaviour, no second runtime/session/federation/controller authority, plus bounded hygiene (strengthen the R3 same-runtime assertion, fix the R2V 404 if local). Deliver the review-only VF Cross-Workspace UI Consistency Audit inside the R4 report.",
+  "explicit_non_objectives": [
+    "No R5 legacy deletion/consolidation",
+    "No SH-WTP expansion or SH-WTP redesign",
+    "No gateway/OPC/MQTT/Kafka production work",
+    "No external MES/PIM repo change",
+    "No generic G4/coupling redesign",
+    "No generic G22 run-identity redesign",
+    "No broad UI redesign or new design system",
+    "No second runtime/session/federation/controller authority",
+    "No rewrite of AssyLineRuntime core semantics",
+    "No rebase onto stale main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-vnext-r4",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "75725508d2894f5afaa1ec10134e64a8874e86df",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-R4.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R4.md",
+    ".ai-harness/sa-review/reports/VF-CROSS-WORKSPACE-UI-AUDIT.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/runcontrol/assy_bridge.py",
+    "src/virtual_factory/assembly/assy_mes_bridge.py",
+    "src/virtual_factory/ui/assy_experience.py",
+    "src/virtual_factory/ui/assy_output.py",
+    "src/virtual_factory/ui/api.py",
+    "src/virtual_factory/ui/workspace_monitor.py",
+    "src/virtual_factory/ui/static/assy_demo.js",
+    "src/virtual_factory/ui/static/assy_demo.html",
+    "src/virtual_factory/ui/static/run_control_context.js",
+    "tests/test_vnext_r4_canonical_parity.py",
+    "tests/test_vnext_r2_same_session_rich_assy.py",
+    "tests/test_vnext_r3_canonical_observation_mes.py",
+    "tests/test_vnext_r3_c01_reset_generation.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/federation/",
+    "src/virtual_factory/protocols/",
+    "src/virtual_factory/assembly/line_runtime.py",
+    "src/virtual_factory/assembly/demo_controller.py",
+    "src/virtual_factory/assembly/demo_composition.py",
+    "src/virtual_factory/assembly/assy_run_profile.py",
+    "src/virtual_factory/assembly/observation_bridge.py",
+    "src/virtual_factory/runcontrol/session.py",
+    "src/virtual_factory/runcontrol/lifecycle.py",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/01-same-session-authority.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/02-jam-recovery.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/03-run-to-terminal.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/04-oee-summary.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/05-scenario-fresh-run.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/06-parity-oracle.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R4/07-browser-sanity.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R4.md",
+    ".ai-harness/sa-review/reports/VF-CROSS-WORKSPACE-UI-AUDIT.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_r4_canonical_parity.py"
+  ],
+  "required_smoke_checks": [
+    "compact browser sanity on the live /assy-demo page (Frame A/Frame B, jam/recover coherence, scenario/new-run identity, console errors)"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Let the Observation/MES projection own simulation fault state",
+    "Mutate an active run's pinned scenario/run identity in place",
+    "Create a second/private runtime loop for run-to-terminal",
+    "Rewrite AssyLineRuntime core semantics",
+    "Keep a legacy runtime/controller active for any /assy-demo product path",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "jam/recover can only work by letting the output/MES projection own fault state",
+    "scenario change requires mutating an active run's pinned identity",
+    "scenario support requires redesigning generic lifecycle/registry contracts",
+    "run-to-terminal requires a second/private runtime loop",
+    "accepted parity requires rewriting core AssyLineRuntime semantics",
+    "a legacy runtime/controller must remain active to preserve product behavior",
+    "production gateway/external MES work becomes necessary"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "R4-01",
+      "phase": "final",
+      "description": "Same-session authority: shell + rich UI + fault controls + run-to-terminal + output reference the same canonical run/session and exactly six runtime objects; no second runtime/session/federation/controller",
+      "rule": {"field": "r4.same_session_authority", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R4-02",
+      "phase": "final",
+      "description": "Canonical jam/recover: one selected sub-line faults/freezes, five continue, Frame A/B reflect the same fault truth, issue/downtime output derives from the canonical fault lifecycle (not projection-owned state), recover resumes the same line",
+      "rule": {"field": "r4.jam_recover", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R4-03",
+      "phase": "final",
+      "description": "Run-to-terminal is bounded canonical orchestration over the same session, deterministic and with terminal parity to manual stepping",
+      "rule": {"field": "r4.run_to_terminal", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R4-04",
+      "phase": "final",
+      "description": "OEE/final summary is a read-only, idempotent projection of canonical facts (incl. canonical downtime) tied to the canonical run identity; it never advances or mutates simulation",
+      "rule": {"field": "r4.oee_summary", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R4-05",
+      "phase": "final",
+      "description": "Scenario selection creates a fresh canonical run identity (previous run historical/unchanged, no in-place mutation), the selected scenario affects domain behaviour, and shell/rich/output scenario identity agree",
+      "rule": {"field": "r4.scenario_fresh_run", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R4-06",
+      "phase": "final",
+      "description": "Existing parity oracles green: SSO2/RSO2 feeds, AP04 genealogy, AP06 retest, AP08 reinspect, AP11 QC/release, failed-final where supported, deterministic replay, six-line independence, Frame A/B 2D truth, R3 observation/MES identity/idempotency/reset epochs",
+      "rule": {"field": "r4.parity_oracle", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R4-07",
+      "phase": "final",
+      "description": "Rich UI parity preserved and no R4-deferred 409 remains on canonicalized /assy-demo product endpoints; bounded hygiene done (R3 same-runtime assertion strengthened, R2V 404 fixed if local)",
+      "rule": {"field": "r4.product_path_cleanup", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R4-08",
+      "phase": "final",
+      "description": "VF Cross-Workspace UI Consistency Audit delivered (review/report only) with MUST BE COMMON / MAY BE DOMAIN-SPECIFIC / CURRENT INCONSISTENCIES / SEVERITY / RECOMMENDED OWNER-GATE / NO-REDESIGN sections, included in the R4 READY report but separated from implementation evidence",
+      "rule": {"field": "r4.cross_workspace_ui_audit", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "R4-09",
+      "phase": "final",
+      "description": "R1/R2/R2V/R3/R3-C01 regressions, focused R4 tests, compact browser sanity, full canonical baseline and full suite green",
+      "rule": {"field": "r4.regression", "operator": "is_true", "expected": null}
+    }
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
