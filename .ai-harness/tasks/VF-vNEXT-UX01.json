@@ -1,0 +1,97 @@
+{
+  "task_id": "VF-vNEXT-UX01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ux_correction",
+  "gate_type": "UX-ONLY gate (no simulation-architecture change) — Issue #87: move the ASSY structural context out of the pinned left sidebar into an on-demand Structure / Model drawer opened from the top bar, keeping the sidebar for Line Overview / Legend / Actions.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/87",
+  "sa_decision_ref": "Issue #87 (SA Task Contract, authoritative); required base 4105e3a",
+  "architecture_authority_ref": "Issue #84 (R5 / R5-C01 consolidated single-simulation-system state, head 4105e3a) + Issue #78 (R0 CLOSED/frozen)",
+  "objective": "Clean up the ASSY UX without changing the simulation architecture: (1) remove the fixed Structural Context block from the default left sidebar, keeping Line Overview / Legend / Actions; (2) move the scope hierarchy into a Structure / Model drawer opened from the top bar, with the minimum hierarchy TIPA -> ASSY Line -> ASSY-SL01..ASSY-SL06 rendered in the existing visual language; (3) treat WORKSPACE / CONTAINER / EXECUTABLE as secondary metadata; (4) make drawer sub-line selection a presentation/monitoring-context change only (same run_id, no time advance, no reset, no new session/federation/runtime); (5) preserve the Frame A six-line overview and the Frame B rich 2D view; (6) prove all of it with browser evidence and R1-R5/R5-C01 regression.",
+  "explicit_non_objectives": [
+    "No simulation-architecture change: no runtime, lifecycle, bridge, federation or route-authority change",
+    "No new endpoint and no backend behaviour change",
+    "No Frame A / Frame B renderer refactor (assy_demo.js untouched)",
+    "No SH-WTP work of any kind",
+    "No change to the de-authorized legacy families or to the canonical workspace shell",
+    "No redesign of the ASSY visual system beyond the drawer's own styles",
+    "No rebase onto stale main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-vnext-ux01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "4105e3aecd18b7fda59f3c334e9f906bbeec2f3f",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-UX01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/ui/static/assy_demo.html",
+    "src/virtual_factory/ui/static/assy_demo.css",
+    "src/virtual_factory/ui/static/assy_context.js",
+    "tests/test_ui_hierarchy.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/**/*.py",
+    "src/virtual_factory/ui/static/assy_demo.js",
+    "src/virtual_factory/ui/static/hierarchy.js",
+    "src/virtual_factory/ui/static/workspace_shell.html",
+    "src/virtual_factory/ui/static/workspace_shell.js",
+    "src/virtual_factory/ui/static/workspace_shell.css",
+    "configs/",
+    "deploy/",
+    "docs/",
+    "examples/",
+    "simulators/",
+    "tests/test_run_control.py",
+    "tests/test_api.py",
+    "tests/test_vnext_r5_single_system.py"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/ui/static/assy_demo.html (sidebar cleanup + Structure / Model drawer + top-bar trigger)",
+    "src/virtual_factory/ui/static/assy_demo.css (.vf-drawer* visual language + scoped hierarchy styling)",
+    "src/virtual_factory/ui/static/assy_context.js (drawer wiring; selection seam unchanged)",
+    "tests/test_ui_hierarchy.py (TestAssyStructureDrawerUX01)",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-UX01/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-UX01/01-sidebar-cleanup.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-UX01/02-drawer-and-hierarchy.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-UX01/03-selection-non-mutation.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-UX01/04-browser-sanity.md + shot-01..05 screenshots",
+    ".ai-harness/sa-review/reports/VF-vNEXT-UX01.md"
+  ],
+  "required_tests": [
+    "tests/test_ui_hierarchy.py"
+  ],
+  "required_smoke_checks": [
+    "Browser: default view has no Structural Context in the sidebar, drawer closed, drawer open, full hierarchy, sub-line selection through the drawer, identical run/session/time before-after, Frame A and Frame B not regressed, no severe console errors",
+    "Canonical baseline green at the pushed head (all 43 groups)"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Changing any runtime/lifecycle/route authority",
+    "Advancing time, resetting, or creating a session/federation/runtime from the drawer or its selection",
+    "Working on SH-WTP",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "The drawer cannot be built without changing a runtime/lifecycle/route authority",
+    "Sub-line selection cannot be made presentation-only without a backend change",
+    "Preserving Frame A / Frame B would require refactoring assy_demo.js",
+    "Completion would require SH-WTP work"
+  ],
+  "acceptance_criteria": [
+    {"id": "UX01-1", "phase": "final", "description": "Structural Context is no longer pinned in the default sidebar; the sidebar keeps Line Overview / Legend / Actions", "rule": {"field": "ux01.sidebar_cleanup", "operator": "is_true", "expected": null}},
+    {"id": "UX01-2", "phase": "final", "description": "Hierarchy lives in a Structure / Model drawer opened from the top bar, closed by default, using the existing visual language, with WORKSPACE/CONTAINER/EXECUTABLE as secondary metadata", "rule": {"field": "ux01.drawer", "operator": "is_true", "expected": null}},
+    {"id": "UX01-3", "phase": "final", "description": "Minimum hierarchy TIPA -> ASSY Line -> ASSY-SL01..ASSY-SL06 rendered from the canonical context payload", "rule": {"field": "ux01.hierarchy", "operator": "is_true", "expected": null}},
+    {"id": "UX01-4", "phase": "final", "description": "Drawer sub-line selection is presentation-only: same run_id/step/projection, no reset, no new session/federation/runtime", "rule": {"field": "ux01.selection_non_mutation", "operator": "is_true", "expected": null}},
+    {"id": "UX01-5", "phase": "final", "description": "Frame A six-line overview and Frame B rich 2D preserved; no severe console errors", "rule": {"field": "ux01.frames_preserved", "operator": "is_true", "expected": null}},
+    {"id": "UX01-6", "phase": "final", "description": "R1-R5/R5-C01 + full canonical baseline + full suite green at the pushed head", "rule": {"field": "ux01.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

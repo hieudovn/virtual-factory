@@ -526,25 +526,36 @@ class TestReset:
     def test_reset_creates_fresh_runtimes(self):
         comp = AssyDemoComposition(config_path=str(REAL_CONFIG))
         comp.initialize()
-        old_runtime_ids = {id(ctx.runtime) for ctx in comp.contexts.values()}
+        # Keep STRONG references to the pre-reset runtime objects for the whole
+        # test, so CPython cannot recycle/reuse their memory addresses. The
+        # post-reset assertion then compares object identity DIRECTLY (`is not`),
+        # independent of memory-address reuse.
+        old_runtimes = {sid: ctx.runtime for sid, ctx in comp.contexts.items()}
 
         comp.step_all()
         comp.step_all()
         comp.reset()
 
-        new_runtime_ids = {id(ctx.runtime) for ctx in comp.contexts.values()}
-        # All new runtime objects
-        assert old_runtime_ids.isdisjoint(new_runtime_ids)
+        new_runtimes = {sid: ctx.runtime for sid, ctx in comp.contexts.items()}
+        # Every post-reset runtime is a genuinely fresh object (same sub-line,
+        # distinct identity) while the old runtime objects remain alive.
+        for sid, old in old_runtimes.items():
+            assert old is not new_runtimes[sid]
 
     def test_reset_creates_fresh_configs(self):
         comp = AssyDemoComposition(config_path=str(REAL_CONFIG))
         comp.initialize()
-        old_config_ids = {id(ctx.config) for ctx in comp.contexts.values()}
+        # Strong references keep the pre-reset config objects alive; the identity
+        # check below is direct (`is not`), not memory-address reuse dependent.
+        old_configs = {sid: ctx.config for sid, ctx in comp.contexts.items()}
 
         comp.reset()
 
-        new_config_ids = {id(ctx.config) for ctx in comp.contexts.values()}
-        assert old_config_ids.isdisjoint(new_config_ids)
+        new_configs = {sid: ctx.config for sid, ctx in comp.contexts.items()}
+        # Every post-reset config is a genuinely fresh object (same sub-line,
+        # distinct identity) while the old config objects remain alive.
+        for sid, old in old_configs.items():
+            assert old is not new_configs[sid]
 
     def test_reset_zeroes_demo_step_number(self):
         comp = AssyDemoComposition(config_path=str(REAL_CONFIG))

@@ -1,0 +1,180 @@
+/* ===================================================================
+   Virtual Factory — Workspace Shell (VF-vNEXT-G24)
+   Multi-workspace UI switching + monitoring shell. Observer/controller
+   only: domain runtimes are the truth owners.
+   =================================================================== */
+:root {
+  color-scheme: light;
+  --bg-root: #f1f5f9;
+  --bg-panel: #ffffff;
+  --bg-topbar: #0f172a;
+  --bg-runbar: #1e293b;
+  --bg-hover: #eef2f7;
+  --border-panel: #e2e8f0;
+  --ink-primary: #0f172a;
+  --ink-secondary: #475569;
+  --ink-muted: #94a3b8;
+  --accent: #0d9488;
+  --accent-bg: #f0fdfa;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --warning: #b45309;
+  --warning-bg: #fffbeb;
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --info: #1d4ed8;
+  --info-bg: #eff6ff;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(15, 23, 42, .08);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg-root);
+  color: var(--ink-primary);
+}
+
+#ws-app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ---- top bar ---- */
+#ws-topbar {
+  display: flex; align-items: center; gap: 18px;
+  background: var(--bg-topbar); color: #e2e8f0;
+  padding: 10px 18px;
+}
+.ws-brand { display: flex; align-items: center; gap: 10px; }
+.ws-logo {
+  background: var(--accent); color: #fff; font-weight: 800;
+  border-radius: 6px; padding: 4px 8px; letter-spacing: .5px;
+}
+.ws-title { display: block; font-weight: 700; font-size: 15px; letter-spacing: .4px; }
+.ws-sub { display: block; font-size: 10px; color: #94a3b8; letter-spacing: .8px; }
+
+.ws-selector { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.ws-selector label { font-size: 12px; color: #cbd5e1; }
+#ws-workspace-select {
+  min-width: 220px; padding: 7px 10px; border-radius: 6px;
+  border: 1px solid #334155; background: #1e293b; color: #f1f5f9; font-size: 14px;
+}
+.ws-top-actions button {
+  background: transparent; color: #cbd5e1; border: 1px solid #334155;
+  border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 14px;
+}
+.ws-top-actions button:hover { background: #1e293b; }
+
+/* ---- shared run-control bar ---- */
+#ws-runbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--bg-runbar); color: #e2e8f0; padding: 8px 18px;
+  position: sticky; top: 0; z-index: 10; box-shadow: var(--shadow);
+}
+.ws-runbar-label { font-size: 12px; color: #94a3b8; }
+.ws-runbar-target {
+  font-family: Consolas, Menlo, monospace; font-size: 13px; font-weight: 700;
+  color: var(--accent); background: rgba(13, 148, 136, .15);
+  padding: 3px 8px; border-radius: 4px;
+}
+#ws-runbar button {
+  border: 1px solid #475569; background: #1e293b; color: #e2e8f0;
+  border-radius: 6px; padding: 6px 14px; cursor: pointer; font-weight: 600; font-size: 13px;
+}
+#ws-runbar button:hover:not(:disabled) { background: #334155; }
+/* VF-vNEXT-R5 (audit I4): ONE unavailable-action convention across the shell —
+   native disabled + aria-disabled + an explicit `title` reason set by the JS,
+   and a single not-allowed cursor. */
+#ws-runbar button:disabled,
+#ws-runbar select:disabled { opacity: .4; cursor: not-allowed; }
+#ws-runbar select {
+  border: 1px solid #475569; background: #1e293b; color: #e2e8f0;
+  border-radius: 6px; padding: 5px 8px; font-size: 13px; max-width: 190px;
+}
+.ws-divider { width: 1px; align-self: stretch; background: #334155; margin: 0 2px; }
+.ws-runbar-msg { margin-left: auto; font-size: 12px; color: #fbbf24; }
+
+/* ---- monitor area ---- */
+#ws-monitor { flex: 1; padding: 18px; }
+.ws-empty {
+  color: var(--ink-muted); text-align: center; padding: 60px 0; font-size: 15px;
+}
+.ws-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+
+.ws-card {
+  background: var(--bg-panel); border: 1px solid var(--border-panel);
+  border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow);
+  min-width: 0; /* VF-vNEXT-R5 (I3): grid items must be allowed to shrink */
+}
+.ws-card.ws-wide { grid-column: 1 / -1; }
+.ws-card h3 {
+  margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .6px;
+  color: var(--ink-muted); font-weight: 700;
+}
+.ws-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; }
+.ws-kv .k { color: var(--ink-muted); }
+.ws-kv .v { font-family: Consolas, Menlo, monospace; }
+
+/* VF-vNEXT-R5 (audit I3): wide tables scroll inside their card instead of
+   pushing the page horizontally at narrow widths. */
+.ws-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.ws-ui-page { margin-top: 10px; }
+.ws-ui-page a, .ws-ui-page button {
+  display: inline-block; background: var(--accent); color: #fff; text-decoration: none;
+  border: none; border-radius: 6px; padding: 7px 12px; font-size: 13px; cursor: pointer;
+}
+
+/* structure table */
+.ws-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ws-table th, .ws-table td {
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border-panel);
+  vertical-align: top;
+  /* VF-vNEXT-R5 (I3): long canonical paths may wrap instead of forcing scroll. */
+  overflow-wrap: anywhere; word-break: break-word;
+}
+.ws-table th { color: var(--ink-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+.ws-table code { font-family: Consolas, Menlo, monospace; }
+
+.badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: var(--success-bg); color: var(--success); }
+.badge-warn { background: var(--warning-bg); color: var(--warning); }
+.badge-info { background: var(--info-bg); color: var(--info); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+.ws-truth-note {
+  margin-top: 10px; padding: 8px 10px; border-radius: 6px; font-size: 12px;
+  background: var(--warning-bg); color: var(--warning); border: 1px solid #fde68a;
+}
+
+/* trace */
+.ws-trace {
+  background: #0f172a; color: #a5f3fc; border-radius: 6px; padding: 10px 12px;
+  font-size: 12px; line-height: 1.5; max-height: 220px; overflow: auto;
+  white-space: pre-wrap; font-family: Consolas, Menlo, monospace; margin: 0;
+}
+
+#ws-footer {
+  background: var(--bg-topbar); color: #94a3b8; font-size: 11px;
+  padding: 8px 18px; text-align: center;
+}
+#ws-footer b { color: #fbbf24; }
+
+/* VF-vNEXT-R5 (audit I5): compact shared glossary (same terms as the rich page). */
+.ws-glossary {
+  display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center;
+  padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid #1e293b;
+}
+.ws-glossary span { white-space: nowrap; }
+.ws-glossary b { color: #cbd5e1; }
+.ws-footer-note { display: block; }
+
+@media (max-width: 760px) {
+  #ws-topbar { flex-wrap: wrap; }
+  .ws-selector { margin-left: 0; }
+  /* VF-vNEXT-R5 (I3): single column + tighter padding so wide scope tables fit. */
+  #ws-monitor { padding: 10px; }
+  .ws-view { grid-template-columns: 1fr; gap: 10px; }
+  .ws-table { font-size: 12px; }
+  .ws-table th, .ws-table td { padding: 4px 6px; }
+  #ws-runbar { flex-wrap: wrap; row-gap: 6px; }
+}

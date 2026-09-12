@@ -1,0 +1,93 @@
+{
+  "task_id": "VF-vNEXT-G18",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — Scenario-Assumed Topology Overlay (G18)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/69",
+  "objective": "Implement the smallest generic VF_SCENARIO_ASSUMED_TOPOLOGY overlay mechanism so VF can carry bounded, explicit, versioned, provenance-bearing topology assumptions without modifying or impersonating PIM_AUTHORITATIVE_TOPOLOGY. Use T108->DIST-P108 only as the first bounded example/fixture; do not claim plant truth. Required semantics: assumption identity/version explicit; source = VF scenario/design assumption (not PIM); provenance/status clearly synthetic/assumed; reversible/replaceable; no back-propagation into PIM/KG; authoritative PIM graph and scenario overlay remain distinguishable; fail closed on malformed/ambiguous overlay; deterministic serialization; overlay must not imply execution order; coupling policy remains orchestration policy. Additive mechanism + tests only; reuse existing structural paths, reference graph and G4 identities where valid; do not redesign G4.",
+  "explicit_non_objectives": [
+    "No PIM modification",
+    "No G4 redesign",
+    "No BoundaryPort / CompositionBinding / coordinator change",
+    "No T110 / Line2 / chemical / electrical / automation runtime",
+    "No new coupling policy implementation",
+    "No runtime/site authorization broadening",
+    "No marking T108->DIST-P108 DocumentConfirmed / SourceMapped / site-verified",
+    "No turning scenario assumptions into canonical PIM relations",
+    "No G19"
+  ],
+  "required_branch": "feature/vf-vnext-g18",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G18.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G18.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G18/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/connectivity/scenario_overlay.py",
+    "src/virtual_factory/connectivity/__init__.py",
+    "src/virtual_factory/shwtp/overlay.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "tests/test_vnext_g18_scenario_overlay.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/logical_runtime.py",
+    "src/virtual_factory/shwtp/projection.py",
+    "src/virtual_factory/shwtp/federation.py",
+    "src/virtual_factory/shwtp/evaluation.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/connectivity/reference_graph.py",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/semantic/",
+    "src/virtual_factory/equipment/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/connectivity/scenario_overlay.py (generic VF_SCENARIO_ASSUMED_TOPOLOGY overlay: AssumedTopologyEdge + ScenarioTopologyOverlay + fail-closed invariants + deterministic serialization)",
+    "src/virtual_factory/shwtp/overlay.py (SH-WTP T108->DIST-P108 assumed-topology fixture)",
+    "tests/test_vnext_g18_scenario_overlay.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G18/01-scenario-overlay.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Modify PIM or PIM-pinned artifacts",
+    "Redesign G4 or change composition/coordinator semantics",
+    "Create T110 / Line2 / chemical / electrical / automation runtime",
+    "Add a new coupling policy",
+    "Broaden runtime/site authorization",
+    "Mark T108->DIST-P108 as PIM-derived or site-verified truth",
+    "Start G19"
+  ],
+  "stop_conditions": [
+    "Implementation requires changing frozen G4 identity/execution semantics",
+    "Implementation requires a new product decision not covered by the issue",
+    "PIM must change",
+    "A new coupling policy would be required"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Assumed edge + overlay carry explicit id and version", "rule": {"field": "overlay.identity", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "source_kind = vf_scenario_assumption and status = assumed/synthetic frozen; no PIM/site impersonation", "rule": {"field": "overlay.provenance", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Authoritative vs assumed topology distinguishable; no back-propagation into PIM", "rule": {"field": "overlay.distinct", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Malformed/ambiguous overlay fails closed (empty identity, duplicate id, duplicate logical assumption, wrong source_kind/status/schema)", "rule": {"field": "overlay.fail_closed", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Reversible/replaceable: remove/replace return new overlay; authoritative baseline unchanged", "rule": {"field": "overlay.reversible", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Deterministic serialization round-trip independent of input order", "rule": {"field": "overlay.deterministic", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Overlay is an unordered set — no execution order implied; no coupling-policy field", "rule": {"field": "overlay.no_order", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "No runtime/site authorization broadened (NOT_AUTHORIZED unchanged)", "rule": {"field": "overlay.authority", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "T108->DIST-P108 fixture present as assumed only (not DocumentConfirmed/site-verified)", "rule": {"field": "overlay.fixture", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "G14/G15/G17A behavior green + full canonical baseline + full suite pass", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

@@ -1,0 +1,84 @@
+{
+  "task_id": "VF-vNEXT-G12C",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "REVIEW/ADMISSION gate — SH-WTP Synthetic Runtime Admission Review (G12C)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/60",
+  "objective": "Review readiness and decide, candidate by candidate, which of UNIT-SHW-L1-T106 / UNIT-SHW-L1-T108 / UNIT-SHW-WASH-T110 may receive synthetic/reference black-box behavior in a future G13. Freeze one of SYNTHETIC_REFERENCE_ALLOWED / STRUCTURAL_ONLY / BLOCKED_PENDING_EVIDENCE per candidate, grounded in the accepted G10 boundary contracts, fidelity ceilings, and G12B inert PIM reference connectivity. No runtime implementation, no PIM change, no G4 projection, no site authorization. Keep vf_runtime_authorization and site_authorized_execution NOT_AUTHORIZED; only future candidate-by-candidate synthetic/reference execution may be authorized; G13 must choose the smallest meaningful executable slice. Planning/config/test/report artifacts only.",
+  "explicit_non_objectives": [
+    "No runtime/executable behavior implementation",
+    "No PIM modification",
+    "No G4 projection / BoundaryPort / PortDirection / PortCategory / CompositionBinding / coordinator / run-control / state propagation",
+    "No site authorization / SiteVerified / SourceMapped / site-faithful control or physics",
+    "No ParameterizedReady or CalibratedReady fabrication",
+    "No silent semantic reclassification of raw G12B relations (FLOWS_TO/DISCHARGES_TO/CONNECTED_TO) into runtime direction/medium/merge/split/coordinator semantics",
+    "No new executable candidates beyond T106/T108/T110",
+    "No production runtime code",
+    "No G13 implementation"
+  ],
+  "required_branch": "feature/vf-vnext-g12c",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G12C.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G12C.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G12C/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "configs/vnext/shwtp/shwtp_synthetic_runtime_admission.json",
+    "configs/vnext/shwtp/ADMISSION.md",
+    "tests/test_vnext_g12c_admission_review.py"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/vnext/shwtp/shwtp_readiness_scope.json",
+    "configs/plants/",
+    "configs/model_types/",
+    "configs/faults/",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "configs/vnext/shwtp/shwtp_synthetic_runtime_admission.json (candidate admission matrix + synthetic assumption policy + runtime projection readiness + G13 authorization plan)",
+    "configs/vnext/shwtp/ADMISSION.md (human-readable summary)",
+    "tests/test_vnext_g12c_admission_review.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G12C/01-admission-review.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement runtime/executable behavior",
+    "Modify PIM",
+    "Create BoundaryPort/PortDirection/PortCategory/CompositionBinding/coordinator/run-control",
+    "Relabel synthetic assumptions as plant truth",
+    "Fabricate ParameterizedReady/CalibratedReady",
+    "Semantically reclassify raw G12B relations",
+    "Authorize site-faithful execution",
+    "Start G13"
+  ],
+  "stop_conditions": [
+    "Admission requires choosing an unstated physical/control model",
+    "A missing plant parameter must be invented as truth",
+    "An ambiguous PIM relationship must be semantically resolved",
+    "vf_runtime_authorization or site authorization must change",
+    "PIM must be modified",
+    "A product decision is required on which fidelity/behavior family to use beyond the frozen progressive-refinement principle",
+    "Production runtime code is required"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Only T106/T108/T110 reviewed; each candidate has an explicit deterministic admission classification", "rule": {"field": "plan.candidates", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Fidelity ceiling not exceeded; no ParameterizedReady/CalibratedReady fabricated", "rule": {"field": "plan.fidelity", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "PIM-supported facts / synthetic assumptions / unknown-blocking visibly separated", "rule": {"field": "plan.separation", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Synthetic assumption policy frozen (explicit/provenance-marked/scenario-driven/not plant truth)", "rule": {"field": "plan.assumption_policy", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "No raw G12B relation silently runtime-classified", "rule": {"field": "plan.no_reclassify", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "vf_runtime_authorization and site_authorized_execution remain NOT_AUTHORIZED", "rule": {"field": "plan.authorization", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "G13 plan selects the smallest meaningful executable slice; no default authorization of all three", "rule": {"field": "plan.g13_slice", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Runtime projection readiness listed for ALLOWED candidates but not implemented", "rule": {"field": "plan.projection_requirements", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "No production runtime code added", "rule": {"field": "plan.no_runtime", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "New G12C tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "Complete canonical vNext baseline + G12B/G12A/G11/G10/G9/G7/G4/ASSY/continuous/UI/full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A12", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

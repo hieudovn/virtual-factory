@@ -1,0 +1,9 @@
+{
+  "base_sha": "f4dcca59112b1f68c94ede6ad50378c72eb0b8e0",
+  "changed_files": [],
+  "non_harness_changes": [],
+  "editor_artifacts_ignored": [],
+  "source_document_changes": [],
+  "source_globs_clean": true,
+  "verdict": "DESIGN_ONLY_NO_CODE_CHANGE"
+}

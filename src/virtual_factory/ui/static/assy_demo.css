@@ -522,6 +522,89 @@ html, body {
 .vf-popup-sep {
   height: 1px; background: var(--vf-border-light); margin: 6px 0;
 }
+
+/* ═══════════════════════════════════════
+   VF-vNEXT-UX01 — Structure / Model drawer
+   Structural context is no longer pinned in the sidebar; it opens on demand
+   from the top bar. Visual language = the existing floating panel
+   (#vf-popup): surface background, 1px border, radius-lg, shadow-lg, accent.
+   Hierarchy rows are primary; WORKSPACE / CONTAINER / EXECUTABLE stay small
+   secondary metadata (badges), never dominant.
+   ═══════════════════════════════════════ */
+.vf-drawer {
+  position: absolute; top: 56px; left: var(--vf-md);
+  width: min(360px, calc(100% - 24px)); max-height: 70vh;
+  background: var(--vf-bg-popup); backdrop-filter: blur(12px);
+  border: 1px solid var(--vf-border); border-radius: var(--vf-radius-lg);
+  box-shadow: var(--vf-shadow-lg);
+  display: none; flex-direction: column; z-index: 60; overflow: hidden;
+}
+.vf-drawer.open { display: flex; }
+.vf-drawer-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: var(--vf-md) var(--vf-lg);
+  border-bottom: 1px solid var(--vf-border-light); flex-shrink: 0;
+}
+.vf-drawer-title { font-size: 14px; font-weight: 600; color: var(--vf-text); }
+.vf-drawer-sub {
+  margin-top: 2px; font-size: 11px; color: var(--vf-text-muted);
+  font-family: Consolas, 'Cascadia Code', monospace;
+}
+.vf-drawer-close {
+  background: none; border: none; color: var(--vf-text-muted);
+  font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
+  border-radius: var(--vf-radius-sm);
+}
+.vf-drawer-close:hover { color: var(--vf-state-fail); background: #FDE8E8; }
+.vf-drawer-body {
+  flex: 1; overflow-y: auto; padding: var(--vf-md) var(--vf-lg);
+  font-size: 12px; color: var(--vf-text-secondary);
+}
+.vf-drawer-meta {
+  margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--vf-border);
+  display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center;
+}
+.vf-drawer-meta-k {
+  font-size: 9px; letter-spacing: .4px; color: var(--vf-text-muted);
+  background: var(--vf-bg-page); border: 1px solid var(--vf-border-light);
+  border-radius: 3px; padding: 0 5px;
+}
+.vf-drawer-meta-note { font-size: 10px; color: var(--vf-text-muted); }
+
+/* hierarchy inside the drawer: light theme, kind metadata secondary */
+#vf-structure-drawer .vf-hierarchy-crumbs,
+#vf-structure-drawer .vf-context-crumbs {
+  margin-bottom: 6px; font-size: 11px; color: var(--vf-text-muted);
+  font-family: Consolas, 'Cascadia Code', monospace;
+}
+#vf-structure-drawer .vf-hierarchy-crumb,
+#vf-structure-drawer .vf-context-crumb { color: var(--vf-text-muted); }
+#vf-structure-drawer .vf-hierarchy-crumb-current,
+#vf-structure-drawer .vf-context-crumb-current {
+  color: var(--vf-accent); font-weight: 600;
+}
+#vf-structure-drawer .vf-hierarchy-row {
+  padding: 3px 6px; border-radius: var(--vf-radius-sm); color: var(--vf-text);
+  cursor: pointer;
+}
+#vf-structure-drawer .vf-hierarchy-row:hover { background: var(--vf-accent-light); }
+#vf-structure-drawer .vf-hierarchy-label { font-size: 12px; }
+#vf-structure-drawer .vf-hierarchy-badge {
+  font-size: 9px; letter-spacing: .3px; text-transform: uppercase;
+  color: var(--vf-text-muted); background: var(--vf-bg-page);
+  border-radius: 3px; padding: 0 4px;
+}
+#vf-structure-drawer .vf-hierarchy-selected {
+  background: var(--vf-accent-light);
+  box-shadow: inset 0 0 0 1px var(--vf-accent);
+}
+#vf-structure-drawer .vf-context-note {
+  font-size: 10px; color: var(--vf-text-muted); padding: 6px 0 0 0;
+}
+
+@media (max-width: 780px) {
+  .vf-drawer { top: 52px; left: 8px; right: 8px; width: auto; max-height: 64vh; }
+}
 .vf-insp-link {
   color: var(--vf-accent); cursor: pointer; text-decoration: underline dotted;
   font-weight: 600;
@@ -845,3 +928,39 @@ html, body {
     transition: none !important;
   }
 }
+
+/* ═══════════════════════════════════════
+   G6 — Shared hierarchical context primitives
+   (additive; domain-agnostic; no layout assumptions)
+   ═══════════════════════════════════════ */
+.vf-context-section { margin: 6px 10px 4px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; background: rgba(255,255,255,0.03); }
+.vf-context-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; opacity: .7; text-transform: uppercase; margin-bottom: 4px; }
+.vf-context-note { font-size: 9px; opacity: .6; margin-top: 4px; }
+.vf-context-crumbs { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 2px 0; padding: 0; }
+.vf-context-crumb { display: inline-flex; align-items: center; font-size: 11px; }
+.vf-context-crumb:not(:last-child)::after { content: "/"; opacity: .4; margin: 0 3px; }
+.vf-context-crumb-btn { background: none; border: none; color: inherit; cursor: pointer; font-size: 11px; padding: 0; opacity: .8; text-decoration: underline dotted; }
+.vf-context-crumb-btn:hover { opacity: 1; }
+.vf-context-crumb-current { font-weight: 700; opacity: .95; }
+.vf-hierarchy-tree, .vf-hierarchy-children { list-style: none; margin: 0; padding: 0; }
+.vf-hierarchy-children { margin-left: 12px; }
+.vf-hierarchy-row { display: flex; align-items: center; gap: 4px; min-height: 20px; }
+.vf-hierarchy-caret, .vf-hierarchy-caret-spacer { width: 14px; background: none; border: none; color: inherit; cursor: pointer; padding: 0; text-align: center; font-size: 10px; flex-shrink: 0; }
+.vf-hierarchy-label { background: none; border: none; color: inherit; cursor: pointer; text-align: left; font-size: 12px; padding: 1px 2px; }
+.vf-hierarchy-label:hover { opacity: 1; }
+.vf-hierarchy-badge { font-size: 8px; text-transform: uppercase; letter-spacing: .04em; opacity: .75; border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; margin-left: 4px; white-space: nowrap; }
+.vf-hierarchy-node-workspace .vf-hierarchy-badge { color: #7c9cff; }
+.vf-hierarchy-node-container .vf-hierarchy-badge { color: #d3a84a; }
+.vf-hierarchy-node-executable .vf-hierarchy-badge { color: #4ecca3; }
+.vf-hierarchy-selected > .vf-hierarchy-row .vf-hierarchy-label { font-weight: 700; text-decoration: underline; }
+.vf-hierarchy-node.vf-hierarchy-collapsed > .vf-hierarchy-children { display: none; }
+
+/* ═══════════════════════════════════════════
+   G7 — run-control context (additive)
+   ═══════════════════════════════════════════ */
+.vf-run-control-section { margin: 6px 10px 4px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; background: rgba(255,255,255,0.03); }
+.vf-run-control-path { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+.vf-run-control-meta { font-size: 10px; opacity: .8; margin-bottom: 4px; }
+.vf-run-control-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+.vf-run-control-buttons button { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: inherit; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer; }
+.vf-run-control-buttons button:disabled { opacity: .4; cursor: default; }

@@ -1,0 +1,85 @@
+{
+  "task_id": "VF-vNEXT-G20",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — Generic Gateway / Workstation Observation Binding (G20)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/71",
+  "objective": "Implement the smallest generic gateway/workstation observation binding mechanism: one or more simulation scopes publish observations through one logical gateway/workstation without coupling domain runtime to MES/API transport. Runtime remains sole source of truth; gateway is read-only observer/adapter/forwarding boundary; explicit deterministic scope->gateway binding; N scopes -> 1 gateway supported; 1 scope -> N gateways architecturally allowed (no one-gateway-per-scope invariant); gateway identity distinct from Workspace/Scope and PIM identity; message provenance preserved (workspace/scope/domain/run/time); semantic messages independently identifiable/idempotent; batching is transport-only; fail closed on unknown scope/duplicate/ambiguous binding/identity mismatch; deterministic serialization; gateway topology is not execution order or containment hierarchy. Reuse ObservationService/Router/Projection/ObservationGatewayProtocol/ASSY MES bridge seams. Additive generic model/binding/fixture + tests only.",
+  "explicit_non_objectives": [
+    "No MQTT/Kafka/broker/network stack",
+    "No production REST delivery/retry/security",
+    "No MES repo modification",
+    "No PIM modification",
+    "No gateway as simulation engine or plant-truth owner",
+    "No gateway mandatory in containment hierarchy",
+    "No G4 redesign",
+    "No ASSY domain semantics change",
+    "No G21"
+  ],
+  "required_branch": "feature/vf-vnext-g20",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G20.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G20.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G20/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/integration/binding.py",
+    "tests/test_vnext_g20_gateway_binding.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/integration/gateway.py",
+    "src/virtual_factory/integration/gateways/",
+    "src/virtual_factory/integration/control_boundary.py",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/shwtp/",
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/observation/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/integration/binding.py (GatewayWorkstation + GatewayScopeBinding + GatewayBindingTable + collect_executable_scope_paths + build_assy_gateway_binding fixture)",
+    "tests/test_vnext_g20_gateway_binding.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G20/01-gateway-binding.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement MQTT/Kafka/broker/network",
+    "Implement production REST delivery/retry/security",
+    "Modify MES repo or PIM",
+    "Make gateway a simulation engine or plant-truth owner",
+    "Make gateway mandatory in containment hierarchy",
+    "Redesign G4",
+    "Change ASSY domain semantics",
+    "Start G21"
+  ],
+  "stop_conditions": [
+    "The binding seam requires a major incompatible redesign of existing observation/gateway architecture",
+    "The binding seam requires a new product decision not covered by the issue",
+    "PIM or MES must change"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Multiple scopes bind to one gateway (N->1)", "rule": {"field": "g20.fanin", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "One scope may bind to multiple distinct gateways (1->N allowed)", "rule": {"field": "g20.fanout", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Scope/runtime truth unchanged by gateway observation", "rule": {"field": "g20.readonly", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Messages preserve source scope identity + independent/idempotent message identity", "rule": {"field": "g20.provenance", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Duplicate/invalid/ambiguous binding + identity mismatch fail closed", "rule": {"field": "g20.fail_closed", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Deterministic serialization independent of declaration order", "rule": {"field": "g20.determinism", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Gateway identity does not impersonate PIM/Scope identity", "rule": {"field": "g20.identity", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Gateway topology is not execution order or containment hierarchy", "rule": {"field": "g20.topology", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "ASSY MES bridge + G19/G18/G14/G15 + canonical baseline + full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

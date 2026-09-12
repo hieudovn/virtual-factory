@@ -1,0 +1,24 @@
+{
+  "seam": "RunLifecycleService(bridge_factory_ctx=...) builds the bridge from the attempt's immutable RunContextV2; build_tipa_scenario_run_factory resolves the profile from context.scenario_id with an immutable per-scenario memo (no ambient holder)",
+  "scenes": [
+    {
+      "scene": "A(tipa-default) terminal -> B(tipa-failed-final) terminal -> A.replay()+advance()",
+      "expected_profile": "tipa-assy-happy_path",
+      "observed_profiles": [
+        "tipa-assy-happy_path"
+      ],
+      "bound": true,
+      "previous_defect": "in R5-audit this scene built profile tipa-assy-failed_final (contamination)"
+    },
+    {
+      "scene": "A.new_attempt()+advance() after B was selected earlier",
+      "expected_profile": "tipa-assy-happy_path",
+      "observed_profiles": [
+        "tipa-assy-happy_path"
+      ],
+      "bound": true
+    }
+  ],
+  "zero_arg_bridge_factory": "fails_closed",
+  "verdict": "ATTEMPT_BINDING_CONTEXT_BOUND"
+}

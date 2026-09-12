@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TIPA ASSY Demo — M6-S04B</title>
-<link rel="stylesheet" href="/static/assy_demo.css">
+<link rel="stylesheet" href="/static/assy_demo.css?v=ux01">
 </head>
 <body>
 <div id="app">
@@ -29,7 +29,9 @@
       <div class="vf-status-strip">
         <span id="live-status" class="vf-status-item live">● LIVE</span>
         <!-- Frame A step -->
-        <span id="demo-step" class="vf-status-step">DEMO STEP 000</span>
+        <span id="demo-step" class="vf-status-step">CANONICAL STEP 000</span>
+        <!-- R2: canonical same-session identity (workspace/run/scenario/profile) -->
+        <span id="vf-canonical-identity" class="vf-status-item" style="font-size:11px;font-family:Consolas,monospace;color:var(--vf-text-muted);">CANONICAL SESSION —</span>
       </div>
 
       <!-- Frame B global context (sub-line / variant / scenario) -->
@@ -39,11 +41,51 @@
     </div>
 
     <div class="vf-tb-right">
+      <!-- VF-vNEXT-UX01: Structure / Model drawer trigger (structural context moved
+           out of the pinned sidebar; presentation/metadata only). -->
+      <button class="vf-tb-icon-btn" id="vf-structure-btn" type="button"
+              title="Structure / Model" aria-controls="vf-structure-drawer"
+              aria-expanded="false" onclick="uiToggleStructure()">▤</button>
       <button class="vf-tb-icon-btn" title="Overview" onclick="closeFrameB();ctrl.refreshOverview();">⊞</button>
       <button class="vf-tb-icon-btn" title="Settings">⚙</button>
       <button class="vf-tb-icon-btn" title="Help">?</button>
     </div>
   </header>
+
+  <!-- ═════════════════════════════════════
+       STRUCTURE / MODEL DRAWER (VF-vNEXT-UX01)
+       The scope hierarchy is no longer pinned in the left sidebar: it is opened
+       on demand from the top bar. Selecting a sub-line only changes the
+       presentation/monitoring context (same run id, no step, no reset, no new
+       session/federation/runtime). WORKSPACE / CONTAINER / EXECUTABLE are
+       secondary structural metadata, never the primary content.
+       ═════════════════════════════════════ -->
+  <aside id="vf-structure-drawer" class="vf-drawer" aria-hidden="true"
+         aria-label="Structure / Model">
+    <div class="vf-drawer-header">
+      <div>
+        <div class="vf-drawer-title">Structure / Model</div>
+        <div class="vf-drawer-sub">TIPA → ASSY Line → sub-lines</div>
+      </div>
+      <button type="button" id="vf-structure-close" class="vf-drawer-close"
+              title="Close">✕</button>
+    </div>
+    <div class="vf-drawer-body">
+      <div id="vf-hierarchy-section" class="vf-hierarchy-section">
+        <div id="vf-context-crumbs" class="vf-context-crumbs"></div>
+        <div id="vf-hierarchy-nav" class="vf-hierarchy-nav"></div>
+        <div class="vf-context-note">Selecting a sub-line sets the monitoring context
+          only: same run id, no step, no reset, no new runtime.</div>
+      </div>
+      <div class="vf-drawer-meta">
+        <span class="vf-drawer-meta-k">WORKSPACE</span>
+        <span class="vf-drawer-meta-k">CONTAINER</span>
+        <span class="vf-drawer-meta-k">EXECUTABLE</span>
+        <span class="vf-drawer-meta-note">structural metadata only — selecting a
+          container never implies execution</span>
+      </div>
+    </div>
+  </aside>
 
   <!-- ═══════════════════════════════════════
        MAIN CONTENT: Sidebar + Canvas
@@ -77,6 +119,29 @@
         <button class="vf-btn danger-outline" onclick="ctrl.reset()">↻ Reset Line</button>
         <button class="vf-btn" onclick="ctrl.reset()">⚠ Clear Alarms</button>
         <button class="vf-btn" onclick="console.log('Export')">⬇ Export</button>
+      </div>
+
+      <!-- VF-vNEXT-UX01: the structural context is NOT pinned here any more.
+           The hierarchy lives in #vf-structure-drawer, opened from the top bar. -->
+
+      <!-- G7 additive: run-control context (read-only + minimal controls) -->
+      <div id="vf-run-control-section" class="vf-run-control-section" style="display:none;">
+        <div class="vf-context-title">Run control</div>
+        <div class="vf-run-control-path" id="vf-run-control-path"></div>
+        <div class="vf-run-control-meta">
+          <span id="vf-run-control-kind"></span> ·
+          <span id="vf-run-control-state"></span> ·
+          <span id="vf-run-control-time"></span>
+        </div>
+        <div class="vf-context-note" id="vf-run-control-eff"></div>
+        <div class="vf-run-control-buttons">
+          <button type="button" id="vf-run-control-run">Run</button>
+          <button type="button" id="vf-run-control-pause">Pause</button>
+          <button type="button" id="vf-run-control-resume">Resume</button>
+          <button type="button" id="vf-run-control-step">Step</button>
+          <button type="button" id="vf-run-control-stop">Stop</button>
+          <button type="button" id="vf-run-control-reset">Reset</button>
+        </div>
       </div>
     </nav>
 
@@ -154,6 +219,10 @@
             <button id="btn-step" class="vf-btn primary" onclick="uiStep()">▶ STEP</button>
             <button id="btn-auto" class="vf-btn accent-outline" onclick="uiToggleAuto()">▶▶ AUTO</button>
             <button id="btn-pause" class="vf-btn" onclick="uiPause()" disabled>⏸ PAUSE</button>
+            <button id="btn-jam" class="vf-btn danger-outline" onclick="uiJam()" title="Canonical AP05 jam on the selected sub-line">⚠ JAM</button>
+            <button id="btn-recover" class="vf-btn accent-outline" onclick="uiRecover()" title="Recover the canonical AP05 fault">↺ RECOVER</button>
+            <button id="btn-terminal" class="vf-btn" onclick="uiRunToTerminal()" title="Bounded canonical run-to-terminal">⏭ TERMINAL</button>
+            <button id="btn-oee" class="vf-btn" onclick="uiOee()" title="Read-only canonical OEE summary">Σ OEE</button>
             <select class="vf-ft-select" id="fb-speed-select" onchange="ctrlB.setSpeed(this.value)">
               <option value="0.1">0.1x</option>
               <option value="0.25">0.25x</option>
@@ -295,7 +364,7 @@
             </select>
           </label>
           <label>Scenario:
-            <select id="scenario-select-s04" onchange="ctrlS04.setScenario(this.value)">
+            <select id="scenario-select-s04" onchange="ctrlS04.setScenario(this.value)" disabled title="scenario is pinned run input (R2)">
               <option value="HAPPY_PATH">Happy Path</option>
               <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
               <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>
@@ -315,7 +384,7 @@
       <!-- Frame A scenario dropdown (hidden in Frame B) -->
       <label class="vf-ft-label" id="vf-scenario-label-a">
         Scenario:
-        <select class="vf-ft-select" id="scenario-select" onchange="ctrl.setScenario(this.value)">
+        <select class="vf-ft-select" id="scenario-select" onchange="ctrl.setScenario(this.value)" title="Scenario is pinned run input; selecting one starts a FRESH canonical run (R4)">
           <option value="HAPPY_PATH">Happy Path</option>
           <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
           <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>
@@ -325,7 +394,7 @@
       <!-- Frame B scenario dropdown (hidden in Frame A) -->
       <label class="vf-ft-label" id="vf-scenario-label-b" style="display:none;">
         Scenario:
-        <select class="vf-ft-select" id="fb-scenario-select" onchange="ctrlB.setScenario(this.value)">
+        <select class="vf-ft-select" id="fb-scenario-select" onchange="ctrlB.setScenario(this.value)" title="Scenario is pinned run input; selecting one starts a FRESH canonical run (R4)">
           <option value="HAPPY_PATH">Happy Path</option>
           <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
           <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>
@@ -358,5 +427,7 @@
 </div><!-- /app -->
 
 <script src="/static/assy_demo.js"></script>
+<script src="/static/hierarchy.js"></script>
+<script src="/static/assy_context.js?v=ux01"></script>
 </body>
 </html>

@@ -40,6 +40,17 @@ from virtual_factory.assembly.demo_snapshot import (
     AssyDemoSnapshot,
     build_snapshot,
 )
+from virtual_factory.assembly.assy_run_profile import (
+    AssyFeedPolicy,
+    AssySubLineRunState,
+    DEFAULT_INITIAL_RSO2_INVENTORY,
+    DEFAULT_INITIAL_SSO2_INVENTORY,
+    SCENARIO_QUALITY_OVERRIDES_BY_VALUE,
+    SCENARIO_TARGET_DEFAULTS_BY_VALUE,
+    apply_scenario_quality_overrides,
+    resolve_scenario_target_id,
+    step_prepared_line,
+)
 from virtual_factory.assembly.quality_records import QualityStatus
 from virtual_factory.assembly.station_contracts import CompletionMode
 
@@ -55,35 +66,27 @@ class DemoScenario(str, enum.Enum):
     FAILED_FINAL = "FAILED_FINAL"
 
 
-# HAPPY_PATH normalisation: override base YAML exception config to clean PASS
-_HAPPY_PATH_QUALITY_NORMALIZE: dict = {
-    "ap06": {"scenario": "PASS", "overrides": {}},
-    "ap08": {"scenario": "PASS", "overrides": {}},
-}
-
+# R1: the accepted scenario transforms live in ONE shared module; these
+# enum-keyed views are derived so legacy callers keep the same semantics.
 SCENARIO_QUALITY_OVERRIDES: dict[DemoScenario, dict] = {
-    DemoScenario.HAPPY_PATH: _HAPPY_PATH_QUALITY_NORMALIZE,
-    DemoScenario.AP06_FAIL_RETEST_PASS: {
-        "ap06": {"scenario": "PASS", "overrides": {1: ["PASS"], 2: ["FAIL", "PASS"]}},
-        "ap08": {"scenario": "PASS", "overrides": {}},
-    },
-    DemoScenario.AP08_NG_REINSPECT_PASS: {
-        "ap06": {"scenario": "PASS", "overrides": {}},
-        "ap08": {"scenario": "PASS", "overrides": {1: ["PASS"], 2: ["NG", "PASS"]}},
-    },
-    DemoScenario.FAILED_FINAL: {
-        "ap06": {"scenario": "ALWAYS_FAIL", "overrides": {}},
-        "ap08": {"scenario": "PASS", "overrides": {}},
-    },
+    member: SCENARIO_QUALITY_OVERRIDES_BY_VALUE[member.value]
+    for member in DemoScenario
 }
 
 # Default target sub-line per scenario (demo policy, not plant truth)
 SCENARIO_TARGET_DEFAULTS: dict[DemoScenario, str] = {
-    DemoScenario.HAPPY_PATH: "",            # no target — all HAPPY_PATH
-    DemoScenario.AP06_FAIL_RETEST_PASS: "ASSY-SL03",
-    DemoScenario.AP08_NG_REINSPECT_PASS: "ASSY-SL02",
-    DemoScenario.FAILED_FINAL: "ASSY-SL03",
+    member: SCENARIO_TARGET_DEFAULTS_BY_VALUE[member.value]
+    for member in DemoScenario
 }
+
+
+def _scenario_value(scenario: "DemoScenario | str") -> str:
+    """Accepted scenario value for either the enum or its plain string form.
+
+    ``DemoScenario`` is a ``str`` enum, so callers historically passed either
+    form; both stay supported (unchanged accepted API).
+    """
+    return scenario.value if isinstance(scenario, DemoScenario) else str(scenario)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -97,22 +100,26 @@ class ContinuousFeedPolicy:
     Replenishes SSO2 upstream inventory and tops up the RSO2 buffer.
     Does NOT modify AssyLineRuntime business semantics.
     Replenished WIPs enter ASSY only through existing introduce_next_sso2().
+
+    R1: the replenishment mechanics are delegated to the SHARED run-state
+    helper so the canonical session path and this demo path cannot diverge.
     """
 
     sso2_target: int = 10
     sso2_low_watermark: int = 3
     rso2_target: int = 6   # DEMO POLICY — not plant truth
 
+    def to_shared(self) -> AssyFeedPolicy:
+        """The equivalent shared feed policy (single semantic source)."""
+        return AssyFeedPolicy(
+            sso2_target=self.sso2_target,
+            sso2_low_watermark=self.sso2_low_watermark,
+            rso2_target=self.rso2_target,
+        )
+
     def replenish(self, ctx: "AssyDemoContext") -> None:
         """Top up SSO2 feed queue and RSO2 buffer for one context."""
-        remaining_sso2 = len(ctx.sso2_ids) - ctx.sso2_idx
-        if remaining_sso2 < self.sso2_low_watermark:
-            for _ in range(self.sso2_target - remaining_sso2):
-                ctx.sso2_ids.append(ctx.runtime.produce_sso2_wip())
-        # RSO2 top-up (DEMO POLICY) — in addition to on-demand in step_context
-        if ctx.runtime.rso2_buffer_size < self.rso2_target:
-            for _ in range(self.rso2_target - ctx.runtime.rso2_buffer_size):
-                ctx.runtime.produce_rso2_wip()
+        ctx.run_state.replenish(ctx.runtime, self.to_shared())
 
 
 # ═══════════════════════════════════════════════════════════
@@ -125,6 +132,10 @@ class AssyDemoContext:
 
     Holds identity, isolated config, runtime, and per-context feed state.
     Does NOT hold projection/UI state.
+
+    R1: the per-context feed/sequencing state is the SHARED
+    :class:`AssySubLineRunState` holder (one distinct holder per context) and
+    the step driver is the shared production driver.
     """
 
     identity: AssySubLineIdentity
@@ -132,41 +143,38 @@ class AssyDemoContext:
     runtime: AssyLineRuntime
     effective_scenario: DemoScenario = DemoScenario.HAPPY_PATH
 
-    # Per-context feed state (isolated — not shared across contexts)
-    carrier_seq: int = 1
-    sso2_idx: int = 0
-    sso2_ids: list[str] = field(default_factory=list)
+    # Per-context feed/sequencing state (isolated — not shared across contexts)
+    run_state: AssySubLineRunState = field(default_factory=AssySubLineRunState)
+
+    # --- Backward-compatible read views over the shared run state ---
+
+    @property
+    def carrier_seq(self) -> int:
+        return self.run_state.carrier_seq
+
+    @property
+    def sso2_idx(self) -> int:
+        return self.run_state.sso2_idx
+
+    @property
+    def sso2_ids(self) -> list[str]:
+        return self.run_state.sso2_ids
 
     # --- Per-context step helpers ---
 
     def introduce_next_sso2(self) -> None:
         """Introduce the next SSO2 WIP into this context's ASSY line."""
-        if self.sso2_idx < len(self.sso2_ids):
-            wip = self.sso2_ids[self.sso2_idx]
-            self.sso2_idx += 1
-            cid = f"PAL-{self.carrier_seq:03d}"
-            self.carrier_seq += 1
-            self.runtime.introduce_to_assy(wip, cid)
+        self.run_state.introduce_next(self.runtime)
 
     def step_context(self) -> None:
         """Execute one demo cycle for this context.
 
-        Reuses existing S04 single-context demo orchestration semantics:
-        on-demand RSO2, execute_dwell, release detection, conditional index.
+        Delegates to the SHARED production driver (reused by the canonical
+        vNext session path): on-demand RSO2, execute_dwell, release detection,
+        conditional index + next-SSO2 introduction. Feed replenishment stays a
+        separate explicit step (see ContinuousFeedPolicy.replenish).
         """
-        # On-demand RSO2
-        if (self.runtime.conveyor.wip_at("AP04")
-                and self.runtime.rso2_buffer_size == 0):
-            self.runtime.produce_rso2_wip()
-
-        # Execute dwell
-        self.runtime.execute_dwell()
-
-        # Index if ready
-        if self.runtime.conveyor.state == ConveyorState.READY_TO_INDEX:
-            self.runtime.index_line()
-            # Introduce next SSO2
-            self.introduce_next_sso2()
+        step_prepared_line(self.runtime, self.run_state)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -246,17 +254,15 @@ class AssyDemoComposition:
                 config=ctx_config,
                 runtime=runtime,
                 effective_scenario=ctx_scenario,
-                carrier_seq=1,
-                sso2_idx=0,
-                sso2_ids=[],
+                run_state=AssySubLineRunState(),
             )
 
-            # Seed upstream WIPs
-            total = 7
-            for _ in range(total):
-                ctx.sso2_ids.append(runtime.produce_sso2_wip())
-            for _ in range(total):
-                runtime.produce_rso2_wip()
+            # Seed upstream WIPs (shared deterministic preparation)
+            ctx.run_state.seed_inventories(
+                runtime,
+                sso2_count=DEFAULT_INITIAL_SSO2_INVENTORY,
+                rso2_count=DEFAULT_INITIAL_RSO2_INVENTORY,
+            )
 
             # Introduce first WIP
             ctx.introduce_next_sso2()
@@ -266,32 +272,24 @@ class AssyDemoComposition:
     def _resolve_target(self) -> str:
         """Determine which sub-line gets the exception scenario.
 
-        Scenario-specific default takes priority, identity default as fallback.
+        Scenario-specific default takes priority, identity default as fallback
+        (shared resolver — same precedence as the canonical session path).
         """
-        if self.scenario == DemoScenario.HAPPY_PATH:
-            return ""
-        scenario_target = SCENARIO_TARGET_DEFAULTS.get(self.scenario, "")
-        if scenario_target:
-            return scenario_target
+        identity_default = ""
         if self.identity and self.identity.target_sub_line_for_exception:
-            return self.identity.target_sub_line_for_exception
-        return ""
+            identity_default = self.identity.target_sub_line_for_exception
+        return resolve_scenario_target_id(_scenario_value(self.scenario), identity_default)
 
     @staticmethod
-    def _apply_quality_overrides(config: AssyLineConfig, scenario: DemoScenario) -> None:
+    def _apply_quality_overrides(
+        config: AssyLineConfig, scenario: "DemoScenario | str"
+    ) -> None:
         """Apply scenario-specific quality overrides to a config instance.
 
         Mutates the given config ONLY.  Caller owns isolation (deepcopy).
+        Delegates to the shared accepted transform (R1).
         """
-        overrides = SCENARIO_QUALITY_OVERRIDES.get(scenario, {})
-        for station_key, cfg in overrides.items():
-            sqc = getattr(config.quality, station_key, None)
-            if sqc is not None:
-                sqc.scenario = cfg.get("scenario", "PASS")
-                sqc.overrides = dict(cfg.get("overrides", {}))
-                # Adjust max_attempts for FAILED_FINAL
-                if scenario == DemoScenario.FAILED_FINAL:
-                    sqc.max_attempts = 2
+        apply_scenario_quality_overrides(config, _scenario_value(scenario))
 
     # --- Context access ---
 

@@ -1,0 +1,192 @@
+{
+  "gate": "VF-SHW-X2",
+  "expected_c1_contracts": [
+    "vf-shw-ctrl-backwash-sequence",
+    "vf-shw-ctrl-dose-ratio",
+    "vf-shw-ctrl-line2-split",
+    "vf-shw-ctrl-raw-pump-duty",
+    "vf-shw-ctrl-sludge-duty",
+    "vf-shw-ctrl-sludge-sink-duty",
+    "vf-shw-ctrl-t100-permissive",
+    "vf-shw-ctrl-t101-residence",
+    "vf-shw-ctrl-t108-permissive"
+  ],
+  "evaluated_c1_controllers": [
+    "vf-shw-ctrl-backwash-sequence",
+    "vf-shw-ctrl-dose-ratio",
+    "vf-shw-ctrl-line2-split",
+    "vf-shw-ctrl-raw-pump-duty",
+    "vf-shw-ctrl-sludge-duty",
+    "vf-shw-ctrl-sludge-sink-duty",
+    "vf-shw-ctrl-t100-permissive",
+    "vf-shw-ctrl-t101-residence",
+    "vf-shw-ctrl-t108-permissive"
+  ],
+  "c2_contracts": [
+    "vf-shw-ctrl-dist-pressure-pi",
+    "vf-shw-ctrl-f106-inlet-flow-pi",
+    "vf-shw-ctrl-raw-flow-pi",
+    "vf-shw-ctrl-t100-level-pi",
+    "vf-shw-ctrl-t108-level-pi"
+  ],
+  "c2_contracts_inactive": [
+    "vf-shw-ctrl-dist-pressure-pi",
+    "vf-shw-ctrl-f106-inlet-flow-pi",
+    "vf-shw-ctrl-raw-flow-pi",
+    "vf-shw-ctrl-t100-level-pi",
+    "vf-shw-ctrl-t108-level-pi"
+  ],
+  "c2_evaluated": [],
+  "pid_equation_tokens_in_c1_layer": [],
+  "actuator_commands": {
+    "vf-shw-ctrl-backwash-sequence": {
+      "output_signals": [
+        "backwash_pump_cmd",
+        "inlet_valve_cmd",
+        "outlet_valve_cmd",
+        "wash_return_cmd",
+        "inlet_valve_pos",
+        "outlet_valve_pos"
+      ],
+      "x2_actuator_command": {
+        "signal": "inlet_valve_pos",
+        "unit": "%",
+        "mode": "discrete_open_closed_position",
+        "value_when_open": 100.0,
+        "value_when_closed": 0.0,
+        "is_feedback_controlled_in_x2": false,
+        "deferred_modulator": {
+          "controller_id": "vf-shw-ctrl-f106-inlet-flow-pi",
+          "gate": "X3"
+        },
+        "rule": "the X2 sequence drives the inlet valve OPEN -> inlet_valve_pos = 100.0 and CLOSED -> inlet_valve_pos = 0.0",
+        "provenance": "synthetic_reference"
+      },
+      "runtime_outputs": {
+        "backwash_pump_cmd": "STOP",
+        "inlet_valve_cmd": "CLOSED",
+        "outlet_valve_cmd": "CLOSED",
+        "wash_return_cmd": "STOP",
+        "inlet_valve_pos": 0.0,
+        "outlet_valve_pos": 0.0
+      }
+    },
+    "vf-shw-ctrl-dose-ratio": {
+      "output_signals": [
+        "coag_dose",
+        "pac_dose"
+      ],
+      "x2_actuator_command": null,
+      "runtime_outputs": {
+        "coag_dose": 1.0,
+        "pac_dose": 2.0
+      }
+    },
+    "vf-shw-ctrl-line2-split": {
+      "output_signals": [
+        "l2_feed_cmd"
+      ],
+      "x2_actuator_command": null,
+      "runtime_outputs": {
+        "l2_feed_cmd": "RUN"
+      }
+    },
+    "vf-shw-ctrl-raw-pump-duty": {
+      "output_signals": [
+        "pump_run_cmd",
+        "scraper_run_cmd",
+        "pump_speed_cmd"
+      ],
+      "x2_actuator_command": {
+        "signal": "pump_speed_cmd",
+        "unit": "%",
+        "mode": "fixed_speed_synthetic_reference",
+        "value_when_running": 75.0,
+        "value_when_stopped": 0.0,
+        "is_feedback_controlled_in_x2": false,
+        "deferred_modulator": {
+          "controller_id": "vf-shw-ctrl-raw-flow-pi",
+          "gate": "X4"
+        },
+        "rule": "pump_run_cmd == RUN -> pump_speed_cmd = 75.0; pump_run_cmd == STOP -> pump_speed_cmd = 0.0",
+        "provenance": "synthetic_reference"
+      },
+      "runtime_outputs": {
+        "pump_run_cmd": "RUN",
+        "pump_speed_cmd": 75.0,
+        "scraper_run_cmd": "STOP"
+      }
+    },
+    "vf-shw-ctrl-sludge-duty": {
+      "output_signals": [
+        "sludge_pump_cmd"
+      ],
+      "x2_actuator_command": null,
+      "runtime_outputs": {
+        "sludge_pump_cmd": "RUN"
+      }
+    },
+    "vf-shw-ctrl-sludge-sink-duty": {
+      "output_signals": [
+        "sink_pump_cmd"
+      ],
+      "x2_actuator_command": null,
+      "runtime_outputs": {
+        "sink_pump_cmd": "RUN"
+      }
+    },
+    "vf-shw-ctrl-t100-permissive": {
+      "output_signals": [
+        "intake_enable",
+        "outlet_enable"
+      ],
+      "x2_actuator_command": null,
+      "runtime_outputs": {
+        "intake_enable": true,
+        "outlet_enable": true
+      }
+    },
+    "vf-shw-ctrl-t101-residence": {
+      "output_signals": [
+        "t101_outlet_enable"
+      ],
+      "x2_actuator_command": null,
+      "runtime_outputs": {
+        "t101_outlet_enable": true
+      }
+    },
+    "vf-shw-ctrl-t108-permissive": {
+      "output_signals": [
+        "transfer_enable",
+        "inflow_enable",
+        "transfer_pump_speed_cmd"
+      ],
+      "x2_actuator_command": {
+        "signal": "transfer_pump_speed_cmd",
+        "unit": "%",
+        "mode": "fixed_speed_synthetic_reference",
+        "value_when_running": 70.0,
+        "value_when_stopped": 0.0,
+        "is_feedback_controlled_in_x2": false,
+        "deferred_modulator": {
+          "controller_id": "vf-shw-ctrl-t108-level-pi",
+          "gate": "X3"
+        },
+        "rule": "transfer_enable == RUN -> transfer_pump_speed_cmd = 70.0; transfer_enable == STOP -> transfer_pump_speed_cmd = 0.0",
+        "provenance": "synthetic_reference"
+      },
+      "runtime_outputs": {
+        "transfer_enable": true,
+        "inflow_enable": true,
+        "transfer_pump_speed_cmd": 70.0
+      }
+    }
+  },
+  "raw_intake_speed_values": [
+    75.0
+  ],
+  "t108_speed_values": [
+    70.0
+  ],
+  "verdict": "NINE_C1_ACTIVE_ZERO_C2_EVALUATION"
+}

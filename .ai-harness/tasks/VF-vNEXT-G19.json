@@ -1,0 +1,79 @@
+{
+  "task_id": "VF-vNEXT-G19",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — Generic Multi-Participant Federation Proof (>2) (G19)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/70",
+  "objective": "Prove the existing generic G4 Coordinator / ExecutableParticipant / BoundaryTransfer mechanism works deterministically with 3+ synthetic executable participants exchanging detached boundary values over 2+ bindings in one coordinated window, without plant semantics. Reuse G4 semantics (never redesign); CompositionGraph != execution order; coupling policy remains orchestration policy (explicit_lagged applied at orchestration level only, not on graph/ports/bindings/transfers); deterministic participant/transfer ordering independent of declaration/registration order; detached immutable transfers; identity/workspace mismatch fails closed; failed window never reported completed; identical inputs produce identical results. Additive generic reusable harness + tests.",
+  "explicit_non_objectives": [
+    "No PIM modification",
+    "No DIST-P108 / T110 / Line2 / chemical / electrical / automation runtime",
+    "No new coupling policy",
+    "No G4 redesign",
+    "No UI",
+    "No plant semantics",
+    "No SH-WTP authority broadening",
+    "No G20"
+  ],
+  "required_branch": "feature/vf-vnext-g19",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G19.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G19.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G19/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/federation/generic.py",
+    "src/virtual_factory/federation/__init__.py",
+    "tests/test_vnext_g19_multi_participant.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/shwtp/",
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/federation/generic.py (generic reusable synthetic multi-participant federation harness: SyntheticParticipant + SyntheticFederation + build_synthetic_federation)",
+    "tests/test_vnext_g19_multi_participant.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G19/01-multi-participant-proof.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Modify PIM",
+    "Implement DIST-P108/T110/Line2/chemical/electrical/automation runtime",
+    "Add a new coupling policy",
+    "Redesign G4",
+    "Add UI",
+    "Start G20"
+  ],
+  "stop_conditions": [
+    "The proof requires changing frozen G4 identity/execution semantics",
+    "The proof requires a new product decision not covered by the issue",
+    "A new coupling policy would be required"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "3+ participants coordinate in one window", "rule": {"field": "g19.coordinate", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "At least 2 cross-participant transfers commit deterministically", "rule": {"field": "g19.transfers", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "No same-window feed-through under explicit_lagged", "rule": {"field": "g19.lag", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Participant/transfer ordering independent of declaration/registration order", "rule": {"field": "g19.ordering", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Identity/workspace mismatch fails closed", "rule": {"field": "g19.identity", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Failed window never reported completed", "rule": {"field": "g19.failed", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "Detached immutable transfers only", "rule": {"field": "g19.detached", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Identical inputs produce identical results", "rule": {"field": "g19.determinism", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "CompositionGraph != execution order; coupling policy stays orchestration policy", "rule": {"field": "g19.coupling", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "G14/G15/G18 behavior unchanged + full canonical baseline + full suite pass", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}
