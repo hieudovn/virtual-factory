@@ -477,5 +477,20 @@ VF-SHW-X3-C01 - Correction of the two blocking SA findings (Issue #98 SA review 
   evaluation of the C01 contract is 9/9 PASS (X3C01-1, X3C01-2 + the X3-1..X3-7 regression re-assertions).
 - Gate: the canonical 46-group baseline (including full_suite) and VF-DM CI are run at the exact pushed head
   of this correction; their machine-derived numbers are recorded in the C01 verification comment on PR #99.
+- Harness contract correction (DISCLOSED, not a scope change): the FIRST baseline run at head 109e3f2 FAILED
+  exactly one group, checks_changed_files, because this correction's contract carried the whole-directory
+  forbidden entry tests/ while its own allowlist explicitly permitted the four X3 test modules (the harness
+  forbidden check is evaluated independently of the allowlist). 45/46 groups passed in that run, including
+  x3_whole_plant_runtime (84 passed), x2_whole_plant_runtime (85), x1_whole_plant_contracts (46), full_suite
+  (2884 passed) and checks_preflight (PRECHECK PASSED); the failed run and its machine-readable results are
+  reported as FAILED, not hidden, and are preserved in the committed artefact
+  .ai-harness/sa-review/evidence/VF-SHW-X3/12-baseline-failed-run.json. The contract's tests/ entry was removed
+  (recorded in the new
+  allowlist_correction block of .ai-harness/tasks/VF-SHW-X3-C01.json); no allowlist entry was added and no code,
+  test, evidence or report file was touched by the amendment. Independent recomputation against the ORIGINAL
+  contract gives outside_allowlist=[] with the two X3 modules as the only forbidden hits, so the permitted set is
+  unchanged; verify_changed_files reports FILE VALIDATION PASSED (16 file(s)). The full 46-group baseline is
+  re-run at the head of the amendment commit and only that re-run is reported as the gate result for the
+  corrected head. The SA retains the decision on accepting this contract correction.
 - STOP: X4/X5 must NOT begin; no merge and no Issue #98 closure without the SA's explicit authorization for
   the exact PR head SHA.

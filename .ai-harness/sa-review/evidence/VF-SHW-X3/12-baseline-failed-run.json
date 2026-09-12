@@ -1,0 +1,311 @@
+{
+  "artefact": "Committed machine-readable extract of the FIRST canonical baseline run at the C01 correction head, which FAILED.",
+  "why_committed": ".ai-harness/traces/ is git-ignored, so the failed run is preserved verbatim (per-group status plus the failing group tail) so the SA can verify the failure that triggered the contract allowlist correction.",
+  "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
+  "manifest": ".ai-harness/regression/vnext_baseline_manifest.json",
+  "head_sha": "109e3f23e148e8f33fd57a22309cd21d19921a89",
+  "changed_files_base": "c3f4b231bb83bbd48f2c8a66f7dda13efd7ef290",
+  "overall": "FAIL",
+  "failed_groups": [
+    "checks_changed_files"
+  ],
+  "groups_total": 46,
+  "groups_passed": 45,
+  "groups_failed": 1,
+  "failing_group_verbatim": {
+    "id": "checks_changed_files",
+    "gate": "CHECKS",
+    "type": "command",
+    "status": "FAIL",
+    "exit_code": 1,
+    "tail": "FILE VALIDATION FAILED:\n  - Forbidden path changed: tests/test_vnext_x3_physical_bounds.py (matches 'tests/')\n  - Forbidden path changed: tests/test_vnext_x3_two_pi_control.py (matches 'tests/')"
+  },
+  "critical_groups_passed_in_this_run": {
+    "x3_whole_plant_runtime": "PASS",
+    "x2_whole_plant_runtime": "PASS",
+    "x1_whole_plant_contracts": "PASS",
+    "full_suite": "PASS",
+    "checks_compile": "PASS",
+    "checks_static_lint_type": "PASS",
+    "checks_preflight": "PASS"
+  },
+  "groups": [
+    {
+      "id": "g1_workspace",
+      "gate": "G1",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g2_provenance",
+      "gate": "G2",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g3_observation_event_alarm",
+      "gate": "G3",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g4_composition_coordinator",
+      "gate": "G4",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g5_federation",
+      "gate": "G5",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g6_hierarchy_ui",
+      "gate": "G6",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g7_run_control",
+      "gate": "G7",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "ui_api_dashboard",
+      "gate": "UI/API",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "assy_oracle",
+      "gate": "ASSY",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "continuous_compressor",
+      "gate": "CONTINUOUS",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g8_cross_gate_invariants",
+      "gate": "G8",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g9_semantic_binding",
+      "gate": "G9",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g10_shwtp_readiness",
+      "gate": "G10",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g11_shwtp_structural",
+      "gate": "G11",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g12a_reference_graph",
+      "gate": "G12A",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g12b_shwtp_connectivity",
+      "gate": "G12B",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g12c_admission_review",
+      "gate": "G12C",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g13_t108_runtime",
+      "gate": "G13",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g13b_t106_logical",
+      "gate": "G13B",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g14a_f01_projection",
+      "gate": "G14A",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g14b_federation",
+      "gate": "G14B",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g15_evaluation",
+      "gate": "G15",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g16_readiness",
+      "gate": "G16",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g17a_workstream_review",
+      "gate": "G17A",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g18_scenario_overlay",
+      "gate": "G18",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g19_multi_participant",
+      "gate": "G19",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g20_gateway_binding",
+      "gate": "G20",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g21_shwtp_expansion",
+      "gate": "G21",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g22_session_replay",
+      "gate": "G22",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g23_workspace_registry",
+      "gate": "G23",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g24_workspace_shell",
+      "gate": "G24",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "g25_acceptance",
+      "gate": "G25",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "r1_production_semantics",
+      "gate": "R1",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "r2_same_session_rich_assy",
+      "gate": "R2",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "r3_canonical_observation_mes",
+      "gate": "R3",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "r3c01_reset_generation",
+      "gate": "R3-C01",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "r4_canonical_parity",
+      "gate": "R4",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "r5_single_system",
+      "gate": "R5",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "x1_whole_plant_contracts",
+      "gate": "X1",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "x2_whole_plant_runtime",
+      "gate": "X2",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "x3_whole_plant_runtime",
+      "gate": "X3",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "full_suite",
+      "gate": "FULL",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "checks_compile",
+      "gate": "CHECKS",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "checks_static_lint_type",
+      "gate": "CHECKS",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "checks_changed_files",
+      "gate": "CHECKS",
+      "status": "FAIL",
+      "exit_code": 1
+    },
+    {
+      "id": "checks_preflight",
+      "gate": "CHECKS",
+      "status": "PASS",
+      "exit_code": 0
+    }
+  ],
+  "raw_run": ".ai-harness/traces/vnext_baseline_x3c01_h1.json (git-ignored local artefact)"
+}

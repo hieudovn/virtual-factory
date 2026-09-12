@@ -145,3 +145,47 @@ operating point.
 The canonical baseline (46 groups, including `full_suite`) and VF-DM CI are run at the exact pushed head of this
 correction; their machine-derived numbers are recorded in the C01 section of `.ai-harness/sa-review/CURRENT.md` and in the
 verification comment on PR #99.
+
+## 5. Harness contract correction disclosed to the SA (not a scope change)
+
+**The first full baseline run at head `109e3f2` FAILED, and it is reported as a FAILED run.**
+Machine-derived result: `overall = FAIL`, `failed_groups = ["checks_changed_files"]`, 45 of 46 groups PASS -
+including `x3_whole_plant_runtime`, `x2_whole_plant_runtime`, `x1_whole_plant_contracts`, `full_suite`
+(2884 passed) and `checks_preflight` (`PRECHECK PASSED`) - with exactly one group,
+`checks_changed_files`, FAILED:
+
+```
+FILE VALIDATION FAILED:
+  - Forbidden path changed: tests/test_vnext_x3_physical_bounds.py (matches 'tests/')
+  - Forbidden path changed: tests/test_vnext_x3_two_pi_control.py (matches 'tests/')
+```
+
+The raw run is `.ai-harness/traces/vnext_baseline_x3c01_h1.json` (log
+`.ai-harness/traces/vnext_baseline_x3c01_h1.log`); because `.ai-harness/traces/` is git-ignored, the run is
+preserved in the committed artefact `evidence/VF-SHW-X3/12-baseline-failed-run.json` (per-group status,
+exit codes, the failing group verbatim and the critical-group verdicts) so the failure stays verifiable.
+
+The cause is a defect in this correction's own contract, not in the correction: `forbidden_paths` carried the
+whole-directory entry `tests/` while `allowed_paths` explicitly allowlisted the four existing X3 test modules -
+including the two `tests/test_vnext_x3_two_pi_control.py` / `tests/test_vnext_x3_physical_bounds.py` modules that
+the SA's mandatory repairs 1 and 3 require editing. `.ai-harness/scripts/verify_changed_files.py` evaluates the
+forbidden list unconditionally and independently of the allowlist, so the contract failed on files it explicitly
+permitted. The accepted X3 contract records the opposite rule verbatim ("tests/ is deliberately not a
+whole-directory forbidden entry").
+
+**Correction applied:** the single entry `"tests/"` was removed from `forbidden_paths` (recorded in the new
+`allowlist_correction` block of `.ai-harness/tasks/VF-SHW-X3-C01.json`). Nothing else changed: no allowlist entry
+was added, no code/test/evidence/report file is touched by the amendment commit, and every other forbidden entry
+(frozen X1 configs, `contracts.py`, `x2_controls.py`, `whole_plant.py`, `session.py`, `workspace_monitor.py`,
+`runcontrol/`, `composition/`, `assembly/`, `pim/`, `core/`, `docs/`, `deploy/`, `examples/`, `simulators/`,
+`main`) is untouched.
+
+**Independent proof that this is not a scope widening:** recomputing the changed-file verdict against the
+ORIGINAL contract gives 16 changed paths, `outside_allowlist = []`, and the two files above as the ONLY forbidden
+hits - both caused solely by the blanket prefix. The allowlist is exhaustive, so the permitted set after the
+amendment is identical to the original intent; re-running the verifier reports
+`FILE VALIDATION PASSED (16 file(s))`.
+
+Because the amendment changes the tree, the full 46-group baseline is re-run at the new head; only that re-run is
+reported as the gate result for the corrected head. The SA retains the decision on accepting this contract
+correction.
