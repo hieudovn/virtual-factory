@@ -1,0 +1,42 @@
+{
+  "route": "GET /",
+  "status_code": 307,
+  "location": "/workspaces",
+  "serves_legacy_dashboard": false,
+  "followed_status": 200,
+  "followed_url_markers": {
+    "workspace_shell": true,
+    "shell_selector": true
+  },
+  "shell_page_status": 200,
+  "zero_construction": {
+    "create_app": {},
+    "root_redirect": {},
+    "root_plus_shell": {},
+    "shell_only": {}
+  },
+  "reference_only_assets": {
+    "index.html retained": true,
+    "app.js retained": true,
+    "continuous_context.js retained": true,
+    "legacy_index_still_has_scada": true
+  },
+  "registry": {
+    "registry_type": "WorkspaceRuntimeRegistry",
+    "registered_workspaces": [
+      "TIPA",
+      "shwtp"
+    ],
+    "continuous_workspace_registered": false,
+    "canonical_workspace_count": 2
+  },
+  "browser_smoke": {
+    "start_url": "http://127.0.0.1:8099/",
+    "final_url": "http://127.0.0.1:8099/workspaces",
+    "shell_rendered": true,
+    "scada_present": false,
+    "console_errors": [],
+    "screenshot": "shot-root-entry.png"
+  },
+  "verdict": "ROOT_IS_CANONICAL_ENTRYPOINT"
+}

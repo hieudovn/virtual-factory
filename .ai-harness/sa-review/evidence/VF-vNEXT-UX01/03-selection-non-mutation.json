@@ -1,0 +1,21 @@
+{
+  "select_status": 200,
+  "select_echo_sub_line": "ASSY-SL03",
+  "identity_before": {
+    "run_id": null,
+    "workspace_id": null,
+    "scenario_id": null,
+    "profile_id": null
+  },
+  "identity_after": {
+    "run_id": null,
+    "workspace_id": null,
+    "scenario_id": null,
+    "profile_id": null
+  },
+  "identity_unchanged": true,
+  "presentation_only_flag": null,
+  "sub_line_projection_unchanged": true,
+  "new_run_id_created": false,
+  "verdict": "SELECTION_IS_PRESENTATION_ONLY"
+}

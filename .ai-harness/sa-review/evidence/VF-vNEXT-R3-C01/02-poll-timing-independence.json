@@ -1,0 +1,25 @@
+{
+  "sequence": [
+    "poll at state S",
+    "RuntimeSession.reset()",
+    "no poll between reset and re-step",
+    "step back to the identical state S",
+    "poll again"
+  ],
+  "state_S_time_s": 480.0,
+  "state_after_restep_identical": true,
+  "epoch_at_state_S": 2,
+  "epoch_after_reset_poll": 3,
+  "session_reset_generation": 3,
+  "session_generation_matches_epoch": true,
+  "epoch_source": "canonical_session_reset_generation",
+  "new_facts_emitted": 60,
+  "delivered_this_poll": 60,
+  "delivered_equals_new_keys": true,
+  "all_new_keys_in_new_epoch": true,
+  "no_collision_with_pre_reset_keys": true,
+  "repeated_poll_delivered": 0,
+  "repeated_poll_count_unchanged": true,
+  "repeated_mes_poll_delivered": 0,
+  "PASS": true
+}

@@ -1,0 +1,72 @@
+{
+  "polls": [
+    {
+      "observations": 200,
+      "mes_messages": 200,
+      "mes_trace": 200
+    },
+    {
+      "observations": 200,
+      "mes_messages": 200,
+      "mes_trace": 200
+    },
+    {
+      "observations": 200,
+      "mes_messages": 200,
+      "mes_trace": 200
+    }
+  ],
+  "step_count_before": 4,
+  "step_count_after": 4,
+  "simulation_time_before": 480.0,
+  "simulation_time_after": 480.0,
+  "run_id_unchanged": true,
+  "per_line_unchanged": {
+    "ASSY-SL01": {
+      "simulation_time_s": true,
+      "positions_unchanged": true,
+      "genealogy_unchanged": true,
+      "production_unchanged": true,
+      "quality_unchanged": true
+    },
+    "ASSY-SL02": {
+      "simulation_time_s": true,
+      "positions_unchanged": true,
+      "genealogy_unchanged": true,
+      "production_unchanged": true,
+      "quality_unchanged": true
+    },
+    "ASSY-SL03": {
+      "simulation_time_s": true,
+      "positions_unchanged": true,
+      "genealogy_unchanged": true,
+      "production_unchanged": true,
+      "quality_unchanged": true
+    },
+    "ASSY-SL04": {
+      "simulation_time_s": true,
+      "positions_unchanged": true,
+      "genealogy_unchanged": true,
+      "production_unchanged": true,
+      "quality_unchanged": true
+    },
+    "ASSY-SL05": {
+      "simulation_time_s": true,
+      "positions_unchanged": true,
+      "genealogy_unchanged": true,
+      "production_unchanged": true,
+      "quality_unchanged": true
+    },
+    "ASSY-SL06": {
+      "simulation_time_s": true,
+      "positions_unchanged": true,
+      "genealogy_unchanged": true,
+      "production_unchanged": true,
+      "quality_unchanged": true
+    }
+  },
+  "mutation_guard": {
+    "guard_raises_output_mutation_error": true
+  },
+  "PASS": true
+}

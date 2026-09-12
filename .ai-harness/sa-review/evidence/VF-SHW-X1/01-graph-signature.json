@@ -1,0 +1,73 @@
+{
+  "gate": "VF-SHW-X1",
+  "artifacts": {
+    "graph": "configs/vnext/shwtp/shwtp_whole_plant_graph_v1.json",
+    "process": "configs/vnext/shwtp/shwtp_process_contracts_v1.json",
+    "control": "configs/vnext/shwtp/shwtp_control_contracts_v1.json",
+    "admission": "configs/vnext/shwtp/shwtp_x2_admission_manifest_v1.json"
+  },
+  "artifact_digests": {
+    "graph": "d57bc26b67437cc2cf2d7b27e9bf488bf4545b5353c2e8069f6d89e4b6faceeb",
+    "process": "3644545ea0ab27ac5971036b14d4e7f6e7cae338531410a11a08b45b46395b5b",
+    "control": "64f24ff4e1014ed852f3a2c0a53ed00f3fc290d6d8786e58ba1f24f8850fd393",
+    "admission": "200af1bc142903fbaf27e2f2c140094244cfeb6b252cb638bee95db6f7ea97fa"
+  },
+  "code_artifact": {
+    "path": "src/virtual_factory/shwtp/contracts.py",
+    "sha256": "62c070dc3ebbaa777bb6295547bb05f56e74a92fb96734d706ff610f4ac3e9ee"
+  },
+  "test_artifact": {
+    "path": "tests/test_vnext_x1_whole_plant_contracts.py",
+    "sha256": "375302ded2346c3544a007bf6004031a52530f478347b58cf7d962d93c91380b"
+  },
+  "graph_schema": "vf.vnext.x1.shwtp.whole_plant_graph.v1",
+  "node_count": 19,
+  "edge_count": 25,
+  "edges_per_category": {
+    "pim_known": 3,
+    "reference_only": 4,
+    "vf_scenario_assumption": 18
+  },
+  "assumption_count": 18,
+  "scope_contract_count": 17,
+  "scope_fidelity_classes": {
+    "first_order": 4,
+    "logical_only": 7,
+    "synthetic_reference": 6
+  },
+  "control_contract_count": 19,
+  "signature": "55f49ca475492eaa4ea7c01358127f75698df6770ad1a83675b44eb6d1288b21",
+  "frozen_counts": {
+    "nodes": 19,
+    "edges": 25,
+    "assumptions": 18,
+    "scope_contracts": 17,
+    "controls": 19,
+    "pim_known_edges": 3,
+    "reference_only_edges": 4,
+    "assumed_edges": 18
+  },
+  "observed_counts": {
+    "nodes": 19,
+    "edges": 25,
+    "assumptions": 18,
+    "scope_contracts": 17,
+    "controls": 19,
+    "pim_known_edges": 3,
+    "reference_only_edges": 4,
+    "assumed_edges": 18
+  },
+  "counts_match_frozen": {
+    "nodes": true,
+    "edges": true,
+    "assumptions": true,
+    "scope_contracts": true,
+    "controls": true,
+    "pim_known_edges": true,
+    "reference_only_edges": true,
+    "assumed_edges": true
+  },
+  "deterministic_across_reloads": true,
+  "edge_order_stable": true,
+  "verdict": "WHOLE_PLANT_GRAPH_DETERMINISTIC"
+}

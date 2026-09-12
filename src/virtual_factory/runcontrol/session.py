@@ -1,0 +1,322 @@
+"""Generic runtime-session/lifecycle seam (VF-vNEXT-G22).
+
+A small, orchestration-only session facade over the accepted G7
+:class:`~virtual_factory.runcontrol.RunLifecycleService`, usable across
+executable workspaces (TIPA ASSY and the SH-WTP G21 plant slice).
+
+- A session has explicit Workspace identity, run/attempt identity, and
+  scenario/config identity.
+- ``reset`` (in-context, same run identity), ``new_attempt`` (fresh run/attempt
+  identity), and ``replay`` (fresh run/attempt identity re-pinning the same
+  scenario inputs) are distinct and explicit.
+- Every fresh attempt/replay rebuilds fresh runtime state from the SAME
+  immutable scenario/config inputs — no hidden state carry-over.
+- Deterministic: identical scenario/config reproduces an identical step trace.
+- The session is lifecycle/orchestration authority only; the domain runtime
+  remains the domain-truth owner.
+
+This module is domain-agnostic and must not reference SH-WTP (frozen G7
+boundary). Domain-specific session factories live in their own packages.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from virtual_factory.runcontrol.lifecycle import (
+    RunLifecycleService,
+    RunState,
+    StepResult,
+)
+
+_TERMINAL = frozenset({RunState.STOPPED, RunState.FAILED})
+
+
+class SessionError(ValueError):
+    """Raised when a runtime-session identity/lifecycle invariant is violated."""
+
+
+@dataclass(frozen=True)
+class SessionIdentity:
+    """Explicit identity of one runtime session."""
+
+    workspace_id: str
+    run_id: str
+    scenario_id: str
+    state: str
+
+
+class RuntimeSession:
+    """Generic orchestration-only runtime session over one Workspace."""
+
+    def __init__(
+        self,
+        service: RunLifecycleService,
+        workspace_id: str,
+        scenario_id: str,
+        *,
+        profile: str | None = None,
+    ) -> None:
+        if not isinstance(service, RunLifecycleService):
+            raise SessionError(
+                f"service must be RunLifecycleService, got {type(service).__name__}"
+            )
+        if not isinstance(workspace_id, str) or not workspace_id.strip():
+            raise SessionError("workspace_id must be a non-empty str")
+        if not isinstance(scenario_id, str) or not scenario_id.strip():
+            raise SessionError("scenario_id must be a non-empty str")
+        self._service = service
+        self._scenario_id = scenario_id
+        # Optional explicit run-input/profile identity (VF-vNEXT-R1). It is
+        # informational run identity only; the domain runtime stays the truth
+        # owner and the profile never becomes a second lifecycle authority.
+        self._run = service.create_run(
+            workspace_id, scenario_id=scenario_id, profile=profile
+        )
+        # Authoritative workspace identity comes from the created run context;
+        # any mismatch fails closed (never silently re-key).
+        if self._run.context.workspace_id != workspace_id:
+            raise SessionError(
+                f"workspace identity mismatch: requested {workspace_id!r}, "
+                f"run context is {self._run.context.workspace_id!r}"
+            )
+        self._trace: list[StepResult] = []
+        # VF-vNEXT-R3-C01: monotonic in-context reset generation of the CURRENT
+        # run. It is the ONE authoritative reset epoch for downstream
+        # projections (read-only metadata): it is incremented exactly when
+        # ``reset()`` succeeds, keeps the same run identity, and starts at 1 for
+        # every fresh attempt/replay. It never becomes a lifecycle/run identity.
+        self._reset_generation: int = 1
+
+    # ── identity ────────────────────────────────────────────────
+
+    @property
+    def workspace_id(self) -> str:
+        return self._run.context.workspace_id
+
+    @property
+    def run_id(self) -> str:
+        return self._run.context.run_id
+
+    @property
+    def scenario_id(self) -> str:
+        return self._scenario_id
+
+    @property
+    def profile_id(self) -> str | None:
+        """Pinned run-input/profile identity of the current attempt (if any)."""
+        return self._run.context.profile
+
+    @property
+    def state(self) -> RunState:
+        return self._run.state
+
+    @property
+    def identity(self) -> SessionIdentity:
+        return SessionIdentity(
+            workspace_id=self.workspace_id,
+            run_id=self.run_id,
+            scenario_id=self.scenario_id,
+            state=self.state.value,
+        )
+
+    @property
+    def record(self):
+        """The current run record (white-box inspection for tests/bridges)."""
+        return self._run
+
+    @property
+    def reset_generation(self) -> int:
+        """Monotonic reset generation of the current run (R3-C01).
+
+        1 for a fresh run; incremented once per successful in-context
+        ``reset()``. Projection metadata only — never a run/lifecycle identity.
+        """
+        return self._reset_generation
+
+    @property
+    def reset_epoch(self) -> int:
+        """Alias of ``reset_generation`` (canonical projection epoch)."""
+        return self._reset_generation
+
+    # ── orchestration ───────────────────────────────────────────
+
+    def advance(self) -> StepResult:
+        """Advance exactly one authorized boundary (start-then-step)."""
+        run_id = self._run.context.run_id
+        if self._run.state is RunState.CREATED:
+            self._run = self._service.start(run_id)
+        result = self._service.step(run_id)
+        self._trace.append(result)
+        return result
+
+    def reset(self) -> None:
+        """In-context reset: same run identity, fresh runtime state."""
+        self._service.reset(self._run.context.run_id)
+        self._trace = []
+        # R3-C01: the reset succeeded → advance the canonical reset generation
+        # (only after the service call returns, so a failure never bumps it).
+        self._reset_generation += 1
+
+    def stop(self) -> None:
+        """Stop the current attempt (terminal; history preserved)."""
+        self._run = self._service.stop(self._run.context.run_id)
+
+    def new_attempt(self) -> str:
+        """Fresh attempt: fresh run identity + fresh runtime state."""
+        if self._run.state not in _TERMINAL:
+            self.stop()
+        self._run = self._service.restart(self._run.context.run_id)
+        self._trace = []
+        # R3-C01: a fresh canonical run starts its own reset generation at 1.
+        self._reset_generation = 1
+        return self._run.context.run_id
+
+    def replay(self) -> str:
+        """Deterministic replay: fresh run identity re-pinning the same scenario."""
+        if self._run.state not in _TERMINAL:
+            self.stop()
+        self._run = self._service.replay(self._run.context.run_id)
+        self._trace = []
+        # R3-C01: a fresh canonical run starts its own reset generation at 1.
+        self._reset_generation = 1
+        return self._run.context.run_id
+
+    # ── trace ───────────────────────────────────────────────────
+
+    def trace(self) -> tuple[StepResult, ...]:
+        """Deterministic step trace captured so far (immutable view)."""
+        return tuple(self._trace)
+
+    def run_all(self, windows: int) -> tuple[StepResult, ...]:
+        """Advance ``windows`` boundaries and return the resulting trace."""
+        for _ in range(windows):
+            self.advance()
+        return self.trace()
+
+
+def _require_attempt_bound_bridge() -> object:
+    """Fail closed: TIPA execution bridges are attempt-bound (R5).
+
+    A TIPA lifecycle service never builds runtime state from ambient/mutable
+    selection state; the bridge for an attempt is built from that attempt's own
+    immutable run context via the ``bridge_factory_ctx`` seam.
+    """
+    raise SessionError(
+        "TIPA execution bridges are attempt-bound: a zero-arg bridge factory must "
+        "never build TIPA runtime state (no ambient run profile)"
+    )
+
+
+def build_tipa_scenario_run_factory(
+    config_path: str,
+    workspace_id: str = "TIPA",
+) -> Callable[[str], "RuntimeSession"]:
+    """Factory for FRESH canonical TIPA runs sharing ONE run-id authority.
+
+    VF-vNEXT-R4: selecting a different scenario must create a fresh canonical run
+    identity (never mutate an active run's pinned identity). Every run created by
+    this factory goes through the SAME ``RunLifecycleService`` — the single
+    run-id minting authority — so successive runs receive fresh ids while the
+    previous run stays historical/unchanged.
+
+    VF-vNEXT-R5: the bridge of each attempt is built from THAT attempt's
+    immutable ``RunContextV2`` (``context.scenario_id`` -> its pinned profile),
+    never from a mutable "last selected" selection. There is no ambient profile
+    holder, so a replay/new_attempt of an older run can never inherit another
+    run's inputs (no cross-run profile contamination).
+    """
+    from virtual_factory.assembly.assy_run_profile import build_tipa_run_profile
+    from virtual_factory.federation import TipaAssyFederation, build_tipa_workspace
+    from virtual_factory.runcontrol import AssyExecutionBridge, RunLifecycleService
+
+    workspace = build_tipa_workspace()
+    if workspace.workspace_id != workspace_id:
+        raise SessionError(
+            f"workspace_id {workspace_id!r} does not match TIPA workspace "
+            f"{workspace.workspace_id!r}"
+        )
+
+    # Immutable, per-scenario memo: a profile object is never mutated and is
+    # selected ONLY by the scenario pinned in the attempt's own context.
+    profiles: dict[str, object] = {}
+
+    def profile_for(scenario_id: str):
+        profile = profiles.get(scenario_id)
+        if profile is None:
+            profile = build_tipa_run_profile(scenario_id)
+            profiles[scenario_id] = profile
+        return profile
+
+    def bridge_factory_ctx(context):
+        # The attempt's own pinned scenario is the ONE input; no ambient state.
+        federation = TipaAssyFederation(config_path=config_path)
+        federation.initialize(run_profile=profile_for(context.scenario_id))
+        return AssyExecutionBridge(federation)
+
+    service = RunLifecycleService(
+        workspace,
+        _require_attempt_bound_bridge,
+        bridge_factory_ctx=bridge_factory_ctx,
+    )
+
+    def factory(scenario_id: str) -> RuntimeSession:
+        profile = profile_for(scenario_id)
+        return RuntimeSession(
+            service,
+            workspace_id,
+            scenario_id,
+            profile=profile.profile_id,
+        )
+
+    return factory
+
+
+def build_tipa_session(
+    config_path: str,
+    scenario_id: str,
+    workspace_id: str = "TIPA",
+) -> RuntimeSession:
+    """Build a TIPA ASSY runtime session (6 sub-lines, one workspace).
+
+    VF-vNEXT-R1: the session ``scenario_id`` is RESOLVED to an explicit, pinned
+    immutable ASSY run profile, so the selected canonical RuntimeSession runs
+    real six-sub-line production semantics (accepted HAPPY_PATH-style production
+    for ``tipa-default``) instead of advancing six empty clocks. The profile is
+    resolved ONCE and re-discovered deterministically per fresh attempt/replay
+    from the same pinned ``scenario_id`` (no hidden state carry-over).
+    """
+    from virtual_factory.assembly.assy_run_profile import build_tipa_run_profile
+    from virtual_factory.federation import TipaAssyFederation, build_tipa_workspace
+    from virtual_factory.runcontrol import AssyExecutionBridge, RunLifecycleService
+
+    # Fail closed before any runtime construction if the scenario is unknown.
+    run_profile = build_tipa_run_profile(scenario_id)
+
+    workspace = build_tipa_workspace()
+    if workspace.workspace_id != workspace_id:
+        raise SessionError(
+            f"workspace_id {workspace_id!r} does not match TIPA workspace "
+            f"{workspace.workspace_id!r}"
+        )
+
+    def bridge_factory_ctx(context):
+        # R5: attempt-bound inputs only — the pinned scenario lives in the
+        # attempt's own immutable context (identical to the session scenario).
+        federation = TipaAssyFederation(config_path=config_path)
+        federation.initialize(
+            run_profile=build_tipa_run_profile(context.scenario_id)
+        )
+        return AssyExecutionBridge(federation)
+
+    service = RunLifecycleService(
+        workspace,
+        _require_attempt_bound_bridge,
+        bridge_factory_ctx=bridge_factory_ctx,
+    )
+    return RuntimeSession(
+        service,
+        workspace_id,
+        scenario_id,
+        profile=run_profile.profile_id,
+    )

@@ -1,0 +1,11 @@
+{
+  "canonical_identity_rendered": true,
+  "deferred_handled_in_ui": true,
+  "frame_a_step_label": true,
+  "identity_element_present": true,
+  "note": "Minimal binding-only UI changes: canonical identity bar, pinned scenario (disabled), no reset on page open, explicit deferred surfacing. No visual redesign.",
+  "on_load_reset_removed": true,
+  "rich_page_status": 200,
+  "scenario_selectors_disabled": true,
+  "select_endpoint_used": true
+}

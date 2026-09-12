@@ -1,0 +1,92 @@
+{
+  "task_id": "VF-ARCH-05",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "ARCHITECTURE / DESIGN GATE — DOCUMENTATION & EVIDENCE ONLY (NO PRODUCTION MIGRATION IMPLEMENTATION)",
+  "objective": "Freeze the migration architecture that moves accepted ASSY behavior into the vNext hierarchical/federated model (TIPA Workspace -> ASSY Simulation Scope -> ASSY-SL01..06 child Simulation Scopes -> station/AP/WIP/carrier Simulation Objects) WITHOUT rewriting AssyLineRuntime domain semantics, losing accepted UX/runtime behavior, or creating two runtime paths between standalone and federated hosts. Deliver: migration inventory, hosting model, runtime reuse/wrap/adapt matrix, identity/context migration contract, parent/child authority matrix, regression-invariant table with repo evidence, UI preservation mapping, observation/event/capability mapping, migration sequence/dependencies, and risks/rollback/STOP assessment. Implementation comes later.",
+  "explicit_non_objectives": [
+    "No TIPA Workspace or ASSY federation implementation",
+    "No rewrite of AssyLineRuntime",
+    "No refactor of accepted domain logic",
+    "No generic Workspace/Scope class implementation",
+    "No coordinator/ports implementation",
+    "No frontend component changes",
+    "No fake simulations for other TIPA production lines",
+    "No PIM semantic contract changes",
+    "No provenance-v2 implementation",
+    "No SH WTP runtime work",
+    "No new frontend framework selection"
+  ],
+  "required_branch": "",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-ARCH-05.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-05.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/01-current-assy-migration-inventory.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/02-target-hosting-model.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/03-runtime-reuse-boundary.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/04-identity-context-migration.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/05-standalone-vs-federated-contract.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/06-regression-invariants.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/07-ui-preservation-boundary.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/08-observation-event-capability-migration.md",
+    ".ai-harness/sa-review/evidence/VF-ARCH-05/09-migration-sequence-risks-and-decisions.md",
+    ".ai-harness/sa-review/reports/VF-ARCH-05.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement TIPA Workspace or ASSY federation",
+    "Rewrite AssyLineRuntime",
+    "Refactor accepted domain logic",
+    "Implement generic Workspace/Scope classes",
+    "Implement coordinator/ports",
+    "Change frontend components",
+    "Create fake simulations for other TIPA production lines",
+    "Change PIM semantic contracts",
+    "Implement provenance-v2",
+    "Start SH WTP runtime work",
+    "Select a new frontend framework",
+    "Implement migration prematurely"
+  ],
+  "stop_conditions": [
+    "Standalone and federated hosting cannot preserve the same AssyLineRuntime semantics",
+    "Mapping to TIPA -> ASSY -> ASSY-SL01..06 requires flattening or retyping the accepted hierarchy",
+    "Preserving regression invariants requires a domain-runtime rewrite",
+    "Current accepted tests/evidence materially conflict with the frozen target and require an Owner/SA decision",
+    "Migration architecture requires reopening ARCH-01..04 decisions",
+    "Implementation is required to answer an architecture question safely"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Target hierarchy lossless and consistent with ARCH-01", "rule": {"field": "hierarchy.lossless", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Standalone/federated hosting explicit", "rule": {"field": "hosting.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "AssyLineRuntime reuse boundary explicit", "rule": {"field": "runtime_reuse.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Parent/child authority non-overlapping", "rule": {"field": "authority.non_overlapping", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "ASSY regression invariants documented with actual repo evidence", "rule": {"field": "regression.evidenced", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "UI preservation boundary explicit", "rule": {"field": "ui_preservation.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "ARCH-03 observation/event/capability contracts respected", "rule": {"field": "arch03_respected", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Migration risks and dependencies explicit", "rule": {"field": "risks_dependencies.explicit", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "No production code changes", "rule": {"field": "production_code_changed", "operator": "is_false", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "No implementation started", "rule": {"field": "implementation_started", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

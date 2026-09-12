@@ -1,0 +1,7 @@
+{
+  "federations_constructed": 1,
+  "legacy_instantiations": 0,
+  "no_legacy_controller": true,
+  "note": "The whole rich path (overview/reset/step/snapshot/select/sub-lines/run-mode/deferred) constructs exactly ONE canonical federation and instantiates ZERO legacy DemoController objects.",
+  "single_canonical_federation": true
+}

@@ -1,0 +1,111 @@
+{
+  "app_construction": {},
+  "canonical_path": {
+    "create_app_constructions": {},
+    "canonical_phase": {
+      "counts": {
+        "RunLifecycleService": 2,
+        "RuntimeSession": 2,
+        "TipaAssyFederation": 1
+      },
+      "construction_sites": {
+        "RunLifecycleService": {
+          "session.py:257": 1,
+          "session.py:38": 1
+        },
+        "RuntimeSession": {
+          "session.py:265": 1,
+          "session.py:39": 1
+        },
+        "TipaAssyFederation": {
+          "session.py:253": 1
+        }
+      },
+      "requests": [
+        {
+          "request": "GET /workspaces",
+          "status": 200
+        },
+        {
+          "request": "GET /vnext/workspaces",
+          "status": 200
+        },
+        {
+          "request": "GET /vnext/workspaces/TIPA/view",
+          "status": 200
+        },
+        {
+          "request": "GET /vnext/workspaces/shwtp/view",
+          "status": 200
+        },
+        {
+          "request": "POST /assy-demo/reset",
+          "status": 200
+        },
+        {
+          "request": "POST /assy-demo/step",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/overview",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/sub-lines",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/identity",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/oee",
+          "status": 200
+        },
+        {
+          "request": "POST /assy-demo/snapshot",
+          "status": 200
+        },
+        {
+          "request": "GET /assy-demo/mes-messages",
+          "status": 200
+        }
+      ]
+    },
+    "canonical_sub_line_count": 6,
+    "verdict": "CANONICAL_PATH_IS_THE_SINGLE_AUTHORITY"
+  },
+  "deauthorized_paths": {
+    "code": "VF_LEGACY_AUTHORITY_DEAUTHORIZED",
+    "declared_surfaces": [
+      "root_dashboard_runtime_service",
+      "legacy_g7_run_control",
+      "legacy_demo_assy_mes"
+    ],
+    "families": {
+      "root_dashboard_runtime_service": {
+        "routes": 17,
+        "all_410": true,
+        "non_410": [],
+        "constructions": {},
+        "zero_construction": true,
+        "websocket_ws_telemetry": "closed fail-closed (WebSocketDenialResponse)"
+      },
+      "legacy_g7_run_control": {
+        "routes": 13,
+        "all_410": true,
+        "non_410": [],
+        "constructions": {},
+        "zero_construction": true
+      },
+      "legacy_demo_assy_mes": {
+        "routes": 9,
+        "all_410": true,
+        "non_410": [],
+        "constructions": {},
+        "zero_construction": true
+      }
+    },
+    "verdict": "ALL_LEGACY_AUTHORITIES_DEAUTHORIZED_FAIL_CLOSED"
+  }
+}
