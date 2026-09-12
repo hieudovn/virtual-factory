@@ -1,0 +1,120 @@
+{
+  "schema": "vf.vnext.x1.shwtp.x2_admission_manifest.v1",
+  "version": "1.0.0",
+  "gate": "VF-SHW-X1",
+  "kind": "ADMISSION_BOUNDARY",
+  "base": "c9d64a55ec030eada459f9680edac5756bc6e390",
+  "graph_ref": "configs/vnext/shwtp/shwtp_whole_plant_graph_v1.json",
+  "process_contracts_ref": "configs/vnext/shwtp/shwtp_process_contracts_v1.json",
+  "control_contracts_ref": "configs/vnext/shwtp/shwtp_control_contracts_v1.json",
+  "authority": {
+    "vf_runtime_authorization": "NOT_AUTHORIZED",
+    "site_authorized_execution": "NOT_AUTHORIZED",
+    "whole_plant_runtime": "NOT_AUTHORIZED / NOT_IMPLEMENTED",
+    "site_truth": false,
+    "simulation_truth": "synthetic_reference",
+    "boundary_statement": "This manifest is the AUTHORIZATION BOUNDARY for X2. PM may not expand X2 beyond these lists; any addition requires a new SA gate. It authorises a SHALLOW whole-plant runnable model with C1 functional control inside the existing ONE canonical SH-WTP RuntimeSession. It does NOT authorise dynamic PI/PID, rich UI, gateway work, a new run authority or any site-faithful claim."
+  },
+  "x2_executable_scopes": [
+    {"scope_id": "vf-shw-node-raw-source", "canonical_id": null, "role": "boundary_source", "fidelity": "synthetic_reference", "control_level": "C0"},
+    {"scope_id": "vf-shw-node-raw-intake", "canonical_id": "UNIT-SHW-RAW-INTAKE", "role": "intake_pumping", "fidelity": "first_order", "control_level": "C1", "c2_deferred_here": ["vf-shw-ctrl-raw-flow-pi", "vf-shw-ctrl-t100-level-pi"]},
+    {"scope_id": "vf-shw-node-t100", "canonical_id": "UNIT-SHW-T100", "role": "storage", "fidelity": "first_order", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-t101", "canonical_id": "UNIT-SHW-L1-T101", "role": "aeration_contact", "fidelity": "logical_only", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-t102", "canonical_id": "UNIT-SHW-L1-T102", "role": "pac_contact", "fidelity": "logical_only", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-t103", "canonical_id": "UNIT-SHW-L1-T103", "role": "rapid_mix_dosing_point", "fidelity": "synthetic_reference", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-t104", "canonical_id": "UNIT-SHW-L1-T104", "role": "flocculation", "fidelity": "logical_only", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-t105", "canonical_id": "UNIT-SHW-L1-T105", "role": "clarification", "fidelity": "synthetic_reference", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-t106", "canonical_id": "UNIT-SHW-L1-T106", "role": "filtration", "fidelity": "first_order", "control_level": "C1", "c2_deferred_here": ["vf-shw-ctrl-f106-inlet-flow-pi"]},
+    {"scope_id": "vf-shw-node-t108", "canonical_id": "UNIT-SHW-L1-T108", "role": "clean_water_storage", "fidelity": "first_order", "control_level": "C1", "c2_deferred_here": ["vf-shw-ctrl-t108-level-pi", "vf-shw-ctrl-dist-pressure-pi"]},
+    {"scope_id": "vf-shw-node-wash-t110", "canonical_id": "UNIT-SHW-WASH-T110", "role": "wash_water_recovery", "fidelity": "logical_only", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-dist-p108", "canonical_id": "UNIT-SHW-DIST-P108", "role": "distribution", "fidelity": "synthetic_reference", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-network-demand", "canonical_id": null, "role": "boundary_sink", "fidelity": "synthetic_reference", "control_level": "C0"},
+    {"scope_id": "vf-shw-node-chem-dosing", "canonical_id": "UNIT-SHW-CHEM-DOSING", "role": "chemical_dosing", "fidelity": "logical_only", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-sludge-t201", "canonical_id": "UNIT-SHW-SLUDGE-T201", "role": "sludge_sink", "fidelity": "logical_only", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-line2-aggregate", "canonical_id": null, "canonical_refs": ["UNIT-SHW-L2-T101", "UNIT-SHW-L2-T105", "UNIT-SHW-L2-T106", "UNIT-SHW-L2-T108"], "role": "parallel_line_aggregate", "fidelity": "logical_only", "control_level": "C1"}
+  ],
+  "x2_reference_or_container_only": [
+    {"scope_id": "vf-shw-node-elec-mcc", "canonical_id": "UNIT-SHW-ELEC-MCC", "reason": "reference-only support area; electrical mapping gap GAP-SHW-005 open"},
+    {"scope_id": "vf-shw-node-auto-plc", "canonical_id": "UNIT-SHW-AUTO-PLC", "reason": "reference-only; control truth UNAVAILABLE (GAP-SHW-002); VF synthetic controllers must never be presented as this PLC"},
+    {"scope_id": "vf-shw-node-t107", "canonical_id": "UNIT-SHW-L1-T107", "reason": "EXCLUDED from X2: in-line position not PIM-established (SA item Q1); REL-SHW-F01 models T106 -> T108 directly. Contract-only."},
+    {"scope_instances": "LINE2 process units", "reason": "LINE2 unit internals are reference-only (PatternInferred); X2 models ONE aggregate block"}
+  ],
+  "x2_c1_controls_active": [
+    {"controller_id": "vf-shw-ctrl-raw-pump-duty", "owning_scope": "vf-shw-node-raw-intake", "type": "rule"},
+    {"controller_id": "vf-shw-ctrl-t100-permissive", "owning_scope": "vf-shw-node-t100", "type": "rule"},
+    {"controller_id": "vf-shw-ctrl-t101-residence", "owning_scope": "vf-shw-node-t101", "type": "rule"},
+    {"controller_id": "vf-shw-ctrl-dose-ratio", "owning_scope": "vf-shw-node-chem-dosing", "type": "ratio"},
+    {"controller_id": "vf-shw-ctrl-sludge-duty", "owning_scope": "vf-shw-node-t105", "type": "rule"},
+    {"controller_id": "vf-shw-ctrl-backwash-sequence", "owning_scope": "vf-shw-node-t106", "type": "sequence"},
+    {"controller_id": "vf-shw-ctrl-t108-permissive", "owning_scope": "vf-shw-node-t108", "type": "rule"},
+    {"controller_id": "vf-shw-ctrl-sludge-sink-duty", "owning_scope": "vf-shw-node-sludge-t201", "type": "rule"},
+    {"controller_id": "vf-shw-ctrl-line2-split", "owning_scope": "vf-shw-node-line2-aggregate", "type": "rule"}
+  ],
+  "x2_c2_controls_deferred": [
+    {"controller_id": "vf-shw-ctrl-f106-inlet-flow-pi", "type": "PI", "gate": "X3", "owning_scope": "vf-shw-node-t106", "active_in_x2": false},
+    {"controller_id": "vf-shw-ctrl-t108-level-pi", "type": "PI", "gate": "X3", "owning_scope": "vf-shw-node-t108", "active_in_x2": false},
+    {"controller_id": "vf-shw-ctrl-dist-pressure-pi", "type": "PI", "gate": "X3", "owning_scope": "vf-shw-node-dist-p108", "active_in_x2": false},
+    {"controller_id": "vf-shw-ctrl-raw-flow-pi", "type": "PI", "gate": "X4", "owning_scope": "vf-shw-node-raw-intake", "active_in_x2": false},
+    {"controller_id": "vf-shw-ctrl-t100-level-pi", "type": "PI", "gate": "X4", "owning_scope": "vf-shw-node-t100", "active_in_x2": false},
+    {"controller_id": "vf-shw-ctrl-chlorine-residual", "type": "proportional_rule", "control_class": "C1", "gate": "X3", "owning_scope": "vf-shw-node-t107", "active_in_x2": false, "deferral_reason": "T107 excluded from X2 (SA item Q1)"}
+  ],
+  "x2_assumed_edges_used": [
+    {"edge_id": "vf-shw-edge-raw-source-intake", "assumption_id": "ASSUME-SHW-RAW-SOURCE-BOUNDARY", "boundary": true},
+    {"edge_id": "vf-shw-edge-t101-t102", "assumption_id": "ASSUME-SHW-L1-SEQ-T101-T102"},
+    {"edge_id": "vf-shw-edge-t102-t103", "assumption_id": "ASSUME-SHW-L1-SEQ-T102-T103"},
+    {"edge_id": "vf-shw-edge-t103-t104", "assumption_id": "ASSUME-SHW-L1-SEQ-T103-T104"},
+    {"edge_id": "vf-shw-edge-t104-t105", "assumption_id": "ASSUME-SHW-L1-SEQ-T104-T105"},
+    {"edge_id": "vf-shw-edge-t105-t106", "assumption_id": "ASSUME-SHW-L1-T105-T106"},
+    {"edge_id": "vf-shw-edge-t106-wash", "assumption_id": "ASSUME-SHW-WASH-OUT"},
+    {"edge_id": "vf-shw-edge-wash-t106", "assumption_id": "ASSUME-SHW-WASH-RETURN"},
+    {"edge_id": "vf-shw-edge-t105-sludge", "assumption_id": "ASSUME-SHW-SLUDGE-OUT"},
+    {"edge_id": "vf-shw-edge-chem-t102", "assumption_id": "ASSUME-SHW-CHEM-DOSE-T102"},
+    {"edge_id": "vf-shw-edge-chem-t103", "assumption_id": "ASSUME-SHW-CHEM-DOSE-T103"},
+    {"edge_id": "vf-shw-edge-t108-dist", "assumption_id": "ASSUME-SHW-T108-DIST-P108"},
+    {"edge_id": "vf-shw-edge-dist-demand", "assumption_id": "ASSUME-SHW-NETWORK-DEMAND-BOUNDARY", "boundary": true},
+    {"edge_id": "vf-shw-edge-t100-line2", "assumption_id": "ASSUME-SHW-L2-FEED"},
+    {"edge_id": "vf-shw-edge-line2-dist", "assumption_id": "ASSUME-SHW-L2-TO-DIST"}
+  ],
+  "x2_assumed_edges_excluded": [
+    {"edge_id": "vf-shw-edge-t106-t107", "assumption_id": "ASSUME-SHW-L1-T106-T107", "reason": "SA item Q1 (in-line disinfection) unresolved"},
+    {"edge_id": "vf-shw-edge-t107-t108", "assumption_id": "ASSUME-SHW-L1-T107-T108", "reason": "SA item Q1 (in-line disinfection) unresolved"},
+    {"edge_id": "vf-shw-edge-chem-t107", "assumption_id": "ASSUME-SHW-CHEM-DOSE-T107", "reason": "T107 excluded from X2"}
+  ],
+  "x2_pim_known_edges_used": [
+    {"edge_id": "vf-shw-edge-intake-t100", "pim_relation_id": "REL-SHW-F04", "aggregate": true},
+    {"edge_id": "vf-shw-edge-t100-l1", "pim_relation_id": "REL-SHW-F04", "aggregate": true},
+    {"edge_id": "vf-shw-edge-t106-t108", "pim_relation_id": "REL-SHW-F01", "deep_scope": "A"}
+  ],
+  "x2_invariants_must_prove": [
+    "exactly ONE canonical SH-WTP RuntimeSession exists (workspace 'shwtp', one active run id) and no second run/session authority is created by any scope, controller or UI",
+    "no new RuntimeSession / RunLifecycleService / ExecutionBridge / engine construction beyond the existing canonical one",
+    "each X2 executable scope instantiates its declared process contract family (no invented topology or interfaces)",
+    "volume/mass balance: for every storage scope dV/dt = inflow - outflow is respected to numerical tolerance; the plant-level balance oracle reports its residual",
+    "bounded outputs: no negative volume/flow, every state stays within its declared constraints, and clamps raise a labelled VF alarm",
+    "causal monotonicity: DP non-decreasing between backwashes; filtered turbidity <= settled turbidity; no effect precedes its cause within a window",
+    "determinism: identical initial conditions + identical input sequence produce identical trajectories; no wall-clock or unordered-iteration dependence",
+    "no same-window feed-through under the existing explicit_lagged coupling policy",
+    "all C1 controls active exactly as listed in x2_c1_controls_active; NO C2 loop active (no PI/PID evaluation, no scan loop)",
+    "every assumed edge in use carries its assumption_id in the runtime provenance and appears in the UI 'assumed topology' list; no assumed edge is ever presented as PIM-known",
+    "T106/T108 existing accepted semantics preserved (G13/G13B/G21/G22 behaviour unchanged: T108 first_order tank, T106 logical pass-through, F01 projection, 2-participant federation, evaluation rows)",
+    "site_truth=false and simulation_truth=synthetic_reference on every payload; vf_runtime_authorization stays NOT_AUTHORIZED",
+    "deterministic contract load: the graph/process/control/admission artefacts load to an identical signature across runs",
+    "no new PIM canonical id is referenced that does not already exist in the accepted PIM-derived inventory/graph"
+  ],
+  "x2_success_criteria": {
+    "model": "whole-plant SHALLOW runnable model covering the 16 admitted scopes with the declared fidelity classes",
+    "control": "9 C1 functional controls active; 6 C2/rule-deferred loops inactive",
+    "runtime": "one canonical session, STEP/RESET semantics unchanged, no UI work",
+    "evidence": "per-invariant proof artefacts + baseline and full suite green"
+  },
+  "x2_not_authorized": [
+    "dynamic PI/PID implementation (X3/X4)",
+    "rich SH-WTP UI (X5/X6)",
+    "T107 in-line disinfection activation (needs SA decision on Q1)",
+    "first_order fidelity for the WASH-T110 return path (needs PIM confirmation of the destination)",
+    "gateway/OPC/MQTT/Kafka work",
+    "new canonical PIM ids or PIM semantic change (escalate to PIM SA)",
+    "any second workspace/session/run authority",
+    "site-faithful or calibrated claims"
+  ]
+}

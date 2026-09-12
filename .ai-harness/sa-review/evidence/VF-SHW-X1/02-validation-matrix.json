@@ -1,0 +1,175 @@
+{
+  "gate": "VF-SHW-X1",
+  "validation_count": 10,
+  "checks": {
+    "V1_graph_deterministic_and_schema_valid": {
+      "pass": true,
+      "detail": {
+        "schema": "vf.vnext.x1.shwtp.whole_plant_graph.v1",
+        "signature": "55f49ca475492eaa4ea7c013"
+      }
+    },
+    "V2_no_new_canonical_pim_id": {
+      "pass": true,
+      "detail": {
+        "accepted_canonical_ids": 59,
+        "referenced_by_contracts": 34,
+        "unknown_ids": {}
+      }
+    },
+    "V3_vf_local_namespace_only": {
+      "pass": true,
+      "detail": {
+        "vf_local_id_count": 38,
+        "prefix": "vf-shw-",
+        "sample": [
+          "vf-shw-ctrl-backwash-sequence",
+          "vf-shw-ctrl-chlorine-residual",
+          "vf-shw-ctrl-dist-pressure-pi",
+          "vf-shw-ctrl-dose-ratio",
+          "vf-shw-ctrl-f106-inlet-flow-pi",
+          "vf-shw-ctrl-line2-split"
+        ]
+      }
+    },
+    "V4_assumption_provenance_complete": {
+      "pass": true,
+      "detail": {
+        "assumed_edges": 18,
+        "assumption_registry_entries": 18,
+        "source_kind": "vf_scenario_assumption",
+        "status": "assumed/synthetic",
+        "reversible": true
+      }
+    },
+    "V5_no_dual_category_edge_identity": {
+      "pass": true,
+      "detail": {
+        "duplicate_identities": {},
+        "distinct_identities": 25
+      }
+    },
+    "V6_process_contract_complete_per_x2_scope": {
+      "pass": true,
+      "detail": {
+        "x2_admitted_scopes": [
+          "vf-shw-node-chem-dosing",
+          "vf-shw-node-dist-p108",
+          "vf-shw-node-line2-aggregate",
+          "vf-shw-node-network-demand",
+          "vf-shw-node-raw-intake",
+          "vf-shw-node-raw-source",
+          "vf-shw-node-sludge-t201",
+          "vf-shw-node-t100",
+          "vf-shw-node-t101",
+          "vf-shw-node-t102",
+          "vf-shw-node-t103",
+          "vf-shw-node-t104",
+          "vf-shw-node-t105",
+          "vf-shw-node-t106",
+          "vf-shw-node-t108",
+          "vf-shw-node-wash-t110"
+        ],
+        "missing_fields": {},
+        "fail_closed": true
+      }
+    },
+    "V7_c1_complete_and_c2_deferred": {
+      "pass": true,
+      "detail": {
+        "x2_active_c1": [
+          "vf-shw-ctrl-backwash-sequence",
+          "vf-shw-ctrl-dose-ratio",
+          "vf-shw-ctrl-line2-split",
+          "vf-shw-ctrl-raw-pump-duty",
+          "vf-shw-ctrl-sludge-duty",
+          "vf-shw-ctrl-sludge-sink-duty",
+          "vf-shw-ctrl-t100-permissive",
+          "vf-shw-ctrl-t101-residence",
+          "vf-shw-ctrl-t108-permissive"
+        ],
+        "c2_deferred": {
+          "vf-shw-ctrl-dist-pressure-pi": "X3",
+          "vf-shw-ctrl-f106-inlet-flow-pi": "X3",
+          "vf-shw-ctrl-raw-flow-pi": "X4",
+          "vf-shw-ctrl-t100-level-pi": "X4",
+          "vf-shw-ctrl-t108-level-pi": "X3"
+        },
+        "admission_deferred_entries": {
+          "vf-shw-ctrl-chlorine-residual": "X3",
+          "vf-shw-ctrl-dist-pressure-pi": "X3",
+          "vf-shw-ctrl-f106-inlet-flow-pi": "X3",
+          "vf-shw-ctrl-raw-flow-pi": "X4",
+          "vf-shw-ctrl-t100-level-pi": "X4",
+          "vf-shw-ctrl-t108-level-pi": "X3"
+        },
+        "missing_fields": {},
+        "c2_active_in_x2": []
+      }
+    },
+    "V8_admission_internally_consistent": {
+      "pass": true,
+      "detail": {
+        "executable_scopes": [
+          "vf-shw-node-chem-dosing",
+          "vf-shw-node-dist-p108",
+          "vf-shw-node-line2-aggregate",
+          "vf-shw-node-network-demand",
+          "vf-shw-node-raw-intake",
+          "vf-shw-node-raw-source",
+          "vf-shw-node-sludge-t201",
+          "vf-shw-node-t100",
+          "vf-shw-node-t101",
+          "vf-shw-node-t102",
+          "vf-shw-node-t103",
+          "vf-shw-node-t104",
+          "vf-shw-node-t105",
+          "vf-shw-node-t106",
+          "vf-shw-node-t108",
+          "vf-shw-node-wash-t110"
+        ],
+        "reference_only_scopes": [
+          "vf-shw-node-auto-plc",
+          "vf-shw-node-elec-mcc",
+          "vf-shw-node-t107"
+        ],
+        "scope_overlap": [],
+        "contracts_without_admission": [],
+        "admitted_without_contract": [],
+        "assumed_edges_used": 15,
+        "assumed_edges_excluded": 3,
+        "pim_known_edges_used": 3
+      }
+    },
+    "V9_invariants_and_authority_frozen": {
+      "pass": true,
+      "detail": {
+        "invariant_count": 14,
+        "missing_invariants": [],
+        "missing_not_authorized": [],
+        "authority_frozen": true,
+        "site_truth": false
+      }
+    },
+    "V10_no_runtime_construction_or_execution_surface": {
+      "pass": true,
+      "detail": {
+        "probed_types": [
+          "virtual_factory.runcontrol.lifecycle.RunLifecycleService",
+          "virtual_factory.runcontrol.session.RuntimeSession",
+          "virtual_factory.shwtp.bridge.ShwtpExecutionBridge",
+          "virtual_factory.shwtp.runtime.T108TankRuntime",
+          "virtual_factory.shwtp.logical_runtime.T106LogicalRuntime",
+          "virtual_factory.core.simulation_engine.SimulationEngine",
+          "virtual_factory.discrete.engine.DiscreteSimulationEngine"
+        ],
+        "constructor_calls_during_load": {},
+        "runtime_tokens_in_contract_module": [],
+        "forbidden_imports_in_contract_module": [],
+        "execution_surface_attributes": []
+      }
+    }
+  },
+  "failed_checks": [],
+  "verdict": "ALL_X1_VALIDATIONS_PASS"
+}

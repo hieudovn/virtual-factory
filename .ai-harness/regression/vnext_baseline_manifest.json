@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-SHW-X0.json",
-    "changed_files_base": "f4dcca59112b1f68c94ede6ad50378c72eb0b8e0"
+    "task_contract": ".ai-harness/tasks/VF-SHW-X1.json",
+    "changed_files_base": "c9d64a55ec030eada459f9680edac5756bc6e390"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -397,6 +397,15 @@
       "purpose": "VF-vNEXT-R5 single simulation system consolidation: static + dynamic construction firewall (no standalone RuntimeService/DemoController/duplicate RunLifecycleService/standalone engine authority/hidden legacy cache on any active product path), fail-closed 410 + zero construction for the de-authorized legacy families (root dashboard, legacy G7 run-control, demo-assy-mes), one canonical session per workspace, attempt-bound TIPA profiles (no cross-run contamination), and the bounded shared-shell convergence I1/I3/I4/I5/I6.",
       "files": [
         "tests/test_vnext_r5_single_system.py"
+      ]
+    },
+    {
+      "id": "x1_whole_plant_contracts",
+      "gate": "X1",
+      "type": "pytest",
+      "purpose": "VF-SHW-X1 whole-plant contract layer: deterministic schema-valid process graph (every edge exactly one category pim_known / vf_scenario_assumption / reference_only); every referenced PIM id already accepted (no invented canonical id, VF-local ids only in the vf-shw- namespace); complete assumption provenance with no identity both PIM-known and VF-assumed; complete process/fidelity contract per X2-admitted scope with fail-closed invalid state and site_truth=false; complete C1 control contracts with C2 explicitly deferred/inactive; internally consistent X2 admission manifest; zero runtime/session/controller/engine construction (instrumented constructors + static token scan); frozen whole-plant shape pinned.",
+      "files": [
+        "tests/test_vnext_x1_whole_plant_contracts.py"
       ]
     },
     {

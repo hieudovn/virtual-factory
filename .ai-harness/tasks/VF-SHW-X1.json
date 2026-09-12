@@ -1,0 +1,111 @@
+{
+  "task_id": "VF-SHW-X1",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "contract_layer",
+  "gate_type": "CONTRACT-LAYER gate (Issue #91): materialize the frozen X0 SH-WTP whole-plant design into repo-native, machine-readable process/topology/fidelity/control contracts plus the authoritative X2 admission manifest. No whole-plant runtime, no PI/PID dynamics, no rich UI.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/91",
+  "sa_decision_ref": "Issue #91 (SA Task Contract, authoritative); required base c9d64a5 (X0 CLOSED, verdict SHW_WHOLE_PLANT_DESIGN_FROZEN)",
+  "architecture_authority_ref": "Issue #89 / X0 freeze (reports/VF-SHW-X0.md, evidence/VF-SHW-X0/**) + Issue #78 (R0 frozen) + frozen chain 'SH-WTP Workspace -> ONE RuntimeSession -> RunLifecycleService -> ShwtpExecutionBridge -> whole-plant composition/coordinator -> Area/Process participants -> Key Asset models/controllers -> runtime truth -> projections/UI'",
+  "objective": "Create the X1 contract layer: (1) a deterministic whole-plant operational process graph contract covering RAW-WATER/T100, LINE1 T101..T108, DIST-P108, the CHEMICAL and SLUDGE side streams, WASH-T110 recovery, the LINE2 shallow aggregate path and the ELECTRICAL/AUTOMATION reference-only areas, with every node/edge classified pim_known vs vf_scenario_assumption vs reference_only and carrying explicit provenance; (2) complete scope/fidelity process contracts for every X2-runtime-eligible scope; (3) complete control contracts materializing C0/C1/C2 with the full field set and an implementation_gate per control; (4) frozen Deep Scope A (LINE1 downstream T106/T107/T108-centred, T107 explicitly VF-assumed) and Deep Scope B (RAW WATER + T100) Key Asset interface boundaries; (5) the authoritative X2 admission manifest that is the authorization boundary for the next gate. No runtime, session or controller may be constructed.",
+  "explicit_non_objectives": [
+    "No whole-plant runtime execution and no runnable whole-plant model",
+    "No PI/PID dynamic implementation (contracts only; C2 loops deferred to X3/X4)",
+    "No rich SH-WTP UI",
+    "No RuntimeSession / RunLifecycleService redesign and no second run authority",
+    "No independent Area sessions",
+    "No modification of existing SH-WTP runtime behaviour (new contract module only)",
+    "No gateway/OPC/MQTT/Kafka work",
+    "No PIM write and no PIM semantic change",
+    "No new PIM canonical ids (UNIT-SHW-*/AREA-SHW-*/REL-SHW-*)",
+    "No site-faithful claims",
+    "No ASSY changes",
+    "No X2 implementation start",
+    "No rebase onto stale main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-shw-x1",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "c9d64a55ec030eada459f9680edac5756bc6e390",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X1.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "configs/vnext/shwtp/shwtp_whole_plant_graph_v1.json",
+    "configs/vnext/shwtp/shwtp_process_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_control_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_x2_admission_manifest_v1.json",
+    "src/virtual_factory/shwtp/contracts.py",
+    "tests/test_vnext_x1_whole_plant_contracts.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/expansion.py",
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/logical_runtime.py",
+    "src/virtual_factory/shwtp/{federation,projection,evaluation,overlay,bridge,session}.py",
+    "src/virtual_factory/{runcontrol,composition,discrete,core,assembly,ui}/",
+    "tests/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/",
+    "configs/plants/",
+    "configs/model_types/",
+    "configs/workspaces/"
+  ],
+  "required_deliverables": [
+    "configs/vnext/shwtp/shwtp_whole_plant_graph_v1.json",
+    "configs/vnext/shwtp/shwtp_process_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_control_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_x2_admission_manifest_v1.json",
+    "src/virtual_factory/shwtp/contracts.py (loader + fail-closed validator; constructs nothing)",
+    "tests/test_vnext_x1_whole_plant_contracts.py",
+    ".ai-harness/sa-review/evidence/VF-SHW-X1/01-graph-signature.json",
+    ".ai-harness/sa-review/evidence/VF-SHW-X1/02-validation-matrix.json",
+    ".ai-harness/sa-review/evidence/VF-SHW-X1/03-no-construction-proof.json",
+    ".ai-harness/sa-review/evidence/VF-SHW-X1/04-x2-admission-summary.json",
+    ".ai-harness/sa-review/reports/VF-SHW-X1.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_x1_whole_plant_contracts.py"
+  ],
+  "required_smoke_checks": [
+    "Canonical baseline green at the pushed head (new x1_whole_plant_contracts group included)",
+    "Full suite green at the pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Constructing any runtime, session, bridge, engine or controller",
+    "Adding or changing a PIM semantic identity",
+    "Activating a C2 loop in X2",
+    "Expanding beyond the X2 admission manifest",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "A required process/node/relationship cannot be represented without adding/changing PIM semantics",
+    "The X0 deep-scope boundaries prove internally inconsistent",
+    "A control contract requires choosing between materially different product behaviours not frozen in X0",
+    "X2 admission cannot be defined without implementing runtime to discover the contract",
+    "The canonical SH-WTP architecture would have to change"
+  ],
+  "acceptance_criteria": [
+    {"id": "X1-1", "phase": "final", "description": "Whole-plant process graph contract is deterministic and schema-valid, covering the frozen path and side streams with per-edge categories pim_known / vf_scenario_assumption / reference_only", "rule": {"field": "x1.graph", "operator": "is_true", "expected": null}},
+    {"id": "X1-2", "phase": "final", "description": "Every PIM canonical id referenced already exists in the accepted PIM-derived inventory/graph; no new canonical id invented; VF-local ids use the vf-shw- namespace", "rule": {"field": "x1.identity", "operator": "is_true", "expected": null}},
+    {"id": "X1-3", "phase": "final", "description": "Every assumed edge carries explicit VF assumption provenance (source_kind/status/reversible/assumption_id) and no edge is simultaneously PIM-known and VF-assumed", "rule": {"field": "x1.assumptions", "operator": "is_true", "expected": null}},
+    {"id": "X1-4", "phase": "final", "description": "Every X2-admitted executable scope has a complete process/fidelity contract (inputs, outputs, state, parameters+units, constraints, conservation, update family, init/reset, invalid state, PIM ceiling, proposed VF fidelity, site_truth=false)", "rule": {"field": "x1.process_contracts", "operator": "is_true", "expected": null}},
+    {"id": "X1-5", "phase": "final", "description": "Every X2 C1 control has a complete control contract and every C2 loop is explicitly deferred to X3/X4 and inactive in X2", "rule": {"field": "x1.controls", "operator": "is_true", "expected": null}},
+    {"id": "X1-6", "phase": "final", "description": "X2 admission manifest is complete (executable scopes, reference/container-only, C1 active, C2 deferred, assumed edges used, invariants) and internally consistent with the other contracts", "rule": {"field": "x1.admission", "operator": "is_true", "expected": null}},
+    {"id": "X1-7", "phase": "final", "description": "Zero runtime/session/controller/engine construction added by the contract layer", "rule": {"field": "x1.no_construction", "operator": "is_true", "expected": null}},
+    {"id": "X1-8", "phase": "final", "description": "R1-R5/UX01/X0 baseline and full suite remain green", "rule": {"field": "x1.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
