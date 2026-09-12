@@ -13,7 +13,7 @@
 |---|---|
 | Implementation commit (all source, config, tests, contract, manifest, CURRENT) | `e3c2846d0a40d786dad8b398039f4eb6d92897a6` |
 | Evidence/acceptance commit (evidence artefacts + report + the `x3.*` rules; no source change) | `c105ec8b143b9abff04a1bc46ee7d6e1e5b89eb0` |
-| Docs/status pin commit (markdown only, code-identical) | this commit — its SHA is the PR #99 head reported to the SA |
+| Docs/status pin commit(s) (markdown only, code-identical) | the `feature/vf-shw-x3` branch head; the exact reviewed SHA is the PR #99 head reported to the SA |
 | Pull request | #99 (`feature/vf-shw-x3` → `main`, base `main`, not merged) |
 
 Machine-derived verification **at the implementation head**, with a clean tree:
@@ -137,10 +137,12 @@ Two real defects were found and fixed by this work (they were *not* visible in t
 - **Unreachable SP**: the valve pins at 100 %, `saturated = true`, reason `output_saturated`, alarm
   `setpoint_unreachable_or_output_saturated`, the PV is reported **below** the SP (never "met"), and the
   integral is held (anti-windup). A reachable SP in the same profile recovers to within 5 %.
-- **Interlock/backwash**: at the frozen DP threshold the C1 sequence takes the valve
-  (`c1_backwash_closes_inlet`), the measured flow is exactly 0, `applied_mv = 0` with
-  `applied_by = c1_arbitration`, the PI's own output stays visible as `pi_output_mv`, its integral is
-  **held** (`external_c1_override_integral_held`) and on release the loop recovers to within 5 %.
+- **Interlock/backwash**: at the frozen DP threshold the C1 sequence takes the valve; the arbitration record
+  carries `c1_backwash_closes_inlet` (the PI's own detail carries the generic `c1_arbitration` override flag
+  with `external_override = true`) while the PI's own output stays visible as `pi_output_mv`, the measured
+  flow is exactly 0 with `applied_mv = 0`, the integral is **held**
+  (`external_c1_override_integral_held`) and on release the loop recovers to within 5 %
+  (`valve_applied_by` returns to `pi_flow_output`).
 - **AUTO/MANUAL**: manual → auto is bumpless (the requested output does not jump beyond the slew); the
   error signs are explicit and tested.
 - **Slew**: the valve/pump ramp limits are enforced every tick.
