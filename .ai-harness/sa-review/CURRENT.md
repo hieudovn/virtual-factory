@@ -59,3 +59,15 @@ Authority unchanged: vf_runtime_authorization NOT_AUTHORIZED;
 site_authorized_execution NOT_AUTHORIZED; whole_plant_runtime NOT_AUTHORIZED / NOT_IMPLEMENTED.
 
 STOP - awaiting SA review. SH-WTP expansion, gateway/protocol work and merge are NOT authorized.
+
+---
+
+R5 machine-derived status (this gate):
+- Harness preflight: PASSED
+- Implementation head: e344e9e
+- Canonical baseline at e344e9e: overall PASS, failed_groups [], 43/43 groups (incl. the new
+  r5_single_system group, r1..r4, full_suite, checks_compile, checks_static_lint_type,
+  checks_changed_files, checks_preflight)
+- Full suite: 2661 passed (R4 head: 2625)
+- R5 focused module: 30 passed
+- Verdict: VF_SINGLE_SIMULATION_SYSTEM_CONSOLIDATED
