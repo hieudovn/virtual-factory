@@ -69,6 +69,11 @@ SHWTP_WHOLE_PLANT_DEFAULT_RUN_ID = "run-shwtp-whole-plant-x2"
 SHWTP_WHOLE_PLANT_DEFAULT_STEP_S = 60.0
 WHOLE_PLANT_X2_SCHEMA = "vf.shwtp.x2.whole_plant_runtime.v1"
 
+#: X3 (VF-SHW-X3) conservative per-edge transfer budget published by the X3
+#: allocation stage. The X2 profile never publishes it, so every participant
+#: behaves exactly as accepted when the key is absent.
+X3_OUT_BUDGET_KEY = "x3_out_budget_m3h_by_scope"
+
 #: Mandatory X2 truth/authorization labels carried by EVERY runtime output.
 SITE_TRUTH = False
 SIMULATION_TRUTH = "synthetic_reference"
@@ -571,6 +576,26 @@ class ScopeParticipant:
         held = (self._storage_volume() / dt_h) if dt_h > 0 else 0.0
         return held + max(0.0, inflow_m3h)
 
+    def _x3_cap(self, port_id: str, requested_m3h: float) -> float:
+        """Apply the X3 per-edge transfer budget of this scope's source port.
+
+        VF-SHW-X3 (D4) publishes immutable per-edge budgets through the transient
+        command set. Without that layer (the accepted X2 profile) the request is
+        returned unchanged, so X2 behaviour is byte-for-byte preserved; withheld
+        water simply stays in this scope's storage.
+        """
+        requested = _nonneg(requested_m3h, f"{self.scope_id}.{port_id}")
+        budgets = self._commands.get(X3_OUT_BUDGET_KEY)
+        if not isinstance(budgets, Mapping):
+            return requested
+        scope_budgets = budgets.get(self.scope_id)
+        if not isinstance(scope_budgets, Mapping):
+            return requested
+        cap = scope_budgets.get(port_id)
+        if cap is None:
+            return requested
+        return min(requested, _nonneg(cap, f"{self.scope_id}.{port_id}.budget"))
+
     def _emit(
         self,
         target_scope_id: str,
@@ -663,6 +688,7 @@ class RawSourceParticipant(ScopeParticipant):
             upper_bound,
             "raw_flow_out_of_band",
         )
+        self._flow_m3h = self._x3_cap("raw_out", self._flow_m3h)
         return (
             self._emit(
                 "vf-shw-node-raw-intake",
@@ -712,6 +738,7 @@ class RawIntakeParticipant(ScopeParticipant):
         else:
             target = self._raw_flow_m3h * (self._pump_speed_pct / 100.0)
             self._intake_flow_m3h = round(min(target, self.scenario.pump_rated_flow_m3h), 9)
+        self._intake_flow_m3h = self._x3_cap("intake_out", self._intake_flow_m3h)
         if self._intake_flow_m3h > 0.0 and self._pump_speed_pct <= 0.0:
             self._alarm("dry_run_flow")
         self._screen_dp_kpa = round(
@@ -865,6 +892,10 @@ class T100Participant(StorageTankParticipant):
             l2_feed = min(split_fraction * l1_feed, max(0.0, available_rate + intake - l1_feed))
             l1_feed = max(0.0, l1_feed)
             l2_feed = max(0.0, l2_feed)
+        # D4: the X3 budget layer bounds each outlet before the withdrawal is
+        # integrated (no-op under the accepted X2 profile)
+        l1_feed = self._x3_cap("l1_out", l1_feed)
+        l2_feed = self._x3_cap("l2_out", l2_feed)
         self._outflows = {"vf-shw-node-t101": l1_feed, "vf-shw-node-line2-aggregate": l2_feed}
         self._withdrawal_m3h = l1_feed + l2_feed
 
@@ -946,6 +977,7 @@ class ResidenceParticipant(ScopeParticipant):
         if self._outlet_inhibited:
             self._alarm("outlet_inhibited_by_residence_interlock")
         self._outflow_m3h = self._inflow_m3h if outlet_enabled else 0.0
+        self._outflow_m3h = self._x3_cap("flow_out", self._outflow_m3h)
         dt_h = dt_s / 3600.0
         self._volume_m3 = self._bound_volume(
             self._volume_m3 + (self._inflow_m3h - self._outflow_m3h) * dt_h, self.capacity_m3
@@ -1055,7 +1087,7 @@ class DoseContactParticipant(ScopeParticipant):
             if lag_delta > self._max_dose_step + 1e-9:
                 self._alarm("dose_transport_mismatch")
         self._applied_dose_mg_l = round(commanded, 6)
-        self._outflow_m3h = self._inflow_m3h
+        self._outflow_m3h = self._x3_cap("flow_out", self._inflow_m3h)
         reduction = self.dose_efficiency * self._applied_dose_mg_l
         self._turbidity_out_ntu = round(max(0.0, self._inbound_turbidity_ntu * (1.0 - min(0.95, reduction))), 9)
         return (
@@ -1133,6 +1165,7 @@ class ClarifierParticipant(ScopeParticipant):
         dt_h = dt_s / 3600.0
         available_rate = (self._volume_m3 / dt_h) if dt_h > 0 else 0.0
         self._sludge_out_m3h = round(min(withdrawal, max(0.0, available_rate)), 9)
+        self._sludge_out_m3h = self._x3_cap("sludge_out", self._sludge_out_m3h)
         # C02-4: the frozen T108 high-level inhibit closes the T106 filtered-water
         # inflow PATH; the filter cannot forward what it does not receive, so the
         # upstream clarifier HOLDS its water instead of pushing it into a closed
@@ -1144,6 +1177,7 @@ class ClarifierParticipant(ScopeParticipant):
             self._outflow_m3h = 0.0
         else:
             self._outflow_m3h = self._inflow_m3h
+        self._outflow_m3h = self._x3_cap("flow_out", self._outflow_m3h)
         total_out = self._outflow_m3h + self._sludge_out_m3h
         self._volume_m3 = self._bound_volume(
             self._volume_m3 + (self._inflow_m3h - total_out) * dt_h, self.capacity_m3
@@ -1222,7 +1256,13 @@ class FilterParticipant(ScopeParticipant):
         valve_pos = _num(self._command("inlet_valve_pos", 0.0), "inlet_valve_pos")
         self._valve_pos_pct = self._clamp(valve_pos, 0.0, 100.0, "valve_pos_out_of_range")
         dt_h = dt_s / 3600.0
-        open_valve = self._valve_pos_pct >= 100.0
+        # VF-SHW-X3 (D5/D7): the inlet valve is a continuous throttling element.
+        # Its delivered capacity is already metered by the X3 edge budget of
+        # T105->T106, so any OPEN position forwards what actually arrived. The
+        # accepted X2 positions are exactly 0 % (closed) and 100 % (open), so
+        # ``valve_fraction > 0`` reproduces the discrete X2 behaviour unchanged.
+        valve_fraction = self._valve_pos_pct / 100.0
+        open_valve = valve_fraction > 0.0
         # C02-4: the frozen T108 high-level permissive owns the UPSTREAM T106
         # filtered-water inflow path (``inflow_enable``). The inhibit closes that
         # path: the filter forwards nothing to T108 while it is active. The
@@ -1235,6 +1275,7 @@ class FilterParticipant(ScopeParticipant):
         if self._inflow_inhibited:
             self._alarm("filtered_path_inhibited_by_downstream_level")
         self._filtered_flow_m3h = self._inflow_m3h if (open_valve and inflow_enable) else 0.0
+        self._filtered_flow_m3h = self._x3_cap("filtered_out", self._filtered_flow_m3h)
         efficiency = self.scenario.t106_filter_efficiency if open_valve else 0.0
         self._filtered_turbidity_ntu = round(max(0.0, self._inbound_turbidity_ntu * (1.0 - efficiency)), 9)
         if open_valve and self._filtered_flow_m3h > 0.0:
@@ -1259,6 +1300,7 @@ class FilterParticipant(ScopeParticipant):
         in_rate = self._inflow_m3h + wash_return
         available_rate = self._available_outflow_rate(dt_s, in_rate)
         self._wash_out_m3h = round(min(requested_wash_out, max(0.0, available_rate)), 9)
+        self._wash_out_m3h = self._x3_cap("wash_out", self._wash_out_m3h)
         self._wash_water_limited = self._wash_out_m3h < requested_wash_out - 1e-12
         if self._wash_water_limited:
             self._alarm("wash_water_limited_by_available_volume")
@@ -1344,6 +1386,7 @@ class RecoveryParticipant(ScopeParticipant):
         dt_h = dt_s / 3600.0
         available_rate = (self._volume_m3 / dt_h) if dt_h > 0 else 0.0
         self._return_m3h = round(min(max_return, max(0.0, available_rate)), 9)
+        self._return_m3h = self._x3_cap("return_out", self._return_m3h)
         self._volume_m3 = self._bound_volume(
             self._volume_m3 + (self._wash_in_m3h - self._return_m3h) * dt_h, self.capacity_m3
         )
@@ -1391,6 +1434,7 @@ class T108Participant(StorageTankParticipant):
         # C03: the transfer withdrawal is bounded by the water actually held; a
         # pump can never move water that is not there.
         self._withdrawal_m3h = round(min(pump_rate, max(0.0, available_rate)), 9)
+        self._withdrawal_m3h = self._x3_cap("outlet_out", self._withdrawal_m3h)
         if self._level_m <= self.level_band[0]:
             self._withdrawal_m3h = 0.0
             self._alarm("transfer_pump_lall_inhibit")
@@ -1448,6 +1492,7 @@ class DistributionParticipant(ScopeParticipant):
             self._last_x2_producer = "x2_active_controller"
         self._speed_pct = self._clamp(speed, 0.0, 100.0, "hsp_speed_out_of_range")
         self._network_flow_m3h = round(self._inlet_flow_m3h + self._l2_flow_m3h, 9)
+        self._network_flow_m3h = self._x3_cap("network_out", self._network_flow_m3h)
         head = self.scenario.dist_curve_head_bar * (self._speed_pct / 100.0) ** 2
         loss = self.scenario.dist_manifold_loss_bar_per_m3h2 * (self._network_flow_m3h ** 2)
         self._pressure_bar = round(
@@ -1660,6 +1705,7 @@ class Line2AggregateParticipant(ScopeParticipant):
         if not self._loss_audit_ok:
             self._alarm("line2_process_loss_audit_failed")
         self._delivery_m3h = round(audit["expected_delivery_m3h"], 9)
+        self._delivery_m3h = self._x3_cap("l2_delivery_out", self._delivery_m3h)
         if self._feed_m3h > capacity:
             self._alarm("line2_capacity_exceeded")
         return (
