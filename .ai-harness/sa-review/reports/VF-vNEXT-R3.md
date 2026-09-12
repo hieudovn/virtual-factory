@@ -8,7 +8,7 @@ Issue: https://github.com/hieudovn/virtual-factory/issues/81
 - Base (technical branch point / accepted R2 head): `4fc81e72780fe14ba5532407fdc8113b44385617`
 - Expected base sha (origin/main): `f5261c8ca18cd4e01779c0274b55270ba028b4e5`
 - Contract commit: `.ai-harness/tasks/VF-vNEXT-R3.json`
-- Head: (final commit on this branch)
+- Head: 5e22da63bee238817327b0f4e21c77bfbcd32b6c
 - Harness preflight: **PASSED** (branch + clean tree + expected_base_sha == origin/main)
 - Authority refs: R0 (Issue #78, CLOSED/frozen), R2 (Issue #80, accepted), R2V (Issue #82, PASS `ASSY_RICH_SIMULATION_VALIDATED`)
 
