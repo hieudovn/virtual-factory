@@ -7,21 +7,12 @@ pytest.importorskip("httpx")
 
 from fastapi.testclient import TestClient
 
-from virtual_factory.ui.api import create_app
+from virtual_factory.ui.api import LEGACY_AUTHORITY_REMOVED_CODE, create_app
 
 
 def _client() -> TestClient:
     app = create_app(config_path=Path("configs/plants/continuous_mvp_01.yaml"), dt_s=1.0)
     return TestClient(app)
-
-
-def _assert_no_internal_truth(payload) -> None:
-    if isinstance(payload, list):
-        assert all(item.get("category") != "internal_truth" for item in payload if isinstance(item, dict))
-        assert all(item.get("name") != "T102_LEVEL_TRUE" for item in payload if isinstance(item, dict))
-    elif isinstance(payload, dict):
-        assert payload.get("category") != "internal_truth"
-        assert payload.get("name") != "T102_LEVEL_TRUE"
 
 
 def test_health_returns_ok() -> None:
@@ -53,77 +44,53 @@ def test_static_app_js_is_accessible() -> None:
     assert "filterPub" in response.text
 
 
-def test_status_returns_service_status_without_truth() -> None:
+# ═══════════════════════════════════════════════════════════
+# VF-vNEXT-R5 — the eager root-dashboard RuntimeService authority is REMOVED.
+#
+# The experimental MVP-01 continuous dashboard routes remain reachable only as
+# FAIL-CLOSED deprecated aliases: HTTP 410, machine-readable payload, and ZERO
+# runtime/engine construction (the construction firewall is proven in
+# tests/test_vnext_r5_single_system.py). Page routes (/, /health, /static/*) are
+# unaffected and the reusable kernel stays available as a library.
+# ═══════════════════════════════════════════════════════════
+
+DEAUTHORIZED_DASHBOARD_ROUTES = (
+    ("get", "/status", None),
+    ("get", "/telemetry/latest", None),
+    ("get", "/telemetry/history", {"limit": 2}),
+    ("get", "/alarms", None),
+    ("post", "/step", {}),
+    ("post", "/run-steps", {}),
+    ("post", "/start", {}),
+    ("post", "/stop", {}),
+    ("post", "/reset", {}),
+    ("get", "/api/plant-graph", None),
+    ("get", "/api/model-types", None),
+    ("patch", "/api/pid/PID-1", {}),
+    ("post", "/api/fault", {}),
+    ("get", "/api/opcua/status", None),
+    ("get", "/api/config/current", None),
+    ("post", "/api/config/switch", {}),
+    ("get", "/api/ui/context/continuous", None),
+)
+
+
+@pytest.mark.parametrize("method,path,body", DEAUTHORIZED_DASHBOARD_ROUTES)
+def test_legacy_dashboard_state_routes_are_deauthorized(method, path, body) -> None:
     client = _client()
 
-    response = client.get("/status")
+    request = getattr(client, method)
+    if method in ("post", "patch"):
+        response = request(path, json=body or {})
+    elif body:
+        response = request(path, params=body)
+    else:
+        response = request(path)
+
+    assert response.status_code == 410
     payload = response.json()
-
-    assert response.status_code == 200
-    assert payload["status"] == "stopped"
-    assert payload["running"] is False
-    assert payload["mqtt_enabled"] is False
-    assert payload["plant_id"] == "continuous_mvp_01"
-    assert "truth" not in payload
-
-
-def test_start_and_stop_update_running_status() -> None:
-    client = _client()
-
-    start_response = client.post("/start")
-    stop_response = client.post("/stop")
-
-    assert start_response.status_code == 200
-    assert start_response.json()["running"] is True
-    assert stop_response.status_code == 200
-    assert stop_response.json()["running"] is False
-
-
-def test_step_returns_publishable_telemetry() -> None:
-    client = _client()
-
-    response = client.post("/step")
-    payload = response.json()
-
-    assert response.status_code == 200
-    assert isinstance(payload, list)
-    assert payload
-    _assert_no_internal_truth(payload)
-
-
-def test_latest_returns_publishable_signals() -> None:
-    client = _client()
-
-    response = client.get("/telemetry/latest")
-    payload = response.json()
-    names = {item["name"] for item in payload}
-
-    assert response.status_code == 200
-    assert "LT102_LEVEL" in names
-    assert "T102_LEVEL_TRUE" not in names
-    _assert_no_internal_truth(payload)
-
-
-def test_alarms_returns_industrial_events_after_step() -> None:
-    client = _client()
-
-    client.post("/step")
-    response = client.get("/alarms")
-    payload = response.json()
-
-    assert response.status_code == 200
-    assert payload
-    assert all(item["category"] == "industrial_event" for item in payload)
-    _assert_no_internal_truth(payload)
-
-
-def test_history_excludes_internal_truth() -> None:
-    client = _client()
-
-    client.post("/run-steps", params={"n": 3})
-    response = client.get("/telemetry/history", params={"limit": 2})
-    payload = response.json()
-
-    assert response.status_code == 200
-    assert payload
-    _assert_no_internal_truth(payload)
+    assert payload["code"] == LEGACY_AUTHORITY_REMOVED_CODE
+    assert payload["error"] == "legacy_runtime_authority_deauthorized"
+    assert payload["surface"] == "root_dashboard_runtime_service"
+    assert payload["legacy_runtime_authority"] is False
+    assert "/workspaces" in payload["canonical_paths"]

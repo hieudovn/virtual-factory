@@ -237,20 +237,35 @@ class TestAssySelectionNoRuntimeReconstruction:
 # ═══════════════════════════════════════════════════════════
 
 class TestContinuousTruthfulContext:
-    def test_continuous_context_is_root_only_no_invented_hierarchy(self):
-        c = _client()
-        ctx = c.get("/api/ui/context/continuous").json()
-        assert ctx["workspace"]["workspace_id"] == "continuous_mvp_01"
-        assert ctx["hierarchy"] == []  # no invented nested scopes
-        assert ctx["selection"]["kind"] == "workspace"
+    def test_continuous_context_route_is_deauthorized(self):
+        """VF-vNEXT-R5: the continuous dashboard context authority is removed.
 
-    def test_continuous_existing_behavior_retained(self):
+        ``/api/ui/context/continuous`` was derived from the eager root-dashboard
+        RuntimeService (``service.status()``); with the authority gone the route
+        is a fail-closed deprecated alias. Structural, service-free context
+        routes (``/api/ui/hierarchy``, ``/api/ui/context``) are unaffected.
+        """
         c = _client()
-        assert c.post("/step").status_code == 200
-        latest = c.get("/telemetry/latest").json()
-        names = {item["name"] for item in latest}
-        assert "LT102_LEVEL" in names
-        assert c.get("/status").json()["plant_id"] == "continuous_mvp_01"
+        response = c.get("/api/ui/context/continuous")
+        assert response.status_code == 410
+        body = response.json()
+        assert body["code"] == "VF_LEGACY_AUTHORITY_DEAUTHORIZED"
+        assert body["surface"] == "root_dashboard_runtime_service"
+        assert body["legacy_runtime_authority"] is False
+        # the structural context routes are still served (no runtime authority)
+        assert c.get("/api/ui/hierarchy").status_code == 200
+        assert c.get("/api/ui/context").status_code == 200
+
+    def test_continuous_dashboard_state_routes_are_deauthorized(self):
+        c = _client()
+        for method, path in (
+            ("post", "/step"),
+            ("get", "/telemetry/latest"),
+            ("get", "/status"),
+        ):
+            response = getattr(c, method)(path)
+            assert response.status_code == 410
+            assert response.json()["code"] == "VF_LEGACY_AUTHORITY_DEAUTHORIZED"
 
     def test_continuous_context_script_is_additive(self):
         js = (UI_STATIC / "continuous_context.js").read_text(encoding="utf-8")

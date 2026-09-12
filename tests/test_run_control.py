@@ -352,12 +352,25 @@ class TestAssyExecutionBridge:
 # ═══════════════════════════════════════════════════════════
 
 class TestContinuousAndReset:
-    def test_continuous_existing_behavior_green(self):
+    def test_continuous_dashboard_routes_are_deauthorized(self):
+        """VF-vNEXT-R5: the experimental continuous dashboard authority is gone.
+
+        The eager root-dashboard RuntimeService is removed, so its state routes
+        are fail-closed deprecated aliases (HTTP 410, zero construction). The
+        reusable kernel (RuntimeService/engine) stays a library.
+        """
         c = _client()
-        assert c.post("/step").status_code == 200
-        latest = c.get("/telemetry/latest").json()
-        assert any(item["name"] == "LT102_LEVEL" for item in latest)
-        assert c.get("/status").json()["plant_id"] == "continuous_mvp_01"
+        for method, path in (
+            ("post", "/step"),
+            ("get", "/telemetry/latest"),
+            ("get", "/status"),
+        ):
+            response = getattr(c, method)(path)
+            assert response.status_code == 410
+            body = response.json()
+            assert body["code"] == "VF_LEGACY_AUTHORITY_DEAUTHORIZED"
+            assert body["surface"] == "root_dashboard_runtime_service"
+            assert body["legacy_runtime_authority"] is False
 
     def test_reset_capability_scoped(self):
         # A bridge without reset support must fail closed.
@@ -385,53 +398,74 @@ class TestContinuousAndReset:
 # ═══════════════════════════════════════════════════════════
 
 class TestApiSurface:
-    def test_end_to_end_lifecycle_and_path_qualified_target(self):
+    """VF-vNEXT-R5: the legacy G7 run-control family is a FAIL-CLOSED alias.
+
+    Before R5 this family owned a SECOND lifecycle authority per workspace
+    (``TIPA`` = duplicate authority over an UNPREPARED federation, ``continuous``
+    = a second continuous authority building an extra RuntimeService per
+    attempt). Both discriminators are de-authorized. The canonical TIPA authority
+    is the workspace monitor family (``/vnext/workspaces/TIPA/*``) plus
+    ``/assy-demo/*``; no continuous workspace is registered.
+    """
+
+    LEGACY_ROUTES = (
+        ("get", "/vnext/runs/current", None),
+        ("get", "/vnext/runs/current", {"workspace": "TIPA"}),
+        ("get", "/vnext/runs/current", {"workspace": "continuous"}),
+        ("get", "/vnext/runs/RUN-1", None),
+        ("post", "/vnext/runs", None),
+        ("post", "/vnext/runs", {"workspace": "TIPA"}),
+        ("post", "/vnext/runs", {"workspace": "continuous"}),
+        ("post", "/vnext/runs/RUN-1/start", None),
+        ("post", "/vnext/runs/RUN-1/step", None),
+        ("post", "/vnext/runs/RUN-1/pause", None),
+        ("post", "/vnext/runs/RUN-1/resume", None),
+        ("post", "/vnext/runs/RUN-1/stop", None),
+        ("post", "/vnext/runs/RUN-1/reset", None),
+        ("post", "/vnext/runs/RUN-1/restart", None),
+        ("post", "/vnext/runs/RUN-1/replay", None),
+    )
+
+    def test_legacy_run_control_routes_fail_closed_without_minting_runs(self):
         c = _client()
-        created = c.post(
-            "/vnext/runs",
-            json={"target_path": "TIPA/ASSY/ASSY-SL03", "scenario_id": "SCN-1"},
+        for method, path, params in self.LEGACY_ROUTES:
+            request = getattr(c, method)
+            response = (
+                request(path, params=params, json={})
+                if method == "post"
+                else request(path, params=params)
+            )
+            assert response.status_code == 410, (method, path, params)
+            body = response.json()
+            assert body["code"] == "VF_LEGACY_AUTHORITY_DEAUTHORIZED"
+            assert body["surface"] == "legacy_g7_run_control"
+            assert body["legacy_runtime_authority"] is False
+
+    def test_deauthorized_family_mints_no_duplicate_authority(self):
+        """The removed family can never create a second lifecycle authority."""
+        c = _client()
+        assert c.post("/vnext/runs", json={"target_path": "TIPA"}).status_code == 410
+        assert (
+            c.get("/vnext/runs/current", params={"workspace": "TIPA"}).status_code
+            == 410
         )
-        assert created.status_code == 201
-        rec = created.json()
-        rid = rec["run_id"]
-        assert rec["target_path"] == "TIPA/ASSY/ASSY-SL03"  # path-qualified
-        assert rec["target_kind"] == "executable"
-        assert rec["effective_scopes"] == ["TIPA/ASSY/ASSY-SL03"]
-        assert c.get(f"/vnext/runs/{rid}").json()["run_id"] == rid
-        assert c.get("/vnext/runs/current").json()["run_id"] == rid
-        assert c.post(f"/vnext/runs/{rid}/start").status_code == 200
-        step = c.post(f"/vnext/runs/{rid}/step").json()
-        assert step["status"] == "completed"
-        assert step["target_time_s"] == 120.0
-        assert c.post(f"/vnext/runs/{rid}/pause").status_code == 200
-        assert c.post(f"/vnext/runs/{rid}/step").status_code == 409
-        assert c.post(f"/vnext/runs/{rid}/resume").status_code == 200
-        assert c.post(f"/vnext/runs/{rid}/stop").status_code == 200
-        assert c.post(f"/vnext/runs/{rid}/step").status_code == 409
+        # The canonical TIPA authority is reachable and independent of the
+        # removed family (its own session identity, no legacy run ids).
+        view = c.get("/vnext/workspaces/TIPA/view")
+        assert view.status_code == 200
+        assert view.json()["workspace_id"] == "TIPA"
 
-    def test_stale_run_id_404(self):
-        c = _client()
-        assert c.post("/vnext/runs/NOPE/start").status_code == 404
-        assert c.get("/vnext/runs/NOPE").status_code == 404
+    def test_containers_and_workspaces_are_never_executable(self):
+        """Library-level authority retained (HTTP surface removed in R5)."""
+        from virtual_factory.runcontrol import RunLifecycleService
 
-    def test_replay_unavailable_explicit(self):
-        c = _client()
-        created = c.post("/vnext/runs", json={"target_path": "TIPA"})
-        rid = created.json()["run_id"]
-        c.post(f"/vnext/runs/{rid}/start")
-        c.post(f"/vnext/runs/{rid}/stop")  # terminal -> eligible replay source
-        r = c.post(f"/vnext/runs/{rid}/replay")
-        assert r.status_code == 409
-        assert "unavailable" in r.json()["detail"]
-
-    def test_container_target_never_gets_executable_authority(self):
-        c = _client()
-        rec = c.post("/vnext/runs", json={"target_path": "TIPA/ASSY"}).json()
-        assert rec["target_kind"] == "container"
-        assert "TIPA/ASSY" not in rec["effective_scopes"]
-        assert rec["effective_scopes"] == [
+        svc = RunLifecycleService(build_tipa_workspace(), lambda: _FakeBridge())
+        rec = svc.create_run("TIPA/ASSY")
+        assert rec.target_kind == "container"
+        assert "TIPA/ASSY" not in rec.effective_scopes
+        assert tuple(rec.effective_scopes) == tuple(
             f"TIPA/ASSY/{sid}" for sid in SUB_LINE_IDS
-        ]
+        )
 
 
 # ═══════════════════════════════════════════════════════════
@@ -450,11 +484,17 @@ class TestStaticUiAndNoG8:
         # no legacy repointing: does not call legacy /step /start /stop /reset
         assert "fetch('/step'" not in js and "fetch(\"/step\"" not in js
 
-    def test_assoc_page_mounts_run_control_additively(self):
+    def test_canonical_page_no_longer_mounts_the_legacy_g7_include(self):
+        """VF-vNEXT-R5 (audit I6): the canonical ASSY page drops the legacy include.
+
+        The canonical page carries its own identity (``vf-canonical-identity``), so
+        the legacy G7 context script was never driven from it; with the family
+        de-authorized the include is removed. The rich 2D domain UI stays mounted.
+        """
         html = (UI_STATIC / "assy_demo.html").read_text(encoding="utf-8")
-        assert "run_control_context.js" in html
-        assert "vf-run-control-section" in html
+        assert "run_control_context.js" not in html
         assert "assy_demo.js" in html  # domain rendering retained
+        assert "hierarchy.js" in html and "assy_context.js" in html
 
     def test_no_g8_scope_in_runcontrol_package(self):
         import inspect
@@ -499,18 +539,6 @@ class TestActiveAttemptAuthorityC01:
             svc.start(aid)
         with pytest.raises(RunLifecycleError):
             svc.step(aid)
-
-    def test_api_historical_run_id_mutation_returns_conflict(self):
-        c = _client()
-        a = c.post("/vnext/runs", json={"target_path": "TIPA"}).json()
-        aid = a["run_id"]
-        c.post(f"/vnext/runs/{aid}/start")
-        c.post(f"/vnext/runs/{aid}/stop")  # A terminal
-        b = c.post("/vnext/runs", json={"target_path": "TIPA"}).json()
-        assert b["run_id"] != aid
-        # Known but superseded run id -> conflict, not success.
-        assert c.post(f"/vnext/runs/{aid}/step").status_code == 409
-        assert c.post(f"/vnext/runs/{aid}/start").status_code == 409
 
     def test_restart_starts_fresh_execution_context(self):
         svc = _real_service()
@@ -715,120 +743,41 @@ class TestContinuousExecutionBridgeC02:
 
 
 class TestWorkspaceIsolationC02:
-    def test_tipa_and_continuous_active_runs_coexist(self):
-        c = _client()
-        a = c.post("/vnext/runs", json={"target_path": "TIPA"}).json()
-        aid = a["run_id"]
-        b = c.post(
-            "/vnext/runs",
-            params={"workspace": "continuous"},
-            json={"target_path": "continuous"},
-        ).json()
-        bid = b["run_id"]
-        assert aid != bid
-        assert c.post(f"/vnext/runs/{aid}/start").status_code == 200
-        assert c.post(
-            f"/vnext/runs/{bid}/start", params={"workspace": "continuous"}
-        ).status_code == 200
-        # both are active simultaneously in independent authorities
-        assert c.get("/vnext/runs/current").json()["run_id"] == aid
-        assert c.get(
-            "/vnext/runs/current", params={"workspace": "continuous"}
-        ).json()["run_id"] == bid
+    """VF-vNEXT-R5: no second workspace lifecycle authority exists any more.
 
-    def test_run_id_cannot_cross_mutate(self):
-        c = _client()
-        a = c.post("/vnext/runs", json={"target_path": "TIPA"}).json()
-        aid = a["run_id"]
-        b = c.post(
-            "/vnext/runs",
-            params={"workspace": "continuous"},
-            json={"target_path": "continuous"},
-        ).json()
-        bid = b["run_id"]
-        # TIPA run_id against continuous authority -> unknown (404)
-        assert c.post(
-            f"/vnext/runs/{aid}/start", params={"workspace": "continuous"}
-        ).status_code == 404
-        # continuous run_id against TIPA authority -> unknown (404)
-        assert c.post(f"/vnext/runs/{bid}/start").status_code == 404
+    The legacy continuous canonicalization was NOT done (no third workspace was
+    registered): the canonical registry still exposes exactly shwtp + TIPA.
+    """
 
-    def test_foreign_workspace_target_fails_closed(self):
+    def test_canonical_registry_exposes_only_tipa_and_shwtp(self):
+        from virtual_factory.ui.workspace_monitor import build_platform_registry
+
+        registry = build_platform_registry()
+        ids = sorted(map(str, registry.workspace_ids()))
+        assert ids == ["TIPA", "shwtp"]
+        assert "continuous" not in ids
+
+    def test_legacy_continuous_discriminator_is_deauthorized(self):
         c = _client()
-        r = c.post(
-            "/vnext/runs",
-            params={"workspace": "continuous"},
-            json={"target_path": "TIPA/ASSY/ASSY-SL01"},
+        assert (
+            c.get("/vnext/runs/current", params={"workspace": "continuous"}).status_code
+            == 410
         )
-        assert r.status_code == 400
-        r2 = c.post("/vnext/runs", json={"target_path": "continuous"})
-        assert r2.status_code == 400
+        assert (
+            c.post(
+                "/vnext/runs",
+                params={"workspace": "continuous"},
+                json={"target_path": "continuous"},
+            ).status_code
+            == 410
+        )
 
-    def test_unknown_workspace_fails_closed(self):
+    def test_canonical_workspaces_are_reachable_without_legacy_family(self):
         c = _client()
-        assert c.post(
-            "/vnext/runs",
-            params={"workspace": "NOPE"},
-            json={"target_path": "x"},
-        ).status_code == 404
-        assert c.get(
-            "/vnext/runs/current", params={"workspace": "NOPE"}
-        ).status_code == 404
-
-    def test_continuous_lifecycle_via_api_keeps_legacy_engine(self):
-        c = _client()
-        rec = c.post(
-            "/vnext/runs",
-            params={"workspace": "continuous"},
-            json={"target_path": "continuous"},
-        ).json()
-        rid = rec["run_id"]
-        assert rec["target_kind"] == "workspace"
-        assert rec["effective_scopes"] == ["continuous/PROCESS"]
-        assert c.post(
-            f"/vnext/runs/{rid}/start", params={"workspace": "continuous"}
-        ).status_code == 200
-        step = c.post(
-            f"/vnext/runs/{rid}/step", params={"workspace": "continuous"}
-        ).json()
-        assert step["status"] == "completed"
-        assert step["target_time_s"] == 1.0
-        assert step["participants"] == ["continuous/PROCESS"]
-        assert c.post(
-            f"/vnext/runs/{rid}/pause", params={"workspace": "continuous"}
-        ).status_code == 200
-        assert c.post(
-            f"/vnext/runs/{rid}/step", params={"workspace": "continuous"}
-        ).status_code == 409
-        assert c.post(
-            f"/vnext/runs/{rid}/resume", params={"workspace": "continuous"}
-        ).status_code == 200
-        assert c.post(
-            f"/vnext/runs/{rid}/stop", params={"workspace": "continuous"}
-        ).status_code == 200
-        # legacy continuous dashboard/service is a SEPARATE compatibility
-        # surface and is NOT aliased into vNext attempt state: its own engine is
-        # untouched by the vNext continuous step (time still 0, dt unchanged).
-        assert c.get("/status").json()["dt_s"] == 1.0
-        assert c.get("/status").json()["time_s"] == 0.0
-        assert c.post("/step").status_code == 200
-
-    def test_continuous_process_scope_via_api(self):
-        c = _client()
-        rec = c.post(
-            "/vnext/runs",
-            params={"workspace": "continuous"},
-            json={"target_path": "continuous/PROCESS"},
-        ).json()
-        assert rec["target_kind"] == "executable"
-        assert rec["target_path"] == "continuous/PROCESS"
-        assert rec["effective_scopes"] == ["continuous/PROCESS"]
-        # foreign/non-existent continuous path fails closed
-        assert c.post(
-            "/vnext/runs",
-            params={"workspace": "continuous"},
-            json={"target_path": "continuous/NOPE"},
-        ).status_code == 400
+        listing = c.get("/vnext/workspaces")
+        assert listing.status_code == 200
+        assert c.get("/vnext/workspaces/TIPA/view").status_code == 200
+        assert c.get("/vnext/workspaces/shwtp/view").status_code == 200
 
     def test_continuous_hierarchy_shows_process_scope(self):
         c = _client()

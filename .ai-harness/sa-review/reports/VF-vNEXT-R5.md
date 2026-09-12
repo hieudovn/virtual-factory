@@ -1,238 +1,99 @@
 # VF-vNEXT-R5 — Single Simulation System Consolidation + Shared VF Shell
 
-**Machine-derived status: `BLOCKED FOR SA`**
-(not READY, not COMPLETE, not CLOSED, not SA APPROVED, no next slice authorized)
+**Machine-derived status: `READY FOR SA REVIEW`**
 
 | Field | Value |
 | --- | --- |
-| Gate | VF-vNEXT-R5 (Issue #84) |
-| Gate type | IMPLEMENTATION gate; executed as **audit-level gate** — the consolidation could not be completed without an SA decision, so **no product code was changed** |
+| Gate | VF-vNEXT-R5 (Issue #84) + SA decision comment **5644148465** |
+| Gate type | IMPLEMENTATION gate (consolidation, per the SA decision) |
 | Branch | `feature/vf-vnext-r5` |
 | Branch point (technical base) | `989deac2fe189e7e66c89d2c33218004e2b7d08c` (R4 head) |
 | `expected_base_sha` | `f5261c8ca18cd4e01779c0274b55270ba028b4e5` (= `origin/main`) |
-| Task contract | `.ai-harness/tasks/VF-vNEXT-R5.json` |
-| Harness preflight | PASSED (see execution log) |
-| Changed files | `.ai-harness/**` only (contract, evidence, report, status); **`src/` and `tests/` untouched** |
-| Verdict | `BLOCKED FOR SA` — two stop conditions of the R5 contract were triggered by measurement |
+| Task contract | `.ai-harness/tasks/VF-vNEXT-R5.json` (rewritten to the implementation shape) |
+| Harness preflight | PASSED |
+| Canonical baseline | see §7 (recorded in `CURRENT.md`) |
+| **Verdict** | **`VF_SINGLE_SIMULATION_SYSTEM_CONSOLIDATED`** |
 
 ---
 
-## 1. Why this gate is BLOCKED rather than READY
+## 1. SA mandate → delivered change
 
-The R5 contract requires that **no active product route may create simulation state except
-through the canonical Workspace / RuntimeSession path**, and it defines an explicit STOP
-condition: *if de-authorizing a competing authority would lose a proven capability that has
-no canonical equivalent, or if consolidation requires a product-surface decision beyond a
-bounded correction → `VF-vNEXT-R5 — BLOCKED FOR SA`.*
-
-Measurement shows **two live competing authorities that cannot be de-authorized inside a
-bounded R5 correction**:
-
-| # | Authority | Construction site | Active product surface | Canonical replacement today |
-| --- | --- | --- | --- | --- |
-| 1 | `ROOT_DASHBOARD_RUNTIME_SERVICE` | `src/virtual_factory/ui/api.py:29` (eager, at `create_app()`) | 19 routes (`/`, `/status`, `/telemetry/*`, `/alarms`, `/step`, `/run-steps`, `/start`, `/stop`, `/reset`, `/ws/telemetry`, `/api/plant-graph`, `/api/model-types`, `/api/fault`, `/api/opcua/status`, `/api/ai/*`, `/api/config/*`, `/api/ui/*`) | **NONE** |
-| 2 | `LEGACY_G7_RUN_CONTROL_SERVICE` | `api.py:813` (TIPA) and `api.py:846` (continuous), plus a second per-attempt `RuntimeService` at `api.py:829` | 11 `/vnext/runs*` routes | **Partial** (TIPA has one; continuous has none) |
-| 3 | `LEGACY_DEMO_ASSY_MES_CONTROLLER` | `api.py:245` (`DemoController(DemoRunner())`) | 9 `/demo-assy-mes*` routes | **YES** (canonical rich ASSY `/assy-demo/*`) → this one is de-authorizable and is **not** a blocker |
-
-### Blocker 1 — continuous-process dashboard authority (no canonical equivalent)
-
-Measured: `build_platform_registry()` exposes exactly **two** workspaces — `["TIPA", "shwtp"]`;
-`continuous_workspace_registered = false`. The capability behind the dashboard routes (plant
-config load/switch, continuous run/step/reset, telemetry history, alarms, websocket streaming,
-MQTT/OPC-UA status, AI endpoints, UI context) therefore has **no canonical Workspace /
-RuntimeSession home**. The authority is an app-level singleton created before any request and
-reused by every dashboard route, so it owns simulation state independently of any run-id
-authority.
-
-Consequences (pick one, they are mutually exclusive):
-- de-authorize the dashboard → the entire MVP-01 continuous-process interactive product
-  surface stops working (proven capability, no canonical replacement) → **capability loss**;
-- consolidate the dashboard onto the canonical path → a **third canonical workspace
-  (`continuous`) must be registered and exposed as user-selectable**, `create_app` /
-  `WorkspaceMonitor` must carry the continuous config/dt/mqtt/opcua inputs, and accepted
-  G23/G24/G25 + root-dashboard expectations must be migrated → **product-surface decision
-  beyond a bounded correction**.
-
-### Blocker 2 — legacy G7 run-control family (split authority, one safe half, one unsafe half)
-
-The 11 `/vnext/runs*` routes funnel through `_vnext_service()` → `_get_run_control_service()`,
-which builds **its own** `RunLifecycleService` per discriminator (measured: 2 services
-constructed on first touch, `TIPA` + `continuous`):
-
-- **TIPA discriminator (duplicate authority, unsafe-in-the-opposite-sense):** it calls
-  `TipaAssyFederation.initialize()` **without a run profile**. It can therefore never be
-  equivalent to the canonical prepared TIPA authority; it is a second, *semantically
-  divergent* TIPA lifecycle authority. De-authorizing it loses nothing proven →
-  **de-authorizable** (recommended split, see §5).
-- **continuous discriminator:** it is the *only* run/replay orchestration surface of the
-  continuous product, and it is itself a second continuous authority next to Blocker 1.
-  It cannot be de-authorized before the continuous-workspace decision is made.
-
-### Finding D — the R5 attempt-binding requirement is currently VIOLATED (measured)
-
-`build_tipa_scenario_run_factory` (`src/virtual_factory/runcontrol/session.py`) mutates a
-single module-closure `holder["profile"]` in `factory()` while the **zero-arg**
-`bridge_factory()` reads it, and `RunLifecycleService._bridge_for()` calls that zero-arg
-factory. The binding is therefore **order-dependent, not attempt-bound**.
-
-Measured, on the canonical seam, with a legal lifecycle sequence:
-
-```
-A = factory("tipa-default")       # profile tipa-assy-happy_path
-A.advance(); A.stop()
-B = factory("tipa-failed-final")  # profile tipa-assy-failed_final
-B.advance(); B.stop()
-A.replay(); A.advance()
-  -> session_a.profile_id (canonical context)   = tipa-assy-happy_path
-  -> TipaAssyFederation.initialize(run_profile) = tipa-assy-failed_final   <<< CONTAMINATION
-```
-
-**Proof: a replayed attempt of the `tipa-default` run builds its federation from the
-`tipa-failed-final` profile** (`violations: 1`, `verdict: ATTEMPT_BINDING_UNBOUND`). The
-ordinary *select → run* flow is accidentally correct because the shared
-`RunLifecycleService` admits at most one nonterminal run
-(`RunLifecycleError: cannot create a new run while active run ... is nonterminal`), so the
-most recently created session happens to agree with the holder. This contradicts the R4
-factory contract ("using that run's pinned scenario profile … no hidden state carry-over")
-and the R5 requirement to prove **no cross-run profile contamination**.
-
----
-
-## 2. Evidence produced (all machine-generated, repo-native)
-
-Generator: `.ai-harness/sa-review/evidence/VF-vNEXT-R5/generate_evidence.py`
-(static scan of `src/**` + `tests/**`, route→authority parse of `ui/api.py`, instrumented
-construction counters over live FastAPI routes, and the attempt-binding probe).
-
-| Artefact | Content |
+| SA item | Delivered |
 | --- | --- |
-| `01-architecture-inventory.json` | 21 production construction sites, four-way classified; 6 of them on the active product path (all in `ui/api.py`); 589 test/reference construction sites recorded as counts only; full 67-route → authority map; registry inventory |
-| `02-product-path-construction-proof.json` | per-phase construction counters + request statuses; attempt-binding scenes |
-| `03-blocker-analysis.json` | blockers, options, unblocked subset, authority statements |
+| **R5a-1** attempt-binding defect | `RunLifecycleService` gained an optional attempt-**context**-aware bridge seam (`bridge_factory_ctx`); `build_tipa_scenario_run_factory` **no longer has any mutable `holder["profile"]`** — the profile is resolved from the attempt's own immutable `RunContextV2.scenario_id` through an immutable per-scenario memo, and the zero-arg factory now **fails closed**. A → B → `replay`/`new_attempt` each build their own profile. |
+| **2. Continuous** | The eager root-dashboard `RuntimeService` is **gone** (`create_app` constructs nothing; the `RuntimeService` import is removed from `api.py`); all 17 stateful dashboard routes are fail-closed 410 aliases with **zero construction**; **no continuous workspace registered** (`["TIPA","shwtp"]`); the kernel/library code is retained but has no active authority. |
+| **3. Legacy G7** | Both discriminators de-authorized: the duplicate TIPA authority (unprepared federation) and the continuous authority (per-attempt `RuntimeService`) are deleted from `_get_run_control_service`, which now raises; all 13 `/vnext/runs*` routes return 410. Canonical TIPA is only `/vnext/workspaces/TIPA/*` + `/assy-demo/*`. |
+| **4. demo-assy-mes** | `_get_demo_controller` fails closed and the 9 routes (incl. the page) return 410; the module/classes stay as reference/test-only code (touched by no route). |
+| **5. Shared shell** | **I1** scenario selector + `＋ NEW RUN` on the canonical seam (new route `POST /vnext/workspaces/{workspace_id}/new-run` → `WorkspaceMonitor.new_run`; the view exposes `scenario_ids`/`default_scenario_id`). **I3** responsive scope tables (`.ws-table-scroll`, `overflow-x:auto`, `min-width:0`, `overflow-wrap:anywhere`, 760 px media query). **I4** one unavailable-action convention (`setActionEnabled` → `disabled` + `aria-disabled` + explicit `title` reason, single `not-allowed` cursor). **I5** compact shared glossary in the shell footer. **I6** legacy `run_control_context.js` include removed from the canonical ASSY page. **I2 (SH-WTP page) NOT done.** |
+| **6. Firewall** | `tests/test_vnext_r5_single_system.py` (+ evidence 05): static AST + dynamic construction counters prove no active product path constructs `RuntimeService`, `DemoController`, a duplicate `RunLifecycleService`, a standalone engine authority, or any hidden legacy session/runtime cache. |
+| **7. Preserve** | R4 ASSY parity, 6 sub-lines, rich 2D, scenario fresh-run, jam/recover, OEE, Observation/MES, SH-WTP canonical monitor behaviour — all green (§7); the browser pass shows the rich 2D page rendering 6 sub-lines × 12 stations on the same canonical session. |
 
-### Classification summary (deliverable A)
+## 2. Evidence (all machine-generated by `evidence/VF-vNEXT-R5/generate_evidence.py`)
 
-| Classification | Sites (production) | Examples |
-| --- | --- | --- |
-| `CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP` | 9 | `runcontrol/session.py` (session + scenario-run factories), `shwtp/session.py`, `ui/workspace_monitor.py` registry factories |
-| `KEEP_AS_EXECUTION_KERNEL_OR_DOMAIN_LIBRARY` | 3 | `core/engine_factory.py:83`, `discrete/run_service.py:107` (engine construction inside the execution kernel) |
-| `KEEP_AS_TEST_REFERENCE_ONLY` | 3 | `assembly/demo_controller.py:86`, `assembly/assy_mes_bridge.py:1481` demo smoke, `demo_assy_mes/__main__.py:36` CLI |
-| `DEPRECATE_REMOVE_ACTIVE_PRODUCT_REACHABILITY` | 6 | `ui/api.py:29` (root dashboard `RuntimeService`), `:245` (`DemoController` + `DemoRunner`), `:813`/`:829`/`:846` (legacy G7 TIPA + per-attempt continuous `RuntimeService` + legacy G7 continuous) |
-| `DELETE_ONLY_IF_PROVEN_REDUNDANT` | 0 | nothing is deleted or proposed for deletion in this gate |
+| Artefact | Verdict |
+| --- | --- |
+| `01-architecture-inventory.json` | 15 production construction sites classified (`CANONICAL_SESSION_REGISTRY_AUTHORITY_KEEP` 8, `KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY` 4, `KEEP_AS_TEST_REFERENCE_ONLY` 3), **0 on the active product path**; `api.py` references **no authority name** (`api_authority_names_referenced: []`); 80-route → authority map; registry = TIPA + shwtp; continuous component classification table |
+| `02-product-path-construction-proof.json` | `create_app` constructions `{}`; canonical phase = `RuntimeSession` 2 (TIPA 1 + shwtp 1), `RunLifecycleService` 2, `TipaAssyFederation` 1, legacy 0 |
+| `03-deauthorization-proof.json` | `ALL_LEGACY_AUTHORITIES_DEAUTHORIZED_FAIL_CLOSED` — 39 family routes all 410 + code `VF_LEGACY_AUTHORITY_DEAUTHORIZED`, each family with **zero construction**; `/ws/telemetry` closes fail-closed |
+| `04-attempt-binding.json` | `ATTEMPT_BINDING_CONTEXT_BOUND` — replay of the older run uses `tipa-assy-happy_path` (the R5-audit defect built `tipa-assy-failed_final`), `new_attempt` likewise, zero-arg factory fails closed |
+| `05-firewall.json` | `FIREWALL_HELD` — no forbidden construction needle in `api.py`, no authority construction anywhere in the UI package, `create_app` `{}`, all de-authorized families 0; hidden-cache checks (`_demo_controller[`, `_run_control`, `runtime_service` import) all removed |
+| `06-shell-convergence.json` | `SHELL_CONVERGENCE_I1_I3_I4_I5_I6_COMPLETE` + live `new-run` proof (fresh run id, `shwtp` → 400, unknown workspace → 404, counts stay canonical) |
+| `07-browser-sanity.md` (+ 2 screenshots) | 0 console errors; shell NEW RUN created `TIPA-0002` `tipa-failed-final`; rich page shows the **same** session/profile, 6 sub-lines × 12 stations; 0 BLOCKER/MAJOR/MINOR |
 
-Total: 21 production sites; 589 test/reference construction sites recorded as counts only.
+Continuous component classification (SA-required): reusable kernel → `KEEP_AS_EXECUTION_KERNEL_OR_LIBRARY`;
+legacy demo/controller/composition + frozen pages → `KEEP_AS_TEST_REFERENCE_ONLY`; the removed
+route families → `FAIL_CLOSED_DEPRECATED_ALIAS`. Nothing was deleted as an obsolete experiment
+beyond the route-level authorities, because the kernel is still a valid library.
 
-Route→authority map (67 non-static routes): canonical ASSY experience **20**,
-root dashboard **19**, static page / no state **16**,
-legacy demo ASSY-MES **9**, canonical workspace monitor **6**, legacy G7 run-control **11**
-(3 direct + 8 via `_vnext_mutate`; the static parser attributes 3 to handlers, the rest to the shared helper).
+## 3. Firewall proof (measured)
 
-### Product-path construction proof (deliverable B)
+- `create_app(...)`: **0** constructions of `RuntimeService`, `SimulationEngine`, `DiscreteSimulationEngine`,
+  `DemoController`, `DemoRunner`, `AssyDemoComposition`, `RunLifecycleService`, `RuntimeSession`, `TipaAssyFederation`.
+- De-authorized families (root dashboard 17 routes, G7 13 routes, demo-assy-mes 9 routes): every
+  route → **410** + code, **0** constructions.
+- Canonical families (`/workspaces`, `/vnext/workspaces/*`, `/assy-demo/*`): exactly **one session per
+  workspace**, one TIPA federation, six sub-lines, no legacy object.
+- Static: `api.py` contains no authority construction and references no authority name; no UI module
+  constructs an authority (AST check); no legacy singleton cache remains.
 
-Driving every canonical route family on a fresh app
-(`/workspaces`, `/vnext/workspaces`, `/vnext/workspaces/{TIPA,shwtp}/view`,
-`/assy-demo/reset|step×2|overview|sub-lines|identity|oee|snapshot|mes-messages`, all HTTP 200):
+## 4. Defect found and fixed during the gate (transparency)
 
-```
-RuntimeSession        = 2   (TIPA = 1, shwtp = 1)
-RunLifecycleService   = 2   (one per canonical workspace)
-TipaAssyFederation    = 1
-DemoController        = 0
-RuntimeService        = 0
-verdict: CANONICAL_PRODUCT_PATH_IS_SINGLE_AUTHORITY
-```
+The real-server smoke caught a startup defect that the test client had not exercised:
+the de-authorization left `del auto_start` inside the ASGI lifespan, which made `auto_start` a local
+name → `UnboundLocalError` at `uvicorn` startup. Fixed (documented in the code) and covered by the
+new regression test `test_lifespan_startup_and_shutdown_construct_no_runtime_state`, which drives the
+lifespan with `auto_start=True` and asserts zero construction. This is exactly why the gate requires a
+real-server + browser pass.
 
-`create_app()` itself constructs `RuntimeService = 1` (eager, blocker 1). Touching the
-non-canonical families constructs exactly what the audit claims: legacy demo → 1
-`DemoController` + 1 `DemoRunner`; legacy G7 → 2 `RunLifecycleService` (TIPA + continuous).
+## 5. What was NOT done (explicitly)
 
----
+- **No third continuous Workspace** and no continuous canonicalization/rebuild.
+- **No SH-WTP expansion** (audit item I2 dedicated SH-WTP page not built); the SH-WTP monitor view is unchanged.
+- No gateway/OPC/MQTT/Kafka production work, no PIM/MES change, no G4/G22 redesign, no `AssyLineRuntime`
+  rewrite, no ASSY visual simplification, no deletion of proven domain capability, no merge.
 
-## 3. What was NOT executed (and is not claimed)
+## 6. Test migrations (legacy contract → de-authorized contract)
 
-- **No consolidation code was written.** A partial migration would leave an unreviewable
-  half-migrated product path; the decisive blocker is a scope/product-surface decision, so
-  the gate stops at the audit per the contract's STOP clause.
-- **No `src/` or `tests/` file was modified** — the changed-file set is `.ai-harness/**`
-  (contract, evidence, report, status/manifest).
-- Deliberately not started: SH-WTP functional/whole-plant expansion (I2 explicitly not
-  authorized), gateway/OPC/MQTT/Kafka production work, PIM/MES repo changes, generic
-  G4/coupling redesign, broad G22 run-identity redesign, ASSY visual simplification,
-  `AssyLineRuntime` rewrite, any deletion of proven domain capability.
-- No merge, no push to `main`. PR is opened for review only.
+`tests/test_api.py` (6 legacy tests → parametrized 410 proof), `tests/test_run_control.py`
+(`TestContinuousAndReset`, `TestApiSurface`, `TestActiveAttemptAuthorityC01` HTTP case,
+`TestWorkspaceIsolationC02` → de-authorization + registry proofs; the I6 test now asserts the legacy
+include is absent), `tests/test_ui_hierarchy.py` and `tests/test_demo_assy_mes_v1.py`
+(continuous context / customer page → 410), `tests/test_vnext_r4_canonical_parity.py` (G7 probe → 410).
+All library/domain coverage (lifecycle, bridges, engine, domain semantics, canonical rich UI) is retained.
 
----
+## 7. Regression
 
-## 4. Recommended unblocked subset (ready to execute once SA decides)
+- R5 focused module: **30 passed** (`tests/test_vnext_r5_single_system.py`).
+- Full suite: **2660 passed** (was 2625 at the R4 head; +35 net).
+- R1/R2/R2V/R3/R3-C01/R4 suites and the observation/MES contract suites: green with the migrations above.
+- Canonical baseline (all required groups incl. the new `r5_single_system` group): **PASSED**, recorded
+  in `CURRENT.md` (`failed_groups: []`).
+- Browser sanity: §2 above (screenshots `shot-shell-newrun.png`, `shot-assy-frame-a.png`).
 
-| ID | Work | Risk |
-| --- | --- | --- |
-| R5a-1 | **Attempt-binding fix:** make the lifecycle bridge construction context-aware (`_bridge_for()` passes the attempt's `RunContextV2`; TIPA factory resolves the profile from `record.context.scenario_id` instead of the mutable holder), removing cross-run profile contamination. Add regression: A→B→replay/new_attempt must use each attempt's own profile. | low, bounded |
-| R5a-2 | **De-authorize `/demo-assy-mes/*`** (9 routes): fail closed with an explicit deprecation response; keep the module as reference/test-only. | low |
-| R5a-3 | **De-authorize the duplicate TIPA discriminator** of `/vnext/runs*` (fail closed with canonical guidance: the canonical TIPA authority is `/assy-demo/*` + `/vnext/workspaces/TIPA/*`). Keep the continuous discriminator pending Blocker 1. | low/medium (public API split needs SA ratification) |
-| R5a-4 | **Bounded shared-shell convergence:** I1 (scenario/new-run control on the canonical `WorkspaceMonitor.new_run` seam), I3 (responsive scope table), I4 (single unavailable-action convention), I5 (compact shared glossary), I6 (remove the unused G7 `run_control_context.js` include from the canonical ASSY page). | low |
-| R5a-5 | **Single-system firewall test module:** static import scan of active product UI for legacy authorities + dynamic per-route construction counters (one session per workspace, TIPA = 1 session/1 federation/6 runtimes, zero legacy constructions). | low |
-| R5a-6 | **Regression:** focused R5 suite + R1–R4 + canonical baseline + full suite at the pushed head. | as usual |
-
----
-
-## 5. SA decision required
-
-**Question:** how must the continuous-process product (MVP-01 plant dashboard) be
-consolidated onto the canonical Workspace/RuntimeSession path?
-
-1. **OPTION 1 (recommended) — register `continuous` as a third canonical workspace.**
-   Canonical session factory (`RunLifecycleService` + `ContinuousExecutionBridge` over a
-   per-attempt `RuntimeService`, reusing the accepted C03 attempt-isolation pattern); root
-   dashboard routes rewired to that canonical session; the G7 continuous discriminator
-   retired; new run-id authority shared with the registry. *No capability lost.* Requires
-   SA authorization because it changes the product surface (3 workspaces, shell selector,
-   `create_app`/`WorkspaceMonitor` inputs, migration of accepted G23/G24/G25 and
-   root-dashboard expectations).
-2. **OPTION 2 — deprecate the dashboard state routes.** Bounded, but the MVP-01 continuous
-   interactive surface (run/step/reset + live telemetry/alarms/websocket) is lost with no
-   canonical replacement.
-3. **OPTION 3 — governance scope amendment.** The SA explicitly scopes the R5 firewall to
-   workspace-platform product paths and classifies the continuous dashboard + legacy G7
-   run-control as frozen non-workspace legacy surfaces. *No capability lost*, but the
-   "no competing authority behind any active product route" requirement must be amended.
-
-R5a-1 (proven contamination) and R5a-2/R5a-3-TIPA/R5a-4/R5a-5/R5a-6 are independent of this
-decision and can be authorized immediately in a bounded follow-up gate.
-
----
-
-## 6. Regression at this head
-
-- No executable source changed → all R1–R4 behaviour carries over unchanged from the R4 head
-  `989deac` (42/42 baseline groups, full suite **2625 passed**).
-- R5-head canonical baseline: **`overall: PASS`, `failed_groups: []`, 42/42 groups** at head
-  `7c03650` (entrypoint `python .ai-harness/regression/run_vnext_baseline.py --json-output
-  .ai-harness/traces/r5_baseline.json`; `gate.task_contract = .ai-harness/tasks/VF-vNEXT-R5.json`,
-  `gate.changed_files_base = 989deac…`). Groups include `r1_production_semantics`,
-  `r2_same_session_rich_assy`, `r3_canonical_observation_mes`, `r3c01_reset_generation`,
-  `r4_canonical_parity`, `full_suite`, `checks_compile`, `checks_static_lint_type`,
-  `checks_changed_files` (`FILE VALIDATION PASSED (8 file(s))`) and `checks_preflight`.
-- `full_suite`: **2625 passed** (unchanged from the R4 head, as expected — no executable source
-  changed in this gate).
-- Harness note (recurring, non-product): the FIRST baseline execution reported a single failing
-  group `checks_preflight` with `M .vscode/tasks.json` — the VS Code task definition file is
-  rewritten by the editor whenever a task is created, so the tree is transiently dirty. After
-  `git checkout -- .vscode/tasks.json` the full baseline was re-executed and passed. This is an
-  editor/harness artifact, never a source change; `.vscode/tasks.json` is not part of any commit
-  in this gate.
-- No new baseline group is added in this gate (no new pytest module exists; audit-only gate).
-
----
-
-## 7. Authority (unchanged, restated)
+## 8. Authority (unchanged, restated)
 
 - `vf_runtime_authorization = NOT_AUTHORIZED`
 - `site_authorized_execution = NOT_AUTHORIZED`
 - `whole_plant_runtime = NOT_AUTHORIZED / NOT_IMPLEMENTED`
 
-Nothing in this gate authorizes runtime execution against a real site, physical assets,
-OPC-UA/MQTT production endpoints, or whole-plant scope. The SA AI remains the sole authority
-for COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED statements.
-
-**STOP — awaiting SA decision on §5 before any consolidation code is written.**
+**STOP — awaiting SA review. SH-WTP expansion, gateway/protocol work and merge are NOT authorized and NOT started.**

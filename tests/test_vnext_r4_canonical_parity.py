@@ -536,8 +536,11 @@ class TestProductPathCleanup:
         js = RUN_CONTROL_JS.read_text(encoding="utf-8")
         assert "vf-canonical-identity" in js, "canonical pages still probe the legacy context"
         c = _client()
-        # the legacy contract itself is unchanged (still 404 for TIPA)
-        assert c.get("/vnext/runs/current", params={"workspace": "TIPA"}).status_code == 404
+        # VF-vNEXT-R5: the legacy G7 family is now a fail-closed deprecated alias
+        # (410 + code) instead of the R4-era 404; the client guard is unchanged.
+        response = c.get("/vnext/runs/current", params={"workspace": "TIPA"})
+        assert response.status_code == 410
+        assert response.json()["code"] == "VF_LEGACY_AUTHORITY_DEAUTHORIZED"
 
     def test_rich_ui_has_canonical_capability_bindings(self):
         js = RICH_JS.read_text(encoding="utf-8")

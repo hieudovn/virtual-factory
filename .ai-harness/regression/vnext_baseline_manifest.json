@@ -391,6 +391,15 @@
       ]
     },
     {
+      "id": "r5_single_system",
+      "gate": "R5",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R5 single simulation system consolidation: static + dynamic construction firewall (no standalone RuntimeService/DemoController/duplicate RunLifecycleService/standalone engine authority/hidden legacy cache on any active product path), fail-closed 410 + zero construction for the de-authorized legacy families (root dashboard, legacy G7 run-control, demo-assy-mes), one canonical session per workspace, attempt-bound TIPA profiles (no cross-run contamination), and the bounded shared-shell convergence I1/I3/I4/I5/I6.",
+      "files": [
+        "tests/test_vnext_r5_single_system.py"
+      ]
+    },
+    {
       "id": "full_suite",
       "gate": "FULL",
       "type": "pytest",

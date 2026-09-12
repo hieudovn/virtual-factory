@@ -81,7 +81,16 @@ body {
   border-radius: 6px; padding: 6px 14px; cursor: pointer; font-weight: 600; font-size: 13px;
 }
 #ws-runbar button:hover:not(:disabled) { background: #334155; }
-#ws-runbar button:disabled { opacity: .4; cursor: not-allowed; }
+/* VF-vNEXT-R5 (audit I4): ONE unavailable-action convention across the shell —
+   native disabled + aria-disabled + an explicit `title` reason set by the JS,
+   and a single not-allowed cursor. */
+#ws-runbar button:disabled,
+#ws-runbar select:disabled { opacity: .4; cursor: not-allowed; }
+#ws-runbar select {
+  border: 1px solid #475569; background: #1e293b; color: #e2e8f0;
+  border-radius: 6px; padding: 5px 8px; font-size: 13px; max-width: 190px;
+}
+.ws-divider { width: 1px; align-self: stretch; background: #334155; margin: 0 2px; }
 .ws-runbar-msg { margin-left: auto; font-size: 12px; color: #fbbf24; }
 
 /* ---- monitor area ---- */
@@ -94,6 +103,7 @@ body {
 .ws-card {
   background: var(--bg-panel); border: 1px solid var(--border-panel);
   border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow);
+  min-width: 0; /* VF-vNEXT-R5 (I3): grid items must be allowed to shrink */
 }
 .ws-card.ws-wide { grid-column: 1 / -1; }
 .ws-card h3 {
@@ -103,6 +113,10 @@ body {
 .ws-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; }
 .ws-kv .k { color: var(--ink-muted); }
 .ws-kv .v { font-family: Consolas, Menlo, monospace; }
+
+/* VF-vNEXT-R5 (audit I3): wide tables scroll inside their card instead of
+   pushing the page horizontally at narrow widths. */
+.ws-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 .ws-ui-page { margin-top: 10px; }
 .ws-ui-page a, .ws-ui-page button {
@@ -115,6 +129,8 @@ body {
 .ws-table th, .ws-table td {
   text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border-panel);
   vertical-align: top;
+  /* VF-vNEXT-R5 (I3): long canonical paths may wrap instead of forcing scroll. */
+  overflow-wrap: anywhere; word-break: break-word;
 }
 .ws-table th { color: var(--ink-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
 .ws-table code { font-family: Consolas, Menlo, monospace; }
@@ -143,7 +159,22 @@ body {
 }
 #ws-footer b { color: #fbbf24; }
 
-@media (max-width: 720px) {
+/* VF-vNEXT-R5 (audit I5): compact shared glossary (same terms as the rich page). */
+.ws-glossary {
+  display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center;
+  padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid #1e293b;
+}
+.ws-glossary span { white-space: nowrap; }
+.ws-glossary b { color: #cbd5e1; }
+.ws-footer-note { display: block; }
+
+@media (max-width: 760px) {
   #ws-topbar { flex-wrap: wrap; }
   .ws-selector { margin-left: 0; }
+  /* VF-vNEXT-R5 (I3): single column + tighter padding so wide scope tables fit. */
+  #ws-monitor { padding: 10px; }
+  .ws-view { grid-template-columns: 1fr; gap: 10px; }
+  .ws-table { font-size: 12px; }
+  .ws-table th, .ws-table td { padding: 4px 6px; }
+  #ws-runbar { flex-wrap: wrap; row-gap: 6px; }
 }

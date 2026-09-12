@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Virtual Factory — Workspace Shell</title>
-<link rel="stylesheet" href="/static/workspace_shell.css">
+<link rel="stylesheet" href="/static/workspace_shell.css?v=r5">
 </head>
 <body>
   <div id="ws-app">
@@ -31,12 +31,18 @@
     <section id="ws-runbar">
       <span class="ws-runbar-label">Run control —</span>
       <span id="ws-runbar-target" class="ws-runbar-target">no workspace</span>
-      <button type="button" id="ws-ctrl-step" disabled>▶ STEP</button>
-      <button type="button" id="ws-ctrl-reset" disabled>↻ RESET</button>
-      <button type="button" id="ws-ctrl-stop" disabled>■ STOP</button>
-      <button type="button" id="ws-ctrl-new" disabled>♻ NEW ATTEMPT</button>
-      <button type="button" id="ws-ctrl-replay" disabled>⟲ REPLAY</button>
-      <span id="ws-runbar-msg" class="ws-runbar-msg"></span>
+      <button type="button" id="ws-ctrl-step" disabled aria-disabled="true">▶ STEP</button>
+      <button type="button" id="ws-ctrl-reset" disabled aria-disabled="true">↻ RESET</button>
+      <button type="button" id="ws-ctrl-stop" disabled aria-disabled="true">■ STOP</button>
+      <button type="button" id="ws-ctrl-new" disabled aria-disabled="true">♻ NEW ATTEMPT</button>
+      <button type="button" id="ws-ctrl-replay" disabled aria-disabled="true">⟲ REPLAY</button>
+      <span class="ws-divider" aria-hidden="true"></span>
+      <label class="ws-runbar-label" for="ws-scenario-select">New run scenario</label>
+      <select id="ws-scenario-select" disabled aria-disabled="true"
+              title="Scenario for a fresh canonical run (TIPA only)"></select>
+      <button type="button" id="ws-ctrl-newrun" disabled aria-disabled="true"
+              title="Start a fresh canonical run with the selected scenario (TIPA only)">＋ NEW RUN</button>
+      <span id="ws-runbar-msg" class="ws-runbar-msg" role="status" aria-live="polite"></span>
     </section>
 
     <!-- ══════════ Monitor area (workspace view) ══════════ -->
@@ -86,11 +92,21 @@
     </main>
 
     <footer id="ws-footer">
-      <span>Domain runtimes are the truth owners. The shell is observer/controller only.
+      <!-- VF-vNEXT-R5 (audit I5): one compact shared glossary, same terms as the rich ASSY page. -->
+      <div class="ws-glossary" aria-label="Shared glossary">
+        <span><b>STEP</b> advance one authorized boundary</span>
+        <span><b>RESET</b> in-context reset (same run id)</span>
+        <span><b>NEW ATTEMPT</b> fresh run id, same scenario</span>
+        <span><b>NEW RUN</b> fresh run id + selected scenario</span>
+        <span><b>REPLAY</b> fresh run id re-pinning the scenario</span>
+        <span><b>HOLD / JAM</b> line frozen (operator / AP05 fault)</span>
+        <span><b>OEE</b> read-only projection over canonical facts</span>
+      </div>
+      <span class="ws-footer-note">Domain runtimes are the truth owners. The shell is observer/controller only.
         SH-WTP assumed/scenario topology is <b>NOT site truth</b>.</span>
     </footer>
   </div>
 
-  <script src="/static/workspace_shell.js"></script>
+  <script src="/static/workspace_shell.js?v=r5"></script>
 </body>
 </html>

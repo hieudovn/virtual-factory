@@ -17,6 +17,7 @@
 
   const $ = (id) => document.getElementById(id);
   const selectEl = $('ws-workspace-select');
+  const scenarioEl = $('ws-scenario-select');
   const runbarTarget = $('ws-runbar-target');
   const runbarMsg = $('ws-runbar-msg');
   const viewBox = $('ws-view');
@@ -24,6 +25,19 @@
 
   let workspaces = [];      // registry metadata
   let currentView = null;   // last monitor payload
+
+  /* ── VF-vNEXT-R5 (audit I4): ONE unavailable-action convention ──────────
+     Every run-control control is set through this helper: native `disabled`,
+     `aria-disabled`, and an explicit `title` reason so an observer can see WHY
+     an action is unavailable (no silent greying out). */
+  function setActionEnabled(button, enabled, reason) {
+    if (!button) return;
+    button.disabled = !enabled;
+    button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    const base = button.dataset.baseTitle || button.getAttribute('title') || '';
+    button.dataset.baseTitle = base;
+    button.setAttribute('title', enabled ? base : (reason || base));
+  }
 
   function setMsg(text) {
     runbarMsg.textContent = text || '';
@@ -177,16 +191,57 @@
     }).join('\n');
     $('ws-trace').textContent = trace || '(no steps yet)';
 
-    // runbar enablement by state
+    // runbar enablement by state (audit I4: every state carries an explicit reason)
     const st = String((sess.state || '').toLowerCase());
-    $('ws-ctrl-step').disabled = !(st === 'running' || st === 'created');
-    $('ws-ctrl-reset').disabled = (st === 'stopped' || st === 'failed');
-    $('ws-ctrl-stop').disabled = !(st === 'created' || st === 'running' || st === 'paused');
+    const terminal = (st === 'stopped' || st === 'failed');
+    setActionEnabled(
+      $('ws-ctrl-step'), st === 'running' || st === 'created',
+      terminal
+        ? 'Unavailable: the run is terminal — use NEW ATTEMPT or NEW RUN'
+        : 'Unavailable: the selected workspace has no started run yet'
+    );
+    setActionEnabled(
+      $('ws-ctrl-reset'), !terminal,
+      'Unavailable: a terminal run cannot be reset in context — use NEW ATTEMPT'
+    );
+    setActionEnabled(
+      $('ws-ctrl-stop'), st === 'created' || st === 'running' || st === 'paused',
+      'Unavailable: the run is not active'
+    );
     // Backend also exposes new_attempt + replay (accepted lifecycle actions).
     // Exposed here so a terminal (stopped) session can be recovered in-UI and
     // deterministic replay can be demonstrated (G26 UAT readiness).
-    $('ws-ctrl-new').disabled = false;
-    $('ws-ctrl-replay').disabled = false;
+    setActionEnabled($('ws-ctrl-new'), true, 'Available: starts a fresh attempt identity');
+    setActionEnabled($('ws-ctrl-replay'), true, 'Available: re-pins this scenario in a fresh run');
+
+    // VF-vNEXT-R5 (audit I1): scenario / NEW RUN control on the canonical seam.
+    const scenarios = view.scenario_ids || [];
+    if (scenarios.length) {
+      const preferred = scenarioEl.value || view.default_scenario_id || scenarios[0];
+      scenarioEl.innerHTML = '';
+      scenarios.forEach(function (sid) {
+        const opt = document.createElement('option');
+        opt.value = sid;
+        opt.textContent = sid;
+        scenarioEl.appendChild(opt);
+      });
+      scenarioEl.value = scenarios.indexOf(preferred) !== -1 ? preferred : scenarios[0];
+      setActionEnabled(scenarioEl, true, 'Scenario selection is available for this workspace');
+      setActionEnabled(
+        $('ws-ctrl-newrun'), true,
+        'Available: starts a fresh canonical run with the selected scenario'
+      );
+    } else {
+      scenarioEl.innerHTML = '';
+      setActionEnabled(
+        scenarioEl, false,
+        'Unavailable: scenario selection is only supported for the TIPA workspace'
+      );
+      setActionEnabled(
+        $('ws-ctrl-newrun'), false,
+        'Unavailable: fresh scenario runs are only supported for TIPA'
+      );
+    }
   }
 
   function structureTable(structure) {
@@ -205,7 +260,8 @@
         '<td>' + details.join(' · ') + '</td>' +
         '</tr>';
     }).join('');
-    return '<table class="ws-table"><thead>' + header + '</thead><tbody>' + body + '</tbody></table>';
+    return '<div class="ws-table-scroll"><table class="ws-table"><thead>' + header +
+      '</thead><tbody>' + body + '</tbody></table></div>';
   }
 
   function subLinesTable(subLines) {
@@ -222,7 +278,8 @@
         '<td>' + esc(row.rso2_buffer_size == null ? '—' : row.rso2_buffer_size) + '</td>' +
         '</tr>';
     }).join('');
-    return '<table class="ws-table"><thead>' + header + '</thead><tbody>' + body + '</tbody></table>';
+    return '<div class="ws-table-scroll"><table class="ws-table"><thead>' + header +
+      '</thead><tbody>' + body + '</tbody></table></div>';
   }
 
   function valuesTable(values, workspaceId) {
@@ -247,7 +304,8 @@
           '<td>' + esc(row.value) + '</td></tr>');
       }
     });
-    return '<table class="ws-table"><thead>' + header + '</thead><tbody>' + rows.join('') + '</tbody></table>';
+    return '<div class="ws-table-scroll"><table class="ws-table"><thead>' + header +
+      '</thead><tbody>' + rows.join('') + '</tbody></table></div>';
   }
 
   /* ── selection ───────────────────────────────────────────────── */
@@ -255,11 +313,13 @@
   function select(workspaceId) {
     if (!workspaceId) return;
     runbarTarget.textContent = workspaceId;
-    $('ws-ctrl-step').disabled = true;
-    $('ws-ctrl-reset').disabled = true;
-    $('ws-ctrl-stop').disabled = true;
-    $('ws-ctrl-new').disabled = true;
-    $('ws-ctrl-replay').disabled = true;
+    setActionEnabled($('ws-ctrl-step'), false, 'Unavailable: loading the selected workspace');
+    setActionEnabled($('ws-ctrl-reset'), false, 'Unavailable: loading the selected workspace');
+    setActionEnabled($('ws-ctrl-stop'), false, 'Unavailable: loading the selected workspace');
+    setActionEnabled($('ws-ctrl-new'), false, 'Unavailable: loading the selected workspace');
+    setActionEnabled($('ws-ctrl-replay'), false, 'Unavailable: loading the selected workspace');
+    setActionEnabled($('ws-ctrl-newrun'), false, 'Unavailable: loading the selected workspace');
+    setActionEnabled(scenarioEl, false, 'Unavailable: loading the selected workspace');
     fetch('/vnext/workspaces/select', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -302,6 +362,36 @@
       });
   }
 
+  /* ── fresh canonical run (VF-vNEXT-R5 audit I1) ──────────────── */
+
+  function newRun() {
+    const workspaceId = selectEl.value;
+    const scenarioId = scenarioEl.value;
+    if (!workspaceId || !scenarioId) return;
+    setMsg('new run ' + scenarioId + ' → ' + workspaceId + ' …');
+    fetch('/vnext/workspaces/' + encodeURIComponent(workspaceId) + '/new-run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_id: scenarioId }),
+    })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.json().then(function (j) {
+            throw new Error(j.detail || 'new run failed');
+          });
+        }
+        return res.json();
+      })
+      .then(function (payload) {
+        currentView = payload;
+        renderView(payload);
+        setMsg('fresh run ' + ((payload.session || {}).run_id || '') + ' (' + scenarioId + ')');
+      })
+      .catch(function (err) {
+        setMsg(err.message);
+      });
+  }
+
   /* ── wiring ──────────────────────────────────────────────────── */
 
   selectEl.addEventListener('change', function () { select(selectEl.value); });
@@ -313,6 +403,7 @@
   $('ws-ctrl-stop').addEventListener('click', function () { control('stop'); });
   $('ws-ctrl-new').addEventListener('click', function () { control('new_attempt'); });
   $('ws-ctrl-replay').addEventListener('click', function () { control('replay'); });
+  $('ws-ctrl-newrun').addEventListener('click', function () { newRun(); });
 
   function boot() {
     loadWorkspaces();

@@ -195,6 +195,19 @@ class RuntimeSession:
         return self.trace()
 
 
+def _require_attempt_bound_bridge() -> object:
+    """Fail closed: TIPA execution bridges are attempt-bound (R5).
+
+    A TIPA lifecycle service never builds runtime state from ambient/mutable
+    selection state; the bridge for an attempt is built from that attempt's own
+    immutable run context via the ``bridge_factory_ctx`` seam.
+    """
+    raise SessionError(
+        "TIPA execution bridges are attempt-bound: a zero-arg bridge factory must "
+        "never build TIPA runtime state (no ambient run profile)"
+    )
+
+
 def build_tipa_scenario_run_factory(
     config_path: str,
     workspace_id: str = "TIPA",
@@ -205,9 +218,13 @@ def build_tipa_scenario_run_factory(
     identity (never mutate an active run's pinned identity). Every run created by
     this factory goes through the SAME ``RunLifecycleService`` — the single
     run-id minting authority — so successive runs receive fresh ids while the
-    previous run stays historical/unchanged. Each run's federation is built
-    lazily by the service on its first start, using that run's pinned scenario
-    profile (resolved once per scenario and re-discovered deterministically).
+    previous run stays historical/unchanged.
+
+    VF-vNEXT-R5: the bridge of each attempt is built from THAT attempt's
+    immutable ``RunContextV2`` (``context.scenario_id`` -> its pinned profile),
+    never from a mutable "last selected" selection. There is no ambient profile
+    holder, so a replay/new_attempt of an older run can never inherit another
+    run's inputs (no cross-run profile contamination).
     """
     from virtual_factory.assembly.assy_run_profile import build_tipa_run_profile
     from virtual_factory.federation import TipaAssyFederation, build_tipa_workspace
@@ -220,24 +237,31 @@ def build_tipa_scenario_run_factory(
             f"{workspace.workspace_id!r}"
         )
 
+    # Immutable, per-scenario memo: a profile object is never mutated and is
+    # selected ONLY by the scenario pinned in the attempt's own context.
     profiles: dict[str, object] = {}
-    holder: dict[str, object] = {}
 
-    def bridge_factory():
-        # Read the profile of the run currently being started (the service
-        # builds the bridge lazily on start, one active run at a time).
-        federation = TipaAssyFederation(config_path=config_path)
-        federation.initialize(run_profile=holder.get("profile"))
-        return AssyExecutionBridge(federation)
-
-    service = RunLifecycleService(workspace, bridge_factory)
-
-    def factory(scenario_id: str) -> RuntimeSession:
+    def profile_for(scenario_id: str):
         profile = profiles.get(scenario_id)
         if profile is None:
             profile = build_tipa_run_profile(scenario_id)
             profiles[scenario_id] = profile
-        holder["profile"] = profile
+        return profile
+
+    def bridge_factory_ctx(context):
+        # The attempt's own pinned scenario is the ONE input; no ambient state.
+        federation = TipaAssyFederation(config_path=config_path)
+        federation.initialize(run_profile=profile_for(context.scenario_id))
+        return AssyExecutionBridge(federation)
+
+    service = RunLifecycleService(
+        workspace,
+        _require_attempt_bound_bridge,
+        bridge_factory_ctx=bridge_factory_ctx,
+    )
+
+    def factory(scenario_id: str) -> RuntimeSession:
+        profile = profile_for(scenario_id)
         return RuntimeSession(
             service,
             workspace_id,
@@ -276,12 +300,20 @@ def build_tipa_session(
             f"{workspace.workspace_id!r}"
         )
 
-    def bridge_factory():
+    def bridge_factory_ctx(context):
+        # R5: attempt-bound inputs only — the pinned scenario lives in the
+        # attempt's own immutable context (identical to the session scenario).
         federation = TipaAssyFederation(config_path=config_path)
-        federation.initialize(run_profile=run_profile)
+        federation.initialize(
+            run_profile=build_tipa_run_profile(context.scenario_id)
+        )
         return AssyExecutionBridge(federation)
 
-    service = RunLifecycleService(workspace, bridge_factory)
+    service = RunLifecycleService(
+        workspace,
+        _require_attempt_bound_bridge,
+        bridge_factory_ctx=bridge_factory_ctx,
+    )
     return RuntimeSession(
         service,
         workspace_id,

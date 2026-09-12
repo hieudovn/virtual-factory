@@ -324,6 +324,7 @@ def _tipa_view_extra(session: RuntimeSession) -> dict:
     runtimes (Frame A overview + Frame B 2D line) and its STEP/RESET act on this
     same session, so shell and rich UI always show the same run/time.
     """
+    from virtual_factory.assembly.assy_run_profile import SESSION_SCENARIO_ALIASES
     from virtual_factory.federation import SUB_LINE_IDS, sub_line_path
 
     record = session.record
@@ -379,6 +380,17 @@ def _tipa_view_extra(session: RuntimeSession) -> dict:
             "Same canonical session: /assy-demo projects this shell's selected "
             "G22 TIPA RuntimeSession (same workspace_id/run_id/scenario). "
             "STEP/RESET act on that same session."
+        ),
+        # VF-vNEXT-R5 (audit I1): the shell can start a FRESH canonical run for a
+        # selected scenario through the SAME canonical seam as /assy-demo
+        # (WorkspaceMonitor.new_run -> build_tipa_scenario_run_factory, one
+        # run-id authority). Scenario ids come from the accepted profile
+        # registry; each run is pinned to its own immutable run context.
+        "scenario_ids": list(SESSION_SCENARIO_ALIASES),
+        "default_scenario_id": (
+            session.scenario_id
+            if session.scenario_id in SESSION_SCENARIO_ALIASES
+            else "tipa-default"
         ),
     }
 

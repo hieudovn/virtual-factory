@@ -5,7 +5,83 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from virtual_factory.ui.runtime_service import RuntimeService
+# ═══════════════════════════════════════════════════════════════════════════
+# VF-vNEXT-R5 — Single Simulation System Consolidation (legacy authority removal)
+#
+# The active product path must create simulation state ONLY through the canonical
+# Workspace / RuntimeSession seam (/workspaces, /vnext/workspaces/*, /assy-demo/*).
+# The legacy simulation authorities were DE-AUTHORIZED here:
+#   1. the eager root-dashboard ``RuntimeService`` (experimental MVP-01 surface),
+#   2. the legacy G7 run-control service family (``/vnext/runs*``),
+#   3. the legacy ``/demo-assy-mes`` ``DemoController`` runtime path.
+# They remain reachable only as FAIL-CLOSED deprecated aliases: any request that
+# touches them returns HTTP 410 and constructs ZERO runtime/engine/controller
+# state. The reusable kernel/library classes are NOT deleted (classification in
+# the VF-vNEXT-R5 report); nothing here constructs them.
+# ═══════════════════════════════════════════════════════════════════════════
+LEGACY_AUTHORITY_REMOVED_CODE = "VF_LEGACY_AUTHORITY_DEAUTHORIZED"
+
+#: The legacy surfaces removed from the active product path in VF-vNEXT-R5.
+DEAUTHORIZED_LEGACY_SURFACES: tuple[str, ...] = (
+    "root_dashboard_runtime_service",
+    "legacy_g7_run_control",
+    "legacy_demo_assy_mes",
+)
+
+#: Canonical product paths that replace the removed authorities.
+CANONICAL_PRODUCT_PATHS: tuple[str, ...] = (
+    "/workspaces",
+    "/vnext/workspaces",
+    "/vnext/workspaces/{workspace_id}/view",
+    "/assy-demo",
+)
+
+
+def legacy_deprecation_payload(surface: str) -> dict:
+    """Machine-readable fail-closed payload for a de-authorized legacy route."""
+    return {
+        "error": "legacy_runtime_authority_deauthorized",
+        "code": LEGACY_AUTHORITY_REMOVED_CODE,
+        "surface": surface,
+        "detail": (
+            "This legacy simulation authority was de-authorized in VF-vNEXT-R5 and "
+            "constructs no runtime state. Use the canonical product paths instead."
+        ),
+        "canonical_paths": list(CANONICAL_PRODUCT_PATHS),
+        "legacy_runtime_authority": False,
+    }
+
+
+class LegacyRuntimeAuthorityDeauthorized(RuntimeError):
+    """A de-authorized legacy simulation authority was touched (VF-vNEXT-R5)."""
+
+    def __init__(self, surface: str) -> None:
+        self.surface = surface
+        RuntimeError.__init__(
+            self,
+            f"legacy runtime authority {surface!r} is de-authorized "
+            f"(VF-vNEXT-R5); canonical product paths: "
+            f"{', '.join(CANONICAL_PRODUCT_PATHS)}",
+        )
+
+
+class DeauthorizedRuntimeAuthority:
+    """Fail-closed placeholder standing in for a removed runtime authority.
+
+    Attribute access ALWAYS raises, so a provider that returned this object can
+    never construct, step or reset simulation state.
+    """
+
+    __slots__ = ("_surface",)
+
+    def __init__(self, surface: str) -> None:
+        object.__setattr__(self, "_surface", surface)
+
+    def __getattr__(self, name: str):
+        raise LegacyRuntimeAuthorityDeauthorized(object.__getattribute__(self, "_surface"))
+
+    def __repr__(self) -> str:  # pragma: no cover - diagnostic only
+        return f"<deauthorized legacy authority {object.__getattribute__(self, '_surface')!r}>"
 
 
 def create_app(
@@ -26,31 +102,32 @@ def create_app(
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
-    service = RuntimeService(
-        config_path=config_path,
-        scenario_path=scenario_path,
-        dt_s=dt_s,
-        mqtt_host=mqtt_host,
-        mqtt_port=mqtt_port,
-        mqtt_topic_prefix=mqtt_topic_prefix,
-        mqtt_client_id=mqtt_client_id,
-        mqtt_connect_retries=mqtt_connect_retries,
-        mqtt_connect_delay=mqtt_connect_delay,
-        opcua_endpoint=opcua_endpoint,
-    )
+    # VF-vNEXT-R5: NO RuntimeService (and no engine/runtime object) is created
+    # here any more. The construction inputs are retained for call-site
+    # compatibility with the de-authorized experimental continuous dashboard and
+    # create no authority: ``service`` is a fail-closed placeholder.
+    service = DeauthorizedRuntimeAuthority("root_dashboard_runtime_service")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        if auto_start:
-            service.start_loop()
-        try:
-            yield
-        finally:
-            await service.stop_loop()
-            service.disconnect_mqtt()
+        # The experimental continuous loop authority was removed in VF-vNEXT-R5:
+        # the app starts no simulation loop and therefore starts no runtime state.
+        # ``auto_start`` is accepted for call-site compatibility only; it must not
+        # be referenced here (a bare ``del`` would make it a local name and break
+        # startup with UnboundLocalError — caught by the R5 server smoke).
+        yield
 
     app = FastAPI(title="Virtual Factory Monitoring API", version="0.1.0", lifespan=lifespan)
     static_dir = Path(__file__).resolve().parent / "static"
+
+    @app.exception_handler(LegacyRuntimeAuthorityDeauthorized)
+    def _legacy_authority_removed(_request, exc: LegacyRuntimeAuthorityDeauthorized):
+        """HTTP 410 for every de-authorized legacy simulation authority."""
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=410, content=legacy_deprecation_payload(exc.surface)
+        )
 
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
@@ -219,36 +296,37 @@ def create_app(
 
     @app.post("/api/config/switch")
     async def config_switch(body: dict) -> dict:
-        """Switch to a different plant configuration at runtime and persist it."""
-        config_path = body.get("config_path", "")
-        if not config_path:
-            return {"status": "error", "message": "No config_path provided"}
-        from pathlib import Path
-        if not Path(config_path).exists():
-            return {"status": "error", "message": f"Config file not found: {config_path}"}
-        from virtual_factory.core.state_persistence import set_last_config
-        set_last_config(config_path)
-        result = await service.reload_config(config_path)
-        return {"status": "ok", "config": config_path, **result}
+        """Switch to a different plant configuration at runtime and persist it.
+
+        VF-vNEXT-R5: de-authorized — the root-dashboard runtime authority was
+        removed, so there is no live continuous configuration to switch. Fails
+        closed BEFORE any body validation (deterministic 410, no construction).
+        """
+        raise LegacyRuntimeAuthorityDeauthorized("root_dashboard_runtime_service")
 
     # ═══════════════════════════════════════════════════
     # VF-DM-DEMO-ASSY-MES-01 — TIPA ASSY Customer Demo Scenario v1
     # Minimal control surface: reset / start / pause / step / jam / recover.
     # ═══════════════════════════════════════════════════
 
-    _demo_controller: dict = {"instance": None}
-
     def _get_demo_controller():
-        if _demo_controller["instance"] is None:
-            from virtual_factory.assembly.demo_assy_mes.controller import DemoController
-            from virtual_factory.assembly.demo_assy_mes.runner import DemoRunner
-            _demo_controller["instance"] = DemoController(DemoRunner())
-        return _demo_controller["instance"]
+        """VF-vNEXT-R5: the active legacy DemoController runtime path is removed.
+
+        No request may construct a ``DemoController``/``DemoRunner``/legacy
+        composition. The module and its classes stay available as
+        reference/test-only code (nothing is deleted); this provider fails closed.
+        """
+        raise LegacyRuntimeAuthorityDeauthorized("legacy_demo_assy_mes")
 
     @app.get("/demo-assy-mes", include_in_schema=False)
-    def demo_asssy_page() -> FileResponse:
-        """Customer-facing TIPA ASSY demo page (VF-DM-DEMO-ASSY-MES-01-C02)."""
-        return FileResponse(static_dir / "demo_assy_mes.html")
+    def demo_asssy_page():
+        """Legacy TIPA ASSY demo page: de-authorized fail-closed alias (R5).
+
+        The legacy customer-demo page was backed by the removed DemoController
+        runtime path; the static asset stays in the repo as reference but the
+        route never serves an active legacy runtime surface again.
+        """
+        raise LegacyRuntimeAuthorityDeauthorized("legacy_demo_assy_mes")
 
     @app.post("/demo-assy-mes/reset")
     def demo_reset() -> dict:
@@ -767,7 +845,26 @@ def create_app(
         return ui_hierarchy_mod.root_only_context(plant_id)
 
     # ═══════════════════════════════════════════════
-    # G7 — Hierarchical Scenario / Run Control (additive vNext seam)
+    # G7 — legacy run-control family: DE-AUTHORIZED (VF-vNEXT-R5).
+    #
+    # The legacy family kept its OWN RunLifecycleService authority per workspace
+    # (``TIPA`` = a duplicate authority over an UNPREPARED federation, and
+    # ``continuous`` = a second continuous authority owning an extra
+    # RuntimeService per attempt). Both discriminators are removed from the
+    # active product path: the canonical TIPA authority is /vnext/workspaces/TIPA/*
+    # plus /assy-demo/*, and no continuous workspace is registered.
+    #
+    # The route decorators are kept so callers receive an explicit fail-closed
+    # deprecation (HTTP 410) instead of an ambiguous 404, and so the removal is
+    # auditable. NOTHING below constructs a lifecycle service or runtime.
+    # ═══════════════════════════════════════════════
+
+    def _get_run_control_service(workspace: str = "TIPA"):
+        """Fail closed: the legacy G7 run-control authority no longer exists."""
+        raise LegacyRuntimeAuthorityDeauthorized("legacy_g7_run_control")
+
+    # ═══════════════════════════════════════════════
+    # Legacy G7 route surface (deprecated aliases only)
     # One platform-level run authority PER WORKSPACE; domain runtimes stay
     # authoritative. TIPA and continuous are independent workspace authorities
     # (no cross-workspace mutation, no platform-global active run singleton).
@@ -775,79 +872,6 @@ def create_app(
     # repointed). The ``workspace`` discriminator follows the existing G6
     # ``?workspace=`` query-param convention (default: TIPA).
     # ═══════════════════════════════════════════════
-    _run_control: dict = {}
-
-    def _get_run_control_service(workspace: str = "TIPA"):
-        """Return the run-control authority for a workspace, or None.
-
-        ``workspace`` is a platform workspace discriminator (``TIPA`` or
-        ``continuous``); each value owns an independent RunLifecycleService
-        (independent active run, history and bridge state). Unknown names fail
-        closed (caller returns 404).
-        """
-        if workspace in _run_control:
-            return _run_control[workspace]
-
-        if workspace == "TIPA":
-            from virtual_factory.federation import (
-                TipaAssyFederation,
-                build_tipa_workspace,
-            )
-            from virtual_factory.runcontrol import (
-                AssyExecutionBridge,
-                RunLifecycleService,
-            )
-
-            ws = build_tipa_workspace()
-
-            def bridge_factory():
-                assy_config = os.environ.get(
-                    "TIPA_ASSY_CONFIG",
-                    str(Path(__file__).resolve().parent.parent.parent.parent
-                        / "configs" / "plants" / "tipa_assy_demo.yaml"),
-                )
-                federation = TipaAssyFederation(config_path=assy_config)
-                federation.initialize()
-                return AssyExecutionBridge(federation)
-
-            _run_control[workspace] = RunLifecycleService(ws, bridge_factory)
-        elif workspace == "continuous":
-            from virtual_factory.runcontrol import (
-                ContinuousExecutionBridge,
-                RunLifecycleService,
-                build_continuous_workspace,
-                process_scope_path,
-            )
-
-            ws = build_continuous_workspace()
-
-            def bridge_factory():
-                # Attempt isolation (C03): a NEW run attempt owns a FRESH
-                # RuntimeService built from the SAME accepted config/runtime
-                # construction inputs. It never shares the legacy dashboard's
-                # service and never reuses another attempt's runtime object.
-                attempt_runtime = RuntimeService(
-                    config_path=config_path,
-                    scenario_path=scenario_path,
-                    dt_s=dt_s,
-                    mqtt_host=mqtt_host,
-                    mqtt_port=mqtt_port,
-                    mqtt_topic_prefix=mqtt_topic_prefix,
-                    mqtt_client_id=mqtt_client_id,
-                    mqtt_connect_retries=mqtt_connect_retries,
-                    mqtt_connect_delay=mqtt_connect_delay,
-                    opcua_endpoint=opcua_endpoint,
-                )
-                return ContinuousExecutionBridge(
-                    attempt_runtime,
-                    participant_id=process_scope_path().as_string(),
-                )
-
-            _run_control[workspace] = RunLifecycleService(ws, bridge_factory)
-        else:
-            return None
-
-        return _run_control[workspace]
 
     def _vnext_service(workspace: str):
         svc = _get_run_control_service(workspace)
@@ -1061,6 +1085,30 @@ def create_app(
             return _JSONResponse(
                 status_code=404,
                 content={"detail": f"unknown workspace {workspace_id!r}: {exc}"},
+            )
+
+    @app.post("/vnext/workspaces/{workspace_id}/new-run")
+    def vnext_workspace_new_run(workspace_id: str, body: dict):
+        """VF-vNEXT-R5 (audit I1): start a FRESH canonical run from the shell.
+
+        The shell's scenario / new-run control uses the SAME canonical seam as
+        the rich ASSY page (``WorkspaceMonitor.new_run`` -> the shared
+        ``build_tipa_scenario_run_factory``), so there is exactly ONE run-id
+        authority and every new run is pinned to its own immutable run context
+        (no cross-run profile contamination).
+        """
+        monitor = _get_workspace_monitor()
+        if not monitor.has(workspace_id):
+            return _JSONResponse(
+                status_code=404, content={"detail": f"unknown workspace {workspace_id!r}"}
+            )
+        scenario_id = (body or {}).get("scenario_id") or None
+        try:
+            return monitor.new_run(workspace_id, scenario_id)
+        except Exception as exc:
+            return _JSONResponse(
+                status_code=400,
+                content={"detail": f"new run refused for {workspace_id!r}: {exc}"},
             )
 
     @app.post("/vnext/workspaces/{workspace_id}/control")

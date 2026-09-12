@@ -144,7 +144,9 @@ class RunLifecycleService:
     """Platform-level run lifecycle authority over one G1 Workspace.
 
     ``bridge_factory`` lazily constructs the execution bridge on first
-    step/reset so lifecycle-only operations never build runtime state.
+    step/reset so lifecycle-only operations never build runtime state. R5 adds
+    an optional attempt-CONTEXT-aware seam (``bridge_factory_ctx``) so bridges
+    are built from the attempt's own immutable run context.
     """
 
     def __init__(
@@ -152,11 +154,18 @@ class RunLifecycleService:
         workspace: Workspace,
         bridge_factory: Callable[[], ExecutionBridge],
         *,
+        bridge_factory_ctx: Callable[[RunContextV2], ExecutionBridge] | None = None,
         run_id_prefix: str | None = None,
         admission: Callable[[RunRecord], None] | None = None,
     ) -> None:
         self._workspace = workspace
         self._bridge_factory = bridge_factory
+        # VF-vNEXT-R5: attempt-BOUND bridge seam. When supplied, the bridge for
+        # an attempt is built from that attempt's IMMUTABLE RunContextV2 (its own
+        # workspace/scenario/profile), so no ambient/mutable selection state can
+        # leak another run's inputs into this attempt (no cross-run
+        # contamination). Callers that do not set it keep the zero-arg seam.
+        self._bridge_factory_ctx = bridge_factory_ctx
         self._runs: dict[str, RunRecord] = {}
         self._active_run_id: str | None = None
         self._seq = 0
@@ -203,10 +212,15 @@ class RunLifecycleService:
 
         A fresh run attempt (create/restart/replay) starts with ``bridge=None``
         and lazily builds its OWN execution context; prior attempts never share
-        runtime state.
+        runtime state. When a context-aware factory is configured (R5), the
+        bridge is built from THIS attempt's immutable ``RunContextV2`` — the
+        inputs of an attempt can never come from another attempt's selection.
         """
         if record.bridge is None:
-            record.bridge = self._bridge_factory()
+            if self._bridge_factory_ctx is not None:
+                record.bridge = self._bridge_factory_ctx(record.context)
+            else:
+                record.bridge = self._bridge_factory()
         return record.bridge
 
     @property
