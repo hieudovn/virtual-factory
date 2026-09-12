@@ -218,3 +218,40 @@ VF-SHW-X1-C01 - X2-safe actuator ownership + level-action direction (Issue #91 c
 - Implementation head: f0f9f30
 - Verdict: VF-SHW-X1-C01 - READY FOR SA REVIEW; X2_SAFE_C1_ACTUATOR_BEHAVIOUR_FROZEN
 - STOP: X2 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.
+
+---
+
+VF-SHW-X2 - Whole-Plant Shallow Runnable Model + C1 Functional Control (Issue #94): IMPLEMENTATION
+- Required/technical base: eba4c58 (X1 + X1-C01 accepted). Branch feature/vf-shw-x2; harness preflight PASSED.
+- Report: reports/VF-SHW-X2.md; all 10 acceptance criteria X2-1..X2-10 mapped.
+- Delivered (additive, contracts untouched): src/virtual_factory/shwtp/whole_plant.py (16 admitted scopes as
+  composition participants under explicit_lagged; frozen topology as 21 bindings = 18 graph flow edges + 3
+  contract-declared process input relations; per-scope contract update families; monitor/control/balance/
+  input-wiring/transfer-ledger/provenance projections), src/virtual_factory/shwtp/x2_controls.py (the nine frozen
+  X2-active C1 controllers as deterministic rule/sequence logic reading the frozen actuator command values/timers/
+  deadbands from the contracts), bridge.py (canonical bridge drives either the accepted G21 slice or the X2 whole
+  plant), session.py (explicit model selector + build_shwtp_whole_plant_session; ONE RuntimeSession per session),
+  __init__.py exports, tests/test_vnext_x2_whole_plant_runtime.py (42 tests = the 18 Issue #94 oracles).
+- Oracles: ONE_CANONICAL_SHWTP_SESSION_AUTHORITY; ALL_16_ADMITTED_SCOPES_EXECUTE_ONLY (T107/ELEC-MCC/AUTO-PLC/
+  LINE2 internals never execute); NINE_C1_ACTIVE_ZERO_C2_EVALUATION (no PID/integrator/derivative/scan loop, five
+  C2 loops stay deferred X3/X4); EVERY_X2_INPUT_RESOLVED_AT_RUNTIME (process node / X2-active C1 / scenario /
+  the single declared DIST-P108 fallback); PHYSICAL_ORACLES_SATISFIED (per-scope storage residual exactly 0,
+  plant closure bounded with the reported transit inventory, 0 negative values over 120 windows, filtered <=
+  settled turbidity on the matched lag basis, filter DP non-decreasing with 3 backwash resets and wash-water
+  return, no same-window feed-through, identical trajectory digests across independent builds and after reset);
+  RUNTIME_PROVENANCE_VISIBLE (3 PIM-known + 15 assumed edges in the runtime ledger with assumption_id/reversible,
+  site_truth=false and simulation_truth=synthetic_reference on every payload, excluded edges never used).
+- X1-C01 actuator behaviour preserved exactly: RAW-INTAKE 75/0, T106 valve 100/0, T108 70/0, DIST-P108 80 percent
+  fallback, T100 low -> downstream withdrawal inhibited while upstream refill permitted, T100 high -> upstream
+  intake inhibited, T108 direction correct.
+- Interpretation recorded in the report: the accepted G21 slice stays the default model (issue requires the
+  accepted G21/G22/G23/G24/G25 behaviour to stay green and defers the rich SH-WTP UI to X5/X6), so the whole
+  plant is reachable through the SAME canonical seam via model="whole_plant_x2"; plus three documented
+  parameterizations (T106 wash-water permissive as recovery capacity available, T101/T104 residence interlock on
+  the scope outlet with a true V/Q residence index, plant boundary IN = actually pumped intake flow).
+- Regression: canonical baseline at de268e5 overall PASS, failed_groups [], 45/45 groups (new
+  x2_whole_plant_runtime group 42 passed, x1_whole_plant_contracts 46 unchanged, checks_changed_files PASSED);
+  full suite 2715 -> 2757 passed.
+- Implementation head: de268e5
+- Verdict: VF-SHW-X2 - READY FOR SA REVIEW; SHW_WHOLE_PLANT_SHALLOW_RUNTIME_READY
+- STOP: X3/X4/X5 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.
