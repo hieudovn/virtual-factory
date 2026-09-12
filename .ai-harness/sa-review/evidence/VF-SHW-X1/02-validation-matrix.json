@@ -1,12 +1,12 @@
 {
   "gate": "VF-SHW-X1",
-  "validation_count": 10,
+  "validation_count": 12,
   "checks": {
     "V1_graph_deterministic_and_schema_valid": {
       "pass": true,
       "detail": {
         "schema": "vf.vnext.x1.shwtp.whole_plant_graph.v1",
-        "signature": "55f49ca475492eaa4ea7c013"
+        "signature": "60e123671d544c4ad6a8f370"
       }
     },
     "V2_no_new_canonical_pim_id": {
@@ -144,7 +144,7 @@
     "V9_invariants_and_authority_frozen": {
       "pass": true,
       "detail": {
-        "invariant_count": 14,
+        "invariant_count": 16,
         "missing_invariants": [],
         "missing_not_authorized": [],
         "authority_frozen": true,
@@ -167,6 +167,105 @@
         "runtime_tokens_in_contract_module": [],
         "forbidden_imports_in_contract_module": [],
         "execution_surface_attributes": []
+      }
+    },
+    "V11_x2_input_resolution_no_c2_dependency": {
+      "pass": true,
+      "detail": {
+        "admitted_scopes": 16,
+        "resolved_inputs": 29,
+        "uncovered_inputs": [],
+        "producer_classes": [
+          "process_node",
+          "scenario",
+          "x2_active_controller",
+          "x2_fallback_default"
+        ],
+        "c2_controls": [
+          "vf-shw-ctrl-dist-pressure-pi",
+          "vf-shw-ctrl-f106-inlet-flow-pi",
+          "vf-shw-ctrl-raw-flow-pi",
+          "vf-shw-ctrl-t100-level-pi",
+          "vf-shw-ctrl-t108-level-pi"
+        ],
+        "inputs_requiring_a_c2_output": [],
+        "explicit_fallback_inputs": [
+          "hsp_speed_cmd"
+        ]
+      }
+    },
+    "V12_level_action_direction_and_x2_actuator_commands": {
+      "pass": true,
+      "detail": {
+        "level_action_controls": [
+          "vf-shw-ctrl-t100-permissive",
+          "vf-shw-ctrl-t108-permissive"
+        ],
+        "level_actions": {
+          "vf-shw-ctrl-t100-permissive": {
+            "downstream": "vf-shw-node-t101.outlet_enable",
+            "upstream": "vf-shw-node-raw-intake.intake_enable"
+          },
+          "vf-shw-ctrl-t108-permissive": {
+            "downstream": "vf-shw-node-dist-p108.transfer_enable",
+            "upstream": "vf-shw-node-t106.inflow_enable"
+          }
+        },
+        "level_action_rows": 6,
+        "actuator_ownership_complete": true,
+        "x2_actuator_command_owners": [
+          "vf-shw-ctrl-backwash-sequence",
+          "vf-shw-ctrl-raw-pump-duty",
+          "vf-shw-ctrl-t108-permissive"
+        ],
+        "x2_command_modes": [
+          "discrete_open_closed_position",
+          "fixed_speed_synthetic_reference"
+        ],
+        "x2_actuator_commands": {
+          "vf-shw-ctrl-raw-pump-duty": {
+            "signal": "pump_speed_cmd",
+            "unit": "%",
+            "mode": "fixed_speed_synthetic_reference",
+            "value_when_running": 75.0,
+            "value_when_stopped": 0.0,
+            "is_feedback_controlled_in_x2": false,
+            "deferred_modulator": {
+              "controller_id": "vf-shw-ctrl-raw-flow-pi",
+              "gate": "X4"
+            },
+            "rule": "pump_run_cmd == RUN -> pump_speed_cmd = 75.0; pump_run_cmd == STOP -> pump_speed_cmd = 0.0",
+            "provenance": "synthetic_reference"
+          },
+          "vf-shw-ctrl-backwash-sequence": {
+            "signal": "inlet_valve_pos",
+            "unit": "%",
+            "mode": "discrete_open_closed_position",
+            "value_when_open": 100.0,
+            "value_when_closed": 0.0,
+            "is_feedback_controlled_in_x2": false,
+            "deferred_modulator": {
+              "controller_id": "vf-shw-ctrl-f106-inlet-flow-pi",
+              "gate": "X3"
+            },
+            "rule": "the X2 sequence drives the inlet valve OPEN -> inlet_valve_pos = 100.0 and CLOSED -> inlet_valve_pos = 0.0",
+            "provenance": "synthetic_reference"
+          },
+          "vf-shw-ctrl-t108-permissive": {
+            "signal": "transfer_pump_speed_cmd",
+            "unit": "%",
+            "mode": "fixed_speed_synthetic_reference",
+            "value_when_running": 70.0,
+            "value_when_stopped": 0.0,
+            "is_feedback_controlled_in_x2": false,
+            "deferred_modulator": {
+              "controller_id": "vf-shw-ctrl-t108-level-pi",
+              "gate": "X3"
+            },
+            "rule": "transfer_enable == RUN -> transfer_pump_speed_cmd = 70.0; transfer_enable == STOP -> transfer_pump_speed_cmd = 0.0",
+            "provenance": "synthetic_reference"
+          }
+        }
       }
     }
   },

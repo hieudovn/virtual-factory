@@ -93,6 +93,37 @@ REQUIRED_CONTROL_FIELDS = (
 )
 
 PI_PID_TYPES = ("PI", "PID")
+PI_PID_GATES = ("X3", "X4")
+
+#: X1-C01: how an X2 process input is produced inside X2.
+X2_PRODUCER_CLASSES = (
+    "process_node",
+    "x2_active_controller",
+    "x2_fallback_default",
+    "scenario",
+    "boundary",
+)
+#: X1-C01: an explicit X2 fallback/default must declare one of these modes.
+X2_FALLBACK_MODES = (
+    "fixed_speed_synthetic_reference",
+    "fixed_position_synthetic_reference",
+    "discrete_open_closed_position",
+    "scenario_reference",
+    "rule_based_synthetic_reference",
+)
+X2_FALLBACK_REQUIRED_KEYS = ("mode", "value", "rule", "provenance")
+
+#: X1-C01: level actions must name the direction they protect.
+LEVEL_ACTION_DIRECTIONS = {
+    "downstream": ("downstream", "outlet", "withdrawal"),
+    "upstream": ("upstream", "intake", "inflow", "refill"),
+}
+LEVEL_ACTION_REQUIRED_KEYS = ("condition", "action", "target_scope", "target_signal")
+ACTUATOR_OWNERSHIP_REQUIRED_KEYS = ("upstream_actuator", "downstream_actuator")
+ACTUATOR_REQUIRED_KEYS = ("scope", "signal", "direction")
+CONTROL_ID_PREFIX = VF_LOCAL_PREFIX + "ctrl-"
+NODE_ID_PREFIX = VF_LOCAL_PREFIX + "node-"
+NON_NODE_INPUT_SOURCES = ("scenario",)
 
 
 class ShwtpContractError(ValueError):
@@ -586,6 +617,306 @@ def _validate_controls(payload: dict) -> tuple[ControlContract, ...]:
     return tuple(sorted(controls, key=lambda c: c.controller_id))
 
 
+# ── X1-C01: X2 input resolution (no C2 dependency) ────────────────────────
+
+def _water_adjacency(edges: tuple[GraphEdge, ...]) -> dict[str, set[str]]:
+    """Directed water-flow adjacency over non-reference graph edges."""
+    adjacency: dict[str, set[str]] = {}
+    for edge in edges:
+        if edge.category == "reference_only" or edge.flow != "water":
+            continue
+        adjacency.setdefault(edge.source, set()).add(edge.target)
+        adjacency.setdefault(edge.target, set())
+    return adjacency
+
+
+def _reaches(adjacency: Mapping[str, set[str]], start: str, target: str, limit: int = 64) -> bool:
+    if start == target:
+        return False
+    seen = {start}
+    queue = [start]
+    while queue and len(seen) <= limit:
+        node = queue.pop(0)
+        for nxt in sorted(adjacency.get(node, ())):
+            if nxt == target:
+                return True
+            if nxt not in seen:
+                seen.add(nxt)
+                queue.append(nxt)
+    return False
+
+
+def _resolve_x2_input(scope: ScopeContract, entry: Mapping[str, Any], nodes_by_id, controls_by_id) -> dict:
+    """Resolve one input of an X2-admitted scope to its X2 producer (fail-closed)."""
+    signal = entry.get("signal")
+    if not signal:
+        raise ShwtpContractError(
+            f"process contract {scope.scope_id!r} declares an input without a signal name"
+        )
+    source = entry.get("source")
+    declared = entry.get("x2_producer_class")
+    if declared is not None and declared not in X2_PRODUCER_CLASSES:
+        raise ShwtpContractError(
+            f"process contract {scope.scope_id!r} input {signal!r} declares x2_producer_class "
+            f"{declared!r} which is not in {X2_PRODUCER_CLASSES}"
+        )
+
+    if isinstance(source, str) and source.startswith(CONTROL_ID_PREFIX):
+        control = controls_by_id.get(source)
+        if control is None:
+            raise ShwtpContractError(
+                f"process contract {scope.scope_id!r} input {signal!r} references unknown controller {source!r}"
+            )
+        if control.control_class == "C2":
+            fallback = entry.get("x2_fallback")
+            if declared != "x2_fallback_default" or not isinstance(fallback, Mapping):
+                raise ShwtpContractError(
+                    f"X2-admitted scope {scope.scope_id!r} input {signal!r} is sourced from the C2 "
+                    f"controller {source!r} without an explicit X2 fallback/default; X2 must not "
+                    f"require a C2 controller output"
+                )
+            for key in X2_FALLBACK_REQUIRED_KEYS:
+                if key not in fallback:
+                    raise ShwtpContractError(
+                        f"X2 fallback for {scope.scope_id!r} input {signal!r} is missing {key!r}"
+                    )
+            if fallback["mode"] not in X2_FALLBACK_MODES:
+                raise ShwtpContractError(
+                    f"X2 fallback mode {fallback['mode']!r} for {scope.scope_id!r} input {signal!r} "
+                    f"must be one of {X2_FALLBACK_MODES}"
+                )
+            if fallback["value"] is None or not str(fallback.get("rule", "")).strip():
+                raise ShwtpContractError(
+                    f"X2 fallback for {scope.scope_id!r} input {signal!r} must declare a deterministic "
+                    f"value and rule"
+                )
+            if not str(fallback["provenance"]).startswith("synthetic_reference"):
+                raise ShwtpContractError(
+                    f"X2 fallback for {scope.scope_id!r} input {signal!r} must be labelled synthetic_reference"
+                )
+            producer_class = "x2_fallback_default"
+        else:
+            if not (control.active_in_x2 and control.implementation_gate == "X2"):
+                raise ShwtpContractError(
+                    f"X2-admitted scope {scope.scope_id!r} input {signal!r} is sourced from controller "
+                    f"{source!r} which is not X2-active (class {control.control_class}, gate "
+                    f"{control.implementation_gate!r}, active_in_x2={control.active_in_x2}) and declares no "
+                    f"explicit X2 fallback/default"
+                )
+            producer_class = "x2_active_controller"
+    elif isinstance(source, str) and source.startswith(NODE_ID_PREFIX):
+        node = nodes_by_id.get(source)
+        if node is None:
+            raise ShwtpContractError(
+                f"process contract {scope.scope_id!r} input {signal!r} references unknown graph node {source!r}"
+            )
+        if not node.x2_eligible:
+            raise ShwtpContractError(
+                f"process contract {scope.scope_id!r} input {signal!r} is sourced from graph node {source!r} "
+                f"which is not X2-eligible"
+            )
+        producer_class = "process_node"
+    elif source in NON_NODE_INPUT_SOURCES:
+        producer_class = "scenario"
+    else:
+        raise ShwtpContractError(
+            f"X2-admitted scope {scope.scope_id!r} input {signal!r} has the unresolved producer {source!r}; "
+            f"declare a process node, an X2-active C1 controller or an explicit x2_fallback"
+        )
+
+    if declared is not None and declared != producer_class:
+        raise ShwtpContractError(
+            f"process contract {scope.scope_id!r} input {signal!r} declares x2_producer_class {declared!r} "
+            f"but resolves as {producer_class!r}"
+        )
+
+    deferred = entry.get("deferred_modulator")
+    if deferred is not None:
+        if not isinstance(deferred, Mapping):
+            raise ShwtpContractError(
+                f"process contract {scope.scope_id!r} input {signal!r} deferred_modulator must be a mapping"
+            )
+        deferred_control = controls_by_id.get(deferred.get("controller_id"))
+        if deferred_control is None:
+            raise ShwtpContractError(
+                f"process contract {scope.scope_id!r} input {signal!r} names an unknown deferred modulator "
+                f"{deferred.get('controller_id')!r}"
+            )
+        if deferred_control.control_class != "C2" or deferred_control.implementation_gate not in PI_PID_GATES:
+            raise ShwtpContractError(
+                f"deferred modulator {deferred_control.controller_id!r} must be a C2 control in a later gate "
+                f"(got class {deferred_control.control_class!r}, gate {deferred_control.implementation_gate!r})"
+            )
+        if deferred_control.active_in_x2:
+            raise ShwtpContractError(
+                f"deferred modulator {deferred_control.controller_id!r} must stay inactive in X2"
+            )
+        if deferred.get("modulates") != signal or deferred.get("gate") != deferred_control.implementation_gate:
+            raise ShwtpContractError(
+                f"process contract {scope.scope_id!r} input {signal!r} deferred_modulator annotation must "
+                f"restate the controller gate and the modulated signal"
+            )
+    return {
+        "scope_id": scope.scope_id,
+        "signal": signal,
+        "unit": entry.get("unit"),
+        "declared_source": source,
+        "x2_producer_class": producer_class,
+        "x2_active_in_x2": producer_class == "x2_active_controller",
+        "deferred_modulator": deferred.get("controller_id") if isinstance(deferred, Mapping) else None,
+        "deferred_modulator_gate": deferred.get("gate") if isinstance(deferred, Mapping) else None,
+        "x2_fallback_mode": entry.get("x2_fallback", {}).get("mode") if isinstance(entry.get("x2_fallback"), Mapping) else None,
+    }
+
+
+def _validate_x2_io_resolution(
+    scopes: tuple[ScopeContract, ...],
+    nodes: tuple[GraphNode, ...],
+    edges: tuple[GraphEdge, ...],
+    controls: tuple[ControlContract, ...],
+) -> tuple[dict, ...]:
+    """Every X2-admitted input must resolve to an X2 producer; never to a C2 output."""
+    nodes_by_id = {node.node_id: node for node in nodes}
+    controls_by_id = {control.controller_id: control for control in controls}
+    rows: list[dict] = []
+    for scope in scopes:
+        if not scope.x2_admitted:
+            continue
+        inputs = scope.raw.get("inputs", [])
+        if not inputs:
+            raise ShwtpContractError(f"X2-admitted scope {scope.scope_id!r} declares no inputs")
+        for entry in inputs:
+            rows.append(_resolve_x2_input(scope, entry, nodes_by_id, controls_by_id))
+    if not rows:
+        raise ShwtpContractError("no X2 input resolution could be derived from the process contracts")
+    return tuple(rows)
+
+
+def _validate_level_action_direction(
+    scopes: tuple[ScopeContract, ...],
+    nodes: tuple[GraphNode, ...],
+    edges: tuple[GraphEdge, ...],
+    controls: tuple[ControlContract, ...],
+) -> tuple[dict, ...]:
+    """Level actions must name the correct upstream/downstream actuator (X1-C01)."""
+    adjacency = _water_adjacency(edges)
+    nodes_by_id = {node.node_id: node for node in nodes}
+    rows: list[dict] = []
+    for control in controls:
+        policy = control.raw.get("level_action_policy")
+        ownership = control.raw.get("actuator_ownership")
+        has_level_alarm = any(str(alarm).startswith("level_") for alarm in control.raw.get("alarms", []))
+        if policy is None and ownership is None:
+            if has_level_alarm and control.active_in_x2 and control.control_class == "C1":
+                raise ShwtpContractError(
+                    f"X2-active C1 control {control.controller_id!r} declares level alarms and must define "
+                    f"both level_action_policy and actuator_ownership"
+                )
+            continue
+        if policy is None or ownership is None:
+            raise ShwtpContractError(
+                f"control {control.controller_id!r} must declare level_action_policy and actuator_ownership together"
+            )
+        for key in ACTUATOR_OWNERSHIP_REQUIRED_KEYS:
+            if key not in ownership:
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} actuator_ownership is missing {key!r}"
+                )
+        for direction in ("upstream", "downstream"):
+            block = ownership[f"{direction}_actuator"]
+            if not isinstance(block, Mapping):
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} {direction}_actuator must be a mapping"
+                )
+            for key in ACTUATOR_REQUIRED_KEYS:
+                if key not in block:
+                    raise ShwtpContractError(
+                        f"control {control.controller_id!r} {direction}_actuator is missing {key!r}"
+                    )
+            if block["direction"] != direction:
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} {direction}_actuator must declare direction {direction!r}"
+                )
+            if block["scope"] not in nodes_by_id:
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} {direction}_actuator references unknown scope {block['scope']!r}"
+                )
+        if not isinstance(policy, list) or not policy:
+            raise ShwtpContractError(f"control {control.controller_id!r} level_action_policy must be a non-empty list")
+
+        for entry in policy:
+            for key in LEVEL_ACTION_REQUIRED_KEYS:
+                if key not in entry:
+                    raise ShwtpContractError(
+                        f"control {control.controller_id!r} level_action_policy entry is missing {key!r}"
+                    )
+            action = str(entry["action"])
+            matched = [
+                direction
+                for direction, words in LEVEL_ACTION_DIRECTIONS.items()
+                if any(word in action for word in words)
+            ]
+            if len(matched) != 1:
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} level action {action!r} must name exactly one "
+                    f"direction (upstream or downstream)"
+                )
+            direction = matched[0]
+            target = entry["target_scope"]
+            if target not in nodes_by_id:
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} level action {action!r} targets unknown scope {target!r}"
+                )
+            expected_signal = ownership[f"{direction}_actuator"]["signal"]
+            if entry["target_signal"] != expected_signal:
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} level action {action!r} must act on the "
+                    f"{direction} actuator signal {expected_signal!r} (got {entry['target_signal']!r})"
+                )
+            owner = control.owning_scope
+            if direction == "downstream" and not _reaches(adjacency, owner, target):
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} downstream level action must target a scope reachable "
+                    f"downstream of {owner!r} (got {target!r})"
+                )
+            if direction == "upstream" and not _reaches(adjacency, target, owner):
+                raise ShwtpContractError(
+                    f"control {control.controller_id!r} upstream level action must target a scope that feeds "
+                    f"{owner!r} (got {target!r})"
+                )
+            rows.append(
+                {
+                    "controller_id": control.controller_id,
+                    "owning_scope": owner,
+                    "condition": entry["condition"],
+                    "action": action,
+                    "direction": direction,
+                    "target_scope": target,
+                    "target_signal": entry["target_signal"],
+                }
+            )
+
+        for group in ("permissives", "interlocks"):
+            for text in control.raw.get(group, []):
+                lowered = str(text).lower()
+                low_level = any(token in lowered for token in ("lal", "low level", "low-low"))
+                blocks_upstream = any(
+                    token in lowered
+                    for token in ("stop intake", "stop the intake", "intake pump", "stop upstream")
+                )
+                # a statement that explicitly denies the upstream trip is not a trip
+                negated = lowered.lstrip().startswith(("no ", "not ", "never ")) or any(
+                    token in lowered for token in ("no low-level", "not implied", "must not", "never trips")
+                )
+                if low_level and blocks_upstream and not negated and "permitted" not in lowered:
+                    raise ShwtpContractError(
+                        f"control {control.controller_id!r} {group} entry {text!r} lets a low level trip the "
+                        f"upstream intake; a low level must protect DOWNSTREAM withdrawal while upstream "
+                        f"refill stays permitted"
+                    )
+    return tuple(rows)
+
+
 def _validate_admission(
     payload: dict,
     scopes: tuple[ScopeContract, ...],
@@ -778,6 +1109,9 @@ def load_whole_plant_contracts(
     nodes, edges, assumption_ids = _validate_graph(graph)
     scopes, reference_only = _validate_scopes(process)
     controls = _validate_controls(control)
+    # X1-C01: X2 I/O resolution (never a C2 dependency) + level-action actuator direction
+    _validate_x2_io_resolution(scopes, nodes, edges, controls)
+    _validate_level_action_direction(scopes, nodes, edges, controls)
     admission = _validate_admission(admission_raw, scopes, reference_only, edges, controls)
 
     # identity: no invented PIM id, VF-local namespace only
@@ -827,6 +1161,16 @@ def load_whole_plant_contracts(
         signature=signature,
         source_paths={key: str(value) for key, value in paths.items()},
     )
+
+
+def x2_io_resolution_audit(contracts: WholePlantContracts) -> tuple[dict, ...]:
+    """Read-only audit of how every X2-admitted input is produced inside X2."""
+    return _validate_x2_io_resolution(contracts.scopes, contracts.nodes, contracts.edges, contracts.controls)
+
+
+def level_action_audit(contracts: WholePlantContracts) -> tuple[dict, ...]:
+    """Read-only audit of level-action actuator ownership and direction."""
+    return _validate_level_action_direction(contracts.scopes, contracts.nodes, contracts.edges, contracts.controls)
 
 
 def _signature(payload: Mapping[str, Any]) -> str:

@@ -41,12 +41,16 @@ from virtual_factory.shwtp.contracts import (  # noqa: E402
     GRAPH_SCHEMA,
     ADMISSION_SCHEMA,
     PROCESS_SCHEMA,
+    X2_FALLBACK_MODES,
+    X2_PRODUCER_CLASSES,
     ShwtpContractError,
     accepted_canonical_ids,
     iter_vf_local_ids,
+    level_action_audit,
     load_whole_plant_contracts,
     pim_ids_referenced_by_contracts,
     referenced_vf_local_ids,
+    x2_io_resolution_audit,
 )
 
 CONFIG_DIR = ROOT / "configs" / "vnext" / "shwtp"
@@ -67,6 +71,39 @@ REQUIRED_FLOW_PATH = {
     "AREA-SHW-ELECTRICAL": {"UNIT-SHW-ELEC-MCC"},
     "AREA-SHW-AUTOMATION": {"UNIT-SHW-AUTO-PLC"},
 }
+
+#: The five PI/PID loops that X2 must not depend on (X1-C01).
+DEFERRED_C2_IDS = (
+    "vf-shw-ctrl-raw-flow-pi",
+    "vf-shw-ctrl-t100-level-pi",
+    "vf-shw-ctrl-f106-inlet-flow-pi",
+    "vf-shw-ctrl-t108-level-pi",
+    "vf-shw-ctrl-dist-pressure-pi",
+)
+
+#: X2 command-producing C1 controls and the actuator signal each one owns in X2.
+X2_COMMAND_OWNERS = {
+    "vf-shw-ctrl-raw-pump-duty": "pump_speed_cmd",
+    "vf-shw-ctrl-backwash-sequence": "inlet_valve_pos",
+    "vf-shw-ctrl-t108-permissive": "transfer_pump_speed_cmd",
+}
+
+
+def _load_with(workdir, *, process_payload=None, control_payload=None, graph_payload=None):
+    """Load the frozen contracts with one artefact replaced by a mutated copy."""
+    kwargs = {}
+    for key, payload, filename in (
+        ("process_contracts_path", process_payload, "process.json"),
+        ("control_contracts_path", control_payload, "control.json"),
+        ("graph_path", graph_payload, "graph.json"),
+    ):
+        if payload is None:
+            continue
+        path = workdir / filename
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        kwargs[key] = path
+    return load_whole_plant_contracts(**kwargs)
+
 
 RUNTIME_TOKENS = (
     "RunLifecycleService",
@@ -160,7 +197,7 @@ class TestGraphContract:
         assert len(contracts.admission.c1_active_ids) == 9
         # 5 deferred PI/PID loops + the deferred C1 chlorine controller
         assert len(contracts.admission.c2_deferred) == 6
-        assert len(contracts.admission.invariants) == 14
+        assert len(contracts.admission.invariants) == 16
 
     def test_every_edge_has_exactly_one_frozen_category(self, contracts):
         assert contracts.edges
@@ -464,7 +501,163 @@ class TestX2Admission:
             assert expected in joined, expected
 
 
-# ── determinism ───────────────────────────────────────────────────────────
+# ── X1-C01: X2 I/O resolution + level-action direction ────────────────────
+
+class TestX2IoResolutionAndLevelDirection:
+    def test_every_admitted_input_resolves_to_an_x2_producer(self, contracts):
+        rows = x2_io_resolution_audit(contracts)
+        admitted = {scope.scope_id for scope in contracts.scopes if scope.x2_admitted}
+        assert admitted
+        assert {row["scope_id"] for row in rows} == admitted
+        assert all(row["x2_producer_class"] in X2_PRODUCER_CLASSES for row in rows)
+        for scope in contracts.scopes:
+            if not scope.x2_admitted:
+                continue
+            assert sorted(row["signal"] for row in rows if row["scope_id"] == scope.scope_id) == sorted(
+                entry["signal"] for entry in scope.raw["inputs"]
+            ), scope.scope_id
+
+    def test_no_admitted_input_requires_a_c2_output(self, contracts):
+        c2_ids = {c.controller_id for c in contracts.controls if c.control_class == "C2"}
+        assert c2_ids == set(DEFERRED_C2_IDS)
+        rows = x2_io_resolution_audit(contracts)
+        offenders = [
+            row for row in rows
+            if row["declared_source"] in c2_ids and row["x2_producer_class"] != "x2_fallback_default"
+        ]
+        assert not offenders, offenders
+        # the X2 producer of every former C2-owned actuator signal is an X2-active C1 control or an
+        # explicit fallback - never a C2 evaluation
+        for scope_id, signal, producer in (
+            ("vf-shw-node-raw-intake", "pump_speed_cmd", "vf-shw-ctrl-raw-pump-duty"),
+            ("vf-shw-node-t106", "inlet_valve_pos", "vf-shw-ctrl-backwash-sequence"),
+            ("vf-shw-node-t108", "transfer_pump_speed_cmd", "vf-shw-ctrl-t108-permissive"),
+        ):
+            row = next(r for r in rows if r["scope_id"] == scope_id and r["signal"] == signal)
+            assert row["declared_source"] == producer, (scope_id, signal)
+            assert row["x2_producer_class"] == "x2_active_controller"
+            assert row["deferred_modulator"] in DEFERRED_C2_IDS
+            assert row["deferred_modulator_gate"] in ("X3", "X4")
+
+    def test_x2_actuator_commands_are_deterministic_and_declared(self, contracts):
+        by_id = {control.controller_id: control for control in contracts.controls}
+        for controller_id, signal in X2_COMMAND_OWNERS.items():
+            control = by_id[controller_id]
+            assert control.active_in_x2 and control.implementation_gate == "X2", controller_id
+            assert signal in control.raw["output_signals"], controller_id
+            command = control.raw["x2_actuator_command"]
+            assert command["signal"] == signal
+            assert command["mode"] in X2_FALLBACK_MODES
+            assert command["is_feedback_controlled_in_x2"] is False
+            assert command["rule"]
+            assert str(command["provenance"]).startswith("synthetic_reference")
+            assert command["deferred_modulator"]["controller_id"] in DEFERRED_C2_IDS
+            assert command["deferred_modulator"]["gate"] in ("X3", "X4")
+            values = [value for key, value in command.items() if key.startswith("value_when_")]
+            assert len(values) >= 2 and all(value is not None for value in values), controller_id
+        # the raw-intake command is a fixed synthetic speed with an explicit RUN/STOP rule
+        raw_command = by_id["vf-shw-ctrl-raw-pump-duty"].raw["x2_actuator_command"]
+        assert raw_command["mode"] == "fixed_speed_synthetic_reference"
+        assert raw_command["value_when_running"] > 0
+        assert raw_command["value_when_stopped"] == 0
+
+    def test_dist_p108_declares_an_explicit_x2_fallback_default(self, contracts):
+        row = next(
+            r for r in x2_io_resolution_audit(contracts)
+            if r["scope_id"] == "vf-shw-node-dist-p108" and r["signal"] == "hsp_speed_cmd"
+        )
+        assert row["x2_producer_class"] == "x2_fallback_default"
+        scope = next(s for s in contracts.scopes if s.scope_id == "vf-shw-node-dist-p108")
+        entry = next(i for i in scope.raw["inputs"] if i["signal"] == "hsp_speed_cmd")
+        fallback = entry["x2_fallback"]
+        assert fallback["mode"] in X2_FALLBACK_MODES
+        assert fallback["value"] is not None
+        assert fallback["rule"]
+        assert str(fallback["provenance"]).startswith("synthetic_reference")
+        assert scope.control_level.startswith("X2_fallback_default")
+
+    def test_deferred_c2_loops_stay_inactive_and_annotated(self, contracts):
+        for control_id in DEFERRED_C2_IDS:
+            control = next(c for c in contracts.controls if c.controller_id == control_id)
+            assert control.control_class == "C2" and control.active_in_x2 is False
+            assert control.implementation_gate in ("X3", "X4")
+            assert "must NOT modulate" in control.raw["x2_status"]
+            replacement = control.raw["x2_replacement"]
+            assert replacement["gate"] == control.implementation_gate
+            assert replacement["mode"] in X2_FALLBACK_MODES
+            assert replacement["signal"] in control.raw["output_signals"]
+
+    def test_t100_level_actions_name_the_correct_actuator(self, contracts):
+        t100 = next(c for c in contracts.controls if c.controller_id == "vf-shw-ctrl-t100-permissive")
+        policy = t100.raw["level_action_policy"]
+        ownership = t100.raw["actuator_ownership"]
+        assert ownership["upstream_actuator"]["scope"] == "vf-shw-node-raw-intake"
+        assert ownership["upstream_actuator"]["signal"] == "intake_enable"
+        assert ownership["downstream_actuator"]["scope"] == "vf-shw-node-t101"
+        assert ownership["downstream_actuator"]["signal"] == "outlet_enable"
+        low = [entry for entry in policy if entry["condition"].startswith("level <=")]
+        high = [entry for entry in policy if entry["condition"].startswith("level >=")]
+        assert low and high
+        for entry in low:
+            assert "downstream" in entry["action"]
+            assert entry["target_scope"] == "vf-shw-node-t101"
+            assert entry["target_signal"] == "outlet_enable"
+            assert entry["upstream_refill"] == "permitted"
+        for entry in high:
+            assert "upstream" in entry["action"]
+            assert entry["target_scope"] == "vf-shw-node-raw-intake"
+            assert entry["target_signal"] == "intake_enable"
+            assert entry["downstream_withdrawal"] == "permitted"
+        joined = " ".join(t100.raw["interlocks"])
+        assert "no low-level trip of the RAW-INTAKE pumps is implied" in joined
+        assert "stop intake pump" not in joined
+        rows = [r for r in level_action_audit(contracts) if r["controller_id"] == t100.controller_id]
+        assert {r["direction"] for r in rows} == {"upstream", "downstream"}
+
+    def test_t108_level_actions_name_the_correct_actuator(self, contracts):
+        t108 = next(c for c in contracts.controls if c.controller_id == "vf-shw-ctrl-t108-permissive")
+        rows = [r for r in level_action_audit(contracts) if r["controller_id"] == t108.controller_id]
+        directions = {row["direction"]: row for row in rows}
+        assert directions["downstream"]["target_scope"] == "vf-shw-node-dist-p108"
+        assert directions["downstream"]["target_signal"] == "transfer_enable"
+        assert directions["upstream"]["target_scope"] == "vf-shw-node-t106"
+        assert directions["upstream"]["target_signal"] == "inflow_enable"
+
+    def test_loader_rejects_a_c2_dependency_without_fallback(self, workdir, process_payload):
+        mutated = json.loads(json.dumps(process_payload))
+        scope = next(s for s in mutated["contracts"] if s["scope_id"] == "vf-shw-node-raw-intake")
+        entry = next(i for i in scope["inputs"] if i["signal"] == "pump_speed_cmd")
+        entry["source"] = "vf-shw-ctrl-raw-flow-pi"
+        entry.pop("x2_producer_class")
+        entry.pop("x2_command_mode")
+        entry.pop("deferred_modulator")
+        with pytest.raises(ShwtpContractError, match="without an explicit X2 fallback/default"):
+            _load_with(workdir, process_payload=mutated)
+
+    def test_loader_rejects_a_low_level_trip_of_the_upstream_intake(self, workdir, control_payload):
+        mutated = json.loads(json.dumps(control_payload))
+        control = next(c for c in mutated["controls"] if c["controller_id"] == "vf-shw-ctrl-t100-permissive")
+        control["interlocks"] = ["LALL -> stop intake pump(s)"]
+        with pytest.raises(ShwtpContractError, match="lets a low level trip the upstream intake"):
+            _load_with(workdir, control_payload=mutated)
+
+    def test_loader_rejects_a_downstream_action_on_an_upstream_scope(self, workdir, control_payload):
+        mutated = json.loads(json.dumps(control_payload))
+        control = next(c for c in mutated["controls"] if c["controller_id"] == "vf-shw-ctrl-t100-permissive")
+        control["level_action_policy"][0]["target_scope"] = "vf-shw-node-raw-intake"
+        with pytest.raises(ShwtpContractError, match="must target a scope reachable downstream"):
+            _load_with(workdir, control_payload=mutated)
+
+    def test_loader_rejects_an_incomplete_x2_fallback(self, workdir, process_payload):
+        mutated = json.loads(json.dumps(process_payload))
+        scope = next(s for s in mutated["contracts"] if s["scope_id"] == "vf-shw-node-dist-p108")
+        entry = next(i for i in scope["inputs"] if i["signal"] == "hsp_speed_cmd")
+        entry["x2_fallback"] = {"mode": "fixed_speed_synthetic_reference"}
+        with pytest.raises(ShwtpContractError, match="is missing"):
+            _load_with(workdir, process_payload=mutated)
+
+
+# ── determinism ────────────────────────────────────────────────────────────
 
 class TestDeterminism:
     def test_signature_is_stable_across_reloads(self, contracts):

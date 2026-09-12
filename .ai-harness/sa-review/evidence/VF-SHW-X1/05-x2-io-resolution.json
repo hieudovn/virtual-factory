@@ -1,0 +1,557 @@
+{
+  "gate": "VF-SHW-X1-C01",
+  "admitted_scopes": [
+    "vf-shw-node-chem-dosing",
+    "vf-shw-node-dist-p108",
+    "vf-shw-node-line2-aggregate",
+    "vf-shw-node-network-demand",
+    "vf-shw-node-raw-intake",
+    "vf-shw-node-raw-source",
+    "vf-shw-node-sludge-t201",
+    "vf-shw-node-t100",
+    "vf-shw-node-t101",
+    "vf-shw-node-t102",
+    "vf-shw-node-t103",
+    "vf-shw-node-t104",
+    "vf-shw-node-t105",
+    "vf-shw-node-t106",
+    "vf-shw-node-t108",
+    "vf-shw-node-wash-t110"
+  ],
+  "x2_input_resolution": [
+    {
+      "scope_id": "vf-shw-node-chem-dosing",
+      "signal": "dose_demand_ratio",
+      "unit": "mg/L",
+      "declared_source": "vf-shw-ctrl-dose-ratio",
+      "x2_producer_class": "x2_active_controller",
+      "x2_active_in_x2": true,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-chem-dosing",
+      "signal": "plant_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t100",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-dist-p108",
+      "signal": "outlet_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t108",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-dist-p108",
+      "signal": "l2_delivery_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-line2-aggregate",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-dist-p108",
+      "signal": "hsp_speed_cmd",
+      "unit": "%",
+      "declared_source": "vf-shw-ctrl-dist-pressure-pi",
+      "x2_producer_class": "x2_fallback_default",
+      "x2_active_in_x2": false,
+      "deferred_modulator": "vf-shw-ctrl-dist-pressure-pi",
+      "deferred_modulator_gate": "X3",
+      "x2_fallback_mode": "fixed_speed_synthetic_reference"
+    },
+    {
+      "scope_id": "vf-shw-node-line2-aggregate",
+      "signal": "l2_feed_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t100",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-line2-aggregate",
+      "signal": "l2_split_fraction",
+      "unit": "-",
+      "declared_source": "vf-shw-ctrl-line2-split",
+      "x2_producer_class": "x2_active_controller",
+      "x2_active_in_x2": true,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-network-demand",
+      "signal": "network_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-dist-p108",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-raw-intake",
+      "signal": "raw_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-raw-source",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-raw-intake",
+      "signal": "pump_speed_cmd",
+      "unit": "%",
+      "declared_source": "vf-shw-ctrl-raw-pump-duty",
+      "x2_producer_class": "x2_active_controller",
+      "x2_active_in_x2": true,
+      "deferred_modulator": "vf-shw-ctrl-raw-flow-pi",
+      "deferred_modulator_gate": "X4",
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-raw-source",
+      "signal": "scenario_raw_flow_sp",
+      "unit": "m3/h",
+      "declared_source": "scenario",
+      "x2_producer_class": "scenario",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-sludge-t201",
+      "signal": "sludge_out_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t105",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t100",
+      "signal": "intake_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-raw-intake",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t100",
+      "signal": "l1_demand",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t101",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t100",
+      "signal": "l2_split_fraction",
+      "unit": "-",
+      "declared_source": "vf-shw-node-line2-aggregate",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t101",
+      "signal": "l1_feed_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t100",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t102",
+      "signal": "t101_out_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t101",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t102",
+      "signal": "pac_dose",
+      "unit": "mg/L",
+      "declared_source": "vf-shw-ctrl-dose-ratio",
+      "x2_producer_class": "x2_active_controller",
+      "x2_active_in_x2": true,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t103",
+      "signal": "t102_out_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t102",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t103",
+      "signal": "coag_dose",
+      "unit": "mg/L",
+      "declared_source": "vf-shw-ctrl-dose-ratio",
+      "x2_producer_class": "x2_active_controller",
+      "x2_active_in_x2": true,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t104",
+      "signal": "t103_out_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t103",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t105",
+      "signal": "t104_out_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t104",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t105",
+      "signal": "sludge_withdrawal",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-ctrl-sludge-duty",
+      "x2_producer_class": "x2_active_controller",
+      "x2_active_in_x2": true,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t106",
+      "signal": "t105_out_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t105",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t106",
+      "signal": "settled_turbidity_proxy",
+      "unit": "NTU",
+      "declared_source": "vf-shw-node-t105",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t106",
+      "signal": "inlet_valve_pos",
+      "unit": "%",
+      "declared_source": "vf-shw-ctrl-backwash-sequence",
+      "x2_producer_class": "x2_active_controller",
+      "x2_active_in_x2": true,
+      "deferred_modulator": "vf-shw-ctrl-f106-inlet-flow-pi",
+      "deferred_modulator_gate": "X3",
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t108",
+      "signal": "filtered_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t106",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-t108",
+      "signal": "transfer_pump_speed_cmd",
+      "unit": "%",
+      "declared_source": "vf-shw-ctrl-t108-permissive",
+      "x2_producer_class": "x2_active_controller",
+      "x2_active_in_x2": true,
+      "deferred_modulator": "vf-shw-ctrl-t108-level-pi",
+      "deferred_modulator_gate": "X3",
+      "x2_fallback_mode": null
+    },
+    {
+      "scope_id": "vf-shw-node-wash-t110",
+      "signal": "wash_out_flow",
+      "unit": "m3/h",
+      "declared_source": "vf-shw-node-t106",
+      "x2_producer_class": "process_node",
+      "x2_active_in_x2": false,
+      "deferred_modulator": null,
+      "deferred_modulator_gate": null,
+      "x2_fallback_mode": null
+    }
+  ],
+  "c2_dependency_check": {
+    "c2_control_ids": [
+      "vf-shw-ctrl-dist-pressure-pi",
+      "vf-shw-ctrl-f106-inlet-flow-pi",
+      "vf-shw-ctrl-raw-flow-pi",
+      "vf-shw-ctrl-t100-level-pi",
+      "vf-shw-ctrl-t108-level-pi"
+    ],
+    "inputs_naming_a_c2_controller": 1,
+    "inputs_with_explicit_x2_fallback": [
+      "hsp_speed_cmd"
+    ],
+    "inputs_requiring_a_c2_output": [],
+    "x2_fallback_modes_allowed": [
+      "fixed_speed_synthetic_reference",
+      "fixed_position_synthetic_reference",
+      "discrete_open_closed_position",
+      "scenario_reference",
+      "rule_based_synthetic_reference"
+    ]
+  },
+  "x2_actuator_commands": {
+    "vf-shw-ctrl-backwash-sequence": {
+      "signal": "inlet_valve_pos",
+      "unit": "%",
+      "mode": "discrete_open_closed_position",
+      "value_when_open": 100.0,
+      "value_when_closed": 0.0,
+      "is_feedback_controlled_in_x2": false,
+      "deferred_modulator": {
+        "controller_id": "vf-shw-ctrl-f106-inlet-flow-pi",
+        "gate": "X3"
+      },
+      "rule": "the X2 sequence drives the inlet valve OPEN -> inlet_valve_pos = 100.0 and CLOSED -> inlet_valve_pos = 0.0",
+      "provenance": "synthetic_reference"
+    },
+    "vf-shw-ctrl-raw-pump-duty": {
+      "signal": "pump_speed_cmd",
+      "unit": "%",
+      "mode": "fixed_speed_synthetic_reference",
+      "value_when_running": 75.0,
+      "value_when_stopped": 0.0,
+      "is_feedback_controlled_in_x2": false,
+      "deferred_modulator": {
+        "controller_id": "vf-shw-ctrl-raw-flow-pi",
+        "gate": "X4"
+      },
+      "rule": "pump_run_cmd == RUN -> pump_speed_cmd = 75.0; pump_run_cmd == STOP -> pump_speed_cmd = 0.0",
+      "provenance": "synthetic_reference"
+    },
+    "vf-shw-ctrl-t108-permissive": {
+      "signal": "transfer_pump_speed_cmd",
+      "unit": "%",
+      "mode": "fixed_speed_synthetic_reference",
+      "value_when_running": 70.0,
+      "value_when_stopped": 0.0,
+      "is_feedback_controlled_in_x2": false,
+      "deferred_modulator": {
+        "controller_id": "vf-shw-ctrl-t108-level-pi",
+        "gate": "X3"
+      },
+      "rule": "transfer_enable == RUN -> transfer_pump_speed_cmd = 70.0; transfer_enable == STOP -> transfer_pump_speed_cmd = 0.0",
+      "provenance": "synthetic_reference"
+    }
+  },
+  "level_action_direction": [
+    {
+      "controller_id": "vf-shw-ctrl-t100-permissive",
+      "owning_scope": "vf-shw-node-t100",
+      "condition": "level <= LALL",
+      "action": "inhibit_downstream_withdrawal",
+      "direction": "downstream",
+      "target_scope": "vf-shw-node-t101",
+      "target_signal": "outlet_enable"
+    },
+    {
+      "controller_id": "vf-shw-ctrl-t100-permissive",
+      "owning_scope": "vf-shw-node-t100",
+      "condition": "LALL < level <= LAL",
+      "action": "reduce_downstream_withdrawal",
+      "direction": "downstream",
+      "target_scope": "vf-shw-node-t101",
+      "target_signal": "outlet_enable"
+    },
+    {
+      "controller_id": "vf-shw-ctrl-t100-permissive",
+      "owning_scope": "vf-shw-node-t100",
+      "condition": "LAH <= level < LAHH",
+      "action": "inhibit_upstream_intake",
+      "direction": "upstream",
+      "target_scope": "vf-shw-node-raw-intake",
+      "target_signal": "intake_enable"
+    },
+    {
+      "controller_id": "vf-shw-ctrl-t100-permissive",
+      "owning_scope": "vf-shw-node-t100",
+      "condition": "level >= LAHH",
+      "action": "inhibit_upstream_intake",
+      "direction": "upstream",
+      "target_scope": "vf-shw-node-raw-intake",
+      "target_signal": "intake_enable"
+    },
+    {
+      "controller_id": "vf-shw-ctrl-t108-permissive",
+      "owning_scope": "vf-shw-node-t108",
+      "condition": "level <= LALL",
+      "action": "inhibit_downstream_withdrawal",
+      "direction": "downstream",
+      "target_scope": "vf-shw-node-dist-p108",
+      "target_signal": "transfer_enable"
+    },
+    {
+      "controller_id": "vf-shw-ctrl-t108-permissive",
+      "owning_scope": "vf-shw-node-t108",
+      "condition": "level >= LAHH",
+      "action": "inhibit_upstream_intake",
+      "direction": "upstream",
+      "target_scope": "vf-shw-node-t106",
+      "target_signal": "inflow_enable"
+    }
+  ],
+  "level_action_ownership": {
+    "vf-shw-ctrl-t100-permissive": {
+      "upstream_actuator": {
+        "scope": "vf-shw-node-raw-intake",
+        "signal": "intake_enable",
+        "direction": "upstream",
+        "asset": "RAW-INTAKE intake pump(s) (RUN/STOP also requires the X2-active C1 duty/standby contract vf-shw-ctrl-raw-pump-duty)"
+      },
+      "downstream_actuator": {
+        "scope": "vf-shw-node-t101",
+        "signal": "outlet_enable",
+        "direction": "downstream",
+        "asset": "T100 outlet / LINE1 + LINE2 feed path"
+      }
+    },
+    "vf-shw-ctrl-t108-permissive": {
+      "upstream_actuator": {
+        "scope": "vf-shw-node-t106",
+        "signal": "inflow_enable",
+        "direction": "upstream",
+        "asset": "T106 filtered-water inflow path"
+      },
+      "downstream_actuator": {
+        "scope": "vf-shw-node-dist-p108",
+        "signal": "transfer_enable",
+        "direction": "downstream",
+        "asset": "T108 transfer/clean-water pump(s) feeding DIST-P108"
+      }
+    }
+  },
+  "deferred_c2_annotations": {
+    "vf-shw-ctrl-dist-pressure-pi": {
+      "control_class": "C2",
+      "implementation_gate": "X3",
+      "active_in_x2": false,
+      "x2_status": "inactive in X2; must NOT modulate hsp_speed_cmd while X2 runs",
+      "x2_replacement": {
+        "gate": "X3",
+        "x2_producer": "x2_fallback_default",
+        "signal": "hsp_speed_cmd",
+        "mode": "fixed_speed_synthetic_reference",
+        "declared_on": "vf-shw-node-dist-p108 input hsp_speed_cmd"
+      }
+    },
+    "vf-shw-ctrl-f106-inlet-flow-pi": {
+      "control_class": "C2",
+      "implementation_gate": "X3",
+      "active_in_x2": false,
+      "x2_status": "inactive in X2; must NOT modulate inlet_valve_pos while X2 runs",
+      "x2_replacement": {
+        "gate": "X3",
+        "x2_producer": "vf-shw-ctrl-backwash-sequence",
+        "signal": "inlet_valve_pos",
+        "mode": "discrete_open_closed_position"
+      }
+    },
+    "vf-shw-ctrl-raw-flow-pi": {
+      "control_class": "C2",
+      "implementation_gate": "X4",
+      "active_in_x2": false,
+      "x2_status": "inactive in X2; must NOT modulate pump_speed_cmd while X2 runs",
+      "x2_replacement": {
+        "gate": "X4",
+        "x2_producer": "vf-shw-ctrl-raw-pump-duty",
+        "signal": "pump_speed_cmd",
+        "mode": "fixed_speed_synthetic_reference"
+      }
+    },
+    "vf-shw-ctrl-t100-level-pi": {
+      "control_class": "C2",
+      "implementation_gate": "X4",
+      "active_in_x2": false,
+      "x2_status": "inactive in X2; must NOT modulate pump_speed_cmd while X2 runs",
+      "x2_replacement": {
+        "gate": "X4",
+        "x2_producer": "vf-shw-ctrl-raw-pump-duty",
+        "signal": "pump_speed_cmd",
+        "mode": "fixed_speed_synthetic_reference"
+      }
+    },
+    "vf-shw-ctrl-t108-level-pi": {
+      "control_class": "C2",
+      "implementation_gate": "X3",
+      "active_in_x2": false,
+      "x2_status": "inactive in X2; must NOT modulate transfer_pump_speed_cmd while X2 runs",
+      "x2_replacement": {
+        "gate": "X3",
+        "x2_producer": "vf-shw-ctrl-t108-permissive",
+        "signal": "transfer_pump_speed_cmd",
+        "mode": "fixed_speed_synthetic_reference"
+      }
+    }
+  },
+  "verdict": "X2_SAFE_C1_ACTUATOR_BEHAVIOUR_FROZEN"
+}

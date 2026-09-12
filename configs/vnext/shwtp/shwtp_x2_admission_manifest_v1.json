@@ -27,7 +27,7 @@
     {"scope_id": "vf-shw-node-t106", "canonical_id": "UNIT-SHW-L1-T106", "role": "filtration", "fidelity": "first_order", "control_level": "C1", "c2_deferred_here": ["vf-shw-ctrl-f106-inlet-flow-pi"]},
     {"scope_id": "vf-shw-node-t108", "canonical_id": "UNIT-SHW-L1-T108", "role": "clean_water_storage", "fidelity": "first_order", "control_level": "C1", "c2_deferred_here": ["vf-shw-ctrl-t108-level-pi", "vf-shw-ctrl-dist-pressure-pi"]},
     {"scope_id": "vf-shw-node-wash-t110", "canonical_id": "UNIT-SHW-WASH-T110", "role": "wash_water_recovery", "fidelity": "logical_only", "control_level": "C1"},
-    {"scope_id": "vf-shw-node-dist-p108", "canonical_id": "UNIT-SHW-DIST-P108", "role": "distribution", "fidelity": "synthetic_reference", "control_level": "C1"},
+    {"scope_id": "vf-shw-node-dist-p108", "canonical_id": "UNIT-SHW-DIST-P108", "role": "distribution", "fidelity": "synthetic_reference", "control_level": "X2_fallback_default+C2(X3)"},
     {"scope_id": "vf-shw-node-network-demand", "canonical_id": null, "role": "boundary_sink", "fidelity": "synthetic_reference", "control_level": "C0"},
     {"scope_id": "vf-shw-node-chem-dosing", "canonical_id": "UNIT-SHW-CHEM-DOSING", "role": "chemical_dosing", "fidelity": "logical_only", "control_level": "C1"},
     {"scope_id": "vf-shw-node-sludge-t201", "canonical_id": "UNIT-SHW-SLUDGE-T201", "role": "sludge_sink", "fidelity": "logical_only", "control_level": "C1"},
@@ -99,7 +99,9 @@
     "T106/T108 existing accepted semantics preserved (G13/G13B/G21/G22 behaviour unchanged: T108 first_order tank, T106 logical pass-through, F01 projection, 2-participant federation, evaluation rows)",
     "site_truth=false and simulation_truth=synthetic_reference on every payload; vf_runtime_authorization stays NOT_AUTHORIZED",
     "deterministic contract load: the graph/process/control/admission artefacts load to an identical signature across runs",
-    "no new PIM canonical id is referenced that does not already exist in the accepted PIM-derived inventory/graph"
+    "no new PIM canonical id is referenced that does not already exist in the accepted PIM-derived inventory/graph",
+    "X1-C01: every process input of an X2-admitted scope is produced inside X2 by an X2-active C1 control, a process node, the scenario boundary or an explicit declared X2 fallback/default; NO admitted scope consumes a C2 controller output in X2",
+    "X1-C01: level-driven actions name the correct actuator direction - a low/low-low level protects DOWNSTREAM withdrawal while upstream refill stays permitted, and a high/high-high level inhibits UPSTREAM intake while downstream withdrawal stays permitted"
   ],
   "x2_success_criteria": {
     "model": "whole-plant SHALLOW runnable model covering the 16 admitted scopes with the declared fidelity classes",

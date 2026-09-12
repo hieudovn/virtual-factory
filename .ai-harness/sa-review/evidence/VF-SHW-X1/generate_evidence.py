@@ -31,14 +31,17 @@ from virtual_factory.shwtp import contracts as shwtp_contracts  # noqa: E402
 from virtual_factory.shwtp.contracts import (  # noqa: E402
     ASSUMED_SOURCE_KIND,
     ASSUMED_STATUS,
-    EDGE_CATEGORIES,
     GRAPH_SCHEMA,
     VF_LOCAL_PREFIX,
+    X2_FALLBACK_MODES,
+    X2_PRODUCER_CLASSES,
     accepted_canonical_ids,
     iter_vf_local_ids,
+    level_action_audit,
     load_whole_plant_contracts,
     pim_ids_referenced_by_contracts,
     referenced_pim_ids,
+    x2_io_resolution_audit,
 )
 
 CONFIG_DIR = ROOT / "configs" / "vnext" / "shwtp"
@@ -110,7 +113,13 @@ FROZEN_ADMISSION = {
     "boundary_entries": 2,
     "c2_loops_deferred": 5,
     "admission_deferred_entries": 6,
-    "invariants": 14,
+    "invariants": 16,
+}
+#: X1-C01: the C1 controls that own an actuator command signal inside X2.
+X2_COMMAND_OWNERS = {
+    "vf-shw-ctrl-raw-pump-duty": "pump_speed_cmd",
+    "vf-shw-ctrl-backwash-sequence": "inlet_valve_pos",
+    "vf-shw-ctrl-t108-permissive": "transfer_pump_speed_cmd",
 }
 
 
@@ -402,6 +411,91 @@ def validation_matrix() -> dict:
         },
     )
 
+    # 11 - X1-C01: every admitted input has an X2 producer and none requires a C2 output
+    io_rows = x2_io_resolution_audit(contracts)
+    c2_ids = {c.controller_id for c in contracts.controls if c.control_class == "C2"}
+    admitted = {s.scope_id for s in contracts.scopes if s.x2_admitted}
+    uncovered = sorted(
+        (s.scope_id, entry["signal"])
+        for s in contracts.scopes
+        if s.x2_admitted
+        for entry in s.raw["inputs"]
+        if not any(r["scope_id"] == s.scope_id and r["signal"] == entry["signal"] for r in io_rows)
+    )
+    c2_requiring = [
+        row
+        for row in io_rows
+        if row["declared_source"] in c2_ids and row["x2_producer_class"] != "x2_fallback_default"
+    ]
+    record(
+        "V11_x2_input_resolution_no_c2_dependency",
+        bool(io_rows)
+        and {row["scope_id"] for row in io_rows} == admitted
+        and not uncovered
+        and not c2_requiring
+        and all(row["x2_producer_class"] in X2_PRODUCER_CLASSES for row in io_rows),
+        {
+            "admitted_scopes": len(admitted),
+            "resolved_inputs": len(io_rows),
+            "uncovered_inputs": uncovered,
+            "producer_classes": sorted({row["x2_producer_class"] for row in io_rows}),
+            "c2_controls": sorted(c2_ids),
+            "inputs_requiring_a_c2_output": c2_requiring,
+            "explicit_fallback_inputs": [
+                row["signal"] for row in io_rows if row["x2_producer_class"] == "x2_fallback_default"
+            ],
+        },
+    )
+
+    # 12 - X1-C01: level actions name the correct actuator direction
+    level_rows = level_action_audit(contracts)
+    by_controller: dict[str, dict[str, str]] = {}
+    for row in level_rows:
+        by_controller.setdefault(row["controller_id"], {})[row["direction"]] = (
+            f"{row['target_scope']}.{row['target_signal']}"
+        )
+    level_controls = [c for c in contracts.controls if "level_action_policy" in c.raw]
+    ownership_ok = all(
+        c.raw["actuator_ownership"]["upstream_actuator"]["direction"] == "upstream"
+        and c.raw["actuator_ownership"]["downstream_actuator"]["direction"] == "downstream"
+        for c in level_controls
+    )
+    commands = {
+        controller_id: next(c for c in contracts.controls if c.controller_id == controller_id).raw[
+            "x2_actuator_command"
+        ]
+        for controller_id in X2_COMMAND_OWNERS
+    }
+    record(
+        "V12_level_action_direction_and_x2_actuator_commands",
+        bool(level_rows)
+        and ownership_ok
+        and all(directions.get("upstream") and directions.get("downstream") for directions in by_controller.values())
+        and all(
+            next(c for c in contracts.controls if c.controller_id == controller_id).raw["x2_actuator_command"][
+                "is_feedback_controlled_in_x2"
+            ]
+            is False
+            for controller_id in X2_COMMAND_OWNERS
+        ),
+        {
+            "level_action_controls": sorted(by_controller),
+            "level_actions": by_controller,
+            "level_action_rows": len(level_rows),
+            "actuator_ownership_complete": ownership_ok,
+            "x2_actuator_command_owners": sorted(X2_COMMAND_OWNERS),
+            "x2_command_modes": sorted(
+                {
+                    next(c for c in contracts.controls if c.controller_id == controller_id).raw[
+                        "x2_actuator_command"
+                    ]["mode"]
+                    for controller_id in X2_COMMAND_OWNERS
+                }
+            ),
+            "x2_actuator_commands": commands,
+        },
+    )
+
     failed = sorted(key for key, value in checks.items() if not value["pass"])
     return {
         "gate": "VF-SHW-X1",
@@ -410,8 +504,6 @@ def validation_matrix() -> dict:
         "failed_checks": failed,
         "verdict": "ALL_X1_VALIDATIONS_PASS" if not failed else "X1_VALIDATION_FAILURES",
     }
-
-
 def no_construction_proof() -> dict:
     counters: dict[str, int] = {}
     originals: list[tuple[object, object]] = []
@@ -534,12 +626,63 @@ def x2_admission_summary() -> dict:
     }
 
 
+def x2_io_resolution_evidence() -> dict:
+    """X1-C01: prove X2 needs no C2 output and level actions name the right actuator."""
+    contracts = load_whole_plant_contracts()
+    rows = x2_io_resolution_audit(contracts)
+    c2_ids = {c.controller_id for c in contracts.controls if c.control_class == "C2"}
+    c2_sourced = [row for row in rows if row["declared_source"] in c2_ids]
+    offenders = [row for row in c2_sourced if row["x2_producer_class"] != "x2_fallback_default"]
+    commands = {
+        control.controller_id: control.raw["x2_actuator_command"]
+        for control in contracts.controls
+        if "x2_actuator_command" in control.raw
+    }
+    deferred = {
+        control.controller_id: {
+            "control_class": control.control_class,
+            "implementation_gate": control.implementation_gate,
+            "active_in_x2": control.active_in_x2,
+            "x2_status": control.raw.get("x2_status"),
+            "x2_replacement": control.raw.get("x2_replacement"),
+        }
+        for control in contracts.controls
+        if control.control_class == "C2"
+    }
+    return {
+        "gate": "VF-SHW-X1-C01",
+        "admitted_scopes": sorted({s.scope_id for s in contracts.scopes if s.x2_admitted}),
+        "x2_input_resolution": list(rows),
+        "c2_dependency_check": {
+            "c2_control_ids": sorted(c2_ids),
+            "inputs_naming_a_c2_controller": len(c2_sourced),
+            "inputs_with_explicit_x2_fallback": [row["signal"] for row in c2_sourced],
+            "inputs_requiring_a_c2_output": offenders,
+            "x2_fallback_modes_allowed": list(X2_FALLBACK_MODES),
+        },
+        "x2_actuator_commands": commands,
+        "level_action_direction": list(level_action_audit(contracts)),
+        "level_action_ownership": {
+            control.controller_id: control.raw["actuator_ownership"]
+            for control in contracts.controls
+            if "actuator_ownership" in control.raw
+        },
+        "deferred_c2_annotations": deferred,
+        "verdict": (
+            "X2_SAFE_C1_ACTUATOR_BEHAVIOUR_FROZEN"
+            if not offenders and commands and deferred and len(deferred) == 5
+            else "X2_C2_DEPENDENCY_REMAINS"
+        ),
+    }
+
+
 def main() -> int:
     results = {
         "01-graph-signature.json": graph_signature_evidence(),
         "02-validation-matrix.json": validation_matrix(),
         "03-no-construction-proof.json": no_construction_proof(),
         "04-x2-admission-summary.json": x2_admission_summary(),
+        "05-x2-io-resolution.json": x2_io_resolution_evidence(),
     }
     for name, payload in results.items():
         (HERE / name).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

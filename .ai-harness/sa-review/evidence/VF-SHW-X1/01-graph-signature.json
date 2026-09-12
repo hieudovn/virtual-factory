@@ -8,17 +8,17 @@
   },
   "artifact_digests": {
     "graph": "d57bc26b67437cc2cf2d7b27e9bf488bf4545b5353c2e8069f6d89e4b6faceeb",
-    "process": "3644545ea0ab27ac5971036b14d4e7f6e7cae338531410a11a08b45b46395b5b",
-    "control": "64f24ff4e1014ed852f3a2c0a53ed00f3fc290d6d8786e58ba1f24f8850fd393",
-    "admission": "200af1bc142903fbaf27e2f2c140094244cfeb6b252cb638bee95db6f7ea97fa"
+    "process": "a6a285ac3c06098bf1730f725812eb436a24224388b5b1c8cc587b8af7ca465e",
+    "control": "f44bace8c6ab209ed599dc8b265859128a59bc3ec4d5148b07d19c4c506ae9cf",
+    "admission": "44b45266e1ac9f175a233811365d10dc5e3dc79b4174a7130b15bb7dac66bfae"
   },
   "code_artifact": {
     "path": "src/virtual_factory/shwtp/contracts.py",
-    "sha256": "62c070dc3ebbaa777bb6295547bb05f56e74a92fb96734d706ff610f4ac3e9ee"
+    "sha256": "eafca914e5042a717b0f0318ba2079c4381c033171b8058092f9f3743bf694cd"
   },
   "test_artifact": {
     "path": "tests/test_vnext_x1_whole_plant_contracts.py",
-    "sha256": "375302ded2346c3544a007bf6004031a52530f478347b58cf7d962d93c91380b"
+    "sha256": "8e0ab0ea7572ddc83757c3236d3a2c69cec75ef89ae9c91127278f33fb605139"
   },
   "graph_schema": "vf.vnext.x1.shwtp.whole_plant_graph.v1",
   "node_count": 19,
@@ -36,7 +36,7 @@
     "synthetic_reference": 6
   },
   "control_contract_count": 19,
-  "signature": "55f49ca475492eaa4ea7c01358127f75698df6770ad1a83675b44eb6d1288b21",
+  "signature": "60e123671d544c4ad6a8f3701f6df13cbfaf7149a93ebda9f60bb457aa834cca",
   "frozen_counts": {
     "nodes": 19,
     "edges": 25,
