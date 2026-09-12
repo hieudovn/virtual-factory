@@ -1,0 +1,122 @@
+{
+  "task_id": "VF-SHW-X3-C02",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "implementation",
+  "gate_type": "CORRECTION gate inside Issue #98 / PR #99: fix the energy finding the SA raised against the C01 head - (C02-1) the realized operating point must apply the FROZEN D6 pump law P_pump = rho*g*Q_actual*H(n,Q_actual) with P_elec = P_pump/eta_total + no_load, so the throttle-dissipated power is included in the electricity instead of being reported only as a head; useful system power rho*g*Q_actual*Hreq and throttle dissipation must be reported separately and must sum to the pump hydraulic power on every positive feasible flow; (C02-2) the 'independent' energy oracle must stop calling the production realized_point/power/energy helpers and instead reconstruct the actual flow from the committed physical discharge water records joined by tick and binding, evaluating every hydraulic and electric quantity directly from the frozen parameters, with BOTH a capacity-Q substitution and an H-to-Hreq power substitution failing acceptance.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/98",
+  "sa_decision_ref": "Issue #98 SA review comment 5649199324 (VF-SHW-X3-C01 CHANGES REQUIRED at head 1d8de908648a1718819247772b5ae58722e87260) authorizing VF-SHW-X3-C02 on the same branch/PR: the control correction is accepted (C01-1 counterexample resolved, C1-release adjustment accepted, blanket tests/ forbidden entry removal accepted) while the energy result 4.207016 MJ is NOT accepted because physical_budget.PumpModel.realized_point computes hydraulic power with Hreq instead of the frozen D6 law head H(n,Q_actual) - the SA's exact-source reproduction at DIST 80 percent, Q = 0.008 m3/s gives H 26.0928 m, Hreq 5.07302784 m, pump hydraulic 2047.762944 W, useful 398.131224883 W, throttle 1649.631719117 W and the frozen electric law 3325.375634286 W, against the 968.758892690 W currently reported - and because the claimed independent oracle reuses the production helper, so the same wrong formula is repeated.",
+  "architecture_authority_ref": "Issue #97 D1-D9 design freeze, the accepted X3 implementation at c3f4b23 as corrected at 1d8de90, the frozen X1 contract layer (untouched) and the accepted X2 runtime (behaviour preserved). The correction stays inside the existing pump model, runtime energy wiring and the affected X3 test/evidence surfaces; no new engine, topology, loop, fidelity scope or pump curve.",
+  "objective": "Close the two blocking C02 findings with measurement-backed proof: (C02-1) evaluate the realized point on the SAME frozen pump head/power equations used by the capacity point - pump hydraulic power rho*g*Q_actual*H(n,Q_actual), useful system power rho*g*Q_actual*Hreq and throttle dissipation given by their difference - integrate electricity from the pump hydraulic power (so the energy later dissipated through the throttle is included), keep head/motor feasibility and the declared OFF/idle simplification, and export pump/useful/throttle power and energy separately per tick and per pump; (C02-2) rebuild the independent oracle so it does not call or consume any production realized_point/power/energy helper: join the committed physical discharge water records with the commanded speed by tick and binding, reconstruct the actual flow, and evaluate H, Hreq, pump/useful/throttle power and electric energy directly from the frozen parameters, reproducing the ledger and rejecting BOTH a capacity-Q substitution and an H-to-Hreq power substitution.",
+  "explicit_non_objectives": [
+    "No new process graph edge, scope, authority, fidelity class, control loop or C2 loop",
+    "No change to the frozen pump/system curve parameters in configs/vnext/shwtp/shwtp_x3_profile_v1.json (the frozen law is used as declared, never replaced to fit an energy result)",
+    "No change to the corrected X3 control behaviour (C01-1 must stay green: protective tracking, integral hold, slew-limited release, C1-release ramp) and no new control design",
+    "No change to the accepted water identity, its tolerances, the allocation semantics or the reservation semantics",
+    "No change to frozen X1 files, runcontrol/composition/assembly/PIM/ASSY, docs/, deploy/, simulators/",
+    "No merge, no Issue #98 closure, no X4/X5",
+    "No relaxation of a tolerance or acceptance band to make a finding disappear"
+  ],
+  "required_branch": "feature/vf-shw-x3",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "1d8de908648a1718819247772b5ae58722e87260",
+  "working_tree_requirement": "clean_or_read_only",
+  "execution_ordering_disclosure": "This correction contract is created BEFORE the C02 edits and the harness preflight is run on the clean reviewed head 1d8de90. Nothing is backdated. (The earlier ordering deviations stay recorded: the X3 implementation was written before the X3 contract existed; the C01 correction contract was created before the C01 edits.)",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X3-C02.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/physical_budget.py",
+    "src/virtual_factory/shwtp/x3_whole_plant.py",
+    "tests/test_vnext_x3_physical_bounds.py",
+    "tests/test_vnext_x3_two_pi_control.py"
+  ],
+  "forbidden_paths": [
+    "configs/vnext/shwtp/shwtp_x3_profile_v1.json",
+    "configs/vnext/shwtp/shwtp_whole_plant_graph_v1.json",
+    "configs/vnext/shwtp/shwtp_process_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_control_contracts_v1.json",
+    "configs/vnext/shwtp/shwtp_x2_admission_manifest_v1.json",
+    "src/virtual_factory/shwtp/contracts.py",
+    "src/virtual_factory/shwtp/x2_controls.py",
+    "src/virtual_factory/shwtp/x3_controls.py",
+    "src/virtual_factory/shwtp/x3_profile.py",
+    "src/virtual_factory/shwtp/whole_plant.py",
+    "src/virtual_factory/shwtp/session.py",
+    "src/virtual_factory/ui/workspace_monitor.py",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/pim/",
+    "src/virtual_factory/core/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/",
+    "main"
+  ],
+  "forbidden_paths_note": "The correction is confined to the pump model, the runtime energy wiring and the two X3 test modules that carry the energy proof; that confinement is enforced by the EXHAUSTIVE allowlist above, which rejects any other path, so tests/ is deliberately NOT a whole-directory forbidden entry (the harness forbidden check is evaluated independently of the allowlist and a blanket tests/ entry would contradict allowlisted modules - the C01 defect that was corrected in 4426b74 and accepted by the SA). The frozen pump curve config is explicitly forbidden because the finding must be closed with the declared D6 law, never by re-parameterizing the pump; x3_controls.py is forbidden because the accepted control correction must stay byte-identical; x3_profile.py is forbidden because the profile loader is not part of the energy finding.",
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/physical_budget.py: realized_point evaluates the FROZEN D6 law on the realized flow - pump hydraulic power rho*g*Q_actual*H(n,Q_actual), useful system power rho*g*Q_actual*Hreq, throttle dissipation = pump - useful, electric power = pump/eta_total + no_load - with the three powers exported separately, the identity pump = useful + throttle enforced on every positive feasible flow, head/motor feasibility retained, the declared OFF/idle simplification retained and the module docstring corrected",
+    "src/virtual_factory/shwtp/x3_whole_plant.py: the per-tick export and the energy report carry the pump hydraulic power, the useful system power and the throttle dissipation (W and J) next to the electric power, and the runtime publishes the committed physical discharge water record per tick and binding (water plus the commanded speed of that tick) so an external oracle can rebuild the flow without any production power/energy helper",
+    "tests/test_vnext_x3_physical_bounds.py: a genuinely independent energy oracle (frozen parameters read from the config file, flow reconstructed from the discharge records joined by tick and binding, no production realized_point/power/energy call and no reliance on exported power) that reproduces the ledger, plus the SA counterexample at DIST 80 percent / 0.008 m3/s pinned to the frozen numbers, plus BOTH mutations (capacity-Q substitution and H-to-Hreq power substitution) failing acceptance, keeping the startup / zero-water / full-receiver / narrowed-downstream cases and the no-created-water assertion",
+    "tests/test_vnext_x3_two_pi_control.py: the energy/OFF assertions kept green under the corrected frozen law (control behaviour unchanged)",
+    ".ai-harness/sa-review/evidence/VF-SHW-X3/generate_evidence.py + regenerated numbered artefacts carrying the SA counterexample numbers, the independent oracle recomputation, both substitution mutations and the x3c02 acceptance block",
+    ".ai-harness/sa-review/reports/VF-SHW-X3-C02.md: per-finding proof with the machine-derived numbers, the C02-3 factual corrections (the 109e3f2 -> 4426b74 commit changed four files; the six protective releases are not all 0 pp - the accepted C1 release is a 10 pp ramp) and the residual deviations",
+    ".ai-harness/sa-review/CURRENT.md: the C02 entry with the exact pushed head and the machine-derived gate results",
+    ".ai-harness/regression/vnext_baseline_manifest.json: gate context pointed at this contract with changed_files_base 1d8de90 (the x3_whole_plant_runtime group content unchanged)",
+    "PR #99 description: the rejected c3f4b23 numbers (11.821 MJ, 2864 tests) marked historical/superseded and pointing at the current reviewed correction"
+  ],
+  "required_tests": [
+    "tests/test_vnext_x3_physical_bounds.py",
+    "tests/test_vnext_x3_two_pi_control.py",
+    "tests/test_vnext_x3_reservations.py",
+    "tests/test_vnext_x3_session_wiring.py"
+  ],
+  "required_smoke_checks": [
+    "The SA counterexample at DIST 80 percent, Q = 0.008 m3/s reproduces H 26.0928 m, Hreq 5.07302784 m, pump 2047.762944 W, useful 398.131224883 W, throttle 1649.631719117 W and 3325.375634286 W electric",
+    "The independent oracle (no production power/energy call) reproduces the ledger per pump",
+    "The capacity-Q and H-to-Hreq substitutions both differ enough to fail acceptance",
+    "Focused X3 modules green at the corrected head",
+    "Water identity still closes on the full run with no created water",
+    "Canonical baseline green at the exact pushed head (46 groups, including full_suite)",
+    "VF-DM CI green at the exact pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Replacing or re-fitting the frozen pump curve so a lower energy figure appears",
+    "Reporting the throttle-dissipated power as useful system power, or omitting it from the electricity",
+    "Keeping a second power law for allocation and energy",
+    "Calling a production realized_point/power/energy helper from the claimed independent oracle, or using an exported power field as the expected answer",
+    "Detecting a substitution mutation by a self-referential comparison (the mutation must be evaluated with the same independent parameter path as the accepted value)",
+    "Changing the accepted control behaviour or a frozen X1/X2 path to make the correction easier",
+    "Omission of the C02-3 factual corrections from the report and the PR description",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "The frozen D6 law cannot be evaluated on the realized flow without inventing a pump parameter (report BLOCKED FOR SA)",
+    "Closing the finding would require changing the declared pump curve or the accepted control behaviour",
+    "A protected path (X1/X2/runcontrol/composition/PIM/ASSY) must change",
+    "The water identity can no longer close without a compensation term"
+  ],
+  "acceptance_criteria": [
+    {"id": "X3C02-1", "phase": "final", "description": "The realized operating point applies the FROZEN D6 law on the actual committed flow: pump hydraulic power rho*g*Q_actual*H(n,Q_actual), electric power pump/eta_total + no_load (so the energy later dissipated through the throttle is included in the electricity), useful system power rho*g*Q_actual*Hreq and throttle dissipation reported separately, pump = useful + throttle on every positive feasible flow, head/motor feasibility and the declared OFF/idle simplification retained, the frozen curve unreplaced and allocation and energy on the same law", "rule": {"field": "x3c02.pump_power_law", "operator": "is_true", "expected": null}},
+    {"id": "X3C02-2", "phase": "final", "description": "The independent energy oracle does not call or consume any production realized_point/power/energy helper: it joins the committed physical discharge water records with the commanded speed by tick and binding, reconstructs the actual flow and evaluates H, Hreq, pump/useful/throttle power and electric energy directly from the frozen parameters, reproduces the ledger per pump, and both the capacity-Q substitution and the H-to-Hreq power substitution differ enough to fail acceptance", "rule": {"field": "x3c02.independent_energy_oracle", "operator": "is_true", "expected": null}},
+    {"id": "X3C01-1", "phase": "final", "description": "Regression: the accepted control correction stays green - protective ownership decided before normal PI integration, integral held from the first protected scan, actual stopped value committed and tracked, trip/interlock release preloaded from it, C1 release resuming through the ordinary slew from the actual last value (bounded ramp, not a bumpless claim), every ordinary reopening inside valve 10 pp/s and pump 5 pp/s, MANUAL and changed-PV continuity preserved", "rule": {"field": "x3c01.actuator_tracking", "operator": "is_true", "expected": null}},
+    {"id": "X3C01-2", "phase": "final", "description": "Regression: energy is still integrated only from the ACHIEVED pumped throughput of each tick (never from a capacity/envelope point), with OFF distinguished from energized zero flow and an explicitly declared idle-loss rule", "rule": {"field": "x3c01.energy_from_actual_flow", "operator": "is_true", "expected": null}},
+    {"id": "X3-1", "phase": "final", "description": "Regression: 16 admitted scopes on deterministic global 1-second windows in one attempt-bound session with exactly two active C2 PI loops and the deferred loops unavailable", "rule": {"field": "x3.scope_control", "operator": "is_true", "expected": null}},
+    {"id": "X3-2", "phase": "final", "description": "Regression: the full-run independent water identity still closes from tick zero with no created water and no compensation term", "rule": {"field": "x3.water_identity", "operator": "is_true", "expected": null}},
+    {"id": "X3-3", "phase": "final", "description": "Regression: flow limiting and reservation semantics are unchanged (capacity tokens, no double count, queue bound, no hidden loss or deadlock)", "rule": {"field": "x3.flow_limits", "operator": "is_true", "expected": null}},
+    {"id": "X3-4", "phase": "final", "description": "Regression: the two PIs drive the real actuators with feasible SP tracking, disturbance rejection, saturation with a reason and recovery inside one ongoing attempt", "rule": {"field": "x3.pi_response", "operator": "is_true", "expected": null}},
+    {"id": "X3-5", "phase": "final", "description": "Regression: pump envelope feasibility, OFF exactly zero flow and zero energy, unit-explicit energy and unmodelled energy declared unavailable, evaluated on REALIZED operating points under the corrected frozen power law", "rule": {"field": "x3.pump_energy", "operator": "is_true", "expected": null}},
+    {"id": "X3-6", "phase": "final", "description": "Regression: physical-envelope mutations still fail the oracle or fail safely", "rule": {"field": "x3.mutations", "operator": "is_true", "expected": null}},
+    {"id": "X3-7", "phase": "final", "description": "Regression: canonical X3 1 s default, X2-60s zero-C2 and G21 compatibility, deterministic reset/attempt/replay, no protected path changed", "rule": {"field": "x3.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
