@@ -71,3 +71,19 @@ R5 machine-derived status (this gate):
 - Full suite: 2661 passed (R4 head: 2625)
 - R5 focused module: 30 passed
 - Verdict: VF_SINGLE_SIMULATION_SYSTEM_CONSOLIDATED
+
+---
+
+R5-C01 correction (SA comment 5644417111) - root canonical entrypoint:
+- Previous head: 7558aaa
+- Branch: feature/vf-vnext-r5-c01; harness preflight: PASSED
+- GET / = canonical entrypoint: 307 redirect to /workspaces; the legacy continuous dashboard is no
+  longer served at root; continuous static assets retained reference-only; no continuous workspace
+  registered
+- create_app docstring de-staled (no "backed by one RuntimeService instance" claim)
+- Regression: root entry resolves to the canonical shell and constructs ZERO runtime state
+  (create_app / redirect / redirect+shell / shell counters all empty)
+- Evidence: evidence/VF-vNEXT-R5/08-root-entry.json -> ROOT_IS_CANONICAL_ENTRYPOINT
+- Browser smoke from / -> lands on /workspaces, shell rendered, 0 console errors, SCADA absent
+- Full suite: 2663 passed; baseline: recorded in the C01 status pin below
+- Verdict: VF-vNEXT-R5-C01 - READY FOR SA REVIEW

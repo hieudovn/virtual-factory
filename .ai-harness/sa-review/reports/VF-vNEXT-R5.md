@@ -96,4 +96,21 @@ All library/domain coverage (lifecycle, bridges, engine, domain semantics, canon
 - `site_authorized_execution = NOT_AUTHORIZED`
 - `whole_plant_runtime = NOT_AUTHORIZED / NOT_IMPLEMENTED`
 
+## 9. VF-vNEXT-R5-C01 — root canonical entrypoint (correction, SA comment 5644417111)
+
+Bounded correction on the R5 head `7558aaa` (no redesign, no Continuous restore, no new workspace).
+
+| Item | Result |
+| --- | --- |
+| `GET /` | **307 redirect → `/workspaces`** (canonical Workspace Shell); the route no longer serves `index.html` and is `include_in_schema=False` |
+| Legacy continuous dashboard at root | **Not served** (`SCADA` absent from the redirect body; no route serves the page any more) |
+| Zero runtime construction | `create_app` `{}`, redirect `{}`, redirect+shell `{}`, shell `{}` (measured in `08-root-entry.json`) |
+| Continuous static assets | retained **reference-only** (`index.html`, `app.js`, `continuous_context.js` present in the repo; `index.html` still contains its `SCADA` markup) |
+| Continuous workspace | **not registered** (registry = `TIPA`, `shwtp`) |
+| Stale docstring | `create_app` docstring no longer claims "backed by one RuntimeService instance"; it now states the app constructs no runtime state and that `GET /` redirects to the shell, with the compatibility arguments documented |
+| Regression | `tests/test_vnext_r5_single_system.py`: `test_root_entrypoint_redirects_to_canonical_shell_without_construction`, `test_root_entrypoint_html_is_not_served_anywhere_else`; `tests/test_api.py` root test migrated; `tests/test_ui_hierarchy.py` legacy dashboard test migrated to reference-only |
+| Browser smoke from `/` | starts at `http://127.0.0.1:8099/`, lands on `/workspaces` (200) with the shell rendered (selector, scenario list, NEW RUN, glossary), **0 console errors**, `SCADA` absent; screenshot `shot-root-entry.png` |
+| Evidence | `08-root-entry.json` → `ROOT_IS_CANONICAL_ENTRYPOINT` (all other R5 verdicts still green) |
+| Regression suite | full suite **2663 passed** (R5 head 2661); canonical baseline **43/43 PASS** at the pushed head |
+
 **STOP — awaiting SA review. SH-WTP expansion, gateway/protocol work and merge are NOT authorized and NOT started.**

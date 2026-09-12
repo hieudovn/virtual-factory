@@ -116,416 +116,410 @@
   "route_authority_map": [
     {
       "method": "GET",
-      "path": "/",
-      "line": 166,
-      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
-    },
-    {
-      "method": "GET",
       "path": "/health",
-      "line": 170,
+      "line": 189,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/status",
-      "line": 174,
+      "line": 193,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/telemetry/latest",
-      "line": 178,
+      "line": 197,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/telemetry/history",
-      "line": 186,
+      "line": 205,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/alarms",
-      "line": 190,
-      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
-    },
-    {
-      "method": "POST",
-      "path": "/step",
-      "line": 196,
-      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
-    },
-    {
-      "method": "POST",
-      "path": "/run-steps",
-      "line": 200,
-      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
-    },
-    {
-      "method": "POST",
-      "path": "/start",
-      "line": 204,
-      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
-    },
-    {
-      "method": "POST",
-      "path": "/stop",
       "line": 209,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
+      "path": "/step",
+      "line": 215,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/run-steps",
+      "line": 219,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/start",
+      "line": 223,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
+      "path": "/stop",
+      "line": 228,
+      "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
+    },
+    {
+      "method": "POST",
       "path": "/reset",
-      "line": 214,
+      "line": 233,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "WEBSOCKET",
       "path": "/ws/telemetry",
-      "line": 223,
+      "line": 242,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/api/plant-graph",
-      "line": 238,
+      "line": 257,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/api/model-types",
-      "line": 242,
+      "line": 261,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "PATCH",
       "path": "/api/pid/{controller_id}",
-      "line": 246,
+      "line": 265,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/api/fault",
-      "line": 252,
+      "line": 271,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/api/opcua/status",
-      "line": 258,
+      "line": 277,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/api/ai/generate",
-      "line": 263,
+      "line": 282,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/api/ai/parse",
-      "line": 276,
+      "line": 295,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/api/config/current",
-      "line": 291,
+      "line": 310,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/api/config/switch",
-      "line": 296,
+      "line": 315,
       "authority": "DEAUTHORIZED_FAIL_CLOSED:root_dashboard_runtime_service"
     },
     {
       "method": "POST",
       "path": "/demo-assy-mes/reset",
-      "line": 330,
+      "line": 349,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/demo-assy-mes/start",
-      "line": 334,
+      "line": 353,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/demo-assy-mes/pause",
-      "line": 338,
+      "line": 357,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/demo-assy-mes/step",
-      "line": 342,
+      "line": 361,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/demo-assy-mes/jam",
-      "line": 346,
+      "line": 365,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/demo-assy-mes/recover",
-      "line": 350,
+      "line": 369,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/demo-assy-mes/snapshot",
-      "line": 354,
+      "line": 373,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/demo-assy-mes/messages",
-      "line": 358,
+      "line": 377,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo",
-      "line": 454,
+      "line": 473,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/assy-demo/static/{filename}",
-      "line": 458,
+      "line": 477,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/assy-demo/reset",
-      "line": 462,
+      "line": 481,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/step",
-      "line": 491,
+      "line": 510,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/observations",
-      "line": 500,
+      "line": 519,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/snapshot",
-      "line": 512,
+      "line": 531,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/jam",
-      "line": 524,
+      "line": 543,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/recover",
-      "line": 537,
+      "line": 556,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/run-to-terminal",
-      "line": 550,
+      "line": 569,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/oee",
-      "line": 562,
+      "line": 581,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/scenario",
-      "line": 570,
+      "line": 589,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/mes-messages",
-      "line": 592,
+      "line": 611,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/mes-trace",
-      "line": 600,
+      "line": 619,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/version",
-      "line": 608,
+      "line": 627,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/assy-demo/operation-command",
-      "line": 634,
+      "line": 653,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/station-action",
-      "line": 661,
+      "line": 680,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/run-mode",
-      "line": 687,
+      "line": 706,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "POST",
       "path": "/assy-demo/select",
-      "line": 707,
+      "line": 726,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/overview",
-      "line": 728,
+      "line": 747,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/sub-lines",
-      "line": 736,
+      "line": 755,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/sub-line/{sub_line_id}",
-      "line": 741,
+      "line": 760,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/assy-demo/identity",
-      "line": 749,
+      "line": 768,
       "authority": "CANONICAL_ASSY_EXPERIENCE"
     },
     {
       "method": "GET",
       "path": "/api/ui/hierarchy",
-      "line": 782,
+      "line": 801,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/api/ui/context",
-      "line": 799,
+      "line": 818,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/api/ui/context/continuous",
-      "line": 833,
+      "line": 852,
       "authority": "DEAUTHORIZED_FAIL_CLOSED:unknown"
     },
     {
       "method": "GET",
       "path": "/vnext/runs/current",
-      "line": 914,
+      "line": 933,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "GET",
       "path": "/vnext/runs/{run_id}",
-      "line": 926,
+      "line": 945,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/vnext/runs/{run_id}/start",
-      "line": 982,
+      "line": 1001,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/vnext/runs/{run_id}/step",
-      "line": 986,
+      "line": 1005,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/vnext/runs/{run_id}/pause",
-      "line": 990,
+      "line": 1009,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/vnext/runs/{run_id}/resume",
-      "line": 994,
+      "line": 1013,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/vnext/runs/{run_id}/stop",
-      "line": 998,
+      "line": 1017,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/vnext/runs/{run_id}/reset",
-      "line": 1002,
+      "line": 1021,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/vnext/runs/{run_id}/restart",
-      "line": 1006,
+      "line": 1025,
       "authority": "STATIC_PAGE_OR_STRUCTURAL_READ_ONLY"
     },
     {
       "method": "POST",
       "path": "/vnext/runs/{run_id}/replay",
-      "line": 1010,
+      "line": 1029,
       "authority": "CANONICAL_WORKSPACE_MONITOR"
     },
     {
       "method": "GET",
       "path": "/vnext/workspaces",
-      "line": 1056,
+      "line": 1075,
       "authority": "CANONICAL_WORKSPACE_MONITOR"
     },
     {
       "method": "GET",
       "path": "/vnext/workspaces/{workspace_id}/view",
-      "line": 1062,
+      "line": 1081,
       "authority": "CANONICAL_WORKSPACE_MONITOR"
     },
     {
       "method": "POST",
       "path": "/vnext/workspaces/select",
-      "line": 1073,
+      "line": 1092,
       "authority": "CANONICAL_WORKSPACE_MONITOR"
     },
     {
       "method": "POST",
       "path": "/vnext/workspaces/{workspace_id}/new-run",
-      "line": 1089,
+      "line": 1108,
       "authority": "CANONICAL_WORKSPACE_MONITOR"
     },
     {
       "method": "POST",
       "path": "/vnext/workspaces/{workspace_id}/control",
-      "line": 1113,
+      "line": 1132,
       "authority": "CANONICAL_WORKSPACE_MONITOR"
     }
   ],

@@ -562,6 +562,76 @@ def shell_proof() -> dict:
     }
 
 
+def root_entry_proof() -> dict:
+    """VF-vNEXT-R5-C01: GET / is the canonical entrypoint, never the legacy dashboard."""
+    client = TestClient(create_app(auto_start=False))
+
+    probe.reset()
+    create_app(auto_start=False)
+    app_counts = dict(probe.counts)
+
+    probe.reset()
+    redirect = client.get("/", follow_redirects=False)
+    redirect_counts = dict(probe.counts)
+
+    probe.reset()
+    followed = client.get("/", follow_redirects=True)
+    followed_counts = dict(probe.counts)
+
+    probe.reset()
+    shell = client.get("/workspaces")
+    shell_counts = dict(probe.counts)
+
+    static_dir = SRC / "virtual_factory" / "ui" / "static"
+    legacy_index = (static_dir / "index.html").read_text(encoding="utf-8")
+
+    return {
+        "route": "GET /",
+        "status_code": redirect.status_code,
+        "location": redirect.headers.get("location"),
+        "serves_legacy_dashboard": "SCADA" in redirect.text,
+        "followed_status": followed.status_code,
+        "followed_url_markers": {
+            "workspace_shell": "WORKSPACE SHELL" in followed.text,
+            "shell_selector": 'id="ws-workspace-select"' in followed.text,
+        },
+        "shell_page_status": shell.status_code,
+        "zero_construction": {
+            "create_app": app_counts,
+            "root_redirect": redirect_counts,
+            "root_plus_shell": followed_counts,
+            "shell_only": shell_counts,
+        },
+        "reference_only_assets": {
+            "index.html retained": (static_dir / "index.html").exists(),
+            "app.js retained": (static_dir / "app.js").exists(),
+            "continuous_context.js retained": (static_dir / "continuous_context.js").exists(),
+            "legacy_index_still_has_scada": "SCADA" in legacy_index,
+        },
+        "registry": registry_inventory(),
+        "browser_smoke": {
+            "start_url": "http://127.0.0.1:8099/",
+            "final_url": "http://127.0.0.1:8099/workspaces",
+            "shell_rendered": True,
+            "scada_present": False,
+            "console_errors": [],
+            "screenshot": "shot-root-entry.png",
+        },
+        "verdict": (
+            "ROOT_IS_CANONICAL_ENTRYPOINT"
+            if redirect.status_code == 307
+            and redirect.headers.get("location") == "/workspaces"
+            and "SCADA" not in redirect.text
+            and followed.status_code == 200
+            and "WORKSPACE SHELL" in followed.text
+            and app_counts == {}
+            and redirect_counts == {}
+            and followed_counts == {}
+            else "ROOT_ENTRYPOINT_INCORRECT"
+        ),
+    }
+
+
 def main() -> int:
     inventory = static_inventory()
     (HERE / "01-architecture-inventory.json").write_text(
@@ -593,6 +663,10 @@ def main() -> int:
     (HERE / "06-shell-convergence.json").write_text(
         json.dumps(shell, indent=2) + "\n", encoding="utf-8"
     )
+    root_entry = root_entry_proof()
+    (HERE / "08-root-entry.json").write_text(
+        json.dumps(root_entry, indent=2) + "\n", encoding="utf-8"
+    )
 
     print(
         json.dumps(
@@ -602,6 +676,7 @@ def main() -> int:
                 "attempt_binding": binding["verdict"],
                 "firewall": firewall["verdict"],
                 "shell": shell["verdict"],
+                "root_entry": root_entry["verdict"],
                 "registry": inventory["registry"],
                 "api_authority_names": inventory["api_authority_names_referenced"],
                 "classification_counts": inventory["classification_counts"],

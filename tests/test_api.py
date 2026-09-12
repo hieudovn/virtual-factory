@@ -24,15 +24,30 @@ def test_health_returns_ok() -> None:
     assert response.json()["status"] == "ok"
 
 
-def test_dashboard_root_returns_html() -> None:
+def test_root_is_the_canonical_entrypoint_without_legacy_dashboard() -> None:
+    """VF-vNEXT-R5-C01: GET / is the canonical entrypoint, not the legacy dashboard.
+
+    It redirects to the canonical Workspace Shell, never serves the experimental
+    continuous dashboard, and constructs no runtime state.
+    """
     client = _client()
 
-    response = client.get("/")
+    response = client.get("/", follow_redirects=False)
 
-    assert response.status_code == 200
-    assert "text/html" in response.headers["content-type"]
-    assert "Virtual Factory" in response.text
-    assert "SCADA" in response.text
+    assert response.status_code == 307
+    assert response.headers["location"] == "/workspaces"
+    assert "SCADA" not in response.text
+
+    followed = client.get("/", follow_redirects=True)
+    assert followed.status_code == 200
+    assert "text/html" in followed.headers["content-type"]
+    assert "WORKSPACE SHELL" in followed.text
+    assert "ws-workspace-select" in followed.text
+
+    # the legacy continuous dashboard asset is retained REFERENCE-ONLY
+    static_dir = Path(__file__).resolve().parents[1] / "src" / "virtual_factory" / "ui" / "static"
+    assert (static_dir / "index.html").exists()
+    assert "SCADA" in (static_dir / "index.html").read_text(encoding="utf-8")
 
 
 def test_static_app_js_is_accessible() -> None:

@@ -97,9 +97,18 @@ def create_app(
     opcua_endpoint: str | None = None,
     auto_start: bool = False,
 ):
-    """Create a FastAPI app backed by one RuntimeService instance."""
+    """Create the Virtual Factory FastAPI app for one process.
+
+    VF-vNEXT-R5: the app is a CANONICAL product shell host, not a simulation
+    authority — it constructs no runtime state (no RuntimeService, engine,
+    controller or session). ``GET /`` is the canonical entrypoint and redirects
+    to the workspace shell (``/workspaces``). The accepted ``config_path`` /
+    ``scenario_path`` / ``dt_s`` / ``mqtt_*`` / ``opcua_endpoint`` / ``auto_start``
+    arguments are retained for call-site compatibility with the de-authorized
+    experimental continuous dashboard and create no authority.
+    """
     from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
-    from fastapi.responses import FileResponse
+    from fastapi.responses import FileResponse, RedirectResponse
     from fastapi.staticfiles import StaticFiles
 
     # VF-vNEXT-R5: NO RuntimeService (and no engine/runtime object) is created
@@ -164,9 +173,18 @@ def create_app(
     def assy_css_direct() -> FileResponse:
         return FileResponse(static_dir / "assy_demo.css", media_type="text/css")
 
-    @app.get("/")
-    def dashboard() -> FileResponse:
-        return FileResponse(static_dir / "index.html")
+    @app.get("/", include_in_schema=False)
+    def dashboard() -> RedirectResponse:
+        """Canonical VF entrypoint: redirect the bare root to the workspace shell.
+
+        VF-vNEXT-R5-C01: the root used to serve the EXPERIMENTAL continuous
+        dashboard (``index.html``), which was backed by the removed eager
+        RuntimeService authority. The root is now the canonical entrypoint into
+        the canonical product surface (Workspace Shell); the legacy dashboard and
+        its static assets stay in the repo as reference-only and are no longer
+        served. Resolving this route constructs ZERO runtime state.
+        """
+        return RedirectResponse(url="/workspaces", status_code=307)
 
     @app.get("/health")
     def health() -> dict:

@@ -344,6 +344,47 @@ def test_no_second_workspace_lifecycle_authority(probe) -> None:
 # 4. R5a-1 — attempt-bound profiles (no cross-run contamination)
 # ═══════════════════════════════════════════════════════════════════════════
 
+def test_root_entrypoint_redirects_to_canonical_shell_without_construction(probe) -> None:
+    """VF-vNEXT-R5-C01: GET / is the canonical entrypoint and builds no runtime.
+
+    The bare root must redirect to the canonical Workspace Shell, must not serve
+    the experimental continuous dashboard, must keep its static assets
+    reference-only, and must construct ZERO runtime state (also when followed).
+    """
+    client = TestClient(create_app(auto_start=False))
+    probe.reset()
+
+    response = client.get("/", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/workspaces"
+    assert "SCADA" not in response.text  # no legacy dashboard body
+    assert dict(probe.counts) == {}, f"root redirect constructed {dict(probe.counts)}"
+
+    followed = client.get("/", follow_redirects=True)
+    assert followed.status_code == 200
+    assert "WORKSPACE SHELL" in followed.text
+    assert 'id="ws-workspace-select"' in followed.text
+    assert dict(probe.counts) == {}, f"root+shell constructed {dict(probe.counts)}"
+
+    # reference-only legacy assets, and no continuous workspace registered
+    assert (UI_STATIC / "index.html").exists()
+    assert (UI_STATIC / "app.js").exists()
+    from virtual_factory.ui.workspace_monitor import build_platform_registry
+
+    assert sorted(map(str, build_platform_registry().workspace_ids())) == ["TIPA", "shwtp"]
+
+
+def test_root_entrypoint_html_is_not_served_anywhere_else(probe) -> None:
+    """No route serves the legacy continuous dashboard page any more."""
+    client = TestClient(create_app(auto_start=False))
+    probe.reset()
+    for path in ("/", "/workspaces"):
+        response = client.get(path, follow_redirects=False)
+        assert response.status_code in (200, 307), path
+        assert "SCADA" not in response.text, path
+    assert dict(probe.counts) == {}
+
+
 class TestAttemptBindingR5a1:
     def _factory(self):
         from virtual_factory.runcontrol.session import build_tipa_scenario_run_factory

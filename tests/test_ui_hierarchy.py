@@ -272,13 +272,21 @@ class TestContinuousTruthfulContext:
         assert "/api/ui/context/continuous" in js
         assert "app.js" not in js  # never touches the existing controller
 
-    def test_index_page_serves_shared_primitives_additively(self):
+    def test_legacy_dashboard_page_is_reference_only(self):
+        """VF-vNEXT-R5-C01: the legacy continuous dashboard is no longer served at /.
+
+        The root now redirects to the canonical Workspace Shell; the legacy page
+        and its primitives stay in the repo as reference-only assets.
+        """
         c = _client()
-        html = c.get("/").text
+        response = c.get("/", follow_redirects=False)
+        assert response.status_code == 307
+        assert response.headers["location"] == "/workspaces"
+        html = (UI_STATIC / "index.html").read_text(encoding="utf-8")
         assert "hierarchy.js" in html
         assert "continuous_context.js" in html
         assert "vf-context-section" in html
-        assert "app.js" in html  # existing controller still loaded
+        assert "app.js" in html  # legacy controller retained as reference
 
 
 # ═══════════════════════════════════════════════════════════
