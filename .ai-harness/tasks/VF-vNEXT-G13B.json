@@ -1,0 +1,90 @@
+{
+  "task_id": "VF-vNEXT-G13B",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — SH-WTP T106 Standalone Synthetic Logical Runtime (G13B)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/63",
+  "objective": "Implement the second already-authorized SH-WTP standalone candidate: UNIT-SHW-L1-T106 at VF StructuralPath shwtp/line1/l1_t106 as a standalone synthetic LogicalOnly zero-storage pass-through (output_flow = inflow; time advances by dt). Obey configs/vnext/shwtp/shwtp_synthetic_runtime_admission.json (review_status=COMPLETE, authorization_mode=CANDIDATE_SCOPED, T106=SYNTHETIC_REFERENCE_ALLOWED, T108 accepted first-order standalone, T110 blocked, NOT_AUTHORIZED). Explicit config dt_s>0 and per-step inflow_m3_s>=0; canonical reference locked to UNIT-SHW-L1-T106; exact target only shwtp/line1/l1_t106; truthful provenance (OriginKind.SIMULATION, DataStatus.SYNTHETIC, Fidelity.LOGICAL_ONLY) on step and snapshot; reuse G1 StructuralPath + G2 RunContextV2/provenance; standalone lifecycle (fresh attempt, deterministic step, reset, detached snapshot, isolation). No filtration physics/quality/headloss/backwash/storage; no T108 modification; no G4/ports/coordinator/federation/T106->T108 wiring; no PIM/legacy engine/global engine/G14.",
+  "explicit_non_objectives": [
+    "No filtration physics/efficiency/headloss/quality/turbidity/media-condition",
+    "No backwash/control logic",
+    "No hydraulic storage/capacity/attenuation/delay",
+    "No T106 -> T108 runtime projection or wiring",
+    "No T110 runtime",
+    "No BoundaryPort / PortDirection / PortCategory / G4 CompositionBinding / coordinator / federation",
+    "No Workspace/container execution",
+    "No modification of T108 runtime semantics/equations/provenance",
+    "No legacy process_dynamics.py change",
+    "No new global SimulationEngine",
+    "No PIM change",
+    "No measured/site/SiteVerified/SourceMapped/ParameterizedReady/CalibratedReady claims",
+    "No G14"
+  ],
+  "required_branch": "feature/vf-vnext-g13b",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G13B.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G13B.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G13B/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/logical_runtime.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "tests/test_vnext_g13b_t106.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/equipment/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/semantic/",
+    "src/virtual_factory/connectivity/",
+    "configs/",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/logical_runtime.py (T106 standalone LogicalOnly pass-through)",
+    "tests/test_vnext_g13b_t106.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G13B/01-t106-logical-runtime.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement filtration/hydraulic/control semantics for T106",
+    "Project T106 -> T108 or interpret G12B relations as runtime connections",
+    "Modify T108 runtime",
+    "Enable shwtp / shwtp/line1 / T110 / multi-scope execution",
+    "Create BoundaryPort/G4/coordinator/federation",
+    "Change PIM, legacy engine, or global engine architecture",
+    "Broaden runtime/site authority",
+    "Start G14"
+  ],
+  "stop_conditions": [
+    "T106 requires any unstated filtration/hydraulic/control behavior",
+    "A PIM relationship must be interpreted as runtime truth",
+    "A new global runtime/engine abstraction becomes necessary",
+    "G7/G4 semantics must change",
+    "T108 must be modified to make T106 work",
+    "Site/runtime authority must broaden",
+    "PIM must change"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "T106 canonical ref locked; exact path shwtp/line1/l1_t106; only T106 added", "rule": {"field": "plan.target", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Deterministic LogicalOnly pass-through (output=input, time += dt) with explicit config/inputs", "rule": {"field": "plan.step", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Lifecycle: fresh attempt, reset, detached snapshot, attempt isolation", "rule": {"field": "plan.lifecycle", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Provenance simulation/synthetic/logical_only on step and snapshot; no site/measure labels", "rule": {"field": "plan.provenance", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Fail closed on invalid dt/inflow/target/workspace/path", "rule": {"field": "plan.fail_closed", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "T108 runtime untouched; G12A/B inert; no G4/ports/projection; T110 blocked; no workspace/container execution", "rule": {"field": "plan.no_projection", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "New G13B tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Complete canonical vNext baseline + G13/G12C/B/A/G11/G10/G9/G7/G4/G2/G1/ASSY/continuous/UI/full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

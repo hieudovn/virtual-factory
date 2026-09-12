@@ -1,0 +1,88 @@
+{
+  "task_id": "VF-vNEXT-G14B-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "CORRECTION gate — SH-WTP T106->T108 Explicit Lagged Federation identity locking (G14B-C01)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/65",
+  "sa_comment_ref": "https://github.com/hieudovn/virtual-factory/issues/65#issuecomment-5592283850",
+  "objective": "Lock the SH-WTP federation participant adapters' federation identity to the wrapped runtimes' immutable RunContextV2. Both ShwtpT106Participant and ShwtpT108Participant must fail closed at construction when runtime.run_context.workspace_id != adapter workspace_id, when runtime.run_context.run_id != adapter run_id, or when the runtime scope path is not the exact T106/T108 path. Enforce the invariant runtime.run_context.workspace_id == adapter workspace_id == 'shwtp' and runtime.run_context.run_id == adapter run_id. The adapter never mutates the RunContext, never rewrites runtime identity, and never derives a new run id after construction. The T106 emitted BoundaryTransfer.run_id must equal the T106 runtime RunContext run_id and the T106 step provenance run_id. T108 provenance must keep the same federation run identity. Preserve all G14B semantics (explicit_lagged, one-window lag, F01 only, T106+T108 only, no T110, no F02-F07, no G4 change, no T106/T108 equation change, no F01 projection change, no policy expansion, no G15).",
+  "explicit_non_objectives": [
+    "No G4/Coordinator/ExecutableParticipant/BoundaryTransfer change",
+    "No T106/T108 domain equation or provenance-fidelity change",
+    "No F01 projection change",
+    "No coupling policy expansion",
+    "No RunContextV2 contract change",
+    "No T110 / F02-F07 execution",
+    "No plant-wide/workspace/container execution",
+    "No G15"
+  ],
+  "required_branch": "feature/vf-vnext-g14b-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G14B-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G14B-C01.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G14B-C01/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/federation.py",
+    "tests/test_vnext_g14b_federation.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/logical_runtime.py",
+    "src/virtual_factory/shwtp/projection.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/semantic/",
+    "src/virtual_factory/equipment/",
+    "configs/",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/federation.py (identity-locked participant adapters)",
+    "tests/test_vnext_g14b_federation.py (identity-locking regressions)",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G14B-C01/01-identity-locking.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Change G4/Coordinator/participant/transfer semantics",
+    "Change T106/T108 equations, canonical ids, or provenance",
+    "Change F01 projection",
+    "Change RunContextV2 contract or G2 identity semantics",
+    "Mutate/rewrite the runtime RunContext",
+    "Silently derive a new run id after construction",
+    "Expand coupling policy beyond explicit_lagged",
+    "Include T110 / F02-F07",
+    "Enable workspace/container/plant-wide execution",
+    "Start G15"
+  ],
+  "stop_conditions": [
+    "Fixing identity locking requires changing G2/G4 identity semantics or the frozen RunContext contract",
+    "T106/T108 equations must change",
+    "F01 projection must change",
+    "G4 semantics must change",
+    "A new global engine/scheduler architecture is required",
+    "Site/runtime authority must broaden",
+    "PIM must change"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "T106/T108 adapters fail closed on run-id mismatch, workspace mismatch, and wrong runtime scope path", "rule": {"field": "plan.identity_fail_closed", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "runtime.run_context.workspace_id == adapter workspace_id == shwtp; runtime.run_context.run_id == adapter run_id", "rule": {"field": "plan.identity_invariant", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "RunContext not mutated/rewritten; no run id derived after construction", "rule": {"field": "plan.no_mutation", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "T106 BoundaryTransfer.run_id == T106 runtime RunContext run_id == T106 step provenance run_id", "rule": {"field": "plan.transfer_identity", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "T108 provenance keeps the same federation run identity", "rule": {"field": "plan.t108_identity", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "All G14B semantics preserved (explicit_lagged lag, F01 only, T106+T108 only, no T110/F02-F07, no G4/T106/T108/F01 change)", "rule": {"field": "plan.g14b_preserved", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "New identity-locking regressions green; G14B focused tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Complete canonical vNext baseline + full suite + compile/static/changed-files/preflight green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

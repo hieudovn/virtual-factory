@@ -1,0 +1,62 @@
+{
+  "I1_scenario_new_run_control": {
+    "html_has_scenario_select": true,
+    "html_has_new_run_button": true,
+    "js_posts_canonical_new_run": true,
+    "view_exposes_scenario_ids": true,
+    "scenario_ids": [
+      "tipa-default",
+      "tipa-happy-path",
+      "tipa-ap06-retest",
+      "tipa-ap08-reinspect",
+      "tipa-failed-final"
+    ],
+    "new_run_status": 200,
+    "fresh_run_id": "TIPA-0002",
+    "previous_run_id": "TIPA-0001",
+    "fresh_run_identity_changed": true,
+    "fresh_run_scenario": "tipa-failed-final",
+    "counts_after_new_run": {
+      "RuntimeSession": 1
+    },
+    "shwtp_new_run_status": 400,
+    "unknown_workspace_status": 404
+  },
+  "I3_responsive_scope_table": {
+    "scroll_wrapper_css": true,
+    "overflow_x_auto": true,
+    "min_width_zero_on_cards": true,
+    "word_break": true,
+    "narrow_media_query": true,
+    "js_wraps_tables": 3
+  },
+  "I4_unavailable_action_convention": {
+    "helper": true,
+    "aria_disabled_used": true,
+    "aria_disabled_in_markup": 7,
+    "explicit_reasons": 13,
+    "css_not_allowed_cursor": true
+  },
+  "I5_shared_glossary": {
+    "glossary_in_shell": true,
+    "terms": [
+      "STEP",
+      "RESET",
+      "NEW ATTEMPT",
+      "NEW RUN",
+      "REPLAY",
+      "HOLD / JAM",
+      "OEE"
+    ],
+    "css_styles": true
+  },
+  "I6_legacy_include_removed": {
+    "include_removed_from_canonical_page": true,
+    "rich_domain_scripts_retained": true
+  },
+  "I2_not_done": {
+    "shwtp_dedicated_process_page": "NOT_AUTHORIZED / NOT_IMPLEMENTED",
+    "shwtp_shell_view_unchanged": true
+  },
+  "verdict": "SHELL_CONVERGENCE_I1_I3_I4_I5_I6_COMPLETE"
+}

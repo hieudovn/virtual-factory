@@ -1,0 +1,72 @@
+{
+  "suites": {
+    "c01_reset_generation": {
+      "targets": [
+        "tests/test_vnext_r3_c01_reset_generation.py"
+      ],
+      "exit_code": 0,
+      "summary": "15 passed in 1.61s",
+      "passed": 15,
+      "failed": 0
+    },
+    "r3_canonical_observation_mes": {
+      "targets": [
+        "tests/test_vnext_r3_canonical_observation_mes.py"
+      ],
+      "exit_code": 0,
+      "summary": "27 passed in 3.12s",
+      "passed": 27,
+      "failed": 0
+    },
+    "r1_production_semantics": {
+      "targets": [
+        "tests/test_vnext_r1_production_semantics.py"
+      ],
+      "exit_code": 0,
+      "summary": "40 passed in 1.67s",
+      "passed": 40,
+      "failed": 0
+    },
+    "r2_same_session_rich_assy": {
+      "targets": [
+        "tests/test_vnext_r2_same_session_rich_assy.py"
+      ],
+      "exit_code": 0,
+      "summary": "27 passed in 2.97s",
+      "passed": 27,
+      "failed": 0
+    },
+    "g22_session_replay": {
+      "targets": [
+        "tests/test_vnext_g22_session.py"
+      ],
+      "exit_code": 0,
+      "summary": "15 passed in 0.41s",
+      "passed": 15,
+      "failed": 0
+    },
+    "observation_lifecycle": {
+      "targets": [
+        "tests/test_m6_int_01.py",
+        "tests/test_assy_mes_bridge_v1.py",
+        "tests/test_assy_mes_03_evidence.py",
+        "tests/test_vf_contract_finality_01.py"
+      ],
+      "exit_code": 0,
+      "summary": "77 passed in 7.06s",
+      "passed": 77,
+      "failed": 0
+    }
+  },
+  "full_suite": {
+    "targets": [
+      "tests"
+    ],
+    "exit_code": 0,
+    "summary": "2598 passed in 30.93s",
+    "passed": 2598,
+    "failed": 0
+  },
+  "baseline": "canonical baseline (40 groups + checks) is run at the pushed head and recorded in the gate report / SA submission",
+  "PASS": true
+}

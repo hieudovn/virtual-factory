@@ -1,0 +1,40 @@
+{
+  "status": "terminal",
+  "windows": 13,
+  "max_windows": 40,
+  "terminal_reached": true,
+  "canonical_run_id": "TIPA-0001",
+  "per_line_parity": {
+    "ASSY-SL01": {
+      "automated_equals_manual": true,
+      "simulation_time_s": 1560.0
+    },
+    "ASSY-SL02": {
+      "automated_equals_manual": true,
+      "simulation_time_s": 1560.0
+    },
+    "ASSY-SL03": {
+      "automated_equals_manual": true,
+      "simulation_time_s": 1560.0
+    },
+    "ASSY-SL04": {
+      "automated_equals_manual": true,
+      "simulation_time_s": 1560.0
+    },
+    "ASSY-SL05": {
+      "automated_equals_manual": true,
+      "simulation_time_s": 1560.0
+    },
+    "ASSY-SL06": {
+      "automated_equals_manual": true,
+      "simulation_time_s": 1560.0
+    }
+  },
+  "all_lines_parity": true,
+  "manual_reached_terminal": true,
+  "bounded_guard": {
+    "max_windows_500": 404,
+    "max_windows_0": 404
+  },
+  "PASS": true
+}

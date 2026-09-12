@@ -1,0 +1,89 @@
+{
+  "happy_path": {
+    "families": {
+      "mes.run_status": 1,
+      "mes.execution_event": 438,
+      "mes.checklist_result": 54,
+      "mes.genealogy_relationship": 48,
+      "mes.quality_result": 66,
+      "mes.measurement_result": 108,
+      "mes.release": 6
+    },
+    "genealogy_records": 48,
+    "releases": 6,
+    "quality_results": 66,
+    "positions_match_canonical_12": true,
+    "feeds": {
+      "ASSY-SL01": {
+        "sso2_buffer": 0,
+        "rso2_buffer": 6
+      },
+      "ASSY-SL02": {
+        "sso2_buffer": 0,
+        "rso2_buffer": 6
+      },
+      "ASSY-SL03": {
+        "sso2_buffer": 0,
+        "rso2_buffer": 6
+      },
+      "ASSY-SL04": {
+        "sso2_buffer": 0,
+        "rso2_buffer": 6
+      },
+      "ASSY-SL05": {
+        "sso2_buffer": 0,
+        "rso2_buffer": 6
+      },
+      "ASSY-SL06": {
+        "sso2_buffer": 0,
+        "rso2_buffer": 6
+      }
+    }
+  },
+  "scenario_oracles": {
+    "AP06_FAIL_RETEST_PASS": {
+      "quality_records": 82,
+      "attempts_gt_1": 1,
+      "dispositions": [
+        "FAIL",
+        "PASS"
+      ],
+      "released": 6,
+      "reject_facts": 0,
+      "reject_reason_codes": []
+    },
+    "AP08_NG_REINSPECT_PASS": {
+      "quality_records": 82,
+      "attempts_gt_1": 1,
+      "dispositions": [
+        "NG",
+        "PASS"
+      ],
+      "released": 6,
+      "reject_facts": 0,
+      "reject_reason_codes": []
+    },
+    "FAILED_FINAL": {
+      "quality_records": 417,
+      "attempts_gt_1": 1,
+      "dispositions": [
+        "FAIL",
+        "PASS"
+      ],
+      "released": 120,
+      "reject_facts": 1,
+      "reject_reason_codes": [
+        "failed_final"
+      ]
+    }
+  },
+  "replay_deterministic": true,
+  "six_line_independence": true,
+  "r3_output_identity": {
+    "same_run_id_across_surfaces": true,
+    "projection_epoch": 2,
+    "session_reset_generation": 2,
+    "epoch_source": "canonical_session_reset_generation"
+  },
+  "PASS": true
+}

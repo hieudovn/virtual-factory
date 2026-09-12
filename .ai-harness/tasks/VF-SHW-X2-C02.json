@@ -1,0 +1,93 @@
+{
+  "task_id": "VF-SHW-X2-C02",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "correction",
+  "gate_type": "CORRECTION gate (Issue #94 SA comment 5645344049): fix four X2 defects that predate C01 (runtime identity, discarded WASH return, conservation oracle counting information as water, level permissive deleting received water). No frozen config/contract change, no new topology/scope/controller, no PI/PID, no T107, no rich UI, no PIM/ASSY change, no X3/X4/X5, no merge.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/94",
+  "sa_decision_ref": "Issue #94 comment 5645344049 (C02-1 run identity from the active lifecycle context; C02-2 WASH return discarded before consumption; C02-3 plant conservation oracle counts information as water; C02-4 T108 high-level action discards received flow instead of inhibiting T106) - required base aae34825a58b1017127d4eecfb42ec811cf2c5a7, existing C01 branch / PR #96",
+  "architecture_authority_ref": "VF-SHW-X2 + X2-C01 report/evidence; the single canonical session/bridge/run authority and the frozen X1 contract layer are unchanged",
+  "objective": "Close the four residual X2 defects inside the C01 branch: (1) bind the SH-WTP model/participants/transfers to the ACTIVE attempt's run identity through the existing RunLifecycleService bridge_factory_ctx seam (no new lifecycle authority, no model-invented run id, reset preserves identity, new attempt/replay get lifecycle-issued identities with no old-id leakage, provenance in the detached ledger); (2) store committed process input separately from the transient controller commands and consume the WASH return at the correct lag exactly once, with positive WASH mass accounting; (3) replace the tolerance-shaped plant conservation oracle with a ledger-based control-volume balance that counts water only (information signals and unpumped source availability excluded by construction), accounts every modelled loss explicitly (declared LINE2 loss, capacity overflow) and closes to a documented float-rounding tolerance; (4) route the existing level permissive to the declared UPSTREAM actuator/path (T108 high inhibits the T106 filtered-water inflow path; T100 high inhibits the intake pump) while never deleting water already received, with defined command priority relative to the backwash sequence; plus audit and fix the equivalent T100 path and correct the stale session docstring.",
+  "explicit_non_objectives": [
+    "No change to any frozen X1 config/contract (configs/** stays untouched)",
+    "No new scope, edge, topology, controller, control class or fidelity class",
+    "No C2 activation, no PI/PID dynamics, no T107",
+    "No rich SH-WTP UI",
+    "No PIM or ASSY change",
+    "No new registry/session/runtime/UI authority",
+    "No X3/X4/X5 work",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-shw-x2-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "aae34825a58b1017127d4eecfb42ec811cf2c5a7",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-SHW-X2-C02.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/evidence/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/whole_plant.py",
+    "src/virtual_factory/shwtp/session.py",
+    "src/virtual_factory/shwtp/bridge.py",
+    "tests/test_vnext_x2_whole_plant_runtime.py"
+  ],
+  "forbidden_paths": [
+    "configs/",
+    "src/virtual_factory/shwtp/contracts.py",
+    "src/virtual_factory/shwtp/x2_controls.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/expansion.py",
+    "src/virtual_factory/{runcontrol,composition,discrete,core,assembly}/",
+    "src/virtual_factory/ui/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/"
+  ],
+  "forbidden_paths_note": "tests/ is intentionally NOT listed as a whole-directory forbidden entry: the C02 corrections are covered by the existing X2 module, so test changes are confined to tests/test_vnext_x2_whole_plant_runtime.py (single-file allowlist). The frozen X1 contract layer (configs/** and contracts.py), the frozen X2-active C1 set (x2_controls.py) and the UI are NOT edited: the run-identity binding reuses the existing runcontrol bridge_factory_ctx seam (no lifecycle change) and the level action routes existing control outputs.",
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/session.py (attempt-bound bridge via bridge_factory_ctx; zero-arg factory and ambient run_id fail closed; corrected default-model docstring)",
+    "src/virtual_factory/shwtp/whole_plant.py (committed process-input rail + consume-once lag; upstream inhibit routing without deleting received water; explicit overflow/shortfall accounting; transfer classification + run_id in the detached ledger; ledger-based plant water balance; run identity in runtime_truth and on every transfer)",
+    "tests/test_vnext_x2_whole_plant_runtime.py (C02-1..C02-4 proofs incl. bite tests)",
+    ".ai-harness/sa-review/evidence/VF-SHW-X2/08-lifecycle-identity.json, 09-committed-process-input.json, 10-water-ledger.json, 11-level-inhibit.json (new) + 01..07 regenerated",
+    ".ai-harness/sa-review/reports/VF-SHW-X2-C02.md",
+    ".ai-harness/sa-review/CURRENT.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_x2_whole_plant_runtime.py"
+  ],
+  "required_smoke_checks": [
+    "Canonical baseline green at the pushed head",
+    "Full suite green at the pushed head"
+  ],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Creating a second registry/session/runtime/UI authority or a second run-id minter",
+    "Letting the model default, mint or inherit a run identity",
+    "Changing any frozen X1 config/contract, the whole-plant graph or the X2 C1 control set",
+    "Adding a scope, an edge, a control or a fidelity class",
+    "Deleting already-received water to implement a level action",
+    "Increasing a percentage tolerance or adding an unexplained residual term instead of accounting a modelled loss",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "A fix would require a genuine unfrozen process/control decision (report BLOCKED FOR SA before choosing it)",
+    "A fix would require changing a frozen X1 config/contract or the frozen topology",
+    "A fix would require a new lifecycle/session authority or a new control"
+  ],
+  "acceptance_criteria": [
+    {"id": "X2C02-1", "phase": "final", "description": "The runtime identity comes from the active attempt context: BoundaryTransfer.run_id == session.run_id, participants/model/runtime-truth agree, RESET preserves the identity, STOP/restart/replay produce lifecycle-issued attempt identities with no old-id transfer leakage, and the zero-arg/ambient paths fail closed", "rule": {"field": "x2c02.identity", "operator": "is_true", "expected": null}},
+    {"id": "X2C02-2", "phase": "final", "description": "The committed WASH return is stored separately from transient controller commands, consumed at the correct lag exactly once, and enters T106's inflow/volume accounting as mass (positive WASH outflow -> consumed inflow), with the recovery loop never returning more than it received", "rule": {"field": "x2c02.wash_return", "operator": "is_true", "expected": null}},
+    {"id": "X2C02-3", "phase": "final", "description": "The plant conservation oracle is a ledger-based control-volume balance that counts water only (information signals and unpumped source availability excluded), accounts every modelled loss explicitly (declared LINE2 loss, capacity overflow, no silent clamping), and closes within a documented float-rounding tolerance across startup, stop/zero inflow, backwash/recovery, LINE2 active and capacity/empty states", "rule": {"field": "x2c02.water_ledger", "operator": "is_true", "expected": null}},
+    {"id": "X2C02-4", "phase": "final", "description": "The T108 high-level permissive inhibits the declared upstream T106 filtered-water path (and the clarifier holds its water) instead of deleting received flow; the received water is integrated and balanced across the transition; the equivalent T100 low/high path is audited and no storage scope deletes received water", "rule": {"field": "x2c02.level_inhibit", "operator": "is_true", "expected": null}},
+    {"id": "X2C02-5", "phase": "final", "description": "No frozen config/contract, scope, topology, control, fidelity, lifecycle or UI surface changed; focused regression, canonical baseline and full suite are green at the pushed head", "rule": {"field": "x2c02.regression", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

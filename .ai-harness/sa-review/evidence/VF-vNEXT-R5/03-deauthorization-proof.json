@@ -1,0 +1,33 @@
+{
+  "code": "VF_LEGACY_AUTHORITY_DEAUTHORIZED",
+  "declared_surfaces": [
+    "root_dashboard_runtime_service",
+    "legacy_g7_run_control",
+    "legacy_demo_assy_mes"
+  ],
+  "families": {
+    "root_dashboard_runtime_service": {
+      "routes": 17,
+      "all_410": true,
+      "non_410": [],
+      "constructions": {},
+      "zero_construction": true,
+      "websocket_ws_telemetry": "closed fail-closed (WebSocketDenialResponse)"
+    },
+    "legacy_g7_run_control": {
+      "routes": 13,
+      "all_410": true,
+      "non_410": [],
+      "constructions": {},
+      "zero_construction": true
+    },
+    "legacy_demo_assy_mes": {
+      "routes": 9,
+      "all_410": true,
+      "non_410": [],
+      "constructions": {},
+      "zero_construction": true
+    }
+  },
+  "verdict": "ALL_LEGACY_AUTHORITIES_DEAUTHORIZED_FAIL_CLOSED"
+}

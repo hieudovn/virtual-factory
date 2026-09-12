@@ -1,0 +1,87 @@
+{
+  "task_id": "VF-vNEXT-G12A",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — Generic Reference Connectivity Graph Foundation (G12A)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/58",
+  "objective": "Implement the smallest generic, immutable/deterministic Reference Connectivity Graph foundation: (1) generic immutable external semantic endpoint identity (authority/source identity + external/canonical entity id + optional entity kind) that does NOT require StructuralPath and never renames external ids; (2) immutable reference edge (edge_id, source, target, non-empty relation type/class, provenance/evidence reference, optional confidence/status/gaps, runtime_effect=none); (3) deterministic graph supporting fan-out/fan-in/many-to-many/cycles/endpoints that are not VF Scopes. Fail closed on empty endpoint identity, empty relation type, duplicate edge id, and duplicate exact logical relation (frozen (source, target, relation_type) identity rule). No hard-coded SH-WTP/PROC-*/PIM relation names; no universal relation-class enum; no BoundaryPort/PortDirection/PortCategory/PortRegistry/coordinator/run-control/state propagation; no G4 semantics change; no containment coupling; no runtime projection; deterministic serialization/inspection.",
+  "explicit_non_objectives": [
+    "No SH-WTP edge materialization",
+    "No semantic classification of F01-F07",
+    "No PROC-* -> Scope mapping",
+    "No runtime projection to G4 / boundary ports / coordinator",
+    "No BoundaryPort / PortDirection / PortCategory / PortRegistry",
+    "No coordinator / run-control / state propagation",
+    "No physics / control / solver",
+    "No change to G4 semantics",
+    "No G11 containment change",
+    "No universal semantic relation taxonomy",
+    "No PIM fetch at runtime",
+    "No G12B+ work"
+  ],
+  "required_branch": "feature/vf-vnext-g12a",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G12A.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G12A.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G12A/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/connectivity/",
+    "tests/test_vnext_g12a_reference_graph.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/semantic/",
+    "src/virtual_factory/shwtp/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/core/",
+    "src/virtual_factory/equipment/",
+    "src/virtual_factory/control/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/connectivity/reference_graph.py (generic reference graph, no runtime)",
+    "tests/test_vnext_g12a_reference_graph.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G12A/01-reference-graph-foundation.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Introduce SH-WTP-specific implementation",
+    "Hard-code SH-WTP / PROC-* / PIM relation names / plant-specific evidence vocabulary",
+    "Create a universal relation-class enum",
+    "Use BoundaryPort / PortDirection / PortCategory / PortRegistry",
+    "Integrate with coordinator / run-control / runtime projection",
+    "Modify G4 semantics",
+    "Infer edges from containment or names",
+    "Start G12B+"
+  ],
+  "stop_conditions": [
+    "Generic endpoint identity cannot be represented without changing G1 authority semantics",
+    "Implementation requires changing G4 runtime semantics",
+    "A universal semantic relation taxonomy must be chosen",
+    "Runtime projection rules must be decided",
+    "Endpoint equality/edge identity semantics require a product-level choice not resolved by this contract",
+    "Production code would need to infer semantic meaning from names/containment"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Generic immutable external endpoint identity (authority + entity id + optional kind), no StructuralPath requirement", "rule": {"field": "plan.endpoint", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Immutable reference edge (edge_id/source/target/relation_type/evidence/confidence/status/gaps/runtime_effect=none)", "rule": {"field": "plan.edge", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Graph supports fan-out/fan-in/many-to-many/cycles/non-Scope endpoints/deterministic ordering", "rule": {"field": "plan.graph", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Fail closed on empty endpoint, empty relation type, duplicate edge id, duplicate logical relation", "rule": {"field": "plan.fail_closed", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "No SH-WTP/PROC-*/PIM hard-coding; no universal relation enum; no G4 semantics change; no containment coupling", "rule": {"field": "plan.generic", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Deterministic serialization/inspection (endpoints/edges/relation/provenance/gaps/runtime_effect)", "rule": {"field": "plan.serialization", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "New G12A tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Complete canonical vNext baseline + G4/G11/G10/G9/G7/ASSY/continuous/UI/full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}
