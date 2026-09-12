@@ -122,7 +122,11 @@ class TestSelectShwtp:
         mon = _monitor()
         view = mon.select("shwtp")
         assert view["workspace_id"] == "shwtp"
-        assert view["runtime"] == "SH-WTP X2 whole plant"
+        # VF-SHW-X3: the canonical shwtp runtime is the X3 whole-plant profile
+        assert view["runtime"] in (
+            "SH-WTP X3 whole plant (1 s windows, two PI loops)",
+            "SH-WTP whole plant (canonical X3 profile; X2/G21 compatible)",
+        )
 
     def test_shwtp_shows_canonical_whole_plant_with_g21_compatibility(self):
         from virtual_factory.shwtp.whole_plant import whole_plant_scope_metadata

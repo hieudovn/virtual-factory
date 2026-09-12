@@ -1,0 +1,66 @@
+{
+  "acquire_release": "a conduit reserves its capacity components ONCE, when water ENTERS it; the forward emission of the next tick releases it. A series hop is never charged twice; a parallel branch from the same header shares the same tick.",
+  "cancellation": "a trip/stop removes the request, so the reservation is released on the following tick; nothing is held without a parcel",
+  "queue_bound_m3": 40.0,
+  "resource_identity": "an edge/trunk/element reservation is a FLOW CAPACITY token in m3/s, published to the processors in m3/h; a receiver reservation is a VOLUME headroom expressed as an equivalent one-tick rate. It is never water, never an extra source or sink.",
+  "steady_state": {
+    "charged_m3": {
+      "vf-shw-edge-t102-t103": 0.0125,
+      "vf-shw-edge-t103-t104": 0.0125
+    },
+    "charges_cover_the_parcel": true,
+    "limited_bindings": {
+      "vf-shw-edge-t100-line2": {
+        "budget_m3_s": 0.00198,
+        "limiting_factor": "receiver_capacity",
+        "requested_m3_s": 0.002,
+        "source_scope": "vf-shw-node-t100",
+        "target_scope": "vf-shw-node-line2-aggregate"
+      },
+      "vf-shw-edge-t104-t105": {
+        "budget_m3_s": 0.01,
+        "limiting_factor": "source_availability",
+        "requested_m3_s": 0.0125,
+        "source_scope": "vf-shw-node-t104",
+        "target_scope": "vf-shw-node-t105"
+      },
+      "vf-shw-edge-wash-t106": {
+        "budget_m3_s": 0.0,
+        "limiting_factor": "source_availability",
+        "requested_m3_s": 0.005,
+        "source_scope": "vf-shw-node-wash-t110",
+        "target_scope": "vf-shw-node-t106"
+      }
+    },
+    "moved_m3": {
+      "vf-shw-edge-t102-t103": 0.01,
+      "vf-shw-edge-t103-t104": 0.01
+    },
+    "no_double_count": true,
+    "queued_volume_m3": 0.139116085771,
+    "trunk_remaining_m3_s": {
+      "line1_process_trunk|vf-shw-node-chem-dosing": 0.0125,
+      "line1_process_trunk|vf-shw-node-dist-p108": 0.0125,
+      "line1_process_trunk|vf-shw-node-line2-aggregate": 0.0125,
+      "line1_process_trunk|vf-shw-node-network-demand": 0.0125,
+      "line1_process_trunk|vf-shw-node-raw-intake": 0.0125,
+      "line1_process_trunk|vf-shw-node-raw-source": 0.0125,
+      "line1_process_trunk|vf-shw-node-sludge-t201": 0.0125,
+      "line1_process_trunk|vf-shw-node-t100": 0.0125,
+      "line1_process_trunk|vf-shw-node-t101": 0.0,
+      "line1_process_trunk|vf-shw-node-t102": 0.0,
+      "line1_process_trunk|vf-shw-node-t103": 0.0,
+      "line1_process_trunk|vf-shw-node-t104": 0.0025000000000000005,
+      "line1_process_trunk|vf-shw-node-t105": 0.004499989277777771,
+      "line1_process_trunk|vf-shw-node-t106": 0.0125,
+      "line1_process_trunk|vf-shw-node-t108": 0.0125,
+      "line1_process_trunk|vf-shw-node-wash-t110": 0.0125
+    }
+  },
+  "units": {
+    "internal": "m3/s",
+    "processor_boundary": "m3/h",
+    "queue": "m3"
+  },
+  "verdict": "RESERVATIONS_ARE_CAPACITY_TOKENS_NOT_WATER"
+}

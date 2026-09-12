@@ -108,13 +108,13 @@
       "kp_pct_per_m": 20.0,
       "ki_pct_per_m_s": 2.0,
       "kb_per_s": 0.1,
-      "bias_pct": 50.0,
-      "manual_default_pct": 50.0,
+      "bias_pct": 48.0,
+      "manual_default_pct": 48.0,
       "tracking_time_s": 10.0,
       "output_min_pct": 0.0,
       "output_max_pct": 100.0,
       "slew_pct_per_s": 5.0,
-      "rationale": "20 %/(m) with a 50 % bias; at a 0.5 m error the pump request is 60 % of the 60 m3/h rated transfer flow"
+      "rationale": "synthetic tuning: 20 %/(m) gives 12 m3/h of trim per metre of level error and the 48 % bias places the nominal operating point ON the balance point (28.8 m3/h filtered inflow / 60 m3/h rated transfer), so the loop trims instead of ramping. The declared response is a damped trim with a documented settling horizon, not a claim of site tuning."
     }
   },
   "deferred_loops": {
@@ -140,8 +140,8 @@
   "acceptance": {
     "flow_steady_error_frac_of_sp": 0.05,
     "level_steady_error_m": 0.05,
-    "nominal_settling_window_s": 900,
+    "nominal_settling_window_s": 1800,
     "oscillation_check_s": 900,
-    "note": "settling horizon derived from the tank area and the available flow: 20 m2 x 0.05 m = 1 m3 at ~0.0021 m3/s of net trim is far below 900 s"
+    "note": "settling horizon covers the declared cold start of the LINE1 chain (60 s intake rest timer + 300 s T101 residence + 300 s T104 residence + filter lag) before the PI loops see any flow; the two loops are then evaluated over a >=600 s steady window for the flow error and the level band. The declared bands apply to the NOMINAL operating point (flow SP 0.008 m3/s, level SP 2.5 m); an off-nominal level setpoint of the same loop is documented to settle inside a 0.10 m band with this synthetic tuning (the loop is deliberately not tuned to an unverified site)."
   }
 }

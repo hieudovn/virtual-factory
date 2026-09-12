@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-SHW-X2-C03.json",
-    "changed_files_base": "c3e7893adeead308cce72ac2a76ba24b497d6bdb"
+    "task_contract": ".ai-harness/tasks/VF-SHW-X3.json",
+    "changed_files_base": "92fbabe7b0023785f86058c6d9d6fce3f9c5c861"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -415,6 +415,18 @@
       "purpose": "VF-SHW-X2 whole-plant shallow runnable model + C1 functional control: one canonical SH-WTP RuntimeSession/bridge authority drives the 16 admitted scopes (excluded scopes never execute); exactly the 9 frozen C1 controls evaluate and zero C2 loop is ever evaluated; every contract input resolves at runtime without hidden fallback; explicit_lagged with no same-window feed-through; exact storage balances and a bounded plant water residual; no negative flow/volume and bounded states; filtered turbidity <= settled turbidity; filter DP non-decreasing between backwashes with reset after a valid backwash; deterministic trajectory and reset; assumed-edge provenance visible in runtime records; site_truth=false/synthetic_reference everywhere; the X1-C01 actuator commands preserved exactly. X2-C01 adds: whole_plant_x2 is the canonical default of the shwtp path (g21_slice only via the explicit compatibility factory); the four authority labels are present and fail-closed-guarded on every transfer/monitor/control/balance/input-wiring/provenance/runtime-truth projection; a mutation-sensitive contract-signature test; real T106/T108 semantics; strict input-resolution mapping; per-cycle DP monotonicity plus bite tests. X2-C02 adds: runtime identity bound to the active run-lifecycle attempt context (reset preserves it; new attempt/replay re-issue it; zero-arg/ambient identity fails closed); the committed WASH return consumed at the correct lag exactly once; a ledger-based plant water conservation oracle that counts water only (information signals and unpumped source availability excluded, modelled losses explicit) closing to float rounding across startup/stop/backwash/LINE2/capacity/empty scenarios; and level permissives routed to the declared upstream path without deleting water already received. X2-C03 adds: physical conservation separated from accounting reconciliation (artificially created water stays a diagnostic and can never certify conservation - the SA counterexample now fails), every real discharge bounded by the water actually held (a dry filter forced through a backwash creates no water), and the LINE2 process loss proven to be the declared loss law plus the modelled capacity spill with a negative mutation check.",
       "files": [
         "tests/test_vnext_x2_whole_plant_runtime.py"
+      ]
+    },
+    {
+      "id": "x3_whole_plant_runtime",
+      "gate": "X3",
+      "type": "pytest",
+      "purpose": "VF-SHW-X3 canonical whole-plant execution profile: 16 admitted scopes on deterministic GLOBAL 1-second windows with exactly the two admitted C2 PI loops (T106 inlet flow, T108 level) plus the nine reused C1 functions with explicit command arbitration; the FULL-RUN independent water identity closes from tick zero (storage flow delta + created water + in-transit - cumulative in + cumulative out - declared losses) with the storage integration gap and created water as separate physical claims, so a warm-up differenced interval can only supplement it; every flow is limited BEFORE transfer by source water, reserved receiver headroom, edge/shared-trunk/valve/pump throughput and hydraulic feasibility, where a reservation is a capacity token that is acquired at a conduit entry, released by the forward emission, never double charged and never held without a parcel; the PIs drive the REAL actuators (measured valve->flow and pump->level response, feasible SP tracking, disturbance rejection, unreachable-SP saturation with an explicit reason, backwash arbitration with the integral held and a bumpless release, AUTO/MANUAL continuity); pump head and motor power feasibility over the operating envelope with an exactly-zero OFF pump and unit-explicit energy integration; mutations of the physical envelope (injected or created water, a dropped delivery, a narrow-pipe breach, an impossible head, a motor overload) fail the oracle; and the canonical default is the X3 profile with the accepted X2 60-second zero-C2 model and the G21 slice explicitly constructible.",
+      "files": [
+        "tests/test_vnext_x3_physical_bounds.py",
+        "tests/test_vnext_x3_reservations.py",
+        "tests/test_vnext_x3_two_pi_control.py",
+        "tests/test_vnext_x3_session_wiring.py"
       ]
     },
     {

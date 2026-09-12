@@ -412,10 +412,15 @@ def _shwtp_view_extra(session: RuntimeSession) -> dict:
         model = getattr(bridge, "slice", None) if bridge is not None else None
 
     if model is not None and hasattr(model, "monitor_rows"):
-        model_label = (
-            "SH-WTP X2 whole plant"
-            if getattr(model, "model_driven_windows", False)
-            else "SH-WTP G21 plant slice"
+        declared_label = getattr(model, "model_label", None)
+        model_label = str(
+            declared_label
+            if declared_label
+            else (
+                "SH-WTP X2 whole plant"
+                if getattr(model, "model_driven_windows", False)
+                else "SH-WTP G21 plant slice"
+            )
         )
         rows = tuple(model.monitor_rows())
         assumed = (
@@ -456,7 +461,7 @@ def _shwtp_view_extra(session: RuntimeSession) -> dict:
             whole_plant_scope_metadata,
         )
 
-        model_label = "SH-WTP X2 whole plant"
+        model_label = "SH-WTP whole plant (canonical X3 profile; X2/G21 compatible)"
         metadata = whole_plant_scope_metadata()
         assumed = list(whole_plant_assumed_topology())
         structure = [

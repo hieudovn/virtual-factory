@@ -1,0 +1,22 @@
+{
+  "attempt_run_id": "shwtp-0001",
+  "canonical_default_model": "whole_plant_x3",
+  "canonical_scenario_id": "shwtp-x3-whole-plant",
+  "g21_compatibility": {
+    "model": "g21_slice",
+    "scopes": 5
+  },
+  "model_class": "WholePlantX3Runtime",
+  "model_run_id_matches_attempt": true,
+  "new_attempt_issues_new_identity": true,
+  "reset_is_deterministic": true,
+  "reset_preserves_identity": true,
+  "tick_s": 1.0,
+  "verdict": "X3_CANONICAL_WITH_X2_AND_G21_COMPATIBILITY",
+  "x2_compatibility": {
+    "has_c2_layer": false,
+    "model": "whole_plant_x2",
+    "model_class": "WholePlantX2Runtime",
+    "tick_s": 60.0
+  }
+}

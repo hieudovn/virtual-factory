@@ -415,6 +415,15 @@ class WholePlantX3Runtime:
     def model_driven_windows(self) -> bool:
         return True
 
+    @property
+    def model_label(self) -> str:
+        """Human-readable identity of the canonical X3 execution profile."""
+        return "SH-WTP X3 whole plant (1 s windows, two PI loops)"
+
+    @property
+    def profile_id(self) -> str:
+        return self.profile.profile_id
+
     def runtime_truth(self) -> dict:
         return {
             "model": X3_MODEL_SCHEMA,
@@ -489,8 +498,16 @@ class WholePlantX3Runtime:
                     "sp_admissible": list(config.sp_admissible),
                     "mode": status.mode if status else "AUTO",
                     "pv": status.pv if status else None,
+                    "error": status.error if status else None,
                     "requested_mv": status.requested_mv if status else None,
                     "applied_mv": status.applied_mv if status else None,
+                    "pi_output_mv": status.pi_output_mv if status else None,
+                    "applied_by": status.applied_by if status else "pi",
+                    "arbitration": (
+                        self._control.arbitration.get(config.mv_signal, "")
+                        if self._control is not None
+                        else ""
+                    ),
                     "integral": status.integral if status else 0.0,
                     "saturated": status.saturated if status else False,
                     "limitation_reason": status.limitation_reason if status else "not_evaluated",
@@ -761,6 +778,10 @@ class WholePlantX3Runtime:
         self._allocation = None
         self._pump_points = {}
         self._alarms = set()
+        # a reset starts a NEW deterministic state: the pipeline bookkeeping and the
+        # marked evaluation window must not carry anything over from the old run
+        self._network_delivered_m3 = 0.0
+        self._balance_baseline = None
         self._record_transfers()
         self._feedback = self._committed_feedback()
 
@@ -802,14 +823,14 @@ class WholePlantX3Runtime:
         Every transfer emitted this window is consumed by its target at the NEXT
         tick, so it is still physically in transit at the end of this window --
         including the DIST discharge that has not yet reached the demand sink.
+        The value is deliberately NOT re-rounded here: the participants integrate
+        the same float flow, and re-rounding the inventory would inject a
+        per-tick mismatch into the conservation identity.
         """
-        return round(
-            sum(
-                row["water_m3"]
-                for row in self._transfers
-                if row["transfer_kind"] == "physical_water"
-            ),
-            12,
+        return sum(
+            row["water_m3"]
+            for row in self._transfers
+            if row["transfer_kind"] == "physical_water"
         )
 
     @property
@@ -837,13 +858,10 @@ class WholePlantX3Runtime:
         )
 
     def _water_of(self, rows: Sequence[Mapping[str, Any]], binding_id: str) -> float:
-        return round(
-            sum(
-                float(row["water_m3"])
-                for row in rows
-                if row["binding_id"] == binding_id and row["transfer_kind"] == "physical_water"
-            ),
-            12,
+        return sum(
+            float(row["water_m3"])
+            for row in rows
+            if row["binding_id"] == binding_id and row["transfer_kind"] == "physical_water"
         )
 
     @property
@@ -883,20 +901,18 @@ class WholePlantX3Runtime:
         # D8 pipeline accounting: the DIST discharge leaves the plant when the
         # demand sink CONSUMES it (one tick after the transfer was emitted), so
         # the emitted transfer is in-transit inventory rather than an early OUT.
-        delivered = float(
-            self.participants["vf-shw-node-network-demand"].monitor_values()["delivered_total_m3"]
-        )
-        self.water.plant_out_m3 += round(delivered - self._network_delivered_m3, 12)
+        # The identity reads the RAW integrated quantity, never the display-rounded
+        # monitor projection (which would inject a rounding drift every tick).
+        delivered = float(self.participants["vf-shw-node-network-demand"]._volume_in_m3)
+        self.water.plant_out_m3 += delivered - self._network_delivered_m3
         self._network_delivered_m3 = delivered
         self.water.plant_out_m3 += (
-            self.participants["vf-shw-node-sludge-t201"].monitor_values()["processed_m3h"] * dt_h
+            float(self.participants["vf-shw-node-sludge-t201"]._processed_m3h) * dt_h
         )
         # a pass-through conduit holds exactly one window of committed water before
         # forwarding it: that physical holding is explicit inventory, never a leak
         for scope_id, value in self.pending_by_scope.items():
-            self.water.pipeline_inventory_m3 = round(
-                self.water.pipeline_inventory_m3 + value, 12
-            )
+            self.water.pipeline_inventory_m3 += value
         line2 = self.participants["vf-shw-node-line2-aggregate"].monitor_values()
         self.water.process_loss_m3 += (
             line2["declared_loss_m3h"] + line2["capacity_spill_m3h"]
@@ -907,11 +923,11 @@ class WholePlantX3Runtime:
         self.water.information_m3 += self.information_inventory_m3
         self.water.source_availability_m3 += self.source_availability_m3
         self.water.in_transit_m3 = self.in_transit_m3
-        self.water.overflow_m3 = round(
-            sum(participant._overflow_m3 for participant in self.participants.values()), 12
+        self.water.overflow_m3 = sum(
+            participant._overflow_m3 for participant in self.participants.values()
         )
-        self.water.created_water_m3 = round(
-            sum(participant._shortfall_m3 for participant in self.participants.values()), 12
+        self.water.created_water_m3 = sum(
+            participant._shortfall_m3 for participant in self.participants.values()
         )
 
     def _update_energy(self) -> None:
@@ -922,32 +938,50 @@ class WholePlantX3Runtime:
 
     # ── reports ────────────────────────────────────────────────────────────
     def balance_report(self) -> dict:
-        """Plant + per-scope water balance over the marked evaluation window."""
+        """Plant + per-scope water balance (SA Issue #98 section 2 identity).
+
+        The plant identity is evaluated on ONE consistent basis, from tick zero:
+
+        ``R(t) = [storage_flow_delta(t) + pipeline_inventory(t) + transit(t)]
+                 - cumulative_in + cumulative_out - declared_losses``
+
+        where ``storage_flow_delta`` is the storage change DERIVED FROM THE FLOWS
+        each participant actually integrated (explicit overflow/shortfall included)
+        rather than from the float state variable, and ``pipeline_inventory`` is the
+        explicitly initialised holding of the pass-through conduits (zero at tick
+        zero, because their committed state starts empty). ``residual_m3`` is this
+        full-run residual and is authoritative; the state-based storage delta is
+        reported next to it as an integration diagnostic.
+        """
         storage_rows = [
             {**participant.balance(), **AUTHORITY_LABELS}
             for participant in self.participants.values()
             if getattr(participant, "storage", False)
         ]
-        stored_delta = round(
-            sum(
-                participant._storage_volume() - getattr(participant, "_initial_volume_m3", 0.0)
-                for participant in self.participants.values()
-                if getattr(participant, "storage", False)
-            ),
-            12,
+        storage_state_delta = sum(
+            participant._storage_volume() - getattr(participant, "_initial_volume_m3", 0.0)
+            for participant in self.participants.values()
+            if getattr(participant, "storage", False)
         )
-        created = round(
-            sum(participant._shortfall_m3 for participant in self.participants.values()), 12
+        storage_flow_delta = sum(
+            participant._volume_in_m3 - participant._volume_out_m3
+            for participant in self.participants.values()
+            if getattr(participant, "storage", False)
         )
-        overflow = round(
-            sum(participant._overflow_m3 for participant in self.participants.values()), 12
+        created = sum(
+            participant._shortfall_m3 for participant in self.participants.values()
         )
+        overflow = sum(
+            participant._overflow_m3 for participant in self.participants.values()
+        )
+        stored_delta = storage_flow_delta + created
+        integration_gap = storage_state_delta - storage_flow_delta - created + overflow
+        inside = stored_delta + self.in_transit_m3
         residual = round(
-            (stored_delta + self.in_transit_m3)
+            inside
             - self.water.plant_in_m3
             + self.water.plant_out_m3
-            + self.water.process_loss_m3
-            + overflow,
+            + self.water.process_loss_m3,
             12,
         )
         baseline = self._balance_baseline
@@ -955,7 +989,10 @@ class WholePlantX3Runtime:
             residual - float(baseline["residual_m3"]) if baseline else residual, 12
         )
         scale = max(
-            1.0, abs(self.water.plant_in_m3) + abs(self.water.plant_out_m3) + abs(stored_delta)
+            1.0,
+            abs(self.water.plant_in_m3)
+            + abs(self.water.plant_out_m3)
+            + abs(stored_delta),
         )
         tolerance = round(
             PLANT_WATER_TOLERANCE_RELATIVE * scale
@@ -968,11 +1005,19 @@ class WholePlantX3Runtime:
             self.water.process_loss_audit_failures == 0
             and abs(self.water.process_loss_m3 - self.water.process_loss_observed_m3) <= tolerance
         )
-        # physical validity is asserted on the EVALUATION WINDOW: the change of the
-        # plant content must equal IN - OUT - declared loss over that window. The
-        # cumulative form additionally carries the one-window pipeline initialisation
-        # of the pass-through conduits, which is reported separately as inventory.
-        physical_valid = abs(window_residual) <= tolerance and created_ok and audit_ok
+        # physical validity is asserted on the FULL RUN from tick zero: a
+        # differenced window after warm-up can supplement the diagnosis but can
+        # never certify a run whose full-run conservation failed. The storage
+        # INTEGRATION gap is a separate physical claim: a state stock that the
+        # integrated flows do not explain (a duplicated or missing initialisation,
+        # a hidden clamp) must fail even when the flow-based residual still closes.
+        integration_ok = abs(integration_gap) <= tolerance
+        physical_valid = (
+            abs(residual) <= tolerance and integration_ok and created_ok and audit_ok
+        )
+        window_valid = (
+            abs(window_residual) <= tolerance and integration_ok and created_ok and audit_ok
+        )
         return {
             "tick_index": self._tick_index,
             "storage_balances": storage_rows,
@@ -983,12 +1028,20 @@ class WholePlantX3Runtime:
                 ),
                 "plant_in_m3": round(self.water.plant_in_m3, 9),
                 "plant_out_m3": round(self.water.plant_out_m3, 9),
-                "stored_delta_m3": stored_delta,
+                "stored_delta_m3": round(stored_delta, 12),
+                "storage_flow_delta_m3": round(storage_flow_delta, 12),
+                "storage_state_delta_m3": round(storage_state_delta, 12),
+                "storage_integration_gap_m3": round(integration_gap, 12),
+                "storage_integration_gap_within_rounding": integration_ok,
                 "transit_inventory_m3": round(self.in_transit_m3, 9),
                 "pipeline_inventory_m3": round(self.water.pipeline_inventory_m3, 9),
-                "water_inside_m3": round(
-                    stored_delta + self.in_transit_m3 + self.water.pipeline_inventory_m3, 9
+                "pipeline_inventory_note": (
+                    "the explicitly declared holding of the pass-through conduits at the "
+                    "current tick (empty at tick zero); it is REPORTED inventory, never an "
+                    "identity term: the pending-slug transit inventory already carries the "
+                    "water the conduits hold"
                 ),
+                "water_inside_m3": round(stored_delta + self.in_transit_m3, 9),
                 "process_loss_m3": round(self.water.process_loss_m3, 9),
                 "process_loss_observed_m3": round(self.water.process_loss_observed_m3, 9),
                 "process_loss_declared_law_plus_spill": audit_ok,
@@ -1003,13 +1056,21 @@ class WholePlantX3Runtime:
                 "residual_m3": residual,
                 "closure_m3": residual,
                 "window_residual_m3": window_residual,
+                "residual_basis": (
+                    "R(t) = [storage_flow_delta + created_water + in_transit] - cumulative_in "
+                    "+ cumulative_out - declared_losses, evaluated from tick zero; "
+                    "storage_flow_delta is derived from the flows the participants "
+                    "integrated, in_transit is the pending-slug inventory of the current "
+                    "tick (empty at tick zero)"
+                ),
                 "window_basis": (
-                    "window residual = content change minus (IN - OUT - declared loss) over the "
-                    "marked evaluation window; the cumulative residual additionally carries "
-                    "the one-window pass-through pipeline initialisation (explicit inventory, "
-                    "never created water)"
+                    "supplementary diagnostic: window residual = the same identity "
+                    "differenced over the marked evaluation window; it can never clear a "
+                    "failed full-run residual"
                 ),
                 "evaluation_window_start_tick": int(baseline["tick_index"]) if baseline else 0,
+                "window_physical_valid": window_valid,
+                "full_run_authoritative": True,
                 "tolerance_m3": tolerance,
                 "tolerance_basis": (
                     "relative + absolute + per-tick deterministic rounding allowance "
@@ -1017,10 +1078,11 @@ class WholePlantX3Runtime:
                 ),
                 "conserved": physical_valid,
                 "physical_valid": physical_valid,
-                "accounting_reconciled": abs(window_residual - created) <= tolerance,
+                "accounting_reconciled": abs(residual - created) <= tolerance,
                 "accounting_note": (
                     "accounting_reconciled subtracts the created-water diagnostic and is "
-                    "NOT a physical-conservation claim"
+                    "NOT a physical-conservation claim; physical_valid carries the "
+                    "full-run identity with no compensation term"
                 ),
                 "bounded": physical_valid,
             },

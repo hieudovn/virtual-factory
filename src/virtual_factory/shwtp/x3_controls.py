@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from virtual_factory.shwtp.x2_controls import C1ControllerSet, C1Evaluation, build_c1_controllers
@@ -38,6 +38,18 @@ X3_CONTROL_ERROR_SIGN_LEVEL = "pv_minus_sp"
 
 class X3ControlError(ValueError):
     """Raised when the X3 control layer cannot honour its contract (fail closed)."""
+
+
+def _with_actual_actuator(status: PIStatus, *, actual_mv: float, applied_by: str) -> PIStatus:
+    """Stamp the REAL actuator value and its owner onto a PI status.
+
+    ``applied_mv`` always means the value the plant actually received; the PI's own
+    pre-arbitration command stays available as ``pi_output_mv``.
+    """
+    detail = dict(status.detail)
+    detail["applied_by"] = applied_by
+    detail.setdefault("pi_output_mv", round(status.applied_mv, 9))
+    return replace(status, applied_mv=actual_mv, detail=detail)
 
 
 def _num(value: Any, name: str) -> float:
@@ -71,6 +83,16 @@ class PIStatus:
     limitation_reason: str
     alarm: str | None = None
     detail: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def pi_output_mv(self) -> float:
+        """What the PI itself would command (before actuator arbitration)."""
+        return round(float(self.detail.get("pi_output_mv", self.applied_mv)), 9)
+
+    @property
+    def applied_by(self) -> str:
+        """Who currently owns the actuator (``pi`` or the arbitrating C1 rule)."""
+        return str(self.detail.get("applied_by", "pi"))
 
 
 class PIController:
@@ -136,7 +158,15 @@ class PIController:
         forced_stop: bool = False,
         interlock: bool = False,
         interlock_alarm: str | None = None,
+        external_override: bool = False,
     ) -> PIStatus:
+        """Evaluate one scan.
+
+        ``external_override`` means the actuator is currently owned by the C1
+        arbitration (a backwash step or a permissive): the PI still reports its
+        requested output but its integral is HELD, so the release is bumpless and
+        the loop cannot wind up while it is not driving the plant.
+        """
         pv = _num(pv, "pv")
         dt_s = _num(dt_s, "dt_s")
         if dt_s <= 0:
@@ -216,13 +246,40 @@ class PIController:
 
         u_raw = self._requested_mv(error)
         clamped = _clamp(u_raw, config.output_min, config.output_max)
-        saturated = abs(clamped - u_raw) > 1e-12
+        driving_up = clamped >= config.output_max - 1e-12 and error > 0.0
+        driving_down = clamped <= config.output_min + 1e-12 and error < 0.0
+        # an output that sits at a limit while the error still drives further is a
+        # SATURATED loop even when the raw request never exceeded the range: the PV
+        # cannot follow the SP. Report it explicitly instead of "ok".
+        saturated = abs(clamped - u_raw) > 1e-12 or driving_up or driving_down
         if saturated:
             alarm = "setpoint_unreachable_or_output_saturated"
             reason = "output_saturated"
+        if external_override:
+            # the C1 arbitration owns the actuator this tick: hold the integral so
+            # the PI neither winds up nor fights the protecting rule
+            requested = clamped
+            return PIStatus(
+                controller_id=config.controller_id,
+                mode="AUTO",
+                sp=sp,
+                pv=pv,
+                error=error,
+                u_raw=u_raw,
+                requested_mv=requested,
+                applied_mv=self._applied_mv,
+                integral=self._integral,
+                saturated=saturated,
+                limited=True,
+                limitation_reason="external_c1_override_integral_held",
+                alarm=alarm,
+                detail={
+                    "pi_output_mv": round(clamped, 9),
+                    "applied_by": "c1_arbitration",
+                    "external_override": True,
+                },
+            )
         # integrate only while not driving saturation further
-        driving_up = clamped >= config.output_max - 1e-12 and error > 0.0
-        driving_down = clamped <= config.output_min + 1e-12 and error < 0.0
         if not (driving_up or driving_down):
             self._integral += config.ki * error * dt_s
         applied = self._apply_slew(clamped, dt_s)
@@ -245,6 +302,11 @@ class PIController:
             limited=limited,
             limitation_reason=reason,
             alarm=alarm,
+            detail={
+                "pi_output_mv": round(applied, 9),
+                "applied_by": "pi",
+                "external_override": False,
+            },
         )
 
     def _requested_mv(self, error: float) -> float:
@@ -270,7 +332,6 @@ class PIController:
             "force_stopped": self._forced_stop,
         }
 
-
 @dataclass(frozen=True, slots=True)
 class X3ControlEvaluation:
     """The arbitrated X3 control result of one tick."""
@@ -294,6 +355,8 @@ class X3ControlEvaluation:
                     "u_raw": status.u_raw,
                     "requested_mv": status.requested_mv,
                     "applied_mv": status.applied_mv,
+                    "pi_output_mv": status.pi_output_mv,
+                    "applied_by": status.applied_by,
                     "integral": status.integral,
                     "saturated": status.saturated,
                     "limited": status.limited,
@@ -332,6 +395,10 @@ class X3ControlLayer:
             profile.controllers[self.level_loop_id], error_sign=X3_CONTROL_ERROR_SIGN_LEVEL
         )
         self._tick_index = 0
+        #: actuator ownership of the previous tick (explicit_lagged): while a C1
+        #: rule owns an actuator the corresponding PI holds its integral
+        self._flow_override = False
+        self._level_override = False
 
     # lifecycle -------------------------------------------------------------
     def reset(self) -> None:
@@ -339,6 +406,8 @@ class X3ControlLayer:
         self.flow_pi.reset()
         self.level_pi.reset()
         self._tick_index = 0
+        self._flow_override = False
+        self._level_override = False
 
     @property
     def active_c2_loop_ids(self) -> tuple[str, ...]:
@@ -369,6 +438,7 @@ class X3ControlLayer:
             forced_stop=bool(trips.get(self.flow_loop_id, False)),
             interlock=bool(trips.get("f106_inlet_path_interlock", False)),
             interlock_alarm=interlock_alarms.get("f106_inlet_path_interlock"),
+            external_override=self._flow_override,
         )
         level_status = self.level_pi.evaluate(
             pv=_num(t108_level_m, "t108_level_m"),
@@ -376,6 +446,7 @@ class X3ControlLayer:
             forced_stop=bool(trips.get(self.level_loop_id, False)),
             interlock=bool(trips.get("t108_pump_interlock", False)),
             interlock_alarm=interlock_alarms.get("t108_pump_interlock"),
+            external_override=self._level_override,
         )
 
         commands: dict[str, Any] = dict(c1.outputs)
@@ -422,6 +493,10 @@ class X3ControlLayer:
         commands["f106_inlet_valve_c1_reference_pct"] = c1_valve
         commands["f106_flow_pi_requested_pct"] = flow_status.requested_mv
         commands["f106_flow_pi_applied_pct"] = valve
+        self._flow_override = arbitration[self.valve_signal] != "pi_flow_output"
+        flow_status = _with_actual_actuator(
+            flow_status, actual_mv=valve, applied_by=arbitration[self.valve_signal]
+        )
 
         # ── T108 transfer pump: trips > C1 permissive > PI ──────────────────
         c1_speed = _num(c1.outputs.get(self.pump_signal, 0.0), "c1.transfer_pump_speed_cmd")
@@ -441,6 +516,10 @@ class X3ControlLayer:
         commands["t108_transfer_speed_c1_reference_pct"] = c1_speed
         commands["t108_level_pi_requested_pct"] = level_status.requested_mv
         commands["t108_level_pi_applied_pct"] = speed
+        self._level_override = arbitration[self.pump_signal] != "pi_level_output"
+        level_status = _with_actual_actuator(
+            level_status, actual_mv=speed, applied_by=arbitration[self.pump_signal]
+        )
         #: PI status exposed to the model/evidence (never a command override).
         commands["x3_pi_status"] = {
             self.flow_loop_id: flow_status,

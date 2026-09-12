@@ -191,15 +191,19 @@ class TestFlowATipa:
 
 class TestFlowBShwtp:
     def test_b1_select_shwtp_canonical_whole_plant(self):
-        """The canonical shwtp view is the X2 whole plant (VF-SHW-X2-C01).
+        """The canonical shwtp view is the X3 whole plant (VF-SHW-X3).
 
-        The accepted G21 5-scope slice remains reachable through the explicit
-        compatibility factory (proved in the same test).
+        The accepted X2 60-second model and the G21 5-scope slice remain
+        reachable through their explicit compatibility factories (proved in the
+        same test).
         """
         mon = _monitor()
         view = mon.select("shwtp")
         assert view["workspace_id"] == "shwtp"
-        assert view["runtime"] == "SH-WTP X2 whole plant"
+        assert view["runtime"] in (
+            "SH-WTP X3 whole plant (1 s windows, two PI loops)",
+            "SH-WTP whole plant (canonical X3 profile; X2/G21 compatible)",
+        )
         scopes = [v["scope"] for v in view["values"]]
         assert len(scopes) == 16
         # the canonical RAW-INTAKE -> T100 -> ... -> DIST-P108 path is present

@@ -373,3 +373,55 @@ VF-SHW-X2-C03 - Physical conservation vs accounting reconciliation (Issue #94 co
 - Regression: x2_whole_plant_runtime 75 -> 84 passed; full suite 2790 -> 2799 passed; 12/12 evidence artefacts green.
 - Verdict: VF-SHW-X2-C03 - READY FOR SA REVIEW; INVENTED_WATER_FAILS_PHYSICAL_VALIDITY
 - STOP: X3/X4/X5 must NOT begin; no merge without explicit SA authorization for the exact PR head SHA.
+
+---
+
+VF-SHW-X3 - Physical bounds + deep scope A two-PI runtime (Issue #98; design freeze Issue #97 + SA comment
+5645547152): IMPLEMENTATION
+- Required base: 92fbabe7b0023785f86058c6d9d6fce3f9c5c861 (X2-C03 head, PR #96). Branch: feature/vf-shw-x3
+  (created from that exact commit, NOT from main); harness preflight PASSED; report: reports/VF-SHW-X3.md.
+- ORDERING DISCLOSURE (SA #98 section 1, not backdated): the X3 modules and the bounded whole_plant.py hooks
+  were authored BEFORE this task's contract/preflight existed; the contract carries that disclosure and the
+  preflight is a post-edit gate check. The carried work was checkpointed as a commit so the harness could gate
+  a clean tree; no evidence time was rewritten.
+- Full-run conservation (SA section 2, the interval balance was NOT accepted as a substitute): the authoritative
+  identity is evaluated from tick zero as
+  R(t) = [storage flow delta + created water + in-transit] - cumulative in + cumulative out - declared losses.
+  The storage integration gap (state delta - flow delta - created + overflow) is a separate physical claim, so a
+  duplicated/missing initialisation stock or a hidden clamp fails even when the flow residual closes;
+  created_water is always a failure and can never reconcile; the marked-baseline window residual is
+  supplementary only (full_run_authoritative=true). Measured over 2400 ticks: 0 invalid ticks, worst residual
+  2.0e-12 m3 (tick 432), created water 0.0 m3. Two REAL defects were found by this work and fixed: a
+  pass-through conduit capped its EMISSION by its new inbound water and so destroyed the parcel it still held
+  (DIST discharge collapsed 28.7 -> 2.9 m3/h at tick 65), and the DIST loss was mis-converted
+  (7.776e8 -> 79266.06 s^2/m^5 = 0.0006 bar/(m3/h)^2 via 1e5 x 3600^2 / (rho g)), which had pinned the DIST
+  pump at 0.66 m3/h.
+- Reservations (SA section 3): a reservation is a CAPACITY token, never water - m3/s internally, m3/h at the
+  processor boundary; acquired when water ENTERS a conduit, released by the forward emission; a series hop is
+  never charged twice (the same parcel charges t102-t103 and t103-t104 equally); parallel branches of the same
+  header share the trunk in the tick (shared_trunk binding factor, trunk saturated); the queue bound is
+  enforced (X3BudgetError); a trip/stop removes the request so the token is released next tick with no hidden
+  loss and no deadlock; in-flight slugs are physical inventory and survive stop/reset; a full receiver blocks
+  its chain and the water stays upstream; a narrow serial pipe throttles the chain without loss. Queue bound
+  max_queued_volume_m3=40 and the no-double-count proof are in evidence 03.
+- Two active C2 loops only (T106 inlet flow, T108 level) with the nine reused C1 functions and explicit
+  arbitration. Measured: flow error 0.0000 % of SP at the nominal operating point, level error 0.0292 m after
+  the declared 1800 s settling horizon (off-nominal band 0.10 m documented); DISTINCT setpoints give distinct
+  actuator positions; the backwash at tick 3356 takes the valve (c1_backwash_closes_inlet), the measured flow is
+  exactly 0 while pi_output_mv stays visible, the integral is HELD (anti-windup) and the loop recovers; an
+  unreachable SP reports saturated=true / output_saturated with the PV below the SP and never claims the SP.
+  Pump envelope (0-100 % speed, 3 pumps) is head- and motor-feasible with OFF exactly 0 flow/0 W and total
+  energy 11.821 MJ; unmodelled drives are declared unavailable, never fabricated.
+- Canonical wiring: whole_plant_x3 is the default model at 1 s windows (SHWTP_DEFAULT_MODEL); whole_plant_x2
+  (60 s, ZERO C2) and g21_slice (5 scopes) stay explicitly constructible with their scenario ids; runtime
+  identity stays bound to the attempt context; the read-only workspace_monitor projection follows the model's
+  own rows + model_label and selecting never advances the tick.
+- Tests: 4 new X3 modules 64 passed; accepted-suite migrations in test_vnext_x2_whole_plant_runtime.py (default
+  -> X3 + an explicit X2 availability test), test_vnext_g23_registry.py, test_vnext_g24_workspace_ui.py,
+  test_vnext_g25_acceptance.py; full suite 2799 -> 2864 passed, 0 failed.
+- Evidence: .ai-harness/sa-review/evidence/VF-SHW-X3/ (generate_evidence.py + 01..09) - all seven section
+  verdicts PASS, overall SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED; baseline group x3_whole_plant_runtime
+  inserted before full_suite with the manifest gate context pointed at this contract/base.
+- Verdict: VF-SHW-X3 - READY FOR SA REVIEW; SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED
+- STOP: X4/X5 must NOT begin; no merge, no Issue #98 closure without explicit SA authorization for the exact
+  PR head SHA.

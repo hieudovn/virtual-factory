@@ -1,0 +1,41 @@
+{
+  "cases": {
+    "created_water": {
+      "created_water_m3": 1.0,
+      "detected": true,
+      "physical_valid": false
+    },
+    "full_receiver": {
+      "created_water_m3": 0.0,
+      "physical_valid": false,
+      "safe": true,
+      "volume_within_capacity": true
+    },
+    "impossible_head_or_loss": {
+      "configured_flow_at_80pct_m3h": 48.096000000000004,
+      "detected": true,
+      "wrong_r_s2_m5_flow_at_80pct_m3h": 0.6594543198736362
+    },
+    "injected_state_water": {
+      "baseline_valid": true,
+      "detected": true,
+      "physical_valid": false,
+      "storage_integration_gap_m3": -0.250000000002
+    },
+    "motor_overload": {
+      "bounded": true,
+      "detected": true,
+      "electric_w": 0.0,
+      "flow_m3h": 0.0,
+      "motor_rating_w": 250.0
+    },
+    "narrow_serial_pipe": {
+      "bounded": true,
+      "chain_throughput_m3_s": 0.002,
+      "narrow_rating_m3_s": 0.002,
+      "no_hidden_loss": true,
+      "water_valid": true
+    }
+  },
+  "verdict": "MUTATIONS_VIOLATE_THE_PHYSICAL_ENVELOPE"
+}

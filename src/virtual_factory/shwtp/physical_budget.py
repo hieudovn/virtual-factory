@@ -417,9 +417,12 @@ def allocate_tick(
         rating: X3EdgeRating = profile.edge(binding_id)
         requested = _nonneg(requested_m3_s.get(binding_id, 0.0), f"{binding_id}.requested_m3_s")
         if pass_through[source]:
-            # a conduit carries what it received, never more; its own component
-            # capacity was already reserved at the entry of the conduit
-            request_eff = min(requested, received[source] + declared_inflow[source])
+            # a conduit must always be able to forward what it already holds (its
+            # committed state) and its own element/rating is the throughput bound;
+            # the NEW inflow is what reserves the shared conduit (see below), so
+            # capping the emission by the newly received water would DESTROY the
+            # water the conduit still holds
+            request_eff = requested
             source_cap = source_remaining.get(source, math.inf)
         else:
             request_eff = requested
@@ -427,7 +430,9 @@ def allocate_tick(
         receiver_cap = receiver_remaining.get(target, math.inf)
         # a conduit is reserved exactly ONCE, at the moment water ENTERS it: a
         # pass-through source merely carries forward water whose whole path was
-        # already reserved, so it is never charged the same hop twice
+        # already reserved, so it is never charged the same hop twice. For a
+        # pass-through receiver the shared forward capacity IS the receiver limit
+        # (the same water must traverse every downstream hop of that path).
         if pass_through[target] and not pass_through[source]:
             keys = conduit[target]
             if keys:
@@ -439,13 +444,11 @@ def allocate_tick(
         limit, factor = min(
             (rating.max_flow_m3_s, "edge_rating"),
             (source_cap, "source_availability"),
-            (receiver_cap, "shared_conduit_capacity"),
+            (receiver_cap, "receiver_capacity"),
             (trunk_cap, "shared_trunk"),
             key=lambda pair: pair[0],
         )
         budget = max(0.0, min(request_eff, limit))
-        if request_eff < requested - 1e-15 and budget >= request_eff - 1e-15:
-            factor = "pass_through_conduit_intake"
         if budget < requested - 1e-15:
             diagnostics.append(f"{binding_id}:{factor}")
         budgets[binding_id] = EdgeBudget(

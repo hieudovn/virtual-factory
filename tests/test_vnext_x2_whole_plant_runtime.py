@@ -255,11 +255,12 @@ class TestCanonicalSessionAuthority:
         assert set(model.participants) == set(SCOPE_PATHS)
         assert model.window_index == 1
 
-    def test_g21_slice_default_is_unchanged(self):
-        session = build_shwtp_session()
+    def test_g21_slice_compatibility_is_unchanged(self):
+        session = build_shwtp_session(model=SHWTP_MODEL_G21_SLICE)
         assert isinstance(session, RuntimeSession)
         assert session.workspace_id == "shwtp"
-        # the accepted G21 slice remains the default model and is untouched
+        assert session.scenario_id == "shwtp-g21-slice"
+        # the accepted G21 slice stays explicitly constructible and untouched
         from virtual_factory.shwtp.expansion import PLANT_SLICE_SCOPES, build_shwtp_plant_slice
 
         assert len(PLANT_SLICE_SCOPES) == 5
@@ -688,18 +689,36 @@ class TestAuthorityLabels:
 
 
 class TestCanonicalDefaultModel:
-    def test_default_session_resolves_to_the_whole_plant_model(self):
+    def test_default_session_resolves_to_the_x3_whole_plant_profile(self):
+        """VF-SHW-X3: the canonical SH-WTP default is the 1-second X3 profile."""
         from virtual_factory.shwtp.session import SHWTP_DEFAULT_MODEL
+        from virtual_factory.shwtp.x3_whole_plant import WholePlantX3Runtime
 
-        assert SHWTP_DEFAULT_MODEL == "whole_plant_x2"
+        assert SHWTP_DEFAULT_MODEL == "whole_plant_x3"
         session = build_shwtp_session()
         assert isinstance(session, RuntimeSession)
         assert session.workspace_id == "shwtp"
         session.advance()
         model = session.record.bridge.model
+        assert isinstance(model, WholePlantX3Runtime)
+        assert len(model.participants) == EXPECTED_SCOPE_COUNT
+        assert model.communication_step_s == 1.0
+        assert len(model.control_layer.active_c2_loop_ids) == 2
+
+    def test_x2_whole_plant_stays_explicitly_available(self):
+        """The accepted X2 model (60 s, zero C2) is unchanged and still selectable."""
+        from virtual_factory.shwtp.session import SHWTP_MODEL_WHOLE_PLANT_X2
+
+        explicit = build_shwtp_session(model=SHWTP_MODEL_WHOLE_PLANT_X2)
+        explicit.advance()
+        model = explicit.record.bridge.model
         assert isinstance(model, WholePlantX2Runtime)
         assert len(model.participants) == EXPECTED_SCOPE_COUNT
-        assert model.window_index == 1
+        assert model.communication_step_s == SHWTP_WHOLE_PLANT_DEFAULT_STEP_S
+        assert not hasattr(model, "control_layer")
+        compatibility = build_shwtp_whole_plant_session()
+        compatibility.advance()
+        assert isinstance(compatibility.record.bridge.model, WholePlantX2Runtime)
 
     def test_g21_slice_is_available_only_through_the_explicit_selector(self):
         explicit = build_shwtp_session(model="g21_slice")
@@ -827,7 +846,7 @@ class TestLifecycleRunIdentity:
     """C02-1: the model identity is the ACTIVE attempt's identity."""
 
     def test_transfers_carry_the_active_attempt_run_id(self):
-        session = build_shwtp_session()
+        session = build_shwtp_session(model=SHWTP_MODEL_WHOLE_PLANT_X2)
         session.advance()
         run_id = session.record.context.run_id
         model = session.record.bridge.model
@@ -843,7 +862,7 @@ class TestLifecycleRunIdentity:
         assert model.run_id != SHWTP_WHOLE_PLANT_DEFAULT_RUN_ID
 
     def test_reset_preserves_the_attempt_identity(self):
-        session = build_shwtp_session()
+        session = build_shwtp_session(model=SHWTP_MODEL_WHOLE_PLANT_X2)
         session.advance()
         run_id = session.record.context.run_id
         session.reset()

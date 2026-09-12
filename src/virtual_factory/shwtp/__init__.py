@@ -129,9 +129,11 @@ from virtual_factory.shwtp.session import (
     SHWTP_MODELS,
     SHWTP_MODEL_G21_SLICE,
     SHWTP_MODEL_WHOLE_PLANT_X2,
+    SHWTP_MODEL_WHOLE_PLANT_X3,
     build_shwtp_g21_slice_session,
     build_shwtp_session,
     build_shwtp_whole_plant_session,
+    build_shwtp_whole_plant_x3_session,
 )
 from virtual_factory.shwtp.whole_plant import (
     AUTHORITY_LABELS,
@@ -230,7 +232,9 @@ __all__ = [
     "SHWTP_DEFAULT_MODEL",
     "SHWTP_MODEL_G21_SLICE",
     "SHWTP_MODEL_WHOLE_PLANT_X2",
+    "SHWTP_MODEL_WHOLE_PLANT_X3",
     "build_shwtp_whole_plant_session",
+    "build_shwtp_whole_plant_x3_session",
     "build_shwtp_g21_slice_session",
     "AUTHORITY_LABELS",
     "authority_labels",
