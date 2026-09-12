@@ -135,5 +135,8 @@ VF-SHW-X0 - Whole-Plant Simulation & Control Design Freeze (Issue #89): DESIGN /
 - X1..X7 refinements: X3/X4 independent after X2; X5 depends on X2 (not on X3/X4) so Frame A can run in
   parallel; X6 depends on X3+X4+X5; X1 carries the PIM escalation checkpoint; X7 gates on plausibility oracles.
 - Design-only: no src/tests/configs/docs/simulators/scripts change; baseline and full suite unchanged from f4dcca5.
+- Implementation head: 00e8422
+- Canonical baseline at 00e8422: overall PASS, failed_groups [], 43/43 groups (incl. every SH-WTP group
+  g10/g11/g12b/g13/g13b/g14a/g14b/g15/g18/g21/g22); full suite 2669 passed (unchanged)
 - Verdict: VF-SHW-X0 - READY FOR SA REVIEW; SHW_WHOLE_PLANT_DESIGN_FROZEN
 - STOP: X1 (and any other implementation) must NOT begin; SH-WTP expansion is design-frozen only.
