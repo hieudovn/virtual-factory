@@ -87,3 +87,22 @@ Regression: R4 focused 27; full suite 2598 -> 2625 passed; canonical baseline
 Authority unchanged: vf_runtime_authorization NOT_AUTHORIZED;
 site_authorized_execution NOT_AUTHORIZED; whole_plant_runtime NOT_AUTHORIZED /
 NOT_IMPLEMENTED.
+
+---
+
+R5 machine-derived status (this gate):
+- Harness preflight: PASSED
+- Canonical baseline at R5 head 7c03650: overall PASS, failed_groups [], 42/42 groups
+  (incl. r1_production_semantics, r2_same_session_rich_assy, r3_canonical_observation_mes,
+  r3c01_reset_generation, r4_canonical_parity, full_suite, checks_compile,
+  checks_static_lint_type, checks_changed_files [8 files], checks_preflight)
+- Full suite: 2625 passed (unchanged from R4 head; no executable source changed)
+- R5 verdict: BLOCKED FOR SA (stop conditions triggered and measured)
+
+NEXT ACTION REQUIRED FROM SA: decide report section 5.
+OPTION 1 - register the continuous workspace on the canonical path, rewire the root dashboard,
+retire the G7 continuous discriminator (no capability lost; changes the product surface).
+OPTION 2 - deprecate the dashboard state routes (capability lost: MVP-01 continuous surface).
+OPTION 3 - governance scope amendment for non-workspace legacy surfaces.
+
+STOP - no consolidation code, no SH-WTP expansion, no gateway/protocol work, no merge.

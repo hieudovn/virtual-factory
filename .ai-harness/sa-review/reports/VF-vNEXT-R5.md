@@ -206,10 +206,21 @@ decision and can be authorized immediately in a bounded follow-up gate.
 
 - No executable source changed → all R1–R4 behaviour carries over unchanged from the R4 head
   `989deac` (42/42 baseline groups, full suite **2625 passed**).
-- R5-head canonical baseline (42 groups; `gate.task_contract = .ai-harness/tasks/VF-vNEXT-R5.json`,
-  `gate.changed_files_base = 989deac…`): **PASSED** — see `CURRENT.md` for the machine-derived
-  line (`BASELINE PASSED: all required groups green`, `failed_groups: []`), including
-  `checks_preflight` and `checks_changed_files`.
+- R5-head canonical baseline: **`overall: PASS`, `failed_groups: []`, 42/42 groups** at head
+  `7c03650` (entrypoint `python .ai-harness/regression/run_vnext_baseline.py --json-output
+  .ai-harness/traces/r5_baseline.json`; `gate.task_contract = .ai-harness/tasks/VF-vNEXT-R5.json`,
+  `gate.changed_files_base = 989deac…`). Groups include `r1_production_semantics`,
+  `r2_same_session_rich_assy`, `r3_canonical_observation_mes`, `r3c01_reset_generation`,
+  `r4_canonical_parity`, `full_suite`, `checks_compile`, `checks_static_lint_type`,
+  `checks_changed_files` (`FILE VALIDATION PASSED (8 file(s))`) and `checks_preflight`.
+- `full_suite`: **2625 passed** (unchanged from the R4 head, as expected — no executable source
+  changed in this gate).
+- Harness note (recurring, non-product): the FIRST baseline execution reported a single failing
+  group `checks_preflight` with `M .vscode/tasks.json` — the VS Code task definition file is
+  rewritten by the editor whenever a task is created, so the tree is transiently dirty. After
+  `git checkout -- .vscode/tasks.json` the full baseline was re-executed and passed. This is an
+  editor/harness artifact, never a source change; `.vscode/tasks.json` is not part of any commit
+  in this gate.
 - No new baseline group is added in this gate (no new pytest module exists; audit-only gate).
 
 ---
