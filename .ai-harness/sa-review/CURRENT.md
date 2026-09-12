@@ -436,3 +436,46 @@ VF-SHW-X3 - Physical bounds + deep scope A two-PI runtime (Issue #98; design fre
   machine-derived result is reported in the PR #99 comment.
 - STOP: X4/X5 must NOT begin; no merge, no Issue #98 closure without explicit SA authorization for the exact
   PR head SHA.
+
+---
+
+VF-SHW-X3-C01 - Correction of the two blocking SA findings (Issue #98 SA review comment 5646905334): CORRECTION
+- Reviewed head / technical base: c3f4b231bb83bbd48f2c8a66f7dda13efd7ef290. Same branch feature/vf-shw-x3 /
+  PR #99; no competing implementation gate. Correction contract .ai-harness/tasks/VF-SHW-X3-C01.json was
+  created BEFORE the edits and the harness preflight PASSED (PRECHECK PASSED) on the clean tree at the
+  contract commit 579f0c2. Report: reports/VF-SHW-X3-C01.md.
+- C01-1 CLOSED (the final physical actuator is the controller's tracked actuator). Protective ownership is now
+  decided BEFORE the PI scans (trip > C1 backwash/permissive > interlock > PI), the protective status commits
+  the ACTUAL value into actuator tracking exactly once, the integral is held from the first protected scan,
+  the trip/interlock release preloads from that actual stopped value, every ordinary reopening is slew limited
+  (valve 10 pp/s, pump 5 pp/s, protective stopping exempt) and the back-calculation is reconciled with the
+  FINAL realized command (commit_actual). Measured (evidence 11-actuator-tracking.json): SA counterexample
+  90.00 % -> stop 0.00 % (tracked 0.00 %) -> release step 0.000 pp vs the 10 pp/s limit; all 6 protective
+  epilogues (trip/interlock/C1 override x flow/level) hold the integral on the first protected scan and with a
+  changed PV, stay inside the slew and take the actuator back; a 5400-tick runtime scan (the real backwash
+  episode, 390 ticks under c1_backwash_closes_inlet) has ZERO tracking/slew violations; feasible SP step,
+  unreachable-SP saturation with output_saturated and recovery all happen INSIDE one ongoing attempt with the
+  controller state retained (control_rows now projects the setpoint in force).
+- C01-2 CLOSED (energy from the ACHIEVED pumped throughput). The capacity point is kept for allocation/envelope
+  only; a new PumpModel.realized_point() evaluates the committed physical pumped throughput of the tick
+  against the frozen pump/system laws, head and motor feasibility are enforced on the realized point, OFF
+  (not energized) is separated from energized-zero-flow/insufficient-head, the declared idle-loss rule charges
+  only no_load_w when no water moves with NO invented useful hydraulic power, and the runtime exports per-tick
+  actual Q/speed/H/Hreq/P/energy (energy_trace). Measured (evidence 10-energy-from-actual-flow.json): total
+  4.207016 MJ = idle 0.102650 MJ + pumped 4.104366 MJ (DIST 1.895614, raw 1.150922, T108 1.160480); the
+  ledger matches an INDEPENDENT recomputation from the per-tick actual rows per pump (<= 1e-6 J); a
+  rated/capacity-flow substitution is detected (up to 1.763154 MJ difference) and cannot pass; 0 infeasible
+  realized ticks out of 1200; startup / zero available water / full receiver / narrowed downstream scenarios
+  all keep the water identity valid, with the empty plant pumping 0.0 m3 through the downstream chain.
+- Regression: water identity 0 invalid ticks, worst residual 2e-12 m3, created water 0.0 m3, integration gap
+  -5e-12 m3; level acceptance inside the declared 0.05 m band at the nominal SP (final level error 0.0366 m)
+  with the post-backwash release slew limited to 10.0 pp and the flow re-settled by tick 5700.
+- Tests at the correction head: tests/test_vnext_x3_physical_bounds.py 30, tests/test_vnext_x3_two_pi_control.py
+  26, tests/test_vnext_x3_reservations.py 16, tests/test_vnext_x3_session_wiring.py 12 (84 passed, 0 failed);
+  tests/test_vnext_x2_whole_plant_runtime.py 85 passed (no migration needed).
+- Evidence: 01..11 all green, overall SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED; the harness acceptance
+  evaluation of the C01 contract is 9/9 PASS (X3C01-1, X3C01-2 + the X3-1..X3-7 regression re-assertions).
+- Gate: the canonical 46-group baseline (including full_suite) and VF-DM CI are run at the exact pushed head
+  of this correction; their machine-derived numbers are recorded in the C01 verification comment on PR #99.
+- STOP: X4/X5 must NOT begin; no merge and no Issue #98 closure without the SA's explicit authorization for
+  the exact PR head SHA.

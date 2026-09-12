@@ -9,42 +9,42 @@
   },
   "energy": {
     "per_pump_electric_j": {
-      "dist-hsp": 6342452.771109,
-      "raw-intake-pump": 3975209.593228,
-      "t108-transfer-pump": 1502953.458266
+      "dist-hsp": 1895614.242541,
+      "raw-intake-pump": 1150921.555129,
+      "t108-transfer-pump": 1160480.374512
     },
     "per_pump_running_s": {
       "dist-hsp": 1200.0,
       "raw-intake-pump": 1141.0,
-      "t108-transfer-pump": 791.0
+      "t108-transfer-pump": 1200.0
     },
     "pump_operating_points": {
       "dist-hsp": {
-        "electric_w": 5285.377309257145,
+        "electric_w": 408.36680011348744,
         "feasible": true,
-        "flow_m3h": 48.096000000000004,
+        "flow_m3h": 7.05672,
         "motor_rating_w": 11000.0,
         "off": false,
-        "reason": "limited_by_head_or_motor_rating"
+        "reason": "ok"
       },
       "raw-intake-pump": {
-        "electric_w": 3483.969845073029,
+        "electric_w": 1008.6954909104567,
         "feasible": true,
-        "flow_m3h": 45.089999999999996,
+        "flow_m3h": 33.75,
         "motor_rating_w": 5500.0,
         "off": false,
-        "reason": "limited_by_head_or_motor_rating"
+        "reason": "ok"
       },
       "t108-transfer-pump": {
-        "electric_w": 0.0,
+        "electric_w": 250.0,
         "feasible": true,
         "flow_m3h": 0.0,
         "motor_rating_w": 7500.0,
-        "off": true,
-        "reason": "insufficient_head_or_motor_overload"
+        "off": false,
+        "reason": "energized_zero_flow_no_lift_head"
       }
     },
-    "total_energy_j": 11820615.822603,
+    "total_energy_j": 4207016.172183,
     "unavailable_energy": [
       "chem-dosing dosing pumps (reagent dosing energy not modelled)",
       "sludge-t201 processing pump (duty-cycle abstraction; energy marked unavailable)",

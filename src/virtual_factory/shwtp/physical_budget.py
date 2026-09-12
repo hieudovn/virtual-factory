@@ -18,6 +18,25 @@ Implements the physical core of the SA design freeze (Issue #97):
   as unexplained pressure or useful energy. A zero-speed pump forwards no flow
   (no passive bypass in the one-way pumped-path abstraction).
 
+**C01-2 (SA finding):** a pump has TWO different statements, and they must never be
+confused:
+
+- :meth:`PumpModel.operating_point` is the **capacity** point of a commanded speed
+  (``Q <= max_feasible_flow_m3_s(n)``). It exists for ALLOCATION and for the declared
+  envelope only; it is NOT an energy measurement.
+- :meth:`PumpModel.realized_point` is the **realized** operating point of the water
+  that was ACTUALLY moved in the tick, at the actual speed, against the same frozen
+  laws. The energy ledger integrates ONLY this one, and head/motor feasibility is
+  enforced on it.
+
+The declared simple power rule of a realized point is: an OFF (not energized) pump
+integrates exactly zero; an ENERGIZED pump that moves no water integrates only the
+declared ``no_load_w`` idle loss with NO useful hydraulic power; an energized pump
+that moves water integrates ``P_hyd(Hreq)/eta_total + no_load_w`` with
+``P_hyd = rho*g*Q_actual*Hreq`` (the head actually delivered to the water), while any
+excess available head stays recorded as ``throttle_head_m`` dissipation.
+
+
 Units: everything here is SI (m3, s, m3/s, m, Pa, W, J). Mappings to the existing
 m3/h and % interfaces happen at the named boundaries of :mod:`x3_profile`.
 """
@@ -69,7 +88,12 @@ def _nonneg(value: Any, name: str) -> float:
 
 @dataclass(frozen=True, slots=True)
 class PumpOperatingPoint:
-    """One evaluated pump operating point (all SI)."""
+    """One evaluated pump operating point (all SI).
+
+    ``energized`` is the tick state of the motor (commanded speed > 0); ``off`` is its
+    negation. A capacity point and a realized point share this record, so the
+    ``reason`` string always says which statement it is.
+    """
 
     pump_id: str
     speed_fraction: float
@@ -83,6 +107,7 @@ class PumpOperatingPoint:
     motor_rating_w: float
     feasible: bool
     reason: str
+    energized: bool = True
 
     @property
     def flow_m3h(self) -> float:
@@ -90,7 +115,13 @@ class PumpOperatingPoint:
 
     @property
     def off(self) -> bool:
-        return self.flow_m3_s <= 0.0
+        """True when the motor is NOT energized: exactly zero flow and zero energy."""
+        return not self.energized
+
+    @property
+    def idle(self) -> bool:
+        """True when the motor runs without moving water (declared idle loss only)."""
+        return self.energized and self.flow_m3_s <= 0.0
 
 
 class PumpModel:
@@ -147,7 +178,12 @@ class PumpModel:
         return low
 
     def operating_point(self, speed_pct: float, requested_flow_m3_s: float) -> PumpOperatingPoint:
-        """Evaluate the achievable operating point for a commanded speed."""
+        """CAPACITY point of one commanded speed (allocation + declared envelope ONLY).
+
+        This is the achievable-throughput statement used by the allocation stage. It is
+        deliberately NOT the energy basis (SA C01-2): the ledger integrates
+        :meth:`realized_point` of the achieved pumped throughput.
+        """
         speed_pct = _finite(speed_pct, "speed_pct")
         if not 0.0 <= speed_pct <= 100.0:
             raise X3BudgetError(f"{self.pump.pump_id}: speed {speed_pct!r} % is outside [0, 100]")
@@ -168,6 +204,7 @@ class PumpModel:
                 motor_rating_w=self.pump.motor_rating_w,
                 feasible=True,
                 reason="pump_off_no_flow_no_energy",
+                energized=False,
             )
         cap = self.max_feasible_flow_m3_s(speed)
         flow = min(requested, cap)
@@ -192,10 +229,96 @@ class PumpModel:
             motor_rating_w=self.pump.motor_rating_w,
             feasible=electric <= self.pump.motor_rating_w + 1e-9,
             reason=reason,
+            energized=True,
+        )
+
+    def realized_point(
+        self, speed_pct: float, actual_flow_m3_s: float
+    ) -> PumpOperatingPoint:
+        """REALIZED operating point of the water actually moved (SA C01-2).
+
+        ``actual_flow_m3_s`` is the committed physical pumped throughput of THIS tick
+        (measured from the physical transfer records), so the energy ledger can never
+        integrate a capacity/envelope point. The realized point always enforces the
+        frozen head and motor feasibility; a realized point that violates them is
+        reported ``feasible=False`` so no success verdict can be built on it.
+        """
+        speed_pct = _finite(speed_pct, "speed_pct")
+        if not 0.0 <= speed_pct <= 100.0:
+            raise X3BudgetError(f"{self.pump.pump_id}: speed {speed_pct!r} % is outside [0, 100]")
+        flow = _nonneg(actual_flow_m3_s, "actual_flow_m3_s")
+        speed = speed_pct / 100.0
+        if speed <= 0.0:
+            # not energized: no flow, no head, exactly zero energy
+            return PumpOperatingPoint(
+                pump_id=self.pump.pump_id,
+                speed_fraction=0.0,
+                requested_flow_m3_s=flow,
+                flow_m3_s=0.0,
+                head_m=0.0,
+                required_head_m=self.required_head_m(0.0),
+                throttle_head_m=0.0,
+                hydraulic_w=0.0,
+                electric_w=0.0,
+                motor_rating_w=self.pump.motor_rating_w,
+                feasible=flow <= 1e-12,
+                reason="pump_off_no_flow_no_energy",
+                energized=False,
+            )
+        available_head = max(0.0, self.head_m(speed, flow))
+        required = self.required_head_m(flow)
+        idle_w = min(self.pump.no_load_w, self.pump.motor_rating_w)
+        if flow <= 0.0:
+            can_lift = self.head_m(speed, 0.0) >= required - 1e-9
+            return PumpOperatingPoint(
+                pump_id=self.pump.pump_id,
+                speed_fraction=speed,
+                requested_flow_m3_s=0.0,
+                flow_m3_s=0.0,
+                head_m=available_head,
+                required_head_m=required,
+                throttle_head_m=max(0.0, available_head - required),
+                hydraulic_w=0.0,
+                electric_w=idle_w,
+                motor_rating_w=self.pump.motor_rating_w,
+                feasible=idle_w <= self.pump.motor_rating_w + 1e-9,
+                reason=(
+                    "energized_zero_flow_no_lift_head"
+                    if not can_lift
+                    else "energized_zero_flow_no_water_moved"
+                ),
+                energized=True,
+            )
+        hydraulic = self.hydraulic_power_w(flow, required)
+        electric = self.electric_power_w(hydraulic)
+        head_ok = available_head >= required - 1e-9
+        motor_ok = electric <= self.pump.motor_rating_w + 1e-9
+        return PumpOperatingPoint(
+            pump_id=self.pump.pump_id,
+            speed_fraction=speed,
+            requested_flow_m3_s=flow,
+            flow_m3_s=flow,
+            head_m=available_head,
+            required_head_m=required,
+            throttle_head_m=max(0.0, available_head - required),
+            hydraulic_w=hydraulic,
+            electric_w=electric,
+            motor_rating_w=self.pump.motor_rating_w,
+            feasible=head_ok and motor_ok,
+            reason=(
+                "ok"
+                if head_ok and motor_ok
+                else (
+                    "insufficient_head_at_realized_flow"
+                    if not head_ok
+                    else "motor_overload_at_realized_flow"
+                )
+            ),
+            energized=True,
         )
 
     def energy_step_j(self, point: PumpOperatingPoint, dt_s: float) -> float:
-        """E = P_elec * dt; an OFF pump integrates exactly zero energy."""
+        """E = P_elec * dt on the REALIZED point (an OFF pump integrates zero)."""
         if point.off:
             return 0.0
         return _nonneg(point.electric_w, "electric_w") * _nonneg(dt_s, "dt_s")

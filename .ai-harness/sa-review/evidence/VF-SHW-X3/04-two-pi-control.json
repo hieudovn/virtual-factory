@@ -4,6 +4,168 @@
     "vf-shw-ctrl-f106-inlet-flow-pi",
     "vf-shw-ctrl-t108-level-pi"
   ],
+  "actuator_tracking": {
+    "all_checks_pass": true,
+    "epilogues_pass": true,
+    "finding": "C01-1 final physical actuator is the controller's tracked actuator",
+    "protective_epilogues": {
+      "vf-shw-ctrl-f106-inlet-flow-pi|c1_override": {
+        "integral_held_on_first_tick": true,
+        "integral_held_with_changed_pv": true,
+        "max_ramp_step_pp": 10.0,
+        "protected_applied_mv": 0.0,
+        "protection": "c1_override",
+        "protection_recognised": true,
+        "ramp_within_slew": true,
+        "release_step_pp": 10.0,
+        "release_within_slew": true,
+        "reopened_above_the_stopped_value": true,
+        "slew_limit_pp": 10.0,
+        "tracked_after_protection_mv": 0.0,
+        "working_mv": 90.0
+      },
+      "vf-shw-ctrl-f106-inlet-flow-pi|interlock": {
+        "integral_held_on_first_tick": true,
+        "integral_held_with_changed_pv": true,
+        "max_ramp_step_pp": 1.6,
+        "protected_applied_mv": 0.0,
+        "protection": "interlock",
+        "protection_recognised": true,
+        "ramp_within_slew": true,
+        "release_step_pp": 0.0,
+        "release_within_slew": true,
+        "reopened_above_the_stopped_value": true,
+        "slew_limit_pp": 10.0,
+        "tracked_after_protection_mv": 0.0,
+        "working_mv": 90.0
+      },
+      "vf-shw-ctrl-f106-inlet-flow-pi|trip": {
+        "integral_held_on_first_tick": true,
+        "integral_held_with_changed_pv": true,
+        "max_ramp_step_pp": 1.6,
+        "protected_applied_mv": 0.0,
+        "protection": "trip",
+        "protection_recognised": true,
+        "ramp_within_slew": true,
+        "release_step_pp": 0.0,
+        "release_within_slew": true,
+        "reopened_above_the_stopped_value": true,
+        "slew_limit_pp": 10.0,
+        "tracked_after_protection_mv": 0.0,
+        "working_mv": 90.0
+      },
+      "vf-shw-ctrl-t108-level-pi|c1_override": {
+        "integral_held_on_first_tick": true,
+        "integral_held_with_changed_pv": true,
+        "max_ramp_step_pp": 5.0,
+        "protected_applied_mv": 0.0,
+        "protection": "c1_override",
+        "protection_recognised": true,
+        "ramp_within_slew": true,
+        "release_step_pp": 5.0,
+        "release_within_slew": true,
+        "reopened_above_the_stopped_value": true,
+        "slew_limit_pp": 5.0,
+        "tracked_after_protection_mv": 0.0,
+        "working_mv": 48.0
+      },
+      "vf-shw-ctrl-t108-level-pi|interlock": {
+        "integral_held_on_first_tick": true,
+        "integral_held_with_changed_pv": true,
+        "max_ramp_step_pp": 0.2,
+        "protected_applied_mv": 0.0,
+        "protection": "interlock",
+        "protection_recognised": true,
+        "ramp_within_slew": true,
+        "release_step_pp": 0.0,
+        "release_within_slew": true,
+        "reopened_above_the_stopped_value": true,
+        "slew_limit_pp": 5.0,
+        "tracked_after_protection_mv": 0.0,
+        "working_mv": 48.0
+      },
+      "vf-shw-ctrl-t108-level-pi|trip": {
+        "integral_held_on_first_tick": true,
+        "integral_held_with_changed_pv": true,
+        "max_ramp_step_pp": 0.2,
+        "protected_applied_mv": 0.0,
+        "protection": "trip",
+        "protection_recognised": true,
+        "ramp_within_slew": true,
+        "release_step_pp": 0.0,
+        "release_within_slew": true,
+        "reopened_above_the_stopped_value": true,
+        "slew_limit_pp": 5.0,
+        "tracked_after_protection_mv": 0.0,
+        "working_mv": 48.0
+      }
+    },
+    "runtime_continuity": {
+      "backwash_episode_seen": true,
+      "owner_counts": {
+        "c1_backwash_closes_inlet": 390,
+        "pi_flow_output": 5010,
+        "pump:pi_level_output": 5400
+      },
+      "ticks": 5400,
+      "violation_count": 0,
+      "violations": []
+    },
+    "sa_counterexample": {
+      "normal_command_pct": 90.0,
+      "release_applied_pct": 0.0,
+      "release_step_pp": 0.0,
+      "slew_limit_pp": 10.0,
+      "stopped_applied_pct": 0.0,
+      "tracked_after_stop_pct": 0.0,
+      "within_slew": true
+    },
+    "setpoint_steps_one_attempt": {
+      "feasible_step": {
+        "alarm": null,
+        "flow_error_frac": 0.0,
+        "flow_measured": 0.006,
+        "flow_sp": 0.006,
+        "integral": -41.99999894444429,
+        "limitation_reason": "ok",
+        "saturated": false,
+        "tick": 2400,
+        "valve_applied_pct": 48.00000105555571
+      },
+      "feasible_step_tracked": true,
+      "mode": "one_ongoing_attempt_state_retained",
+      "recovered_step": {
+        "alarm": null,
+        "flow_error_frac": 0.0,
+        "flow_measured": 0.008,
+        "flow_sp": 0.008,
+        "integral": -25.999998888888854,
+        "limitation_reason": "ok",
+        "saturated": false,
+        "tick": 6000,
+        "valve_applied_pct": 64.00000111111115
+      },
+      "recovered_within_band": true,
+      "state_retained": true,
+      "unreachable_saturated_with_reason": true,
+      "unreachable_step": {
+        "alarm": "setpoint_unreachable_or_output_saturated",
+        "flow_error_frac": 0.20000000000000004,
+        "flow_measured": 0.01,
+        "flow_sp": 0.0125,
+        "integral": 5.000000000000006,
+        "limitation_reason": "output_saturated",
+        "saturated": true,
+        "tick": 4200,
+        "valve_applied_pct": 100.0
+      }
+    },
+    "slew_limits_pp_per_s": {
+      "pump": 5.0,
+      "valve": 10.0
+    },
+    "verdict": "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED"
+  },
   "arbitration_seen": true,
   "backwash_arbitration": {
     "arbitration": "c1_backwash_closes_inlet",
@@ -14,29 +176,48 @@
     "valve_applied_by": "c1_backwash_closes_inlet",
     "valve_applied_pct": 0.0
   },
-  "backwash_release": {
-    "arbitration": "pi_flow_output",
+  "backwash_recovery": {
+    "applied_by": "pi_flow_output",
+    "backwash_episode": {
+      "arbitration": "c1_backwash_closes_inlet",
+      "filter_dp_kpa": 85.98,
+      "flow_measured": 0.0,
+      "pi_integral_held": -25.999998888888804,
+      "tick": 3356,
+      "valve_applied_by": "c1_backwash_closes_inlet",
+      "valve_applied_pct": 0.0
+    },
     "flow_error_frac": 0.0,
     "flow_measured": 0.008,
+    "flow_sp": 0.008,
+    "release_valve_pct": 10.0,
+    "reopened_within_slew": true,
+    "tick": 5700,
+    "valve_applied_pct": 63.999998933877876
+  },
+  "backwash_release": {
+    "arbitration": "pi_flow_output",
+    "flow_error_frac": 0.84375,
+    "flow_measured": 0.00125,
     "tick": 3746,
     "valve_applied_by": "pi_flow_output",
-    "valve_applied_pct": 64.0000011111112
+    "valve_applied_pct": 10.0
   },
   "final_flow_error_frac": 0.0,
-  "final_level_error_m": 0.0292349999999999,
+  "final_level_error_m": 0.03662199999999993,
   "last_pi_owned_window": {
     "flow_error_frac": 0.0,
     "flow_measured": 0.008,
     "flow_sp": 0.008,
-    "level_error_m": -0.0292349999999999,
-    "level_measured": 2.470765,
+    "level_error_m": -0.03662199999999993,
+    "level_measured": 2.463378,
     "level_sp": 2.5,
     "limitation_reason": "ok",
-    "pump_applied_pct": 33.870256152355225,
+    "pump_applied_pct": 34.92094893344563,
     "tick": 5400,
-    "valve_applied_pct": 64.0000011111112
+    "valve_applied_pct": 63.999998933877876
   },
-  "plant_water_residual_m3": -5e-12,
+  "plant_water_residual_m3": -1.15e-10,
   "samples": [
     {
       "flow_error_frac": 0.0006380902777777288,
@@ -147,58 +328,58 @@
       "valve_pi_output_pct": 80.000001111
     },
     {
-      "flow_error_frac": 0.0,
-      "flow_integral": -25.999998888888804,
-      "flow_measured": 0.008,
-      "flow_pv": 0.008,
+      "flow_error_frac": 1.5972222222127366e-05,
+      "flow_integral": -26.001257677233255,
+      "flow_measured": 0.007999872222222223,
+      "flow_pv": 0.007999869444444445,
       "flow_sp": 0.008,
-      "level_error_m": 0.0868739999999999,
-      "level_integral": 19.537243999999905,
-      "level_measured": 2.586874,
-      "level_pv": 2.587043,
+      "level_error_m": 0.0899230000000002,
+      "level_integral": 17.400365999999998,
+      "level_measured": 2.589923,
+      "level_pv": 2.590082,
       "level_sp": 2.5,
       "limitation_reason": "ok",
-      "pump_applied_pct": 69.10401799999991,
+      "pump_applied_pct": 67.021842,
       "tick": 4200,
       "valve_applied_by": "pi_flow_output",
-      "valve_applied_pct": 64.0000011111112,
-      "valve_pi_output_pct": 64.000001111
+      "valve_applied_pct": 63.99897732276675,
+      "valve_pi_output_pct": 63.998977323
     },
     {
       "flow_error_frac": 0.0,
-      "flow_integral": -25.999998888888804,
+      "flow_integral": -26.000001066122127,
       "flow_measured": 0.008,
       "flow_pv": 0.008,
       "flow_sp": 0.008,
-      "level_error_m": -0.014526000000000039,
-      "level_integral": 50.74999015235515,
-      "level_measured": 2.485474,
-      "level_pv": 2.485643,
+      "level_error_m": -0.01144500000000015,
+      "level_integral": 51.21948093344558,
+      "level_measured": 2.488555,
+      "level_pv": 2.488724,
       "level_sp": 2.5,
       "limitation_reason": "ok",
-      "pump_applied_pct": 98.49156415235515,
+      "pump_applied_pct": 99.01651293344557,
       "tick": 4800,
       "valve_applied_by": "pi_flow_output",
-      "valve_applied_pct": 64.0000011111112,
-      "valve_pi_output_pct": 64.000001111
+      "valve_applied_pct": 63.999998933877876,
+      "valve_pi_output_pct": 63.999998934
     },
     {
       "flow_error_frac": 0.0,
-      "flow_integral": -25.999998888888804,
+      "flow_integral": -26.000001066122127,
       "flow_measured": 0.008,
       "flow_pv": 0.008,
       "flow_sp": 0.008,
-      "level_error_m": -0.0292349999999999,
-      "level_integral": -13.596313847644781,
-      "level_measured": 2.470765,
-      "level_pv": 2.470365,
+      "level_error_m": -0.03662199999999993,
+      "level_integral": -12.412655066554375,
+      "level_measured": 2.463378,
+      "level_pv": 2.462978,
       "level_sp": 2.5,
       "limitation_reason": "ok",
-      "pump_applied_pct": 33.870256152355225,
+      "pump_applied_pct": 34.92094893344563,
       "tick": 5400,
       "valve_applied_by": "pi_flow_output",
-      "valve_applied_pct": 64.0000011111112,
-      "valve_pi_output_pct": 64.000001111
+      "valve_applied_pct": 63.999998933877876,
+      "valve_pi_output_pct": 63.999998934
     }
   ],
   "setpoint_sweep": {

@@ -285,17 +285,313 @@ class TestEnergy:
         )
         assert report["unavailable_energy"], "unmodelled energy must be declared unavailable"
 
-    def test_off_pump_moves_nothing_and_integrates_nothing(self, profile, contracts):
-        """A level far ABOVE the setpoint drives the transfer pump to OFF."""
+    def test_off_pump_moves_nothing_and_integrates_no_hydraulic_energy(self, profile, contracts):
+        """A level far ABOVE the setpoint drives the transfer pump to OFF.
+
+        C01-2 semantics: an OFF (not energized) pump integrates exactly zero, while an
+        ENERGIZED pump that moved no water may only integrate the declared idle loss -
+        never a hydraulic power derived from a capacity flow.
+        """
         high_sp = _profile_with(profile, **{LEVEL_LOOP: {"sp": 3.4}})
         model = build_shwtp_whole_plant_x3(profile=high_sp, contracts=contracts, run_id="x3-off")
         _run(model, 400)
         report = model.energy_report()
         point = report["pump_operating_points"]["t108-transfer-pump"]
-        assert point["off"] is True, "the loop must be able to stop the pump completely"
-        assert point["flow_m3h"] == 0.0
-        assert point["electric_w"] == 0.0
-        assert report["per_pump_electric_j"].get("t108-transfer-pump", 0.0) == 0.0
+        pump = model.pump_models["t108-transfer-pump"].pump
+        assert point["flow_m3h"] == 0.0, "the loop must be able to stop the transfer"
+        assert point["hydraulic_w"] == 0.0
+        assert point["off"] is True or point["idle"] is True, (
+            "a stopped transfer is either OFF or energized without water"
+        )
+        assert point["electric_w"] == pytest.approx(
+            0.0 if point["off"] else pump.no_load_w
+        )
+        expected = 0.0
+        for row in model.energy_trace():
+            data = row["pumps"]["t108-transfer-pump"]
+            if data["off"]:
+                assert data["electric_w"] == 0.0
+                assert data["energy_delta_j"] == 0.0
+                continue
+            assert data["electric_w"] == pytest.approx(
+                data["hydraulic_w"] / pump.eta_total + pump.no_load_w, abs=1e-9
+            )
+            expected += data["energy_delta_j"]
+        assert report["per_pump_electric_j"].get("t108-transfer-pump", 0.0) == pytest.approx(
+            expected, abs=1e-6
+        )
         assert model.participants["vf-shw-node-t108"].monitor_values()["outflows_m3h"][
             "vf-shw-node-dist-p108"
         ] == 0.0
+
+
+def _drive_pi(pi, *, pv: float, ticks: int) -> None:
+    for _ in range(ticks):
+        pi.evaluate(pv=pv, dt_s=1.0)
+
+
+def _flow_pi(profile, sp: float | None = None) -> PIController:
+    config = profile.controllers[FLOW_LOOP] if sp is None else replace(
+        profile.controllers[FLOW_LOOP], sp=sp
+    )
+    return PIController(config, error_sign=X3_CONTROL_ERROR_SIGN_FLOW)
+
+
+def _level_pi(profile, sp: float | None = None) -> PIController:
+    config = profile.controllers[LEVEL_LOOP] if sp is None else replace(
+        profile.controllers[LEVEL_LOOP], sp=sp
+    )
+    return PIController(config, error_sign=X3_CONTROL_ERROR_SIGN_LEVEL)
+
+
+_PROTECTIONS = {
+    "trip": {"forced_stop": True},
+    "interlock": {"interlock": True, "interlock_alarm": "c01_interlock"},
+    "c1_override": {
+        "external_override": True,
+        "external_override_mv": 0.0,
+        "external_override_reason": "c1_backwash_closes_inlet",
+    },
+}
+
+
+class TestC01ActuatorTrackingAndReleaseSlew:
+    """SA C01-1: the final physical actuator must be the controller's actuator.
+
+    Reproduces the SA counterexample (a valve that was forced to 0 % must not reopen
+    to its pre-stop command in one second) and drives every protective path of BOTH
+    loops through entry -> release, asserting the tracked actual value, the first-tick
+    integral hold and a slew-limited ordinary reopening.
+    """
+
+    def test_sa_counterexample_cannot_reopen_90_percent_in_one_second(self, profile):
+        """The exact SA reproduction: normal 90 % -> stop 0 % -> release."""
+        pi = _flow_pi(profile)
+        _drive_pi(pi, pv=0.008, ticks=60)
+        assert pi.applied_mv == pytest.approx(90.0, abs=1e-6), "declared working point"
+        stopped = pi.evaluate(pv=0.008, dt_s=1.0, forced_stop=True)
+        assert stopped.applied_mv == 0.0
+        assert pi.applied_mv == 0.0, "the stopped value must be the TRACKED value"
+        released = pi.evaluate(pv=0.008, dt_s=1.0)
+        step = abs(released.applied_mv - stopped.applied_mv)
+        assert step <= profile.controllers[FLOW_LOOP].slew_per_s + 1e-9, (
+            f"reopening jumped {step:.3f} pp in one second"
+        )
+
+    @pytest.mark.parametrize("protection", sorted(_PROTECTIONS))
+    @pytest.mark.parametrize("loop", ["flow", "level"])
+    def test_protective_entry_and_release_for_both_loops(self, profile, loop, protection):
+        config = profile.controllers[FLOW_LOOP if loop == "flow" else LEVEL_LOOP]
+        pi = _flow_pi(profile) if loop == "flow" else _level_pi(profile)
+        pv = 0.008 if loop == "flow" else 2.5
+        # a PV CONSISTENT with the protected actuator: a closed valve gives no inlet
+        # flow, a stopped transfer pump lets the level rise above the setpoint
+        release_pv = 0.0 if loop == "flow" else 2.6
+        _drive_pi(pi, pv=pv, ticks=60)
+        working = pi.applied_mv
+        integral_before = pi.integral
+        assert working > config.output_min + 1.0
+
+        first = pi.evaluate(pv=pv, dt_s=1.0, **_PROTECTIONS[protection])
+        assert first.applied_mv == config.output_min
+        assert first.protection == protection
+        assert first.integral_held is True
+        assert first.committed_actual_mv == config.output_min
+        # first-tick integral hold: ONE protected scan must not move the integral
+        assert pi.integral == pytest.approx(integral_before, abs=1e-12)
+        # the tracked actuator is the protective value, not the stale command
+        assert pi.applied_mv == config.output_min
+
+        # stay protected with a CHANGED PV: the integral stays held
+        for index in range(5):
+            pi.evaluate(
+                pv=pv + (0.001 if loop == "flow" else 0.05) * (index + 1),
+                dt_s=1.0,
+                **_PROTECTIONS[protection],
+            )
+        assert pi.integral == pytest.approx(integral_before, abs=1e-12)
+
+        # release: the first ordinary step starts FROM the actual stopped value
+        release = pi.evaluate(pv=release_pv, dt_s=1.0)
+        assert abs(release.applied_mv - config.output_min) <= config.slew_per_s + 1e-9
+        previous = release.applied_mv
+        reopened = release.applied_mv > config.output_min + 1e-9
+        for _ in range(40):
+            status = pi.evaluate(pv=release_pv, dt_s=1.0)
+            assert abs(status.applied_mv - previous) <= config.slew_per_s + 1e-9
+            previous = status.applied_mv
+            if status.applied_mv > config.output_min + 1e-9:
+                reopened = True
+        assert reopened, "the loop must be able to take the actuator back"
+
+    def test_manual_mode_and_changed_pv_during_a_stop(self, profile):
+        """MANUAL holds the integral too and the release stays inside the slew."""
+        config = profile.controllers[LEVEL_LOOP]
+        pi = _level_pi(profile)
+        _drive_pi(pi, pv=2.5, ticks=30)
+        pi.set_mode("MANUAL", manual_mv=55.0)
+        _drive_pi(pi, pv=2.5, ticks=5)
+        integral_before = pi.integral
+        stopped = pi.evaluate(pv=2.9, dt_s=1.0, forced_stop=True)
+        assert stopped.applied_mv == 0.0
+        assert pi.applied_mv == 0.0
+        assert pi.integral == pytest.approx(integral_before, abs=1e-12)
+        # PV changes during the stop while MANUAL stays selected
+        pi.evaluate(pv=2.2, dt_s=1.0, forced_stop=True)
+        assert pi.integral == pytest.approx(integral_before, abs=1e-12)
+        first = pi.evaluate(pv=2.2, dt_s=1.0)
+        assert abs(first.applied_mv) <= config.slew_per_s + 1e-9
+        previous = first.applied_mv
+        for _ in range(30):
+            status = pi.evaluate(pv=2.2, dt_s=1.0)
+            assert abs(status.applied_mv - previous) <= config.slew_per_s + 1e-9
+            previous = status.applied_mv
+
+    def test_runtime_actuator_continuity_across_the_backwash_episode(self, profile, contracts):
+        """No ordinary step may exceed the slew; entering protection is exempt."""
+        model = build_shwtp_whole_plant_x3(
+            profile=profile, contracts=contracts, run_id="x3-c01-continuity"
+        )
+        slew = profile.controllers[FLOW_LOOP].slew_per_s
+        previous_valve = None
+        previous_owner = None
+        violations = []
+        owners = set()
+        for index in range(1, 5401):
+            model.run_window(f"w{index}")
+            report = model.control_report()
+            owner = report["arbitration"]["inlet_valve_pos"]
+            valve = float(model._control.commands["inlet_valve_pos"])
+            tracked = model.control_layer.flow_pi.applied_mv
+            assert tracked == pytest.approx(valve, abs=1e-9), (
+                f"tick {index}: tracked {tracked} != realized {valve}"
+            )
+            if previous_valve is not None:
+                enters_protection = (
+                    owner != "pi_flow_output" and previous_owner == "pi_flow_output"
+                )
+                step = abs(valve - previous_valve)
+                if not enters_protection and step > slew + 1e-9:
+                    violations.append((index, previous_owner, owner, step))
+            owners.add(owner)
+            previous_valve, previous_owner = valve, owner
+        assert "c1_backwash_closes_inlet" in owners, "the DP threshold must start a backwash"
+        assert "pi_flow_output" in owners, "the loop must take the valve back"
+        assert violations == [], f"unslew re-openings: {violations[:5]}"
+
+    def test_runtime_pump_command_continuity(self, profile, contracts):
+        """The same continuity statement for the transfer pump (5 pp/s)."""
+        model = build_shwtp_whole_plant_x3(
+            profile=profile, contracts=contracts, run_id="x3-c01-pump"
+        )
+        slew = profile.controllers[LEVEL_LOOP].slew_per_s
+        previous_speed = None
+        previous_owner = None
+        violations = []
+        for index in range(1, 1801):
+            model.run_window(f"w{index}")
+            report = model.control_report()
+            owner = report["arbitration"]["transfer_pump_speed_cmd"]
+            speed = float(model._control.commands["transfer_pump_speed_cmd"])
+            assert model.control_layer.level_pi.applied_mv == pytest.approx(speed, abs=1e-9)
+            if previous_speed is not None:
+                enters_protection = (
+                    owner != "pi_level_output" and previous_owner == "pi_level_output"
+                )
+                step = abs(speed - previous_speed)
+                if not enters_protection and step > slew + 1e-9:
+                    violations.append((index, previous_owner, owner, step))
+            previous_speed, previous_owner = speed, owner
+        assert violations == [], f"unslew pump re-starts: {violations[:5]}"
+
+    def test_layer_trip_and_release_stop_the_pump_without_a_jump(self, profile, contracts):
+        """The pump loop through the LAYER: trip value tracked, release slew limited."""
+        model = build_shwtp_whole_plant_x3(
+            profile=profile, contracts=contracts, run_id="x3-c01-layer-pump"
+        )
+        layer = model.control_layer
+        slew = profile.controllers[LEVEL_LOOP].slew_per_s
+        _run(model, 400)
+        feedback = model._feedback
+        level = float(model.participants["vf-shw-node-t108"].monitor_values()["level_m"])
+        inlet = (
+            float(model.participants["vf-shw-node-t106"].monitor_values()["inflow_m3h"]) / 3600.0
+        )
+        assert layer.level_pi.applied_mv > 5.0
+
+        tripped = layer.evaluate(
+            feedback,
+            inlet_flow_m3_s=inlet,
+            t108_level_m=level,
+            trips={LEVEL_LOOP: True},
+        )
+        assert tripped.arbitration["transfer_pump_speed_cmd"] == "physical_trip_forced_stop"
+        assert tripped.commands["transfer_pump_speed_cmd"] == 0.0
+        assert layer.level_pi.applied_mv == 0.0, "the trip value must be tracked"
+        assert tripped.pi_statuses[LEVEL_LOOP].integral_held is True
+        layer.commit_tick(tripped)
+
+        released = layer.evaluate(feedback, inlet_flow_m3_s=inlet, t108_level_m=level)
+        assert released.arbitration["transfer_pump_speed_cmd"] == "pi_level_output"
+        step = abs(released.commands["transfer_pump_speed_cmd"])
+        assert step <= slew + 1e-9, f"the pump re-started with {step:.3f} pp in one second"
+        layer.commit_tick(released)
+
+
+class TestC01SetpointStepsInsideOneAttempt:
+    """SA C01-1 repair 2: steps and recovery inside ONE ongoing attempt."""
+
+    def test_feasible_step_unreachable_then_recovery_on_one_attempt(self, profile, contracts):
+        model = build_shwtp_whole_plant_x3(
+            profile=profile, contracts=contracts, run_id="x3-c01-steps"
+        )
+        flow = model.control_layer.flow_pi
+        acceptance = profile.acceptance
+        advanced = {"ticks": 0}
+
+        def advance(ticks: int) -> None:
+            _run(model, ticks, offset=advanced["ticks"])
+            advanced["ticks"] += ticks
+
+        flow.set_setpoint(0.006)
+        advance(acceptance.nominal_settling_window_s + 600)
+        measured = (
+            model.participants["vf-shw-node-t106"].monitor_values()["inflow_m3h"] / 3600.0
+        )
+        assert abs(measured - 0.006) / 0.006 <= acceptance.flow_steady_error_frac_of_sp
+        assert flow.applied_mv > 0.0
+
+        # step UP to the admitted maximum (unreachable here) on the SAME attempt
+        flow.set_setpoint(0.0125)
+        advance(acceptance.nominal_settling_window_s)
+        saturated = _rows(model)[FLOW_LOOP]
+        assert saturated["saturated"] is True
+        assert saturated["limitation_reason"] == "output_saturated"
+        assert saturated["alarm"] == "setpoint_unreachable_or_output_saturated"
+        pinned = (
+            model.participants["vf-shw-node-t106"].monitor_values()["inflow_m3h"] / 3600.0
+        )
+        assert pinned < saturated["sp"], "an unreachable SP is never reported as met"
+
+        # recover on the SAME attempt, retaining controller state
+        flow.set_setpoint(0.008)
+        advance(acceptance.nominal_settling_window_s)
+        recovered = _rows(model)[FLOW_LOOP]
+        recovered_measured = (
+            model.participants["vf-shw-node-t106"].monitor_values()["inflow_m3h"] / 3600.0
+        )
+        assert recovered["saturated"] is False
+        assert (
+            abs(recovered_measured - 0.008) / 0.008
+            <= acceptance.flow_steady_error_frac_of_sp
+        )
+        # the valve had to come back DOWN from the saturation limit to the SP -> the
+        # recovery is a real, slew-limited actuator movement on one continuing attempt
+        assert recovered["applied_mv"] < saturated["applied_mv"]
+        assert recovered_measured < pinned + 1e-9
+        assert model.balance_report()["plant_water"]["physical_valid"] is True
+
+    def test_setpoint_outside_the_admissible_range_fails_closed(self, profile):
+        flow = _flow_pi(profile)
+        with pytest.raises(Exception):
+            flow.set_setpoint(0.5)

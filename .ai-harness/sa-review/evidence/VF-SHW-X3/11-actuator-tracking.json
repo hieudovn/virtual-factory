@@ -1,0 +1,163 @@
+{
+  "all_checks_pass": true,
+  "epilogues_pass": true,
+  "evidence": "VF-SHW-X3-C01 finding 1",
+  "finding": "C01-1 final physical actuator is the controller's tracked actuator",
+  "protective_epilogues": {
+    "vf-shw-ctrl-f106-inlet-flow-pi|c1_override": {
+      "integral_held_on_first_tick": true,
+      "integral_held_with_changed_pv": true,
+      "max_ramp_step_pp": 10.0,
+      "protected_applied_mv": 0.0,
+      "protection": "c1_override",
+      "protection_recognised": true,
+      "ramp_within_slew": true,
+      "release_step_pp": 10.0,
+      "release_within_slew": true,
+      "reopened_above_the_stopped_value": true,
+      "slew_limit_pp": 10.0,
+      "tracked_after_protection_mv": 0.0,
+      "working_mv": 90.0
+    },
+    "vf-shw-ctrl-f106-inlet-flow-pi|interlock": {
+      "integral_held_on_first_tick": true,
+      "integral_held_with_changed_pv": true,
+      "max_ramp_step_pp": 1.6,
+      "protected_applied_mv": 0.0,
+      "protection": "interlock",
+      "protection_recognised": true,
+      "ramp_within_slew": true,
+      "release_step_pp": 0.0,
+      "release_within_slew": true,
+      "reopened_above_the_stopped_value": true,
+      "slew_limit_pp": 10.0,
+      "tracked_after_protection_mv": 0.0,
+      "working_mv": 90.0
+    },
+    "vf-shw-ctrl-f106-inlet-flow-pi|trip": {
+      "integral_held_on_first_tick": true,
+      "integral_held_with_changed_pv": true,
+      "max_ramp_step_pp": 1.6,
+      "protected_applied_mv": 0.0,
+      "protection": "trip",
+      "protection_recognised": true,
+      "ramp_within_slew": true,
+      "release_step_pp": 0.0,
+      "release_within_slew": true,
+      "reopened_above_the_stopped_value": true,
+      "slew_limit_pp": 10.0,
+      "tracked_after_protection_mv": 0.0,
+      "working_mv": 90.0
+    },
+    "vf-shw-ctrl-t108-level-pi|c1_override": {
+      "integral_held_on_first_tick": true,
+      "integral_held_with_changed_pv": true,
+      "max_ramp_step_pp": 5.0,
+      "protected_applied_mv": 0.0,
+      "protection": "c1_override",
+      "protection_recognised": true,
+      "ramp_within_slew": true,
+      "release_step_pp": 5.0,
+      "release_within_slew": true,
+      "reopened_above_the_stopped_value": true,
+      "slew_limit_pp": 5.0,
+      "tracked_after_protection_mv": 0.0,
+      "working_mv": 48.0
+    },
+    "vf-shw-ctrl-t108-level-pi|interlock": {
+      "integral_held_on_first_tick": true,
+      "integral_held_with_changed_pv": true,
+      "max_ramp_step_pp": 0.2,
+      "protected_applied_mv": 0.0,
+      "protection": "interlock",
+      "protection_recognised": true,
+      "ramp_within_slew": true,
+      "release_step_pp": 0.0,
+      "release_within_slew": true,
+      "reopened_above_the_stopped_value": true,
+      "slew_limit_pp": 5.0,
+      "tracked_after_protection_mv": 0.0,
+      "working_mv": 48.0
+    },
+    "vf-shw-ctrl-t108-level-pi|trip": {
+      "integral_held_on_first_tick": true,
+      "integral_held_with_changed_pv": true,
+      "max_ramp_step_pp": 0.2,
+      "protected_applied_mv": 0.0,
+      "protection": "trip",
+      "protection_recognised": true,
+      "ramp_within_slew": true,
+      "release_step_pp": 0.0,
+      "release_within_slew": true,
+      "reopened_above_the_stopped_value": true,
+      "slew_limit_pp": 5.0,
+      "tracked_after_protection_mv": 0.0,
+      "working_mv": 48.0
+    }
+  },
+  "runtime_continuity": {
+    "backwash_episode_seen": true,
+    "owner_counts": {
+      "c1_backwash_closes_inlet": 390,
+      "pi_flow_output": 5010,
+      "pump:pi_level_output": 5400
+    },
+    "ticks": 5400,
+    "violation_count": 0,
+    "violations": []
+  },
+  "sa_counterexample": {
+    "normal_command_pct": 90.0,
+    "release_applied_pct": 0.0,
+    "release_step_pp": 0.0,
+    "slew_limit_pp": 10.0,
+    "stopped_applied_pct": 0.0,
+    "tracked_after_stop_pct": 0.0,
+    "within_slew": true
+  },
+  "setpoint_steps_one_attempt": {
+    "feasible_step": {
+      "alarm": null,
+      "flow_error_frac": 0.0,
+      "flow_measured": 0.006,
+      "flow_sp": 0.006,
+      "integral": -41.99999894444429,
+      "limitation_reason": "ok",
+      "saturated": false,
+      "tick": 2400,
+      "valve_applied_pct": 48.00000105555571
+    },
+    "feasible_step_tracked": true,
+    "mode": "one_ongoing_attempt_state_retained",
+    "recovered_step": {
+      "alarm": null,
+      "flow_error_frac": 0.0,
+      "flow_measured": 0.008,
+      "flow_sp": 0.008,
+      "integral": -25.999998888888854,
+      "limitation_reason": "ok",
+      "saturated": false,
+      "tick": 6000,
+      "valve_applied_pct": 64.00000111111115
+    },
+    "recovered_within_band": true,
+    "state_retained": true,
+    "unreachable_saturated_with_reason": true,
+    "unreachable_step": {
+      "alarm": "setpoint_unreachable_or_output_saturated",
+      "flow_error_frac": 0.20000000000000004,
+      "flow_measured": 0.01,
+      "flow_sp": 0.0125,
+      "integral": 5.000000000000006,
+      "limitation_reason": "output_saturated",
+      "saturated": true,
+      "tick": 4200,
+      "valve_applied_pct": 100.0
+    }
+  },
+  "slew_limits_pp_per_s": {
+    "pump": 5.0,
+    "valve": 10.0
+  },
+  "verdict": "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED"
+}

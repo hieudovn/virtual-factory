@@ -46,6 +46,11 @@ from virtual_factory.shwtp.session import (  # noqa: E402
     SHWTP_MODEL_WHOLE_PLANT_X2,
     build_shwtp_session,
 )
+from virtual_factory.shwtp.x3_controls import (  # noqa: E402
+    X3_CONTROL_ERROR_SIGN_FLOW,
+    X3_CONTROL_ERROR_SIGN_LEVEL,
+    PIController,
+)
 from virtual_factory.shwtp.x3_profile import load_x3_profile  # noqa: E402
 from virtual_factory.shwtp.x3_whole_plant import (  # noqa: E402
     build_shwtp_whole_plant_x3,
@@ -386,6 +391,27 @@ def section_04(profile, contracts) -> dict:
             }
     plant = model.balance_report()["plant_water"]
     final_sample = last_pi_owned or samples[-1]
+    # C01-1: after a backwash releases the valve the PI must REOPEN it inside the slew
+    # limit, so the release sample is followed by a bounded recovery window.
+    recovery = None
+    if released is not None:
+        run(model, 300, offset=5400)
+        flow_row = {row["controller_id"]: row for row in model.control_rows()}[FLOW_LOOP]
+        measured = (
+            model.participants["vf-shw-node-t106"].monitor_values()["inflow_m3h"] / 3600.0
+        )
+        recovery = {
+            "tick": model._tick_index,
+            "flow_sp": flow_row["sp"],
+            "flow_measured": measured,
+            "flow_error_frac": abs(measured - flow_row["sp"]) / flow_row["sp"],
+            "valve_applied_pct": flow_row["applied_mv"],
+            "applied_by": flow_row["applied_by"],
+            "release_valve_pct": released["valve_applied_pct"],
+            "reopened_within_slew": released["valve_applied_pct"]
+            <= profile.controllers[FLOW_LOOP].slew_per_s + 1e-9,
+            "backwash_episode": backwash,
+        }
     # ACTUAL actuator response under two different setpoints per loop: the valve must
     # move the measured inlet flow and the pump must move the measured T108 level.
     flow_low = _sweep(profile, contracts, flow_sp=0.006, ticks=1800)
@@ -418,6 +444,13 @@ def section_04(profile, contracts) -> dict:
         and flow_high["flow_error_frac"] <= profile.acceptance.flow_steady_error_frac_of_sp
         and flow_low["flow_error_frac"] <= profile.acceptance.flow_steady_error_frac_of_sp
     )
+    recovered_flow_error = None if recovery is None else recovery["flow_error_frac"]
+    _tracking_ok = actuator_ok and (
+        recovery is not None
+        and recovery["reopened_within_slew"]
+        and recovery["applied_by"] == "pi_flow_output"
+        and recovered_flow_error <= profile.acceptance.flow_steady_error_frac_of_sp
+    )
     return write(
         "04-two-pi-control",
         {
@@ -426,6 +459,8 @@ def section_04(profile, contracts) -> dict:
             "last_pi_owned_window": last_pi_owned,
             "backwash_arbitration": backwash,
             "backwash_release": released,
+            "backwash_recovery": recovery,
+            "actuator_tracking": _actuator_tracking_evidence(profile, contracts),
             "setpoint_sweep": sweep,
             "arbitration_seen": arbitration_seen,
             "acceptance_basis": (
@@ -440,6 +475,7 @@ def section_04(profile, contracts) -> dict:
                 "TWO_PI_ACTUATOR_RESPONSE_AND_ARBITRATION_VERIFIED"
                 if arbitration_seen
                 and actuator_ok
+                and _tracking_ok
                 and final_sample["flow_error_frac"]
                 <= profile.acceptance.flow_steady_error_frac_of_sp
                 and abs(final_sample["level_error_m"]) <= profile.acceptance.level_steady_error_m
@@ -694,6 +730,9 @@ def _acceptance_block(artefacts: dict) -> dict:
     """
     s01, s02, s03 = artefacts["01"], artefacts["02"], artefacts["03"]
     s04, s05, s06, s07 = artefacts["04"], artefacts["05"], artefacts["06"], artefacts["07"]
+    s10 = artefacts["10"]
+    tracking = s04["actuator_tracking"]
+    recovery = s04["backwash_recovery"] or {}
 
     deferred_ok = all(
         ("ACTIVE" in note) == (loop_id in set(s01["active_c2_loop_ids"]))
@@ -745,7 +784,14 @@ def _acceptance_block(artefacts: dict) -> dict:
         and arbitration.get("valve_applied_by") == "c1_backwash_closes_inlet"
         and arbitration.get("flow_measured") == 0.0
         and release.get("valve_applied_by") == "pi_flow_output"
-        and release.get("flow_error_frac", 1.0) <= 0.05
+        # C01-1: the release itself is slew limited and the bounded recovery window
+        # proves the loop takes the real flow back inside the acceptance band
+        and release.get("valve_applied_pct") is not None
+        and tracking["all_checks_pass"] is True
+        and tracking["runtime_continuity"]["violation_count"] == 0
+        and recovery.get("reopened_within_slew") is True
+        and recovery.get("applied_by") == "pi_flow_output"
+        and recovery.get("flow_error_frac", 1.0) <= 0.05
         and sweep["flow"]["actuator_responds"] is True
         and sweep["level"]["actuator_responds"] is True
         and sweep["level"]["inside_documented_band"] is True
@@ -757,7 +803,17 @@ def _acceptance_block(artefacts: dict) -> dict:
     envelope_rows = [row for rows in s05["envelope"].values() for row in rows]
     points = s05["energy"]["pump_operating_points"].values()
     pump_energy = (
-        all(row["head_ok"] and row["power_ok"] for row in envelope_rows)
+        # C01-2: the energy verdict is now built on the REALIZED basis
+        s10["all_checks_pass"] is True
+        and s10["independent_recomputation_matches"] is True
+        and s10["capacity_substitution_detected"] is True
+        and s10["realized_feasibility"]["all_realized_points_feasible"] is True
+        and s10["realized_feasibility"]["infeasible_ticks"] == 0
+        and all(
+            row["water_physical_valid"] and row["all_realized_points_feasible"]
+            for row in s10["scenarios"].values()
+        )
+        and all(row["head_ok"] and row["power_ok"] for row in envelope_rows)
         and all(row["off_is_zero"] is True for row in envelope_rows if row["speed_pct"] == 0)
         and all(
             point["flow_m3h"] == 0.0 and point["electric_w"] == 0.0
@@ -765,7 +821,7 @@ def _acceptance_block(artefacts: dict) -> dict:
             if point["off"]
         )
         and s05["dimensional_conversion"]["matches"] is True
-        and s05["energy"]["total_energy_j"] > 0.0
+        and s10["total_energy_j"] > 0.0
         and len(s05["energy"]["unavailable_energy"]) > 0
     )
 
@@ -807,6 +863,485 @@ def _acceptance_block(artefacts: dict) -> dict:
     }
 
 
+def _c01_acceptance_block(artefacts: dict) -> dict:
+    """The C01 acceptance fields of the correction contract (SA findings 1 and 2)."""
+    s04 = artefacts["04"]
+    s10 = artefacts["10"]
+    tracking = s04["actuator_tracking"]
+    epilogues = list(tracking["protective_epilogues"].values())
+    counterexample = tracking["sa_counterexample"]
+    steps = tracking["setpoint_steps_one_attempt"]
+    actuator_tracking = (
+        counterexample["tracked_after_stop_pct"] == 0.0
+        and counterexample["within_slew"] is True
+        and all(
+            row["protected_applied_mv"] == 0.0
+            and row["tracked_after_protection_mv"] == 0.0
+            and row["protection_recognised"] is True
+            and row["integral_held_on_first_tick"] is True
+            and row["integral_held_with_changed_pv"] is True
+            and row["release_within_slew"] is True
+            and row["ramp_within_slew"] is True
+            for row in epilogues
+        )
+        and tracking["runtime_continuity"]["violation_count"] == 0
+        and tracking["runtime_continuity"]["backwash_episode_seen"] is True
+        and steps["feasible_step_tracked"] is True
+        and steps["unreachable_saturated_with_reason"] is True
+        and steps["recovered_within_band"] is True
+        and steps["state_retained"] is True
+    )
+    energy_from_actual_flow = (
+        s10["operating_point_basis"] == "realized_actual_pumped_throughput"
+        and s10["independent_recomputation_matches"] is True
+        and s10["capacity_substitution_detected"] is True
+        and s10["realized_feasibility"]["all_realized_points_feasible"] is True
+        and s10["realized_feasibility"]["infeasible_ticks"] == 0
+        and s10["scenarios"]["zero_available_water"]["downstream_pumped_flow_sum_m3_s"] == 0.0
+        and all(
+            row["off_rows_integrate_zero"] and row["idle_rows_have_no_hydraulic_power"]
+            for row in s10["scenarios"].values()
+        )
+        and all(row["water_physical_valid"] for row in s10["scenarios"].values())
+    )
+    return {
+        "actuator_tracking": actuator_tracking,
+        "energy_from_actual_flow": energy_from_actual_flow,
+    }
+
+
+def _pi(profile, loop_id: str, error_sign: str, sp: float | None = None) -> PIController:
+    config = profile.controllers[loop_id]
+    if sp is not None:
+        config = replace(config, sp=sp)
+    return PIController(config, error_sign=error_sign)
+
+
+def _protective_epilogue(
+    *,
+    pi: PIController,
+    pv: float,
+    changed_pv: float,
+    release_pv: float,
+    protection: str,
+    kwargs: dict,
+    slew: float,
+    ticks: int = 60,
+) -> dict:
+    """Drive to a working point, enter the protection, hold it with a CHANGED PV,
+    release it and then ramp: the C01-1 statement measured end to end.
+
+    ``release_pv`` is the PV that is CONSISTENT with the protected actuator (a closed
+    valve gives no inlet flow; a stopped transfer pump lets the level rise), so the
+    release is a real, slew-limited reopening and not a synthetic constant-PV scan.
+    """
+    for _ in range(ticks):
+        pi.evaluate(pv=pv, dt_s=1.0)
+    working = pi.applied_mv
+    integral_before = pi.integral
+    first = pi.evaluate(pv=pv, dt_s=1.0, **kwargs)
+    integral_held_first = abs(first.integral - integral_before) <= 1e-12
+    for _ in range(5):
+        pi.evaluate(pv=changed_pv, dt_s=1.0, **kwargs)
+    integral_held_changed_pv = abs(pi.integral - integral_before) <= 1e-12
+    tracked_stopped = pi.applied_mv
+    release = pi.evaluate(pv=release_pv, dt_s=1.0)
+    release_step = abs(release.applied_mv - tracked_stopped)
+    steps = []
+    previous = release.applied_mv
+    for _ in range(40):
+        status = pi.evaluate(pv=release_pv, dt_s=1.0)
+        steps.append(abs(status.applied_mv - previous))
+        previous = status.applied_mv
+    return {
+        "protection": protection,
+        "working_mv": round(working, 9),
+        "protected_applied_mv": round(first.applied_mv, 9),
+        "protection_recognised": first.protection == protection,
+        "integral_held_on_first_tick": integral_held_first,
+        "integral_held_with_changed_pv": integral_held_changed_pv,
+        "tracked_after_protection_mv": round(tracked_stopped, 9),
+        "release_step_pp": round(release_step, 9),
+        "slew_limit_pp": slew,
+        "release_within_slew": release_step <= slew + 1e-9,
+        "max_ramp_step_pp": round(max(steps), 9) if steps else 0.0,
+        "ramp_within_slew": all(step <= slew + 1e-9 for step in steps),
+        "reopened_above_the_stopped_value": previous > tracked_stopped + 1e-9,
+    }
+
+
+def _loop_probe(model) -> dict:
+    rows = {row["controller_id"]: row for row in model.control_rows()}
+    flow = rows[FLOW_LOOP]
+    measured = (
+        model.participants["vf-shw-node-t106"].monitor_values()["inflow_m3h"] / 3600.0
+    )
+    return {
+        "tick": model._tick_index,
+        "flow_sp": flow["sp"],
+        "flow_measured": measured,
+        "flow_error_frac": abs(measured - flow["sp"]) / flow["sp"],
+        "valve_applied_pct": flow["applied_mv"],
+        "saturated": flow["saturated"],
+        "limitation_reason": flow["limitation_reason"],
+        "alarm": flow["alarm"],
+        "integral": flow["integral"],
+    }
+
+
+def _actuator_tracking_evidence(profile, contracts) -> dict:
+    """C01-1: the tracked actuator is the REALIZED one on every protective path."""
+    flow_slew = profile.controllers[FLOW_LOOP].slew_per_s
+    level_slew = profile.controllers[LEVEL_LOOP].slew_per_s
+    epilogues: dict[str, dict] = {}
+    for loop_id, sign, pv, changed_pv, release_pv, slew in (
+        (FLOW_LOOP, X3_CONTROL_ERROR_SIGN_FLOW, 0.008, 0.009, 0.0, flow_slew),
+        (LEVEL_LOOP, X3_CONTROL_ERROR_SIGN_LEVEL, 2.5, 2.55, 2.6, level_slew),
+    ):
+        for name, kwargs in (
+            ("trip", {"forced_stop": True}),
+            ("interlock", {"interlock": True, "interlock_alarm": "c01_interlock"}),
+            (
+                "c1_override",
+                {
+                    "external_override": True,
+                    "external_override_mv": 0.0,
+                    "external_override_reason": "c1_backwash_closes_inlet",
+                },
+            ),
+        ):
+            epilogues[f"{loop_id}|{name}"] = _protective_epilogue(
+                pi=_pi(profile, loop_id, sign),
+                pv=pv,
+                changed_pv=changed_pv,
+                release_pv=release_pv,
+                protection=name,
+                kwargs=kwargs,
+                slew=slew,
+            )
+
+    # the exact SA counterexample: normal 90 % -> forced stop 0 % -> release
+    counterexample_pi = _pi(profile, FLOW_LOOP, X3_CONTROL_ERROR_SIGN_FLOW)
+    for _ in range(60):
+        counterexample_pi.evaluate(pv=0.008, dt_s=1.0)
+    normal = counterexample_pi.applied_mv
+    stopped = counterexample_pi.evaluate(pv=0.008, dt_s=1.0, forced_stop=True)
+    tracked_after_stop = counterexample_pi.applied_mv
+    released = counterexample_pi.evaluate(pv=0.008, dt_s=1.0)
+    counterexample = {
+        "normal_command_pct": round(normal, 9),
+        "stopped_applied_pct": round(stopped.applied_mv, 9),
+        "tracked_after_stop_pct": round(tracked_after_stop, 9),
+        "release_applied_pct": round(released.applied_mv, 9),
+        "release_step_pp": round(abs(released.applied_mv - stopped.applied_mv), 9),
+        "slew_limit_pp": flow_slew,
+        "within_slew": abs(released.applied_mv - stopped.applied_mv) <= flow_slew + 1e-9,
+    }
+
+    # runtime continuity over the WHOLE run: only entering protection may bypass the slew
+    model = build_shwtp_whole_plant_x3(
+        profile=profile, contracts=contracts, run_id="x3-ev-tracking"
+    )
+    violations: list[dict] = []
+    owner_counts: dict[str, int] = {}
+    previous = None
+    for index in range(1, 5401):
+        model.run_window(f"w{index}")
+        report = model.control_report()
+        owner = report["arbitration"]["inlet_valve_pos"]
+        pump_owner = report["arbitration"]["transfer_pump_speed_cmd"]
+        valve = float(model._control.commands["inlet_valve_pos"])
+        pump = float(model._control.commands["transfer_pump_speed_cmd"])
+        tracked = model.control_layer.flow_pi.applied_mv
+        tracked_pump = model.control_layer.level_pi.applied_mv
+        if abs(tracked - valve) > 1e-9:
+            violations.append(
+                {"tick": index, "kind": "valve_tracking", "tracked": tracked, "realized": valve}
+            )
+        if abs(tracked_pump - pump) > 1e-9:
+            violations.append(
+                {"tick": index, "kind": "pump_tracking", "tracked": tracked_pump, "realized": pump}
+            )
+        if previous is not None:
+            enters_valve = owner != "pi_flow_output" and previous[1] == "pi_flow_output"
+            valve_step = abs(valve - previous[0])
+            if not enters_valve and valve_step > flow_slew + 1e-9:
+                violations.append(
+                    {"tick": index, "kind": "valve_step", "step_pp": round(valve_step, 9)}
+                )
+            enters_pump = pump_owner != "pi_level_output" and previous[3] == "pi_level_output"
+            pump_step = abs(pump - previous[2])
+            if not enters_pump and pump_step > level_slew + 1e-9:
+                violations.append(
+                    {"tick": index, "kind": "pump_step", "step_pp": round(pump_step, 9)}
+                )
+        owner_counts[owner] = owner_counts.get(owner, 0) + 1
+        owner_counts[f"pump:{pump_owner}"] = owner_counts.get(f"pump:{pump_owner}", 0) + 1
+        previous = (valve, owner, pump, pump_owner)
+    runtime = {
+        "ticks": 5400,
+        "owner_counts": dict(sorted(owner_counts.items())),
+        "violations": violations[:10],
+        "violation_count": len(violations),
+        "backwash_episode_seen": "c1_backwash_closes_inlet" in owner_counts,
+    }
+
+    # one ONGOING attempt: feasible step -> unreachable -> recovery (state retained)
+    step_model = build_shwtp_whole_plant_x3(
+        profile=profile, contracts=contracts, run_id="x3-ev-steps"
+    )
+    flow_pi = step_model.control_layer.flow_pi
+    acceptance = profile.acceptance
+    advanced = {"ticks": 0}
+
+    def advance(ticks: int) -> None:
+        run(step_model, ticks, offset=advanced["ticks"])
+        advanced["ticks"] += ticks
+
+    flow_pi.set_setpoint(0.006)
+    advance(acceptance.nominal_settling_window_s + 600)
+    stepped = _loop_probe(step_model)
+    flow_pi.set_setpoint(0.0125)
+    advance(acceptance.nominal_settling_window_s)
+    unreachable = _loop_probe(step_model)
+    flow_pi.set_setpoint(0.008)
+    advance(acceptance.nominal_settling_window_s)
+    recovered = _loop_probe(step_model)
+    one_attempt = {
+        "mode": "one_ongoing_attempt_state_retained",
+        "feasible_step": stepped,
+        "unreachable_step": unreachable,
+        "recovered_step": recovered,
+        "feasible_step_tracked": stepped["flow_error_frac"]
+        <= acceptance.flow_steady_error_frac_of_sp,
+        "unreachable_saturated_with_reason": bool(unreachable["saturated"])
+        and unreachable["limitation_reason"] == "output_saturated"
+        and unreachable["flow_measured"] < unreachable["flow_sp"],
+        "recovered_within_band": recovered["saturated"] is False
+        and recovered["flow_error_frac"] <= acceptance.flow_steady_error_frac_of_sp,
+        "state_retained": recovered["tick"] > unreachable["tick"] > stepped["tick"],
+    }
+
+    epilogue_pass = all(
+        row["protection_recognised"]
+        and row["protected_applied_mv"] == 0.0
+        and row["tracked_after_protection_mv"] == 0.0
+        and row["integral_held_on_first_tick"]
+        and row["integral_held_with_changed_pv"]
+        and row["release_within_slew"]
+        and row["ramp_within_slew"]
+        and row["reopened_above_the_stopped_value"]
+        for row in epilogues.values()
+    )
+    checks_pass = (
+        epilogue_pass
+        and counterexample["within_slew"]
+        and counterexample["tracked_after_stop_pct"] == 0.0
+        and runtime["violation_count"] == 0
+        and runtime["backwash_episode_seen"]
+        and one_attempt["feasible_step_tracked"]
+        and one_attempt["unreachable_saturated_with_reason"]
+        and one_attempt["recovered_within_band"]
+        and one_attempt["state_retained"]
+    )
+    return write(
+        "11-actuator-tracking",
+        {
+            "finding": "C01-1 final physical actuator is the controller's tracked actuator",
+            "sa_counterexample": counterexample,
+            "protective_epilogues": epilogues,
+            "epilogues_pass": epilogue_pass,
+            "runtime_continuity": runtime,
+            "setpoint_steps_one_attempt": one_attempt,
+            "slew_limits_pp_per_s": {"valve": flow_slew, "pump": level_slew},
+            "all_checks_pass": checks_pass,
+            "verdict": (
+                "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED"
+                if checks_pass
+                else "ACTUATOR_TRACKING_OR_RELEASE_SLEW_UNPROVEN"
+            ),
+        },
+    )
+
+
+def section_10(profile, contracts) -> dict:
+    """C01-2: energy integrated from the ACHIEVED pumped throughput (SA finding 2)."""
+    dt_s = profile.tick_s
+    model = build_shwtp_whole_plant_x3(
+        profile=profile, contracts=contracts, run_id="x3-ev-10"
+    )
+    run(model, 1200)
+    report = model.energy_report()
+    trace = model.energy_trace()
+
+    independent: dict[str, float] = {}
+    capacity_basis: dict[str, float] = {}
+    for row in trace:
+        for pump_id, data in row["pumps"].items():
+            pump_model = model.pump_models[pump_id]
+            achieved = pump_model.realized_point(
+                data["commanded_speed_pct"], data["achieved_flow_m3_s"]
+            )
+            if not achieved.off:
+                independent[pump_id] = independent.get(pump_id, 0.0) + achieved.electric_w * dt_s
+            capacity = pump_model.realized_point(
+                data["commanded_speed_pct"], data["capacity_flow_m3h"] / 3600.0
+            )
+            if not capacity.off:
+                capacity_basis[pump_id] = capacity_basis.get(pump_id, 0.0) + capacity.electric_w * dt_s
+
+    ledger = {key: float(value) for key, value in report["per_pump_electric_j"].items()}
+    matches = {
+        pump_id: abs(independent.get(pump_id, 0.0) - energy) <= 1e-6
+        for pump_id, energy in ledger.items()
+    }
+    substitution = {
+        pump_id: round(abs(capacity_basis.get(pump_id, 0.0) - energy), 6)
+        for pump_id, energy in ledger.items()
+    }
+    capacity_detected = max(substitution.values(), default=0.0) > 1.0
+
+    # scenario matrix: startup / zero available water / full receiver / narrowed pipe
+    startup = build_shwtp_whole_plant_x3(
+        profile=profile, contracts=contracts, run_id="x3-ev-10-startup"
+    )
+    run(startup, 120)
+    startup_rows = startup.energy_trace()
+    empty = build_shwtp_whole_plant_x3(
+        profile=profile, contracts=contracts, run_id="x3-ev-10-empty"
+    )
+    for participant in empty.participants.values():
+        if getattr(participant, "storage", False):
+            participant._volume_m3 = 0.0
+            participant._initial_volume_m3 = 0.0
+    run(empty, 60)
+    empty_rows = empty.energy_trace()
+    full = build_shwtp_whole_plant_x3(
+        profile=profile, contracts=contracts, run_id="x3-ev-10-full"
+    )
+    tank = full.participants["vf-shw-node-t108"]
+    tank._volume_m3 = tank.capacity_m3
+    tank._initial_volume_m3 = tank.capacity_m3
+    run(full, 60)
+    edges = dict(profile.edges)
+    edges["vf-shw-edge-dist-demand"] = replace(
+        edges["vf-shw-edge-dist-demand"], max_flow_m3_s=0.0005
+    )
+    narrow = build_shwtp_whole_plant_x3(
+        profile=replace(profile, edges=edges), contracts=contracts, run_id="x3-ev-10-narrow"
+    )
+    run(narrow, 900)
+
+    def _scenario(instance, rows) -> dict:
+        pumped = sum(
+            data["achieved_flow_m3_s"]
+            for row in rows
+            for data in row["pumps"].values()
+        )
+        # the raw-intake pump draws from the DECLARED boundary source, so a "no water"
+        # statement is made on the downstream chain (T108 transfer + DIST), where a
+        # limited startup inventory / empty upstream / full receiver really binds
+        downstream = sum(
+            data["achieved_flow_m3_s"]
+            for row in rows
+            for pump_id, data in row["pumps"].items()
+            if pump_id in ("t108-transfer-pump", "dist-hsp")
+        )
+        return {
+            "total_energy_j": instance.energy_report()["total_energy_j"],
+            "ticks": len(rows),
+            "pumped_flow_sum_m3_s": round(pumped, 12),
+            "downstream_pumped_flow_sum_m3_s": round(downstream, 12),
+            "water_physical_valid": instance.balance_report()["plant_water"]["physical_valid"],
+            "all_realized_points_feasible": instance.energy_report()["realized_feasibility"][
+                "all_realized_points_feasible"
+            ],
+            "off_rows_integrate_zero": all(
+                data["electric_w"] == 0.0 and data["energy_delta_j"] == 0.0
+                for row in rows
+                for data in row["pumps"].values()
+                if data["off"]
+            ),
+            "idle_rows_have_no_hydraulic_power": all(
+                data["hydraulic_w"] == 0.0
+                for row in rows
+                for data in row["pumps"].values()
+                if data["idle"]
+            ),
+        }
+
+    scenarios = {
+        "startup": _scenario(startup, startup_rows),
+        "zero_available_water": _scenario(empty, empty_rows),
+        "full_receiver": _scenario(full, full.energy_trace()),
+        "narrowed_downstream": _scenario(narrow, narrow.energy_trace()),
+    }
+
+    sample_ticks = [row for row in trace if row["tick_index"] in (1, 60, 600, 1200)]
+    realized_feasible = report["realized_feasibility"]["all_realized_points_feasible"]
+    checks_pass = (
+        all(matches.values())
+        and capacity_detected
+        and realized_feasible
+        and all(row["water_physical_valid"] for row in scenarios.values())
+        and all(row["all_realized_points_feasible"] for row in scenarios.values())
+        and all(row["off_rows_integrate_zero"] for row in scenarios.values())
+        and all(row["idle_rows_have_no_hydraulic_power"] for row in scenarios.values())
+        and report["operating_point_basis"] == "realized_actual_pumped_throughput"
+        and report["total_energy_j"] > 0.0
+        and scenarios["zero_available_water"]["downstream_pumped_flow_sum_m3_s"] == 0.0
+    )
+    return write(
+        "10-energy-from-actual-flow",
+        {
+            "finding": "C01-2 energy integrated from the ACHIEVED pumped throughput",
+            "operating_point_basis": report["operating_point_basis"],
+            "idle_loss_rule": report["idle_loss_rule"],
+            "total_energy_j": report["total_energy_j"],
+            "per_pump_electric_j": report["per_pump_electric_j"],
+            "idle_energy_j": report["idle_energy_j"],
+            "actual_pumped_energy_j": report["actual_pumped_energy_j"],
+            "independent_recomputation_j": {
+                key: round(value, 6) for key, value in sorted(independent.items())
+            },
+            "independent_recomputation_matches": all(matches.values()),
+            "capacity_basis_j": {
+                key: round(value, 6) for key, value in sorted(capacity_basis.items())
+            },
+            "capacity_substitution_difference_j": substitution,
+            "capacity_substitution_detected": capacity_detected,
+            "realized_operating_points_last_tick": report["pump_operating_points"],
+            "allocation_capacity_points_last_tick": report["allocation_capacity_points"],
+            "realized_feasibility": report["realized_feasibility"],
+            "scenarios": scenarios,
+            "per_tick_export_sample": sample_ticks,
+            "per_tick_export_fields": [
+                "commanded_speed_pct",
+                "achieved_flow_m3_s",
+                "achieved_flow_m3h",
+                "capacity_flow_m3h",
+                "head_m",
+                "required_head_m",
+                "throttle_head_m",
+                "hydraulic_w",
+                "electric_w",
+                "energy_delta_j",
+                "energized",
+                "idle",
+                "off",
+                "feasible",
+                "reason",
+            ],
+            "all_checks_pass": checks_pass,
+            "verdict": (
+                "ENERGY_INTEGRATED_FROM_ACHIEVED_PUMPED_THROUGHPUT"
+                if checks_pass
+                else "ENERGY_BASIS_UNPROVEN"
+            ),
+        },
+    )
+
+
 def main() -> int:
     profile = load_x3_profile(PROFILE_PATH)
     contracts = load_whole_plant_contracts()
@@ -818,6 +1353,8 @@ def main() -> int:
         "05": "PUMP_ENVELOPE_FEASIBLE_WITH_EXPLICIT_UNITS",
         "06": "MUTATIONS_VIOLATE_THE_PHYSICAL_ENVELOPE",
         "07": "X3_CANONICAL_WITH_X2_AND_G21_COMPATIBILITY",
+        "10": "ENERGY_INTEGRATED_FROM_ACHIEVED_PUMPED_THROUGHPUT",
+        "11": "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED",
     }
     artefacts = {
         "01": section_01(profile, contracts),
@@ -827,10 +1364,16 @@ def main() -> int:
         "05": section_05(profile, contracts),
         "06": section_06(profile, contracts),
         "07": section_07(),
+        "10": section_10(profile, contracts),
     }
+    artefacts["11"] = write(
+        "11-actuator-tracking",
+        {**artefacts["04"]["actuator_tracking"], "evidence": "VF-SHW-X3-C01 finding 1"},
+    )
     verdicts = {key: payload["verdict"] for key, payload in artefacts.items()}
     all_pass = all(verdicts.get(key) == value for key, value in expected.items())
     acceptance = _acceptance_block(artefacts)
+    c01_acceptance = _c01_acceptance_block(artefacts)
     summary = write(
         "08-verdict",
         {
@@ -840,19 +1383,20 @@ def main() -> int:
             "expected_verdicts": expected,
             "all_sections_pass": all_pass,
             "x3": acceptance,
+            "x3c01": c01_acceptance,
             "overall": "SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED"
-            if all_pass
+            if all_pass and all(c01_acceptance.values())
             else "SHW_X3_EVIDENCE_INCOMPLETE",
         },
     )
-    # Machine-checkable acceptance: the harness evaluates the contract rules against the
-    # x3.* block above and the results are written back into the same artefact.
+    # Machine-checkable acceptance: the harness evaluates the CORRECTION contract rules
+    # (C01 findings + the X3-1..X3-7 regression re-assertions) against the blocks above.
     evaluation = subprocess.run(
         [
             sys.executable,
             str(ROOT / ".ai-harness" / "scripts" / "evaluate_acceptance.py"),
             str(OUT / "08-verdict.json"),
-            str(ROOT / ".ai-harness" / "tasks" / "VF-SHW-X3.json"),
+            str(ROOT / ".ai-harness" / "tasks" / "VF-SHW-X3-C01.json"),
             "--phase",
             "final",
             "--output",
@@ -867,8 +1411,9 @@ def main() -> int:
     failed = [row["id"] for row in evaluated if row["result"] != "PASS"]
     acceptance_line = (
         f"- acceptance: {len(passed)}/{len(evaluated)} criteria PASS "
-        f"(X3-1..X3-7 via .ai-harness/scripts/evaluate_acceptance.py, phase=final, "
-        f"rules x3.scope_control .. x3.regression)"
+        f"(X3C01-1, X3C01-2 + the X3-1..X3-7 regression re-assertions, evaluated by "
+        f".ai-harness/scripts/evaluate_acceptance.py against the VF-SHW-X3-C01 contract; "
+        f"rules x3c01.actuator_tracking / x3c01.energy_from_actual_flow / x3.*)"
     )
     lines = [
         "# VF-SHW-X3 evidence summary",
@@ -909,6 +1454,20 @@ def main() -> int:
             f"{artefacts['04']['setpoint_sweep']['level']['high']['level_measured_m']:.4f} m "
             f"(pump {artefacts['04']['setpoint_sweep']['level']['low']['pump_applied_pct']:.2f} -> "
             f"{artefacts['04']['setpoint_sweep']['level']['high']['pump_applied_pct']:.2f} %)",
+            f"- C01-1 actuator tracking: SA counterexample "
+            f"{artefacts['11']['sa_counterexample']['normal_command_pct']:.1f} % -> stop "
+            f"{artefacts['11']['sa_counterexample']['stopped_applied_pct']:.1f} % (tracked "
+            f"{artefacts['11']['sa_counterexample']['tracked_after_stop_pct']:.1f} %) -> release step "
+            f"{artefacts['11']['sa_counterexample']['release_step_pp']:.3f} pp (limit "
+            f"{artefacts['11']['sa_counterexample']['slew_limit_pp']:.1f} pp/s); protective epilogues "
+            f"{len(artefacts['11']['protective_epilogues'])}; runtime slew violations "
+            f"{artefacts['11']['runtime_continuity']['violation_count']}",
+            f"- C01-2 realized energy: total "
+            f"{artefacts['10']['total_energy_j'] / 1e6:.6f} MJ (idle "
+            f"{artefacts['10']['idle_energy_j'] / 1e6:.6f} MJ, pumped "
+            f"{artefacts['10']['actual_pumped_energy_j'] / 1e6:.6f} MJ); capacity-basis "
+            f"substitution differs by up to "
+            f"{max(artefacts['10']['capacity_substitution_difference_j'].values(), default=0.0) / 1e6:.6f} MJ",
             acceptance_line,
             "",
             "Every number above is produced by `generate_evidence.py` from the committed model at",

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -430,3 +431,215 @@ class TestPhysicalEnvelope:
             assert getattr(model.participants[scope_id], "storage", False) is False
         assert "vf-shw-node-raw-intake" not in PIPELINE_SCOPES
         assert "vf-shw-node-network-demand" not in PIPELINE_SCOPES
+
+
+def _independent_energy(model, *, basis: str = "achieved") -> dict[str, float]:
+    """Recompute the energy INDEPENDENTLY from the exported per-tick actual data.
+
+    ``basis="achieved"`` uses the realized pumped throughput; ``basis="capacity"``
+    substitutes the capacity/rated flow (the mutation the acceptance rule must reject).
+    """
+    totals: dict[str, float] = {}
+    for row in model.energy_trace():
+        dt_s = row["dt_s"]
+        for pump_id, data in row["pumps"].items():
+            if basis == "achieved":
+                point = model.pump_models[pump_id].realized_point(
+                    data["commanded_speed_pct"], data["achieved_flow_m3_s"]
+                )
+            else:
+                point = model.pump_models[pump_id].realized_point(
+                    data["commanded_speed_pct"], data["capacity_flow_m3h"] / 3600.0
+                )
+            if point.off:
+                continue
+            totals[pump_id] = totals.get(pump_id, 0.0) + point.electric_w * dt_s
+    return totals
+
+
+class TestC01EnergyFromAchievedFlow:
+    """SA C01-2: the energy ledger must integrate the ACHIEVED pumped throughput."""
+
+    def test_ledger_matches_an_independent_recomputation(self, profile, contracts):
+        model = _settled(
+            build_shwtp_whole_plant_x3(
+                profile=profile, contracts=contracts, run_id="x3-c01-energy"
+            ),
+            1200,
+        )
+        report = model.energy_report()
+        independent = _independent_energy(model, basis="achieved")
+        for pump_id, energy in report["per_pump_electric_j"].items():
+            assert energy == pytest.approx(independent.get(pump_id, 0.0), abs=1e-6), pump_id
+        assert report["total_energy_j"] == pytest.approx(
+            sum(report["per_pump_electric_j"].values()), rel=1e-9
+        )
+        assert report["operating_point_basis"] == "realized_actual_pumped_throughput"
+        assert report["realized_feasibility"]["infeasible_ticks"] == 0
+        assert report["realized_feasibility"]["all_realized_points_feasible"] is True
+
+    def test_capacity_flow_substitution_fails_the_energy_audit(self, profile, contracts):
+        """A rated/capacity-flow substitution must NOT reproduce the ledger."""
+        model = _settled(
+            build_shwtp_whole_plant_x3(
+                profile=profile, contracts=contracts, run_id="x3-c01-energy-mutation"
+            ),
+            1200,
+        )
+        report = model.energy_report()
+        wrong = _independent_energy(model, basis="capacity")
+        differences = {
+            pump_id: abs(wrong.get(pump_id, 0.0) - report["per_pump_electric_j"].get(pump_id, 0.0))
+            for pump_id in report["per_pump_electric_j"]
+        }
+        assert max(differences.values()) > 1.0, (
+            f"the capacity-flow substitution is indistinguishable: {differences}"
+        )
+        # at least one pump really pumped less than its declared capacity
+        assert any(
+            row["pumps"][pump_id]["achieved_flow_m3h"]
+            < row["pumps"][pump_id]["capacity_flow_m3h"] - 1e-9
+            for row in model.energy_trace()
+            for pump_id in row["pumps"]
+        )
+
+    def test_off_idle_and_pumped_states_are_distinguished(self, profile, contracts):
+        """OFF = exactly zero; energized-no-flow = declared idle loss, never P_hyd."""
+        pump = profile.pumps["raw-intake-pump"]
+        model = PumpModel(pump, profile.units)
+
+        off = model.realized_point(0.0, 0.0)
+        assert off.off is True and off.energized is False
+        assert off.flow_m3_s == 0.0 and off.electric_w == 0.0 and off.hydraulic_w == 0.0
+
+        idle = model.realized_point(20.0, 0.0)
+        assert idle.off is False and idle.energized is True and idle.idle is True
+        assert idle.electric_w == pytest.approx(pump.no_load_w)
+        assert idle.hydraulic_w == 0.0, "no useful power may be invented with no water"
+        assert idle.reason == "energized_zero_flow_no_lift_head"
+        assert idle.feasible is True
+
+        pumped = model.realized_point(90.0, 0.010)
+        assert pumped.idle is False and pumped.feasible is True
+        assert pumped.hydraulic_w == pytest.approx(
+            profile.units.rho_kg_m3 * profile.units.g_m_s2 * 0.010 * pumped.required_head_m
+        )
+        assert pumped.electric_w == pytest.approx(
+            pumped.hydraulic_w / pump.eta_total + pump.no_load_w
+        )
+        assert pumped.throttle_head_m >= 0.0
+
+    def test_realized_points_enforce_head_and_motor_feasibility(self, profile):
+        """A realized point that violates the frozen laws is reported infeasible."""
+        pump = profile.pumps["t108-transfer-pump"]
+        model = PumpModel(pump, profile.units)
+        # impossible head at the realized flow
+        no_lift = model.realized_point(10.0, 0.005)
+        assert no_lift.feasible is False
+        assert no_lift.reason == "insufficient_head_at_realized_flow"
+        # motor overload at the realized flow
+        tiny = replace(pump, motor_rating_w=10.0, no_load_w=1.0)
+        overloaded = PumpModel(tiny, profile.units).realized_point(100.0, 0.0167)
+        assert overloaded.feasible is False
+        assert overloaded.reason in ("motor_overload_at_realized_flow", "insufficient_head_at_realized_flow")
+
+    def test_startup_and_zero_water_energy_is_achieved_not_rated(self, profile, contracts):
+        """Startup (nothing moved yet) may not integrate a capacity-rated power."""
+        model = build_shwtp_whole_plant_x3(
+            profile=profile, contracts=contracts, run_id="x3-c01-startup"
+        )
+        _run(model, 120)
+        report = model.energy_report()
+        trace = model.energy_trace()
+        assert trace, "the per-tick export must exist"
+        for row in trace[:60]:
+            for pump_id, data in row["pumps"].items():
+                if data["off"]:
+                    assert data["electric_w"] == 0.0
+                    assert data["energy_delta_j"] == 0.0
+                else:
+                    assert data["hydraulic_w"] == 0.0 or data["achieved_flow_m3_s"] > 0.0
+                    power = (
+                        data["hydraulic_w"] / model.pump_models[pump_id].pump.eta_total
+                        + model.pump_models[pump_id].pump.no_load_w
+                    )
+                    assert data["electric_w"] == pytest.approx(power, abs=1e-9)
+        assert report["idle_energy_j"] >= 0.0
+        assert report["actual_pumped_energy_j"] >= 0.0
+        assert report["total_energy_j"] == pytest.approx(
+            report["idle_energy_j"] + report["actual_pumped_energy_j"], abs=1e-6
+        )
+
+    def test_empty_storages_keep_the_energy_on_the_declared_law(self, profile, contracts):
+        """With every storage empty the DOWNSTREAM chain has no water to move, so only
+        OFF/idle energy may be integrated - never a capacity-rated hydraulic power.
+
+        (The raw-intake pump draws from the declared boundary source, which is a
+        separate, explicitly modelled boundary; the no-water claim is therefore made on
+        the chain that a limited startup inventory really binds.)
+        """
+        model = build_shwtp_whole_plant_x3(
+            profile=profile, contracts=contracts, run_id="x3-c01-nowater"
+        )
+        for participant in model.participants.values():
+            if getattr(participant, "storage", False):
+                participant._volume_m3 = 0.0
+                participant._initial_volume_m3 = 0.0
+        _run(model, 60)
+        report = model.energy_report()
+        trace = model.energy_trace()
+        for row in trace[:20]:
+            for pump_id in ("t108-transfer-pump", "dist-hsp"):
+                data = row["pumps"][pump_id]
+                assert data["achieved_flow_m3_s"] == 0.0, "an empty chain delivers no water"
+                assert data["hydraulic_w"] == 0.0, "no water moved, no useful power"
+                if data["off"]:
+                    assert data["energy_delta_j"] == 0.0
+                else:
+                    assert data["energy_delta_j"] == pytest.approx(
+                        model.pump_models[pump_id].pump.no_load_w * row["dt_s"], abs=1e-9
+                    ), "an energized dry pump draws only the declared idle loss"
+        assert report["total_energy_j"] == pytest.approx(
+            report["idle_energy_j"] + report["actual_pumped_energy_j"], abs=1e-6
+        )
+        plant = model.balance_report()["plant_water"]
+        assert plant["shortfall_m3"] <= CREATED_WATER_TOLERANCE_M3
+        assert plant["physical_valid"] is True
+
+        # a FULL receiver throttles the chain: still no invented flow
+        tank = model.participants["vf-shw-node-t108"]
+        tank._volume_m3 = tank.capacity_m3
+        tank._initial_volume_m3 = tank.capacity_m3
+        _run(model, 30, offset=500)
+        assert tank._storage_volume() <= tank.capacity_m3 + 1e-9
+        assert model.balance_report()["plant_water"]["physical_valid"] is True
+
+    def test_narrowed_downstream_capacity_shrinks_the_achieved_flow(self, profile, contracts):
+        """A narrowed downstream hop reduces the ACHIEVED flow, hence the energy."""
+        edges = dict(profile.edges)
+        edges["vf-shw-edge-dist-demand"] = replace(
+            edges["vf-shw-edge-dist-demand"], max_flow_m3_s=0.0005
+        )
+        narrow = replace(profile, edges=edges)
+        narrow_model = _settled(
+            build_shwtp_whole_plant_x3(
+                profile=narrow, contracts=contracts, run_id="x3-c01-narrow"
+            ),
+            900,
+        )
+        baseline_model = _settled(
+            build_shwtp_whole_plant_x3(profile=profile, contracts=contracts, run_id="x3-c01-wide"),
+            900,
+        )
+        narrow_report = narrow_model.energy_report()
+        baseline_report = baseline_model.energy_report()
+        narrow_flow = narrow_report["pump_operating_points"]["dist-hsp"]["flow_m3h"]
+        baseline_flow = baseline_report["pump_operating_points"]["dist-hsp"]["flow_m3h"]
+        assert narrow_flow <= baseline_flow + 1e-9
+        assert narrow_report["total_energy_j"] != baseline_report["total_energy_j"]
+        # the ledger of the narrowed plant still matches its own independent recomputation
+        independent = _independent_energy(narrow_model, basis="achieved")
+        for pump_id, energy in narrow_report["per_pump_electric_j"].items():
+            assert energy == pytest.approx(independent.get(pump_id, 0.0), abs=1e-6)
+        assert narrow_model.balance_report()["plant_water"]["physical_valid"] is True
+

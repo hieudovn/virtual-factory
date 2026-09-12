@@ -122,6 +122,15 @@ def _num(value: Any, name: str) -> float:
 #: or unbounded discharge still fails the gate at 1e-9).
 X3_LEDGER_ROUNDING_PER_TICK_M3 = 5e-11
 
+#: The physical transfer that carries each powered pump's DISCHARGE: the committed
+#: water (m3) on this binding in a tick is exactly the pumped throughput of the tick,
+#: which is the basis of the realized operating point / energy integration (C01-2).
+PUMP_DISCHARGE_BINDINGS: dict[str, str] = {
+    "raw-intake-pump": "vf-shw-edge-intake-t100",
+    "t108-transfer-pump": "vf-shw-edge-t108-dist",
+    "dist-hsp": "vf-shw-edge-dist-demand",
+}
+
 
 def _nonneg_float(value: Any, name: str = "value") -> float:
     out = _num(value, name)
@@ -388,7 +397,16 @@ class WholePlantX3Runtime:
         self._control: X3ControlEvaluation | None = None
         self._allocation: TickAllocation | None = None
         self._balance_baseline: dict[str, Any] | None = None
+        #: CAPACITY points of the current tick: allocation/envelope statement ONLY
+        #: (never an energy measurement, SA C01-2)
+        self._pump_capacity_points: dict[str, PumpOperatingPoint] = {}
+        #: REALIZED points of the current tick, from the committed achieved throughput
         self._pump_points: dict[str, PumpOperatingPoint] = {}
+        #: actual commanded speed of the tick whose realized points were evaluated
+        self._tick_speeds: dict[str, float] = {}
+        #: per-tick realized operating data (actual Q, speed, H/Hreq, power, energy)
+        self._energy_trace: list[dict[str, Any]] = []
+        self._energy_realized_trace: dict[str, Any] = {}
         self._feedback: dict[str, Any] = {}
         self._alarms: set[str] = set()
         self._record_transfers()
@@ -494,7 +512,7 @@ class WholePlantX3Runtime:
                     "active_in_x3": True,
                     "mv_signal": config.mv_signal,
                     "pv_signal": config.pv_signal,
-                    "sp": config.sp,
+                    "sp": status.sp if status else config.sp,
                     "sp_admissible": list(config.sp_admissible),
                     "mode": status.mode if status else "AUTO",
                     "pv": status.pv if status else None,
@@ -707,7 +725,8 @@ class WholePlantX3Runtime:
         for pump_id, speed_pct in speeds.items():
             model = self.pump_models[pump_id]
             points[pump_id] = model.operating_point(speed_pct, model.pump.q_rated_m3_s)
-        self._pump_points = points
+        # CAPACITY statement only: the energy ledger uses the realized points below
+        self._pump_capacity_points = points
         requested["vf-shw-edge-intake-t100"] = points["raw-intake-pump"].flow_m3_s
         requested["vf-shw-edge-t108-dist"] = points["t108-transfer-pump"].flow_m3_s
         requested["vf-shw-edge-dist-demand"] = points["dist-hsp"].flow_m3_s
@@ -735,7 +754,9 @@ class WholePlantX3Runtime:
             t108_level_m=t108_level_m,
             trips={"f106_inlet_path_interlock": False, "t108_pump_interlock": False},
         )
-        requests = self._requested_edge_flows(self._pump_speeds())
+        speeds = self._pump_speeds()
+        self._tick_speeds = dict(speeds)
+        requests = self._requested_edge_flows(speeds)
         allocation = allocate_tick(
             profile=self.profile,
             tick_index=tick,
@@ -776,7 +797,11 @@ class WholePlantX3Runtime:
         self._seen_windows = set()
         self._control = None
         self._allocation = None
+        self._pump_capacity_points = {}
         self._pump_points = {}
+        self._tick_speeds = {}
+        self._energy_trace = []
+        self._energy_realized_trace = {}
         self._alarms = set()
         # a reset starts a NEW deterministic state: the pipeline bookkeeping and the
         # marked evaluation window must not carry anything over from the old run
@@ -930,11 +955,74 @@ class WholePlantX3Runtime:
             participant._shortfall_m3 for participant in self.participants.values()
         )
 
+    def _realized_pump_points(self) -> dict[str, PumpOperatingPoint]:
+        """SA C01-2: the operating point of the ACHIEVED pumped throughput.
+
+        The capacity point of :meth:`_requested_edge_flows` is an allocation/envelope
+        statement; the energy ledger must integrate what the pumps really moved. The
+        actual throughput is read from the committed physical transfer records of THIS
+        tick (``_water_of``), so a startup inventory limit, an empty source, a full
+        receiver or a narrowed downstream capacity all show up as a smaller realized
+        flow instead of a capacity-rated power.
+        """
+        dt_s = self.profile.tick_s
+        points: dict[str, PumpOperatingPoint] = {}
+        for pump_id, binding_id in sorted(PUMP_DISCHARGE_BINDINGS.items()):
+            achieved_m3 = self._water_of(self._transfers, binding_id)
+            achieved_m3_s = achieved_m3 / dt_s if dt_s > 0.0 else 0.0
+            points[pump_id] = self.pump_models[pump_id].realized_point(
+                self._tick_speeds.get(pump_id, 0.0), achieved_m3_s
+            )
+        return points
+
     def _update_energy(self) -> None:
-        for point in self._pump_points.values():
-            self.energy.integrate(point, self.profile.tick_s)
+        """Integrate energy from the REALIZED operating points (SA C01-2)."""
+        points = self._realized_pump_points()
+        self._pump_points = points
+        rows: dict[str, Any] = {}
+        total_delta_j = 0.0
+        for pump_id, point in sorted(points.items()):
+            delta = self.energy.integrate(point, self.profile.tick_s)
+            total_delta_j += delta
             if not point.feasible:
-                self._alarms.add(f"{point.pump_id}:motor_or_head_infeasible")
+                self._alarms.add(f"{pump_id}:motor_or_head_infeasible")
+            capacity = self._pump_capacity_points.get(pump_id)
+            rows[pump_id] = {
+                "commanded_speed_pct": self._tick_speeds.get(pump_id, 0.0),
+                "achieved_flow_m3_s": point.flow_m3_s,
+                "achieved_flow_m3h": point.flow_m3h,
+                "capacity_flow_m3h": capacity.flow_m3h if capacity else 0.0,
+                "head_m": point.head_m,
+                "required_head_m": point.required_head_m,
+                "throttle_head_m": point.throttle_head_m,
+                "hydraulic_w": point.hydraulic_w,
+                "electric_w": point.electric_w,
+                "motor_rating_w": point.motor_rating_w,
+                "feasible": point.feasible,
+                "energized": point.energized,
+                "idle": point.idle,
+                "off": point.off,
+                "reason": point.reason,
+                "energy_delta_j": delta,
+            }
+        self._energy_trace.append(
+            {
+                "tick_index": self._tick_index,
+                "dt_s": self.profile.tick_s,
+                "pumps": rows,
+                "total_electric_w": round(
+                    sum(row["electric_w"] for row in rows.values()), 9
+                ),
+                "total_hydraulic_w": round(
+                    sum(row["hydraulic_w"] for row in rows.values()), 9
+                ),
+                "total_energy_delta_j": round(total_delta_j, 9),
+            }
+        )
+
+    def energy_trace(self) -> tuple[dict[str, Any], ...]:
+        """Per-tick realized operating data (actual Q, speed, H/Hreq, P, energy)."""
+        return tuple(self._energy_trace)
 
     # ── reports ────────────────────────────────────────────────────────────
     def balance_report(self) -> dict:
@@ -1094,7 +1182,16 @@ class WholePlantX3Runtime:
 
     def energy_report(self) -> dict:
         report = self.energy.to_dict(
-            "P_elec = P_hyd/eta_total + no_load (declared synthetic); J -> kWh at the named boundary"
+            "P_elec = P_hyd(Hreq)/eta_total + no_load (declared synthetic, realized on the "
+            "achieved pumped throughput); P_hyd uses the head actually delivered to the "
+            "water; J -> kWh at the named boundary"
+        )
+        report["operating_point_basis"] = "realized_actual_pumped_throughput"
+        report["idle_loss_rule"] = (
+            "an OFF pump integrates exactly zero flow and zero energy; an energized pump "
+            "that moves no water integrates only the declared no_load_w idle loss with no "
+            "useful hydraulic power; the excess available head stays a recorded "
+            "throttle_head_m dissipation instead of invented useful power"
         )
         report["pump_operating_points"] = {
             pump_id: {
@@ -1109,10 +1206,56 @@ class WholePlantX3Runtime:
                 "motor_rating_w": point.motor_rating_w,
                 "feasible": point.feasible,
                 "reason": point.reason,
+                "energized": point.energized,
+                "idle": point.idle,
                 "off": point.off,
             }
             for pump_id, point in sorted(self._pump_points.items())
         }
+        report["allocation_capacity_points"] = {
+            pump_id: {
+                "speed_pct": point.speed_fraction * 100.0,
+                "flow_m3_s": point.flow_m3_s,
+                "flow_m3h": point.flow_m3h,
+                "feasible": point.feasible,
+                "reason": point.reason,
+                "energized": point.energized,
+                "off": point.off,
+            }
+            for pump_id, point in sorted(self._pump_capacity_points.items())
+        }
+        realized = [row for row in self._energy_trace]
+        infeasible = [
+            {"tick_index": row["tick_index"], "pumps": sorted(
+                pump_id for pump_id, data in row["pumps"].items() if not data["feasible"]
+            )}
+            for row in realized
+            if any(not data["feasible"] for data in row["pumps"].values())
+        ]
+        report["realized_feasibility"] = {
+            "ticks_observed": len(realized),
+            "infeasible_ticks": len(infeasible),
+            "first_infeasible": infeasible[:5],
+            "all_realized_points_feasible": not infeasible,
+        }
+        report["idle_energy_j"] = round(
+            sum(
+                data["electric_w"] * row["dt_s"]
+                for row in realized
+                for data in row["pumps"].values()
+                if data["idle"]
+            ),
+            6,
+        )
+        report["actual_pumped_energy_j"] = round(
+            sum(
+                data["energy_delta_j"]
+                for row in realized
+                for data in row["pumps"].values()
+                if not data["idle"]
+            ),
+            6,
+        )
         report.update(AUTHORITY_LABELS)
         return report
 
