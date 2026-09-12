@@ -1,0 +1,84 @@
+{
+  "task_id": "VF-vNEXT-G21",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "IMPLEMENTATION gate — SH-WTP Functional Simulation Expansion (G21)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/72",
+  "objective": "Expand SH-WTP from the T106->T108 proof into a bounded runnable multi-scope simulation slice (~4-6 executable scopes spanning treatment + distribution). Reuse G10/G11 readiness, T106/T108 runtimes, G18 scenario-assumed topology, G19 federation mechanism. Use LogicalOnly/SyntheticReference/FirstOrder where evidence is limited; do not fabricate detailed physics. Preserve assumed vs authoritative topology distinction; explicit fidelity/status per scope; deterministic multi-window; no mutable cross-scope state; CompositionGraph != execution order; explicit_lagged without same-window feed-through; no site/runtime authority broadening. No gateway routing, no MQTT/Kafka/REST, no PIM change, no T110 runtime, no whole-plant/site-faithful claim, no G4 redesign, no next gate.",
+  "explicit_non_objectives": [
+    "No detailed gateway routing",
+    "No MQTT/Kafka/production REST/retry/security",
+    "No PIM modification",
+    "No T110 runtime",
+    "No whole-plant/site-faithful claim",
+    "No G4 redesign",
+    "No next gate"
+  ],
+  "required_branch": "feature/vf-vnext-g21",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G21.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G21.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G21/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/expansion.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "tests/test_vnext_g21_shwtp_expansion.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/shwtp/runtime.py",
+    "src/virtual_factory/shwtp/logical_runtime.py",
+    "src/virtual_factory/shwtp/projection.py",
+    "src/virtual_factory/shwtp/federation.py",
+    "src/virtual_factory/shwtp/evaluation.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/overlay.py",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/connectivity/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/ui/",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/expansion.py (5-scope SH-WTP plant slice: PlantSliceScope descriptors + 5 participant adapters + build_shwtp_plant_slice)",
+    "tests/test_vnext_g21_shwtp_expansion.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G21/01-shwtp-expansion.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement gateway routing",
+    "Implement MQTT/Kafka/REST",
+    "Modify PIM",
+    "Implement T110 runtime",
+    "Claim whole-plant/site-faithful simulation",
+    "Redesign G4",
+    "Start next gate"
+  ],
+  "stop_conditions": [
+    "Fewer than 4 executable scopes can be selected safely from repo evidence",
+    "Exact scope selection requires a new product decision or unsupported plant truth"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Coherent runnable multi-scope slice materially larger than T106->T108", "rule": {"field": "g21.slice", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "At least 4 executable scopes present", "rule": {"field": "g21.scopes", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Assumed links explicit/versioned/reversible and not PIM truth", "rule": {"field": "g21.assumed", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Fidelity/status explicit per scope", "rule": {"field": "g21.fidelity", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Deterministic multi-window execution", "rule": {"field": "g21.determinism", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "No same-window feed-through under explicit_lagged", "rule": {"field": "g21.lag", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "CompositionGraph != execution order; no mutable cross-scope state", "rule": {"field": "g21.graph", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "No authority broadening", "rule": {"field": "g21.authority", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "TIPA ASSY + G20/G19/G18/G14/G15 + canonical baseline + full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

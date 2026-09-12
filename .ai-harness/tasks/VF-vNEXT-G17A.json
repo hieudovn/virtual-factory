@@ -1,0 +1,87 @@
+{
+  "task_id": "VF-vNEXT-G17A",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "PLANNING/REVIEW gate — Post-G16 Platform Workstream Independence Review (G17A)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/68",
+  "objective": "Produce an evidence-grounded, deterministic separation between VF workstreams that genuinely depend on unresolved plant semantic authority (T108 -> DIST-P108, STILL_INSUFFICIENT) and platform capability work that can proceed independently. Inspect actual accepted repo state through G16 (G4 Coordinator/ExecutableParticipant/BoundaryTransfer, G7 run-control, G14A projection, G14B federation, G15 evaluation, G16 readiness artifact, frontend/inspection surfaces, replay/run-identity/provenance). Classify every required workstream with exactly one of CAN_PROCEED_INDEPENDENTLY / BLOCKED_BY_PIM_EVIDENCE / SHOULD_WAIT_FOR_RUNTIME_EXPANSION, each with a full decision record (current repo readiness, dependencies, plant-truth-required flag, architecture risk if done now, rationale, priority, future model Flash or Pro). Distinguish PIM_AUTHORITATIVE_TOPOLOGY (still blocked for T108->DIST-P108) from VF_SCENARIO_ASSUMED_TOPOLOGY (may be a future bounded synthetic-reference implementation gate; explicit/versioned/provenanced/reversible; never promoted to site truth). Choose exactly one smallest next VF implementation gate satisfying: independent of unresolved T108->DIST-P108 semantic authority; materially reduces whole-plant federation risk; does not broaden SH-WTP runtime authorization; requires no new plant physics/topology truth; preserves CompositionGraph != execution order; preserves coupling policy as orchestration policy; does not redesign G4. No runtime, UI, graph, PIM, projection, or federation implementation in G17A. No DIST-P108/T110/Line2/chemical/electrical/automation runtime.",
+  "explicit_non_objectives": [
+    "No runtime implementation",
+    "No UI/dashboard/alarms/KPI implementation",
+    "No BoundaryPort / CompositionBinding creation",
+    "No new federation participant",
+    "No whole-plant execution",
+    "No T110 behavior",
+    "No Line 2 / chemical / electrical / automation runtime",
+    "No Gauss-Seidel / iterative / multirate policy implementation",
+    "No coupling policy change",
+    "No PIM modification or re-pin",
+    "No G4 redesign",
+    "No G18 implementation"
+  ],
+  "required_branch": "feature/vf-vnext-g17a",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G17A.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G17A.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G17A/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "configs/vnext/shwtp/shwtp_workstream_independence_review.json",
+    "configs/vnext/shwtp/WORKSTREAM-INDEPENDENCE-REVIEW.md",
+    "tests/test_vnext_g17a_workstream_review.py"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/vnext/shwtp/shwtp_readiness_scope.json",
+    "configs/vnext/shwtp/shwtp_synthetic_runtime_admission.json",
+    "configs/vnext/shwtp/shwtp_expansion_readiness.json",
+    "configs/plants/",
+    "configs/model_types/",
+    "configs/faults/",
+    "docs/",
+    "deploy/",
+    "examples/"
+  ],
+  "required_deliverables": [
+    "configs/vnext/shwtp/shwtp_workstream_independence_review.json (machine-readable workstream classification matrix + dependency matrix + recommended next gate + blocked/deferred list + architecture invariants + no-runtime-authorization statement)",
+    "configs/vnext/shwtp/WORKSTREAM-INDEPENDENCE-REVIEW.md (human-readable review note)",
+    "tests/test_vnext_g17a_workstream_review.py (planning tests proving G17A did not change runtime behavior)",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G17A/01-workstream-independence-review.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement any new runtime behavior",
+    "Modify PIM or re-pin PIM artifacts",
+    "Create DIST-P108 runtime or T108->DIST ports/binding",
+    "Create T110 / Line2 / chemical / electrical / automation runtime",
+    "Create whole-plant runtime",
+    "Broaden G12C admission",
+    "Add Gauss-Seidel / iterative / multirate policy implementation",
+    "Invent plant values",
+    "Redesign G4 without a repo-proven blocker",
+    "Start the recommended next implementation gate"
+  ],
+  "stop_conditions": [
+    "The only meaningful next step requires a new product/physics/architecture decision not supported by evidence",
+    "The recommended next gate would require changing frozen G4/runtime semantics",
+    "PIM must change or be re-pinned",
+    "A workstream classification would require broadening site/runtime authority",
+    "Selecting a next gate requires plant physics/topology truth that is not available"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "External PIM blocker reference (d10049801a1eb022a7fa2e83badabefb92fb7412) + T108-DIST-EVIDENCE STILL_INSUFFICIENT + required VF base 732decd recorded", "rule": {"field": "review.pins", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Every required workstream has exactly one classification; all 23 workstreams present; each has readiness/dependencies/plant-truth-required/risk/rationale/priority/model", "rule": {"field": "review.workstreams", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Topology distinction present: PIM_AUTHORITATIVE_TOPOLOGY (blocked for T108->DIST-P108) vs VF_SCENARIO_ASSUMED_TOPOLOGY (future synthetic-reference only)", "rule": {"field": "review.topology", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Exactly one recommended next gate; satisfies all 7 independence/risk/authority/no-plant-truth/CompositionGraph/coupling-policy/no-G4-redesign criteria", "rule": {"field": "review.next_gate", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Authority unchanged: vf_runtime_authorization NOT_AUTHORIZED; site_authorized_execution NOT_AUTHORIZED; whole_plant_runtime NOT_AUTHORIZED/NOT_IMPLEMENTED", "rule": {"field": "review.authority", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "No runtime behavior changed (src/ untouched; changed files within allowlist)", "rule": {"field": "review.no_runtime_change", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "New G17A planning tests green", "rule": {"field": "review.tests", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "Complete canonical vNext baseline green (updated manifest with g17a group + gate context)", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

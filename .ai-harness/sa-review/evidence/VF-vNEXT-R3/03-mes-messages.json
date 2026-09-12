@@ -1,0 +1,81 @@
+{
+  "authority": "canonical_tipa_runtime_session",
+  "contract_version": "tipa-assy-demo-v1.1",
+  "run_id": "TIPA-0001",
+  "count": 1159,
+  "trace_count": 1159,
+  "by_family": {
+    "mes.run_status": 1,
+    "mes.execution_event": 666,
+    "mes.checklist_result": 78,
+    "mes.genealogy_relationship": 72,
+    "mes.quality_result": 138,
+    "mes.measurement_result": 180,
+    "mes.release": 24
+  },
+  "sub_lines_covered": [
+    "ASSY-SL01",
+    "ASSY-SL02",
+    "ASSY-SL03",
+    "ASSY-SL04",
+    "ASSY-SL05",
+    "ASSY-SL06"
+  ],
+  "all_payload_run_ids_canonical": true,
+  "all_message_keys_contain_canonical_run_id": true,
+  "all_keys_equal_idempotency_key": true,
+  "all_payloads_carry_common_contract_fields": true,
+  "sample": {
+    "message_key": "TIPA-0001|E2:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
+    "message_type": "mes.run_status",
+    "schema_name": "vf.mes.run_status",
+    "schema_version": "1.0",
+    "headers": {
+      "correlation_id": "",
+      "causation_id": ""
+    },
+    "payload": {
+      "observation_id": "de6dabd3-bdfa-49b0-b965-fb8ec0f3c805",
+      "idempotency_key": "TIPA-0001|E2:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
+      "run_id": "TIPA-0001",
+      "simulation_time_s": 2400.0,
+      "occurred_at": "2026-01-01T00:40:00+00:00",
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1.1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "LINE_STATE_CHANGED",
+      "line_state": "running",
+      "conveyor_state": "operating",
+      "reason_code": ""
+    }
+  },
+  "trace_sample": {
+    "gateway_id": "inmemory",
+    "message_key": "TIPA-0001|E2:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
+    "message_type": "mes.run_status",
+    "schema_name": "vf.mes.run_status",
+    "run_id": "TIPA-0001",
+    "source_event_id": "E2:ASSY-SL01:ASSY-SL01:operational:running:init",
+    "simulation_time_s": 2400.0,
+    "subject_id": null,
+    "payload": {
+      "observation_id": "de6dabd3-bdfa-49b0-b965-fb8ec0f3c805",
+      "idempotency_key": "TIPA-0001|E2:ASSY-SL01:ASSY-SL01:operational:running:init|assy2.run_status|1.0",
+      "run_id": "TIPA-0001",
+      "simulation_time_s": 2400.0,
+      "occurred_at": "2026-01-01T00:40:00+00:00",
+      "station_id": "ASSY-SL01",
+      "contract_version": "tipa-assy-demo-v1.1",
+      "subline_id": "ASSY-SL01",
+      "production_line_id": "ASSY",
+      "plant_id": "TIPA",
+      "event_type": "LINE_STATE_CHANGED",
+      "line_state": "running",
+      "conveyor_state": "operating",
+      "reason_code": ""
+    }
+  },
+  "PASS": true
+}

@@ -1,0 +1,83 @@
+{
+  "task_id": "VF-vNEXT-G16",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "PLANNING/REVIEW gate — SH-WTP Whole-Plant Federation Expansion Readiness Review (G16)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/67",
+  "objective": "Produce an evidence-grounded, deterministic expansion-readiness plan for scaling the proven T106->T108 federation toward whole-plant federated execution, WITHOUT implementing any new runtime. Inspect the accepted G10 readiness scope, G11 structural, G12B reference connectivity, G12C admission, G14A projection, G14B federation, G15 evaluation, and the pinned PIM artifacts. Assign exactly one planning decision (NEXT_SLICE_CANDIDATE / LATER_CANDIDATE / STRUCTURAL_ONLY / REFERENCE_ONLY / BLOCKED_PENDING_EVIDENCE) to every reviewed unit with a full decision record (canonical id, VF path, G10 role, evidence, fidelity ceiling, gaps, boundary-contract status, reference-connectivity support, rationale, PIM-decision-before-runtime flag). Provide v0 boundary-contract plans for NEXT/LATER candidates (inputs/outputs/supported properties/synthetic assumptions/unknown-blocking/fidelity ceiling; no runtime code, no fabricated plant parameters). Classify every future projection relation (PROJECTION_CANDIDATE / REFERENCE_ONLY / AMBIGUOUS_BLOCKED / PROJECTED_G14A) with exact PIM relation ids; no BoundaryPort/CompositionBinding creation, no generic FLOWS_TO auto-projection. Produce a whole-plant readiness coverage matrix with whole_plant_runtime = NOT_AUTHORIZED / NOT_IMPLEMENTED, and choose exactly one smallest evidence-safe next slice (or state NO_NEXT_RUNTIME_SLICE_WITH_CURRENT_EVIDENCE). Preserve architecture invariants and authority. No new runtime, ports, bindings, participants, plant-wide execution, T110/Line2/chemical/automation runtime, coupling-policy change, PIM change, or G17.",
+  "explicit_non_objectives": [
+    "No new domain runtime",
+    "No new BoundaryPort / CompositionBinding",
+    "No new federation participant",
+    "No plant-wide execution",
+    "No T110 behavior",
+    "No Line 2 runtime",
+    "No chemical/electrical/automation runtime",
+    "No coupling policy change",
+    "No UI/dashboard/alarms/KPI",
+    "No PIM change",
+    "No G17"
+  ],
+  "required_branch": "feature/vf-vnext-g16",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G16.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G16.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G16/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "configs/vnext/shwtp/shwtp_expansion_readiness.json",
+    "configs/vnext/shwtp/EXPANSION-READINESS.md",
+    "tests/test_vnext_g16_readiness.py"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/vnext/shwtp/shwtp_readiness_scope.json",
+    "configs/vnext/shwtp/shwtp_synthetic_runtime_admission.json",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "configs/vnext/shwtp/shwtp_expansion_readiness.json (machine-readable readiness artifact)",
+    "configs/vnext/shwtp/EXPANSION-READINESS.md (human-readable planning note)",
+    "tests/test_vnext_g16_readiness.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G16/01-expansion-readiness.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Implement any new runtime behavior",
+    "Create BoundaryPort / CompositionBinding / federation participant",
+    "Enable plant-wide/workspace/container execution",
+    "Include T110 runtime or Line2/chemical/electrical/automation runtime",
+    "Change coupling policy or G4/G7 semantics",
+    "Change PIM or re-pin PIM artifacts",
+    "Promote PatternInferred/IndustryExpected entities to runtime candidates",
+    "Reinterpret runtime_later=blocked as runtime permission",
+    "Start G17"
+  ],
+  "stop_conditions": [
+    "Selecting a next slice requires a product/physics behavior decision not supported by evidence",
+    "A PIM semantic ambiguity must be resolved before candidate selection",
+    "Current pins are insufficient and a PIM re-pin/re-export is required",
+    "Candidate classification would require changing the frozen fidelity policy",
+    "Whole-plant execution would require bypassing explicit boundary/projection gates",
+    "Site/runtime authority must broaden",
+    "PIM must change"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Source pins match accepted G10/G12B baseline", "rule": {"field": "plan.pins", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Every reviewed unit has exactly one decision; all G10 first-slice candidates represented; T106/T108 accepted; T110 blocked; no PatternInferred/IndustryExpected promotion", "rule": {"field": "plan.decisions", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Every NEXT/LATER candidate has a v0 boundary-contract plan; unknowns explicit; no fabricated site values", "rule": {"field": "plan.contracts", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Projection candidates reference exact PIM relation ids; no G4 binding created; no generic FLOWS_TO auto-projection", "rule": {"field": "plan.projections", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Whole-plant runtime remains NOT_AUTHORIZED / NOT_IMPLEMENTED; authority unchanged", "rule": {"field": "plan.authority", "operator": "is_true", "expected": null}},
+    {"id": "A06", "phase": "final", "description": "Exactly one next-slice recommendation (not T110) or explicit no-safe-slice result", "rule": {"field": "plan.next_slice", "operator": "is_true", "expected": null}},
+    {"id": "A07", "phase": "final", "description": "No T106/T108/G14/G15/G4/G7/PIM behavior changed", "rule": {"field": "plan.no_change", "operator": "is_true", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "New G16 tests green", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "Complete canonical vNext baseline + G15/G14B-C01/G14B/G14A/G13B/G13/G12C/B/A/G11/G10/G9/G7/G4/G2/G1/ASSY/continuous/UI/full suite green", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "Working tree clean and branch/head pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}

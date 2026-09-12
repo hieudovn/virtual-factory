@@ -1,0 +1,1632 @@
+{
+  "tipa-ap06-retest": {
+    "effective_scenario_per_line": {
+      "ASSY-SL01": "HAPPY_PATH",
+      "ASSY-SL02": "HAPPY_PATH",
+      "ASSY-SL03": "AP06_FAIL_RETEST_PASS",
+      "ASSY-SL04": "HAPPY_PATH",
+      "ASSY-SL05": "HAPPY_PATH",
+      "ASSY-SL06": "HAPPY_PATH"
+    },
+    "motor_count_per_line": {
+      "ASSY-SL01": 12,
+      "ASSY-SL02": 12,
+      "ASSY-SL03": 11,
+      "ASSY-SL04": 12,
+      "ASSY-SL05": 12,
+      "ASSY-SL06": 12
+    },
+    "quality_config_per_line": {
+      "ASSY-SL01": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL02": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL03": {
+        "ap06": {
+          "overrides": {
+            "1": [
+              "PASS"
+            ],
+            "2": [
+              "FAIL",
+              "PASS"
+            ]
+          },
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL04": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL05": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL06": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      }
+    },
+    "released_wips_per_line": {
+      "ASSY-SL01": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL02": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL03": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL04": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL05": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL06": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ]
+    },
+    "run_profile": {
+      "continuous_feed_enabled": true,
+      "feed_policy": {
+        "rso2_target": 6,
+        "sso2_low_watermark": 3,
+        "sso2_target": 10
+      },
+      "initial_rso2_inventory": 7,
+      "initial_sso2_inventory": 7,
+      "profile_id": "tipa-assy-ap06_fail_retest_pass",
+      "provenance": "simulation_synthetic_profile_input",
+      "scenario": "AP06_FAIL_RETEST_PASS",
+      "session_scenario_id": "tipa-ap06-retest",
+      "target_sub_line_id": "ASSY-SL03",
+      "version": "1"
+    },
+    "runtime_quality_evidence": {
+      "ASSY-SL01": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL02": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL03": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "FAIL"
+            ],
+            [
+              2,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL04": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL05": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL06": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      }
+    },
+    "simulation_time_per_line": {
+      "ASSY-SL01": 2400.0,
+      "ASSY-SL02": 2400.0,
+      "ASSY-SL03": 2400.0,
+      "ASSY-SL04": 2400.0,
+      "ASSY-SL05": 2400.0,
+      "ASSY-SL06": 2400.0
+    }
+  },
+  "tipa-ap08-reinspect": {
+    "effective_scenario_per_line": {
+      "ASSY-SL01": "HAPPY_PATH",
+      "ASSY-SL02": "AP08_NG_REINSPECT_PASS",
+      "ASSY-SL03": "HAPPY_PATH",
+      "ASSY-SL04": "HAPPY_PATH",
+      "ASSY-SL05": "HAPPY_PATH",
+      "ASSY-SL06": "HAPPY_PATH"
+    },
+    "motor_count_per_line": {
+      "ASSY-SL01": 12,
+      "ASSY-SL02": 11,
+      "ASSY-SL03": 12,
+      "ASSY-SL04": 12,
+      "ASSY-SL05": 12,
+      "ASSY-SL06": 12
+    },
+    "quality_config_per_line": {
+      "ASSY-SL01": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL02": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {
+            "1": [
+              "PASS"
+            ],
+            "2": [
+              "NG",
+              "PASS"
+            ]
+          },
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL03": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL04": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL05": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL06": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      }
+    },
+    "released_wips_per_line": {
+      "ASSY-SL01": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL02": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL03": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL04": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL05": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL06": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ]
+    },
+    "run_profile": {
+      "continuous_feed_enabled": true,
+      "feed_policy": {
+        "rso2_target": 6,
+        "sso2_low_watermark": 3,
+        "sso2_target": 10
+      },
+      "initial_rso2_inventory": 7,
+      "initial_sso2_inventory": 7,
+      "profile_id": "tipa-assy-ap08_ng_reinspect_pass",
+      "provenance": "simulation_synthetic_profile_input",
+      "scenario": "AP08_NG_REINSPECT_PASS",
+      "session_scenario_id": "tipa-ap08-reinspect",
+      "target_sub_line_id": "ASSY-SL02",
+      "version": "1"
+    },
+    "runtime_quality_evidence": {
+      "ASSY-SL01": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL02": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "NG"
+            ],
+            [
+              2,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL03": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL04": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL05": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL06": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      }
+    },
+    "simulation_time_per_line": {
+      "ASSY-SL01": 2400.0,
+      "ASSY-SL02": 2400.0,
+      "ASSY-SL03": 2400.0,
+      "ASSY-SL04": 2400.0,
+      "ASSY-SL05": 2400.0,
+      "ASSY-SL06": 2400.0
+    }
+  },
+  "tipa-default": {
+    "effective_scenario_per_line": {
+      "ASSY-SL01": "HAPPY_PATH",
+      "ASSY-SL02": "HAPPY_PATH",
+      "ASSY-SL03": "HAPPY_PATH",
+      "ASSY-SL04": "HAPPY_PATH",
+      "ASSY-SL05": "HAPPY_PATH",
+      "ASSY-SL06": "HAPPY_PATH"
+    },
+    "motor_count_per_line": {
+      "ASSY-SL01": 12,
+      "ASSY-SL02": 12,
+      "ASSY-SL03": 12,
+      "ASSY-SL04": 12,
+      "ASSY-SL05": 12,
+      "ASSY-SL06": 12
+    },
+    "quality_config_per_line": {
+      "ASSY-SL01": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL02": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL03": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL04": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL05": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL06": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      }
+    },
+    "released_wips_per_line": {
+      "ASSY-SL01": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL02": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL03": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL04": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL05": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL06": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ]
+    },
+    "run_profile": {
+      "continuous_feed_enabled": true,
+      "feed_policy": {
+        "rso2_target": 6,
+        "sso2_low_watermark": 3,
+        "sso2_target": 10
+      },
+      "initial_rso2_inventory": 7,
+      "initial_sso2_inventory": 7,
+      "profile_id": "tipa-assy-happy_path",
+      "provenance": "simulation_synthetic_profile_input",
+      "scenario": "HAPPY_PATH",
+      "session_scenario_id": "tipa-default",
+      "target_sub_line_id": "",
+      "version": "1"
+    },
+    "runtime_quality_evidence": {
+      "ASSY-SL01": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL02": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL03": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL04": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL05": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL06": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      }
+    },
+    "simulation_time_per_line": {
+      "ASSY-SL01": 2400.0,
+      "ASSY-SL02": 2400.0,
+      "ASSY-SL03": 2400.0,
+      "ASSY-SL04": 2400.0,
+      "ASSY-SL05": 2400.0,
+      "ASSY-SL06": 2400.0
+    }
+  },
+  "tipa-failed-final": {
+    "effective_scenario_per_line": {
+      "ASSY-SL01": "HAPPY_PATH",
+      "ASSY-SL02": "HAPPY_PATH",
+      "ASSY-SL03": "FAILED_FINAL",
+      "ASSY-SL04": "HAPPY_PATH",
+      "ASSY-SL05": "HAPPY_PATH",
+      "ASSY-SL06": "HAPPY_PATH"
+    },
+    "motor_count_per_line": {
+      "ASSY-SL01": 12,
+      "ASSY-SL02": 12,
+      "ASSY-SL03": 3,
+      "ASSY-SL04": 12,
+      "ASSY-SL05": 12,
+      "ASSY-SL06": 12
+    },
+    "quality_config_per_line": {
+      "ASSY-SL01": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL02": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL03": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "ALWAYS_FAIL"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL04": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL05": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      },
+      "ASSY-SL06": {
+        "ap06": {
+          "overrides": {},
+          "scenario": "PASS"
+        },
+        "ap08": {
+          "overrides": {},
+          "scenario": "PASS"
+        }
+      }
+    },
+    "released_wips_per_line": {
+      "ASSY-SL01": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL02": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL03": [],
+      "ASSY-SL04": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL05": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ],
+      "ASSY-SL06": [
+        "MTR-0001",
+        "MTR-0002",
+        "MTR-0003",
+        "MTR-0004"
+      ]
+    },
+    "run_profile": {
+      "continuous_feed_enabled": true,
+      "feed_policy": {
+        "rso2_target": 6,
+        "sso2_low_watermark": 3,
+        "sso2_target": 10
+      },
+      "initial_rso2_inventory": 7,
+      "initial_sso2_inventory": 7,
+      "profile_id": "tipa-assy-failed_final",
+      "provenance": "simulation_synthetic_profile_input",
+      "scenario": "FAILED_FINAL",
+      "session_scenario_id": "tipa-failed-final",
+      "target_sub_line_id": "ASSY-SL03",
+      "version": "1"
+    },
+    "runtime_quality_evidence": {
+      "ASSY-SL01": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL02": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL03": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "FAIL"
+            ],
+            [
+              2,
+              "FAIL"
+            ]
+          ],
+          "ap08": [],
+          "ap11": [],
+          "current_status": "failed_final"
+        },
+        "MTR-0002": {
+          "ap06": [],
+          "ap08": [],
+          "ap11": [],
+          "current_status": null
+        }
+      },
+      "ASSY-SL04": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL05": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      },
+      "ASSY-SL06": {
+        "MTR-0001": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        },
+        "MTR-0002": {
+          "ap06": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap08": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "ap11": [
+            [
+              1,
+              "PASS"
+            ]
+          ],
+          "current_status": "clear"
+        }
+      }
+    },
+    "simulation_time_per_line": {
+      "ASSY-SL01": 2400.0,
+      "ASSY-SL02": 2400.0,
+      "ASSY-SL03": 2400.0,
+      "ASSY-SL04": 2400.0,
+      "ASSY-SL05": 2400.0,
+      "ASSY-SL06": 2400.0
+    }
+  }
+}

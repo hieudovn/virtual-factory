@@ -1,0 +1,16 @@
+{
+  "federations_after_first_run": 1,
+  "federations_after_in_context_reset": 1,
+  "federations_after_new_attempt": 2,
+  "reset_does_not_rebuild_federation": true,
+  "one_federation_per_run_authority": true,
+  "sessions_constructed": 1,
+  "exactly_one_canonical_session": true,
+  "legacy_controllers_constructed": [],
+  "no_legacy_controller": true,
+  "polling_leaves_state_unchanged": true,
+  "polling_leaves_reset_generation_unchanged": true,
+  "mutation_guard_raises": true,
+  "sub_line_count": 6,
+  "PASS": true
+}

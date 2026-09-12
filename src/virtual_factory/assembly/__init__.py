@@ -75,6 +75,19 @@ from virtual_factory.assembly.demo_controller import (
     SCENARIO_QUALITY_OVERRIDES,
 )
 
+# VF-vNEXT-R1 — explicit immutable ASSY domain run profile + shared run prep
+from virtual_factory.assembly.assy_run_profile import (
+    AssyFeedPolicy,
+    AssyRunProfile,
+    AssyRunProfileError,
+    AssySubLineRunState,
+    apply_scenario_quality_overrides,
+    build_tipa_run_profile,
+    resolve_run_scenario,
+    resolve_scenario_target_id,
+    step_prepared_line,
+)
+
 __all__ = [
     # M3
     "AssemblyPrimitive",
@@ -129,4 +142,14 @@ __all__ = [
     "DemoController",
     "DemoScenario",
     "SCENARIO_QUALITY_OVERRIDES",
+    # VF-vNEXT-R1
+    "AssyFeedPolicy",
+    "AssyRunProfile",
+    "AssyRunProfileError",
+    "AssySubLineRunState",
+    "apply_scenario_quality_overrides",
+    "build_tipa_run_profile",
+    "resolve_run_scenario",
+    "resolve_scenario_target_id",
+    "step_prepared_line",
 ]

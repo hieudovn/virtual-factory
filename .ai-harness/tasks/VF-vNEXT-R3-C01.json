@@ -1,0 +1,116 @@
+{
+  "task_id": "VF-vNEXT-R3-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "CORRECTION gate — R3-C01 reset-generation projection epoch (SA review finding on Issue #81 comment 5643455951). Narrow additive lifecycle seam; no architecture redesign.",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/81",
+  "architecture_authority_ref": "Issue #81 comment 5643455951 (SA review: R3 requires C01 before PASS) + Issue #78 (R0 CLOSED/frozen) + Issue #80 (R2 CLOSED) + Issue #82 (R2V PASS)",
+  "objective": "Remove the poll-timing dependence of the canonical output projection epoch. Expose a monotonically increasing reset_generation / reset_epoch on the canonical RuntimeSession (the ONE reset authority), incremented exactly when RuntimeSession.reset() succeeds, keeping the same run_id and all existing reset semantics. CanonicalAssyOutput derives its projection epoch directly from that authoritative generation instead of inferring a reset from poll-to-poll time/step regression. The output stays downstream/read-only (observes lifecycle metadata, never drives reset) and no second lifecycle authority is created. new_attempt/replay start epoch 1 under their fresh canonical run ids, and the canonical binding bound into newly created bridges is recomputed after the epoch change so no stale prior-run epoch metadata is bound.",
+  "explicit_non_objectives": [
+    "No R4 parity closure (jam/recover/run-to-terminal/OEE/scenario mutation)",
+    "No R5 runtime consolidation",
+    "No SH-WTP expansion",
+    "No gateway/protocol work (MQTT/Kafka/OPC/REST, store-forward, multi-gateway)",
+    "No change to G22 run identity semantics (no run_id change on reset)",
+    "No second lifecycle authority (no reset counter on the projection side)",
+    "No architecture redesign",
+    "No change to AssyLineRuntime, R1 production driver/profile, G4 coordinator, federation, domain facts",
+    "No rebase onto main",
+    "No merge"
+  ],
+  "required_branch": "feature/vf-vnext-r3-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "technical_base_sha": "311109c3c6a8f3b6550dfef8659348e0bd70e28e",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-R3-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R3-C01.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3-C01/",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/runcontrol/session.py",
+    "src/virtual_factory/ui/assy_output.py",
+    "tests/test_vnext_r3_c01_reset_generation.py",
+    "tests/test_vnext_r3_canonical_observation_mes.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/federation/",
+    "src/virtual_factory/protocols/",
+    "src/virtual_factory/assembly/line_runtime.py",
+    "src/virtual_factory/assembly/demo_controller.py",
+    "src/virtual_factory/assembly/demo_composition.py",
+    "src/virtual_factory/assembly/observation_bridge.py",
+    "src/virtual_factory/assembly/assy_mes_bridge.py",
+    "configs/",
+    "docs/",
+    "deploy/",
+    "examples/",
+    "simulators/"
+  ],
+  "required_deliverables": [
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3-C01/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3-C01/01-reset-generation-seam.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3-C01/02-poll-timing-independence.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3-C01/03-fresh-run-epoch-one.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3-C01/04-no-second-authority-read-only.json",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-R3-C01/05-regression.json",
+    ".ai-harness/sa-review/reports/VF-vNEXT-R3-C01.md"
+  ],
+  "required_tests": [
+    "tests/test_vnext_r3_c01_reset_generation.py"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Infer the projection epoch from poll-to-poll time/step regression",
+    "Change run_id / G22 reset/new-attempt/replay semantics",
+    "Create a second lifecycle authority or projection-owned reset",
+    "Drive reset/step from the output path",
+    "Push directly to main",
+    "Merge"
+  ],
+  "stop_conditions": [
+    "The authoritative reset generation cannot be exposed without changing G22 run identity semantics",
+    "The seam would require a second reset authority",
+    "R3 evidence cannot be reproduced under the corrected epoch semantics",
+    "Any R1/R2/R2V/R3 regression cannot remain green without weakening an accepted assertion"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "C01-01",
+      "phase": "final",
+      "description": "Monotonic reset_generation / reset_epoch on the canonical RuntimeSession, incremented exactly when reset() succeeds, run_id unchanged, new_attempt/replay start at 1",
+      "rule": {"field": "c01.reset_generation_seam", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "C01-02",
+      "phase": "final",
+      "description": "CanonicalAssyOutput derives its projection epoch from the canonical reset generation (not poll-timing inference): poll at S -> reset -> re-step to identical S without polling -> poll yields a new epoch with collision-free newly emitted facts",
+      "rule": {"field": "c01.poll_timing_independence", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "C01-03",
+      "phase": "final",
+      "description": "new_attempt/replay after a prior epoch > 1 start at epoch 1 (envelope + emitted keys + payload metadata), with the canonical binding recomputed after the fresh-run epoch change",
+      "rule": {"field": "c01.fresh_run_epoch_one", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "C01-04",
+      "phase": "final",
+      "description": "Output remains read-only and single-authority: no second runtime/session/federation/controller, no output-driven mutation, repeated poll idempotent",
+      "rule": {"field": "c01.read_only_single_authority", "operator": "is_true", "expected": null}
+    },
+    {
+      "id": "C01-05",
+      "phase": "final",
+      "description": "R1/R2/R2V/R3 regressions, full suite and the complete canonical baseline remain green",
+      "rule": {"field": "c01.regression", "operator": "is_true", "expected": null}
+    }
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}

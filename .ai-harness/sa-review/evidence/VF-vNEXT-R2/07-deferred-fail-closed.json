@@ -1,0 +1,83 @@
+{
+  "all_deferred_fail_closed": true,
+  "deferred_endpoints": {
+    "/assy-demo/jam": {
+      "body": {
+        "authority": "canonical_tipa_runtime_session",
+        "deferred_to": "R4",
+        "feature": "jam",
+        "legacy_runtime_authority": false,
+        "reason": "AP05 fault/OEE workflow is not bindable to the canonical session without new architecture (R4)",
+        "status": "deferred"
+      },
+      "status_code": 409
+    },
+    "/assy-demo/mes-messages": {
+      "body": {
+        "authority": "canonical_tipa_runtime_session",
+        "deferred_to": "R3",
+        "feature": "mes_messages",
+        "legacy_runtime_authority": false,
+        "reason": "MES/output reintegration is R3; the legacy runtime is not allowed to serve it",
+        "status": "deferred"
+      },
+      "status_code": 503
+    },
+    "/assy-demo/mes-trace": {
+      "body": {
+        "authority": "canonical_tipa_runtime_session",
+        "deferred_to": "R3",
+        "feature": "mes_trace",
+        "legacy_runtime_authority": false,
+        "reason": "MES/output reintegration is R3; the legacy runtime is not allowed to serve it",
+        "status": "deferred"
+      },
+      "status_code": 503
+    },
+    "/assy-demo/observations": {
+      "body": {
+        "authority": "canonical_tipa_runtime_session",
+        "deferred_to": "R3",
+        "feature": "observations",
+        "legacy_runtime_authority": false,
+        "reason": "observation/MES reintegration is R3; the legacy runtime is not allowed to serve it",
+        "status": "deferred"
+      },
+      "status_code": 503
+    },
+    "/assy-demo/recover": {
+      "body": {
+        "authority": "canonical_tipa_runtime_session",
+        "deferred_to": "R4",
+        "feature": "recover",
+        "legacy_runtime_authority": false,
+        "reason": "AP05 fault recovery is not bindable to the canonical session without new architecture (R4)",
+        "status": "deferred"
+      },
+      "status_code": 409
+    },
+    "/assy-demo/reset (scenario change)": {
+      "body": {
+        "authority": "canonical_tipa_runtime_session",
+        "deferred_to": "R4",
+        "feature": "scenario_change",
+        "legacy_runtime_authority": false,
+        "reason": "scenario/profile is pinned run input; changing it needs a new canonical session (R4), not a legacy reset",
+        "status": "deferred"
+      },
+      "status_code": 409
+    },
+    "/assy-demo/run-to-terminal": {
+      "body": {
+        "authority": "canonical_tipa_runtime_session",
+        "deferred_to": "R4",
+        "feature": "run_to_terminal",
+        "legacy_runtime_authority": false,
+        "reason": "legacy run-to-terminal/OEE driving is not part of the canonical session contract (R4)",
+        "status": "deferred"
+      },
+      "status_code": 409
+    }
+  },
+  "no_legacy_authority_claimed": true
+}

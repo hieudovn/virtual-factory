@@ -1,0 +1,73 @@
+{
+  "task_id": "VF-vNEXT-G13-C01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "CORRECTION gate — T108 identity/provenance closure (G13-C01)",
+  "issue_ref": "https://github.com/hieudovn/virtual-factory/issues/62",
+  "objective": "Close exactly two G13 contract-level gaps without broadening scope: (A) lock the T108 canonical semantic reference so an arbitrary/non-T108 canonical_id cannot be emitted through the runtime seam (canonical reference is exactly UNIT-SHW-L1-T108 and is read-only metadata, never VF runtime identity); (B) make the detached T108State/snapshot visibly carry truthful G2 provenance (OriginKind.SIMULATION, DataStatus.SYNTHETIC, Fidelity.FIRST_ORDER) reusing the accepted G2 seam, preserving optional semantic contract pins only when supplied (never fabricated) and preserving immutability/detachment/determinism. No runtime/G4/PIM/T106/T110/G14 expansion.",
+  "explicit_non_objectives": [
+    "No runtime expansion beyond T108 standalone first-order accumulator",
+    "No G4 / BoundaryPort / CompositionBinding / coordinator",
+    "No G12A/B relation projection",
+    "No PIM change",
+    "No T106/T110 runtime",
+    "No legacy engine change",
+    "No site-faithful/measured/SourceMapped/SiteVerified/ParameterizedReady/CalibratedReady claims",
+    "No G2 provenance semantics change / G1 identity change / G7 lifecycle change",
+    "No G14"
+  ],
+  "required_branch": "feature/vf-vnext-g13-c01",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/VF-vNEXT-G13-C01.json",
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/reports/VF-vNEXT-G13.md",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G13/",
+    ".ai-harness/regression/vnext_baseline_manifest.json",
+    "src/virtual_factory/shwtp/runtime.py",
+    "tests/test_vnext_g13_t108.py"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/shwtp/structural.py",
+    "src/virtual_factory/shwtp/connectivity.py",
+    "src/virtual_factory/shwtp/__init__.py",
+    "src/virtual_factory/equipment/",
+    "src/virtual_factory/composition/",
+    "src/virtual_factory/runcontrol/",
+    "src/virtual_factory/workspace/",
+    "src/virtual_factory/provenance/",
+    "src/virtual_factory/semantic/",
+    "src/virtual_factory/connectivity/",
+    "configs/",
+    "docs/",
+    "deploy/"
+  ],
+  "required_deliverables": [
+    "src/virtual_factory/shwtp/runtime.py (locked T108 canonical reference + snapshot provenance)",
+    "tests/test_vnext_g13_t108.py (focused correction regression tests)",
+    ".ai-harness/sa-review/evidence/VF-vNEXT-G13/02-c01-identity-provenance.md"
+  ],
+  "required_tests": [],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [],
+  "forbidden_actions": [
+    "Allow caller override of T108 canonical reference",
+    "Fabricate semantic contract provenance",
+    "Change G2 provenance semantics or G1 identity semantics",
+    "Broaden runtime scope (T106/T110/G4/plant-wide)",
+    "Modify PIM or legacy engine",
+    "Start G14"
+  ],
+  "stop_conditions": [
+    "Correction requires changing G2 provenance semantics, G1 identity semantics, G7 lifecycle, G4 composition, PIM, or any broader architecture decision"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "final", "description": "Non-T108 canonical reference cannot be emitted through the G13 runtime seam", "rule": {"field": "plan.locked_canonical", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "final", "description": "Detached state snapshot visibly carries truthful simulation/synthetic/first_order provenance via G2 infrastructure", "rule": {"field": "plan.snapshot_provenance", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "final", "description": "Existing G13 semantics and 24 tests remain green + focused correction tests added", "rule": {"field": "plan.tests", "operator": "is_true", "expected": null}},
+    {"id": "A04", "phase": "final", "description": "Full canonical vNext baseline + full suite + compile/static/preflight/changed-files PASS", "rule": {"field": "regression.green", "operator": "is_true", "expected": null}},
+    {"id": "A05", "phase": "final", "description": "Evidence/report/CURRENT updated; working tree clean; branch pushed", "rule": {"field": "head_pushed", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": false, "may_merge": false, "may_start_next_task": false}
+}
