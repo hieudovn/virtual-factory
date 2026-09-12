@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-vNEXT-R3-C01.json",
-    "changed_files_base": "311109c3c6a8f3b6550dfef8659348e0bd70e28e"
+    "task_contract": ".ai-harness/tasks/VF-vNEXT-R4.json",
+    "changed_files_base": "75725508d2894f5afaa1ec10134e64a8874e86df"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {
@@ -379,6 +379,15 @@
       "purpose": "VF-vNEXT-R3-C01 authoritative canonical reset generation as the output projection epoch: reset_generation increments only on a successful RuntimeSession.reset(); the projection epoch is read from that seam (no poll-timing inference); poll at state S -> reset -> re-step to identical S without polling -> fresh epoch with collision-free newly emitted facts; new_attempt/replay restart at epoch 1; output stays read-only.",
       "files": [
         "tests/test_vnext_r3_c01_reset_generation.py"
+      ]
+    },
+    {
+      "id": "r4_canonical_parity",
+      "gate": "R4",
+      "type": "pytest",
+      "purpose": "VF-vNEXT-R4 ASSY full parity closure on the canonical runtime: canonical AP05 jam/recover owned by the execution bridge (one fault, five continue, Frame A/B same truth, issue/downtime output read from canonical fault), bounded canonical run-to-terminal with parity to manual stepping, read-only idempotent OEE from canonical facts (incl. canonical downtime), scenario selection as a FRESH canonical run (no in-place mutation), product-path cleanup, and no second runtime/session/federation/controller.",
+      "files": [
+        "tests/test_vnext_r4_canonical_parity.py"
       ]
     },
     {

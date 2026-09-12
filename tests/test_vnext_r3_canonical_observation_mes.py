@@ -97,11 +97,13 @@ class TestSameSessionOutputIdentity:
         assert out._federation is exp.federation()
         assert set(out._federation.sub_lines) == set(SUB_LINE_IDS)
         for sub_line_id, entry in out._federation.sub_lines.items():
-            # the SAME six runtime objects the rich UI projects
-            assert entry.runtime is exp.federation().get(sub_line_id).runtime
-            assert entry.runtime is exp.detail(sub_line_id)["canonical_sub_line"][
+            # the SAME six runtime objects the rich UI projects (R4 strengthened
+            # this assertion: runtime object identity is actually asserted)
+            detail_runtime_id = exp.detail(sub_line_id)["canonical_sub_line"][
                 "runtime_object_id"
-            ] or True
+            ]
+            assert id(entry.runtime) == detail_runtime_id
+            assert entry.runtime is exp.federation().get(sub_line_id).runtime
 
     def test_exactly_one_canonical_federation_for_the_whole_output_path(
         self, monkeypatch
@@ -594,19 +596,26 @@ class TestR3ApiEndpoints:
         ]
         assert trace["canonical"]["run_id"] == messages["canonical"]["run_id"]
 
-    def test_r4_workflow_endpoints_stay_deferred(self):
+    def test_r4_workflow_endpoints_are_canonical_now(self):
+        """R4 canonicalized jam/recover/run-to-terminal (migrated ownership
+        assertion from the R2/R3 deferral)."""
         c = _client()
+        c.post("/assy-demo/reset")
+        c.post("/assy-demo/step")
         for path in ("/assy-demo/jam", "/assy-demo/recover", "/assy-demo/run-to-terminal"):
             resp = c.post(path)
-            assert resp.status_code == 409
-            body = resp.json()
-            assert body["status"] == "deferred"
-            assert body["deferred_to"] == "R4"
-            assert body["legacy_runtime_authority"] is False
+            assert resp.status_code in (200, 404, 409)
+        jam = c.post("/assy-demo/jam", json={"sub_line_id": "ASSY-SL01"})
+        assert jam.status_code == 200
+        c.post("/assy-demo/step")
+        recover = c.post("/assy-demo/recover", json={"sub_line_id": "ASSY-SL01"})
+        assert recover.status_code == 200
+        terminal = c.post("/assy-demo/run-to-terminal", json={"max_windows": 8})
+        assert terminal.status_code == 200
 
     def test_r3_features_are_no_longer_declared_deferred(self):
         assert "observations" not in DEFERRED_FEATURES
         assert "mes_messages" not in DEFERRED_FEATURES
         assert "mes_trace" not in DEFERRED_FEATURES
-        assert DEFERRED_FEATURES["jam"] == "R4"
-        assert DEFERRED_FEATURES["scenario_change"] == "R4"
+        # R4 canonicalized every remaining deferred capability
+        assert DEFERRED_FEATURES == {}

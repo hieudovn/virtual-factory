@@ -408,10 +408,13 @@ const ctrl = {
     if (scn) scn.textContent = c.scenario_id || scn.textContent;
     const sel = document.getElementById('scenario-select');
     if (sel) {
-      // keep the pinned scenario visible but not-changeable in R2
-      if (c.scenario_id) sel.value = c.scenario_id;
-      sel.disabled = true;
-      sel.title = 'scenario is pinned run input (R2) — change deferred to R4';
+      // R4: the pinned scenario stays visible and selectable; choosing another
+      // scenario starts a FRESH canonical run (never an in-place mutation).
+      if (c.scenario_id && Array.from(sel.options).some((o) => o.value === c.scenario_id)) {
+        sel.value = c.scenario_id;
+      }
+      sel.disabled = false;
+      sel.title = 'pinned run input; selecting a scenario starts a FRESH canonical run (R4)';
     }
   },
 
@@ -906,14 +909,30 @@ const ctrlB = {
   setSpeed(val) { this._speed = parseFloat(val); if (this._autoTimer) { this.stopAuto(); this.startAuto(); } },
 
   setScenario(val) {
-    // R2: scenario is pinned run input — display only (no legacy reset).
+    // R4: scenario selection = FRESH canonical run (never in-place mutation).
+    // The backend creates a new canonical run id for the pinned scenario.
     this._scenario = val;
     ctrl._scenario = val;
     const selA = document.getElementById('scenario-select');
-    if (selA) { selA.value = val; selA.disabled = true; }
     const selB = document.getElementById('fb-scenario-select');
-    if (selB) { selB.value = val; selB.disabled = true; }
-    ctrl.renderCanonicalNote('scenario is pinned run input (R2); no legacy scenario mutation');
+    fetch(`${API}/scenario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_id: val }),
+    }).then(async (resp) => {
+      const payload = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        ctrl.renderCanonicalNote(`scenario change rejected: ${(payload && payload.detail) || resp.status}`);
+        return;
+      }
+      const identity = (payload && payload.canonical) || {};
+      ctrl.renderCanonicalNote(`fresh canonical run ${identity.run_id || '?'} · scenario ${identity.scenario_id || val}`);
+      if (selA) selA.value = val;
+      if (selB) selB.value = val;
+      if (ctrl._autoTimer) ctrl.stopAuto();
+      if (typeof ctrlB !== 'undefined' && ctrlB._autoTimer) ctrlB.stopAuto();
+      return ctrl.refreshOverview();
+    }).catch(() => ctrl.renderCanonicalNote('scenario change failed'));
   },
 
   setRunMode(val) {
@@ -2092,6 +2111,65 @@ const ctrlS04 = {
    ═══════════════════════════════════════ */
 async function detectS04B() {
   try { const r = await fetch(`${API}/overview`); return r.ok; } catch (_) { return false; }
+}
+
+/* ═══════════════════════════════════════
+   R4 canonical capability controls (SAME session)
+   ═══════════════════════════════════════ */
+function _r4SelectedSubLine() {
+  if (typeof ctrlB !== 'undefined' && ctrlB && ctrlB._subLineId) return ctrlB._subLineId;
+  if (typeof ctrl !== 'undefined' && ctrl && ctrl._selectedSubLineId) return ctrl._selectedSubLineId;
+  return 'ASSY-SL01';
+}
+
+function _r4Call(action, body, note) {
+  const opts = body
+    ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+    : { method: 'POST' };
+  return fetch(`${API}/${action}`, opts)
+    .then(async (resp) => {
+      const payload = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        ctrl.renderCanonicalNote(`${action} rejected: ${(payload && (payload.detail || payload.status)) || resp.status}`);
+        return null;
+      }
+      if (note) ctrl.renderCanonicalNote(note(payload));
+      return payload;
+    })
+    .catch(() => { ctrl.renderCanonicalNote(`${action} failed`); return null; });
+}
+
+function uiJam() {
+  const subLine = _r4SelectedSubLine();
+  const btn = document.getElementById('btn-jam');
+  if (btn) btn.disabled = true;
+  _r4Call('jam', { sub_line_id: subLine }, (p) => `canonical AP05 jam on ${p.sub_line_id}`)
+    .then(() => { if (btn) btn.disabled = false; if (typeof ctrlB !== 'undefined') ctrlB.refresh(); });
+}
+
+function uiRecover() {
+  const subLine = _r4SelectedSubLine();
+  _r4Call('recover', { sub_line_id: subLine }, (p) => `canonical recovery on ${p.sub_line_id}`)
+    .then(() => { if (typeof ctrlB !== 'undefined') ctrlB.refresh(); });
+}
+
+function uiRunToTerminal() {
+  const btn = document.getElementById('btn-terminal');
+  if (btn) btn.disabled = true;
+  _r4Call('run-to-terminal', { max_windows: 40 },
+    (p) => `run-to-terminal: ${p.status} after ${p.windows} window(s)`)
+    .then(() => { if (btn) btn.disabled = false; if (typeof ctrlB !== 'undefined') ctrlB.refresh(); });
+}
+
+function uiOee() {
+  fetch(`${API}/oee`)
+    .then(async (resp) => {
+      const body = await resp.json().catch(() => null);
+      if (!resp.ok) { ctrl.renderCanonicalNote(`oee unavailable: ${resp.status}`); return; }
+      const identity = (body && body.canonical) || {};
+      ctrl.renderCanonicalNote(`OEE (read-only) run ${identity.run_id || '?'} · ${body.count} summary(ies)`);
+    })
+    .catch(() => ctrl.renderCanonicalNote('oee failed'));
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

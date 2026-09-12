@@ -71,6 +71,11 @@ def _tipa_session_factory(config_path: str) -> Callable[[], RuntimeSession]:
     return lambda: build_tipa_session(config_path, "tipa-default")
 
 
+#: Run states from which a fresh canonical run may be created without first
+#: stopping the previous run (VF-vNEXT-R4 fresh-run/scenario semantics).
+_TERMINAL_STATES = frozenset({"stopped", "failed"})
+
+
 def _shwtp_session_factory() -> Callable[[], RuntimeSession]:
     from virtual_factory.shwtp import build_shwtp_session
 
@@ -117,6 +122,13 @@ class WorkspaceMonitor:
         self._registry = registry or build_platform_registry(tipa_config_path)
         self._sessions: dict[str, RuntimeSession] = {}
         self._selected: str | None = None
+        # VF-vNEXT-R4: identities of runs replaced by a fresh-run operation.
+        # History is READ-ONLY metadata; replaced runs are never mutated.
+        self._run_history: dict[str, list[dict]] = {}
+        # VF-vNEXT-R4: ONE TIPA run-id authority for this monitor. Every TIPA
+        # run (initial and fresh scenario runs) is created through this factory,
+        # so successive runs get fresh canonical run ids.
+        self._tipa_run_factory: Callable[[str], RuntimeSession] | None = None
 
     # ── registry / selector source ─────────────────────────────
 
@@ -145,9 +157,24 @@ class WorkspaceMonitor:
             raise WorkspaceMonitorError(f"unknown workspace {workspace_id!r}")
         session = self._sessions.get(workspace_id)
         if session is None:
-            session = self._registry.select(workspace_id)
+            if workspace_id == TIPA_WORKSPACE_ID:
+                session = self._tipa_factory()("tipa-default")
+            else:
+                session = self._registry.select(workspace_id)
             self._sessions[workspace_id] = session
         return session
+
+    def _tipa_factory(self) -> Callable[[str], RuntimeSession]:
+        """The monitor's ONE TIPA run-id authority (lazily built)."""
+        if self._tipa_run_factory is None:
+            from virtual_factory.runcontrol.session import (
+                build_tipa_scenario_run_factory,
+            )
+
+            self._tipa_run_factory = build_tipa_scenario_run_factory(
+                self._tipa_config_path, TIPA_WORKSPACE_ID
+            )
+        return self._tipa_run_factory
 
     def select(self, workspace_id: str) -> dict:
         """Select a workspace and return its monitor view.
@@ -173,6 +200,41 @@ class WorkspaceMonitor:
         """
         return self._session_for(workspace_id)
 
+    def new_run(self, workspace_id: str, scenario_id: str | None = None) -> dict:
+        """Start a FRESH canonical run for one workspace (R4 scenario semantics).
+
+        Never mutates an active run's pinned identity: the previous session
+        identity is recorded as read-only history and the workspace's ONE live
+        session is replaced by a newly built canonical session pinned to the
+        requested scenario (TIPA only). Unknown workspace/scenario fails closed.
+        """
+        if not self._registry.has(workspace_id):
+            raise WorkspaceMonitorError(f"unknown workspace {workspace_id!r}")
+        if scenario_id is not None and workspace_id != TIPA_WORKSPACE_ID:
+            raise WorkspaceMonitorError(
+                f"scenario selection is only supported for {TIPA_WORKSPACE_ID!r}"
+            )
+        previous = self._sessions.get(workspace_id)
+        if previous is not None:
+            self._run_history.setdefault(workspace_id, []).append(
+                _session_identity_dict(previous)
+            )
+        if scenario_id is not None:
+            factory = self._tipa_factory()
+            if previous is not None and previous.state.value not in _TERMINAL_STATES:
+                # The replaced run is stopped (terminal) and preserved as
+                # history; its identity is never mutated.
+                previous.stop()
+            session = factory(scenario_id)
+        else:
+            session = self._registry.select(workspace_id)
+        self._sessions[workspace_id] = session
+        return self.view(workspace_id)
+
+    def run_history(self, workspace_id: str) -> list[dict]:
+        """READ-ONLY identities of runs replaced by ``new_run`` (historical)."""
+        return [dict(row) for row in self._run_history.get(workspace_id, ())]
+
     # ── run control (only the selected workspace/session) ───────
 
     def control(self, workspace_id: str, action: str) -> dict:
@@ -197,6 +259,7 @@ class WorkspaceMonitor:
             base.update(_shwtp_view_extra(session))
         else:
             base.update(_tipa_view_extra(session))
+        base["run_history"] = self.run_history(workspace_id)
         return base
 
 

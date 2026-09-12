@@ -184,6 +184,10 @@
             <button id="btn-step" class="vf-btn primary" onclick="uiStep()">▶ STEP</button>
             <button id="btn-auto" class="vf-btn accent-outline" onclick="uiToggleAuto()">▶▶ AUTO</button>
             <button id="btn-pause" class="vf-btn" onclick="uiPause()" disabled>⏸ PAUSE</button>
+            <button id="btn-jam" class="vf-btn danger-outline" onclick="uiJam()" title="Canonical AP05 jam on the selected sub-line">⚠ JAM</button>
+            <button id="btn-recover" class="vf-btn accent-outline" onclick="uiRecover()" title="Recover the canonical AP05 fault">↺ RECOVER</button>
+            <button id="btn-terminal" class="vf-btn" onclick="uiRunToTerminal()" title="Bounded canonical run-to-terminal">⏭ TERMINAL</button>
+            <button id="btn-oee" class="vf-btn" onclick="uiOee()" title="Read-only canonical OEE summary">Σ OEE</button>
             <select class="vf-ft-select" id="fb-speed-select" onchange="ctrlB.setSpeed(this.value)">
               <option value="0.1">0.1x</option>
               <option value="0.25">0.25x</option>
@@ -345,7 +349,7 @@
       <!-- Frame A scenario dropdown (hidden in Frame B) -->
       <label class="vf-ft-label" id="vf-scenario-label-a">
         Scenario:
-        <select class="vf-ft-select" id="scenario-select" onchange="ctrl.setScenario(this.value)" disabled title="scenario is pinned run input (R2) — change deferred to R4">
+        <select class="vf-ft-select" id="scenario-select" onchange="ctrl.setScenario(this.value)" title="Scenario is pinned run input; selecting one starts a FRESH canonical run (R4)">
           <option value="HAPPY_PATH">Happy Path</option>
           <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
           <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>
@@ -355,7 +359,7 @@
       <!-- Frame B scenario dropdown (hidden in Frame A) -->
       <label class="vf-ft-label" id="vf-scenario-label-b" style="display:none;">
         Scenario:
-        <select class="vf-ft-select" id="fb-scenario-select" onchange="ctrlB.setScenario(this.value)" disabled title="scenario is pinned run input (R2) — change deferred to R4">
+        <select class="vf-ft-select" id="fb-scenario-select" onchange="ctrlB.setScenario(this.value)" title="Scenario is pinned run input; selecting one starts a FRESH canonical run (R4)">
           <option value="HAPPY_PATH">Happy Path</option>
           <option value="AP06_FAIL_RETEST_PASS">AP06 Fail → Retest → Pass</option>
           <option value="AP08_NG_REINSPECT_PASS">AP08 NG → Reinspect → Pass</option>

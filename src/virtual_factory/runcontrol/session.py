@@ -195,6 +195,59 @@ class RuntimeSession:
         return self.trace()
 
 
+def build_tipa_scenario_run_factory(
+    config_path: str,
+    workspace_id: str = "TIPA",
+) -> Callable[[str], "RuntimeSession"]:
+    """Factory for FRESH canonical TIPA runs sharing ONE run-id authority.
+
+    VF-vNEXT-R4: selecting a different scenario must create a fresh canonical run
+    identity (never mutate an active run's pinned identity). Every run created by
+    this factory goes through the SAME ``RunLifecycleService`` — the single
+    run-id minting authority — so successive runs receive fresh ids while the
+    previous run stays historical/unchanged. Each run's federation is built
+    lazily by the service on its first start, using that run's pinned scenario
+    profile (resolved once per scenario and re-discovered deterministically).
+    """
+    from virtual_factory.assembly.assy_run_profile import build_tipa_run_profile
+    from virtual_factory.federation import TipaAssyFederation, build_tipa_workspace
+    from virtual_factory.runcontrol import AssyExecutionBridge, RunLifecycleService
+
+    workspace = build_tipa_workspace()
+    if workspace.workspace_id != workspace_id:
+        raise SessionError(
+            f"workspace_id {workspace_id!r} does not match TIPA workspace "
+            f"{workspace.workspace_id!r}"
+        )
+
+    profiles: dict[str, object] = {}
+    holder: dict[str, object] = {}
+
+    def bridge_factory():
+        # Read the profile of the run currently being started (the service
+        # builds the bridge lazily on start, one active run at a time).
+        federation = TipaAssyFederation(config_path=config_path)
+        federation.initialize(run_profile=holder.get("profile"))
+        return AssyExecutionBridge(federation)
+
+    service = RunLifecycleService(workspace, bridge_factory)
+
+    def factory(scenario_id: str) -> RuntimeSession:
+        profile = profiles.get(scenario_id)
+        if profile is None:
+            profile = build_tipa_run_profile(scenario_id)
+            profiles[scenario_id] = profile
+        holder["profile"] = profile
+        return RuntimeSession(
+            service,
+            workspace_id,
+            scenario_id,
+            profile=profile.profile_id,
+        )
+
+    return factory
+
+
 def build_tipa_session(
     config_path: str,
     scenario_id: str,

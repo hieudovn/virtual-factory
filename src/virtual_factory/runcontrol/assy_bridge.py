@@ -19,8 +19,14 @@ generic Workspace lifecycle or coordinator/synchronization policy.
 
 from __future__ import annotations
 
+from typing import Any
+
 from virtual_factory.federation import TipaAssyFederation
 from virtual_factory.runcontrol.lifecycle import StepResult
+
+#: Accepted AP05 jam reason code and deterministic downtime interval.
+AP05_JAM_REASON = "AP05_JAM"
+AP05_JAM_DOWNTIME_S = 120.0
 
 
 class AssyExecutionBridge:
@@ -34,6 +40,12 @@ class AssyExecutionBridge:
         self._federation = federation
         self._window_seq = 0
         self._held_sub_line_ids: set[str] = set()
+        # VF-vNEXT-R4 — canonical AP05 jam/recover fault state. The BRIDGE is the
+        # ONE owner of the fault lifecycle (raised/resolved timestamps +
+        # downtime); Observation/MES projections may only READ it. This keeps
+        # simulation fault state out of any output projection.
+        self._jammed_sub_line_ids: set[str] = set()
+        self._faults: dict[str, dict[str, Any]] = {}
 
     @property
     def federation(self) -> TipaAssyFederation:
@@ -57,9 +69,97 @@ class AssyExecutionBridge:
         self._federation.get(sub_line_id)
         self._held_sub_line_ids.discard(sub_line_id)
 
+    # ── R4: canonical AP05 jam / recover fault seam ───────────
+
+    @property
+    def jammed_sub_line_ids(self) -> tuple[str, ...]:
+        """Deterministic sorted sub-line ids currently faulted/frozen."""
+        return tuple(sorted(self._jammed_sub_line_ids))
+
+    def jam_sub_line(
+        self, sub_line_id: str, *, reason_code: str = AP05_JAM_REASON,
+    ) -> dict[str, Any]:
+        """Fault/freeze exactly ONE canonical sub-line at its current clock.
+
+        Idempotent while the fault is active. Unknown ids fail closed. The
+        raised timestamp is read from the canonical runtime clock (no synthetic
+        projection state) and the raised window sequence makes a deterministic
+        "at least one frozen window" recovery rule possible.
+        """
+        entry = self._federation.get(sub_line_id)  # fail closed on unknown id
+        existing = self._faults.get(sub_line_id)
+        if existing is not None and existing["state"] == "FAULT":
+            return dict(existing)
+        raised_at_s = float(entry.runtime.simulation_time_s)
+        fault: dict[str, Any] = {
+            "sub_line_id": sub_line_id,
+            "state": "FAULT",
+            "reason_code": reason_code,
+            "station_id": "AP05",
+            "raised_at_s": raised_at_s,
+            "raised_window_seq": self._window_seq,
+            "resolved_at_s": None,
+            "downtime_s": AP05_JAM_DOWNTIME_S,
+            "conveyor_state": entry.runtime.conveyor.state.value,
+        }
+        self._faults[sub_line_id] = fault
+        self._jammed_sub_line_ids.add(sub_line_id)
+        return dict(fault)
+
+    def recover_sub_line(self, sub_line_id: str) -> dict[str, Any]:
+        """Clear the fault on the same sub-line after a frozen window elapsed.
+
+        Fails closed when there is no active fault, or when the canonical run
+        has not advanced at least one window with the line frozen (mirrors the
+        accepted deterministic ≥1-step downtime gate without projection state).
+        """
+        self._federation.get(sub_line_id)  # fail closed on unknown id
+        fault = self._faults.get(sub_line_id)
+        if fault is None or fault["state"] != "FAULT":
+            raise ValueError(
+                f"sub-line {sub_line_id!r} has no active fault to recover"
+            )
+        if self._window_seq < int(fault["raised_window_seq"]) + 1:
+            raise ValueError(
+                "recovery requires at least one advanced canonical window with "
+                f"{sub_line_id!r} frozen"
+            )
+        resolved_at_s = float(fault["raised_at_s"]) + float(fault["downtime_s"])
+        fault["state"] = "RUNNING"
+        fault["resolved_at_s"] = resolved_at_s
+        self._jammed_sub_line_ids.discard(sub_line_id)
+        return dict(fault)
+
+    def fault_for(self, sub_line_id: str) -> dict[str, Any]:
+        """READ-ONLY canonical fault state of one sub-line (healthy default)."""
+        self._federation.get(sub_line_id)  # fail closed on unknown id
+        fault = self._faults.get(sub_line_id)
+        if fault is None:
+            return {
+                "sub_line_id": sub_line_id,
+                "state": "RUNNING",
+                "reason_code": "",
+                "raised_at_s": None,
+                "resolved_at_s": None,
+                "downtime_s": 0.0,
+            }
+        return dict(fault)
+
+    def fault_read_model(self) -> dict[str, dict[str, Any]]:
+        """READ-ONLY canonical fault read model for all six sub-lines.
+
+        Downstream Observation/MES projections read THIS (canonical truth); they
+        never own or synthesise fault state.
+        """
+        return {
+            sub_line_id: self.fault_for(sub_line_id)
+            for sub_line_id in self._federation.sub_line_ids
+        }
+
     def _executable_ids(self, scope_ids: tuple[str, ...]) -> tuple[str, ...]:
-        """Selected ids that may actually participate (held lines excluded)."""
-        return tuple(sid for sid in tuple(scope_ids) if sid not in self._held_sub_line_ids)
+        """Selected ids that may participate (held or jammed lines excluded)."""
+        frozen = self._held_sub_line_ids | self._jammed_sub_line_ids
+        return tuple(sid for sid in tuple(scope_ids) if sid not in frozen)
 
     @property
     def supports_reset(self) -> bool:
@@ -150,6 +250,11 @@ class AssyExecutionBridge:
         # whole session to its fresh profile baseline with every sub-line able to
         # participate and progress again. It is capability-scoped on purpose: a
         # full session reset (all six effective scopes) clears every domain hold.
+        # R4: the canonical AP05 fault state of the reset scopes is cleared for
+        # the same reason (a reset returns to the fresh profile baseline).
         self._held_sub_line_ids.difference_update(scope_ids)
+        for sid in tuple(scope_ids):
+            self._jammed_sub_line_ids.discard(sid)
+            self._faults.pop(sid, None)
         for sid in tuple(scope_ids):
             self._federation.reset_sub_line(sid)

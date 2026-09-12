@@ -319,14 +319,23 @@ class TestDeferredFailClosed:
             ("post", "/assy-demo/run-to-terminal"),
         ],
     )
-    def test_ap05_fault_and_oee_workflows_are_deferred(self, method, path):
+    def test_ap05_fault_and_oee_workflows_are_canonical(self, method, path):
+        """R4 canonicalized these workflows (migrated from the R2/R3 deferral)."""
         c = _client()
+        c.post("/assy-demo/reset")
+        c.post("/assy-demo/step")
         resp = getattr(c, method)(path)
-        assert resp.status_code == 409
-        body = resp.json()
-        assert body["status"] == "deferred"
-        assert body["legacy_runtime_authority"] is False
-        assert body["deferred_to"] == "R4"
+        assert resp.status_code in (200, 404, 409)
+        if resp.status_code == 200:
+            assert resp.json().get("legacy_runtime_authority") is False
+        assert c.post("/assy-demo/jam", json={"sub_line_id": "ASSY-SL03"}).status_code == 200
+        c.post("/assy-demo/step")
+        recovered = c.post("/assy-demo/recover", json={"sub_line_id": "ASSY-SL03"})
+        assert recovered.status_code == 200
+        assert recovered.json()["fault"]["state"] == "RUNNING"
+        terminal = c.post("/assy-demo/run-to-terminal", json={"max_windows": 8})
+        assert terminal.status_code == 200
+        assert terminal.json().get("legacy_runtime_authority") is False
 
     @pytest.mark.parametrize(
         "path",
@@ -348,15 +357,29 @@ class TestDeferredFailClosed:
             c.get("/assy-demo/identity").json()["canonical"]["run_id"]
         )
 
-    def test_scenario_mutation_is_deferred_but_same_scenario_reset_is_allowed(self):
+    def test_scenario_change_starts_a_fresh_run_and_same_scenario_reset_is_in_place(self):
+        """R4: a different scenario is a FRESH canonical run (migrated from the
+        R2 deferral); a same-scenario reset stays an in-context reset."""
         c = _client()
         assert c.post("/assy-demo/reset").status_code == 200
+        run_id = c.get("/assy-demo/identity").json()["canonical"]["run_id"]
         ok = c.post("/assy-demo/reset", json={"scenario": "HAPPY_PATH"})
         assert ok.status_code == 200
-        deferred = c.post("/assy-demo/reset", json={"scenario": "AP06_FAIL_RETEST_PASS"})
-        assert deferred.status_code == 409
-        assert deferred.json()["feature"] == "scenario_change"
-        assert c.get("/assy-demo/identity").json()["canonical"]["scenario_id"] == "tipa-default"
+        fresh = c.post("/assy-demo/reset", json={"scenario": "AP06_FAIL_RETEST_PASS"})
+        assert fresh.status_code == 200
+        body = fresh.json()
+        assert body["canonical"]["run_id"] != run_id
+        assert body["canonical"]["scenario_id"] == "AP06_FAIL_RETEST_PASS"
+        assert body["previous"]["run_id"] == run_id
+        assert body["legacy_runtime_authority"] is False
+        # the active canonical run is now the fresh one (no in-place mutation)
+        assert (
+            c.get("/assy-demo/identity").json()["canonical"]["scenario_id"]
+            == "AP06_FAIL_RETEST_PASS"
+        )
+        assert c.get("/assy-demo/identity").json()["canonical"]["run_id"] == body[
+            "canonical"
+        ]["run_id"]
 
     def test_thin_ops_bindings_use_the_canonical_runtime(self):
         c = _client()

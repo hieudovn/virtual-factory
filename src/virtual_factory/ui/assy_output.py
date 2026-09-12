@@ -215,16 +215,38 @@ class CanonicalAssyOutput:
 
     # ── Composition shim (references the SAME six runtimes) ──
 
+    def _canonical_bridge(self):
+        """The session's own execution bridge (canonical control/fault owner)."""
+        record = self.session.record
+        return getattr(record, "bridge", None)
+
+    def fault_state(self) -> dict[str, dict[str, Any]]:
+        """READ-ONLY canonical AP05 fault read model.
+
+        The fault lifecycle is owned by the canonical execution bridge; the
+        output projection only reads it (never owns simulation fault state).
+        """
+        bridge = self._canonical_bridge()
+        if bridge is None or not hasattr(bridge, "fault_read_model"):
+            return {}
+        return {
+            sub_line_id: dict(row)
+            for sub_line_id, row in bridge.fault_read_model().items()
+        }
+
     def _composition(self) -> SimpleNamespace:
         """Duck-typed composition over the canonical six sub-line runtimes.
 
         Contains references/read access only: no lifecycle, no mutable truth.
+        ``faults`` carries the canonical fault read model (R4) so the output
+        bridges derive issue/downtime/OEE from canonical truth.
         """
         federation = self._federation
         step_count = int(getattr(self.session.record, "step_count", 0) or 0)
         return SimpleNamespace(
             contexts=dict(federation.sub_lines),
             demo_step_number=step_count,
+            faults=self.fault_state(),
         )
 
     # ── Read-only guard ──
@@ -364,6 +386,68 @@ class CanonicalAssyOutput:
             "canonical": self.canonical_envelope(),
             "mes_messages": messages,
             "count": len(messages),
+            "delivered_this_poll": counts["mes_delivered"],
+        }
+
+    def oee_summary(self) -> dict[str, Any]:
+        """READ-ONLY OEE / final summary from canonical facts (idempotent).
+
+        Reuses the accepted MES OEE projection over the canonical six runtimes;
+        downtime comes from the canonical fault lifecycle. It never advances or
+        mutates simulation truth and repeated reads are idempotent.
+        """
+        counts = self.poll()
+        if self._mes is None:
+            raise CanonicalOutputError(
+                "the canonical MES projection is not bound for OEE"
+            )
+        for sub_line_id, entry in self._federation.sub_lines.items():
+            self._mes.emit_oee(sub_line_id, entry.runtime)
+        summaries = [
+            {
+                "message_key": msg.key,
+                "message_type": msg.message_type,
+                "schema_name": msg.schema_name,
+                "payload": dict(msg.payload),
+            }
+            for msg in self._mes.projected_messages
+            if msg.message_type == "mes.oee_summary"
+        ]
+        faults = self.fault_state()
+        sub_lines = []
+        for sub_line_id, entry in self._federation.sub_lines.items():
+            runtime = entry.runtime
+            released = 0
+            rejected = 0
+            for wip_id in runtime.wip_ids:
+                ws = runtime.get_wip(wip_id)
+                if ws is not None and ws.lifecycle.value == "released":
+                    released += 1
+                elif runtime.get_current_quality_status(wip_id).value == "FAILED_FINAL":
+                    rejected += 1
+            fault = faults.get(sub_line_id, {})
+            sub_lines.append(
+                {
+                    "sub_line_id": sub_line_id,
+                    "simulation_time_s": float(runtime.simulation_time_s),
+                    "released_wips": released,
+                    "rejected_wips": rejected,
+                    "fault_state": fault.get("state", "RUNNING"),
+                    "downtime_s": float(fault.get("downtime_s") or 0.0)
+                    if fault.get("raised_at_s") is not None
+                    else 0.0,
+                }
+            )
+        return {
+            "authority": PROJECTION_AUTHORITY,
+            "legacy_runtime_authority": False,
+            "status": "ok",
+            "provenance": PROJECTION_PROVENANCE,
+            "contract_version": CONTRACT_VERSION,
+            "canonical": self.canonical_envelope(),
+            "oee_summaries": summaries,
+            "count": len(summaries),
+            "sub_lines": sub_lines,
             "delivered_this_poll": counts["mes_delivered"],
         }
 

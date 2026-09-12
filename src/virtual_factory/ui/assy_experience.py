@@ -38,14 +38,10 @@ from virtual_factory.workspace import StructuralPath
 CANONICAL_TIPA_WORKSPACE = "TIPA"
 
 #: Deferred capabilities -> the gate that owns them.
-#: R3 output (observations / mes_messages / mes_trace) is NO LONGER deferred:
-#: it is served read-only by ``virtual_factory.ui.assy_output``.
-DEFERRED_FEATURES: dict[str, str] = {
-    "jam": "R4",
-    "recover": "R4",
-    "run_to_terminal": "R4",
-    "scenario_change": "R4",
-}
+#: R3 output is served read-only by ``virtual_factory.ui.assy_output`` and R4
+#: canonicalized jam/recover/run-to-terminal/OEE/scenario-change below, so no
+#: capability is deferred any more (R5 legacy decommissioning is NOT authorized).
+DEFERRED_FEATURES: dict[str, str] = {}
 
 
 class AssyExperienceError(ValueError):
@@ -413,6 +409,135 @@ class CanonicalAssyExperience:
             for row in bridge.sub_line_views()
         }
         return {"held_sub_line_ids": list(held), "sub_lines": rows}
+
+    # ── R4: canonical fault / run-to-terminal / scenario seams ─
+
+    def _require_bridge(self):
+        bridge = self.bridge()
+        if bridge is None:
+            raise SessionNotStarted("no runtime projection yet")
+        return bridge
+
+    def fault_state(self) -> dict:
+        """READ-ONLY canonical AP05 fault read model (owner: session bridge)."""
+        bridge = self.bridge()
+        if bridge is None or not hasattr(bridge, "fault_read_model"):
+            return {"faults": {}, "jammed_sub_line_ids": []}
+        return {
+            "faults": {
+                sid: dict(row) for sid, row in bridge.fault_read_model().items()
+            },
+            "jammed_sub_line_ids": list(bridge.jammed_sub_line_ids),
+        }
+
+    def jam(self, sub_line_id: str | None = None) -> dict:
+        """Fault/freeze exactly ONE canonical sub-line (canonical same session)."""
+        entry, _ = self._runtime_for(sub_line_id or self.selected_sub_line_id())
+        bridge = self._require_bridge()
+        fault = bridge.jam_sub_line(entry.identity.sub_line_id)
+        payload = {
+            "status": "faulted",
+            "sub_line_id": entry.identity.sub_line_id,
+            "fault": fault,
+            "canonical": self.session_identity(),
+        }
+        payload.update(self.fault_state())
+        return payload
+
+    def recover(self, sub_line_id: str | None = None) -> dict:
+        """Clear the canonical fault on the same sub-line (fail closed)."""
+        entry, _ = self._runtime_for(sub_line_id or self.selected_sub_line_id())
+        bridge = self._require_bridge()
+        try:
+            fault = bridge.recover_sub_line(entry.identity.sub_line_id)
+        except ValueError as exc:
+            raise AssyExperienceError(str(exc)) from exc
+        payload = {
+            "status": "recovered",
+            "sub_line_id": entry.identity.sub_line_id,
+            "fault": fault,
+            "canonical": self.session_identity(),
+        }
+        payload.update(self.fault_state())
+        return payload
+
+    def terminal_reached(self) -> bool:
+        """Deterministic terminal condition (read-only, canonical facts).
+
+        Every one of the six canonical sub-lines has released at least one WIP.
+        """
+        federation = self._require_federation()
+        for sub_line_id in self.sub_line_ids():
+            runtime = federation.get(sub_line_id).runtime
+            released = any(
+                runtime.get_wip(wip_id) is not None
+                and runtime.get_wip(wip_id).lifecycle.value == "released"
+                for wip_id in runtime.wip_ids
+            )
+            if not released:
+                return False
+        return True
+
+    def run_to_terminal(self, max_windows: int = 32) -> dict:
+        """Bounded canonical orchestration over the SAME session (R4).
+
+        Repeatedly calls the canonical session advance/step path only — no
+        private simulation loop and no second runtime — with a deterministic
+        stop condition and a hard bounded-window guard.
+        """
+        if not isinstance(max_windows, int) or not 1 <= max_windows <= 200:
+            raise AssyExperienceError(
+                "max_windows must be an int in 1..200 (bounded, fail closed)"
+            )
+        windows = 0
+        reached = self.terminal_reached()
+        while windows < max_windows and not reached:
+            self.session.advance()
+            windows += 1
+            reached = self.terminal_reached()
+        payload = self.detail()
+        payload.update(
+            {
+                "status": "terminal" if reached else "bounded",
+                "windows": windows,
+                "max_windows": max_windows,
+                "terminal_reached": reached,
+                "canonical": self.session_identity(),
+            }
+        )
+        return payload
+
+    def select_scenario(self, scenario_id: str) -> dict:
+        """Scenario change = FRESH canonical run (never in-place mutation).
+
+        Validates the scenario against the pinned run-profile vocabulary, then
+        asks the monitor for a new canonical run for the SAME workspace. The
+        previous run identity stays historical and unmodified.
+        """
+        from virtual_factory.assembly.assy_run_profile import build_tipa_run_profile
+
+        try:
+            build_tipa_run_profile(scenario_id)  # fail closed if unknown
+        except Exception as exc:
+            raise AssyExperienceError(
+                f"unknown/unusable scenario {scenario_id!r}: {exc}"
+            ) from exc
+        previous = self.session_identity()
+        new_run = self._monitor.new_run(
+            CANONICAL_TIPA_WORKSPACE, scenario_id=scenario_id
+        )
+        identity = self.session_identity()
+        return {
+            "status": "fresh_run",
+            "requested_scenario_id": scenario_id,
+            "profile_id": identity.get("profile_id"),
+            "previous": {
+                "run_id": previous.get("run_id"),
+                "scenario_id": previous.get("scenario_id"),
+            },
+            "canonical": identity,
+            "monitor": new_run,
+        }
 
 
 @dataclass(frozen=True, slots=True)

@@ -54,6 +54,13 @@
     }
 
     function refresh() {
+      // VF-vNEXT-R4: canonical pages (e.g. /assy-demo) already serve their own
+      // run identity; the legacy G7 run-control context does not exist for
+      // them, so skip the probe entirely (no 404 console noise).
+      if (document.getElementById('vf-canonical-identity')) {
+        section.hidden = true;
+        return;
+      }
       fetch('/vnext/runs/current' + wsParam)
         .then(function (res) {
           if (!res.ok) { section.hidden = true; return null; }

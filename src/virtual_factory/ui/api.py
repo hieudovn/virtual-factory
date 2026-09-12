@@ -392,14 +392,20 @@ def create_app(
         experience = _get_assy_experience()
         requested = (body or {}).get("scenario")
         if requested:
-            effective = experience.session_identity().get("scenario_id", "")
-            profile = experience.session_identity().get("run_profile") or {}
-            if requested not in (effective, profile.get("scenario")):
-                return _deferred_response(
-                    "scenario_change",
-                    "scenario/profile is pinned run input; changing it needs a "
-                    "new canonical session (R4), not a legacy reset",
-                )
+            identity = experience.session_identity()
+            profile = identity.get("run_profile") or {}
+            if requested not in (
+                identity.get("scenario_id", ""),
+                profile.get("scenario"),
+            ):
+                # R4: a different scenario is a FRESH canonical run, never an
+                # in-place mutation of the active run's pinned identity.
+                try:
+                    result = experience.select_scenario(requested)
+                except Exception as exc:
+                    return _experience_error_response(exc)
+                result["legacy_runtime_authority"] = False
+                return result
         try:
             return experience.reset()
         except Exception as exc:
@@ -440,30 +446,71 @@ def create_app(
 
     @app.post("/assy-demo/jam")
     def assy_demo_jam(body: dict | None = None) -> dict:
-        """R4: AP05 fault/OEE workflow needs legacy authority (fail closed)."""
-        return _deferred_response(
-            "jam",
-            "AP05 fault/OEE workflow is not bindable to the canonical session "
-            "without new architecture (R4)",
-        )
+        """R4: canonical AP05 jam on ONE selected sub-line (same session)."""
+        experience = _get_assy_experience()
+        payload = body or {}
+        sub_line_id = payload.get("sub_line_id") or None
+        try:
+            result = experience.jam(sub_line_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
+        result["legacy_runtime_authority"] = False
+        return result
 
     @app.post("/assy-demo/recover")
     def assy_demo_recover(body: dict | None = None) -> dict:
-        """R4: AP05 fault recovery needs legacy authority (fail closed)."""
-        return _deferred_response(
-            "recover",
-            "AP05 fault recovery is not bindable to the canonical session "
-            "without new architecture (R4)",
-        )
+        """R4: canonical AP05 recovery on the same sub-line (fail closed)."""
+        experience = _get_assy_experience()
+        payload = body or {}
+        sub_line_id = payload.get("sub_line_id") or None
+        try:
+            result = experience.recover(sub_line_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
+        result["legacy_runtime_authority"] = False
+        return result
 
     @app.post("/assy-demo/run-to-terminal")
-    def assy_demo_run_to_terminal() -> dict:
-        """R4: legacy run-to-terminal/OEE driver is deferred (fail closed)."""
-        return _deferred_response(
-            "run_to_terminal",
-            "legacy run-to-terminal/OEE driving is not part of the canonical "
-            "session contract (R4)",
-        )
+    def assy_demo_run_to_terminal(body: dict | None = None) -> dict:
+        """R4: bounded canonical run-to-terminal over the SAME session."""
+        experience = _get_assy_experience()
+        max_windows = (body or {}).get("max_windows", 32)
+        try:
+            result = experience.run_to_terminal(max_windows)
+        except Exception as exc:
+            return _experience_error_response(exc)
+        result["legacy_runtime_authority"] = False
+        return result
+
+    @app.get("/assy-demo/oee")
+    def assy_demo_oee() -> dict:
+        """R4: READ-ONLY OEE/final summary from canonical facts (idempotent)."""
+        try:
+            return _get_assy_output().oee_summary()
+        except Exception as exc:
+            return _experience_error_response(exc)
+
+    @app.post("/assy-demo/scenario")
+    def assy_demo_scenario(body: dict) -> dict:
+        """R4: scenario selection = FRESH canonical run (no in-place mutation)."""
+        experience = _get_assy_experience()
+        scenario_id = (body or {}).get("scenario_id")
+        if not scenario_id:
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "detail": "scenario_id is required",
+                    "status": "error",
+                },
+            )
+        try:
+            result = experience.select_scenario(scenario_id)
+        except Exception as exc:
+            return _experience_error_response(exc)
+        result["legacy_runtime_authority"] = False
+        return result
 
     @app.get("/assy-demo/mes-messages")
     def assy_demo_mes_messages() -> dict:
