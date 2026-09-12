@@ -475,8 +475,13 @@ VF-SHW-X3-C01 - Correction of the two blocking SA findings (Issue #98 SA review 
   tests/test_vnext_x2_whole_plant_runtime.py 85 passed (no migration needed).
 - Evidence: 01..11 all green, overall SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED; the harness acceptance
   evaluation of the C01 contract is 9/9 PASS (X3C01-1, X3C01-2 + the X3-1..X3-7 regression re-assertions).
-- Gate: the canonical 46-group baseline (including full_suite) and VF-DM CI are run at the exact pushed head
-  of this correction; their machine-derived numbers are recorded in the C01 verification comment on PR #99.
+- Gate: the canonical 46-group baseline at the contract-correction head 4426b74 is **overall PASS, 46/46 groups,
+  failed_groups = []**: x3_whole_plant_runtime 84 passed (113.75 s), x2_whole_plant_runtime 85, x1_whole_plant_contracts
+  46, full_suite 2884 passed (171.00 s), checks_compile / checks_static_lint_type PASS, checks_changed_files
+  FILE VALIDATION PASSED (17 file(s)), checks_preflight PRECHECK PASSED. The final commit of this correction only
+  pins these numbers into markdown and changes no source/test/config/evidence file; the same canonical baseline is
+  re-run at that pinned head and the exact SHA + result are recorded in the C01 verification comment on PR #99,
+  together with the VF-DM CI result for the same head.
 - Harness contract correction (DISCLOSED, not a scope change): the FIRST baseline run at head 109e3f2 FAILED
   exactly one group, checks_changed_files, because this correction's contract carried the whole-directory
   forbidden entry tests/ while its own allowlist explicitly permitted the four X3 test modules (the harness

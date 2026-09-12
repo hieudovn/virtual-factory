@@ -141,10 +141,13 @@ operating point.
 | Evidence `01..11` | all nine section verdicts PASS, overall `SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED` |
 | Contract acceptance | **9/9 PASS** (`X3C01-1`, `X3C01-2` + the `X3-1..X3-7` regression re-assertions, evaluated by the harness on `08-verdict.json`) |
 | Water identity (regression) | 0 invalid ticks, worst residual 2e-12 m3, created water 0.0 m3, storage integration gap -5e-12 m3 |
+| Canonical baseline (46 groups) at the contract-correction head `4426b74` | **overall PASS, 46/46 groups, `failed_groups = []`**: `x3_whole_plant_runtime` 84 passed (113.75 s), `x2_whole_plant_runtime` 85, `x1_whole_plant_contracts` 46, `full_suite` **2884 passed** (171.00 s), `checks_compile` / `checks_static_lint_type` PASS, `checks_changed_files` `FILE VALIDATION PASSED (17 file(s))`, `checks_preflight` `PRECHECK PASSED` |
 
-The canonical baseline (46 groups, including `full_suite`) and VF-DM CI are run at the exact pushed head of this
-correction; their machine-derived numbers are recorded in the C01 section of `.ai-harness/sa-review/CURRENT.md` and in the
-verification comment on PR #99.
+The first baseline run at the code head `109e3f2` failed one harness group and is disclosed in section 5; the
+re-run above is the gate result for the corrected contract. The final commit of this correction only pins these
+machine-derived numbers into markdown (this report and `CURRENT.md`) and changes no source, test, config or
+evidence file, so the same canonical 46-group baseline is re-run at that pinned head; its exact SHA and result are
+recorded in the C01 verification comment on PR #99.
 
 ## 5. Harness contract correction disclosed to the SA (not a scope change)
 
