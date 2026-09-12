@@ -4,8 +4,8 @@
   "entrypoint": "python .ai-harness/regression/run_vnext_baseline.py",
   "base": "3f8c9409cac5698399ab4d386506b0419d68a5df",
   "gate": {
-    "task_contract": ".ai-harness/tasks/VF-SHW-X3-C01.json",
-    "changed_files_base": "c3f4b231bb83bbd48f2c8a66f7dda13efd7ef290"
+    "task_contract": ".ai-harness/tasks/VF-SHW-X3-C02.json",
+    "changed_files_base": "1d8de908648a1718819247772b5ae58722e87260"
   },
   "purpose": "Deterministic, repo-native Platform vNext regression baseline (Issue #53). Groups are first-class and reference existing authoritative pytest modules/commands; no test logic is duplicated. Manifest groups are either pytest groups (type 'pytest' -> `python -m pytest -q -p no:cacheprovider`) or explicit repo-native command groups (type 'command', run from the repo root). The default invocation `python .ai-harness/regression/run_vnext_baseline.py` runs the COMPLETE required baseline, including the compile/static/preflight/changed-file harness checks, and exits non-zero if any required group fails. The top-level `gate` context (task_contract / changed_files_base) is the single reusable parameter seam so the SAME entrypoint runs the current authorized gate (G9 here) without hard-coding a gate.",
   "static_checks": {

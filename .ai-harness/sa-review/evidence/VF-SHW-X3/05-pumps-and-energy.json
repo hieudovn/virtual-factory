@@ -9,9 +9,9 @@
   },
   "energy": {
     "per_pump_electric_j": {
-      "dist-hsp": 1895614.242541,
-      "raw-intake-pump": 1150921.555129,
-      "t108-transfer-pump": 1160480.374512
+      "dist-hsp": 4139123.001819,
+      "raw-intake-pump": 3063771.102483,
+      "t108-transfer-pump": 1602610.981859
     },
     "per_pump_running_s": {
       "dist-hsp": 1200.0,
@@ -20,7 +20,7 @@
     },
     "pump_operating_points": {
       "dist-hsp": {
-        "electric_w": 408.36680011348744,
+        "electric_w": 1116.7901647908575,
         "feasible": true,
         "flow_m3h": 7.05672,
         "motor_rating_w": 11000.0,
@@ -28,7 +28,7 @@
         "reason": "ok"
       },
       "raw-intake-pump": {
-        "electric_w": 1008.6954909104567,
+        "electric_w": 2685.163104717548,
         "feasible": true,
         "flow_m3h": 33.75,
         "motor_rating_w": 5500.0,
@@ -44,7 +44,7 @@
         "reason": "energized_zero_flow_no_lift_head"
       }
     },
-    "total_energy_j": 4207016.172183,
+    "total_energy_j": 8805505.086161,
     "unavailable_energy": [
       "chem-dosing dosing pumps (reagent dosing energy not modelled)",
       "sludge-t201 processing pump (duty-cycle abstraction; energy marked unavailable)",

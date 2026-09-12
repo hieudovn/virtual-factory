@@ -450,7 +450,9 @@ VF-SHW-X3-C01 - Correction of the two blocking SA findings (Issue #98 SA review 
   the trip/interlock release preloads from that actual stopped value, every ordinary reopening is slew limited
   (valve 10 pp/s, pump 5 pp/s, protective stopping exempt) and the back-calculation is reconciled with the
   FINAL realized command (commit_actual). Measured (evidence 11-actuator-tracking.json): SA counterexample
-  90.00 % -> stop 0.00 % (tracked 0.00 %) -> release step 0.000 pp vs the 10 pp/s limit; all 6 protective
+  90.00 % -> stop 0.00 % (tracked 0.00 %) -> release step 0.000 pp vs the 10 pp/s limit; the 4 trip/interlock
+  epilogues release at 0.00 pp (preloaded from the actual stopped value) while the 2 C1-override epilogues ramp
+  at the declared limits (10.0 pp valve / 5.0 pp pump), NOT a 0 pp release (wording corrected per SA C02-3); all 6
   epilogues (trip/interlock/C1 override x flow/level) hold the integral on the first protected scan and with a
   changed PV, stay inside the slew and take the actuator back; a 5400-tick runtime scan (the real backwash
   episode, 390 ticks under c1_backwash_closes_inlet) has ZERO tracking/slew violations; feasible SP step,
@@ -491,11 +493,54 @@ VF-SHW-X3-C01 - Correction of the two blocking SA findings (Issue #98 SA review 
   reported as FAILED, not hidden, and are preserved in the committed artefact
   .ai-harness/sa-review/evidence/VF-SHW-X3/12-baseline-failed-run.json. The contract's tests/ entry was removed
   (recorded in the new
-  allowlist_correction block of .ai-harness/tasks/VF-SHW-X3-C01.json); no allowlist entry was added and no code,
-  test, evidence or report file was touched by the amendment. Independent recomputation against the ORIGINAL
+  allowlist_correction block of .ai-harness/tasks/VF-SHW-X3-C01.json); no allowlist entry was added and NO runtime
+  or test change is part of that commit - it changes four files (task contract, CURRENT.md, the C01 report and the
+  new evidence artefact 12-baseline-failed-run.json), as the SA's C02-3 correction requires. Independent
+  recomputation against the ORIGINAL
   contract gives outside_allowlist=[] with the two X3 modules as the only forbidden hits, so the permitted set is
   unchanged; verify_changed_files reports FILE VALIDATION PASSED (16 file(s)). The full 46-group baseline is
   re-run at the head of the amendment commit and only that re-run is reported as the gate result for the
   corrected head. The SA retains the decision on accepting this contract correction.
 - STOP: X4/X5 must NOT begin; no merge and no Issue #98 closure without the SA's explicit authorization for
   the exact PR head SHA.
+
+---
+
+VF-SHW-X3-C02 - Correction of the SA energy finding (C02-1), of the independent-oracle gap (C02-2) and of the
+reporting facts (C02-3), Issue #98 SA review comment 5649199324): CORRECTION
+- Reviewed head / technical base: 1d8de908648a1718819247772b5ae58722e87260. Same branch feature/vf-shw-x3 /
+  PR #99; no competing implementation gate. Contract .ai-harness/tasks/VF-SHW-X3-C02.json created BEFORE the C02
+  edits with the harness preflight PASSED (PRECHECK PASSED). Report: reports/VF-SHW-X3-C02.md.
+- C02-1 CLOSED (frozen D6 pump law). realized_point now charges the electricity on the PUMP hydraulic power
+  rho*g*Q_actual*H(n,Q_actual) instead of Hreq, reports P_pump / P_useful / P_throttle separately, enforces
+  P_pump = P_useful + P_throttle on every positive flow (a violation is infeasible, reason power_split_inconsistent)
+  and keeps the declared OFF/idle simplification; the pump curve was NOT re-parameterized. SA exact-source
+  counterexample reproduced: H 26.0928 m, Hreq 5.07302784 m, pump 2047.762944 W, useful 398.131224883 W, throttle
+  1649.631719117 W, electric 3325.375634286 W (the rejected law gave 968.758892690 W). Full run 1200 ticks:
+  8.805505 MJ total (idle 0.102650 + pumped 8.702855), pump hydraulic 5.242170 MJ = useful 2.118870 + throttle
+  3.123300 MJ, balance residual 0.0, 0 infeasible ticks.
+- C02-2 CLOSED (genuine independence). The oracle (test module AND evidence generator, each with its own copy)
+  reads the frozen parameters from configs/vnext/shwtp/shwtp_x3_profile_v1.json and rebuilds the flow from the
+  committed pump discharge records (pump_discharge_records(): tick, pump, binding, discharge m3, dt, commanded
+  speed - water and command only, no power field); it never calls realized_point/power/energy helpers and never
+  reads an exported power, asserted by a source-token scan and a test. It reproduces the ledger per pump
+  (<= 1e-6 J). BOTH mutations fail: capacity-flow substitution differs by up to 2.203330 MJ and the H-to-Hreq
+  power substitution by up to 2.243509 MJ (its total 4.207016 MJ is exactly the rejected figure vs the accepted
+  8.805505 MJ).
+- C02-3 CLOSED (facts corrected). The 109e3f2 -> 4426b74 amendment commit changes FOUR files (contract, C01
+  report, CURRENT.md, the new 12-baseline-failed-run.json evidence artefact) and no runtime/test file - the
+  earlier "no evidence/report file touched" claim is corrected in the C01 report and here. The six protective
+  releases are NOT all 0 pp: the four trip/interlock releases step 0.00 pp while the two C1-override releases ramp
+  at the declared limits (10.0 pp valve / 5.0 pp pump) - corrected in the C01 report and here. The PR #99
+  description's c3f4b23 numbers (11.821 MJ, 2864 tests) are marked historical/superseded.
+- Regression: control behaviour untouched (x3_controls.py is outside the allowlist and explicitly forbidden);
+  evidence 11 regenerated unchanged with the corrected release-step wording; water identity unchanged (0 invalid
+  ticks, created water 0.0 m3); tests at this head: physical_bounds 35, two_pi_control 26, reservations 16,
+  session_wiring 12 = 89 passed, 0 failed.
+- Evidence: 01..11 all PASS with the new verdict ENERGY_FROM_ACHIEVED_FLOW_ON_THE_FROZEN_PUMP_LAW, overall
+  SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED; harness acceptance of the C02 contract 11/11 PASS
+  (X3C02-1, X3C02-2 + X3C01-1, X3C01-2 + X3-1..X3-7), failed: [].
+- Gate: the canonical 46-group baseline (including full_suite) and VF-DM CI are run at the exact pushed head of
+  this correction; their machine-derived numbers are recorded in the C02 verification comment on PR #99.
+- STOP: X3 is not accepted; X4/X5 must NOT begin; no merge and no Issue #98 closure without the SA's explicit
+  authorization for the exact PR head SHA.

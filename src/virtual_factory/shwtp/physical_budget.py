@@ -31,10 +31,23 @@ confused:
 
 The declared simple power rule of a realized point is: an OFF (not energized) pump
 integrates exactly zero; an ENERGIZED pump that moves no water integrates only the
-declared ``no_load_w`` idle loss with NO useful hydraulic power; an energized pump
-that moves water integrates ``P_hyd(Hreq)/eta_total + no_load_w`` with
-``P_hyd = rho*g*Q_actual*Hreq`` (the head actually delivered to the water), while any
-excess available head stays recorded as ``throttle_head_m`` dissipation.
+declared ``no_load_w`` idle loss with NO hydraulic power at all.
+
+**C02-1 (SA finding, corrected):** an ENERGIZED pump that moves water integrates the
+FROZEN D6 law on the realized flow - the PUMP hydraulic power uses the pump curve head
+``rho*g*Q_actual*H(n, Q_actual)`` and ``P_elec = P_pump/eta_total + no_load_w``, so the
+energy that is subsequently dissipated through the throttle is part of the electricity.
+Using ``Hreq`` in the hydraulic power (the C01-2 error) only credits the useful system
+work and omits the dissipation. The three powers are therefore reported separately and
+the identity ``P_pump = P_useful + P_throttle`` is required on every positive feasible
+flow:
+
+- ``P_pump = rho*g*Q_actual*H(n, Q_actual)``   (what the pump delivers to the water)
+- ``P_useful = rho*g*Q_actual*Hreq``           (what the system consumes)
+- ``P_throttle = P_pump - P_useful``           (dissipated across the throttle/valve)
+
+The capacity statement (:meth:`PumpModel.operating_point`) uses the SAME law with the
+requested/allocated flow, so allocation and energy never apply different power laws.
 
 
 Units: everything here is SI (m3, s, m3/s, m, Pa, W, J). Mappings to the existing
@@ -108,10 +121,19 @@ class PumpOperatingPoint:
     feasible: bool
     reason: str
     energized: bool = True
+    #: rho*g*Q*Hreq - the share of the pump hydraulic power the system actually consumes
+    useful_hydraulic_w: float = 0.0
+    #: P_pump - P_useful - the share dissipated across the throttle; part of the electricity
+    throttle_power_w: float = 0.0
 
     @property
     def flow_m3h(self) -> float:
         return self.flow_m3_s * 3600.0
+
+    @property
+    def power_balance_error_w(self) -> float:
+        """P_pump - (P_useful + P_throttle); exactly 0 by construction (SA C02-1)."""
+        return self.hydraulic_w - (self.useful_hydraulic_w + self.throttle_power_w)
 
     @property
     def off(self) -> bool:
@@ -144,7 +166,26 @@ class PumpModel:
     def hydraulic_power_w(self, flow_m3_s: float, head_m: float) -> float:
         return self.units.rho_kg_m3 * self.units.g_m_s2 * _nonneg(flow_m3_s, "flow_m3_s") * _nonneg(head_m, "head_m")
 
+    def power_split_w(
+        self, flow_m3_s: float, head_m: float, required_head_m: float
+    ) -> tuple[float, float, float]:
+        """Split the pump hydraulic power into the useful and dissipated shares (SA C02-1).
+
+        ``P_pump = rho*g*Q*H`` (the frozen D6 pump law), ``P_useful = rho*g*Q*Hreq`` and
+        ``P_throttle = P_pump - P_useful``. No water moved means no hydraulic power at all;
+        a head shortfall credits no useful power (the whole pump output is bookkept as
+        dissipation) so the identity ``P_pump = P_useful + P_throttle`` always holds.
+        """
+        pump = self.hydraulic_power_w(flow_m3_s, head_m)
+        if flow_m3_s <= 0.0:
+            return 0.0, 0.0, 0.0
+        if head_m + 1e-12 < required_head_m:
+            return pump, 0.0, pump
+        useful = self.hydraulic_power_w(flow_m3_s, required_head_m)
+        return pump, useful, max(0.0, pump - useful)
+
     def electric_power_w(self, hydraulic_w: float) -> float:
+        """Frozen D6 electric law on the PUMP hydraulic power: throttle loss is included."""
         return hydraulic_w / self.pump.eta_total + self.pump.no_load_w
 
     # feasibility -----------------------------------------------------------
@@ -214,7 +255,7 @@ class PumpModel:
             reason = "limited_by_head_or_motor_rating"
         head = max(0.0, self.head_m(speed, flow))
         required = self.required_head_m(flow)
-        hydraulic = self.hydraulic_power_w(flow, head)
+        hydraulic, useful, throttle = self.power_split_w(flow, head, required)
         electric = self.electric_power_w(hydraulic) if flow > 0.0 else 0.0
         return PumpOperatingPoint(
             pump_id=self.pump.pump_id,
@@ -230,18 +271,25 @@ class PumpModel:
             feasible=electric <= self.pump.motor_rating_w + 1e-9,
             reason=reason,
             energized=True,
+            useful_hydraulic_w=useful,
+            throttle_power_w=throttle,
         )
 
     def realized_point(
         self, speed_pct: float, actual_flow_m3_s: float
     ) -> PumpOperatingPoint:
-        """REALIZED operating point of the water actually moved (SA C01-2).
+        """REALIZED operating point of the water actually moved (SA C01-2 / C02-1).
 
         ``actual_flow_m3_s`` is the committed physical pumped throughput of THIS tick
         (measured from the physical transfer records), so the energy ledger can never
         integrate a capacity/envelope point. The realized point always enforces the
         frozen head and motor feasibility; a realized point that violates them is
         reported ``feasible=False`` so no success verdict can be built on it.
+
+        The hydraulic power uses the FROZEN D6 pump law head ``H(n, Q_actual)`` - NOT
+        ``Hreq`` - so the electricity includes the energy later dissipated through the
+        throttle: ``P_elec = P_pump/eta_total + no_load_w``. ``P_useful`` (rho*g*Q*Hreq)
+        and ``P_throttle`` are reported separately and must sum to ``P_pump``.
         """
         speed_pct = _finite(speed_pct, "speed_pct")
         if not 0.0 <= speed_pct <= 100.0:
@@ -289,10 +337,11 @@ class PumpModel:
                 ),
                 energized=True,
             )
-        hydraulic = self.hydraulic_power_w(flow, required)
+        hydraulic, useful, throttle = self.power_split_w(flow, available_head, required)
         electric = self.electric_power_w(hydraulic)
         head_ok = available_head >= required - 1e-9
         motor_ok = electric <= self.pump.motor_rating_w + 1e-9
+        balance_ok = abs(hydraulic - (useful + throttle)) <= 1e-9 * max(1.0, hydraulic)
         return PumpOperatingPoint(
             pump_id=self.pump.pump_id,
             speed_fraction=speed,
@@ -304,17 +353,23 @@ class PumpModel:
             hydraulic_w=hydraulic,
             electric_w=electric,
             motor_rating_w=self.pump.motor_rating_w,
-            feasible=head_ok and motor_ok,
+            feasible=head_ok and motor_ok and balance_ok,
             reason=(
                 "ok"
-                if head_ok and motor_ok
+                if head_ok and motor_ok and balance_ok
                 else (
                     "insufficient_head_at_realized_flow"
                     if not head_ok
-                    else "motor_overload_at_realized_flow"
+                    else (
+                        "motor_overload_at_realized_flow"
+                        if not motor_ok
+                        else "power_split_inconsistent"
+                    )
                 )
             ),
             energized=True,
+            useful_hydraulic_w=useful,
+            throttle_power_w=throttle,
         )
 
     def energy_step_j(self, point: PumpOperatingPoint, dt_s: float) -> float:

@@ -52,7 +52,9 @@ discontinuity.
 | SA counterexample: normal command | 90.00 % |
 | forced stop applied / **tracked** value | 0.00 % / **0.00 %** |
 | release step vs valve limit (10 pp/s) | **0.000 pp** (within the limit) |
-| protective epilogues (trip, interlock, C1 override x flow, level = 6) | all: protection recognised, tracked value 0.00 %, integral held on the first protected scan AND with a changed PV, release step 0.00 pp, every ramp step within the slew, actuator taken back |
+| protective epilogues (trip, interlock, C1 override x flow, level = 6) | all: protection recognised, tracked value 0.00 %, integral held on the first protected scan AND with a changed PV, every ramp step within the slew, actuator taken back |
+| release step of the 4 trip/interlock epilogues | **0.00 pp** (preloaded from the actual stopped value) |
+| release step of the 2 C1-override epilogues | **10.0 pp** (flow loop / valve, exactly at the 10 pp/s limit) and **5.0 pp** (level loop / pump, exactly at the 5 pp/s limit) - a bounded ramp at the slew limit, NOT a 0 pp release (wording corrected per SA finding C02-3) |
 | runtime continuity over 5400 ticks (whole backwash episode) | tracked == realized on every tick; **0** tracking/slew violations; owners: `pi_flow_output` 5010 ticks, `c1_backwash_closes_inlet` 390 ticks, pump `pi_level_output` 5400 ticks |
 | one ongoing attempt: 0.006 -> 0.0125 (unreachable) -> 0.008 | feasible step tracked (err 0.0 at tick 2400), unreachable saturates with `output_saturated` (measured 0.0100 < 0.0125, tick 4200), recovery inside 5 % (err 0.0 at tick 6000) with the controller state retained |
 | live setpoint projection | `control_rows()` now reports the setpoint in force (from the PI status), so a runtime step is visible in every projection |
@@ -177,11 +179,13 @@ permitted. The accepted X3 contract records the opposite rule verbatim ("tests/ 
 whole-directory forbidden entry").
 
 **Correction applied:** the single entry `"tests/"` was removed from `forbidden_paths` (recorded in the new
-`allowlist_correction` block of `.ai-harness/tasks/VF-SHW-X3-C01.json`). Nothing else changed: no allowlist entry
-was added, no code/test/evidence/report file is touched by the amendment commit, and every other forbidden entry
+`allowlist_correction` block of `.ai-harness/tasks/VF-SHW-X3-C01.json`). **No runtime or test change is part of
+that commit**; it changes four files - the task contract, this report (section 5), `.ai-harness/sa-review/CURRENT.md`
+and the new evidence artefact `evidence/VF-SHW-X3/12-baseline-failed-run.json` - and every other forbidden entry
 (frozen X1 configs, `contracts.py`, `x2_controls.py`, `whole_plant.py`, `session.py`, `workspace_monitor.py`,
 `runcontrol/`, `composition/`, `assembly/`, `pim/`, `core/`, `docs/`, `deploy/`, `examples/`, `simulators/`,
-`main`) is untouched.
+`main`) is untouched. (The earlier wording of this section claimed that no evidence or report file is touched by
+the amendment commit; that was factually wrong and is corrected here per SA finding C02-3.)
 
 **Independent proof that this is not a scope widening:** recomputing the changed-file verdict against the
 ORIGINAL contract gives 16 changed paths, `outside_allowlist = []`, and the two files above as the ONLY forbidden

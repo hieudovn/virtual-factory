@@ -300,11 +300,19 @@ class X3WaterLedger:
 
 @dataclass(slots=True)
 class X3EnergyLedger:
-    """Energy integration (J) of the declared powered pumps only (D6)."""
+    """Energy integration (J) of the declared powered pumps only (D6, SA C02-1).
+
+    The integrated electricity is ``P_pump/eta_total + no_load`` where ``P_pump`` is the
+    FROZEN D6 pump hydraulic power ``rho*g*Q_actual*H(n,Q_actual)``, so the share that is
+    later dissipated through the throttle is part of the electricity. The pump, useful
+    and throttle components are accumulated separately for reporting.
+    """
 
     total_j: float = 0.0
     per_pump_j: dict[str, float] = field(default_factory=dict)
     per_pump_hydraulic_j: dict[str, float] = field(default_factory=dict)
+    per_pump_useful_j: dict[str, float] = field(default_factory=dict)
+    per_pump_throttle_j: dict[str, float] = field(default_factory=dict)
     per_pump_seconds: dict[str, float] = field(default_factory=dict)
     unavailable: tuple[str, ...] = ()
 
@@ -318,6 +326,12 @@ class X3EnergyLedger:
         self.per_pump_hydraulic_j[point.pump_id] = (
             self.per_pump_hydraulic_j.get(point.pump_id, 0.0) + point.hydraulic_w * dt_s
         )
+        self.per_pump_useful_j[point.pump_id] = (
+            self.per_pump_useful_j.get(point.pump_id, 0.0) + point.useful_hydraulic_w * dt_s
+        )
+        self.per_pump_throttle_j[point.pump_id] = (
+            self.per_pump_throttle_j.get(point.pump_id, 0.0) + point.throttle_power_w * dt_s
+        )
         self.per_pump_seconds[point.pump_id] = self.per_pump_seconds.get(point.pump_id, 0.0) + dt_s
         return electric
 
@@ -328,9 +342,18 @@ class X3EnergyLedger:
             "per_pump_electric_j": {
                 key: round(value, 6) for key, value in sorted(self.per_pump_j.items())
             },
-            "per_pump_hydraulic_j": {
+            "per_pump_pump_hydraulic_j": {
                 key: round(value, 6) for key, value in sorted(self.per_pump_hydraulic_j.items())
             },
+            "per_pump_useful_hydraulic_j": {
+                key: round(value, 6) for key, value in sorted(self.per_pump_useful_j.items())
+            },
+            "per_pump_throttle_dissipated_j": {
+                key: round(value, 6) for key, value in sorted(self.per_pump_throttle_j.items())
+            },
+            "total_pump_hydraulic_j": round(sum(self.per_pump_hydraulic_j.values()), 6),
+            "total_useful_hydraulic_j": round(sum(self.per_pump_useful_j.values()), 6),
+            "total_throttle_dissipated_j": round(sum(self.per_pump_throttle_j.values()), 6),
             "per_pump_running_s": {
                 key: round(value, 6) for key, value in sorted(self.per_pump_seconds.items())
             },
@@ -406,6 +429,10 @@ class WholePlantX3Runtime:
         self._tick_speeds: dict[str, float] = {}
         #: per-tick realized operating data (actual Q, speed, H/Hreq, power, energy)
         self._energy_trace: list[dict[str, Any]] = []
+        #: committed PHYSICAL discharge water per tick and pump binding (water + the
+        #: commanded speed of that tick ONLY - no power/energy statement), published so
+        #: an external oracle can rebuild the flow without any production energy helper
+        self._discharge_records: list[dict[str, Any]] = []
         self._energy_realized_trace: dict[str, Any] = {}
         self._feedback: dict[str, Any] = {}
         self._alarms: set[str] = set()
@@ -801,6 +828,7 @@ class WholePlantX3Runtime:
         self._pump_points = {}
         self._tick_speeds = {}
         self._energy_trace = []
+        self._discharge_records = []
         self._energy_realized_trace = {}
         self._alarms = set()
         # a reset starts a NEW deterministic state: the pipeline bookkeeping and the
@@ -969,11 +997,35 @@ class WholePlantX3Runtime:
         points: dict[str, PumpOperatingPoint] = {}
         for pump_id, binding_id in sorted(PUMP_DISCHARGE_BINDINGS.items()):
             achieved_m3 = self._water_of(self._transfers, binding_id)
-            achieved_m3_s = achieved_m3 / dt_s if dt_s > 0.0 else 0.0
-            points[pump_id] = self.pump_models[pump_id].realized_point(
-                self._tick_speeds.get(pump_id, 0.0), achieved_m3_s
+            capacity = self._pump_capacity_points.get(pump_id)
+            speed_pct = self._tick_speeds.get(pump_id, 0.0)
+            # SA C02-2: the water record is published per tick and binding (water plus the
+            # commanded speed of the tick only) so an external oracle can rebuild the flow
+            # WITHOUT calling any production power/energy helper.
+            self._discharge_records.append(
+                {
+                    "tick_index": self._tick_index,
+                    "pump_id": pump_id,
+                    "binding_id": binding_id,
+                    "commanded_speed_pct": speed_pct,
+                    "discharge_m3": achieved_m3,
+                    "dt_s": dt_s,
+                    "capacity_flow_m3_s": capacity.flow_m3_s if capacity else 0.0,
+                }
             )
+            achieved_m3_s = achieved_m3 / dt_s if dt_s > 0.0 else 0.0
+            points[pump_id] = self.pump_models[pump_id].realized_point(speed_pct, achieved_m3_s)
         return points
+
+    def pump_discharge_records(self) -> tuple[dict[str, Any], ...]:
+        """Committed PHYSICAL pump discharge water per tick and binding (SA C02-2).
+
+        Each record carries the committed discharge volume of one pump binding on one
+        tick, the tick duration and the commanded speed of that tick. It deliberately
+        carries NO power, efficiency or energy statement, so an independent oracle has to
+        evaluate the frozen parameters itself instead of reusing a production formula.
+        """
+        return tuple(self._discharge_records)
 
     def _update_energy(self) -> None:
         """Integrate energy from the REALIZED operating points (SA C01-2)."""
@@ -996,6 +1048,9 @@ class WholePlantX3Runtime:
                 "required_head_m": point.required_head_m,
                 "throttle_head_m": point.throttle_head_m,
                 "hydraulic_w": point.hydraulic_w,
+                "useful_hydraulic_w": point.useful_hydraulic_w,
+                "throttle_power_w": point.throttle_power_w,
+                "power_balance_error_w": point.power_balance_error_w,
                 "electric_w": point.electric_w,
                 "motor_rating_w": point.motor_rating_w,
                 "feasible": point.feasible,
@@ -1016,12 +1071,18 @@ class WholePlantX3Runtime:
                 "total_hydraulic_w": round(
                     sum(row["hydraulic_w"] for row in rows.values()), 9
                 ),
+                "total_useful_hydraulic_w": round(
+                    sum(row["useful_hydraulic_w"] for row in rows.values()), 9
+                ),
+                "total_throttle_power_w": round(
+                    sum(row["throttle_power_w"] for row in rows.values()), 9
+                ),
                 "total_energy_delta_j": round(total_delta_j, 9),
             }
         )
 
     def energy_trace(self) -> tuple[dict[str, Any], ...]:
-        """Per-tick realized operating data (actual Q, speed, H/Hreq, P, energy)."""
+        """Per-tick realized operating data (actual Q, speed, H/Hreq, P_pump/P_useful/P_throttle/electric, energy)."""
         return tuple(self._energy_trace)
 
     # ── reports ────────────────────────────────────────────────────────────
@@ -1182,11 +1243,23 @@ class WholePlantX3Runtime:
 
     def energy_report(self) -> dict:
         report = self.energy.to_dict(
-            "P_elec = P_hyd(Hreq)/eta_total + no_load (declared synthetic, realized on the "
-            "achieved pumped throughput); P_hyd uses the head actually delivered to the "
-            "water; J -> kWh at the named boundary"
+            "P_elec = P_pump/eta_total + no_load with the FROZEN D6 pump law "
+            "P_pump = rho*g*Q_actual*H(n,Q_actual) (realized on the achieved pumped "
+            "throughput); P_pump = P_useful(Hreq) + P_throttle, so the energy dissipated "
+            "through the throttle is part of the electricity; J -> kWh at the named boundary"
         )
         report["operating_point_basis"] = "realized_actual_pumped_throughput"
+        report["pump_power_law"] = (
+            "frozen D6, SA C02-1: P_pump = rho*g*Q_actual*H(n,Q_actual); "
+            "P_useful = rho*g*Q_actual*Hreq; P_throttle = P_pump - P_useful; "
+            "P_elec = P_pump/eta_total + no_load, so the throttle-dissipated energy is "
+            "included in the electricity instead of being reported only as a head"
+        )
+        report["power_identity_rule"] = (
+            "P_pump = P_useful + P_throttle on every positive feasible flow (part of the "
+            "realized feasibility verdict); a pump that moves no water has no hydraulic "
+            "power at all, and the OFF/idle simplification is unchanged"
+        )
         report["idle_loss_rule"] = (
             "an OFF pump integrates exactly zero flow and zero energy; an energized pump "
             "that moves no water integrates only the declared no_load_w idle loss with no "
@@ -1202,6 +1275,9 @@ class WholePlantX3Runtime:
                 "required_head_m": point.required_head_m,
                 "throttle_head_m": point.throttle_head_m,
                 "hydraulic_w": point.hydraulic_w,
+                "useful_hydraulic_w": point.useful_hydraulic_w,
+                "throttle_power_w": point.throttle_power_w,
+                "power_balance_error_w": point.power_balance_error_w,
                 "electric_w": point.electric_w,
                 "motor_rating_w": point.motor_rating_w,
                 "feasible": point.feasible,
@@ -1256,6 +1332,48 @@ class WholePlantX3Runtime:
             ),
             6,
         )
+        report["energy_components_j"] = {
+            "pump_hydraulic_j": round(
+                sum(
+                    data["hydraulic_w"] * row["dt_s"]
+                    for row in realized
+                    for data in row["pumps"].values()
+                    if not data["off"]
+                ),
+                6,
+            ),
+            "useful_hydraulic_j": round(
+                sum(
+                    data["useful_hydraulic_w"] * row["dt_s"]
+                    for row in realized
+                    for data in row["pumps"].values()
+                    if not data["off"]
+                ),
+                6,
+            ),
+            "throttle_dissipated_j": round(
+                sum(
+                    data["throttle_power_w"] * row["dt_s"]
+                    for row in realized
+                    for data in row["pumps"].values()
+                    if not data["off"]
+                ),
+                6,
+            ),
+            "idle_j": report["idle_energy_j"],
+            "total_electric_j": report["total_energy_j"],
+            "max_power_balance_error_w": round(
+                max(
+                    (
+                        abs(data["power_balance_error_w"])
+                        for row in realized
+                        for data in row["pumps"].values()
+                    ),
+                    default=0.0,
+                ),
+                9,
+            ),
+        }
         report.update(AUTHORITY_LABELS)
         return report
 

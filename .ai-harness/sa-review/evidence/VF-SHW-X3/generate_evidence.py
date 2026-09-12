@@ -803,10 +803,15 @@ def _acceptance_block(artefacts: dict) -> dict:
     envelope_rows = [row for rows in s05["envelope"].values() for row in rows]
     points = s05["energy"]["pump_operating_points"].values()
     pump_energy = (
-        # C01-2: the energy verdict is now built on the REALIZED basis
+        # C01-2: the energy verdict is built on the REALIZED basis; C02-1/C02-2: on the
+        # frozen D6 pump law and an oracle that does not reuse the production helpers
         s10["all_checks_pass"] is True
         and s10["independent_recomputation_matches"] is True
         and s10["capacity_substitution_detected"] is True
+        and s10["hreq_substitution_detected"] is True
+        and s10["power_identity_holds"] is True
+        and s10["throttle_energy_is_charged_in_the_electricity"] is True
+        and s10["oracle"]["independent_of_production_helpers"] is True
         and s10["realized_feasibility"]["all_realized_points_feasible"] is True
         and s10["realized_feasibility"]["infeasible_ticks"] == 0
         and all(
@@ -907,6 +912,38 @@ def _c01_acceptance_block(artefacts: dict) -> dict:
     return {
         "actuator_tracking": actuator_tracking,
         "energy_from_actual_flow": energy_from_actual_flow,
+    }
+
+
+def _c02_acceptance_block(artefacts: dict) -> dict:
+    """The C02 acceptance fields of the correction contract (SA findings C02-1/C02-2)."""
+    s10 = artefacts["10"]
+    counterexample = s10["sa_counterexample"]
+    split_error = abs(
+        counterexample["pump_hydraulic_w"]
+        - (counterexample["useful_hydraulic_w"] + counterexample["throttle_power_w"])
+    )
+    pump_power_law = (
+        counterexample["matches_sa_numbers"] is True
+        and split_error <= 1e-3
+        and counterexample["power_balance_error_w"] <= 1e-6
+        and s10["power_identity_holds"] is True
+        and s10["throttle_energy_is_charged_in_the_electricity"] is True
+        and "frozen D6" in s10["pump_power_law"]
+        and s10["realized_feasibility"]["all_realized_points_feasible"] is True
+        and all(row["idle_rows_have_no_hydraulic_power"] for row in s10["scenarios"].values())
+    )
+    independent_energy_oracle = (
+        s10["oracle"]["independent_of_production_helpers"] is True
+        and s10["independent_recomputation_matches"] is True
+        and s10["capacity_substitution_detected"] is True
+        and s10["hreq_substitution_detected"] is True
+        and s10["realized_feasibility"]["infeasible_ticks"] == 0
+        and all(row["water_physical_valid"] for row in s10["scenarios"].values())
+    )
+    return {
+        "pump_power_law": pump_power_law,
+        "independent_energy_oracle": independent_energy_oracle,
     }
 
 
@@ -1164,8 +1201,95 @@ def _actuator_tracking_evidence(profile, contracts) -> dict:
     )
 
 
+def frozen_pump_parameters() -> dict:
+    """Frozen pump/unit parameters read straight from the config file (SA C02-2)."""
+    raw = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
+    constants = raw["constants"]
+    return {
+        "rho_kg_m3": float(constants["rho_kg_m3"]),
+        "g_m_s2": float(constants["g_m_s2"]),
+        "pumps": {
+            pump_id: {
+                "h0_m": float(pump["h0_m"]),
+                "k_s2_m5": float(pump["k_s2_m5"]),
+                "h_static_m": float(pump["h_static_m"]),
+                "r_s2_m5": float(pump["r_s2_m5"]),
+                "eta_total": float(pump["eta_total"]),
+                "no_load_w": float(pump["no_load_w"]),
+                "motor_rating_w": float(pump["motor_rating_w"]),
+            }
+            for pump_id, pump in raw["pumps"].items()
+        },
+    }
+
+
+#: tokens that would mean the oracle reuses the production implementation (SA C02-2)
+ORACLE_FORBIDDEN_TOKENS = (
+    "realized_point",
+    "operating_point",
+    "power_split_w",
+    "hydraulic_power_w",
+    "electric_power_w",
+    "energy_step_j",
+    "pump_models",
+    "energy_trace",
+    "energy_report",
+    "energy_components_j",
+    "per_pump_electric_j",
+    "hydraulic_w",
+)
+
+
+def independent_energy(model, *, basis: str = "achieved") -> dict[str, float]:
+    """Electricity per pump WITHOUT any production energy helper (SA C02-2).
+
+    Inputs: the committed PHYSICAL pump discharge records (committed water, the commanded
+    speed of that tick, the binding) joined by tick. Every hydraulic and electric quantity
+    is then evaluated from the frozen parameters read out of the config file.
+
+    ``basis="achieved"`` committed discharge flow against the frozen D6 law;
+    ``basis="capacity"`` substitutes the allocation capacity flow (mutation 1);
+    ``basis="hreq_law"`` substitutes Hreq for the pump head H(n,Q) (mutation 2, the C01-2
+    error the SA reproduced, which must not reproduce the ledger).
+    """
+    frozen = frozen_pump_parameters()
+    rho = frozen["rho_kg_m3"]
+    g = frozen["g_m_s2"]
+    totals: dict[str, float] = {}
+    for record in model.pump_discharge_records():
+        pump_id = record["pump_id"]
+        pump = frozen["pumps"][pump_id]
+        dt_s = float(record["dt_s"])
+        speed = float(record["commanded_speed_pct"]) / 100.0
+        if speed <= 0.0:
+            continue  # not energized: exactly zero flow and zero energy
+        if basis == "capacity":
+            flow = float(record["capacity_flow_m3_s"])
+        else:
+            flow = float(record["discharge_m3"]) / dt_s if dt_s > 0.0 else 0.0
+        if flow <= 0.0:
+            electric_w = pump["no_load_w"]
+        else:
+            head = max(0.0, pump["h0_m"] * speed * speed - pump["k_s2_m5"] * flow * flow)
+            required = pump["h_static_m"] + pump["r_s2_m5"] * flow * flow
+            head_for_power = required if basis == "hreq_law" else head
+            electric_w = rho * g * flow * head_for_power / pump["eta_total"] + pump["no_load_w"]
+        totals[pump_id] = totals.get(pump_id, 0.0) + electric_w * dt_s
+    return totals
+
+
+def oracle_is_independent() -> bool:
+    """True when the oracle source contains no production power/energy reference."""
+    import inspect
+
+    source = inspect.getsource(independent_energy) + inspect.getsource(
+        frozen_pump_parameters
+    )
+    return not any(token in source for token in ORACLE_FORBIDDEN_TOKENS)
+
+
 def section_10(profile, contracts) -> dict:
-    """C01-2: energy integrated from the ACHIEVED pumped throughput (SA finding 2)."""
+    """C02-1/C02-2: energy on the FROZEN pump law, verified by an independent oracle."""
     dt_s = profile.tick_s
     model = build_shwtp_whole_plant_x3(
         profile=profile, contracts=contracts, run_id="x3-ev-10"
@@ -1174,21 +1298,40 @@ def section_10(profile, contracts) -> dict:
     report = model.energy_report()
     trace = model.energy_trace()
 
-    independent: dict[str, float] = {}
-    capacity_basis: dict[str, float] = {}
-    for row in trace:
-        for pump_id, data in row["pumps"].items():
-            pump_model = model.pump_models[pump_id]
-            achieved = pump_model.realized_point(
-                data["commanded_speed_pct"], data["achieved_flow_m3_s"]
-            )
-            if not achieved.off:
-                independent[pump_id] = independent.get(pump_id, 0.0) + achieved.electric_w * dt_s
-            capacity = pump_model.realized_point(
-                data["commanded_speed_pct"], data["capacity_flow_m3h"] / 3600.0
-            )
-            if not capacity.off:
-                capacity_basis[pump_id] = capacity_basis.get(pump_id, 0.0) + capacity.electric_w * dt_s
+    frozen = frozen_pump_parameters()
+    # SA exact-source reproduction of the frozen DIST parameters at 80 %, Q = 0.008 m3/s
+    dist_point = PumpModel(profile.pumps["dist-hsp"], profile.units).realized_point(80.0, 0.008)
+    sa_counterexample = {
+        "description": "SA exact-source reproduction, frozen DIST parameters, 80 %, Q = 0.008 m3/s",
+        "head_m": dist_point.head_m,
+        "required_head_m": dist_point.required_head_m,
+        "pump_hydraulic_w": dist_point.hydraulic_w,
+        "useful_hydraulic_w": dist_point.useful_hydraulic_w,
+        "throttle_power_w": dist_point.throttle_power_w,
+        "electric_w": dist_point.electric_w,
+        "power_balance_error_w": dist_point.power_balance_error_w,
+        "feasible": dist_point.feasible,
+        "sa_expected": {
+            "head_m": 26.0928,
+            "required_head_m": 5.07302784,
+            "pump_hydraulic_w": 2047.762944,
+            "useful_hydraulic_w": 398.131224883,
+            "throttle_power_w": 1649.631719117,
+            "electric_w": 3325.375634286,
+        },
+    }
+    sa_counterexample["matches_sa_numbers"] = (
+        abs(dist_point.head_m - 26.0928) < 1e-6
+        and abs(dist_point.required_head_m - 5.07302784) < 1e-6
+        and abs(dist_point.hydraulic_w - 2047.762944) < 1e-3
+        and abs(dist_point.useful_hydraulic_w - 398.131224883) < 1e-3
+        and abs(dist_point.throttle_power_w - 1649.631719117) < 1e-3
+        and abs(dist_point.electric_w - 3325.375634286) < 1e-3
+    )
+
+    independent = independent_energy(model, basis="achieved")
+    capacity_basis = independent_energy(model, basis="capacity")
+    hreq_basis = independent_energy(model, basis="hreq_law")
 
     ledger = {key: float(value) for key, value in report["per_pump_electric_j"].items()}
     matches = {
@@ -1200,6 +1343,25 @@ def section_10(profile, contracts) -> dict:
         for pump_id, energy in ledger.items()
     }
     capacity_detected = max(substitution.values(), default=0.0) > 1.0
+    hreq_substitution = {
+        pump_id: round(abs(hreq_basis.get(pump_id, 0.0) - energy), 6)
+        for pump_id, energy in ledger.items()
+    }
+    hreq_detected = max(hreq_substitution.values(), default=0.0) > 1.0
+    components = report["energy_components_j"]
+    power_identity_holds = (
+        abs(
+            components["pump_hydraulic_j"]
+            - (components["useful_hydraulic_j"] + components["throttle_dissipated_j"])
+        )
+        <= 1e-3
+        and components["max_power_balance_error_w"] <= 1e-6
+    )
+    throttle_is_charged = (
+        components["throttle_dissipated_j"] > 0.0
+        and components["total_electric_j"] > components["useful_hydraulic_j"]
+        and sum(hreq_basis.values()) < report["total_energy_j"]
+    )
 
     # scenario matrix: startup / zero available water / full receiver / narrowed pipe
     startup = build_shwtp_whole_plant_x3(
@@ -1279,9 +1441,15 @@ def section_10(profile, contracts) -> dict:
 
     sample_ticks = [row for row in trace if row["tick_index"] in (1, 60, 600, 1200)]
     realized_feasible = report["realized_feasibility"]["all_realized_points_feasible"]
+    oracle_independent = oracle_is_independent()
     checks_pass = (
         all(matches.values())
         and capacity_detected
+        and hreq_detected
+        and throttle_is_charged
+        and power_identity_holds
+        and oracle_independent
+        and sa_counterexample["matches_sa_numbers"]
         and realized_feasible
         and all(row["water_physical_valid"] for row in scenarios.values())
         and all(row["all_realized_points_feasible"] for row in scenarios.values())
@@ -1294,11 +1462,32 @@ def section_10(profile, contracts) -> dict:
     return write(
         "10-energy-from-actual-flow",
         {
-            "finding": "C01-2 energy integrated from the ACHIEVED pumped throughput",
+            "finding": (
+                "C01-2 (achieved basis, kept under regression) + C02-1 (frozen pump law) + "
+                "C02-2 (genuinely independent oracle and both substitution mutations)"
+            ),
+            "pump_power_law": report["pump_power_law"],
+            "power_identity_rule": report["power_identity_rule"],
             "operating_point_basis": report["operating_point_basis"],
             "idle_loss_rule": report["idle_loss_rule"],
+            "frozen_parameters_used_by_the_oracle": frozen,
+            "sa_counterexample": sa_counterexample,
+            "oracle": {
+                "independent_of_production_helpers": oracle_independent,
+                "forbidden_tokens_checked": list(ORACLE_FORBIDDEN_TOKENS),
+                "inputs": "model.pump_discharge_records() joined by tick and binding "
+                "(committed discharge water + the commanded speed of the tick)",
+                "parameters": "configs/vnext/shwtp/shwtp_x3_profile_v1.json "
+                "(constants + pumps), read by the generator itself",
+            },
             "total_energy_j": report["total_energy_j"],
             "per_pump_electric_j": report["per_pump_electric_j"],
+            "per_pump_pump_hydraulic_j": report["per_pump_pump_hydraulic_j"],
+            "per_pump_useful_hydraulic_j": report["per_pump_useful_hydraulic_j"],
+            "per_pump_throttle_dissipated_j": report["per_pump_throttle_dissipated_j"],
+            "energy_components_j": components,
+            "power_identity_holds": power_identity_holds,
+            "throttle_energy_is_charged_in_the_electricity": throttle_is_charged,
             "idle_energy_j": report["idle_energy_j"],
             "actual_pumped_energy_j": report["actual_pumped_energy_j"],
             "independent_recomputation_j": {
@@ -1310,6 +1499,11 @@ def section_10(profile, contracts) -> dict:
             },
             "capacity_substitution_difference_j": substitution,
             "capacity_substitution_detected": capacity_detected,
+            "hreq_law_basis_j": {
+                key: round(value, 6) for key, value in sorted(hreq_basis.items())
+            },
+            "hreq_substitution_difference_j": hreq_substitution,
+            "hreq_substitution_detected": hreq_detected,
             "realized_operating_points_last_tick": report["pump_operating_points"],
             "allocation_capacity_points_last_tick": report["allocation_capacity_points"],
             "realized_feasibility": report["realized_feasibility"],
@@ -1324,6 +1518,9 @@ def section_10(profile, contracts) -> dict:
                 "required_head_m",
                 "throttle_head_m",
                 "hydraulic_w",
+                "useful_hydraulic_w",
+                "throttle_power_w",
+                "power_balance_error_w",
                 "electric_w",
                 "energy_delta_j",
                 "energized",
@@ -1334,7 +1531,7 @@ def section_10(profile, contracts) -> dict:
             ],
             "all_checks_pass": checks_pass,
             "verdict": (
-                "ENERGY_INTEGRATED_FROM_ACHIEVED_PUMPED_THROUGHPUT"
+                "ENERGY_FROM_ACHIEVED_FLOW_ON_THE_FROZEN_PUMP_LAW"
                 if checks_pass
                 else "ENERGY_BASIS_UNPROVEN"
             ),
@@ -1353,7 +1550,7 @@ def main() -> int:
         "05": "PUMP_ENVELOPE_FEASIBLE_WITH_EXPLICIT_UNITS",
         "06": "MUTATIONS_VIOLATE_THE_PHYSICAL_ENVELOPE",
         "07": "X3_CANONICAL_WITH_X2_AND_G21_COMPATIBILITY",
-        "10": "ENERGY_INTEGRATED_FROM_ACHIEVED_PUMPED_THROUGHPUT",
+        "10": "ENERGY_FROM_ACHIEVED_FLOW_ON_THE_FROZEN_PUMP_LAW",
         "11": "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED",
     }
     artefacts = {
@@ -1374,6 +1571,7 @@ def main() -> int:
     all_pass = all(verdicts.get(key) == value for key, value in expected.items())
     acceptance = _acceptance_block(artefacts)
     c01_acceptance = _c01_acceptance_block(artefacts)
+    c02_acceptance = _c02_acceptance_block(artefacts)
     summary = write(
         "08-verdict",
         {
@@ -1384,19 +1582,21 @@ def main() -> int:
             "all_sections_pass": all_pass,
             "x3": acceptance,
             "x3c01": c01_acceptance,
+            "x3c02": c02_acceptance,
             "overall": "SHW_X3_PHYSICAL_BOUNDS_AND_TWO_PI_VERIFIED"
-            if all_pass and all(c01_acceptance.values())
+            if all_pass and all(c01_acceptance.values()) and all(c02_acceptance.values())
             else "SHW_X3_EVIDENCE_INCOMPLETE",
         },
     )
     # Machine-checkable acceptance: the harness evaluates the CORRECTION contract rules
-    # (C01 findings + the X3-1..X3-7 regression re-assertions) against the blocks above.
+    # (the C02 findings, the C01 regressions and the X3-1..X3-7 regression re-assertions)
+    # against the blocks above.
     evaluation = subprocess.run(
         [
             sys.executable,
             str(ROOT / ".ai-harness" / "scripts" / "evaluate_acceptance.py"),
             str(OUT / "08-verdict.json"),
-            str(ROOT / ".ai-harness" / "tasks" / "VF-SHW-X3-C01.json"),
+            str(ROOT / ".ai-harness" / "tasks" / "VF-SHW-X3-C02.json"),
             "--phase",
             "final",
             "--output",
@@ -1411,9 +1611,10 @@ def main() -> int:
     failed = [row["id"] for row in evaluated if row["result"] != "PASS"]
     acceptance_line = (
         f"- acceptance: {len(passed)}/{len(evaluated)} criteria PASS "
-        f"(X3C01-1, X3C01-2 + the X3-1..X3-7 regression re-assertions, evaluated by "
-        f".ai-harness/scripts/evaluate_acceptance.py against the VF-SHW-X3-C01 contract; "
-        f"rules x3c01.actuator_tracking / x3c01.energy_from_actual_flow / x3.*)"
+        f"(X3C02-1, X3C02-2 + the X3C01-1/X3C01-2 and X3-1..X3-7 regression "
+        f"re-assertions, evaluated by .ai-harness/scripts/evaluate_acceptance.py against "
+        f"the VF-SHW-X3-C02 contract; rules x3c02.pump_power_law / "
+        f"x3c02.independent_energy_oracle / x3c01.* / x3.*)"
     )
     lines = [
         "# VF-SHW-X3 evidence summary",
@@ -1462,12 +1663,30 @@ def main() -> int:
             f"{artefacts['11']['sa_counterexample']['slew_limit_pp']:.1f} pp/s); protective epilogues "
             f"{len(artefacts['11']['protective_epilogues'])}; runtime slew violations "
             f"{artefacts['11']['runtime_continuity']['violation_count']}",
-            f"- C01-2 realized energy: total "
+            f"- C02-1 frozen pump law (SA counterexample, DIST 80 %, Q = 0.008 m3/s): "
+            f"H {artefacts['10']['sa_counterexample']['head_m']:.4f} m, Hreq "
+            f"{artefacts['10']['sa_counterexample']['required_head_m']:.8f} m, pump "
+            f"{artefacts['10']['sa_counterexample']['pump_hydraulic_w']:.6f} W, useful "
+            f"{artefacts['10']['sa_counterexample']['useful_hydraulic_w']:.6f} W, throttle "
+            f"{artefacts['10']['sa_counterexample']['throttle_power_w']:.6f} W, electric "
+            f"{artefacts['10']['sa_counterexample']['electric_w']:.6f} W "
+            f"(matches the SA numbers: {artefacts['10']['sa_counterexample']['matches_sa_numbers']})",
+            f"- C02-1/C02-2 realized energy: total "
             f"{artefacts['10']['total_energy_j'] / 1e6:.6f} MJ (idle "
             f"{artefacts['10']['idle_energy_j'] / 1e6:.6f} MJ, pumped "
-            f"{artefacts['10']['actual_pumped_energy_j'] / 1e6:.6f} MJ); capacity-basis "
-            f"substitution differs by up to "
-            f"{max(artefacts['10']['capacity_substitution_difference_j'].values(), default=0.0) / 1e6:.6f} MJ",
+            f"{artefacts['10']['actual_pumped_energy_j'] / 1e6:.6f} MJ; pump hydraulic "
+            f"{artefacts['10']['energy_components_j']['pump_hydraulic_j'] / 1e6:.6f} MJ = useful "
+            f"{artefacts['10']['energy_components_j']['useful_hydraulic_j'] / 1e6:.6f} MJ + throttle "
+            f"{artefacts['10']['energy_components_j']['throttle_dissipated_j'] / 1e6:.6f} MJ); "
+            f"independent oracle (no production helper: "
+            f"{artefacts['10']['oracle']['independent_of_production_helpers']}) matches "
+            f"{artefacts['10']['independent_recomputation_matches']}; capacity-basis substitution "
+            f"differs by up to "
+            f"{max(artefacts['10']['capacity_substitution_difference_j'].values(), default=0.0) / 1e6:.6f} MJ "
+            f"(detected {artefacts['10']['capacity_substitution_detected']}), H-to-Hreq power "
+            f"substitution by up to "
+            f"{max(artefacts['10']['hreq_substitution_difference_j'].values(), default=0.0) / 1e6:.6f} MJ "
+            f"(detected {artefacts['10']['hreq_substitution_detected']})",
             acceptance_line,
             "",
             "Every number above is produced by `generate_evidence.py` from the committed model at",

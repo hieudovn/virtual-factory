@@ -20,6 +20,7 @@ Covers the Issue #98 / SA continuation requirements that are physically binding:
 
 from __future__ import annotations
 
+import inspect
 import json
 import sys
 from dataclasses import replace
@@ -433,48 +434,188 @@ class TestPhysicalEnvelope:
         assert "vf-shw-node-network-demand" not in PIPELINE_SCOPES
 
 
-def _independent_energy(model, *, basis: str = "achieved") -> dict[str, float]:
-    """Recompute the energy INDEPENDENTLY from the exported per-tick actual data.
+def _frozen_pump_parameters() -> dict:
+    """Frozen pump/unit parameters read straight from the config file (SA C02-2).
 
-    ``basis="achieved"`` uses the realized pumped throughput; ``basis="capacity"``
-    substitutes the capacity/rated flow (the mutation the acceptance rule must reject).
+    The energy oracle must not depend on the production profile objects or on any
+    production power/energy computation; the declared numbers are read from the frozen
+    JSON surface itself.
     """
+    raw = json.loads(X3_PROFILE_PATH.read_text(encoding="utf-8"))
+    constants = raw["constants"]
+    return {
+        "rho_kg_m3": float(constants["rho_kg_m3"]),
+        "g_m_s2": float(constants["g_m_s2"]),
+        "pumps": {
+            pump_id: {
+                "h0_m": float(pump["h0_m"]),
+                "k_s2_m5": float(pump["k_s2_m5"]),
+                "h_static_m": float(pump["h_static_m"]),
+                "r_s2_m5": float(pump["r_s2_m5"]),
+                "eta_total": float(pump["eta_total"]),
+                "no_load_w": float(pump["no_load_w"]),
+                "motor_rating_w": float(pump["motor_rating_w"]),
+            }
+            for pump_id, pump in raw["pumps"].items()
+        },
+    }
+
+
+#: Tokens that would mean the oracle reuses the production implementation (SA C02-2).
+_ORACLE_FORBIDDEN_TOKENS = (
+    "realized_point",
+    "operating_point",
+    "power_split_w",
+    "hydraulic_power_w",
+    "electric_power_w",
+    "energy_step_j",
+    "pump_models",
+    "energy_trace",
+    "energy_report",
+    "energy_components_j",
+    "per_pump_electric_j",
+    "hydraulic_w",
+)
+
+
+def _oracle_energy(model, *, basis: str = "achieved") -> dict[str, float]:
+    """Electricity per pump recomputed WITHOUT any production energy helper (SA C02-2).
+
+    The only runtime inputs are the committed PHYSICAL pump discharge records of
+    :meth:`pump_discharge_records` (committed water, the commanded speed of that tick and
+    the binding), joined by tick; every hydraulic/electric quantity is then evaluated
+    from the frozen parameters read out of the config file.
+
+    ``basis="achieved"`` committed discharge flow against the frozen D6 law;
+    ``basis="capacity"`` substitutes the allocation capacity flow (mutation 1);
+    ``basis="hreq_law"`` substitutes Hreq for the pump head H(n,Q) (mutation 2, the
+    C01-2 error the SA reproduced).
+    """
+    frozen = _frozen_pump_parameters()
+    rho = frozen["rho_kg_m3"]
+    g = frozen["g_m_s2"]
     totals: dict[str, float] = {}
-    for row in model.energy_trace():
-        dt_s = row["dt_s"]
-        for pump_id, data in row["pumps"].items():
-            if basis == "achieved":
-                point = model.pump_models[pump_id].realized_point(
-                    data["commanded_speed_pct"], data["achieved_flow_m3_s"]
-                )
-            else:
-                point = model.pump_models[pump_id].realized_point(
-                    data["commanded_speed_pct"], data["capacity_flow_m3h"] / 3600.0
-                )
-            if point.off:
-                continue
-            totals[pump_id] = totals.get(pump_id, 0.0) + point.electric_w * dt_s
+    for record in model.pump_discharge_records():
+        pump_id = record["pump_id"]
+        pump = frozen["pumps"][pump_id]
+        dt_s = float(record["dt_s"])
+        speed = float(record["commanded_speed_pct"]) / 100.0
+        if speed <= 0.0:
+            continue  # not energized: exactly zero flow and zero energy
+        if basis == "capacity":
+            flow = float(record["capacity_flow_m3_s"])
+        else:
+            flow = float(record["discharge_m3"]) / dt_s if dt_s > 0.0 else 0.0
+        if flow <= 0.0:
+            electric_w = pump["no_load_w"]  # energized without water: declared idle loss
+        else:
+            head = max(0.0, pump["h0_m"] * speed * speed - pump["k_s2_m5"] * flow * flow)
+            required = pump["h_static_m"] + pump["r_s2_m5"] * flow * flow
+            head_for_power = required if basis == "hreq_law" else head
+            electric_w = rho * g * flow * head_for_power / pump["eta_total"] + pump["no_load_w"]
+        totals[pump_id] = totals.get(pump_id, 0.0) + electric_w * dt_s
     return totals
 
 
-class TestC01EnergyFromAchievedFlow:
-    """SA C01-2: the energy ledger must integrate the ACHIEVED pumped throughput."""
+class TestC02FrozenPumpPowerLaw:
+    """SA C02-1: the realized point applies the frozen D6 pump law (throttle included)."""
 
-    def test_ledger_matches_an_independent_recomputation(self, profile, contracts):
+    def test_sa_counterexample_dist_80_matches_the_frozen_law(self, profile):
+        """The SA's exact-source reproduction of the frozen DIST parameters."""
+        model = PumpModel(profile.pumps["dist-hsp"], profile.units)
+        point = model.realized_point(80.0, 0.008)
+        assert point.head_m == pytest.approx(26.0928, abs=1e-9)
+        assert point.required_head_m == pytest.approx(5.07302784, abs=1e-9)
+        assert point.hydraulic_w == pytest.approx(2047.762944, abs=1e-6)
+        assert point.useful_hydraulic_w == pytest.approx(398.131224883, abs=1e-6)
+        assert point.throttle_power_w == pytest.approx(1649.631719117, abs=1e-6)
+        assert point.electric_w == pytest.approx(3325.375634286, abs=1e-6)
+        assert point.power_balance_error_w == 0.0
+        assert point.feasible is True and point.reason == "ok"
+
+    def test_oracle_does_not_reuse_the_production_implementation(self):
+        """The claimed independent oracle must not call or read production energy code."""
+        source = inspect.getsource(_oracle_energy) + inspect.getsource(
+            _frozen_pump_parameters
+        )
+        for token in _ORACLE_FORBIDDEN_TOKENS:
+            assert token not in source, f"the independent oracle must not use {token!r}"
+
+    def test_power_identity_holds_on_every_exported_tick(self, profile, contracts):
+        """P_pump = P_useful + P_throttle and P_elec = P_pump/eta + no_load on each tick."""
+        frozen = _frozen_pump_parameters()
         model = _settled(
             build_shwtp_whole_plant_x3(
-                profile=profile, contracts=contracts, run_id="x3-c01-energy"
+                profile=profile, contracts=contracts, run_id="x3-c02-identity"
+            ),
+            900,
+        )
+        pumped_ticks = 0
+        throttled_ticks = 0
+        for row in model.energy_trace():
+            for pump_id, data in row["pumps"].items():
+                pump = frozen["pumps"][pump_id]
+                # the identity holds up to float rounding of the split itself
+                assert data["power_balance_error_w"] == pytest.approx(0.0, abs=1e-6), (
+                    pump_id,
+                    row["tick_index"],
+                )
+                assert data["hydraulic_w"] == pytest.approx(
+                    data["useful_hydraulic_w"] + data["throttle_power_w"], abs=1e-9
+                ), (pump_id, row["tick_index"])
+                assert data["throttle_power_w"] >= 0.0
+                if data["off"]:
+                    assert data["electric_w"] == 0.0
+                    assert data["hydraulic_w"] == 0.0
+                    continue
+                assert data["electric_w"] == pytest.approx(
+                    data["hydraulic_w"] / pump["eta_total"] + pump["no_load_w"], abs=1e-9
+                ), (pump_id, row["tick_index"])
+                if data["achieved_flow_m3_s"] > 0.0:
+                    pumped_ticks += 1
+                    if data["throttle_power_w"] > 0.0:
+                        throttled_ticks += 1
+        assert pumped_ticks > 0, "the settled plant must really pump"
+        assert throttled_ticks > 0, "the declared pump curve must really throttle"
+
+    def test_throttle_dissipation_is_charged_in_the_electricity(self, profile, contracts):
+        """The omitted throttle share must be a material part of the electricity (SA C02-1)."""
+        model = _settled(
+            build_shwtp_whole_plant_x3(
+                profile=profile, contracts=contracts, run_id="x3-c02-throttle"
             ),
             1200,
         )
         report = model.energy_report()
-        independent = _independent_energy(model, basis="achieved")
-        for pump_id, energy in report["per_pump_electric_j"].items():
-            assert energy == pytest.approx(independent.get(pump_id, 0.0), abs=1e-6), pump_id
-        assert report["total_energy_j"] == pytest.approx(
-            sum(report["per_pump_electric_j"].values()), rel=1e-9
+        components = report["energy_components_j"]
+        assert components["pump_hydraulic_j"] == pytest.approx(
+            components["useful_hydraulic_j"] + components["throttle_dissipated_j"], abs=1e-6
         )
-        assert report["operating_point_basis"] == "realized_actual_pumped_throughput"
+        assert components["throttle_dissipated_j"] > 1.0e5, (
+            "the throttle-dissipated energy must be a real part of the electricity, "
+            f"got {components['throttle_dissipated_j']} J"
+        )
+        assert components["total_electric_j"] > components["useful_hydraulic_j"], (
+            "electricity must exceed the useful system work by the dissipated share"
+        )
+        assert "frozen D6" in report["pump_power_law"]
+        assert report["per_pump_throttle_dissipated_j"]
+
+    def test_oracle_reproduces_the_ledger(self, profile, contracts):
+        model = _settled(
+            build_shwtp_whole_plant_x3(
+                profile=profile, contracts=contracts, run_id="x3-c02-oracle"
+            ),
+            1200,
+        )
+        report = model.energy_report()
+        oracle = _oracle_energy(model, basis="achieved")
+        assert report["per_pump_electric_j"], "the ledger must carry per-pump entries"
+        for pump_id, energy in report["per_pump_electric_j"].items():
+            assert energy == pytest.approx(oracle.get(pump_id, 0.0), abs=1e-6), pump_id
+        assert sum(report["per_pump_electric_j"].values()) == pytest.approx(
+            report["total_energy_j"], rel=1e-9
+        )
         assert report["realized_feasibility"]["infeasible_ticks"] == 0
         assert report["realized_feasibility"]["all_realized_points_feasible"] is True
 
@@ -482,12 +623,12 @@ class TestC01EnergyFromAchievedFlow:
         """A rated/capacity-flow substitution must NOT reproduce the ledger."""
         model = _settled(
             build_shwtp_whole_plant_x3(
-                profile=profile, contracts=contracts, run_id="x3-c01-energy-mutation"
+                profile=profile, contracts=contracts, run_id="x3-c02-mut-capacity"
             ),
             1200,
         )
         report = model.energy_report()
-        wrong = _independent_energy(model, basis="capacity")
+        wrong = _oracle_energy(model, basis="capacity")
         differences = {
             pump_id: abs(wrong.get(pump_id, 0.0) - report["per_pump_electric_j"].get(pump_id, 0.0))
             for pump_id in report["per_pump_electric_j"]
@@ -495,13 +636,41 @@ class TestC01EnergyFromAchievedFlow:
         assert max(differences.values()) > 1.0, (
             f"the capacity-flow substitution is indistinguishable: {differences}"
         )
-        # at least one pump really pumped less than its declared capacity
         assert any(
             row["pumps"][pump_id]["achieved_flow_m3h"]
             < row["pumps"][pump_id]["capacity_flow_m3h"] - 1e-9
             for row in model.energy_trace()
             for pump_id in row["pumps"]
+        ), "at least one pump must really pump less than its declared capacity"
+
+    def test_hreq_power_law_substitution_fails_the_energy_audit(self, profile, contracts):
+        """The C01-2 error (Hreq in the hydraulic power) must NOT reproduce the ledger."""
+        model = _settled(
+            build_shwtp_whole_plant_x3(
+                profile=profile, contracts=contracts, run_id="x3-c02-mut-hreq"
+            ),
+            1200,
         )
+        report = model.energy_report()
+        wrong = _oracle_energy(model, basis="hreq_law")
+        differences = {
+            pump_id: abs(wrong.get(pump_id, 0.0) - report["per_pump_electric_j"].get(pump_id, 0.0))
+            for pump_id in report["per_pump_electric_j"]
+        }
+        assert max(differences.values()) > 1.0, (
+            f"the H-to-Hreq power substitution is indistinguishable: {differences}"
+        )
+        assert sum(wrong.values()) < report["total_energy_j"], (
+            "crediting only the useful head must under-count the electricity"
+        )
+
+
+class TestC01EnergyFromAchievedFlow:
+    """SA C01-2 (kept as regression): the ledger integrates the ACHIEVED pumped throughput.
+
+    The power law itself was corrected by C02-1 and the oracle replaced by C02-2; these
+    tests keep the original finding's semantics under regression.
+    """
 
     def test_off_idle_and_pumped_states_are_distinguished(self, profile, contracts):
         """OFF = exactly zero; energized-no-flow = declared idle loss, never P_hyd."""
@@ -521,12 +690,18 @@ class TestC01EnergyFromAchievedFlow:
 
         pumped = model.realized_point(90.0, 0.010)
         assert pumped.idle is False and pumped.feasible is True
-        assert pumped.hydraulic_w == pytest.approx(
-            profile.units.rho_kg_m3 * profile.units.g_m_s2 * 0.010 * pumped.required_head_m
+        frozen = _frozen_pump_parameters()["pumps"]["raw-intake-pump"]
+        rho_g = _frozen_pump_parameters()["rho_kg_m3"] * _frozen_pump_parameters()["g_m_s2"]
+        assert pumped.hydraulic_w == pytest.approx(rho_g * 0.010 * pumped.head_m)
+        assert pumped.useful_hydraulic_w == pytest.approx(
+            rho_g * 0.010 * pumped.required_head_m
+        )
+        assert pumped.throttle_power_w == pytest.approx(
+            pumped.hydraulic_w - pumped.useful_hydraulic_w
         )
         assert pumped.electric_w == pytest.approx(
-            pumped.hydraulic_w / pump.eta_total + pump.no_load_w
-        )
+            pumped.hydraulic_w / frozen["eta_total"] + frozen["no_load_w"]
+        ), "the electricity is charged on the PUMP hydraulic power, not only on the useful head"
         assert pumped.throttle_head_m >= 0.0
 
     def test_realized_points_enforce_head_and_motor_feasibility(self, profile):
@@ -638,7 +813,7 @@ class TestC01EnergyFromAchievedFlow:
         assert narrow_flow <= baseline_flow + 1e-9
         assert narrow_report["total_energy_j"] != baseline_report["total_energy_j"]
         # the ledger of the narrowed plant still matches its own independent recomputation
-        independent = _independent_energy(narrow_model, basis="achieved")
+        independent = _oracle_energy(narrow_model, basis="achieved")
         for pump_id, energy in narrow_report["per_pump_electric_j"].items():
             assert energy == pytest.approx(independent.get(pump_id, 0.0), abs=1e-6)
         assert narrow_model.balance_report()["plant_water"]["physical_valid"] is True

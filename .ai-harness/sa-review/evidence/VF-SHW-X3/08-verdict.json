@@ -9,7 +9,7 @@
     "05": "PUMP_ENVELOPE_FEASIBLE_WITH_EXPLICIT_UNITS",
     "06": "MUTATIONS_VIOLATE_THE_PHYSICAL_ENVELOPE",
     "07": "X3_CANONICAL_WITH_X2_AND_G21_COMPATIBILITY",
-    "10": "ENERGY_INTEGRATED_FROM_ACHIEVED_PUMPED_THROUGHPUT",
+    "10": "ENERGY_FROM_ACHIEVED_FLOW_ON_THE_FROZEN_PUMP_LAW",
     "11": "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED"
   },
   "issue": "https://github.com/hieudovn/virtual-factory/issues/98",
@@ -22,7 +22,7 @@
     "05": "PUMP_ENVELOPE_FEASIBLE_WITH_EXPLICIT_UNITS",
     "06": "MUTATIONS_VIOLATE_THE_PHYSICAL_ENVELOPE",
     "07": "X3_CANONICAL_WITH_X2_AND_G21_COMPATIBILITY",
-    "10": "ENERGY_INTEGRATED_FROM_ACHIEVED_PUMPED_THROUGHPUT",
+    "10": "ENERGY_FROM_ACHIEVED_FLOW_ON_THE_FROZEN_PUMP_LAW",
     "11": "ACTUATOR_TRACKING_AND_RELEASE_SLEW_VERIFIED"
   },
   "x3": {
@@ -38,16 +38,32 @@
     "actuator_tracking": true,
     "energy_from_actual_flow": true
   },
+  "x3c02": {
+    "independent_energy_oracle": true,
+    "pump_power_law": true
+  },
   "acceptance": [
     {
+      "id": "X3C02-1",
+      "description": "The realized operating point applies the FROZEN D6 law on the actual committed flow: pump hydraulic power rho*g*Q_actual*H(n,Q_actual), electric power pump/eta_total + no_load (so the energy later dissipated through the throttle is included in the electricity), useful system power rho*g*Q_actual*Hreq and throttle dissipation reported separately, pump = useful + throttle on every positive feasible flow, head/motor feasibility and the declared OFF/idle simplification retained, the frozen curve unreplaced and allocation and energy on the same law",
+      "result": "PASS",
+      "evidence": "field=x3c02.pump_power_law operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
+      "id": "X3C02-2",
+      "description": "The independent energy oracle does not call or consume any production realized_point/power/energy helper: it joins the committed physical discharge water records with the commanded speed by tick and binding, reconstructs the actual flow and evaluates H, Hreq, pump/useful/throttle power and electric energy directly from the frozen parameters, reproduces the ledger per pump, and both the capacity-Q substitution and the H-to-Hreq power substitution differ enough to fail acceptance",
+      "result": "PASS",
+      "evidence": "field=x3c02.independent_energy_oracle operator=is_true expected=None actual=True \u2192 PASS"
+    },
+    {
       "id": "X3C01-1",
-      "description": "The final physical actuator is the controller's tracked actuator across trip, interlock, C1 backwash/permissive entry and release for both loops: protective ownership is decided before normal PI integration, the integral is held from the first protected scan, the actual stopped value is committed into actuator tracking, the release is preloaded from that actual value and every ordinary reopening/re-starting step obeys the declared valve 10 pp/s and pump 5 pp/s slew (protective stopping alone may bypass slew); requested-vs-applied provenance is preserved",
+      "description": "Regression: the accepted control correction stays green - protective ownership decided before normal PI integration, integral held from the first protected scan, actual stopped value committed and tracked, trip/interlock release preloaded from it, C1 release resuming through the ordinary slew from the actual last value (bounded ramp, not a bumpless claim), every ordinary reopening inside valve 10 pp/s and pump 5 pp/s, MANUAL and changed-PV continuity preserved",
       "result": "PASS",
       "evidence": "field=x3c01.actuator_tracking operator=is_true expected=None actual=True \u2192 PASS"
     },
     {
       "id": "X3C01-2",
-      "description": "Energy is integrated from the realized operating point of the ACHIEVED pumped throughput of each tick (actual speed + frozen pump/system laws), with head and motor feasibility enforced on the realized point, OFF distinguished from powered-zero-flow/insufficient-head, an explicitly declared idle-loss rule and no invented useful hydraulic power; an independent recomputation from the physical transfer records reproduces the ledger across startup, zero available water, full receiver and narrowed downstream capacity, and a rated/capacity-flow substitution fails",
+      "description": "Regression: energy is still integrated only from the ACHIEVED pumped throughput of each tick (never from a capacity/envelope point), with OFF distinguished from energized zero flow and an explicitly declared idle-loss rule",
       "result": "PASS",
       "evidence": "field=x3c01.energy_from_actual_flow operator=is_true expected=None actual=True \u2192 PASS"
     },
@@ -77,7 +93,7 @@
     },
     {
       "id": "X3-5",
-      "description": "Regression: pump envelope feasibility, OFF exactly zero flow and zero energy, unit-explicit energy and unmodelled energy declared unavailable - now evaluated on REALIZED operating points",
+      "description": "Regression: pump envelope feasibility, OFF exactly zero flow and zero energy, unit-explicit energy and unmodelled energy declared unavailable, evaluated on REALIZED operating points under the corrected frozen power law",
       "result": "PASS",
       "evidence": "field=x3.pump_energy operator=is_true expected=None actual=True \u2192 PASS"
     },
