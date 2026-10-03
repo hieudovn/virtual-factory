@@ -24,8 +24,10 @@ from virtual_factory.assembly.demo_controller import DemoController
 from virtual_factory.assembly.line_runtime import (
     AssyLineRuntime,
     LineRunState,
+    WipLifecycle,
     load_assy_config_from_yaml,
 )
+from virtual_factory.assembly.station_contracts import CompletionMode
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = (
@@ -47,12 +49,17 @@ EXPECTED_ROUTE = [
 INSPECTION = "BW-FP-INS01"
 NOMINAL_DWELL_S = 20.0
 
-# Domain-isolation tokens that must never appear in Bottled Water outward
-# runtime/config/event surfaces.
-FORBIDDEN_LITERALS = (
-    "TIPA", "ASSY", "PRE-ASSY", "AP05_JAM", "SSO2", "RSO2",
+# Domain-isolation patterns that must never appear in Bottled Water outward
+# runtime/config/event surfaces. Matching is case-insensitive so that semantic
+# variants such as `in_assy`, `PRE-ASSY` or `ASSY-SLxx` are caught too (C01-A).
+FORBIDDEN_PATTERNS = (
+    re.compile(r"assy", re.IGNORECASE),
+    re.compile(r"tipa", re.IGNORECASE),
+    re.compile(r"sso2", re.IGNORECASE),
+    re.compile(r"rso2", re.IGNORECASE),
+    re.compile(r"ap05_jam", re.IGNORECASE),
+    re.compile(r"\bap\d{2}\b", re.IGNORECASE),
 )
-FORBIDDEN_PATTERN = re.compile(r"\bAP\d{2}\b")
 
 
 # ═══════════════════════════════════════════════════════════
@@ -473,10 +480,11 @@ def test_t11_reset_restores_initial_state_and_deterministic_rerun():
 
 def _assert_clean(label: str, texts) -> None:
     for text in texts:
-        for token in FORBIDDEN_LITERALS:
-            assert token not in text, f"{label}: leaked '{token}' in {text!r}"
-        assert not FORBIDDEN_PATTERN.search(text), (
-            f"{label}: leaked APxx station id in {text!r}")
+        for pattern in FORBIDDEN_PATTERNS:
+            match = pattern.search(text)
+            assert match is None, (
+                f"{label}: leaked legacy-domain token {match.group(0)!r} in {text!r}"
+            )
 
 
 def test_t12_no_legacy_domain_leakage_in_outward_surfaces():
@@ -524,3 +532,88 @@ def test_t12_no_legacy_domain_leakage_in_outward_surfaces():
     assert generic_facts["product_code"] == "WATER-500ML"
     assert generic_facts["route"] == EXPECTED_ROUTE
     _assert_clean("controller facts", list(iter_strings(generic_facts)))
+
+
+# ═══════════════════════════════════════════════════════════
+# C01-A — domain-neutral lifecycle for the generic route
+# ═══════════════════════════════════════════════════════════
+
+def _status_at(line: AssyLineRuntime, position: str) -> str:
+    for entry in line.line_facts()["positions"]:
+        if entry["position_id"] == position:
+            return entry["manufacturing_status"]
+    raise AssertionError(f"position {position} not found")
+
+
+def test_c01_a_generic_outward_lifecycle_is_domain_neutral():
+    """Entry / in-progress / completion / reject must publish neutral statuses.
+
+    Regression guard for the verified DDAY-B2 defect where generic units were
+    published with the legacy ``in_assy`` lifecycle.
+    """
+    # --- entry -------------------------------------------------------------
+    entry_line = make_line()
+    entry_line.start()
+    unit = entry_line.produce_unit()
+    entry_line.introduce_unit(unit, "CAR-0001")
+    assert _status_at(entry_line, EXPECTED_ROUTE[0]) == "in_line"
+    assert entry_line.get_wip(unit).lifecycle.value == "in_line"
+    _assert_clean("entry facts", list(iter_strings(entry_line.line_facts())))
+    _assert_clean("entry trace", [
+        f"{e.event_type} {e.position} {e.wip_id} {e.detail}" for e in entry_line.trace])
+
+    # --- in progress (station has not completed yet) -----------------------
+    progress_line = make_line()
+    progress_line.global_run_mode = CompletionMode.MANUAL
+    progress_line.start()
+    progress_line.advance_cycle()
+    assert progress_line.units_on_line() == 1
+    assert _status_at(progress_line, EXPECTED_ROUTE[0]) == "in_line"
+    _assert_clean("in-progress facts", list(iter_strings(progress_line.line_facts())))
+
+    # --- station completion ------------------------------------------------
+    done_line = make_line()
+    done_line.start()
+    run_cycles(done_line, 1)
+    assert _status_at(done_line, EXPECTED_ROUTE[1]) == "completed_station"
+
+    # --- route completion --------------------------------------------------
+    assert _status_at(done_line, EXPECTED_ROUTE[1]) == "completed_station"
+    run_cycles(done_line, 7)
+    assert done_line.get_wip("BTL-000001").lifecycle.value == "released"
+
+    # --- reject ------------------------------------------------------------
+    reject_line = make_line("ALWAYS_FAIL")
+    reject_line.start()
+    run_cycles(reject_line, 12)
+    assert reject_line.reject_count == 8
+    assert reject_line.get_wip("BTL-000001").lifecycle.value == "rejected"
+
+    # No stage of the generic route may publish a legacy lifecycle token.
+    for label, line in (("entry", entry_line), ("progress", progress_line),
+                        ("completion", done_line), ("reject", reject_line)):
+        _assert_clean(f"{label} facts", list(iter_strings(line.line_facts())))
+        _assert_clean(f"{label} trace", [
+            f"{e.event_type} {e.position} {e.wip_id} {e.detail}" for e in line.trace])
+        for position in EXPECTED_ROUTE:
+            status = _status_at(line, position)
+            assert "assy" not in status.lower()
+
+
+def test_c01_a_legacy_lifecycle_semantics_are_unchanged():
+    """The legacy indexed-line profile keeps its frozen lifecycle semantics."""
+    legacy_config = load_assy_config_from_yaml(
+        str(REPO_ROOT / "configs" / "plants" / "tipa_assy_demo.yaml"))
+    assert legacy_config.is_generic_profile is False
+
+    legacy = AssyLineRuntime(config=legacy_config)
+    legacy.start()
+    wip_id = legacy.produce_sso2_wip()
+    legacy.introduce_to_assy(wip_id, "PAL-001")
+    assert legacy.get_wip(wip_id).lifecycle.value == "in_assy"
+
+    # The generic entry state is a distinct, additional value — the legacy
+    # value was neither removed nor renamed.
+    assert WipLifecycle.IN_ASSY.value == "in_assy"
+    assert WipLifecycle.IN_LINE.value == "in_line"
+    assert WipLifecycle.IN_LINE is not WipLifecycle.IN_ASSY

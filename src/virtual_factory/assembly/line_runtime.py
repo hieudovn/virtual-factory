@@ -92,9 +92,15 @@ class LineRunState(str, enum.Enum):
 
 
 class WipLifecycle(str, enum.Enum):
-    """ASSY WIP lifecycle states (demo semantic names)."""
+    """ASSY WIP lifecycle states (demo semantic names).
+
+    ``IN_LINE`` (C01) is the domain-neutral entry state used by the generic line
+    profile, so that a non-legacy workspace never publishes the legacy
+    ``IN_ASSY`` semantic. The legacy profile keeps using ``IN_ASSY``.
+    """
     CREATED = "created"
     IN_ASSY = "in_assy"
+    IN_LINE = "in_line"
     AT_STATION = "at_station"
     COMPLETED_STATION = "completed_station"
     JOINED = "joined"
@@ -665,7 +671,9 @@ class AssyLineRuntime:
         if carrier is None:
             carrier = self.conveyor.create_carrier(carrier_id)
         self.conveyor.place_carrier(carrier, entry, wip_id)
-        ws.lifecycle = WipLifecycle.IN_ASSY
+        # C01-A: the generic route must stay domain-neutral — the legacy
+        # IN_ASSY lifecycle is not published for a non-legacy workspace.
+        ws.lifecycle = WipLifecycle.IN_LINE
         ws.current_position = entry
         self._station_elapsed[entry] = 0.0
         return [self._make_event(
