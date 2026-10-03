@@ -2,12 +2,22 @@
 
 ## Status
 
-**IMPLEMENTED — PR OPEN — READY FOR SA REVIEW**
+**Deliverable: `DDAY-B2 — READY FOR SA REVIEW`** — all executable acceptance
+checks pass (A01–A12: 12 PASS, 0 FAIL, 0 UNKNOWN), exact-head invariant verified
+(branch = PR #101 = CI = reported SHA), legacy regression green.
 
-(Status as reported by the PM; the authoritative machine-derived status is
-produced by `.ai-harness/scripts/derive_status.py` through the DDAY-B2 task gate
-— see [`.ai-harness/traces/DDAY-B2/gate-report.md`](../traces/DDAY-B2/gate-report.md).
-The PM does not self-certify `COMPLETE`, `CLOSED` or `SA APPROVED`.)
+**Machine gate status: `NOT READY — REQUIRED TOOL FAILURE (harness P22)`.** The
+mandated full task gate (`run_task_gate.py`) exits 5 on a required step that can
+never be satisfied by the artifact the gate itself generates (P21 writes a
+provisional report without the head SHA; P22 requires the SHA to be present).
+Every other pipeline step passes. This is a pre-existing defect in
+`run_task_gate.py`, unrelated to B2 and not fixable inside the B2 allowlist.
+
+**The PM does not self-certify the gate as satisfied, and does not report
+`COMPLETE`, `CLOSED` or `SA APPROVED`.**
+
+Full analysis, reproduction and the SA decision request:
+[`evidence/DDAY-B2/11-machine-gate-status.md`](../evidence/DDAY-B2/11-machine-gate-status.md).
 
 ---
 
@@ -171,7 +181,12 @@ tokens. The legacy demo-snapshot path publishes no Bottled Water state.
 | A11 | No OEE/KPI implementation | PASS | evidence 10 §C |
 | A12 | No B3/B4/B5/B6/B7 work | PASS | evidence 10 §F |
 | A13 | All edits inside allowlist | PASS | evidence 10 §A |
-| A14 | Required remote + exact-head CI evidence | see gateway section below | traces/DDAY-B2/evidence.json |
+| A14 | Required remote + exact-head CI evidence | **PASS** | evidence 11 (branch = PR #101 = CI = reported SHA, all `true`) |
+
+Additionally verified independently of the aborted pipeline: changed-files
+allowlist check PASS (31 files vs harness baseline, 25 files vs the SA B2
+baseline), evidence validation PASS, final acceptance `12 PASS, 0 FAIL,
+0 UNKNOWN`.
 
 ---
 
@@ -221,8 +236,10 @@ values are not used as evidence.
 
 | Field | Value |
 |---|---|
-| Derived status | produced by `.ai-harness/scripts/derive_status.py`; see `.ai-harness/traces/DDAY-B2/evidence.json` |
-| Requested gate | `ready_for_sa_review` |
-| Requested human decision | SA review of the exact head diff, tests and evidence |
+| Machine gate | `run_task_gate.py` → exit code 5; all steps P01–P21 PASS, **P22 FAIL**, P23/P24 not reached |
+| Derived status | not produced (the pipeline aborts at P22 before `derive_status.py` is finalized) |
+| Independently derived acceptance | **A01–A12 all PASS, 0 FAIL, 0 UNKNOWN** |
+| Requested gate | `ready_for_sa_review` — **not machine-satisfied** (harness tool failure) |
+| Requested human decision | 1) authorize a bounded harness fix to `run_task_gate.py` P21 so the gate can be re-run for this head, or 2) accept the substantive machine evidence as the B2 gate, treating P22 as a known defect |
 | Merge authorization | **not granted** |
 | Next-slice authorization | **not granted** |
