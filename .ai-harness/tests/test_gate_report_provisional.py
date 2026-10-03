@@ -86,3 +86,55 @@ def test_final_report_references_sha_and_pipeline():
     assert SHA in report
     assert "**Pipeline**" in report
     assert "[PASS] P01" in report
+
+
+# ── C01-B2: PR state representation alignment ──────────────────────────────
+
+def test_pr_state_is_normalized_to_harness_convention():
+    """The REST API reports 'open'; derive_status.py and the harness fixtures
+    use 'OPEN'. Only the representation is aligned."""
+    from run_task_gate import _normalize_pr_state
+
+    assert _normalize_pr_state(
+        {"pull_request": {"state": "open"}})["pull_request"]["state"] == "OPEN"
+    assert _normalize_pr_state(
+        {"pull_request": {"state": "closed"}})["pull_request"]["state"] == "CLOSED"
+    # Idempotent and harmless for the already-canonical form.
+    assert _normalize_pr_state(
+        {"pull_request": {"state": "OPEN"}})["pull_request"]["state"] == "OPEN"
+    assert _normalize_pr_state(
+        {"pull_request": {"state": ""}})["pull_request"]["state"] == ""
+    assert _normalize_pr_state({}) == {}
+
+
+def test_closed_pr_still_fails_closed_after_normalization():
+    """Guards against the alignment being used to relax the open-PR check."""
+    from derive_status import derive_status
+    from run_task_gate import _normalize_pr_state
+
+    evidence = {
+        "preflight": {"baseline_match": True, "expected_base_sha": "a" * 40,
+                      "remote_main_head": "a" * 40},
+        "tool_failures": [],
+        "implementation": {"commit_exists_remotely": True,
+                           "remote_branch_head": "b" * 40},
+        "pull_request": {"number": 101, "state": "closed", "draft": False,
+                         "base_branch": "main", "head_sha": "b" * 40,
+                         "merged": False},
+        "ci": {"run_id": 1, "head_sha": "b" * 40, "conclusion": "success"},
+        "tests": {"failed": 0},
+        "acceptance": [],
+        "unknown_evidence": [],
+        "contradictions": [],
+        "blocking_issues": [],
+        "forbidden_actions": {"performed": False},
+    }
+    _normalize_pr_state(evidence)
+    assert evidence["pull_request"]["state"] == "CLOSED"
+    assert derive_status(evidence) == "NOT READY — GOVERNANCE FAILURE"
+
+    # The same evidence with an open PR derives READY, proving the alignment is
+    # representation-only.
+    evidence["pull_request"]["state"] = "open"
+    _normalize_pr_state(evidence)
+    assert derive_status(evidence) == "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW"

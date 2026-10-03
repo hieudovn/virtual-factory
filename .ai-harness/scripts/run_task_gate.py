@@ -140,6 +140,21 @@ def _write_gate_report(path, title: str, tid: str, status: str, gate: str,
                 f.write(f"- [{s['result']}] {s['id']} {s['name']}\n")
 
 
+def _normalize_pr_state(evidence: dict) -> dict:
+    """Align the PR state with the harness' canonical representation (C01-B).
+
+    The GitHub REST API reports ``open``/``closed`` while ``derive_status.py``
+    and the harness evidence fixtures use ``OPEN``/``CLOSED``. Only the
+    representation is aligned: the underlying checks (PR open, not draft, base
+    main, head/CI equality) are unchanged and still fail closed for a closed or
+    non-open PR.
+    """
+    pr_block = evidence.get("pull_request")
+    if isinstance(pr_block, dict) and isinstance(pr_block.get("state"), str):
+        pr_block["state"] = pr_block["state"].upper()
+    return evidence
+
+
 def _resolve_pr(contract: dict, token: str | None) -> int | None:
     """Resolve the open PR for the task's required_branch with base=main.
 
@@ -267,6 +282,11 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     print(rmt.stdout or ""); reg.record("P08", "Remote state", True, "PASS" if rmt.returncode == 0 else "FAIL")
     with open(ep) as f: evidence = json.load(f)
     reg.record("P09", "PR metadata", True, "PASS" if evidence.get("pull_request", {}).get("number") else "FAIL")
+
+    # C01-B: align the PR state representation before status derivation and
+    # acceptance evaluation (the REST API source reports lowercase).
+    _normalize_pr_state(evidence)
+    with open(ep, "w") as f: json.dump(evidence, f, indent=2)
 
     # P10: CI
     print("\n" + "=" * 50 + "\nP10: Exact-head CI")
