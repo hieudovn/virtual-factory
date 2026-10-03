@@ -1,0 +1,84 @@
+# DDAY-B4 — Bottled Water whole-factory aggregate simulation parameters.
+#
+# This file configures ONLY the small aggregate layer that sits around the
+# unchanged detailed Filling & Packaging line runtime (B2/B3). It contains no
+# process physics, no KPI definition, no scenario definition and no telemetry
+# or protocol configuration.
+#
+# The plant/area/asset hierarchy is deliberately NOT declared here: it is read
+# from the frozen B1 topology contract (topology.yaml) so there is a single
+# hierarchy source of truth.
+
+workspace_id: bottled-water-dday
+hierarchy_source: topology.yaml
+
+clock:
+  dt_s: 1.0                  # simulated seconds advanced per runtime tick
+  integration_step_s: 1.0    # internal sub-step; makes step(N) == N x step(1)
+  tick_interval_s: 0.25      # wall-clock pacing only, never a simulated fact
+
+water_treatment:
+  raw_water_flow_m3h: 1.2
+  recovery_factor: 0.75
+  tank_capacity_m3: 0.4
+  tank_initial_fill_fraction: 0.70
+  tank_high_level_pct: 85.0  # at/above this the feed idles
+  tank_low_level_pct: 60.0   # at/below this the feed restarts
+  feed_standby_kw: 0.5
+  feed_running_kw: 3.0
+  ro_standby_kw: 0.3
+  ro_running_kw: 6.0
+
+line:
+  # Which line station realises which process step. Station identity comes from
+  # configuration, never from hard-coded domain knowledge in code.
+  stations:
+    fill: BW-FP-FIL01
+    cap: BW-FP-CAP01
+    label: BW-FP-LAB01
+    case_pack: BW-FP-CPK01
+    palletize: BW-FP-PAL01
+  bottle_volume_m3: 0.0005   # 500 mL bottle
+  process_efficiency: 0.94   # filler draw = product water / efficiency
+
+packaging:
+  # Aggregate packing model (D-Day simplification) — the Case Packer and
+  # Palletizer stay count models, they do not simulate packaging kinematics.
+  bottles_per_case: 6
+  cases_per_pallet: 2
+
+# Standby / running electrical load per modelled asset (kW). Missing entries
+# default to 0 kW; unknown station ids are rejected at load time.
+line_loads:
+  BW-FP-BLW01: { standby_kw: 0.2, running_kw: 4.0 }
+  BW-FP-RIN01: { standby_kw: 0.1, running_kw: 1.5 }
+  BW-FP-FIL01: { standby_kw: 0.2, running_kw: 5.5 }
+  BW-FP-CAP01: { standby_kw: 0.2, running_kw: 4.5 }
+  BW-FP-INS01: { standby_kw: 0.1, running_kw: 1.0 }
+  BW-FP-LAB01: { standby_kw: 0.1, running_kw: 1.8 }
+  BW-FP-CPK01: { standby_kw: 0.1, running_kw: 2.6 }
+  BW-FP-PAL01: { standby_kw: 0.1, running_kw: 3.2 }
+
+utilities:
+  compressed_air:
+    setpoint_bar: 7.0
+    production_sag_bar: 0.6   # target pressure while the line is producing
+    min_pressure_bar: 5.5
+    max_pressure_bar: 7.2
+    rise_bar_per_s: 0.05
+    fall_bar_per_s: 0.02
+    loading_tolerance_bar: 0.05  # compressor loads below setpoint - tolerance
+    running_kw: 15.0
+    standby_kw: 2.0
+  chiller:
+    running_kw: 11.0
+    standby_kw: 1.5
+  pump:
+    running_kw: 4.0
+    standby_kw: 0.8
+
+warehouse:
+  dispatch_rate_per_min: 4.0
+
+plant:
+  base_load_kw: 6.0

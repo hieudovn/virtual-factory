@@ -108,7 +108,7 @@
           <button id="bw-btn-reset"  class="bw-btn bw-btn-outline" onclick="bwReset()">↻ RESET</button>
         </div>
         <div class="bw-sim-rate">
-          <label class="bw-rate-label">Presentation rate
+          <label class="bw-rate-label">Refresh
             <select id="bw-rate" class="bw-select" onchange="bwSetRate(this.value)">
               <option value="900">0.5x</option>
               <option value="600" selected>1x</option>
@@ -116,7 +116,7 @@
               <option value="150">4x</option>
             </select>
           </label>
-          <span class="bw-rate-hint">pacing only — simulation stays deterministic</span>
+          <span class="bw-rate-hint">display only — the server clock drives production</span>
         </div>
       </div>
 

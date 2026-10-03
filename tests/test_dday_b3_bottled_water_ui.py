@@ -59,9 +59,19 @@ SKIN_ASSETS = (
 
 @pytest.fixture()
 def client(monkeypatch):
-    """Fresh app bound to a freshly reset Bottled Water runtime."""
+    """Fresh app bound to a freshly reset Bottled Water runtime.
+
+    The autonomous server-side clock (DDAY-B4) is disabled here so the tests
+    drive production deterministically; autonomy itself is covered by the B4
+    test module and by the live SMOKE-BW-FACTORY check.
+    """
     monkeypatch.delenv("BOTTLED_WATER_CONFIG", raising=False)
-    app = create_app(config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml", dt_s=1.0)
+    monkeypatch.delenv("BOTTLED_WATER_FACTORY_CONFIG", raising=False)
+    app = create_app(
+        config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
+        dt_s=1.0,
+        factory_autorun=False,
+    )
     with TestClient(app) as test_client:
         test_client.post("/bottled-water-demo/reset")
         yield test_client
@@ -304,10 +314,12 @@ def test_b3_05b_control_surface_exposes_only_the_allowed_operator_controls(clien
                       "release", "retry", "manual"):
         assert forbidden not in lowered, f"skin page exposes {forbidden!r}"
 
-    # The skin can only call the five operator controls plus the clock tick.
+    # The skin can only call the five operator controls, never a production
+    # step (DDAY-B4 made the skin observer-only).
     js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
     calls = re.findall(r"bw(?:Post|Action)\('([^']+)'\)", js)
-    assert sorted(calls) == ["/advance", "/pause", "/reset", "/resume", "/start", "/stop"]
+    assert sorted(calls) == ["/pause", "/reset", "/resume", "/start", "/stop"]
+    assert "/advance" not in js
 
     # No quality-decision endpoint is reachable from the skin or the API.
     for path in ("/bottled-water-demo/disposition", "/bottled-water-demo/decision",
@@ -397,6 +409,7 @@ def test_b3_07b_inspection_failure_and_reject_are_observable(client, monkeypatch
         app = create_app(
             config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
             dt_s=1.0,
+            factory_autorun=False,
         )
         with TestClient(app) as failing_client:
             failing_client.post("/bottled-water-demo/reset")
@@ -464,9 +477,11 @@ def test_b3_08c_skin_interaction_is_selection_only():
     js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
 
     assert "This panel is read-only." in js
-    # The only POSTs are the five operator controls plus the presentation tick.
+    # The only POSTs are the five operator controls: the skin never requests a
+    # production step (DDAY-B4 server-side autonomy).
     posts = re.findall(r"bw(?:Post|Action)\('([^']+)'\)", js)
-    assert sorted(posts) == sorted(["/start", "/pause", "/resume", "/stop", "/reset", "/advance"])
+    assert sorted(posts) == sorted(["/start", "/pause", "/resume", "/stop", "/reset"])
+    assert "/advance" not in js
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -489,6 +504,7 @@ def test_b3_09b_api_exposes_no_later_slice_endpoint(client):
     assert bw_paths == {
         "/bottled-water-demo",
         "/bottled-water-demo/state",
+        "/bottled-water-demo/factory",
         "/bottled-water-demo/static/{filename}",
         "/bottled-water-demo/unit/{unit_id}",
         "/bottled-water-demo/start",

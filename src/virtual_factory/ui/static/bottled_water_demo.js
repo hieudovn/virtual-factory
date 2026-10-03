@@ -937,25 +937,25 @@ function bwReset() {
 }
 
 function bwSetRate(value) {
+  // Display refresh only: the server owns the production clock.
   BW.rateMs = Math.max(80, Number(value) || 600);
   bwRestartClock();
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Presentation clock — paces engine ticks while the line RUNNING
+   Observer poll — the server owns the production clock
 
-   The simulation itself is step driven and deterministic; this clock
-   only decides when the next tick is requested. PAUSE/STOP make the
-   runtime refuse to advance, so operator semantics stay with the
-   runtime, not the skin.
+   DDAY-B4: the simulation advances autonomously on the server. This skin only
+   reads state and renders it; it never requests a production step. START /
+   PAUSE / RESUME / STOP / RESET remain operator controls. The poll interval is
+   presentation only and has no influence on simulation truth.
    ══════════════════════════════════════════════════════════════ */
 
 async function bwTick() {
   if (BW.busy) return;
   BW.busy = true;
   try {
-    const running = BW.state && BW.state.run_state === 'RUNNING';
-    const state = running ? await bwPost('/advance') : await bwGet('/state');
+    const state = await bwGet('/state');
     bwApplyState(state);
   } catch (err) {
     bwEl('bw-sim-note').textContent = `Line link unavailable: ${err.message}`;

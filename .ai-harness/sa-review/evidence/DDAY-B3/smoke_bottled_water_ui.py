@@ -70,6 +70,10 @@ def _serve(config_path: Path, port: int):
     app = create_app(
         config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
         dt_s=1.0,
+        # DDAY-B4: the B3 contract is checked with the deterministic step seam,
+        # so the autonomous server-side clock is disabled here. Autonomy itself
+        # is proven by SMOKE-BW-FACTORY.
+        factory_autorun=False,
     )
     server = uvicorn.Server(uvicorn.Config(
         app, host="127.0.0.1", port=port, log_level="error"))

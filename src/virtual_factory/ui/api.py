@@ -20,6 +20,8 @@ def create_app(
     mqtt_connect_delay: float = 1.0,
     opcua_endpoint: str | None = None,
     auto_start: bool = False,
+    factory_autorun: bool = True,
+    factory_tick_interval_s: float | None = None,
 ):
     """Create a FastAPI app backed by one RuntimeService instance."""
     from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
@@ -39,13 +41,85 @@ def create_app(
         opcua_endpoint=opcua_endpoint,
     )
 
+    # ═══════════════════════════════════════════════════
+    # DDAY-B4 — Bottled Water whole-factory autonomous runtime
+    #
+    # The server owns the production clock: one bounded asyncio task advances
+    # the deterministic factory simulation while the app is running. The
+    # browser is an observer plus control surface, never the clock authority.
+    # The runner only paces wall-clock ticks — simulation truth stays
+    # deterministic and is driven exclusively by factories.step().
+    # ═══════════════════════════════════════════════════
+
+    _bw_factory: dict = {"instance": None}
+    _bw_runner: dict = {"task": None}
+
+    def _bw_workspace_dir() -> Path:
+        return (
+            Path(__file__).resolve().parent.parent.parent.parent
+            / "configs" / "workspaces" / "bottled-water-dday"
+        )
+
+    def _bw_config_path() -> str:
+        """Resolve the Bottled Water line config (env override supported)."""
+        default = _bw_workspace_dir() / "line.yaml"
+        return os.environ.get("BOTTLED_WATER_CONFIG", str(default))
+
+    def _bw_factory_config_path() -> str:
+        """Resolve the Bottled Water aggregate config (env override supported)."""
+        default = _bw_workspace_dir() / "factory.yaml"
+        return os.environ.get("BOTTLED_WATER_FACTORY_CONFIG", str(default))
+
+    def _get_bw_factory():
+        """The single whole-factory composition backing every BW endpoint."""
+        if _bw_factory["instance"] is None:
+            from virtual_factory.workspaces.bottled_water import (
+                BottledWaterFactory,
+            )
+            _bw_factory["instance"] = BottledWaterFactory(
+                line_config_path=_bw_config_path(),
+                factory_config_path=_bw_factory_config_path(),
+            )
+        return _bw_factory["instance"]
+
+    async def _bw_autorun_loop(interval_s: float) -> None:
+        factory = _get_bw_factory()
+        while True:
+            await asyncio.sleep(interval_s)
+            factory.step()
+
+    def _start_bw_autorun() -> None:
+        if _bw_runner["task"] is not None:
+            return
+        factory = _get_bw_factory()
+        interval = (
+            factory.tick_interval_s
+            if factory_tick_interval_s is None
+            else float(factory_tick_interval_s)
+        )
+        _bw_runner["task"] = asyncio.create_task(_bw_autorun_loop(interval))
+
+    async def _stop_bw_autorun() -> None:
+        task = _bw_runner["task"]
+        _bw_runner["task"] = None
+        if task is None:
+            return
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         if auto_start:
             service.start_loop()
+        if factory_autorun:
+            _start_bw_autorun()
         try:
             yield
         finally:
+            await _stop_bw_autorun()
             await service.stop_loop()
             service.disconnect_mqtt()
 
@@ -537,97 +611,30 @@ def create_app(
     # Binds the dedicated Bottled Water skin to the B2 generic single-line
     # runtime. The projection below is raw operational facts only: no KPI is
     # calculated here and no hidden scenario truth is exposed.
+    #
+    # DDAY-B4: the controller is owned by the whole-factory composition, so the
+    # skin, the factory projection and the autonomous runner all share exactly
+    # one runtime instance.
     # ═══════════════════════════════════════════════════
 
-    _bw_controller: dict = {"instance": None}
-
-    def _bw_config_path() -> str:
-        """Resolve the Bottled Water workspace config (env override supported)."""
-        default = (
-            Path(__file__).resolve().parent.parent.parent.parent
-            / "configs" / "workspaces" / "bottled-water-dday" / "line.yaml"
-        )
-        return os.environ.get("BOTTLED_WATER_CONFIG", str(default))
-
     def _get_bw_controller():
-        if _bw_controller["instance"] is None:
-            from virtual_factory.assembly.demo_controller import DemoController
-            ctrl = DemoController(config_path=_bw_config_path())
-            ctrl.initialize()
-            if not ctrl.is_generic_line:
-                raise RuntimeError(
-                    "Bottled Water workspace requires a generic single-line "
-                    "configuration"
-                )
-            _bw_controller["instance"] = ctrl
-        return _bw_controller["instance"]
+        return _get_bw_factory().controller
 
     def _bw_projection(ctrl, limit: int = 60) -> dict:
-        """Domain-neutral outward projection of the B2 generic line runtime.
+        """Domain-neutral outward projection of the B2 generic line runtime."""
+        from virtual_factory.workspaces.bottled_water import project_target_line
+        return project_target_line(ctrl, limit=limit)
 
-        Reads only public runtime surfaces. Counts and states are raw facts.
+    @app.get("/bottled-water-demo/factory")
+    def bottled_water_factory() -> dict:
+        """Authoritative whole-factory raw projection (raw facts only).
+
+        One factory-level projection over the same single runtime the target-line
+        endpoints read: plant/area/asset hierarchy with per-node raw signals,
+        conservation summaries, the reused target-line facts and recent raw
+        events. No calculated KPI is published.
         """
-        line = ctrl.line
-        facts = ctrl.line_facts()
-        checkpoints = [
-            station_id
-            for station_id, contract in line.station_contracts.items()
-            if contract.capabilities.quality_decision
-        ]
-
-        stations = []
-        for sequence, entry in enumerate(facts["positions"]):
-            station_id = entry["position_id"]
-            stations.append({
-                "sequence": sequence,
-                "station_id": station_id,
-                "unit_id": entry["unit_id"],
-                "unit_type": entry["unit_type"],
-                "product_code": entry["product_code"],
-                "unit_status": entry["manufacturing_status"],
-                "is_occupied": entry["is_occupied"],
-                "is_quality_checkpoint": station_id in checkpoints,
-                "last_disposition": line.last_quality_disposition(station_id),
-            })
-
-        events = [
-            {
-                "event_type": event.event_type,
-                "station_id": event.position,
-                "unit_id": event.wip_id,
-                "detail": event.detail,
-                "simulation_time_s": event.simulation_time_s,
-                "dwell_number": event.dwell_number,
-            }
-            for event in line.trace[-limit:]
-        ]
-
-        return {
-            "workspace_id": "bottled-water-dday",
-            "plant_id": facts["plant_id"],
-            "line_id": facts["line_id"],
-            "line_label": facts["line_label"],
-            "run_state": facts["run_state"],
-            "operating_state": facts["operating_state"],
-            "simulation_time_s": facts["simulation_time_s"],
-            "dwell_number": facts["dwell_number"],
-            "nominal_dwell_s": facts["nominal_dwell_s"],
-            "unit_type": facts["unit_type"],
-            "product_code": facts["product_code"],
-            "route": facts["route"],
-            "stations": stations,
-            "counts": {
-                "total": facts["total_count"],
-                "good": facts["good_count"],
-                "reject": facts["reject_count"],
-            },
-            "units_on_line": facts["units_on_line"],
-            "quality_checkpoints": checkpoints,
-            "last_reject": next(
-                (e["unit_id"] for e in reversed(events)
-                 if e["event_type"] == "REJECT"), ""),
-            "recent_events": events,
-        }
+        return _get_bw_factory().snapshot()
 
     @app.get("/bottled-water-demo/state")
     def bottled_water_state(
@@ -687,49 +694,51 @@ def create_app(
             ],
         }
 
-    # Controls: exactly the operator set allowed by the B3 contract.
+    # Controls: exactly the operator set allowed by the B3 contract. Each one is
+    # applied to the shared whole-factory composition so the aggregate models
+    # stay coherent with the line.
     @app.post("/bottled-water-demo/start")
     def bottled_water_start() -> dict:
-        ctrl = _get_bw_controller()
-        ctrl.start()
-        return _bw_projection(ctrl)
+        factory = _get_bw_factory()
+        factory.start()
+        return _bw_projection(factory.controller)
 
     @app.post("/bottled-water-demo/pause")
     def bottled_water_pause() -> dict:
-        ctrl = _get_bw_controller()
-        ctrl.pause()
-        return _bw_projection(ctrl)
+        factory = _get_bw_factory()
+        factory.pause()
+        return _bw_projection(factory.controller)
 
     @app.post("/bottled-water-demo/resume")
     def bottled_water_resume() -> dict:
-        ctrl = _get_bw_controller()
-        ctrl.resume()
-        return _bw_projection(ctrl)
+        factory = _get_bw_factory()
+        factory.resume()
+        return _bw_projection(factory.controller)
 
     @app.post("/bottled-water-demo/stop")
     def bottled_water_stop() -> dict:
-        ctrl = _get_bw_controller()
-        ctrl.stop()
-        return _bw_projection(ctrl)
+        factory = _get_bw_factory()
+        factory.stop()
+        return _bw_projection(factory.controller)
 
     @app.post("/bottled-water-demo/reset")
     def bottled_water_reset() -> dict:
-        """RESET rebuilds the line and returns it to its known initial state."""
-        ctrl = _get_bw_controller()
-        ctrl.reset()
-        return _bw_projection(ctrl)
+        """RESET rebuilds the line and returns the factory to its known initial
+        state."""
+        factory = _get_bw_factory()
+        factory.reset()
+        return _bw_projection(factory.controller)
 
     @app.post("/bottled-water-demo/advance")
     def bottled_water_advance() -> dict:
-        """Animation-clock tick: one deterministic production cycle.
+        """Manual/debug seam: force one deterministic production cycle.
 
-        Not an operator control — the skin's presentation clock calls this while
-        the line is RUNNING. The runtime itself refuses to advance unless the
-        run state is RUNNING, so operator semantics are preserved.
+        Not an operator control and not the D-Day operating path — the
+        autonomous server-side clock is. The skin never calls this.
         """
-        ctrl = _get_bw_controller()
-        ctrl.advance()
-        return _bw_projection(ctrl)
+        factory = _get_bw_factory()
+        factory.advance_debug_cycle()
+        return _bw_projection(factory.controller)
 
     return app
 
