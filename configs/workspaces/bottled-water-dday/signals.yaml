@@ -1,0 +1,85 @@
+# B1 signal/event dictionary — raw facts only.
+contract_version: dday-bw-b1-v1
+default_provenance: SIMULATED_RAW
+
+common_machine_signals:
+  operating_state:
+    datatype: enum
+    values: [RUNNING, IDLE, STOPPED, FAULT, UNKNOWN]
+    unit: '-'
+    cadence: on_change_plus_heartbeat
+  speed: { datatype: float, unit: bottle/min, cadence: 1s }
+  cycle_time: { datatype: float, unit: s, cadence: per_cycle_or_1s }
+  total_count: { datatype: integer, unit: bottle, cadence: on_change_or_1s }
+  good_count: { datatype: integer, unit: bottle, cadence: on_change_or_1s }
+  reject_count: { datatype: integer, unit: bottle, cadence: on_change_or_1s }
+  active_power: { datatype: float, unit: kW, cadence: 1-2s }
+  energy_total: { datatype: float, unit: kWh, cadence: 2-5s }
+
+asset_specific_signals:
+  BW-WT-FEED01:
+    water_flow: { datatype: float, unit: m3/h, cadence: 2s }
+  BW-WT-RO01:
+    production_flow: { datatype: float, unit: m3/h, cadence: 2s }
+  BW-WT-TK01:
+    level: { datatype: float, unit: '%', cadence: 2-5s }
+  BW-FP-BLW01:
+    air_pressure: { datatype: float, unit: bar, cadence: 2s }
+  BW-FP-FIL01:
+    fill_rate: { datatype: float, unit: bottle/min, cadence: 1s }
+    pump_load: { datatype: float, unit: '%', cadence: 1-2s }
+    fill_level_result: { datatype: enum, values: [PASS, FAIL], unit: '-', cadence: event }
+  BW-FP-CAP01:
+    motor_current: { datatype: float, unit: A, cadence: 1s }
+    drive_load: { datatype: float, unit: '%', cadence: 1s }
+    vibration_rms: { datatype: float, unit: mm/s, cadence: 1-2s }
+    bearing_temperature: { datatype: float, unit: degC, cadence: 2-5s }
+    cap_torque: { datatype: float, unit: N.m, cadence: per_cycle_or_1s }
+  BW-FP-INS01:
+    inspection_result: { datatype: enum, values: [PASS, FAIL], unit: '-', cadence: event }
+    reject_reason: { datatype: enum, unit: '-', cadence: event }
+  BW-FP-LAB01:
+    label_result: { datatype: enum, values: [PASS, FAIL], unit: '-', cadence: event }
+  BW-FP-CPK01:
+    case_count: { datatype: integer, unit: case, cadence: on_change }
+  BW-FP-PAL01:
+    pallet_count: { datatype: integer, unit: pallet, cadence: on_change }
+  BW-UT-CMP01:
+    air_pressure: { datatype: float, unit: bar, cadence: 2s }
+  BW-UT-PWR01:
+    plant_active_power: { datatype: float, unit: kW, cadence: 1-2s }
+    plant_energy_total: { datatype: float, unit: kWh, cadence: 2-5s }
+
+configured_targets:
+  BW-FP:
+    target_rate:
+      datatype: float
+      unit: bottle/min
+      provenance: CONFIGURED_TARGET
+
+event_dictionary:
+  - MACHINE_STATE_CHANGED
+  - UNIT_ENTERED
+  - UNIT_COMPLETED
+  - QUALITY_RESULT
+  - REJECT
+  - ALARM_RAISED
+  - ALARM_CLEARED
+  - DOWNTIME_START
+  - DOWNTIME_END
+  - SCENARIO_PHASE_CHANGED
+
+invariants:
+  - 'good_count + reject_count <= total_count'
+  - 'STOPPED != FAULT'
+  - 'IDLE != DOWNTIME'
+  - 'UNKNOWN != STOPPED'
+  - counters_do_not_silently_reset_within_run
+  - hidden_ground_truth_is_not_publishable_industrial_telemetry
+  - calculated_kpis_are_not_simulated_raw
+
+publish_contract:
+  primary: mqtt_json
+  topic_pattern: 'virtual-factory/bottled-water-dday/{kind}/{asset_id}/{signal_or_event}'
+  debug: [rest, websocket, csv_jsonl]
+  optional: [opcua]
