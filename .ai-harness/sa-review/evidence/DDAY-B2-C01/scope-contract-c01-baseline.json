@@ -2,7 +2,7 @@
   "task_id": "DDAY-B2-C01",
   "repository": "hieudovn/virtual-factory",
   "requested_gate": "ready_for_sa_review",
-  "gate_type": "D-DAY TRACK B — DDAY-B2 CORRECTION (SEMANTIC ISOLATION + HARNESS GATE REPAIR)",
+  "gate_type": "D-DAY TRACK B \u2014 DDAY-B2 CORRECTION (SEMANTIC ISOLATION + HARNESS GATE REPAIR)",
   "issue": "hieudovn/virtual-factory#103",
   "parent_issue": "hieudovn/virtual-factory#102",
   "pr": "hieudovn/virtual-factory#101",
@@ -18,7 +18,7 @@
     "No OEE/KPI calculation"
   ],
   "required_branch": "sa/dday-track-b-20261003",
-  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "expected_base_sha": "0a1d18e42b5a28009ae05a6e916f9e942a857b38",
   "sa_expected_baseline_sha": "0a1d18e42b5a28009ae05a6e916f9e942a857b38",
   "baseline_semantics_note": "As for DDAY-B2: the harness compares 'expected_base_sha' to origin/main and diffs it against HEAD, so it must be origin/main. 'sa_expected_baseline_sha' is the baseline issued in Issue #103 (the accepted DDAY-B2 head) and was verified equal to the branch head before the first C01 write.",
   "working_tree_required": "clean",
@@ -101,14 +101,20 @@
   "required_smoke_checks": [
     {
       "id": "SMOKE-BW",
-      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py"],
+      "command": [
+        "python",
+        ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py"
+      ],
       "execution_policy": "local_or_ci",
       "required": true,
       "description": "B2 runtime smoke regression: START -> progression -> Inspection -> good/reject -> downstream completion, PAUSE/RESUME/STOP/RESET, deterministic replay."
     },
     {
       "id": "SMOKE-BW-ISO",
-      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B2-C01/smoke_semantic_isolation.py"],
+      "command": [
+        "python",
+        ".ai-harness/sa-review/evidence/DDAY-B2-C01/smoke_semantic_isolation.py"
+      ],
       "execution_policy": "local_or_ci",
       "required": true,
       "description": "C01-A semantic isolation smoke: proves Bottled Water outward facts carry no legacy lifecycle semantics at entry, in progress, at completion and at reject."
@@ -132,34 +138,160 @@
     "Do not self-certify COMPLETE / CLOSED / SA APPROVED"
   ],
   "stop_conditions": [
-    "Neutralizing generic lifecycle would require redesigning shared lifecycle or domain APIs -> STOPPED — SA ARCHITECTURE REVIEW REQUIRED",
-    "Legacy indexed-line behaviour changes or a legacy regression appears -> STOPPED — REGRESSION REQUIRES SA REVIEW",
-    "The harness repair would require weakening validation rather than fixing report generation -> STOPPED — SA DECISION REQUIRED",
-    "A required change falls outside the allowlist -> STOPPED — ALLOWLIST EXPANSION REQUIRED",
-    "Baseline is no longer the expected SHA before the first C01 write -> STOPPED — BASELINE MISMATCH",
-    "origin/main advances materially -> STOPPED — BASELINE ADVANCED",
+    "Neutralizing generic lifecycle would require redesigning shared lifecycle or domain APIs -> STOPPED \u2014 SA ARCHITECTURE REVIEW REQUIRED",
+    "Legacy indexed-line behaviour changes or a legacy regression appears -> STOPPED \u2014 REGRESSION REQUIRES SA REVIEW",
+    "The harness repair would require weakening validation rather than fixing report generation -> STOPPED \u2014 SA DECISION REQUIRED",
+    "A required change falls outside the allowlist -> STOPPED \u2014 ALLOWLIST EXPANSION REQUIRED",
+    "Baseline is no longer the expected SHA before the first C01 write -> STOPPED \u2014 BASELINE MISMATCH",
+    "origin/main advances materially -> STOPPED \u2014 BASELINE ADVANCED",
     "B3+ scope becomes necessary -> stop C01"
   ],
   "acceptance_criteria": [
-    {"id": "A01", "phase": "pre_status", "description": "Repository baseline matches the contract baseline", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
-    {"id": "A02", "phase": "pre_status", "description": "Working tree was clean at preflight", "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}},
-    {"id": "A03", "phase": "pre_status", "description": "Full local test suite passes", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
-    {"id": "A04", "phase": "pre_status", "description": "Required smoke checks reach effective PASS", "rule": {"field": "smoke_checks", "operator": "contains", "expected": "'effective_result': 'PASS'"}},
-    {"id": "A05", "phase": "pre_status", "description": "No blocking issue recorded by the gate pipeline", "rule": {"field": "blocking_issues", "operator": "is_empty", "expected": null}},
-    {"id": "A06", "phase": "pre_status", "description": "No tool failure recorded (P22 must no longer fail)", "rule": {"field": "tool_failures", "operator": "is_empty", "expected": null}},
-    {"id": "A07", "phase": "pre_status", "description": "No contradictions detected", "rule": {"field": "contradictions", "operator": "is_empty", "expected": null}},
-    {"id": "A08", "phase": "final", "description": "All canonical gate steps executed (P01-P24)", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
-    {"id": "A09", "phase": "final", "description": "All canonical gate steps PASS, including P22", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
-    {"id": "A10", "phase": "final", "description": "Implementation commit exists on the remote branch", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}},
-    {"id": "A11", "phase": "final", "description": "Remote branch head is present and reported", "rule": {"field": "implementation.remote_branch_head", "operator": "is_present", "expected": null}},
-    {"id": "A12", "phase": "final", "description": "PR #101 metadata resolved (open PR with base main)", "rule": {"field": "pull_request.number", "operator": "is_present", "expected": null}},
-    {"id": "A13", "phase": "final", "description": "Exact-head CI succeeded for the pushed SHA", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
-    {"id": "A14", "phase": "final", "description": "Runtime authorization boundaries preserved (no merge, no next slice)", "rule": {"field": "authorization.may_merge", "operator": "is_false", "expected": null}}
+    {
+      "id": "A01",
+      "phase": "pre_status",
+      "description": "Repository baseline matches the contract baseline",
+      "rule": {
+        "field": "preflight.baseline_match",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "A02",
+      "phase": "pre_status",
+      "description": "Working tree was clean at preflight",
+      "rule": {
+        "field": "preflight.working_tree_clean",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "A03",
+      "phase": "pre_status",
+      "description": "Full local test suite passes",
+      "rule": {
+        "field": "tests.result",
+        "operator": "equals",
+        "expected": "PASS"
+      }
+    },
+    {
+      "id": "A04",
+      "phase": "pre_status",
+      "description": "Required smoke checks reach effective PASS",
+      "rule": {
+        "field": "smoke_checks",
+        "operator": "contains",
+        "expected": "'effective_result': 'PASS'"
+      }
+    },
+    {
+      "id": "A05",
+      "phase": "pre_status",
+      "description": "No blocking issue recorded by the gate pipeline",
+      "rule": {
+        "field": "blocking_issues",
+        "operator": "is_empty",
+        "expected": null
+      }
+    },
+    {
+      "id": "A06",
+      "phase": "pre_status",
+      "description": "No tool failure recorded (P22 must no longer fail)",
+      "rule": {
+        "field": "tool_failures",
+        "operator": "is_empty",
+        "expected": null
+      }
+    },
+    {
+      "id": "A07",
+      "phase": "pre_status",
+      "description": "No contradictions detected",
+      "rule": {
+        "field": "contradictions",
+        "operator": "is_empty",
+        "expected": null
+      }
+    },
+    {
+      "id": "A08",
+      "phase": "final",
+      "description": "All canonical gate steps executed (P01-P24)",
+      "rule": {
+        "field": "pipeline_integrity.all_required_steps_executed",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "A09",
+      "phase": "final",
+      "description": "All canonical gate steps PASS, including P22",
+      "rule": {
+        "field": "pipeline_integrity.all_required_steps_pass",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "A10",
+      "phase": "final",
+      "description": "Implementation commit exists on the remote branch",
+      "rule": {
+        "field": "implementation.commit_exists_remotely",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "A11",
+      "phase": "final",
+      "description": "Remote branch head is present and reported",
+      "rule": {
+        "field": "implementation.remote_branch_head",
+        "operator": "is_present",
+        "expected": null
+      }
+    },
+    {
+      "id": "A12",
+      "phase": "final",
+      "description": "PR #101 metadata resolved (open PR with base main)",
+      "rule": {
+        "field": "pull_request.number",
+        "operator": "is_present",
+        "expected": null
+      }
+    },
+    {
+      "id": "A13",
+      "phase": "final",
+      "description": "Exact-head CI succeeded for the pushed SHA",
+      "rule": {
+        "field": "ci.conclusion",
+        "operator": "equals",
+        "expected": "success"
+      }
+    },
+    {
+      "id": "A14",
+      "phase": "final",
+      "description": "Runtime authorization boundaries preserved (no merge, no next slice)",
+      "rule": {
+        "field": "authorization.may_merge",
+        "operator": "is_false",
+        "expected": null
+      }
+    }
   ],
   "authorization": {
     "may_open_pr": true,
     "may_merge": false,
     "may_start_next_task": false
   },
-  "_note": "Authored by the PM from SA Issue #103 (DDAY-B2-C01 — Semantic Isolation + Harness Gate Correction). Correction scope only. The harness repair fixes report generation; validation (validate_report_consistency.py) and exact-head invariants are untouched and must not be weakened."
+  "_note": "Authored by the PM from SA Issue #103 (DDAY-B2-C01 \u2014 Semantic Isolation + Harness Gate Correction). Correction scope only. The harness repair fixes report generation; validation (validate_report_consistency.py) and exact-head invariants are untouched and must not be weakened."
 }
