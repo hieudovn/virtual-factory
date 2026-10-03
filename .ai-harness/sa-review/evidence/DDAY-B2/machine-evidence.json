@@ -1,0 +1,598 @@
+{
+  "task_id": "DDAY-B2",
+  "git": {
+    "branch": "sa/dday-track-b-20261003",
+    "local_head": "135113d170403c931051debf6654aa97e004948f",
+    "local_head_short": "135113d",
+    "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+    "origin_branch_head": "cb908c66ab1de03e1798d9609fdf46d0fc42e675",
+    "b1_baseline_sha": "cb908c66ab1de03e1798d9609fdf46d0fc42e675",
+    "working_tree_status": "?? .ai-harness/sa-review/evidence/DDAY-B2/",
+    "name_status_vs_b1": [
+      "A\t.ai-harness/tasks/DDAY-B2.json",
+      "A\tconfigs/workspaces/bottled-water-dday/line.yaml",
+      "M\tsrc/virtual_factory/assembly/demo_controller.py",
+      "M\tsrc/virtual_factory/assembly/line_runtime.py",
+      "A\ttests/test_dday_b2_bottled_water_line.py"
+    ],
+    "changed_vs_b1": [
+      ".ai-harness/tasks/DDAY-B2.json",
+      "configs/workspaces/bottled-water-dday/line.yaml",
+      "src/virtual_factory/assembly/demo_controller.py",
+      "src/virtual_factory/assembly/line_runtime.py",
+      "tests/test_dday_b2_bottled_water_line.py"
+    ],
+    "changed_vs_origin_main": [
+      ".ai-harness/tasks/DDAY-B2.json",
+      "configs/workspaces/bottled-water-dday/line.yaml",
+      "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.contract.yaml",
+      "configs/workspaces/bottled-water-dday/signals.yaml",
+      "configs/workspaces/bottled-water-dday/topology.yaml",
+      "configs/workspaces/bottled-water-dday/workspace.contract.yaml",
+      "docs/plans/PLANTOS_DDAY_TRACK_B_B1_WORKSPACE_CONTRACT.md",
+      "docs/plans/PLANTOS_DDAY_TRACK_B_VF_SA_HANDOFF.md",
+      "src/virtual_factory/assembly/demo_controller.py",
+      "src/virtual_factory/assembly/line_runtime.py",
+      "tests/test_dday_b2_bottled_water_line.py"
+    ],
+    "diffstat_vs_b1": [
+      ".ai-harness/tasks/DDAY-B2.json                  | 212 ++++++++++",
+      " configs/workspaces/bottled-water-dday/line.yaml |  79 ++++",
+      " src/virtual_factory/assembly/demo_controller.py | 102 ++++-",
+      " src/virtual_factory/assembly/line_runtime.py    | 454 +++++++++++++++++++-",
+      " tests/test_dday_b2_bottled_water_line.py        | 526 ++++++++++++++++++++++++",
+      " 5 files changed, 1356 insertions(+), 17 deletions(-)"
+    ],
+    "implementation_patch": "implementation.patch"
+  },
+  "preflight_at_b2_start": {
+    "command": "python .ai-harness/scripts/preflight.py --task .ai-harness/tasks/DDAY-B2.json",
+    "run_at_commit": "211c3ef (DDAY-B2 task contract commit, clean tree)",
+    "result": "PRECHECK PASSED",
+    "exit_code": 0,
+    "transcript": "preflight-at-b2-start.txt",
+    "authoritative_machine_evidence": "pipeline step P03 of the DDAY-B2 task gate"
+  },
+  "route": {
+    "configured_route": [
+      "BW-FP-BLW01",
+      "BW-FP-RIN01",
+      "BW-FP-FIL01",
+      "BW-FP-CAP01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-CPK01",
+      "BW-FP-PAL01"
+    ],
+    "expected_route": [
+      "BW-FP-BLW01",
+      "BW-FP-RIN01",
+      "BW-FP-FIL01",
+      "BW-FP-CAP01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-CPK01",
+      "BW-FP-PAL01"
+    ],
+    "route_matches": true,
+    "station_count": 8,
+    "station_durations": {
+      "BW-FP-BLW01": 12.0,
+      "BW-FP-RIN01": 10.0,
+      "BW-FP-FIL01": 18.0,
+      "BW-FP-CAP01": 14.0,
+      "BW-FP-INS01": 8.0,
+      "BW-FP-LAB01": 10.0,
+      "BW-FP-CPK01": 16.0,
+      "BW-FP-PAL01": 18.0
+    },
+    "station_contracts": [
+      "BW-FP-BLW01",
+      "BW-FP-CAP01",
+      "BW-FP-CPK01",
+      "BW-FP-FIL01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-PAL01",
+      "BW-FP-RIN01"
+    ],
+    "quality_capable_stations": [
+      "BW-FP-INS01"
+    ],
+    "unit_traversal_order": [
+      "BW-FP-BLW01",
+      "BW-FP-RIN01",
+      "BW-FP-FIL01",
+      "BW-FP-CAP01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-CPK01",
+      "BW-FP-PAL01"
+    ],
+    "unit_traversal_matches_route": true,
+    "traversal_hops": 8
+  },
+  "quality_and_counts": {
+    "nominal": {
+      "inspection_disposition": "PASS",
+      "quality_results": [
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000001",
+          "detail": "disposition=PASS attempt=1"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000002",
+          "detail": "disposition=PASS attempt=1"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000003",
+          "detail": "disposition=PASS attempt=1"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000004",
+          "detail": "disposition=PASS attempt=1"
+        }
+      ],
+      "facts": {
+        "plant_id": "BW-DEMO-01",
+        "line_id": "BW-FP",
+        "line_label": "Filling & Packaging Line",
+        "line_profile": "generic",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "run_state": "RUNNING",
+        "operating_state": "RUNNING",
+        "simulation_time_s": 160.0,
+        "dwell_number": 8,
+        "nominal_dwell_s": 20.0,
+        "route": [
+          "BW-FP-BLW01",
+          "BW-FP-RIN01",
+          "BW-FP-FIL01",
+          "BW-FP-CAP01",
+          "BW-FP-INS01",
+          "BW-FP-LAB01",
+          "BW-FP-CPK01",
+          "BW-FP-PAL01"
+        ],
+        "positions": [
+          {
+            "position_id": "BW-FP-BLW01",
+            "unit_id": "",
+            "unit_type": "",
+            "product_code": "",
+            "manufacturing_status": "",
+            "is_occupied": false
+          },
+          {
+            "position_id": "BW-FP-RIN01",
+            "unit_id": "BTL-000008",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-FIL01",
+            "unit_id": "BTL-000007",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-CAP01",
+            "unit_id": "BTL-000006",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-INS01",
+            "unit_id": "BTL-000005",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-LAB01",
+            "unit_id": "BTL-000004",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-CPK01",
+            "unit_id": "BTL-000003",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-PAL01",
+            "unit_id": "BTL-000002",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          }
+        ],
+        "units_on_line": 7,
+        "total_count": 8,
+        "good_count": 1,
+        "reject_count": 0
+      },
+      "unit_completed_events": [
+        {
+          "position": "BW-FP-PAL01",
+          "unit": "BTL-000001",
+          "detail": "route_complete total=8 good=1 reject=0"
+        }
+      ],
+      "unit_1_lifecycle": "released"
+    },
+    "rejected": {
+      "facts": {
+        "plant_id": "BW-DEMO-01",
+        "line_id": "BW-FP",
+        "line_label": "Filling & Packaging Line",
+        "line_profile": "generic",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "run_state": "RUNNING",
+        "operating_state": "RUNNING",
+        "simulation_time_s": 240.0,
+        "dwell_number": 12,
+        "nominal_dwell_s": 20.0,
+        "route": [
+          "BW-FP-BLW01",
+          "BW-FP-RIN01",
+          "BW-FP-FIL01",
+          "BW-FP-CAP01",
+          "BW-FP-INS01",
+          "BW-FP-LAB01",
+          "BW-FP-CPK01",
+          "BW-FP-PAL01"
+        ],
+        "positions": [
+          {
+            "position_id": "BW-FP-BLW01",
+            "unit_id": "",
+            "unit_type": "",
+            "product_code": "",
+            "manufacturing_status": "",
+            "is_occupied": false
+          },
+          {
+            "position_id": "BW-FP-RIN01",
+            "unit_id": "BTL-000012",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-FIL01",
+            "unit_id": "BTL-000011",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-CAP01",
+            "unit_id": "BTL-000010",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-INS01",
+            "unit_id": "BTL-000009",
+            "unit_type": "bottle",
+            "product_code": "WATER-500ML",
+            "manufacturing_status": "completed_station",
+            "is_occupied": true
+          },
+          {
+            "position_id": "BW-FP-LAB01",
+            "unit_id": "",
+            "unit_type": "",
+            "product_code": "",
+            "manufacturing_status": "",
+            "is_occupied": false
+          },
+          {
+            "position_id": "BW-FP-CPK01",
+            "unit_id": "",
+            "unit_type": "",
+            "product_code": "",
+            "manufacturing_status": "",
+            "is_occupied": false
+          },
+          {
+            "position_id": "BW-FP-PAL01",
+            "unit_id": "",
+            "unit_type": "",
+            "product_code": "",
+            "manufacturing_status": "",
+            "is_occupied": false
+          }
+        ],
+        "units_on_line": 4,
+        "total_count": 12,
+        "good_count": 0,
+        "reject_count": 8
+      },
+      "reject_events": [
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000001",
+          "detail": "reason=NG"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000002",
+          "detail": "reason=NG"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000003",
+          "detail": "reason=NG"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000004",
+          "detail": "reason=NG"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000005",
+          "detail": "reason=NG"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000006",
+          "detail": "reason=NG"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000007",
+          "detail": "reason=NG"
+        },
+        {
+          "position": "BW-FP-INS01",
+          "unit": "BTL-000008",
+          "detail": "reason=NG"
+        }
+      ],
+      "rejected_units": {
+        "BTL-000001": {
+          "lifecycle": "rejected",
+          "rejected": true,
+          "counted_good": false
+        },
+        "BTL-000002": {
+          "lifecycle": "rejected",
+          "rejected": true,
+          "counted_good": false
+        },
+        "BTL-000003": {
+          "lifecycle": "rejected",
+          "rejected": true,
+          "counted_good": false
+        },
+        "BTL-000004": {
+          "lifecycle": "rejected",
+          "rejected": true,
+          "counted_good": false
+        },
+        "BTL-000005": {
+          "lifecycle": "rejected",
+          "rejected": true,
+          "counted_good": false
+        },
+        "BTL-000006": {
+          "lifecycle": "rejected",
+          "rejected": true,
+          "counted_good": false
+        },
+        "BTL-000007": {
+          "lifecycle": "rejected",
+          "rejected": true,
+          "counted_good": false
+        },
+        "BTL-000008": {
+          "lifecycle": "rejected",
+          "rejected": true,
+          "counted_good": false
+        }
+      },
+      "downstream_completions": 0
+    },
+    "invariant_sweep": [
+      {
+        "scenario": "PASS",
+        "cycles": 1,
+        "total_count": 1,
+        "good_count": 0,
+        "reject_count": 0,
+        "units_on_line": 1,
+        "invariant_ok": true,
+        "in_progress_equals_on_line": true
+      },
+      {
+        "scenario": "PASS",
+        "cycles": 8,
+        "total_count": 8,
+        "good_count": 1,
+        "reject_count": 0,
+        "units_on_line": 7,
+        "invariant_ok": true,
+        "in_progress_equals_on_line": true
+      },
+      {
+        "scenario": "PASS",
+        "cycles": 20,
+        "total_count": 20,
+        "good_count": 13,
+        "reject_count": 0,
+        "units_on_line": 7,
+        "invariant_ok": true,
+        "in_progress_equals_on_line": true
+      },
+      {
+        "scenario": "ALWAYS_FAIL",
+        "cycles": 1,
+        "total_count": 1,
+        "good_count": 0,
+        "reject_count": 0,
+        "units_on_line": 1,
+        "invariant_ok": true,
+        "in_progress_equals_on_line": true
+      },
+      {
+        "scenario": "ALWAYS_FAIL",
+        "cycles": 8,
+        "total_count": 8,
+        "good_count": 0,
+        "reject_count": 4,
+        "units_on_line": 4,
+        "invariant_ok": true,
+        "in_progress_equals_on_line": true
+      },
+      {
+        "scenario": "ALWAYS_FAIL",
+        "cycles": 20,
+        "total_count": 20,
+        "good_count": 0,
+        "reject_count": 16,
+        "units_on_line": 4,
+        "invariant_ok": true,
+        "in_progress_equals_on_line": true
+      }
+    ],
+    "all_invariants_hold": true
+  },
+  "controls": {
+    "initial_run_state": "STOPPED",
+    "no_progression_before_start": true,
+    "state_after_start": "RUNNING",
+    "state_after_pause": "PAUSED",
+    "pause_froze_simulation_time": true,
+    "pause_froze_positions": true,
+    "pause_froze_counts": true,
+    "state_after_resume": "RUNNING",
+    "resume_continued_time": true,
+    "resume_continued_production": true,
+    "state_after_stop": "STOPPED",
+    "stop_froze_time": true,
+    "stop_operating_state": "STOPPED",
+    "no_fault_or_downtime_in_trace": true,
+    "run_state_enum_values": [
+      "PAUSED",
+      "RUNNING",
+      "STOPPED"
+    ],
+    "fault_is_not_a_run_state": true,
+    "state_after_reset": "STOPPED",
+    "reset_zeroed_counts": true,
+    "reset_zeroed_time": true,
+    "reset_emptied_line": true,
+    "reset_cleared_trace": true
+  },
+  "determinism": {
+    "cycles": 12,
+    "sha256_trace_digests_independent_instances": [
+      "6d968db7c70d20daf15e6b9be8fbe986c85c75f4d70bee1b89493623d696fd34",
+      "6d968db7c70d20daf15e6b9be8fbe986c85c75f4d70bee1b89493623d696fd34"
+    ],
+    "identical_across_instances": true,
+    "sha256_trace_digest_after_reset_replay": "6d968db7c70d20daf15e6b9be8fbe986c85c75f4d70bee1b89493623d696fd34",
+    "identical_after_reset_replay": true,
+    "facts_identical_across_instances": true,
+    "reject_path_digests": [
+      "8688874ed734eff667f9332ae377000dbd5438cc7044b9a677987b52e5936dc7",
+      "8688874ed734eff667f9332ae377000dbd5438cc7044b9a677987b52e5936dc7"
+    ],
+    "reject_path_identical": true,
+    "seed": 42,
+    "timing_behavior": "DETERMINISTIC"
+  },
+  "leakage": {
+    "forbidden_literals": [
+      "TIPA",
+      "ASSY",
+      "PRE-ASSY",
+      "AP05_JAM",
+      "SSO2",
+      "RSO2"
+    ],
+    "forbidden_pattern": "\\bAP\\d{2}\\b",
+    "surfaces_scanned": {
+      "config_file": 2411,
+      "outward_raw_facts": 121,
+      "trace_events": 223,
+      "station_contracts": 8,
+      "unit_identities": 12,
+      "quality_records": 8
+    },
+    "findings": [],
+    "clean": true,
+    "legacy_snapshot_compartments_empty": {
+      "positions": [],
+      "genealogy": [],
+      "quality_records": [],
+      "active_operations": [],
+      "recent_quality_events": [],
+      "production_wips_on_line": 0
+    },
+    "legacy_snapshot_carries_no_bottled_water_state": true,
+    "generic_workspace_outward_surface": "DemoController.line_facts()"
+  },
+  "tests_b2": {
+    "command": "python -m pytest -q --tb=short tests/test_dday_b2_bottled_water_line.py",
+    "exit_code": 0,
+    "junit": "junit-dday-b2.xml",
+    "collected": 17,
+    "passed": 17,
+    "failed": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "errors": 0,
+    "tail": "17 passed in 0.51s"
+  },
+  "tests_regression": {
+    "command": "python -m pytest -q --tb=short tests/test_assy_line.py tests/test_assy_demo.py tests/test_demo_composition.py tests/test_demo_overview.py tests/test_quality.py tests/test_ops02_operation_execution.py tests/test_ops02_schema_contract.py tests/test_ops03_interaction.py tests/test_ops03_contract_loader.py tests/test_ops04_c01.py tests/test_auto_equiv_01.py tests/test_auto_timing.py tests/test_auto_timing_runtime.py tests/test_auto_timing_snapshot.py tests/test_assy_mes_bridge_v1.py tests/test_demo_assy_mes_v1.py tests/test_assy_mes_03_evidence.py tests/test_m6_int_01.py tests/test_sim_val_01_feed.py tests/test_sub_line_identity.py tests/test_vf_contract_finality_01.py tests/test_manual_e2e_01.py tests/test_m3_s03_tipa.py",
+    "exit_code": 0,
+    "junit": "junit-dday-b2-regression.xml",
+    "collected": 575,
+    "passed": 575,
+    "failed": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "errors": 0,
+    "tail": "575 passed in 20.05s"
+  },
+  "tests_full": {
+    "command": "python -m pytest -q --tb=short <full suite>",
+    "exit_code": 0,
+    "junit": "junit-dday-b2-full.xml",
+    "collected": 1664,
+    "passed": 1664,
+    "failed": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "errors": 0,
+    "tail": "1664 passed in 25.90s"
+  }
+}
