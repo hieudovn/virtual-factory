@@ -1,0 +1,89 @@
+# PlantOS + Virtual Factory D-Day — Bottled Water workspace contract
+# B1 contract only: NOT a runnable workspace manifest yet.
+# Runtime wiring is intentionally deferred to B2 and MUST reuse the existing
+# Virtual Factory discrete foundation used by the TIPA ASSY workspace.
+
+contract_version: dday-bw-b1-v1
+contract_status: FROZEN_CANDIDATE
+workspace_id: bottled-water-dday
+workspace_type: demo
+domain: bottled_water
+plant_id: BW-DEMO-01
+
+runtime:
+  engine: discrete_assembly
+  foundation_reuse: required
+  create_new_engine: false
+  fidelity_ceiling: synthetic_reference
+  deterministic: true
+  target_line_detail: detailed_basic
+  non_target_areas_detail: aggregate_basic
+
+semantic_binding:
+  mode: none
+  note: >
+    D-Day uses stable VF-local runtime IDs mapped to PlantOS Plant/Area/Asset/Signal.
+    No PIM-owned canonical ID is invented by this workspace.
+
+topology:
+  ref: configs/workspaces/bottled-water-dday/topology.yaml
+
+signals:
+  ref: configs/workspaces/bottled-water-dday/signals.yaml
+
+scenarios:
+  - id: BW-CAP-DEG-01
+    ref: configs/workspaces/bottled-water-dday/scenarios/capper_degradation.contract.yaml
+
+outputs:
+  namespace: bottled-water-dday
+  origin: VF-Simulation
+  provenance: SIMULATED_RAW
+  primary_integration: mqtt_json
+  debug_outputs: [rest, websocket, csv_jsonl]
+  optional_output: [opcua]
+
+interaction_policy:
+  automated_operation: true
+  allowed_manual_actions:
+    - start
+    - stop
+    - pause
+    - resume
+    - declare_downtime_code
+    - declare_failure_code
+  prohibited_manual_workflows:
+    - checklist_confirmation
+    - manual_quality_decision
+    - manual_release
+    - manual_retry
+    - manual_rework_decision
+
+visualization:
+  target_line_2d_animation: true
+  reuse_existing_renderer_mechanics: true
+  reuse_tipa_skin_assets: false
+  dedicated_skin_required: true
+  target_line_skin: bottled_water_filling_packaging
+
+kpi_boundary:
+  vf_must_not_publish_calculated_kpis:
+    - oee
+    - availability
+    - performance
+    - quality_percentage
+    - energy_per_unit
+    - utilization
+    - health_score
+  vf_publishes_raw_facts_only: true
+
+deployment_target:
+  phase: post_simulation
+  host: same_vps_as_plantos
+  service_isolation: separate_container
+  preferred_network: shared_private_docker_network
+  primary_transport: mqtt_json
+  public_port_required_for_integration: false
+  note: >
+    Final port/container/broker bindings are frozen only during deployment slice.
+    B1 must not hard-code VPS-specific addresses or credentials.
