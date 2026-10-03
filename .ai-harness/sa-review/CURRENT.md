@@ -1,51 +1,55 @@
-# SA REVIEW INBOX
+﻿# SA REVIEW INBOX
 
-Task: SHW-PIM-VF-COMPAT-01-C01
-Status: READY FOR SA REVIEW (C01: gap-impact semantics refined to scope-precise)
-Compatibility decision: compatible_with_constraints (unchanged)
+Task: DDAY-B2 — Bottled Water Hero Line Runtime Reuse
+Status: IMPLEMENTED — PR OPEN — READY FOR SA REVIEW
 
-Gate type:
-Cross-project PIM<->VF compatibility review / documentation-evidence only
-(C01 correction gate for Issue #35 — Issue #36)
+Authority:
+SA Issue hieudovn/virtual-factory#102 (B2 ONLY)
+PR: hieudovn/virtual-factory#101 (base main, head sa/dday-track-b-20261003)
 
-Authoritative VF baseline:
-main @ b0affc99b5eae175bf2558ad6072afab8cb8960a (post PR #34 merge)
+Baselines:
+B1 baseline / SA-issued B2 baseline:
+cb908c66ab1de03e1798d9609fdf46d0fc42e675 (branch head at B2 start - match)
+harness expected_base_sha (== origin/main):
+f5261c8ca18cd4e01779c0274b55270ba028b4e5 (unchanged, not advanced)
 
-Reviewed PIM handoff (VERIFIED, unchanged):
-hieudovn/plant-intelligence-model @ main ec7f1266d4a19e5201b689874a2a7a75a022fc5c
-package SHW-PIM-VF-EXPORT-v0.1 (v0.1; source model SHW-PH03-v0.1)
-semantic model identity SHA f23f3c4614f50a1a2e3805f7e887433feb934915
-export artifact hash baseline ea3361a4aca9d25927a4a76c792f3af184e1aabb
-(unchanged by C01)
+Commits on this branch:
+211c3ef  DDAY-B2 task contract authored from SA Issue #102
+135113d  DDAY-B2 implementation (Bottled Water hero line on the reused runtime)
+9314d52  DDAY-B2 evidence pack
+(then)    DDAY-B2 SA review report + inbox pin  <-- reported review SHA
 
-C01 scope-precise gap semantics:
-Runtime scopes: S1 synthetic LogicalOnly simulation; S2 source-mapped /
-site-integrated runtime; S3 site-faithful control/interlock; S4 FirstOrder/
-parameterized execution.
-- 0 blocks_binding (unchanged).
-- GAP-SHW-001 -> S2 (blocks source-mapped/site-integrated binding + source-truth
-  claims; does NOT block S1 synthetic LogicalOnly simulation).
-- GAP-SHW-002 -> S3 (blocks site-faithful control/interlock; does NOT block a
-  simulation-owned logical controller/scenario model, non-site-authoritative).
-- GAP-SHW-010 -> S4 (may block FirstOrder/parameterized execution for affected
-  models; LogicalOnly composition remains feasible).
-- compatible_with_gap: 003,004,006,007,009,010,011; out_of_scope: 005,008,012.
-
-Governance:
-- Runtime NOT_AUTHORIZED (governance state of this gate — NOT a semantic
-  impossibility caused by GAP-001/002/010).
-- PIM package/SHA/hash unchanged; all PIM gaps preserved (not closed/downgraded).
-- No source tags / plant control logic / parameters / site truth invented.
-
-Production code changed: NO
-PH01 started: NO
-
-Report:
-.ai-harness/sa-review/reports/SHW-PIM-VF-COMPAT-01.md
+What was done:
+- Bottled Water Filling & Packaging route made runnable on the existing
+  discrete line runtime. No new engine, no fork, no new source module.
+- Frozen 8-station route:
+  BW-FP-BLW01 -> RIN01 -> FIL01 -> CAP01 -> INS01 -> LAB01 -> CPK01 -> PAL01
+- Generic automated unit flow (unit_type=bottle, product_code=WATER-500ML),
+  deterministic timing and replay, total/good/reject counts with the invariant
+  good + reject <= total, automatic Inspection quality (PASS continues, FAIL
+  rejects without blocking the line), and START/PAUSE/RESUME/STOP/RESET.
+- Legacy behaviour preserved: legacy regression 575/575, full suite
+  1664/1664 (baseline was 1647 + 17 new tests).
 
 Evidence:
-.ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/ (6 files: 01…06;
-05 and 06 C01-refined)
+.ai-harness/sa-review/evidence/DDAY-B2/ (01..10, machine-evidence.json,
+implementation.patch, generate_evidence.py, smoke_bottled_water.py, JUnit XMLs)
+Report:
+.ai-harness/sa-review/reports/DDAY-B2.md
 
+Verification commands:
+python .ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py
+python .ai-harness/sa-review/evidence/DDAY-B2/generate_evidence.py
+python -m pytest -q
 
+Machine-derived gate record:
+.ai-harness/traces/DDAY-B2/evidence.json
+.ai-harness/traces/DDAY-B2/gate-report.md
 
+Governance:
+- Merge NOT authorized. No next slice authorized (B3+ not started).
+- No forbidden path modified; no KPI/OEE calculation; no legacy domain tokens
+  in Bottled Water outward surfaces (audit: 0 findings).
+- Deferred, classified gaps: B3 skin/snapshot schema; B4 full-factory runtime;
+  B5 Capper degradation + FAULT/DOWNTIME operating states; B6 PlantOS
+  integration; B7 deployment.
