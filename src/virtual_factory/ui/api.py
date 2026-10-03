@@ -531,4 +531,205 @@ def create_app(
                     content={"detail": f"Sub-line not found: {sub_line_id!r}"},
                 )
 
+    # ═══════════════════════════════════════════════════
+    # DDAY-B3 — Bottled Water 2D target-line skin
+    #
+    # Binds the dedicated Bottled Water skin to the B2 generic single-line
+    # runtime. The projection below is raw operational facts only: no KPI is
+    # calculated here and no hidden scenario truth is exposed.
+    # ═══════════════════════════════════════════════════
+
+    _bw_controller: dict = {"instance": None}
+
+    def _bw_config_path() -> str:
+        """Resolve the Bottled Water workspace config (env override supported)."""
+        default = (
+            Path(__file__).resolve().parent.parent.parent.parent
+            / "configs" / "workspaces" / "bottled-water-dday" / "line.yaml"
+        )
+        return os.environ.get("BOTTLED_WATER_CONFIG", str(default))
+
+    def _get_bw_controller():
+        if _bw_controller["instance"] is None:
+            from virtual_factory.assembly.demo_controller import DemoController
+            ctrl = DemoController(config_path=_bw_config_path())
+            ctrl.initialize()
+            if not ctrl.is_generic_line:
+                raise RuntimeError(
+                    "Bottled Water workspace requires a generic single-line "
+                    "configuration"
+                )
+            _bw_controller["instance"] = ctrl
+        return _bw_controller["instance"]
+
+    def _bw_projection(ctrl, limit: int = 60) -> dict:
+        """Domain-neutral outward projection of the B2 generic line runtime.
+
+        Reads only public runtime surfaces. Counts and states are raw facts.
+        """
+        line = ctrl.line
+        facts = ctrl.line_facts()
+        checkpoints = [
+            station_id
+            for station_id, contract in line.station_contracts.items()
+            if contract.capabilities.quality_decision
+        ]
+
+        stations = []
+        for sequence, entry in enumerate(facts["positions"]):
+            station_id = entry["position_id"]
+            stations.append({
+                "sequence": sequence,
+                "station_id": station_id,
+                "unit_id": entry["unit_id"],
+                "unit_type": entry["unit_type"],
+                "product_code": entry["product_code"],
+                "unit_status": entry["manufacturing_status"],
+                "is_occupied": entry["is_occupied"],
+                "is_quality_checkpoint": station_id in checkpoints,
+                "last_disposition": line.last_quality_disposition(station_id),
+            })
+
+        events = [
+            {
+                "event_type": event.event_type,
+                "station_id": event.position,
+                "unit_id": event.wip_id,
+                "detail": event.detail,
+                "simulation_time_s": event.simulation_time_s,
+                "dwell_number": event.dwell_number,
+            }
+            for event in line.trace[-limit:]
+        ]
+
+        return {
+            "workspace_id": "bottled-water-dday",
+            "plant_id": facts["plant_id"],
+            "line_id": facts["line_id"],
+            "line_label": facts["line_label"],
+            "run_state": facts["run_state"],
+            "operating_state": facts["operating_state"],
+            "simulation_time_s": facts["simulation_time_s"],
+            "dwell_number": facts["dwell_number"],
+            "nominal_dwell_s": facts["nominal_dwell_s"],
+            "unit_type": facts["unit_type"],
+            "product_code": facts["product_code"],
+            "route": facts["route"],
+            "stations": stations,
+            "counts": {
+                "total": facts["total_count"],
+                "good": facts["good_count"],
+                "reject": facts["reject_count"],
+            },
+            "units_on_line": facts["units_on_line"],
+            "quality_checkpoints": checkpoints,
+            "last_reject": next(
+                (e["unit_id"] for e in reversed(events)
+                 if e["event_type"] == "REJECT"), ""),
+            "recent_events": events,
+        }
+
+    @app.get("/bottled-water-demo/state")
+    def bottled_water_state(
+        limit: int = Query(default=60, ge=0, le=200),
+    ) -> dict:
+        """Raw line facts for the Bottled Water skin (no KPI calculation).
+
+        `limit` bounds the event window. A full production cycle emits roughly
+        20–30 events, so the default window covers more than one cycle and the
+        skin never misses a cycle's events between polls.
+        """
+        return _bw_projection(_get_bw_controller(), limit=limit)
+
+    @app.get("/bottled-water-demo/static/{filename}", include_in_schema=False)
+    def bottled_water_static(filename: str) -> FileResponse:
+        return FileResponse(static_dir / filename)
+
+    @app.get("/bottled-water-demo", include_in_schema=False)
+    def bottled_water_page() -> FileResponse:
+        return FileResponse(static_dir / "bottled_water_demo.html")
+
+    @app.get("/bottled-water-demo/unit/{unit_id}")
+    def bottled_water_unit(unit_id: str) -> dict:
+        """Context for one unit at a selected point (selection is read-only)."""
+        from fastapi.responses import JSONResponse
+        ctrl = _get_bw_controller()
+        line = ctrl.line
+        unit = line.get_wip(unit_id)
+        if unit is None:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": f"Unit not found: {unit_id!r}"},
+            )
+        history = line.get_quality_history(unit_id)
+        return {
+            "unit_id": unit.wip_id,
+            "unit_type": unit.unit_type,
+            "product_code": unit.product_code,
+            "unit_sequence": unit.unit_sequence,
+            "unit_status": unit.lifecycle.value,
+            "current_station_id": unit.current_position,
+            "stations_completed": unit.station_count,
+            "rejected": unit.rejected,
+            "counted_good": unit.counted_good,
+            "quality_status": line.get_current_quality_status(unit_id).value,
+            "quality_records": [
+                {
+                    "record_id": record.record_id,
+                    "station_id": record.station_id,
+                    "check_type": record.check_type.value,
+                    "disposition": record.disposition,
+                    "attempt_number": record.attempt_number,
+                    "simulation_time_s": record.simulation_time_s,
+                    "reason_code": record.reason_code,
+                }
+                for record in (history.records if history else ())
+            ],
+        }
+
+    # Controls: exactly the operator set allowed by the B3 contract.
+    @app.post("/bottled-water-demo/start")
+    def bottled_water_start() -> dict:
+        ctrl = _get_bw_controller()
+        ctrl.start()
+        return _bw_projection(ctrl)
+
+    @app.post("/bottled-water-demo/pause")
+    def bottled_water_pause() -> dict:
+        ctrl = _get_bw_controller()
+        ctrl.pause()
+        return _bw_projection(ctrl)
+
+    @app.post("/bottled-water-demo/resume")
+    def bottled_water_resume() -> dict:
+        ctrl = _get_bw_controller()
+        ctrl.resume()
+        return _bw_projection(ctrl)
+
+    @app.post("/bottled-water-demo/stop")
+    def bottled_water_stop() -> dict:
+        ctrl = _get_bw_controller()
+        ctrl.stop()
+        return _bw_projection(ctrl)
+
+    @app.post("/bottled-water-demo/reset")
+    def bottled_water_reset() -> dict:
+        """RESET rebuilds the line and returns it to its known initial state."""
+        ctrl = _get_bw_controller()
+        ctrl.reset()
+        return _bw_projection(ctrl)
+
+    @app.post("/bottled-water-demo/advance")
+    def bottled_water_advance() -> dict:
+        """Animation-clock tick: one deterministic production cycle.
+
+        Not an operator control — the skin's presentation clock calls this while
+        the line is RUNNING. The runtime itself refuses to advance unless the
+        run state is RUNNING, so operator semantics are preserved.
+        """
+        ctrl = _get_bw_controller()
+        ctrl.advance()
+        return _bw_projection(ctrl)
+
     return app
+
