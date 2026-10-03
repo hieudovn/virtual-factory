@@ -5,7 +5,7 @@
 **Program:** PlantOS + Virtual Factory Integrated D-Day  
 **Track:** B — Virtual Factory simulation plant and data source  
 **Parallel track:** Track A — FactoriX IIoT / PlantOS product experience  
-**Status:** READY FOR VF SA EXECUTION  
+**Status:** READY FOR VF SA EXECUTION — BOTTLED WATER FACTORY FROZEN  
 **Important:** This handoff authorizes planning, contract reconciliation, simulation design, configuration work, test design and bounded VF implementation planning. It does **not** authorize PlantOS UAT deployment, migration, Shift OEE, PLC field work, or unrelated VF scope expansion.
 
 ---
@@ -82,9 +82,25 @@ The demo must tell one coherent operational story, not present unrelated random 
 
 ---
 
-## 3. D-Day simulation strategy
+## 3. Frozen D-Day plant archetype — Bottled Water Factory
+
+The Product Owner has selected **Bottled Water** as the D-Day reference factory.
+
+This decision is now frozen for Track B unless explicitly changed by the Product Owner.
+
+Why this archetype is preferred for the current D-Day:
+
+- it combines process monitoring and discrete production in one factory;
+- it is easy to understand visually during a live demo;
+- it supports Plant Overview, Operations, Asset Condition, Asset Performance, Energy, Productivity, Quality, Historian and OEE-oriented scenarios;
+- it reuses the existing VF discrete station-flow capability well for the filling/packaging section;
+- it avoids forcing D-Day into deep MES/batch/recipe semantics;
+- it remains reusable as a generic FactoriX reference factory rather than a customer-specific motor assembly demo.
+
+### D-Day factory structure
 
 Use a two-tier simulation model.
+
 
 ### Tier 1 — Full factory, basic model
 
@@ -99,13 +115,34 @@ Purpose:
 Expected logical factory structure:
 
 ```text
-FACTORY
+BOTTLED WATER FACTORY
 │
-├── Raw Material / Feeding
-├── Production Line 1       ← detailed hero line
-├── Production Line 2       ← basic
-├── Packaging               ← basic
-└── Utilities               ← basic
+├── Water Treatment                 ← basic process zone
+│   ├── Raw Water / Feed
+│   ├── Filtration / RO
+│   └── Treated Water Storage
+│
+├── Bottle / Preform Preparation    ← basic
+│   └── Blower / Bottle Infeed
+│
+├── Filling & Packaging Line        ← DETAILED HERO LINE
+│   ├── Rinser
+│   ├── Filler
+│   ├── Capper
+│   ├── Inspection
+│   ├── Labeler
+│   ├── Case Packer
+│   └── Palletizer
+│
+├── Secondary / Other Line          ← basic optional
+│
+├── Utilities                       ← basic
+│   ├── Air Compressor
+│   ├── Chiller / Cooling
+│   ├── Pumps
+│   └── Main Power Meter
+│
+└── Warehouse / Dispatch Interface  ← visual/basic only
 ```
 
 Tier-1 nodes do **not** require high-fidelity physics.
@@ -123,11 +160,33 @@ Goal:
 
 > PlantOS opens and immediately looks like a real operating factory, not a tag viewer.
 
-### Tier 2 — One detailed production line
+### Tier 2 — Detailed Filling & Packaging Line
 
-One line is the D-Day hero model.
+The D-Day hero line is now frozen as the **Filling & Packaging Line**.
 
-It must support:
+Reference process:
+
+```text
+Bottle Infeed / Blower
+        ↓
+Rinser
+        ↓
+Filler
+        ↓
+Capper
+        ↓
+Inspection
+        ↓
+Labeler
+        ↓
+Case Packer
+        ↓
+Palletizer
+```
+
+This is the detailed line PlantOS Track A should ultimately visualize.
+
+The line should be modeled deeply enough to support:
 
 - station/machine structure;
 - machine state;
@@ -142,6 +201,23 @@ It must support:
 - raw facts needed by PlantOS for productivity/KPI/OEE where valid.
 
 Do not attempt to simulate every factory line at this depth.
+
+### Recommended detailed-line semantics
+
+Minimum useful facts by station:
+
+| Station | Example raw facts |
+|---|---|
+| Blower / Infeed | speed, bottle count, power, state |
+| Rinser | state, speed, water/flow context where modeled |
+| Filler | fill rate, fill-level quality result, pump/drive load, power |
+| Capper | speed, torque/quality result, motor current/load, vibration/temperature candidate |
+| Inspection | pass/fail, low-fill/cap-missing/reject event |
+| Labeler | speed, label inspection result, state |
+| Case Packer | cycle, count, state, rejects |
+| Palletizer | cycle, count, state |
+
+The implementation may simplify these facts where current VF models do not support them yet, but must preserve semantic truth and explicitly mark gaps.
 
 ---
 
@@ -243,30 +319,30 @@ They are **not canonical VF IDs**.
 
 VF SA must first decide whether D-Day should use:
 
-### Option A — Extend/reuse current ASSY discrete model
+### Required implementation direction
 
-Use when:
+Create a **generic Bottled Water D-Day plant configuration** for the integrated demo.
 
-- the current AP01–AP11 runtime is sufficient for PlantOS showcase;
-- a generic presentation can be achieved by configuration/labels;
-- the existing station/quality/production mechanics save time.
+However, do **not** create a new simulation engine.
 
-### Option B — Create a new generic FactoriX D-Day plant config
+Reuse current VF capabilities wherever possible:
 
-Use only if needed because:
+- station sequence / discrete flow;
+- deterministic dwell/cycle timing;
+- WIP/unit movement;
+- PASS / FAIL / NG outcomes;
+- retry/reject paths;
+- production counts;
+- sub-line/runtime identity concepts;
+- scenario control;
+- alarm/event infrastructure;
+- MQTT / OPC UA / REST/WebSocket outputs.
 
-- customer-specific TIPA semantics should not be exposed in a generic showcase;
-- the full-factory context needs areas beyond the current ASSY line;
-- the demo needs utilities/raw material/packaging topology not cleanly expressible with current config.
+The existing TIPA ASSY model is therefore treated as an **implementation reference and reusable engine capability**, not as the D-Day plant identity.
 
-If Option B is chosen:
+Customer-specific TIPA names such as `AP01...AP11`, `ASSY-SL01...06` must not leak into the generic Bottled Water D-Day model unless intentionally retained in an internal adapter/test fixture.
 
-- reuse existing VF engine/schema;
-- reuse existing discrete runtime concepts;
-- do not fork a second engine;
-- do not duplicate station/quality/state concepts under different semantics.
-
-Decision must be explicit and documented.
+The new plant config should express bottled-water topology through configuration and existing reusable models. Any engine extension must be the smallest generic extension required, never a bottled-water hardcode.
 
 ---
 
@@ -455,21 +531,31 @@ warning
 intermittent stop / downtime
 ```
 
-The exact hero station is **not pre-frozen**.
+The hero abnormal equipment should be selected inside the Filling & Packaging Line.
 
-VF SA must choose the best existing AP station based on current runtime mechanics.
+### Preferred hero candidate
 
-Selection criteria:
+**Capper drive / motor** is the current preferred candidate because it provides a clean causal story:
 
-- can host a machine/drive/motor concept credibly;
-- can affect cycle/throughput;
-- can produce or be extended to produce energy/condition signals;
-- does not require large engine changes;
-- supports a clear before/during/after historian story.
+```text
+mechanical load ↑
+→ motor current ↑
+→ vibration ↑
+→ bearing / gearbox temperature ↑
+→ capper speed ↓
+→ micro-stops ↑
+→ line throughput ↓
+→ performance / OEE impact
+→ energy per bottle ↑
+```
 
-If no current AP station can do this cleanly, propose the smallest configuration-driven extension.
+Alternative candidate:
 
-Do not create a completely new station model only to match the example.
+**Filler drive / pump**, if the current VF model library makes this substantially easier while preserving the same D-Day story.
+
+VF SA should select between Capper and Filler based on the smallest truthful model extension.
+
+Do not select an arbitrary AP station merely because it exists in the old ASSY config.
 
 ---
 
@@ -580,14 +666,16 @@ Deliver:
 - which simulation mechanics are reusable;
 - gaps against D-Day contract.
 
-### B2 — Factory topology & ID freeze
+### B2 — Bottled Water topology & ID freeze
 
 Deliver:
 
-- chosen D-Day factory structure;
-- whether TIPA ASSY is reused directly or a generic config is created;
-- stable plant/area/line/station/asset IDs;
-- mapping-ready hierarchy.
+- Bottled Water D-Day factory structure;
+- stable generic plant/zone/line/station/asset IDs;
+- detailed Filling & Packaging Line identity;
+- basic Water Treatment / Utilities / Bottle Preparation identity;
+- mapping-ready hierarchy;
+- explicit reuse map from existing VF discrete concepts where applicable.
 
 ### B3 — Signal dictionary & sample payloads
 
@@ -604,28 +692,42 @@ Also deliver sample payloads for:
 - alarm/event;
 - downtime transition.
 
-### B4 — Living Factory basic model
+### B4 — Living Bottled Water Factory basic model
 
 Implement enough data for:
 
+- Water Treatment basic process state;
+- Bottle / Preform Preparation basic state;
+- Utilities basic state and energy context;
+- Filling & Packaging detailed status;
+- optional secondary line basic status;
 - full-factory Plant Overview;
-- multiple areas;
-- basic operational status;
 - energy;
 - alarms;
 - historian.
 
-### B5 — Detailed hero line
+### B5 — Detailed Filling & Packaging Line
 
 Implement:
 
+- Bottle Infeed/Blower;
+- Rinser;
+- Filler;
+- Capper;
+- Inspection;
+- Labeler;
+- Case Packer;
+- Palletizer;
+
+with:
+
 - station state;
-- cycle;
+- cycle/speed;
 - counts;
-- quality;
-- downtime;
+- quality/reject results;
+- downtime/micro-stops;
 - energy;
-- condition signals.
+- selected condition signals.
 
 ### B6 — Deterministic abnormal scenario
 
@@ -658,19 +760,24 @@ Use PlantOS Issue:
 
 **#38 — DDAY-WP2-CONTRACT-01 — Reconcile VF Living Factory Contract**
 
-This is currently the primary cross-workstream contract/mapping task.
+This remains the primary cross-workstream contract/mapping task, but its plant target is now **Bottled Water**.
 
-The immediate VF SA responsibility is to provide evidence for that issue, specifically:
+The immediate VF SA responsibility is:
 
-1. exact publishable signals emitted by the current discrete ASSY runtime;
-2. units/datatype/cadence;
-3. current output protocols;
-4. mapping candidate to PlantOS Plant/Area/Asset/Signal;
-5. reusable event contracts;
-6. best hero AP station recommendation;
-7. minimal gaps/extensions.
+1. audit exact reusable capabilities from the current discrete ASSY runtime;
+2. define the generic Bottled Water D-Day topology;
+3. define stable generic IDs;
+4. define the Filling & Packaging signal dictionary;
+5. define Water Treatment / Utilities basic signals;
+6. document units/datatype/cadence;
+7. select PlantOS ingestion/output protocol;
+8. map to PlantOS Plant/Area/Asset/Signal;
+9. select Capper vs Filler as hero abnormal asset;
+10. classify minimal gaps/extensions.
 
-Do not jump immediately to building a new factory model before this audit is complete.
+The existing ASSY config is a reuse reference, not the D-Day domain model.
+
+Do not begin broad simulation coding before topology + signal contract are frozen.
 
 ---
 
@@ -699,8 +806,8 @@ D-Day goal is an operational IIoT showcase, not a complete manufacturing softwar
 
 VF Track B is considered D-Day ready when:
 
-1. one factory topology is stable;
-2. one detailed production line is stable;
+1. the Bottled Water factory topology is stable;
+2. the Filling & Packaging Line is stable;
 3. IDs are deterministic;
 4. signal dictionary is frozen;
 5. PlantOS can ingest the agreed raw facts;
@@ -724,14 +831,19 @@ VF SA should report in this order:
 - actual current signal/event outputs.
 
 ### B. Architecture decision
-- reuse TIPA ASSY vs new generic D-Day config;
-- rationale;
+- generic Bottled Water config design;
+- exact current VF capabilities reused;
+- minimal generic extensions required;
 - no-duplication analysis.
 
-### C. D-Day factory model
-- hierarchy;
-- detailed line;
-- selected hero abnormal station.
+### C. D-Day Bottled Water factory model
+- Water Treatment;
+- Bottle / Preform Preparation;
+- Filling & Packaging Line;
+- Utilities;
+- optional secondary line / warehouse interface;
+- detailed Filling & Packaging topology;
+- selected hero abnormal asset: Capper or Filler.
 
 ### D. Signal/data contract
 - dictionary;
@@ -839,3 +951,50 @@ The desired result is:
 > “PlantOS can show a believable factory, detect an operational problem, drill into the affected line and asset, prove it with historian data, and explain the operational impact — using VF as a deterministic raw-data source.”
 
 That is the Track B mission.
+
+
+---
+
+## 22. Frozen Product Owner decision — 2026-10-03
+
+The Product Owner has explicitly selected:
+
+> **Bottled Water Factory**
+
+for the integrated PlantOS / Virtual Factory D-Day.
+
+For Track B this means:
+
+```text
+FULL FACTORY — BASIC
+Water Treatment
+Bottle / Preform Preparation
+Utilities
+Secondary supporting zones
+
++
+
+HERO LINE — DETAILED
+Blower / Infeed
+→ Rinser
+→ Filler
+→ Capper
+→ Inspection
+→ Labeler
+→ Case Packer
+→ Palletizer
+```
+
+Preferred abnormal story:
+
+```text
+Capper/Filler equipment degradation
+→ condition signals degrade
+→ machine performance degrades
+→ micro-stop/downtime
+→ throughput falls
+→ energy per bottle rises
+→ PlantOS historian proves the sequence
+```
+
+This decision supersedes the earlier open question about whether D-Day would use motor assembly, paint, feed mill, or another archetype.
