@@ -1,0 +1,420 @@
+diff --git a/.ai-harness/scripts/run_task_gate.py b/.ai-harness/scripts/run_task_gate.py
+index 896adf2..bc35411 100644
+--- a/.ai-harness/scripts/run_task_gate.py
++++ b/.ai-harness/scripts/run_task_gate.py
+@@ -115,6 +115,46 @@ def _normalize_smoke_command(cmd: list[str]) -> list[str]:
+     return cmd
+ 
+ 
++def _write_gate_report(path, title: str, tid: str, status: str, gate: str,
++                       satisfied, exit_code, steps: list[dict], impl_sha: str,
++                       pipeline_integrity: dict | None = None) -> None:
++    """Write a gate report that identifies the exact implementation head.
++
++    C01-B: P22 validates the provisional report against the evidence via
++    validate_report_consistency.py, which fails closed when the report does not
++    reference ``implementation.commit_sha``. The report is therefore required to
++    state the implementation SHA; validation itself is unchanged.
++    """
++    with open(path, "w") as f:
++        f.write(f"# {title} — {tid}\n\n")
++        f.write(f"**Status**: {status}\n")
++        f.write(f"**Gate**: {gate} | **Satisfied**: {satisfied} | **Exit**: {exit_code}\n")
++        f.write(f"**Implementation SHA**: {impl_sha}\n")
++        if pipeline_integrity is not None:
++            pi = pipeline_integrity
++            f.write(f"**Pipeline**: expected={CANONICAL_IDS} actual={pi.get('actual_ids', [])} "
++                    f"missing={pi.get('missing_ids', [])} dups={pi.get('duplicate_ids', [])}\n")
++        if steps:
++            f.write("\n## Pipeline\n")
++            for s in steps:
++                f.write(f"- [{s['result']}] {s['id']} {s['name']}\n")
++
++
++def _normalize_pr_state(evidence: dict) -> dict:
++    """Align the PR state with the harness' canonical representation (C01-B).
++
++    The GitHub REST API reports ``open``/``closed`` while ``derive_status.py``
++    and the harness evidence fixtures use ``OPEN``/``CLOSED``. Only the
++    representation is aligned: the underlying checks (PR open, not draft, base
++    main, head/CI equality) are unchanged and still fail closed for a closed or
++    non-open PR.
++    """
++    pr_block = evidence.get("pull_request")
++    if isinstance(pr_block, dict) and isinstance(pr_block.get("state"), str):
++        pr_block["state"] = pr_block["state"].upper()
++    return evidence
++
++
+ def _resolve_pr(contract: dict, token: str | None) -> int | None:
+     """Resolve the open PR for the task's required_branch with base=main.
+ 
+@@ -243,6 +283,11 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
+     with open(ep) as f: evidence = json.load(f)
+     reg.record("P09", "PR metadata", True, "PASS" if evidence.get("pull_request", {}).get("number") else "FAIL")
+ 
++    # C01-B: align the PR state representation before status derivation and
++    # acceptance evaluation (the REST API source reports lowercase).
++    _normalize_pr_state(evidence)
++    with open(ep, "w") as f: json.dump(evidence, f, indent=2)
++
+     # P10: CI
+     print("\n" + "=" * 50 + "\nP10: Exact-head CI")
+     cim = _run("verify_exact_head_ci.py", [str(ep), "--sha", sha, "--branch", branch] +
+@@ -368,9 +413,11 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
+     evidence["derived_status"] = final_status; evidence["requested_gate"] = requested_gate
+     evidence["exit_code"] = ec; evidence["requested_gate_satisfied"] = ec == 0
+     reg.record("P20", "Provisional status", True, "PASS")
+-    with open(rp_prov, "w") as f:
+-        f.write(f"# Gate Report (Provisional) — {tid}\n\n**Status**: {final_status}\n**Gate**: {requested_gate} | **Satisfied**: {ec==0} | **Exit**: {ec}\n")
+-        for s in reg.steps: f.write(f"- [{s['result']}] {s['id']} {s['name']}\n")
++    _write_gate_report(
++        rp_prov, "Gate Report (Provisional)", tid, final_status, requested_gate,
++        ec == 0, ec, reg.steps,
++        evidence.get("implementation", {}).get("commit_sha", ""),
++    )
+     reg.record("P21", "Provisional report", True, "PASS")
+ 
+     # P22: Validate provisional evidence + report
+@@ -445,13 +492,13 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
+         evidence["exit_code"] = 1
+     evidence["report_generation_result"] = "success"
+     with open(ep, "w") as f: json.dump(evidence, f, indent=2)
+-    with open(rp_final, "w") as f:
+-        f.write(f"# Gate Report — {tid}\n\n**Status**: {final_status}\n")
+-        f.write(f"**Gate**: {requested_gate} | **Satisfied**: {evidence.get('requested_gate_satisfied',False)} | **Exit**: {evidence.get('exit_code')}\n")
+-        pi = evidence.get("pipeline_integrity", {})
+-        f.write(f"**Pipeline**: expected={CANONICAL_IDS} actual={pi.get('actual_ids',[])} missing={pi.get('missing_ids',[])} dups={pi.get('duplicate_ids',[])}\n\n")
+-        f.write("## Pipeline\n")
+-        for s in reg.steps: f.write(f"- [{s['result']}] {s['id']} {s['name']}\n")
++    _write_gate_report(
++        rp_final, "Gate Report", tid, final_status, requested_gate,
++        evidence.get("requested_gate_satisfied", False),
++        evidence.get("exit_code"), reg.steps,
++        evidence.get("implementation", {}).get("commit_sha", ""),
++        pipeline_integrity=evidence.get("pipeline_integrity", {}),
++    )
+ 
+     duration = time.time() - t0
+     print(f"\n{'='*50}\nGATE COMPLETE ({duration:.1f}s)")
+diff --git a/.ai-harness/tests/test_gate_report_provisional.py b/.ai-harness/tests/test_gate_report_provisional.py
+new file mode 100644
+index 0000000..f00fbbf
+--- /dev/null
++++ b/.ai-harness/tests/test_gate_report_provisional.py
+@@ -0,0 +1,140 @@
++"""Focused harness test for the C01-B gate report contract.
++
++`run_task_gate.py` P22 validates the provisional gate report against the evidence
++via ``validate_report_consistency.py``, which fails closed when the report does
++not reference ``implementation.commit_sha``. P21 therefore has to put the exact
++implementation SHA into the report it generates. This test pins that contract on
++the shared report writer.
++"""
++
++from __future__ import annotations
++
++import sys
++import tempfile
++from pathlib import Path
++
++HARNESS = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(HARNESS / "scripts"))
++
++SHA = "0123456789abcdef0123456789abcdef01234567"
++STATUS = "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW"
++
++
++def _ready_evidence() -> dict:
++    return {
++        "derived_status": STATUS,
++        "ci": {"status": "completed", "conclusion": "success"},
++        "acceptance": [{"id": "A01", "result": "PASS"}],
++        "unknown_evidence": [],
++        "tool_failures": [],
++        "contradictions": [],
++        "blocking_issues": [],
++        "implementation": {"commit_sha": SHA},
++        "pipeline_steps": [],
++        "requested_gate_satisfied": True,
++    }
++
++
++def test_provisional_report_references_implementation_sha():
++    """The P21 artefact must satisfy P22 (validate_report_consistency)."""
++    from run_task_gate import _write_gate_report
++    from validate_report_consistency import validate
++
++    with tempfile.TemporaryDirectory(prefix="c01-gate-report-") as tmp:
++        path = Path(tmp) / "gate-report.provisional.md"
++        _write_gate_report(
++            path, "Gate Report (Provisional)", "DDAY-B2-C01", STATUS,
++            "ready_for_sa_review", True, 0,
++            [{"result": "PASS", "id": "P01", "name": "Load contract"}],
++            SHA,
++        )
++        # Read exactly as run_task_gate / validate_report_consistency do
++        # (platform default encoding = the encoding the gate writer uses).
++        report = path.read_text()
++
++    assert SHA in report, "report must contain the full implementation SHA"
++    assert SHA[:12] in report, "report must contain the abbreviated head SHA"
++
++    ok, issues = validate(_ready_evidence(), report)
++    assert ok, f"provisional report still inconsistent: {issues}"
++
++
++def test_report_without_sha_fails_closed():
++    """Validation must keep failing closed — the repair is in the writer."""
++    from validate_report_consistency import validate
++
++    report = "# Gate Report (Provisional) — DDAY-B2-C01\n\n**Status**: READY\n"
++    ok, issues = validate(_ready_evidence(), report)
++    assert not ok
++    assert any("SHA" in issue for issue in issues)
++
++
++def test_final_report_references_sha_and_pipeline():
++    from run_task_gate import _write_gate_report
++
++    with tempfile.TemporaryDirectory(prefix="c01-gate-report-") as tmp:
++        path = Path(tmp) / "gate-report.md"
++        _write_gate_report(
++            path, "Gate Report", "DDAY-B2-C01", STATUS, "ready_for_sa_review",
++            True, 0, [{"result": "PASS", "id": "P01", "name": "Load contract"}],
++            SHA,
++            pipeline_integrity={"actual_ids": ["P01"], "missing_ids": [],
++                                "duplicate_ids": []},
++        )
++        report = path.read_text()
++
++    assert SHA in report
++    assert "**Pipeline**" in report
++    assert "[PASS] P01" in report
++
++
++# ── C01-B2: PR state representation alignment ──────────────────────────────
++
++def test_pr_state_is_normalized_to_harness_convention():
++    """The REST API reports 'open'; derive_status.py and the harness fixtures
++    use 'OPEN'. Only the representation is aligned."""
++    from run_task_gate import _normalize_pr_state
++
++    assert _normalize_pr_state(
++        {"pull_request": {"state": "open"}})["pull_request"]["state"] == "OPEN"
++    assert _normalize_pr_state(
++        {"pull_request": {"state": "closed"}})["pull_request"]["state"] == "CLOSED"
++    # Idempotent and harmless for the already-canonical form.
++    assert _normalize_pr_state(
++        {"pull_request": {"state": "OPEN"}})["pull_request"]["state"] == "OPEN"
++    assert _normalize_pr_state(
++        {"pull_request": {"state": ""}})["pull_request"]["state"] == ""
++    assert _normalize_pr_state({}) == {}
++
++
++def test_closed_pr_still_fails_closed_after_normalization():
++    """Guards against the alignment being used to relax the open-PR check."""
++    from derive_status import derive_status
++    from run_task_gate import _normalize_pr_state
++
++    evidence = {
++        "preflight": {"baseline_match": True, "expected_base_sha": "a" * 40,
++                      "remote_main_head": "a" * 40},
++        "tool_failures": [],
++        "implementation": {"commit_exists_remotely": True,
++                           "remote_branch_head": "b" * 40},
++        "pull_request": {"number": 101, "state": "closed", "draft": False,
++                         "base_branch": "main", "head_sha": "b" * 40,
++                         "merged": False},
++        "ci": {"run_id": 1, "head_sha": "b" * 40, "conclusion": "success"},
++        "tests": {"failed": 0},
++        "acceptance": [],
++        "unknown_evidence": [],
++        "contradictions": [],
++        "blocking_issues": [],
++        "forbidden_actions": {"performed": False},
++    }
++    _normalize_pr_state(evidence)
++    assert evidence["pull_request"]["state"] == "CLOSED"
++    assert derive_status(evidence) == "NOT READY — GOVERNANCE FAILURE"
++
++    # The same evidence with an open PR derives READY, proving the alignment is
++    # representation-only.
++    evidence["pull_request"]["state"] = "open"
++    _normalize_pr_state(evidence)
++    assert derive_status(evidence) == "IMPLEMENTED — PR OPEN — READY FOR SA REVIEW"
+diff --git a/src/virtual_factory/assembly/line_runtime.py b/src/virtual_factory/assembly/line_runtime.py
+index 2e83ff9..69bc361 100644
+--- a/src/virtual_factory/assembly/line_runtime.py
++++ b/src/virtual_factory/assembly/line_runtime.py
+@@ -92,9 +92,15 @@ class LineRunState(str, enum.Enum):
+ 
+ 
+ class WipLifecycle(str, enum.Enum):
+-    """ASSY WIP lifecycle states (demo semantic names)."""
++    """ASSY WIP lifecycle states (demo semantic names).
++
++    ``IN_LINE`` (C01) is the domain-neutral entry state used by the generic line
++    profile, so that a non-legacy workspace never publishes the legacy
++    ``IN_ASSY`` semantic. The legacy profile keeps using ``IN_ASSY``.
++    """
+     CREATED = "created"
+     IN_ASSY = "in_assy"
++    IN_LINE = "in_line"
+     AT_STATION = "at_station"
+     COMPLETED_STATION = "completed_station"
+     JOINED = "joined"
+@@ -665,7 +671,9 @@ class AssyLineRuntime:
+         if carrier is None:
+             carrier = self.conveyor.create_carrier(carrier_id)
+         self.conveyor.place_carrier(carrier, entry, wip_id)
+-        ws.lifecycle = WipLifecycle.IN_ASSY
++        # C01-A: the generic route must stay domain-neutral — the legacy
++        # IN_ASSY lifecycle is not published for a non-legacy workspace.
++        ws.lifecycle = WipLifecycle.IN_LINE
+         ws.current_position = entry
+         self._station_elapsed[entry] = 0.0
+         return [self._make_event(
+diff --git a/tests/test_dday_b2_bottled_water_line.py b/tests/test_dday_b2_bottled_water_line.py
+index 77dc247..5a3904e 100644
+--- a/tests/test_dday_b2_bottled_water_line.py
++++ b/tests/test_dday_b2_bottled_water_line.py
+@@ -24,8 +24,10 @@ from virtual_factory.assembly.demo_controller import DemoController
+ from virtual_factory.assembly.line_runtime import (
+     AssyLineRuntime,
+     LineRunState,
++    WipLifecycle,
+     load_assy_config_from_yaml,
+ )
++from virtual_factory.assembly.station_contracts import CompletionMode
+ 
+ REPO_ROOT = Path(__file__).resolve().parent.parent
+ CONFIG_PATH = (
+@@ -47,12 +49,17 @@ EXPECTED_ROUTE = [
+ INSPECTION = "BW-FP-INS01"
+ NOMINAL_DWELL_S = 20.0
+ 
+-# Domain-isolation tokens that must never appear in Bottled Water outward
+-# runtime/config/event surfaces.
+-FORBIDDEN_LITERALS = (
+-    "TIPA", "ASSY", "PRE-ASSY", "AP05_JAM", "SSO2", "RSO2",
++# Domain-isolation patterns that must never appear in Bottled Water outward
++# runtime/config/event surfaces. Matching is case-insensitive so that semantic
++# variants such as `in_assy`, `PRE-ASSY` or `ASSY-SLxx` are caught too (C01-A).
++FORBIDDEN_PATTERNS = (
++    re.compile(r"assy", re.IGNORECASE),
++    re.compile(r"tipa", re.IGNORECASE),
++    re.compile(r"sso2", re.IGNORECASE),
++    re.compile(r"rso2", re.IGNORECASE),
++    re.compile(r"ap05_jam", re.IGNORECASE),
++    re.compile(r"\bap\d{2}\b", re.IGNORECASE),
+ )
+-FORBIDDEN_PATTERN = re.compile(r"\bAP\d{2}\b")
+ 
+ 
+ # ═══════════════════════════════════════════════════════════
+@@ -473,10 +480,11 @@ def test_t11_reset_restores_initial_state_and_deterministic_rerun():
+ 
+ def _assert_clean(label: str, texts) -> None:
+     for text in texts:
+-        for token in FORBIDDEN_LITERALS:
+-            assert token not in text, f"{label}: leaked '{token}' in {text!r}"
+-        assert not FORBIDDEN_PATTERN.search(text), (
+-            f"{label}: leaked APxx station id in {text!r}")
++        for pattern in FORBIDDEN_PATTERNS:
++            match = pattern.search(text)
++            assert match is None, (
++                f"{label}: leaked legacy-domain token {match.group(0)!r} in {text!r}"
++            )
+ 
+ 
+ def test_t12_no_legacy_domain_leakage_in_outward_surfaces():
+@@ -524,3 +532,88 @@ def test_t12_no_legacy_domain_leakage_in_outward_surfaces():
+     assert generic_facts["product_code"] == "WATER-500ML"
+     assert generic_facts["route"] == EXPECTED_ROUTE
+     _assert_clean("controller facts", list(iter_strings(generic_facts)))
++
++
++# ═══════════════════════════════════════════════════════════
++# C01-A — domain-neutral lifecycle for the generic route
++# ═══════════════════════════════════════════════════════════
++
++def _status_at(line: AssyLineRuntime, position: str) -> str:
++    for entry in line.line_facts()["positions"]:
++        if entry["position_id"] == position:
++            return entry["manufacturing_status"]
++    raise AssertionError(f"position {position} not found")
++
++
++def test_c01_a_generic_outward_lifecycle_is_domain_neutral():
++    """Entry / in-progress / completion / reject must publish neutral statuses.
++
++    Regression guard for the verified DDAY-B2 defect where generic units were
++    published with the legacy ``in_assy`` lifecycle.
++    """
++    # --- entry -------------------------------------------------------------
++    entry_line = make_line()
++    entry_line.start()
++    unit = entry_line.produce_unit()
++    entry_line.introduce_unit(unit, "CAR-0001")
++    assert _status_at(entry_line, EXPECTED_ROUTE[0]) == "in_line"
++    assert entry_line.get_wip(unit).lifecycle.value == "in_line"
++    _assert_clean("entry facts", list(iter_strings(entry_line.line_facts())))
++    _assert_clean("entry trace", [
++        f"{e.event_type} {e.position} {e.wip_id} {e.detail}" for e in entry_line.trace])
++
++    # --- in progress (station has not completed yet) -----------------------
++    progress_line = make_line()
++    progress_line.global_run_mode = CompletionMode.MANUAL
++    progress_line.start()
++    progress_line.advance_cycle()
++    assert progress_line.units_on_line() == 1
++    assert _status_at(progress_line, EXPECTED_ROUTE[0]) == "in_line"
++    _assert_clean("in-progress facts", list(iter_strings(progress_line.line_facts())))
++
++    # --- station completion ------------------------------------------------
++    done_line = make_line()
++    done_line.start()
++    run_cycles(done_line, 1)
++    assert _status_at(done_line, EXPECTED_ROUTE[1]) == "completed_station"
++
++    # --- route completion --------------------------------------------------
++    assert _status_at(done_line, EXPECTED_ROUTE[1]) == "completed_station"
++    run_cycles(done_line, 7)
++    assert done_line.get_wip("BTL-000001").lifecycle.value == "released"
++
++    # --- reject ------------------------------------------------------------
++    reject_line = make_line("ALWAYS_FAIL")
++    reject_line.start()
++    run_cycles(reject_line, 12)
++    assert reject_line.reject_count == 8
++    assert reject_line.get_wip("BTL-000001").lifecycle.value == "rejected"
++
++    # No stage of the generic route may publish a legacy lifecycle token.
++    for label, line in (("entry", entry_line), ("progress", progress_line),
++                        ("completion", done_line), ("reject", reject_line)):
++        _assert_clean(f"{label} facts", list(iter_strings(line.line_facts())))
++        _assert_clean(f"{label} trace", [
++            f"{e.event_type} {e.position} {e.wip_id} {e.detail}" for e in line.trace])
++        for position in EXPECTED_ROUTE:
++            status = _status_at(line, position)
++            assert "assy" not in status.lower()
++
++
++def test_c01_a_legacy_lifecycle_semantics_are_unchanged():
++    """The legacy indexed-line profile keeps its frozen lifecycle semantics."""
++    legacy_config = load_assy_config_from_yaml(
++        str(REPO_ROOT / "configs" / "plants" / "tipa_assy_demo.yaml"))
++    assert legacy_config.is_generic_profile is False
++
++    legacy = AssyLineRuntime(config=legacy_config)
++    legacy.start()
++    wip_id = legacy.produce_sso2_wip()
++    legacy.introduce_to_assy(wip_id, "PAL-001")
++    assert legacy.get_wip(wip_id).lifecycle.value == "in_assy"
++
++    # The generic entry state is a distinct, additional value — the legacy
++    # value was neither removed nor renamed.
++    assert WipLifecycle.IN_ASSY.value == "in_assy"
++    assert WipLifecycle.IN_LINE.value == "in_line"
++    assert WipLifecycle.IN_LINE is not WipLifecycle.IN_ASSY

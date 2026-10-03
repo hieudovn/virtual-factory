@@ -1,71 +1,79 @@
 ﻿# SA REVIEW INBOX
 
-Task: DDAY-B2 — Bottled Water Hero Line Runtime Reuse
-Deliverable status: DDAY-B2 — READY FOR SA REVIEW (A01-A12: 12 PASS, 0 FAIL, 0 UNKNOWN)
-Machine gate status: NOT READY — REQUIRED TOOL FAILURE (run_task_gate.py P22)
+Task: DDAY-B2-C01 — Semantic Isolation + Harness Gate Correction
+Status: IMPLEMENTED — PR OPEN — READY FOR SA REVIEW (machine-derived, gate exit 0)
 
 Authority:
-SA Issue hieudovn/virtual-factory#102 (B2 ONLY)
+SA Issue hieudovn/virtual-factory#103 (correction only)
+Parent: hieudovn/virtual-factory#102
 PR: hieudovn/virtual-factory#101 (base main, head sa/dday-track-b-20261003)
 
 Baselines:
-SA-issued B2 baseline / branch head at B2 start:
-cb908c66ab1de03e1798d9609fdf46d0fc42e675 (match)
+SA-issued C01 baseline / branch head at C01 start:
+0a1d18e42b5a28009ae05a6e916f9e942a857b38 (match)
 harness expected_base_sha (== origin/main):
 f5261c8ca18cd4e01779c0274b55270ba028b4e5 (unchanged, not advanced)
 
-Implemented:
-- Bottled Water Filling & Packaging route made runnable on the existing
-  discrete line runtime. No new engine, no fork, no new source module.
-- Frozen 8-station route:
-  BW-FP-BLW01 -> RIN01 -> FIL01 -> CAP01 -> INS01 -> LAB01 -> CPK01 -> PAL01
-- Generic automated unit flow (unit_type=bottle, product_code=WATER-500ML),
-  deterministic timing/replay, total/good/reject counts with the invariant
-  good + reject <= total, automatic Inspection quality (PASS continues, FAIL
-  rejects without blocking the line), START/PAUSE/RESUME/STOP/RESET.
-- Legacy behaviour preserved: legacy regression 575/575; full suite 1664/1664
-  (baseline 1647 + 17 new tests).
+Commits on this branch (C01):
+27821cc  DDAY-B2-C01 task contract authored from SA Issue #103
+8d77277  C01-A semantic isolation + C01-B harness gate repair
+7e6221f  C01 allowlist correction (frozen B2 artifact handling)
+54fafa6  PR state representation alignment (second harness defect)
+(then)   C01 evidence pack + report + inbox pin  <-- reported review SHA
 
-Exact-head invariant (gate P08/P09/P10, all true):
-remote branch HEAD = PR #101 head SHA = CI head SHA = reported review SHA
+C01-A — semantic isolation:
+- Generic units previously published the legacy lifecycle value 'in_assy'.
+  Reproduced before the fix through the public API (produce_unit + introduce_unit).
+- WipLifecycle gains IN_LINE ("in_line"); the generic route uses it. The legacy
+  value is neither removed nor renamed and introduce_to_assy() still yields it.
+- Neutral statuses proven at every stage: entry in_line, in-progress in_line,
+  station completion completed_station, route completion released, reject rejected.
+- Case-insensitive leak sweep (assy/tipa/sso2/rso2/ap05_jam/APxx): 0 findings over
+  944 strings across four states; T12 strengthened to catch semantic variants.
 
-Gate outcome:
-- P01-P21 PASS (including P03 preflight, P04 changed-files allowlist,
-  P06 full suite, P07 SMOKE-BW, P08 remote, P09 PR, P10 exact-head CI,
-  P12 invariants, P13 pre-status acceptance 7/7).
-- P22 FAIL: "Report does not reference head SHA" — the gate's own P21 generates
-  a provisional report that omits the head SHA, while validate_report_consistency
-  requires it. Pre-existing defect in run_task_gate.py, task-independent and
-  outside the B2 allowlist. P23/P24 not reached; gate exit 5.
-- Independent re-run of the remaining checks: changed-files allowlist PASS
-  (31 files vs harness baseline / 25 vs SA B2 baseline), validate_evidence PASS,
-  final acceptance A08-A12 PASS (12 PASS, 0 FAIL, 0 UNKNOWN total).
+C01-B — harness gate repair:
+- P21 generated its provisional report without the implementation SHA while P22
+  requires it, so the gate could never validate its own artefact (exit 5, P23/P24
+  unreachable; reproduced at two heads).
+- Fixed by a single report writer that always states the implementation SHA.
+  validate_report_consistency.py is untouched and still fail-closed.
+- A second task-independent defect surfaced during verification: with a token the
+  REST path stores PR state "open" while derive_status.py expects "OPEN", so the
+  gate reached P24 with everything PASS yet derived NOT READY. run_task_gate.py now
+  aligns the representation; a closed PR still fails closed.
 
-SA decision requested (see evidence 11):
-1) authorize a bounded harness correction to run_task_gate.py P21 so the gate
-   can be re-run for this exact head; or
-2) accept the substantive machine evidence as the B2 gate (same evidence the
-   gate consumes), treating P22 as a known harness defect.
+Full task gate (first successful run in this program):
+  Status: IMPLEMENTED — PR OPEN — READY FOR SA REVIEW
+  Gate: ready_for_sa_review | Satisfied: True | Exit: 0
+  P01-P24 all PASS (including P22) | Acceptance 14 PASS, 0 FAIL, 0 UNKNOWN
+  Exact-head invariants: remote = PR head = CI head = reported SHA (all true)
+
+Tests:
+  B2 + C01 tests 19/19 | harness tests 9/9 | legacy regression 575/575 |
+  full suite 1666/1666 (1647 baseline, +17 B2, +2 C01)
 
 Evidence:
-.ai-harness/sa-review/evidence/DDAY-B2/ (01..11, machine-evidence.json,
-implementation.patch, generate_evidence.py, smoke_bottled_water.py, JUnit XMLs)
+.ai-harness/sa-review/evidence/DDAY-B2-C01/ (01..05, machine-evidence.json,
+implementation.patch, before/after transcripts, smokes, JUnit XMLs)
 Report:
-.ai-harness/sa-review/reports/DDAY-B2.md
+.ai-harness/sa-review/reports/DDAY-B2-C01.md
 
 Verification commands:
+python .ai-harness/sa-review/evidence/DDAY-B2-C01/smoke_semantic_isolation.py
 python .ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py
-python .ai-harness/sa-review/evidence/DDAY-B2/generate_evidence.py
 python -m pytest -q
+python .ai-harness/scripts/run_task_gate.py --task .ai-harness/tasks/DDAY-B2-C01.json --token <token>
+  (do not set PYTHONIOENCODING=utf-8 on Windows for the gate invocation)
 
 Machine record:
-.ai-harness/traces/DDAY-B2/evidence.json
-.ai-harness/traces/DDAY-B2/preliminary-evidence.json
+.ai-harness/traces/DDAY-B2-C01/evidence.json
+.ai-harness/traces/DDAY-B2-C01/gate-report.md
 
 Governance:
 - Merge NOT authorized. No next slice authorized (B3+ not started).
-- No forbidden path modified; no KPI/OEE calculation; 0 legacy domain tokens in
-  Bottled Water outward surfaces.
-- Deferred, classified gaps: B3 skin/generic snapshot schema; B4 full-factory
-  runtime; B5 Capper degradation + FAULT/DOWNTIME operating states; B6 PlantOS
-  integration; B7 deployment.
+- validate_report_consistency.py, derive_status.py and the PM execution contract
+  are unmodified; exact-head invariants and acceptance criteria were not relaxed.
+- Residual disclosed: the PR-state root cause remains in
+  .ai-harness/scripts/verify_remote_state.py (outside the C01 allowlist); the
+  orchestrator aligns the representation. SA decision requested if the source fix
+  is preferred.
