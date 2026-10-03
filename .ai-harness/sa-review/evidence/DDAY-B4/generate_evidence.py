@@ -48,6 +48,8 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 import yaml  # noqa: E402  (after sys.path setup)
 
 B4_BASELINE_SHA = "23b6208266751a8c508b0d96fd7a736dffc5676c"
+B4_CONTRACT_SHA = "18e8cad1ef52f6eed549e753acfc464a4ef7e7dd"
+B4_IMPLEMENTATION_SHA = "ae560c02e259ed91a9609b36b5dff060dc9d4fd4"
 WORKSPACE = REPO_ROOT / "configs" / "workspaces" / "bottled-water-dday"
 LINE_YAML = WORKSPACE / "line.yaml"
 FACTORY_YAML = WORKSPACE / "factory.yaml"
@@ -110,18 +112,27 @@ def _digest(payload: dict) -> str:
 
 
 def capture_git_state() -> dict:
-    name_status = git("diff", "--name-status", B4_BASELINE_SHA, "HEAD").splitlines()
+    # The slice change set is pinned to the B4 implementation commit, so it stays
+    # a faithful record of what B4 changed even after the evidence and
+    # gate-status commits advance the branch head.
+    name_status = git(
+        "diff", "--name-status", B4_BASELINE_SHA, B4_IMPLEMENTATION_SHA
+    ).splitlines()
     (EVIDENCE_DIR / "implementation.patch").write_text(
-        git("diff", B4_BASELINE_SHA, "HEAD"), encoding="utf-8")
+        git("diff", B4_CONTRACT_SHA, B4_IMPLEMENTATION_SHA), encoding="utf-8")
     scope = {
         "task_id": "DDAY-B4",
         "b4_baseline_sha": B4_BASELINE_SHA,
         "sa_expected_baseline_sha": "23b6208266751a8c508b0d96fd7a736dffc5676c",
+        "b4_contract_sha": B4_CONTRACT_SHA,
+        "b4_implementation_sha": B4_IMPLEMENTATION_SHA,
         "changed_vs_b4_baseline": [
             line.split("\t", 1)[1] for line in name_status if "\t" in line],
         "name_status_vs_b4_baseline": name_status,
         "diffstat_vs_b4_baseline": git(
-            "diff", "--stat", B4_BASELINE_SHA, "HEAD").splitlines(),
+            "diff", "--stat", B4_BASELINE_SHA, B4_IMPLEMENTATION_SHA).splitlines(),
+        "diffstat_implementation_only": git(
+            "diff", "--stat", B4_CONTRACT_SHA, B4_IMPLEMENTATION_SHA).splitlines(),
         "changed_vs_origin_main": git(
             "diff", "--name-only", "origin/main", "HEAD").splitlines(),
     }
@@ -132,10 +143,12 @@ def capture_git_state() -> dict:
         "local_head": git("rev-parse", "HEAD"),
         "origin_main": git("rev-parse", "origin/main"),
         "b4_baseline_sha": B4_BASELINE_SHA,
+        "b4_implementation_sha": B4_IMPLEMENTATION_SHA,
         "working_tree_status": git("status", "--short"),
         "name_status_vs_b4_baseline": name_status,
         "changed_vs_b4_baseline": scope["changed_vs_b4_baseline"],
         "diffstat_vs_b4_baseline": scope["diffstat_vs_b4_baseline"],
+        "diffstat_implementation_only": scope["diffstat_implementation_only"],
         "changed_vs_origin_main": scope["changed_vs_origin_main"],
     }
 

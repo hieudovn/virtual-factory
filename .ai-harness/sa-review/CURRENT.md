@@ -3,6 +3,10 @@
 Task: DDAY-B4 — Full-Factory Basic Simulation + Autonomous Runtime
 Status: IMPLEMENTED — PR OPEN — READY FOR SA REVIEW
 
+Machine-derived by the full canonical task gate (exit 0, P01-P24 all PASS,
+acceptance A01-A14 all PASS) for the implementation head recorded in
+.ai-harness/traces/DDAY-B4/evidence.json.
+
 Authority:
 SA Issue hieudovn/virtual-factory#105 (B4 ONLY)
 PR: hieudovn/virtual-factory#101 (base main, head sa/dday-track-b-20261003)

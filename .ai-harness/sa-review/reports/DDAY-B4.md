@@ -152,7 +152,27 @@ is never emitted because no abnormal condition is modelled before B5, so
 
 ## Machine gate status
 
-See `.ai-harness/traces/DDAY-B4/gate-report.md` and the `task_gate` block of
-`machine-evidence.json`. This report is updated with the machine-derived status
-in the gate-status commit; the PM does not self-certify `COMPLETE`, `CLOSED` or
-`SA APPROVED`.
+**Gate exit 0 — `P01–P24` 24/24 PASS — acceptance `A01–A14` 14/14 PASS**
+**Machine-derived status: `IMPLEMENTED — PR OPEN — READY FOR SA REVIEW`**
+
+| Item | Value |
+|---|---|
+| Gate | `ready_for_sa_review`, `requested_gate_satisfied: true` |
+| Implementation SHA at gate time | `9d4f43275c34f62a8a55b410fd427e469f7004ee` |
+| Exact-head CI | run `37133165235` (pull_request) — **success** |
+| Exact-head invariants | remote = PR head = CI head = gate SHA — all true |
+
+Records: `.ai-harness/traces/DDAY-B4/evidence.json`,
+`.ai-harness/traces/DDAY-B4/gate-report.md`,
+[`evidence/DDAY-B4/06-machine-gate-status.md`](../evidence/DDAY-B4/06-machine-gate-status.md).
+
+The **first** gate invocation exited `5` with `NOT READY — TEST FAILURE`; the only
+failure was the disclosed pre-existing nondeterministic
+`tests/test_demo_composition.py::TestReset::test_reset_creates_fresh_runtimes`
+(`id()`-disjointness) test, which is explicitly out of scope per Issue #105 §13
+and is demonstrated deterministically in
+`evidence/DDAY-B4/flaky_reset_disclosure.py`. The recorded gate was green on
+every step.
+
+The PM does not self-certify `COMPLETE`, `CLOSED` or `SA APPROVED`, and no merge
+or B5 work was performed.

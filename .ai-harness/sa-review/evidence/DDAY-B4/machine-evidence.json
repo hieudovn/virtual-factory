@@ -5,10 +5,11 @@
   "pr": 101,
   "git": {
     "branch": "sa/dday-track-b-20261003",
-    "local_head": "ae560c02e259ed91a9609b36b5dff060dc9d4fd4",
+    "local_head": "9d4f43275c34f62a8a55b410fd427e469f7004ee",
     "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
     "b4_baseline_sha": "23b6208266751a8c508b0d96fd7a736dffc5676c",
-    "working_tree_status": "M .ai-harness/sa-review/CURRENT.md\n?? .ai-harness/sa-review/evidence/DDAY-B4/\n?? .ai-harness/sa-review/reports/DDAY-B4.md",
+    "b4_implementation_sha": "ae560c02e259ed91a9609b36b5dff060dc9d4fd4",
+    "working_tree_status": "M .ai-harness/sa-review/evidence/DDAY-B4/generate_evidence.py\n M .ai-harness/sa-review/evidence/DDAY-B4/implementation.patch\n M .ai-harness/sa-review/evidence/DDAY-B4/scope-contract-b4-baseline.json",
     "name_status_vs_b4_baseline": [
       "M\t.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
       "M\t.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
@@ -48,6 +49,19 @@
       " tests/test_dday_b3_bottled_water_ui.py             |   28 +-",
       " tests/test_dday_b4_bottled_water_factory.py        |  848 +++++++++++++++",
       " 11 files changed, 2448 insertions(+), 124 deletions(-)"
+    ],
+    "diffstat_implementation_only": [
+      ".../evidence/DDAY-B3/generate_evidence.py          |    3 +",
+      " .../evidence/DDAY-B3/smoke_bottled_water_ui.py     |    4 +",
+      " configs/workspaces/bottled-water-dday/factory.yaml |   84 ++",
+      " src/virtual_factory/ui/api.py                      |  227 ++--",
+      " .../ui/static/bottled_water_demo.html              |    4 +-",
+      " .../ui/static/bottled_water_demo.js                |   14 +-",
+      " src/virtual_factory/workspaces/__init__.py         |   24 +",
+      " src/virtual_factory/workspaces/bottled_water.py    | 1125 ++++++++++++++++++++",
+      " tests/test_dday_b3_bottled_water_ui.py             |   28 +-",
+      " tests/test_dday_b4_bottled_water_factory.py        |  848 +++++++++++++++",
+      " 10 files changed, 2237 insertions(+), 124 deletions(-)"
     ],
     "changed_vs_origin_main": [
       ".ai-harness/sa-review/CURRENT.md",
@@ -113,9 +127,27 @@
       ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/06-reject-running.png",
       ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/07-reject-inspection.png",
       ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
+      ".ai-harness/sa-review/evidence/DDAY-B4/01-baseline-scope-and-reuse.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/02-autonomous-runtime.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/03-factory-state-and-taxonomy.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/04-conservation-and-process-consistency.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/05-determinism-ui-and-tests.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/factory-state-sample.json",
+      ".ai-harness/sa-review/evidence/DDAY-B4/flaky-reset-disclosure.txt",
+      ".ai-harness/sa-review/evidence/DDAY-B4/flaky_reset_disclosure.py",
+      ".ai-harness/sa-review/evidence/DDAY-B4/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B4/implementation.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B4/junit-b4-full.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B4/junit-b4-regression-rerun.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B4/junit-b4-regression.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B4/junit-b4.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B4/machine-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B4/scope-contract-b4-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_factory.py",
       ".ai-harness/sa-review/reports/DDAY-B2-C01.md",
       ".ai-harness/sa-review/reports/DDAY-B2.md",
       ".ai-harness/sa-review/reports/DDAY-B3.md",
+      ".ai-harness/sa-review/reports/DDAY-B4.md",
       ".ai-harness/scripts/run_task_gate.py",
       ".ai-harness/tasks/DDAY-B2-C01.json",
       ".ai-harness/tasks/DDAY-B2.json",
@@ -171,21 +203,21 @@
     },
     "samples": [
       {
-        "wall_s": 0.002,
+        "wall_s": 0.001,
         "simulation_time_s": 10.0,
         "dwell_number": 0,
         "total_count": 0,
         "plant_energy_total_kwh": 0.033888888888888885
       },
       {
-        "wall_s": 0.057,
+        "wall_s": 0.055,
         "simulation_time_s": 11.0,
         "dwell_number": 0,
         "total_count": 0,
         "plant_energy_total_kwh": 0.04947222222222222
       },
       {
-        "wall_s": 0.11,
+        "wall_s": 0.108,
         "simulation_time_s": 12.0,
         "dwell_number": 0,
         "total_count": 0,
@@ -199,7 +231,7 @@
         "plant_energy_total_kwh": 0.08425
       },
       {
-        "wall_s": 0.214,
+        "wall_s": 0.215,
         "simulation_time_s": 14.0,
         "dwell_number": 0,
         "total_count": 0,
@@ -213,14 +245,14 @@
         "plant_energy_total_kwh": 0.1226388888888889
       },
       {
-        "wall_s": 0.32,
+        "wall_s": 0.319,
         "simulation_time_s": 16.0,
         "dwell_number": 0,
         "total_count": 0,
         "plant_energy_total_kwh": 0.14183333333333334
       },
       {
-        "wall_s": 0.373,
+        "wall_s": 0.372,
         "simulation_time_s": 17.0,
         "dwell_number": 0,
         "total_count": 0,
@@ -248,7 +280,7 @@
         "plant_energy_total_kwh": 0.21861111111111114
       },
       {
-        "wall_s": 0.583,
+        "wall_s": 0.584,
         "simulation_time_s": 21.0,
         "dwell_number": 0,
         "total_count": 0,
@@ -283,56 +315,56 @@
         "plant_energy_total_kwh": 0.31458333333333344
       },
       {
-        "wall_s": 0.847,
+        "wall_s": 0.848,
         "simulation_time_s": 26.0,
         "dwell_number": 0,
         "total_count": 0,
         "plant_energy_total_kwh": 0.3337777777777779
       },
       {
-        "wall_s": 0.9,
+        "wall_s": 0.901,
         "simulation_time_s": 27.0,
         "dwell_number": 0,
         "total_count": 0,
         "plant_energy_total_kwh": 0.35297222222222235
       },
       {
-        "wall_s": 0.952,
+        "wall_s": 0.953,
         "simulation_time_s": 28.0,
         "dwell_number": 0,
         "total_count": 0,
         "plant_energy_total_kwh": 0.3721666666666668
       },
       {
-        "wall_s": 1.005,
+        "wall_s": 1.006,
         "simulation_time_s": 29.0,
         "dwell_number": 0,
         "total_count": 0,
         "plant_energy_total_kwh": 0.39136111111111127
       },
       {
-        "wall_s": 1.059,
+        "wall_s": 1.06,
         "simulation_time_s": 30.0,
         "dwell_number": 1,
         "total_count": 1,
         "plant_energy_total_kwh": 0.41055555555555573
       },
       {
-        "wall_s": 1.112,
+        "wall_s": 1.113,
         "simulation_time_s": 31.0,
         "dwell_number": 1,
         "total_count": 1,
         "plant_energy_total_kwh": 0.4297500000000002
       },
       {
-        "wall_s": 1.164,
+        "wall_s": 1.165,
         "simulation_time_s": 32.0,
         "dwell_number": 1,
         "total_count": 1,
         "plant_energy_total_kwh": 0.44894444444444465
       },
       {
-        "wall_s": 1.217,
+        "wall_s": 1.218,
         "simulation_time_s": 33.0,
         "dwell_number": 1,
         "total_count": 1,
@@ -346,7 +378,7 @@
         "plant_energy_total_kwh": 0.48733333333333356
       },
       {
-        "wall_s": 1.325,
+        "wall_s": 1.324,
         "simulation_time_s": 35.0,
         "dwell_number": 1,
         "total_count": 1,
@@ -367,7 +399,7 @@
         "plant_energy_total_kwh": 0.5449166666666668
       },
       {
-        "wall_s": 1.483,
+        "wall_s": 1.482,
         "simulation_time_s": 38.0,
         "dwell_number": 1,
         "total_count": 1,
@@ -381,14 +413,14 @@
         "plant_energy_total_kwh": 0.5833055555555556
       },
       {
-        "wall_s": 1.589,
+        "wall_s": 1.587,
         "simulation_time_s": 40.0,
         "dwell_number": 1,
         "total_count": 1,
         "plant_energy_total_kwh": 0.6025
       },
       {
-        "wall_s": 1.642,
+        "wall_s": 1.641,
         "simulation_time_s": 41.0,
         "dwell_number": 1,
         "total_count": 1,
@@ -416,35 +448,35 @@
         "plant_energy_total_kwh": 0.6792777777777776
       },
       {
-        "wall_s": 1.853,
+        "wall_s": 1.852,
         "simulation_time_s": 45.0,
         "dwell_number": 1,
         "total_count": 1,
         "plant_energy_total_kwh": 0.698472222222222
       },
       {
-        "wall_s": 1.907,
+        "wall_s": 1.906,
         "simulation_time_s": 46.0,
         "dwell_number": 1,
         "total_count": 1,
         "plant_energy_total_kwh": 0.7176666666666665
       },
       {
-        "wall_s": 1.959,
+        "wall_s": 1.96,
         "simulation_time_s": 47.0,
         "dwell_number": 1,
         "total_count": 1,
         "plant_energy_total_kwh": 0.7368611111111109
       },
       {
-        "wall_s": 2.012,
+        "wall_s": 2.013,
         "simulation_time_s": 48.0,
         "dwell_number": 1,
         "total_count": 1,
         "plant_energy_total_kwh": 0.7560555555555553
       },
       {
-        "wall_s": 2.064,
+        "wall_s": 2.066,
         "simulation_time_s": 49.0,
         "dwell_number": 1,
         "total_count": 1,
@@ -895,8 +927,19 @@
   },
   "tests_regression": {
     "command": "python -m pytest -q tests/test_api.py tests/test_assy_demo.py tests/test_demo_composition.py tests/test_demo_overview.py tests/test_dday_b2_bottled_water_line.py tests/test_dday_b3_bottled_water_ui.py tests/test_runtime_service.py",
-    "exit_code": 0,
+    "exit_code": 1,
     "junit": "junit-b4-regression.xml",
+    "collected": 164,
+    "passed": 163,
+    "failed": 1,
+    "skipped": 0,
+    "errors": 0,
+    "result": "FAIL"
+  },
+  "tests_regression_rerun": {
+    "command": "python -m pytest -q tests/test_api.py tests/test_assy_demo.py tests/test_demo_composition.py tests/test_demo_overview.py tests/test_dday_b2_bottled_water_line.py tests/test_dday_b3_bottled_water_ui.py tests/test_runtime_service.py",
+    "exit_code": 0,
+    "junit": "junit-b4-regression-rerun.xml",
     "collected": 164,
     "passed": 164,
     "failed": 0,
@@ -914,5 +957,128 @@
     "skipped": 0,
     "errors": 0,
     "result": "PASS"
+  },
+  "task_gate": {
+    "record": ".ai-harness/traces/DDAY-B4/evidence.json",
+    "report": ".ai-harness/traces/DDAY-B4/gate-report.md",
+    "derived_status": "IMPLEMENTED \u2014 PR OPEN \u2014 READY FOR SA REVIEW",
+    "exit_code": 0,
+    "requested_gate_satisfied": true,
+    "implementation_sha": "9d4f43275c34f62a8a55b410fd427e469f7004ee",
+    "pipeline_steps": {
+      "P01": "PASS",
+      "P02": "PASS",
+      "P03": "PASS",
+      "P04": "PASS",
+      "P05": "PASS",
+      "P06": "PASS",
+      "P07": "PASS",
+      "P08": "PASS",
+      "P09": "PASS",
+      "P10": "PASS",
+      "P11": "PASS",
+      "P12": "PASS",
+      "P13": "PASS",
+      "P14": "PASS",
+      "P15": "PASS",
+      "P16": "PASS",
+      "P17": "PASS",
+      "P18": "PASS",
+      "P19": "PASS",
+      "P20": "PASS",
+      "P21": "PASS",
+      "P22": "PASS",
+      "P23": "PASS",
+      "P24": "PASS"
+    },
+    "acceptance": {
+      "A01": "PASS",
+      "A02": "PASS",
+      "A03": "PASS",
+      "A04": "PASS",
+      "A05": "PASS",
+      "A06": "PASS",
+      "A07": "PASS",
+      "A08": "PASS",
+      "A09": "PASS",
+      "A10": "PASS",
+      "A11": "PASS",
+      "A12": "PASS",
+      "A13": "PASS",
+      "A14": "PASS"
+    },
+    "invariants": {
+      "remote_branch_equals_pr_head": true,
+      "pr_head_equals_implementation_sha": true,
+      "ci_head_equals_pr_head": true,
+      "smoke_vf_effective_pass": false,
+      "smoke_vf2_effective_pass": false,
+      "evidence_validator_exit_zero": true,
+      "report_consistency_exit_zero": true
+    },
+    "ci": {
+      "run_id": 37133165235,
+      "event": "pull_request",
+      "workflow": "VF-DM CI",
+      "branch": "sa/dday-track-b-20261003",
+      "head_sha": "9d4f43275c34f62a8a55b410fd427e469f7004ee",
+      "status": "completed",
+      "conclusion": "success",
+      "required_steps": [],
+      "jobs": [
+        {
+          "id": 111232188979,
+          "name": "test",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Install",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke \u2014 virtual-factory validate",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke \u2014 VF2 validate",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 schema validation",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 self-tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 valid fixtures",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 invalid fixtures (expect non-zero)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 status derivation",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 status enum rejection",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 baseline contract gate",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "annotations": 0
+    }
   }
 }
