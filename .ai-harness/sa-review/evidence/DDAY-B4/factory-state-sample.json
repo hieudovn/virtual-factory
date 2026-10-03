@@ -1,0 +1,1585 @@
+{
+  "workspace_id": "bottled-water-dday",
+  "plant_id": "BW-DEMO-01",
+  "plant_name": "Bottled Water Factory",
+  "factory": {
+    "run_state": "RUNNING",
+    "operating_state": "RUNNING",
+    "simulation_time_s": 500.0,
+    "production_elapsed_s": 500.0,
+    "dwell_number": 25
+  },
+  "hierarchy": [
+    {
+      "source_id": "BW-DEMO-01",
+      "name": "Bottled Water Factory",
+      "entity_type": "plant",
+      "parent_source_id": null,
+      "role": "plant",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-WT",
+      "name": "Water Treatment",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "process_area",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-WT-FEED01",
+      "name": "Raw Water Feed",
+      "entity_type": "asset",
+      "parent_source_id": "BW-WT",
+      "role": "feed",
+      "equipment_class": "pump",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-WT-RO01",
+      "name": "Filtration / RO",
+      "entity_type": "asset",
+      "parent_source_id": "BW-WT",
+      "role": "treatment",
+      "equipment_class": "ro_skid",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-WT-TK01",
+      "name": "Treated Water Storage",
+      "entity_type": "asset",
+      "parent_source_id": "BW-WT",
+      "role": "storage",
+      "equipment_class": "storage_tank",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-BP",
+      "name": "Bottle Preparation",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "preparation_area",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP",
+      "name": "Filling & Packaging Line",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "production_line",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP-BLW01",
+      "name": "Blower / Infeed",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "blower_infeed",
+      "equipment_class": "blower",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP-RIN01",
+      "name": "Rinser",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "rinser",
+      "equipment_class": "rinser",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP-FIL01",
+      "name": "Filler",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "filler",
+      "equipment_class": "filler",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "name": "Capper",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "capper",
+      "equipment_class": "capper",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP-INS01",
+      "name": "Inspection",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "quality_inspection",
+      "equipment_class": "inspector",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP-LAB01",
+      "name": "Labeler",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "labeler",
+      "equipment_class": "labeler",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP-CPK01",
+      "name": "Case Packer",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "case_packer",
+      "equipment_class": "case_packer",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-FP-PAL01",
+      "name": "Palletizer",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "palletizer",
+      "equipment_class": "palletizer",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-UT",
+      "name": "Utilities",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "utility_area",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-UT-CMP01",
+      "name": "Air Compressor",
+      "entity_type": "asset",
+      "parent_source_id": "BW-UT",
+      "role": "compressed_air",
+      "equipment_class": "compressor",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-UT-CHL01",
+      "name": "Chiller",
+      "entity_type": "asset",
+      "parent_source_id": "BW-UT",
+      "role": "cooling",
+      "equipment_class": "chiller",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-UT-PMP01",
+      "name": "Utility Pump",
+      "entity_type": "asset",
+      "parent_source_id": "BW-UT",
+      "role": "pump",
+      "equipment_class": "pump",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-UT-PWR01",
+      "name": "Main Power Meter",
+      "entity_type": "asset",
+      "parent_source_id": "BW-UT",
+      "role": "power_meter",
+      "equipment_class": "power_meter",
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-WH",
+      "name": "Warehouse / Dispatch",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "warehouse_interface",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday"
+    },
+    {
+      "source_id": "BW-WH-FG01",
+      "name": "Finished Goods Interface",
+      "entity_type": "asset",
+      "parent_source_id": "BW-WH",
+      "role": "finished_goods",
+      "equipment_class": "fg_interface",
+      "workspace_id": "bottled-water-dday"
+    }
+  ],
+  "nodes": {
+    "BW-DEMO-01": {
+      "source_id": "BW-DEMO-01",
+      "name": "Bottled Water Factory",
+      "entity_type": "plant",
+      "parent_source_id": null,
+      "role": "plant",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "run_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-WT": {
+      "source_id": "BW-WT",
+      "name": "Water Treatment",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "process_area",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday",
+      "signals": {}
+    },
+    "BW-WT-FEED01": {
+      "source_id": "BW-WT-FEED01",
+      "name": "Raw Water Feed",
+      "entity_type": "asset",
+      "parent_source_id": "BW-WT",
+      "role": "feed",
+      "equipment_class": "pump",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "IDLE",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "water_flow": {
+          "value": 0.0,
+          "unit": "m3/h",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "raw_water_total_m3": {
+          "value": 0.0878014184397265,
+          "unit": "m3",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 0.5,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.2527777777777762,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-WT-RO01": {
+      "source_id": "BW-WT-RO01",
+      "name": "Filtration / RO",
+      "entity_type": "asset",
+      "parent_source_id": "BW-WT",
+      "role": "treatment",
+      "equipment_class": "ro_skid",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "IDLE",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "production_flow": {
+          "value": 0.0,
+          "unit": "m3/h",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "treated_water_total_m3": {
+          "value": 0.06585106382979473,
+          "unit": "m3",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "reject_water_total_m3": {
+          "value": 0.021950354609931624,
+          "unit": "m3",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 0.3,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.45966666666666317,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-WT-TK01": {
+      "source_id": "BW-WT-TK01",
+      "name": "Treated Water Storage",
+      "entity_type": "asset",
+      "parent_source_id": "BW-WT",
+      "role": "storage",
+      "equipment_class": "storage_tank",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "level": {
+          "value": 83.404,
+          "unit": "%",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "volume_m3": {
+          "value": 0.3336170212765956,
+          "unit": "m3",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-BP": {
+      "source_id": "BW-BP",
+      "name": "Bottle Preparation",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "preparation_area",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "preform_count": {
+          "value": 25,
+          "unit": "preform",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP": {
+      "source_id": "BW-FP",
+      "name": "Filling & Packaging Line",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "production_line",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "total_count": {
+          "value": 25,
+          "unit": "bottle",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "good_count": {
+          "value": 18,
+          "unit": "bottle",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "reject_count": {
+          "value": 0,
+          "unit": "bottle",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP-BLW01": {
+      "source_id": "BW-FP-BLW01",
+      "name": "Blower / Infeed",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "blower_infeed",
+      "equipment_class": "blower",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 4.0,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.5555555555555551,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP-RIN01": {
+      "source_id": "BW-FP-RIN01",
+      "name": "Rinser",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "rinser",
+      "equipment_class": "rinser",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 1.5,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.20833333333333476,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP-FIL01": {
+      "source_id": "BW-FP-FIL01",
+      "name": "Filler",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "filler",
+      "equipment_class": "filler",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "fill_rate": {
+          "value": 2.76,
+          "unit": "bottle/min",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "product_water_total_m3": {
+          "value": 0.011500000000000007,
+          "unit": "m3",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "water_draw_total_m3": {
+          "value": 0.012234042553191495,
+          "unit": "m3",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 5.5,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.7638888888888937,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP-CAP01": {
+      "source_id": "BW-FP-CAP01",
+      "name": "Capper",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "capper",
+      "equipment_class": "capper",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "cap_count": {
+          "value": 22,
+          "unit": "cap",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 4.5,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.6249999999999922,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP-INS01": {
+      "source_id": "BW-FP-INS01",
+      "name": "Inspection",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "quality_inspection",
+      "equipment_class": "inspector",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "inspection_result": {
+          "value": "PASS",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 1.0,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.13888888888888878,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP-LAB01": {
+      "source_id": "BW-FP-LAB01",
+      "name": "Labeler",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "labeler",
+      "equipment_class": "labeler",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "label_count": {
+          "value": 20,
+          "unit": "label",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 1.8,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.25000000000000017,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP-CPK01": {
+      "source_id": "BW-FP-CPK01",
+      "name": "Case Packer",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "case_packer",
+      "equipment_class": "case_packer",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "case_count": {
+          "value": 3,
+          "unit": "case",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 2.6,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.3611111111111152,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-FP-PAL01": {
+      "source_id": "BW-FP-PAL01",
+      "name": "Palletizer",
+      "entity_type": "asset",
+      "parent_source_id": "BW-FP",
+      "role": "palletizer",
+      "equipment_class": "palletizer",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "pallet_count": {
+          "value": 1,
+          "unit": "pallet",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 3.2,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.44444444444444225,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-UT": {
+      "source_id": "BW-UT",
+      "name": "Utilities",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "utility_area",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday",
+      "signals": {}
+    },
+    "BW-UT-CMP01": {
+      "source_id": "BW-UT-CMP01",
+      "name": "Air Compressor",
+      "entity_type": "asset",
+      "parent_source_id": "BW-UT",
+      "role": "compressed_air",
+      "equipment_class": "compressor",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "air_pressure": {
+          "value": 6.4,
+          "unit": "bar",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 15.0,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 2.0761111111111092,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-UT-CHL01": {
+      "source_id": "BW-UT-CHL01",
+      "name": "Chiller",
+      "entity_type": "asset",
+      "parent_source_id": "BW-UT",
+      "role": "cooling",
+      "equipment_class": "chiller",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 11.0,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 1.5277777777777874,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-UT-PMP01": {
+      "source_id": "BW-UT-PMP01",
+      "name": "Utility Pump",
+      "entity_type": "asset",
+      "parent_source_id": "BW-UT",
+      "role": "pump",
+      "equipment_class": "pump",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "active_power": {
+          "value": 4.0,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "energy_total": {
+          "value": 0.5555555555555551,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-UT-PWR01": {
+      "source_id": "BW-UT-PWR01",
+      "name": "Main Power Meter",
+      "entity_type": "asset",
+      "parent_source_id": "BW-UT",
+      "role": "power_meter",
+      "equipment_class": "power_meter",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "plant_active_power": {
+          "value": 60.9,
+          "unit": "kW",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "plant_energy_total": {
+          "value": 9.052444444444516,
+          "unit": "kWh",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    },
+    "BW-WH": {
+      "source_id": "BW-WH",
+      "name": "Warehouse / Dispatch",
+      "entity_type": "area",
+      "parent_source_id": "BW-DEMO-01",
+      "role": "warehouse_interface",
+      "equipment_class": null,
+      "workspace_id": "bottled-water-dday",
+      "signals": {}
+    },
+    "BW-WH-FG01": {
+      "source_id": "BW-WH-FG01",
+      "name": "Finished Goods Interface",
+      "entity_type": "asset",
+      "parent_source_id": "BW-WH",
+      "role": "finished_goods",
+      "equipment_class": "fg_interface",
+      "workspace_id": "bottled-water-dday",
+      "signals": {
+        "operating_state": {
+          "value": "RUNNING",
+          "unit": "-",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "receipt_count": {
+          "value": 18,
+          "unit": "bottle",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "dispatch_count": {
+          "value": 17,
+          "unit": "bottle",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        },
+        "inventory_count": {
+          "value": 1,
+          "unit": "bottle",
+          "quality": "GOOD",
+          "provenance": "SIMULATED_RAW",
+          "simulation_time_s": 500.0
+        }
+      }
+    }
+  },
+  "balances": {
+    "water": {
+      "raw_water_feed_total_m3": 0.0878014184397265,
+      "treated_water_total_m3": 0.06585106382979473,
+      "ro_reject_total_m3": 0.021950354609931624,
+      "recovery_factor": 0.75,
+      "tank_initial_volume_m3": 0.27999999999999997,
+      "tank_volume_m3": 0.3336170212765956,
+      "tank_capacity_m3": 0.4,
+      "tank_high_volume_m3": 0.34,
+      "tank_low_volume_m3": 0.24,
+      "tank_level_pct": 83.40425531914889,
+      "product_water_total_m3": 0.011500000000000007,
+      "water_draw_total_m3": 0.012234042553191495,
+      "other_loss_total_m3": 0.0007340425531914881
+    },
+    "materials": {
+      "preform_count": 25,
+      "cap_count": 22,
+      "label_count": 20,
+      "case_count": 3,
+      "pallet_count": 1
+    },
+    "energy": {
+      "plant_active_power_kw": 60.9,
+      "plant_energy_total_kwh": 9.052444444444516,
+      "base_load_kw": 6.0
+    },
+    "finished_goods": {
+      "receipt_count": 18,
+      "dispatch_count": 17,
+      "inventory_count": 1
+    }
+  },
+  "target_line": {
+    "workspace_id": "bottled-water-dday",
+    "plant_id": "BW-DEMO-01",
+    "line_id": "BW-FP",
+    "line_label": "Filling & Packaging Line",
+    "run_state": "RUNNING",
+    "operating_state": "RUNNING",
+    "simulation_time_s": 500.0,
+    "dwell_number": 25,
+    "nominal_dwell_s": 20.0,
+    "unit_type": "bottle",
+    "product_code": "WATER-500ML",
+    "route": [
+      "BW-FP-BLW01",
+      "BW-FP-RIN01",
+      "BW-FP-FIL01",
+      "BW-FP-CAP01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-CPK01",
+      "BW-FP-PAL01"
+    ],
+    "stations": [
+      {
+        "sequence": 0,
+        "station_id": "BW-FP-BLW01",
+        "unit_id": "",
+        "unit_type": "",
+        "product_code": "",
+        "unit_status": "",
+        "is_occupied": false,
+        "is_quality_checkpoint": false,
+        "last_disposition": ""
+      },
+      {
+        "sequence": 1,
+        "station_id": "BW-FP-RIN01",
+        "unit_id": "BTL-000025",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station",
+        "is_occupied": true,
+        "is_quality_checkpoint": false,
+        "last_disposition": ""
+      },
+      {
+        "sequence": 2,
+        "station_id": "BW-FP-FIL01",
+        "unit_id": "BTL-000024",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station",
+        "is_occupied": true,
+        "is_quality_checkpoint": false,
+        "last_disposition": ""
+      },
+      {
+        "sequence": 3,
+        "station_id": "BW-FP-CAP01",
+        "unit_id": "BTL-000023",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station",
+        "is_occupied": true,
+        "is_quality_checkpoint": false,
+        "last_disposition": ""
+      },
+      {
+        "sequence": 4,
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000022",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station",
+        "is_occupied": true,
+        "is_quality_checkpoint": true,
+        "last_disposition": "PASS"
+      },
+      {
+        "sequence": 5,
+        "station_id": "BW-FP-LAB01",
+        "unit_id": "BTL-000021",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station",
+        "is_occupied": true,
+        "is_quality_checkpoint": false,
+        "last_disposition": ""
+      },
+      {
+        "sequence": 6,
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000020",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station",
+        "is_occupied": true,
+        "is_quality_checkpoint": false,
+        "last_disposition": ""
+      },
+      {
+        "sequence": 7,
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000019",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station",
+        "is_occupied": true,
+        "is_quality_checkpoint": false,
+        "last_disposition": ""
+      }
+    ],
+    "counts": {
+      "total": 25,
+      "good": 18,
+      "reject": 0
+    },
+    "units_on_line": 7,
+    "quality_checkpoints": [
+      "BW-FP-INS01"
+    ],
+    "last_reject": "",
+    "recent_events": [
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000018",
+        "detail": "\u2192 BW-FP-CPK01",
+        "simulation_time_s": 460.0,
+        "dwell_number": 23
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000017",
+        "detail": "\u2192 BW-FP-PAL01",
+        "simulation_time_s": 460.0,
+        "dwell_number": 23
+      },
+      {
+        "event_type": "UNIT_ENTERED",
+        "station_id": "BW-FP-BLW01",
+        "unit_id": "BTL-000024",
+        "detail": "carrier=CAR-0024 unit_type=bottle product_code=WATER-500ML",
+        "simulation_time_s": 460.0,
+        "dwell_number": 23
+      },
+      {
+        "event_type": "DWELL_META",
+        "station_id": "",
+        "unit_id": "",
+        "detail": "DWELL_BEGIN",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-BLW01",
+        "unit_id": "BTL-000024",
+        "detail": "duration=12s",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-BLW01",
+        "unit_id": "BTL-000024",
+        "detail": "done",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-RIN01",
+        "unit_id": "BTL-000023",
+        "detail": "duration=10s",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-RIN01",
+        "unit_id": "BTL-000023",
+        "detail": "done",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-FIL01",
+        "unit_id": "BTL-000022",
+        "detail": "duration=18s",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-FIL01",
+        "unit_id": "BTL-000022",
+        "detail": "done",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-CAP01",
+        "unit_id": "BTL-000021",
+        "detail": "duration=14s",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-CAP01",
+        "unit_id": "BTL-000021",
+        "detail": "done",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "QUALITY_OBSERVED",
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000020",
+        "detail": "type=VISUAL_INSPECTION attempt=1 proposal=PASS",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "QUALITY_START",
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000020",
+        "detail": "type=VISUAL_INSPECTION attempt=1",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "QUALITY_RESULT",
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000020",
+        "detail": "disposition=PASS attempt=1",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-LAB01",
+        "unit_id": "BTL-000019",
+        "detail": "duration=10s",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-LAB01",
+        "unit_id": "BTL-000019",
+        "detail": "done",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000018",
+        "detail": "duration=16s",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000018",
+        "detail": "done",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000017",
+        "detail": "duration=18s",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000017",
+        "detail": "done",
+        "simulation_time_s": 460.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "DWELL_META",
+        "station_id": "",
+        "unit_id": "",
+        "detail": "DWELL_READY actual=20s",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "UNIT_COMPLETED",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000017",
+        "detail": "route_complete total=24 good=17 reject=0",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "DWELL_META",
+        "station_id": "",
+        "unit_id": "",
+        "detail": "INDEX",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-RIN01",
+        "unit_id": "BTL-000024",
+        "detail": "\u2192 BW-FP-RIN01",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-FIL01",
+        "unit_id": "BTL-000023",
+        "detail": "\u2192 BW-FP-FIL01",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-CAP01",
+        "unit_id": "BTL-000022",
+        "detail": "\u2192 BW-FP-CAP01",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000021",
+        "detail": "\u2192 BW-FP-INS01",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-LAB01",
+        "unit_id": "BTL-000020",
+        "detail": "\u2192 BW-FP-LAB01",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000019",
+        "detail": "\u2192 BW-FP-CPK01",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000018",
+        "detail": "\u2192 BW-FP-PAL01",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "UNIT_ENTERED",
+        "station_id": "BW-FP-BLW01",
+        "unit_id": "BTL-000025",
+        "detail": "carrier=CAR-0025 unit_type=bottle product_code=WATER-500ML",
+        "simulation_time_s": 480.0,
+        "dwell_number": 24
+      },
+      {
+        "event_type": "DWELL_META",
+        "station_id": "",
+        "unit_id": "",
+        "detail": "DWELL_BEGIN",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-BLW01",
+        "unit_id": "BTL-000025",
+        "detail": "duration=12s",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-BLW01",
+        "unit_id": "BTL-000025",
+        "detail": "done",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-RIN01",
+        "unit_id": "BTL-000024",
+        "detail": "duration=10s",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-RIN01",
+        "unit_id": "BTL-000024",
+        "detail": "done",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-FIL01",
+        "unit_id": "BTL-000023",
+        "detail": "duration=18s",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-FIL01",
+        "unit_id": "BTL-000023",
+        "detail": "done",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-CAP01",
+        "unit_id": "BTL-000022",
+        "detail": "duration=14s",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-CAP01",
+        "unit_id": "BTL-000022",
+        "detail": "done",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "QUALITY_OBSERVED",
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000021",
+        "detail": "type=VISUAL_INSPECTION attempt=1 proposal=PASS",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "QUALITY_START",
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000021",
+        "detail": "type=VISUAL_INSPECTION attempt=1",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "QUALITY_RESULT",
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000021",
+        "detail": "disposition=PASS attempt=1",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-LAB01",
+        "unit_id": "BTL-000020",
+        "detail": "duration=10s",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-LAB01",
+        "unit_id": "BTL-000020",
+        "detail": "done",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000019",
+        "detail": "duration=16s",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000019",
+        "detail": "done",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_START",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000018",
+        "detail": "duration=18s",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "STATION_COMPLETE",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000018",
+        "detail": "done",
+        "simulation_time_s": 480.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "DWELL_META",
+        "station_id": "",
+        "unit_id": "",
+        "detail": "DWELL_READY actual=20s",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "UNIT_COMPLETED",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000018",
+        "detail": "route_complete total=25 good=18 reject=0",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "DWELL_META",
+        "station_id": "",
+        "unit_id": "",
+        "detail": "INDEX",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-RIN01",
+        "unit_id": "BTL-000025",
+        "detail": "\u2192 BW-FP-RIN01",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-FIL01",
+        "unit_id": "BTL-000024",
+        "detail": "\u2192 BW-FP-FIL01",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-CAP01",
+        "unit_id": "BTL-000023",
+        "detail": "\u2192 BW-FP-CAP01",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000022",
+        "detail": "\u2192 BW-FP-INS01",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-LAB01",
+        "unit_id": "BTL-000021",
+        "detail": "\u2192 BW-FP-LAB01",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000020",
+        "detail": "\u2192 BW-FP-CPK01",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      },
+      {
+        "event_type": "WIP_MOVED",
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000019",
+        "detail": "\u2192 BW-FP-PAL01",
+        "simulation_time_s": 500.0,
+        "dwell_number": 25
+      }
+    ]
+  },
+  "recent_events": [
+    {
+      "event_type": "MACHINE_STATE_CHANGED",
+      "source_id": "BW-DEMO-01",
+      "detail": "run_state=RUNNING",
+      "simulation_time_s": 0.0,
+      "quality": "GOOD",
+      "provenance": "SIMULATED_RAW"
+    }
+  ]
+}

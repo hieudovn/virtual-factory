@@ -1,0 +1,2773 @@
+diff --git a/.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py b/.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py
+index e3c7de3..9e4cf50 100644
+--- a/.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py
++++ b/.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py
+@@ -86,6 +86,9 @@ def capture_api_binding() -> dict:
+     app = create_app(
+         config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
+         dt_s=1.0,
++        # DDAY-B4: this B3 evidence is captured through the deterministic step
++        # seam, so the autonomous server-side clock is disabled here.
++        factory_autorun=False,
+     )
+ 
+     def scan_for_forbidden(text: str) -> list[str]:
+diff --git a/.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py b/.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py
+index 69ce6c6..e1b63b9 100644
+--- a/.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py
++++ b/.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py
+@@ -70,6 +70,10 @@ def _serve(config_path: Path, port: int):
+     app = create_app(
+         config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
+         dt_s=1.0,
++        # DDAY-B4: the B3 contract is checked with the deterministic step seam,
++        # so the autonomous server-side clock is disabled here. Autonomy itself
++        # is proven by SMOKE-BW-FACTORY.
++        factory_autorun=False,
+     )
+     server = uvicorn.Server(uvicorn.Config(
+         app, host="127.0.0.1", port=port, log_level="error"))
+diff --git a/.ai-harness/tasks/DDAY-B4.json b/.ai-harness/tasks/DDAY-B4.json
+new file mode 100644
+index 0000000..b956a65
+--- /dev/null
++++ b/.ai-harness/tasks/DDAY-B4.json
+@@ -0,0 +1,211 @@
++{
++  "task_id": "DDAY-B4",
++  "repository": "hieudovn/virtual-factory",
++  "requested_gate": "ready_for_sa_review",
++  "gate_type": "D-DAY TRACK B — FULL-FACTORY BASIC SIMULATION + AUTONOMOUS RUNTIME",
++  "issue": "hieudovn/virtual-factory#105",
++  "parent_issue": "hieudovn/virtual-factory#104",
++  "pr": "hieudovn/virtual-factory#101",
++  "objective": "Turn the detailed Bottled Water Filling & Packaging demo into a small but coherent whole-factory simulation with a server-side autonomous runtime. Deliver: (a) server-side production clock independent of the browser, with START/PAUSE/RESUME/STOP/RESET semantics preserved; (b) aggregate basic simulation for Water Treatment, Bottle Preparation, Utilities and Warehouse/Dispatch around the unchanged detailed BW-FP line; (c) conservation/process consistency — water balance with a bounded tank, packaging-material balance, energy from power x time, causal utility response, FG balance; (d) a minimal FactoriX IIoT-ready asset taxonomy using the frozen B1 hierarchy; (e) one authoritative factory-level raw projection. No new engine, no KPI calculation, no B5/B6/B7 scope.",
++  "explicit_non_objectives": [
++    "No second simulation engine, no fork of the discrete runtime",
++    "No new telemetry framework, scenario engine, protocol gateway, historian or persistence subsystem",
++    "No detailed process-physics engine (no membrane physics, no hydraulic solver)",
++    "Capper degradation / failure storyline (B5)",
++    "PlantOS / MQTT integration (B6)",
++    "VPS / Docker deployment (B7)",
++    "OEE / availability / performance / quality% / energy-per-unit / utilization / health-score calculation",
++    "Batch/recipe management, WMS/MES workflows",
++    "Manual quality / rework / release / checklist actions",
++    "TIPA/APxx semantics",
++    "A polished whole-factory VF overview UI (that belongs to PlantOS in B6)",
++    "Unrelated harness or flaky-test cleanup",
++    "Inventing FactoriX platform canonical IDs inside VF",
++    "A first-class PlantOS 'Line' entity (BW-FP stays an Area with role=production_line)"
++  ],
++  "required_branch": "sa/dday-track-b-20261003",
++  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
++  "sa_expected_baseline_sha": "23b6208266751a8c508b0d96fd7a736dffc5676c",
++  "baseline_semantics_note": "As for DDAY-B2/B3: the harness compares 'expected_base_sha' to origin/main and diffs it against HEAD, so it must be origin/main. 'sa_expected_baseline_sha' is the baseline issued in Issue #105 (the accepted DDAY-B3 head) and was verified equal to the branch head before the first B4 write.",
++  "working_tree_required": "clean",
++  "allowed_paths": [
++    "configs/workspaces/bottled-water-dday/",
++    "src/virtual_factory/workspaces/",
++    "src/virtual_factory/assembly/demo_controller.py",
++    "src/virtual_factory/ui/api.py",
++    "src/virtual_factory/ui/static/bottled_water_demo.js",
++    "tests/",
++    ".ai-harness/tasks/DDAY-B4.json",
++    ".ai-harness/sa-review/evidence/DDAY-B4/",
++    ".ai-harness/sa-review/reports/DDAY-B4.md",
++    ".ai-harness/sa-review/CURRENT.md",
++    "src/virtual_factory/assembly/line_runtime.py",
++    "src/virtual_factory/ui/static/bottled_water_demo.html",
++    "src/virtual_factory/ui/static/bottled_water_demo.css",
++    ".ai-harness/tasks/DDAY-B2.json",
++    ".ai-harness/tasks/DDAY-B2-C01.json",
++    ".ai-harness/tasks/DDAY-B3.json",
++    ".ai-harness/sa-review/evidence/DDAY-B2/",
++    ".ai-harness/sa-review/evidence/DDAY-B2-C01/",
++    ".ai-harness/sa-review/evidence/DDAY-B3/",
++    ".ai-harness/sa-review/reports/",
++    ".ai-harness/scripts/run_task_gate.py",
++    ".ai-harness/tests/",
++    "docs/plans/"
++  ],
++  "allowed_paths_note": "Entries from line_runtime.py onwards (including the B3 skin assets and prior evidence) are frozen DDAY-B1/B2/B2-C01/B3 artifacts already committed on this branch and therefore present in the diff against origin/main; they are listed only so the harness allowlist diff check is truthful and are NOT authorized for modification in B4. The B4-scope changed-file check against the B4 baseline 23b6208 in the evidence proves which files B4 actually touched.",
++  "sa_allowed_paths": [
++    "configs/workspaces/bottled-water-dday/",
++    "a small Bottled Water workspace/domain composition module under src/virtual_factory/ if required",
++    "src/virtual_factory/assembly/demo_controller.py only for a bounded generic runner/control seam",
++    "src/virtual_factory/ui/api.py",
++    "src/virtual_factory/ui/static/bottled_water_demo.js plus minimal related skin changes needed to become observer-only",
++    "directly relevant tests/",
++    ".ai-harness/tasks/DDAY-B4.json",
++    ".ai-harness/sa-review/evidence/DDAY-B4/",
++    ".ai-harness/sa-review/reports/DDAY-B4.md",
++    ".ai-harness/sa-review/CURRENT.md under existing governance"
++  ],
++  "forbidden_paths": [
++    "src/virtual_factory/core/",
++    "src/virtual_factory/telemetry/",
++    "src/virtual_factory/protocols/",
++    "src/virtual_factory/scenarios/",
++    "src/virtual_factory/equipment/",
++    "src/virtual_factory/balance/",
++    "src/virtual_factory/control/",
++    "src/virtual_factory/instrumentation/",
++    "src/virtual_factory/actuation/",
++    "src/virtual_factory/assembly/assy_mes_bridge.py",
++    "src/virtual_factory/assembly/observation_bridge.py",
++    "src/virtual_factory/assembly/demo_composition.py",
++    "src/virtual_factory/assembly/station_contracts.py",
++    "src/virtual_factory/assembly/quality_records.py",
++    "src/virtual_factory/assembly/conveyor.py",
++    "src/virtual_factory/assembly/demo_snapshot.py",
++    "src/virtual_factory/ui/runtime_service.py",
++    "src/virtual_factory/ui/static/assy_demo.js",
++    "src/virtual_factory/ui/static/assy_demo.css",
++    "src/virtual_factory/ui/static/assy_demo.html",
++    "src/virtual_factory/ui/static/index.html",
++    "src/virtual_factory/ui/static/app.js",
++    "src/virtual_factory/main.py",
++    "simulators/",
++    "deploy/",
++    "docs/deployment/",
++    "docker-compose.yml",
++    "docker-compose.assy.yml",
++    "Dockerfile",
++    "pyproject.toml",
++    "configs/plants/",
++    ".ai-harness/scripts/validate_report_consistency.py",
++    ".ai-harness/scripts/derive_status.py",
++    ".ai-harness/PM-EXECUTION-CONTRACT.md"
++  ],
++  "required_deliverables": [
++    "configs/workspaces/bottled-water-dday/factory.yaml — aggregate-simulation parameters for the whole factory (rated loads, water balance, utility response, FG dispatch), with the hierarchy itself read from the frozen B1 topology.yaml (no duplication)",
++    "src/virtual_factory/workspaces/bottled_water.py (+ package init) — small Bottled Water domain composition: hierarchy/taxonomy from the B1 topology, aggregate Water Treatment / Bottle Preparation / Utilities / Warehouse models, and the factory-level raw projection. Composes the existing runtime; no second engine",
++    "src/virtual_factory/assembly/demo_controller.py — bounded generic runner/control seam for the autonomous server-side clock (only if required)",
++    "src/virtual_factory/ui/api.py — autonomous factory runner started with the app lifespan; factory-level projection endpoint; keeps the B3 target-line endpoints",
++    "src/virtual_factory/ui/static/bottled_water_demo.js — becomes observer-only: polls state, no longer POSTs /advance as the production clock",
++    "tests/test_dday_b4_*.py — tests covering all 21 required verifications",
++    ".ai-harness/sa-review/evidence/DDAY-B4/ (evidence pack) and .ai-harness/sa-review/reports/DDAY-B4.md + CURRENT.md"
++  ],
++  "required_tests": [
++    "B4-1 START progresses target-line production server-side without browser /advance calls",
++    "B4-2 closing/not opening the B3 page does not stop simulation",
++    "B4-3 PAUSE freezes target line and aggregate factory progression",
++    "B4-4 RESUME continues from preserved state",
++    "B4-5 STOP halts progression without becoming FAULT",
++    "B4-6 RESET returns deterministic initial state",
++    "B4-7 same config/seed + same control sequence produces a deterministic state trace",
++    "B4-8 B1 hierarchy appears exactly; every asset has exactly one parent",
++    "B4-9 all source IDs unique; no duplicate Blower",
++    "B4-10 every exposed raw fact maps to a valid hierarchy node",
++    "B4-11 water treatment balance coherent; tank stays bounded",
++    "B4-12 production water/material consumption follows real production counts",
++    "B4-13 utilities respond coherently to production load",
++    "B4-14 cumulative energy monotonic and derived from power/time",
++    "B4-15 warehouse/FG follows completed good production",
++    "B4-16 no calculated KPI fields emitted",
++    "B4-17 no TIPA/APxx semantic leakage",
++    "B4-18 B3 target-line UI still works as observer/control surface",
++    "B4-19 B2/B3/legacy regression remains green",
++    "B4-20 full suite passes (subject only to the disclosed pre-existing flake)"
++  ],
++  "required_smoke_checks": [
++    {
++      "id": "SMOKE-BW-FACTORY",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_factory.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "Live autonomous-runtime smoke over real HTTP: START progresses production with no /advance calls from any client, the B3 page is never opened, PAUSE/RESUME/STOP/RESET semantics hold, and the factory projection carries coherent conservation facts with no KPI fields."
++    },
++    {
++      "id": "SMOKE-BW-UI",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "B3 target-line skin regression (must remain green: the skin must still work as an observer/control surface)."
++    },
++    {
++      "id": "SMOKE-BW",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "B2 line-runtime regression (line semantics unchanged)."
++    }
++  ],
++  "required_remote_evidence": [
++    "Remote branch head equals reported commit SHA",
++    "PR #101 open, base main, head equals remote branch head",
++    "Exact-head CI success for the pushed commit SHA",
++    "Exact-head invariant: remote branch HEAD = PR #101 head SHA = CI head SHA = reported review SHA"
++  ],
++  "forbidden_actions": [
++    "Do not push directly to main",
++    "Do not merge PR #101",
++    "Do not start B5 or any later slice",
++    "Do not modify any forbidden path, including core/, telemetry/, protocols/, scenarios/ and runtime_service.py",
++    "Do not create a second simulation engine or duplicate the discrete runtime",
++    "Do not change B2/B3 line semantics",
++    "Do not invent FactoriX platform canonical IDs",
++    "Do not publish calculated KPIs (OEE/availability/performance/quality%/energy-per-unit/utilization/health score)",
++    "Do not implement Capper degradation, PlantOS integration or deployment",
++    "Do not delete or weaken existing tests",
++    "Do not self-certify COMPLETE / CLOSED / SA APPROVED"
++  ],
++  "stop_conditions": [
++    "Autonomy requires a second engine or a significant core redesign -> STOPPED — SA ARCHITECTURE REVIEW REQUIRED",
++    "Whole-factory composition requires protocol/telemetry schema redesign -> STOPPED — SA ARCHITECTURE REVIEW REQUIRED",
++    "The B1 topology must change -> STOPPED — SA DECISION REQUIRED",
++    "B5 abnormal scenario becomes necessary to make B4 work -> stop B4",
++    "Platform canonical IDs must be invented inside VF -> STOPPED — SA DECISION REQUIRED",
++    "Required edits fall outside the allowlist -> STOPPED — ALLOWLIST EXPANSION REQUIRED",
++    "Baseline is no longer the expected SHA before the first B4 write -> STOPPED — BASELINE MISMATCH",
++    "origin/main advances materially -> STOPPED — BASELINE ADVANCED",
++    "B2/B3 line semantics regress -> STOPPED — REGRESSION REQUIRES SA REVIEW"
++  ],
++  "acceptance_criteria": [
++    {"id": "A01", "phase": "pre_status", "description": "Repository baseline matches the contract baseline", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
++    {"id": "A02", "phase": "pre_status", "description": "Working tree was clean at preflight", "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}},
++    {"id": "A03", "phase": "pre_status", "description": "Full local test suite passes", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
++    {"id": "A04", "phase": "pre_status", "description": "Required smoke checks reach effective PASS", "rule": {"field": "smoke_checks", "operator": "contains", "expected": "'effective_result': 'PASS'"}},
++    {"id": "A05", "phase": "pre_status", "description": "No blocking issue recorded by the gate pipeline", "rule": {"field": "blocking_issues", "operator": "is_empty", "expected": null}},
++    {"id": "A06", "phase": "pre_status", "description": "No tool failure recorded", "rule": {"field": "tool_failures", "operator": "is_empty", "expected": null}},
++    {"id": "A07", "phase": "pre_status", "description": "No contradictions detected", "rule": {"field": "contradictions", "operator": "is_empty", "expected": null}},
++    {"id": "A08", "phase": "final", "description": "All canonical gate steps executed (P01-P24)", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
++    {"id": "A09", "phase": "final", "description": "All canonical gate steps PASS", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
++    {"id": "A10", "phase": "final", "description": "Implementation commit exists on the remote branch", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}},
++    {"id": "A11", "phase": "final", "description": "Remote branch head is present and reported", "rule": {"field": "implementation.remote_branch_head", "operator": "is_present", "expected": null}},
++    {"id": "A12", "phase": "final", "description": "PR #101 metadata resolved (open PR with base main)", "rule": {"field": "pull_request.number", "operator": "is_present", "expected": null}},
++    {"id": "A13", "phase": "final", "description": "Exact-head CI succeeded for the pushed SHA", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
++    {"id": "A14", "phase": "final", "description": "Runtime authorization boundaries preserved (no merge, no next slice)", "rule": {"field": "authorization.may_merge", "operator": "is_false", "expected": null}}
++  ],
++  "authorization": {
++    "may_open_pr": true,
++    "may_merge": false,
++    "may_start_next_task": false
++  },
++  "_note": "Authored by the PM from SA Issue #105 (DDAY-B4 — Full-Factory Basic Simulation + Autonomous Runtime). B4 only. No merge authorization. The PM may not self-certify COMPLETE or CLOSED."
++}
+diff --git a/configs/workspaces/bottled-water-dday/factory.yaml b/configs/workspaces/bottled-water-dday/factory.yaml
+new file mode 100644
+index 0000000..1e0f077
+--- /dev/null
++++ b/configs/workspaces/bottled-water-dday/factory.yaml
+@@ -0,0 +1,84 @@
++# DDAY-B4 — Bottled Water whole-factory aggregate simulation parameters.
++#
++# This file configures ONLY the small aggregate layer that sits around the
++# unchanged detailed Filling & Packaging line runtime (B2/B3). It contains no
++# process physics, no KPI definition, no scenario definition and no telemetry
++# or protocol configuration.
++#
++# The plant/area/asset hierarchy is deliberately NOT declared here: it is read
++# from the frozen B1 topology contract (topology.yaml) so there is a single
++# hierarchy source of truth.
++
++workspace_id: bottled-water-dday
++hierarchy_source: topology.yaml
++
++clock:
++  dt_s: 1.0                  # simulated seconds advanced per runtime tick
++  integration_step_s: 1.0    # internal sub-step; makes step(N) == N x step(1)
++  tick_interval_s: 0.25      # wall-clock pacing only, never a simulated fact
++
++water_treatment:
++  raw_water_flow_m3h: 1.2
++  recovery_factor: 0.75
++  tank_capacity_m3: 0.4
++  tank_initial_fill_fraction: 0.70
++  tank_high_level_pct: 85.0  # at/above this the feed idles
++  tank_low_level_pct: 60.0   # at/below this the feed restarts
++  feed_standby_kw: 0.5
++  feed_running_kw: 3.0
++  ro_standby_kw: 0.3
++  ro_running_kw: 6.0
++
++line:
++  # Which line station realises which process step. Station identity comes from
++  # configuration, never from hard-coded domain knowledge in code.
++  stations:
++    fill: BW-FP-FIL01
++    cap: BW-FP-CAP01
++    label: BW-FP-LAB01
++    case_pack: BW-FP-CPK01
++    palletize: BW-FP-PAL01
++  bottle_volume_m3: 0.0005   # 500 mL bottle
++  process_efficiency: 0.94   # filler draw = product water / efficiency
++
++packaging:
++  # Aggregate packing model (D-Day simplification) — the Case Packer and
++  # Palletizer stay count models, they do not simulate packaging kinematics.
++  bottles_per_case: 6
++  cases_per_pallet: 2
++
++# Standby / running electrical load per modelled asset (kW). Missing entries
++# default to 0 kW; unknown station ids are rejected at load time.
++line_loads:
++  BW-FP-BLW01: { standby_kw: 0.2, running_kw: 4.0 }
++  BW-FP-RIN01: { standby_kw: 0.1, running_kw: 1.5 }
++  BW-FP-FIL01: { standby_kw: 0.2, running_kw: 5.5 }
++  BW-FP-CAP01: { standby_kw: 0.2, running_kw: 4.5 }
++  BW-FP-INS01: { standby_kw: 0.1, running_kw: 1.0 }
++  BW-FP-LAB01: { standby_kw: 0.1, running_kw: 1.8 }
++  BW-FP-CPK01: { standby_kw: 0.1, running_kw: 2.6 }
++  BW-FP-PAL01: { standby_kw: 0.1, running_kw: 3.2 }
++
++utilities:
++  compressed_air:
++    setpoint_bar: 7.0
++    production_sag_bar: 0.6   # target pressure while the line is producing
++    min_pressure_bar: 5.5
++    max_pressure_bar: 7.2
++    rise_bar_per_s: 0.05
++    fall_bar_per_s: 0.02
++    loading_tolerance_bar: 0.05  # compressor loads below setpoint - tolerance
++    running_kw: 15.0
++    standby_kw: 2.0
++  chiller:
++    running_kw: 11.0
++    standby_kw: 1.5
++  pump:
++    running_kw: 4.0
++    standby_kw: 0.8
++
++warehouse:
++  dispatch_rate_per_min: 4.0
++
++plant:
++  base_load_kw: 6.0
+diff --git a/src/virtual_factory/ui/api.py b/src/virtual_factory/ui/api.py
+index 996bca8..556a3d0 100644
+--- a/src/virtual_factory/ui/api.py
++++ b/src/virtual_factory/ui/api.py
+@@ -20,6 +20,8 @@ def create_app(
+     mqtt_connect_delay: float = 1.0,
+     opcua_endpoint: str | None = None,
+     auto_start: bool = False,
++    factory_autorun: bool = True,
++    factory_tick_interval_s: float | None = None,
+ ):
+     """Create a FastAPI app backed by one RuntimeService instance."""
+     from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+@@ -39,13 +41,85 @@ def create_app(
+         opcua_endpoint=opcua_endpoint,
+     )
+ 
++    # ═══════════════════════════════════════════════════
++    # DDAY-B4 — Bottled Water whole-factory autonomous runtime
++    #
++    # The server owns the production clock: one bounded asyncio task advances
++    # the deterministic factory simulation while the app is running. The
++    # browser is an observer plus control surface, never the clock authority.
++    # The runner only paces wall-clock ticks — simulation truth stays
++    # deterministic and is driven exclusively by factories.step().
++    # ═══════════════════════════════════════════════════
++
++    _bw_factory: dict = {"instance": None}
++    _bw_runner: dict = {"task": None}
++
++    def _bw_workspace_dir() -> Path:
++        return (
++            Path(__file__).resolve().parent.parent.parent.parent
++            / "configs" / "workspaces" / "bottled-water-dday"
++        )
++
++    def _bw_config_path() -> str:
++        """Resolve the Bottled Water line config (env override supported)."""
++        default = _bw_workspace_dir() / "line.yaml"
++        return os.environ.get("BOTTLED_WATER_CONFIG", str(default))
++
++    def _bw_factory_config_path() -> str:
++        """Resolve the Bottled Water aggregate config (env override supported)."""
++        default = _bw_workspace_dir() / "factory.yaml"
++        return os.environ.get("BOTTLED_WATER_FACTORY_CONFIG", str(default))
++
++    def _get_bw_factory():
++        """The single whole-factory composition backing every BW endpoint."""
++        if _bw_factory["instance"] is None:
++            from virtual_factory.workspaces.bottled_water import (
++                BottledWaterFactory,
++            )
++            _bw_factory["instance"] = BottledWaterFactory(
++                line_config_path=_bw_config_path(),
++                factory_config_path=_bw_factory_config_path(),
++            )
++        return _bw_factory["instance"]
++
++    async def _bw_autorun_loop(interval_s: float) -> None:
++        factory = _get_bw_factory()
++        while True:
++            await asyncio.sleep(interval_s)
++            factory.step()
++
++    def _start_bw_autorun() -> None:
++        if _bw_runner["task"] is not None:
++            return
++        factory = _get_bw_factory()
++        interval = (
++            factory.tick_interval_s
++            if factory_tick_interval_s is None
++            else float(factory_tick_interval_s)
++        )
++        _bw_runner["task"] = asyncio.create_task(_bw_autorun_loop(interval))
++
++    async def _stop_bw_autorun() -> None:
++        task = _bw_runner["task"]
++        _bw_runner["task"] = None
++        if task is None:
++            return
++        task.cancel()
++        try:
++            await task
++        except asyncio.CancelledError:
++            pass
++
+     @asynccontextmanager
+     async def lifespan(app: FastAPI):
+         if auto_start:
+             service.start_loop()
++        if factory_autorun:
++            _start_bw_autorun()
+         try:
+             yield
+         finally:
++            await _stop_bw_autorun()
+             await service.stop_loop()
+             service.disconnect_mqtt()
+ 
+@@ -537,97 +611,30 @@ def create_app(
+     # Binds the dedicated Bottled Water skin to the B2 generic single-line
+     # runtime. The projection below is raw operational facts only: no KPI is
+     # calculated here and no hidden scenario truth is exposed.
++    #
++    # DDAY-B4: the controller is owned by the whole-factory composition, so the
++    # skin, the factory projection and the autonomous runner all share exactly
++    # one runtime instance.
+     # ═══════════════════════════════════════════════════
+ 
+-    _bw_controller: dict = {"instance": None}
+-
+-    def _bw_config_path() -> str:
+-        """Resolve the Bottled Water workspace config (env override supported)."""
+-        default = (
+-            Path(__file__).resolve().parent.parent.parent.parent
+-            / "configs" / "workspaces" / "bottled-water-dday" / "line.yaml"
+-        )
+-        return os.environ.get("BOTTLED_WATER_CONFIG", str(default))
+-
+     def _get_bw_controller():
+-        if _bw_controller["instance"] is None:
+-            from virtual_factory.assembly.demo_controller import DemoController
+-            ctrl = DemoController(config_path=_bw_config_path())
+-            ctrl.initialize()
+-            if not ctrl.is_generic_line:
+-                raise RuntimeError(
+-                    "Bottled Water workspace requires a generic single-line "
+-                    "configuration"
+-                )
+-            _bw_controller["instance"] = ctrl
+-        return _bw_controller["instance"]
++        return _get_bw_factory().controller
+ 
+     def _bw_projection(ctrl, limit: int = 60) -> dict:
+-        """Domain-neutral outward projection of the B2 generic line runtime.
+-
+-        Reads only public runtime surfaces. Counts and states are raw facts.
++        """Domain-neutral outward projection of the B2 generic line runtime."""
++        from virtual_factory.workspaces.bottled_water import project_target_line
++        return project_target_line(ctrl, limit=limit)
++
++    @app.get("/bottled-water-demo/factory")
++    def bottled_water_factory() -> dict:
++        """Authoritative whole-factory raw projection (raw facts only).
++
++        One factory-level projection over the same single runtime the target-line
++        endpoints read: plant/area/asset hierarchy with per-node raw signals,
++        conservation summaries, the reused target-line facts and recent raw
++        events. No calculated KPI is published.
+         """
+-        line = ctrl.line
+-        facts = ctrl.line_facts()
+-        checkpoints = [
+-            station_id
+-            for station_id, contract in line.station_contracts.items()
+-            if contract.capabilities.quality_decision
+-        ]
+-
+-        stations = []
+-        for sequence, entry in enumerate(facts["positions"]):
+-            station_id = entry["position_id"]
+-            stations.append({
+-                "sequence": sequence,
+-                "station_id": station_id,
+-                "unit_id": entry["unit_id"],
+-                "unit_type": entry["unit_type"],
+-                "product_code": entry["product_code"],
+-                "unit_status": entry["manufacturing_status"],
+-                "is_occupied": entry["is_occupied"],
+-                "is_quality_checkpoint": station_id in checkpoints,
+-                "last_disposition": line.last_quality_disposition(station_id),
+-            })
+-
+-        events = [
+-            {
+-                "event_type": event.event_type,
+-                "station_id": event.position,
+-                "unit_id": event.wip_id,
+-                "detail": event.detail,
+-                "simulation_time_s": event.simulation_time_s,
+-                "dwell_number": event.dwell_number,
+-            }
+-            for event in line.trace[-limit:]
+-        ]
+-
+-        return {
+-            "workspace_id": "bottled-water-dday",
+-            "plant_id": facts["plant_id"],
+-            "line_id": facts["line_id"],
+-            "line_label": facts["line_label"],
+-            "run_state": facts["run_state"],
+-            "operating_state": facts["operating_state"],
+-            "simulation_time_s": facts["simulation_time_s"],
+-            "dwell_number": facts["dwell_number"],
+-            "nominal_dwell_s": facts["nominal_dwell_s"],
+-            "unit_type": facts["unit_type"],
+-            "product_code": facts["product_code"],
+-            "route": facts["route"],
+-            "stations": stations,
+-            "counts": {
+-                "total": facts["total_count"],
+-                "good": facts["good_count"],
+-                "reject": facts["reject_count"],
+-            },
+-            "units_on_line": facts["units_on_line"],
+-            "quality_checkpoints": checkpoints,
+-            "last_reject": next(
+-                (e["unit_id"] for e in reversed(events)
+-                 if e["event_type"] == "REJECT"), ""),
+-            "recent_events": events,
+-        }
++        return _get_bw_factory().snapshot()
+ 
+     @app.get("/bottled-water-demo/state")
+     def bottled_water_state(
+@@ -687,49 +694,51 @@ def create_app(
+             ],
+         }
+ 
+-    # Controls: exactly the operator set allowed by the B3 contract.
++    # Controls: exactly the operator set allowed by the B3 contract. Each one is
++    # applied to the shared whole-factory composition so the aggregate models
++    # stay coherent with the line.
+     @app.post("/bottled-water-demo/start")
+     def bottled_water_start() -> dict:
+-        ctrl = _get_bw_controller()
+-        ctrl.start()
+-        return _bw_projection(ctrl)
++        factory = _get_bw_factory()
++        factory.start()
++        return _bw_projection(factory.controller)
+ 
+     @app.post("/bottled-water-demo/pause")
+     def bottled_water_pause() -> dict:
+-        ctrl = _get_bw_controller()
+-        ctrl.pause()
+-        return _bw_projection(ctrl)
++        factory = _get_bw_factory()
++        factory.pause()
++        return _bw_projection(factory.controller)
+ 
+     @app.post("/bottled-water-demo/resume")
+     def bottled_water_resume() -> dict:
+-        ctrl = _get_bw_controller()
+-        ctrl.resume()
+-        return _bw_projection(ctrl)
++        factory = _get_bw_factory()
++        factory.resume()
++        return _bw_projection(factory.controller)
+ 
+     @app.post("/bottled-water-demo/stop")
+     def bottled_water_stop() -> dict:
+-        ctrl = _get_bw_controller()
+-        ctrl.stop()
+-        return _bw_projection(ctrl)
++        factory = _get_bw_factory()
++        factory.stop()
++        return _bw_projection(factory.controller)
+ 
+     @app.post("/bottled-water-demo/reset")
+     def bottled_water_reset() -> dict:
+-        """RESET rebuilds the line and returns it to its known initial state."""
+-        ctrl = _get_bw_controller()
+-        ctrl.reset()
+-        return _bw_projection(ctrl)
++        """RESET rebuilds the line and returns the factory to its known initial
++        state."""
++        factory = _get_bw_factory()
++        factory.reset()
++        return _bw_projection(factory.controller)
+ 
+     @app.post("/bottled-water-demo/advance")
+     def bottled_water_advance() -> dict:
+-        """Animation-clock tick: one deterministic production cycle.
++        """Manual/debug seam: force one deterministic production cycle.
+ 
+-        Not an operator control — the skin's presentation clock calls this while
+-        the line is RUNNING. The runtime itself refuses to advance unless the
+-        run state is RUNNING, so operator semantics are preserved.
++        Not an operator control and not the D-Day operating path — the
++        autonomous server-side clock is. The skin never calls this.
+         """
+-        ctrl = _get_bw_controller()
+-        ctrl.advance()
+-        return _bw_projection(ctrl)
++        factory = _get_bw_factory()
++        factory.advance_debug_cycle()
++        return _bw_projection(factory.controller)
+ 
+     return app
+ 
+diff --git a/src/virtual_factory/ui/static/bottled_water_demo.html b/src/virtual_factory/ui/static/bottled_water_demo.html
+index 815c52f..73e0450 100644
+--- a/src/virtual_factory/ui/static/bottled_water_demo.html
++++ b/src/virtual_factory/ui/static/bottled_water_demo.html
+@@ -108,7 +108,7 @@
+           <button id="bw-btn-reset"  class="bw-btn bw-btn-outline" onclick="bwReset()">↻ RESET</button>
+         </div>
+         <div class="bw-sim-rate">
+-          <label class="bw-rate-label">Presentation rate
++          <label class="bw-rate-label">Refresh
+             <select id="bw-rate" class="bw-select" onchange="bwSetRate(this.value)">
+               <option value="900">0.5x</option>
+               <option value="600" selected>1x</option>
+@@ -116,7 +116,7 @@
+               <option value="150">4x</option>
+             </select>
+           </label>
+-          <span class="bw-rate-hint">pacing only — simulation stays deterministic</span>
++          <span class="bw-rate-hint">display only — the server clock drives production</span>
+         </div>
+       </div>
+ 
+diff --git a/src/virtual_factory/ui/static/bottled_water_demo.js b/src/virtual_factory/ui/static/bottled_water_demo.js
+index 6d64642..68f6551 100644
+--- a/src/virtual_factory/ui/static/bottled_water_demo.js
++++ b/src/virtual_factory/ui/static/bottled_water_demo.js
+@@ -937,25 +937,25 @@ function bwReset() {
+ }
+ 
+ function bwSetRate(value) {
++  // Display refresh only: the server owns the production clock.
+   BW.rateMs = Math.max(80, Number(value) || 600);
+   bwRestartClock();
+ }
+ 
+ /* ══════════════════════════════════════════════════════════════
+-   Presentation clock — paces engine ticks while the line RUNNING
++   Observer poll — the server owns the production clock
+ 
+-   The simulation itself is step driven and deterministic; this clock
+-   only decides when the next tick is requested. PAUSE/STOP make the
+-   runtime refuse to advance, so operator semantics stay with the
+-   runtime, not the skin.
++   DDAY-B4: the simulation advances autonomously on the server. This skin only
++   reads state and renders it; it never requests a production step. START /
++   PAUSE / RESUME / STOP / RESET remain operator controls. The poll interval is
++   presentation only and has no influence on simulation truth.
+    ══════════════════════════════════════════════════════════════ */
+ 
+ async function bwTick() {
+   if (BW.busy) return;
+   BW.busy = true;
+   try {
+-    const running = BW.state && BW.state.run_state === 'RUNNING';
+-    const state = running ? await bwPost('/advance') : await bwGet('/state');
++    const state = await bwGet('/state');
+     bwApplyState(state);
+   } catch (err) {
+     bwEl('bw-sim-note').textContent = `Line link unavailable: ${err.message}`;
+diff --git a/src/virtual_factory/workspaces/__init__.py b/src/virtual_factory/workspaces/__init__.py
+new file mode 100644
+index 0000000..197c1aa
+--- /dev/null
++++ b/src/virtual_factory/workspaces/__init__.py
+@@ -0,0 +1,24 @@
++"""Virtual Factory workspace compositions.
++
++A workspace composition binds an existing Virtual Factory runtime to a factory
++workspace. It composes, it does not fork: no new simulation engine, telemetry
++framework, scenario engine or historian lives here.
++"""
++
++from __future__ import annotations
++
++from virtual_factory.workspaces.bottled_water import (
++    BottledWaterFactory,
++    HierarchyNode,
++    load_factory_config,
++    load_hierarchy,
++    project_target_line,
++)
++
++__all__ = [
++    "BottledWaterFactory",
++    "HierarchyNode",
++    "load_factory_config",
++    "load_hierarchy",
++    "project_target_line",
++]
+diff --git a/src/virtual_factory/workspaces/bottled_water.py b/src/virtual_factory/workspaces/bottled_water.py
+new file mode 100644
+index 0000000..ff91c27
+--- /dev/null
++++ b/src/virtual_factory/workspaces/bottled_water.py
+@@ -0,0 +1,1125 @@
++"""DDAY-B4 — Bottled Water whole-factory composition.
++
++This module is a *small aggregate layer* around the unchanged detailed
++Filling & Packaging line runtime delivered by B2/B3. It composes the existing
++discrete line runtime (``AssyLineRuntime`` through ``DemoController``) and adds
++only:
++
++* a deterministic factory clock driven from the server (never from a browser);
++* aggregate Water Treatment / Bottle Preparation / Utilities / Warehouse models
++  that publish conservation-consistent raw facts;
++* a hierarchy + taxonomy projection read from the frozen B1 topology contract.
++
++It is deliberately *not* a second simulation engine, not a telemetry framework,
++not a scenario engine, not a protocol gateway, not a historian and not a
++persistence subsystem. No calculated KPI (OEE / availability / performance /
++quality % / energy per unit / utilization / health score) is produced here —
++those belong to FactoriX IIoT / PlantOS.
++
++Raw-fact boundary
++-----------------
++Every published fact is a simulated raw fact attributable to a hierarchy source
++ID. Configured constants are published with ``provenance = CONFIGURED_TARGET``
++where a B1 dictionary entry calls for it.
++
++Control interpretation (documented, see B4 evidence)
++----------------------------------------------------
++``PAUSE`` freezes the simulation clock completely: no simulated time passes, so
++no tank, energy, utility or warehouse progression occurs. ``STOP`` is a
++controlled stop (never a fault) that halts *production* while the plant stays
++energized: the clock keeps advancing and only explicitly modelled standby/base
++load accrues energy, which keeps cumulative energy monotonic and coherent with
++equipment state.
++"""
++
++from __future__ import annotations
++
++import threading
++from collections import deque
++from dataclasses import dataclass
++from pathlib import Path
++from typing import Any, Iterable, Optional
++
++import yaml
++
++from virtual_factory.assembly.demo_controller import DemoController
++from virtual_factory.assembly.line_runtime import LineRunState
++
++WORKSPACE_ID = "bottled-water-dday"
++
++ENTITY_PLANT = "plant"
++ENTITY_AREA = "area"
++ENTITY_ASSET = "asset"
++
++PROVENANCE_RAW = "SIMULATED_RAW"
++PROVENANCE_CONFIGURED = "CONFIGURED_TARGET"
++
++_QUALITY_GOOD = "GOOD"
++
++#: Equipment class per B1 asset role. ``role`` describes what an asset does in
++#: this process; ``equipment_class`` describes what kind of equipment it is, so
++#: two different roles may share a class.
++EQUIPMENT_CLASS_BY_ROLE = {
++    "feed": "pump",
++    "treatment": "ro_skid",
++    "storage": "storage_tank",
++    "blower_infeed": "blower",
++    "rinser": "rinser",
++    "filler": "filler",
++    "capper": "capper",
++    "quality_inspection": "inspector",
++    "labeler": "labeler",
++    "case_packer": "case_packer",
++    "palletizer": "palletizer",
++    "compressed_air": "compressor",
++    "cooling": "chiller",
++    "pump": "pump",
++    "power_meter": "power_meter",
++    "finished_goods": "fg_interface",
++}
++
++#: Line stations whose completion count drives a packaging material counter.
++STATION_KEYS = ("fill", "cap", "label", "case_pack", "palletize")
++
++MAX_FACTORY_EVENTS = 20
++
++#: Float tolerance for tank-level limit comparisons (volume, m3).
++_TANK_EPSILON_M3 = 1e-12
++
++
++def _get(data: dict, path: str, default: Any) -> Any:
++    """Read ``a.b.c`` from nested mappings, returning ``default`` when absent."""
++    node: Any = data
++    for part in path.split("."):
++        if not isinstance(node, dict) or part not in node:
++            return default
++        node = node[part]
++    return node
++
++
++def _round(value: float, digits: int = 4) -> float:
++    return round(float(value), digits)
++
++
++# ═══════════════════════════════════════════════════════════════
++# Frozen B1 hierarchy / taxonomy
++# ═══════════════════════════════════════════════════════════════
++
++
++@dataclass(frozen=True)
++class HierarchyNode:
++    """One node of the frozen B1 plant hierarchy with its minimal taxonomy."""
++
++    source_id: str
++    name: str
++    entity_type: str
++    parent_source_id: Optional[str]
++    role: str
++    equipment_class: Optional[str] = None
++
++    def as_dict(self) -> dict:
++        return {
++            "source_id": self.source_id,
++            "name": self.name,
++            "entity_type": self.entity_type,
++            "parent_source_id": self.parent_source_id,
++            "role": self.role,
++            "equipment_class": self.equipment_class,
++            "workspace_id": WORKSPACE_ID,
++        }
++
++
++def load_hierarchy(topology_path: str | Path) -> tuple[dict, list[HierarchyNode]]:
++    """Load the frozen B1 topology contract into flat taxonomy nodes.
++
++    Order is plant → areas → that area's assets, which keeps the projection
++    stable and readable. No node is invented here and no FactoriX platform
++    canonical ID is created: VF owns source IDs only.
++    """
++    data = yaml.safe_load(Path(topology_path).read_text(encoding="utf-8")) or {}
++    plant = data.get("plant") or {}
++    plant_id = plant.get("id")
++    if not plant_id:
++        raise ValueError(f"topology contract declares no plant id: {topology_path}")
++
++    nodes: list[HierarchyNode] = [
++        HierarchyNode(
++            source_id=plant_id,
++            name=plant.get("name", plant_id),
++            entity_type=ENTITY_PLANT,
++            parent_source_id=None,
++            role="plant",
++            equipment_class=None,
++        )
++    ]
++    for area in data.get("areas", ()) or ():
++        area_id = area["id"]
++        nodes.append(
++            HierarchyNode(
++                source_id=area_id,
++                name=area.get("name", area_id),
++                entity_type=ENTITY_AREA,
++                parent_source_id=plant_id,
++                role=area.get("role", ""),
++                equipment_class=None,
++            )
++        )
++        for asset in area.get("assets", ()) or ():
++            role = asset.get("role", "")
++            nodes.append(
++                HierarchyNode(
++                    source_id=asset["id"],
++                    name=asset.get("name", asset["id"]),
++                    entity_type=ENTITY_ASSET,
++                    parent_source_id=area_id,
++                    role=role,
++                    equipment_class=EQUIPMENT_CLASS_BY_ROLE.get(role),
++                )
++            )
++    return data, nodes
++
++
++# ═══════════════════════════════════════════════════════════════
++# Aggregate simulation parameters
++# ═══════════════════════════════════════════════════════════════
++
++
++@dataclass(frozen=True)
++class FactoryConfig:
++    """Aggregate-simulation parameters (no process physics, no KPI)."""
++
++    workspace_id: str
++    step_dt_s: float
++    integration_step_s: float
++    tick_interval_s: float
++
++    raw_water_flow_m3h: float
++    recovery_factor: float
++    tank_capacity_m3: float
++    tank_initial_volume_m3: float
++    tank_high_level_pct: float
++    tank_low_level_pct: float
++    feed_standby_kw: float
++    feed_running_kw: float
++    ro_standby_kw: float
++    ro_running_kw: float
++
++    stations: dict[str, str]
++    bottle_volume_m3: float
++    process_efficiency: float
++    bottles_per_case: int
++    cases_per_pallet: int
++
++    line_loads: dict[str, tuple[float, float]]
++
++    air_setpoint_bar: float
++    air_production_sag_bar: float
++    air_min_bar: float
++    air_max_bar: float
++    air_rise_bar_per_s: float
++    air_fall_bar_per_s: float
++    air_loading_tolerance_bar: float
++    air_running_kw: float
++    air_standby_kw: float
++    chiller_running_kw: float
++    chiller_standby_kw: float
++    pump_running_kw: float
++    pump_standby_kw: float
++
++    dispatch_rate_per_min: float
++    base_load_kw: float
++
++
++def load_factory_config(
++    factory_config_path: str | Path,
++    route: Iterable[str] = (),
++) -> FactoryConfig:
++    """Load the aggregate-simulation parameters for the workspace."""
++    data = yaml.safe_load(
++        Path(factory_config_path).read_text(encoding="utf-8")
++    ) or {}
++
++    route_ids = list(route)
++    declared_loads = _get(data, "line_loads", {}) or {}
++    unknown = sorted(set(declared_loads) - set(route_ids))
++    if unknown:
++        raise ValueError(
++            "factory configuration declares loads for stations that are not on "
++            f"the line route: {unknown}"
++        )
++
++    stations = dict(_get(data, "line.stations", {}) or {})
++    missing = [key for key in STATION_KEYS if key not in stations]
++    if missing:
++        raise ValueError(
++            f"factory configuration is missing line station bindings: {missing}"
++        )
++    off_route = sorted(sid for sid in stations.values() if sid not in route_ids)
++    if off_route:
++        raise ValueError(
++            f"factory configuration binds line stations not on the route: {off_route}"
++        )
++
++    tank_capacity = float(_get(data, "water_treatment.tank_capacity_m3", 0.4))
++    fill_fraction = float(
++        _get(data, "water_treatment.tank_initial_fill_fraction", 0.7)
++    )
++
++    line_loads: dict[str, tuple[float, float]] = {}
++    for station_id in route_ids:
++        entry = declared_loads.get(station_id) or {}
++        line_loads[station_id] = (
++            float(entry.get("standby_kw", 0.0)),
++            float(entry.get("running_kw", 0.0)),
++        )
++
++    return FactoryConfig(
++        workspace_id=_get(data, "workspace_id", WORKSPACE_ID),
++        step_dt_s=float(_get(data, "clock.dt_s", 1.0)),
++        integration_step_s=float(_get(data, "clock.integration_step_s", 1.0)),
++        tick_interval_s=float(_get(data, "clock.tick_interval_s", 0.25)),
++        raw_water_flow_m3h=float(
++            _get(data, "water_treatment.raw_water_flow_m3h", 1.2)
++        ),
++        recovery_factor=float(_get(data, "water_treatment.recovery_factor", 0.75)),
++        tank_capacity_m3=tank_capacity,
++        tank_initial_volume_m3=tank_capacity * fill_fraction,
++        tank_high_level_pct=float(
++            _get(data, "water_treatment.tank_high_level_pct", 85.0)
++        ),
++        tank_low_level_pct=float(
++            _get(data, "water_treatment.tank_low_level_pct", 60.0)
++        ),
++        feed_standby_kw=float(_get(data, "water_treatment.feed_standby_kw", 0.5)),
++        feed_running_kw=float(_get(data, "water_treatment.feed_running_kw", 3.0)),
++        ro_standby_kw=float(_get(data, "water_treatment.ro_standby_kw", 0.3)),
++        ro_running_kw=float(_get(data, "water_treatment.ro_running_kw", 6.0)),
++        stations=stations,
++        bottle_volume_m3=float(_get(data, "line.bottle_volume_m3", 0.0005)),
++        process_efficiency=float(_get(data, "line.process_efficiency", 0.94)),
++        bottles_per_case=int(_get(data, "packaging.bottles_per_case", 6)),
++        cases_per_pallet=int(_get(data, "packaging.cases_per_pallet", 2)),
++        line_loads=line_loads,
++        air_setpoint_bar=float(_get(data, "utilities.compressed_air.setpoint_bar", 7.0)),
++        air_production_sag_bar=float(
++            _get(data, "utilities.compressed_air.production_sag_bar", 0.6)
++        ),
++        air_min_bar=float(
++            _get(data, "utilities.compressed_air.min_pressure_bar", 5.5)
++        ),
++        air_max_bar=float(
++            _get(data, "utilities.compressed_air.max_pressure_bar", 7.2)
++        ),
++        air_rise_bar_per_s=float(
++            _get(data, "utilities.compressed_air.rise_bar_per_s", 0.05)
++        ),
++        air_fall_bar_per_s=float(
++            _get(data, "utilities.compressed_air.fall_bar_per_s", 0.02)
++        ),
++        air_loading_tolerance_bar=float(
++            _get(data, "utilities.compressed_air.loading_tolerance_bar", 0.05)
++        ),
++        air_running_kw=float(_get(data, "utilities.compressed_air.running_kw", 15.0)),
++        air_standby_kw=float(_get(data, "utilities.compressed_air.standby_kw", 2.0)),
++        chiller_running_kw=float(_get(data, "utilities.chiller.running_kw", 11.0)),
++        chiller_standby_kw=float(_get(data, "utilities.chiller.standby_kw", 1.5)),
++        pump_running_kw=float(_get(data, "utilities.pump.running_kw", 4.0)),
++        pump_standby_kw=float(_get(data, "utilities.pump.standby_kw", 0.8)),
++        dispatch_rate_per_min=float(
++            _get(data, "warehouse.dispatch_rate_per_min", 4.0)
++        ),
++        base_load_kw=float(_get(data, "plant.base_load_kw", 6.0)),
++    )
++
++
++def load_workspace(
++    factory_config_path: str | Path,
++) -> tuple[FactoryConfig, list[HierarchyNode]]:
++    """Load the aggregate parameters and the frozen hierarchy of a workspace.
++
++    The hierarchy source is declared by the factory configuration
++    (``hierarchy_source``) and resolved relative to it, so the B1 topology stays
++    the single hierarchy source of truth.
++    """
++    factory_path = Path(factory_config_path)
++    data = yaml.safe_load(factory_path.read_text(encoding="utf-8")) or {}
++    hierarchy_ref = _get(data, "hierarchy_source", "topology.yaml")
++    topology_path = (factory_path.parent / str(hierarchy_ref)).resolve()
++    if not topology_path.is_file():
++        # Fall back to the workspace directory packaged with the repository.
++        topology_path = (
++            Path(__file__).resolve().parents[3]
++            / "configs" / "workspaces" / WORKSPACE_ID / str(hierarchy_ref)
++        )
++    _topology, nodes = load_hierarchy(topology_path)
++    return data, nodes
++
++
++# ═══════════════════════════════════════════════════════════════
++# Target-line projection (B2/B3 facts, reused unchanged)
++# ═══════════════════════════════════════════════════════════════
++
++
++def project_target_line(ctrl: DemoController, limit: int = 60) -> dict:
++    """Domain-neutral outward projection of the B2 generic line runtime.
++
++    Reads only public runtime surfaces. Counts and states are raw facts; no KPI
++    is derived and no hidden scenario truth is exposed. This is the B3
++    projection, kept as the single implementation and reused by the
++    whole-factory projection.
++    """
++    line = ctrl.line
++    facts = ctrl.line_facts()
++    checkpoints = [
++        station_id
++        for station_id, contract in line.station_contracts.items()
++        if contract.capabilities.quality_decision
++    ]
++
++    stations = []
++    for sequence, entry in enumerate(facts["positions"]):
++        station_id = entry["position_id"]
++        stations.append({
++            "sequence": sequence,
++            "station_id": station_id,
++            "unit_id": entry["unit_id"],
++            "unit_type": entry["unit_type"],
++            "product_code": entry["product_code"],
++            "unit_status": entry["manufacturing_status"],
++            "is_occupied": entry["is_occupied"],
++            "is_quality_checkpoint": station_id in checkpoints,
++            "last_disposition": line.last_quality_disposition(station_id),
++        })
++
++    events = [
++        {
++            "event_type": event.event_type,
++            "station_id": event.position,
++            "unit_id": event.wip_id,
++            "detail": event.detail,
++            "simulation_time_s": event.simulation_time_s,
++            "dwell_number": event.dwell_number,
++        }
++        for event in line.trace[-limit:]
++    ]
++
++    return {
++        "workspace_id": WORKSPACE_ID,
++        "plant_id": facts["plant_id"],
++        "line_id": facts["line_id"],
++        "line_label": facts["line_label"],
++        "run_state": facts["run_state"],
++        "operating_state": facts["operating_state"],
++        "simulation_time_s": facts["simulation_time_s"],
++        "dwell_number": facts["dwell_number"],
++        "nominal_dwell_s": facts["nominal_dwell_s"],
++        "unit_type": facts["unit_type"],
++        "product_code": facts["product_code"],
++        "route": facts["route"],
++        "stations": stations,
++        "counts": {
++            "total": facts["total_count"],
++            "good": facts["good_count"],
++            "reject": facts["reject_count"],
++        },
++        "units_on_line": facts["units_on_line"],
++        "quality_checkpoints": checkpoints,
++        "last_reject": next(
++            (e["unit_id"] for e in reversed(events)
++             if e["event_type"] == "REJECT"), ""),
++        "recent_events": events,
++    }
++
++
++# ═══════════════════════════════════════════════════════════════
++# Whole-factory composition
++# ═══════════════════════════════════════════════════════════════
++
++
++class BottledWaterFactory:
++    """Deterministic whole-factory composition for the Bottled Water workspace.
++
++    Owns exactly one ``DemoController`` (the reused discrete line runtime) plus
++    the aggregate area/utility/warehouse models. Callers drive it with
++    ``step(dt_s)``; the HTTP layer is only an observer and a control surface.
++    """
++
++    def __init__(
++        self,
++        line_config_path: str | Path,
++        factory_config_path: str | Path,
++    ) -> None:
++        self.line_config_path = str(line_config_path)
++        self.factory_config_path = str(factory_config_path)
++        self._lock = threading.RLock()
++
++        self.controller = DemoController(config_path=self.line_config_path)
++        self.controller.initialize()
++        if not self.controller.is_generic_line:
++            raise RuntimeError(
++                "Bottled Water workspace requires a generic single-line "
++                "configuration"
++            )
++
++        route = list(self.controller.line.config.conveyor.positions)
++        data, nodes = load_workspace(factory_config_path)
++        self._config = load_factory_config(factory_config_path, route=route)
++        self.tick_interval_s = self._config.tick_interval_s
++        self.workspace_id = self._config.workspace_id
++
++        self._hierarchy = nodes
++        self._nodes_by_id = {node.source_id: node for node in nodes}
++        if len(self._nodes_by_id) != len(nodes):
++            raise ValueError("topology contract contains duplicate source ids")
++        self._route = route
++        self._topology = data
++        self._plant_source_id = next(
++            node.source_id for node in nodes if node.entity_type == ENTITY_PLANT
++        )
++
++        # Asset ids used by the aggregate models, resolved through the frozen
++        # hierarchy so nothing is hard-coded to a particular plant layout.
++        self._load_nodes = [
++            node.source_id
++            for node in nodes
++            if node.entity_type == ENTITY_ASSET
++            and (node.source_id in self._config.line_loads
++                 or node.role in ("feed", "treatment", "compressed_air",
++                                  "cooling", "pump"))
++        ]
++        self._feed_node = self._node_by_role("feed")
++        self._ro_node = self._node_by_role("treatment")
++        self._tank_node = self._node_by_role("storage")
++        self._meter_node = self._node_by_role("power_meter")
++        self._fg_node = self._node_by_role("finished_goods")
++        self._compressor_node = self._node_by_role("compressed_air")
++        self._chiller_node = self._node_by_role("cooling")
++        self._pump_node = self._node_by_role_any("pump", exclude=("feed",))
++        self._prep_area = self._node_by_role("preparation_area")
++        self._line_area = self._node_by_role("production_line")
++
++        self._initialise_state()
++
++    # --- hierarchy helpers ---
++
++    def _node_by_role(self, role: str) -> Optional[str]:
++        for node in self._hierarchy:
++            if node.role == role:
++                return node.source_id
++        return None
++
++    def _node_by_role_any(self, role: str, exclude: tuple[str, ...]) -> Optional[str]:
++        for node in self._hierarchy:
++            if node.role == role and node.source_id not in exclude:
++                return node.source_id
++        return None
++
++    # --- state ---
++
++    def _initialise_state(self) -> None:
++        cfg = self._config
++        line = self.controller.line
++        self._clock_s = 0.0
++        self._production_elapsed_s = 0.0
++        self._dwell_acc_s = 0.0
++        self._nominal_dwell_s = float(line.config.conveyor.nominal_line_dwell_time_s)
++
++        self._tank_volume_m3 = cfg.tank_initial_volume_m3
++        self._feed_enabled = True
++        self._raw_water_total_m3 = 0.0
++        self._treated_water_total_m3 = 0.0
++        self._reject_water_total_m3 = 0.0
++        self._water_draw_total_m3 = 0.0
++        self._pending_draw_m3 = 0.0
++        self._product_water_total_m3 = 0.0
++        self._last_raw_flow_m3h = 0.0
++
++        self._air_pressure_bar = cfg.air_setpoint_bar
++
++        self._station_units: dict[str, set[str]] = {
++            station_id: set() for station_id in self._route
++        }
++        self._filled_counted = 0
++        self._trace_cursor = 0
++
++        self._node_energy_kwh: dict[str, float] = {
++            node_id: 0.0 for node_id in self._load_nodes
++        }
++        self._plant_energy_total_kwh = 0.0
++
++        self._dispatch_acc = 0.0
++        self._dispatch_count = 0
++
++        self._events: deque = deque(maxlen=MAX_FACTORY_EVENTS)
++        self._last_noted_state = LineRunState.STOPPED.value
++
++    def _reset(self) -> None:
++        self.controller.reset()
++        self._initialise_state()
++
++    # --- control (server-side semantics) ---
++
++    def _note_run_state(self) -> None:
++        """Record a plant-level raw MACHINE_STATE_CHANGED fact.
++
++        Idempotent: only a real transition is recorded, so RESET restores exactly
++        the initial state (including an empty recent-event window).
++        """
++        state = self.controller.run_state.value
++        if state == self._last_noted_state:
++            return
++        self._last_noted_state = state
++        self._events.append({
++            "event_type": "MACHINE_STATE_CHANGED",
++            "source_id": self._plant_source_id,
++            "detail": f"run_state={state}",
++            "simulation_time_s": _round(self._clock_s, 3),
++            "quality": _QUALITY_GOOD,
++            "provenance": PROVENANCE_RAW,
++        })
++
++    def _plant_id(self) -> str:
++        return self._plant_source_id
++
++    def start(self) -> str:
++        with self._lock:
++            self.controller.start()
++            self._note_run_state()
++            return self.controller.run_state.value
++
++    def pause(self) -> str:
++        with self._lock:
++            self.controller.pause()
++            self._note_run_state()
++            return self.controller.run_state.value
++
++    def resume(self) -> str:
++        with self._lock:
++            self.controller.resume()
++            self._note_run_state()
++            return self.controller.run_state.value
++
++    def stop(self) -> str:
++        with self._lock:
++            self.controller.stop()
++            self._note_run_state()
++            return self.controller.run_state.value
++
++    def reset(self) -> str:
++        with self._lock:
++            self._reset()
++            self._note_run_state()
++            return self.controller.run_state.value
++
++    def advance_debug_cycle(self) -> float:
++        """Manual/debug seam: force exactly one line cycle.
++
++        Not the D-Day operating path and not a visible operator action — the
++        autonomous server-side clock is. The factory clock and the aggregate
++        models are advanced by exactly the simulated time the line advanced, so
++        aggregates never drift from the line when this seam is used.
++        """
++        with self._lock:
++            before = self.controller.line.simulation_time_s
++            self._produce_one_cycle()
++            delta = self.controller.line.simulation_time_s - before
++            if delta > 0.0:
++                self._dwell_acc_s = 0.0
++                self._integrate_elapsed(delta)
++                self._apply_draw()
++            return delta
++
++    # --- deterministic clock ---
++
++    def step(self, dt_s: Optional[float] = None) -> None:
++        """Advance the factory by ``dt_s`` simulated seconds (default config)."""
++        delta = self._config.step_dt_s if dt_s is None else float(dt_s)
++        if delta <= 0.0:
++            return
++        with self._lock:
++            sub_step = max(self._config.integration_step_s, 1e-6)
++            remaining = delta
++            while remaining > 1e-9:
++                chunk = min(remaining, sub_step)
++                self._sub_step(chunk)
++                remaining -= chunk
++
++    def _sub_step(self, dt: float) -> None:
++        run_state = self.controller.run_state
++        if run_state is LineRunState.PAUSED:
++            # PAUSE freezes simulated progression entirely: no clock, no tank,
++            # no utility, no warehouse and no energy movement.
++            return
++
++        self._integrate_elapsed(dt)
++
++        if run_state is LineRunState.RUNNING:
++            self._dwell_acc_s += dt
++            if self._dwell_acc_s >= self._nominal_dwell_s - 1e-9:
++                self._dwell_acc_s -= self._nominal_dwell_s
++                self._produce_one_cycle()
++
++        self._apply_draw()
++
++    def _currently_running(self) -> bool:
++        return self.controller.run_state is LineRunState.RUNNING
++
++    def _integrate_elapsed(self, dt: float) -> None:
++        """Integrate clock and aggregate models over ``dt`` simulated seconds."""
++        running = self._currently_running()
++        self._clock_s += dt
++        if running:
++            self._production_elapsed_s += dt
++
++        self._update_feed_state(running)
++        self._integrate_water(dt)
++        self._integrate_air(dt)
++        self._integrate_energy(dt, running)
++        self._integrate_dispatch(dt)
++
++    def _update_feed_state(self, running: bool) -> None:
++        """Tank-level hysteresis latch for the water-treatment feed.
++
++        The latch is only updated while the plant is producing; while it is not,
++        the feed is inactive because ``_feed_active()`` also requires the run
++        state. That keeps the latch meaningful across a STOP/RESUME cycle
++        instead of latching to 'off' and never restarting.
++        """
++        cfg = self._config
++        if not running:
++            return
++        high_volume_m3 = self._tank_high_volume_m3()
++        low_volume_m3 = cfg.tank_capacity_m3 * cfg.tank_low_level_pct / 100.0
++        if self._tank_volume_m3 >= high_volume_m3 - _TANK_EPSILON_M3:
++            self._feed_enabled = False
++        elif self._tank_volume_m3 <= low_volume_m3 + _TANK_EPSILON_M3:
++            self._feed_enabled = True
++
++    def _tank_high_volume_m3(self) -> float:
++        cfg = self._config
++        return cfg.tank_capacity_m3 * cfg.tank_high_level_pct / 100.0
++
++    def _feed_active(self) -> bool:
++        """True when the treatment feed is actually running right now."""
++        return self._feed_enabled and self._currently_running()
++
++    def _integrate_water(self, dt: float) -> None:
++        """Water balance with a bounded tank and a modulating high-level limit.
++
++        ``treated = raw x recovery`` and the feed ramps down as the tank reaches
++        its high-level volume, so the tank can never be pushed past the high
++        limit (and therefore never past capacity). The published instantaneous
++        flow is the flow actually taken during the last step.
++        """
++        cfg = self._config
++        if not self._feed_active() or dt <= 0.0:
++            self._last_raw_flow_m3h = 0.0
++            return
++
++        high_volume_m3 = self._tank_high_volume_m3()
++        headroom_m3 = high_volume_m3 - self._tank_volume_m3
++        if headroom_m3 <= _TANK_EPSILON_M3:
++            self._last_raw_flow_m3h = 0.0
++            return
++
++        raw_m3 = cfg.raw_water_flow_m3h / 3600.0 * dt
++        treated_m3 = raw_m3 * cfg.recovery_factor
++        if treated_m3 >= headroom_m3:
++            # Saturate exactly at the configured high-level volume.
++            treated_m3 = headroom_m3
++            raw_m3 = treated_m3 / cfg.recovery_factor
++            self._tank_volume_m3 = high_volume_m3
++        else:
++            self._tank_volume_m3 += treated_m3
++
++        self._last_raw_flow_m3h = raw_m3 / dt * 3600.0
++        self._raw_water_total_m3 += raw_m3
++        self._treated_water_total_m3 += treated_m3
++        self._reject_water_total_m3 += raw_m3 - treated_m3
++
++    def _integrate_air(self, dt: float) -> None:
++        cfg = self._config
++        target = cfg.air_setpoint_bar
++        if self._currently_running():
++            target -= cfg.air_production_sag_bar
++        target = max(cfg.air_min_bar, min(cfg.air_max_bar, target))
++
++        pressure = self._air_pressure_bar
++        if pressure < target:
++            pressure = min(target, pressure + cfg.air_rise_bar_per_s * dt)
++        elif pressure > target:
++            pressure = max(target, pressure - cfg.air_fall_bar_per_s * dt)
++        self._air_pressure_bar = max(
++            cfg.air_min_bar, min(cfg.air_max_bar, pressure)
++        )
++
++    def _integrate_energy(self, dt: float, running: bool) -> None:
++        dt_h = dt / 3600.0
++        loads = self._active_loads(running)
++        for node_id, kw in loads.items():
++            if kw:
++                self._node_energy_kwh[node_id] = (
++                    self._node_energy_kwh.get(node_id, 0.0) + kw * dt_h
++                )
++        self._plant_energy_total_kwh += (
++            sum(loads.values()) + self._config.base_load_kw
++        ) * dt_h
++
++    def _integrate_dispatch(self, dt: float) -> None:
++        cfg = self._config
++        if self._finished_goods_inventory() <= 0:
++            return
++        self._dispatch_acc += cfg.dispatch_rate_per_min / 60.0 * dt
++        while self._dispatch_acc >= 1.0 and self._finished_goods_inventory() > 0:
++            self._dispatch_acc -= 1.0
++            self._dispatch_count += 1
++
++    # --- production coupling ---
++
++    def _produce_one_cycle(self) -> None:
++        self.controller.advance()
++        self._consume_trace()
++
++    def _consume_trace(self) -> None:
++        """Derive material consumption from real line progress.
++
++        Per-station completion is counted by unit id, so a rejected unit still
++        consumes every material it already had when it was rejected.
++        """
++        trace = self.controller.line.trace
++        while self._trace_cursor < len(trace):
++            event = trace[self._trace_cursor]
++            self._trace_cursor += 1
++            if event.event_type != "STATION_COMPLETE":
++                continue
++            bucket = self._station_units.get(event.position)
++            if bucket is not None:
++                bucket.add(event.wip_id)
++
++        filled = self._station_completions(self._config.stations["fill"])
++        new_filled = filled - self._filled_counted
++        if new_filled > 0:
++            self._filled_counted = filled
++            product_m3 = new_filled * self._config.bottle_volume_m3
++            self._product_water_total_m3 += product_m3
++            self._pending_draw_m3 += product_m3 / self._config.process_efficiency
++
++    def _apply_draw(self) -> None:
++        if self._pending_draw_m3 <= 0.0:
++            return
++        drawn = min(self._pending_draw_m3, self._tank_volume_m3)
++        self._tank_volume_m3 -= drawn
++        self._water_draw_total_m3 += drawn
++        self._pending_draw_m3 = 0.0
++
++    def _station_completions(self, station_id: Optional[str]) -> int:
++        if not station_id:
++            return 0
++        return len(self._station_units.get(station_id, ()))
++
++    # --- aggregate facts ---
++
++    def _tank_level_pct(self) -> float:
++        cfg = self._config
++        if cfg.tank_capacity_m3 <= 0.0:
++            return 0.0
++        return self._tank_volume_m3 / cfg.tank_capacity_m3 * 100.0
++
++    def _compressor_loading(self) -> bool:
++        cfg = self._config
++        return (
++            self._air_pressure_bar
++            < cfg.air_setpoint_bar - cfg.air_loading_tolerance_bar
++        )
++
++    def _active_loads(self, running: Optional[bool] = None) -> dict[str, float]:
++        """Instantaneous active power per load-bearing asset (kW)."""
++        cfg = self._config
++        if running is None:
++            running = self._currently_running()
++
++        loads: dict[str, float] = {}
++        feed_active = self._feed_active()
++        for station_id, (standby, running_kw) in cfg.line_loads.items():
++            loads[station_id] = running_kw if running else standby
++        if self._feed_node:
++            loads[self._feed_node] = (
++                cfg.feed_running_kw if feed_active else cfg.feed_standby_kw
++            )
++        if self._ro_node:
++            loads[self._ro_node] = (
++                cfg.ro_running_kw if feed_active else cfg.ro_standby_kw
++            )
++        if self._compressor_node:
++            loads[self._compressor_node] = (
++                cfg.air_running_kw if self._compressor_loading()
++                else cfg.air_standby_kw
++            )
++        if self._chiller_node:
++            loads[self._chiller_node] = (
++                cfg.chiller_running_kw if running else cfg.chiller_standby_kw
++            )
++        if self._pump_node:
++            loads[self._pump_node] = (
++                cfg.pump_running_kw if (feed_active or running)
++                else cfg.pump_standby_kw
++            )
++        return loads
++
++    def _finished_goods_receipts(self) -> int:
++        return int(self.controller.line.good_count)
++
++    def _finished_goods_inventory(self) -> int:
++        return self._finished_goods_receipts() - self._dispatch_count
++
++    def _operating_state(self, active: bool, support_equipment: bool = False) -> str:
++        """B1 operating_state from equipment activity and the factory run state.
++
++        FAULT and UNKNOWN are never produced by B4 — no abnormal condition is
++        modelled before B5 — so ``STOPPED != FAULT`` holds by construction. A
++        PAUSED factory reports IDLE because nothing is producing, while
++        ``run_state`` carries PAUSED explicitly.
++
++        Process equipment of a stopped plant reports STOPPED. Support equipment
++        (utilities) stays energized and reports its own load state, so a
++        controlled stop reduces utility demand instead of hiding it behind a
++        blanket STOPPED.
++        """
++        if (not support_equipment
++                and self.controller.run_state is LineRunState.STOPPED):
++            return "STOPPED"
++        return "RUNNING" if active else "IDLE"
++
++    def _signal(
++        self,
++        value: Any,
++        unit: str,
++        provenance: str = PROVENANCE_RAW,
++    ) -> dict:
++        return {
++            "value": value,
++            "unit": unit,
++            "quality": _QUALITY_GOOD,
++            "provenance": provenance,
++            "simulation_time_s": _round(self._clock_s, 3),
++        }
++
++    def _node_signals(self) -> dict[str, dict[str, dict]]:
++        running = self._currently_running()
++        cfg = self._config
++        loads = self._active_loads(running)
++        stations = cfg.stations
++
++        filled = self._station_completions(stations["fill"])
++        caps = self._station_completions(stations["cap"])
++        labels = self._station_completions(stations["label"])
++        packed = self._station_completions(stations["case_pack"])
++        palletized = self._station_completions(stations["palletize"])
++        good = self._finished_goods_receipts()
++
++        production_min = self._production_elapsed_s / 60.0
++        fill_rate = filled / production_min if production_min > 0 else 0.0
++
++        nodes: dict[str, dict[str, dict]] = {}
++
++        def put(node_id: Optional[str], signal_id: str, value: Any, unit: str,
++                provenance: str = PROVENANCE_RAW) -> None:
++            if not node_id or node_id not in self._nodes_by_id:
++                return
++            nodes.setdefault(node_id, {})[signal_id] = self._signal(
++                value, unit, provenance
++            )
++
++        # Plant node — factory-level run state only.
++        put(self._plant_id(), "run_state", self.controller.run_state.value, "-")
++        put(self._plant_id(), "operating_state",
++            self._operating_state(running), "-")
++
++        # Water treatment.
++        feed_active = self._feed_active()
++        put(self._feed_node, "operating_state",
++            self._operating_state(feed_active), "-")
++        put(self._feed_node, "water_flow",
++            _round(self._last_raw_flow_m3h, 6), "m3/h")
++        put(self._feed_node, "raw_water_total_m3",
++            self._raw_water_total_m3, "m3")
++        put(self._ro_node, "operating_state",
++            self._operating_state(feed_active), "-")
++        put(self._ro_node, "production_flow",
++            _round(self._last_raw_flow_m3h * cfg.recovery_factor, 6), "m3/h")
++        put(self._ro_node, "treated_water_total_m3",
++            self._treated_water_total_m3, "m3")
++        put(self._ro_node, "reject_water_total_m3",
++            self._reject_water_total_m3, "m3")
++        put(self._tank_node, "level", _round(self._tank_level_pct(), 3), "%")
++        put(self._tank_node, "volume_m3", self._tank_volume_m3, "m3")
++
++        # Bottle preparation — logical area, no duplicate physical asset.
++        put(self._prep_area, "operating_state", self._operating_state(running), "-")
++        put(self._prep_area, "preform_count", int(self.controller.line.total_count),
++            "preform")
++
++        # Filling & packaging line area and its stations.
++        put(self._line_area, "operating_state", self._operating_state(running), "-")
++        put(self._line_area, "total_count",
++            int(self.controller.line.total_count), "bottle")
++        put(self._line_area, "good_count", good, "bottle")
++        put(self._line_area, "reject_count",
++            int(self.controller.line.reject_count), "bottle")
++
++        for station_id in self._route:
++            put(station_id, "operating_state", self._operating_state(running), "-")
++
++        put(stations["fill"], "fill_rate", _round(fill_rate, 3), "bottle/min")
++        put(stations["fill"], "product_water_total_m3",
++            self._product_water_total_m3, "m3")
++        put(stations["fill"], "water_draw_total_m3",
++            self._water_draw_total_m3, "m3")
++        put(stations["cap"], "cap_count", caps, "cap")
++        put(stations["label"], "label_count", labels, "label")
++        put(stations["case_pack"], "case_count",
++            packed // cfg.bottles_per_case, "case")
++        put(stations["palletize"], "pallet_count",
++            (packed // cfg.bottles_per_case) // cfg.cases_per_pallet, "pallet")
++
++        # Consolidated automated quality checkpoint configured for this line.
++        # The result is published only once the line has produced one, so no
++        # disposition is ever invented.
++        quality_stations = dict(self.controller.line.config.quality_stations)
++        for station_id in self._route:
++            if station_id not in quality_stations:
++                continue
++            disposition = self.controller.line.last_quality_disposition(station_id)
++            if disposition:
++                put(station_id, "inspection_result", disposition, "-")
++
++        # Utilities — support equipment keeps following demand while STOPPED.
++        put(self._compressor_node, "operating_state",
++            self._operating_state(self._compressor_loading(), True), "-")
++        put(self._compressor_node, "air_pressure",
++            _round(self._air_pressure_bar, 3), "bar")
++        put(self._chiller_node, "operating_state",
++            self._operating_state(running, True), "-")
++        put(self._pump_node, "operating_state",
++            self._operating_state(feed_active or running, True), "-")
++        put(self._meter_node, "plant_active_power",
++            _round(sum(loads.values()) + cfg.base_load_kw, 3), "kW",
++            PROVENANCE_RAW)
++        put(self._meter_node, "plant_energy_total",
++            self._plant_energy_total_kwh, "kWh")
++
++        # Warehouse / dispatch: activity tracks whether finished goods are
++        # available to drain.
++        put(self._fg_node, "operating_state",
++            self._operating_state(self._finished_goods_inventory() > 0), "-")
++        put(self._fg_node, "receipt_count", good, "bottle")
++        put(self._fg_node, "dispatch_count", self._dispatch_count, "bottle")
++        put(self._fg_node, "inventory_count",
++            self._finished_goods_inventory(), "bottle")
++
++        # Per-asset electrical load / energy where the asset consumes power.
++        for node_id, kw in loads.items():
++            put(node_id, "active_power", _round(kw, 3), "kW")
++            put(node_id, "energy_total",
++                self._node_energy_kwh.get(node_id, 0.0), "kWh")
++
++        return nodes
++
++    # --- projection ---
++
++    def snapshot(self, event_limit: int = 60) -> dict:
++        """One authoritative whole-factory raw projection."""
++        with self._lock:
++            cfg = self._config
++            running = self._currently_running()
++            loads = self._active_loads(running)
++            nodes = self._node_signals()
++
++            node_tree: dict[str, dict] = {}
++            for node in self._hierarchy:
++                entry = node.as_dict()
++                entry["signals"] = nodes.get(node.source_id, {})
++                node_tree[node.source_id] = entry
++
++            balances = {
++                # Conservation quantities are published at full precision so the
++                # balances stay exactly checkable (rounding them would break the
++                # mass/energy identities at small magnitudes).
++                "water": {
++                    "raw_water_feed_total_m3": self._raw_water_total_m3,
++                    "treated_water_total_m3": self._treated_water_total_m3,
++                    "ro_reject_total_m3": self._reject_water_total_m3,
++                    "recovery_factor": cfg.recovery_factor,
++                    "tank_initial_volume_m3": cfg.tank_initial_volume_m3,
++                    "tank_volume_m3": self._tank_volume_m3,
++                    "tank_capacity_m3": cfg.tank_capacity_m3,
++                    "tank_high_volume_m3": (
++                        cfg.tank_capacity_m3
++                        * cfg.tank_high_level_pct / 100.0
++                    ),
++                    "tank_low_volume_m3": (
++                        cfg.tank_capacity_m3
++                        * cfg.tank_low_level_pct / 100.0
++                    ),
++                    "tank_level_pct": self._tank_level_pct(),
++                    "product_water_total_m3": self._product_water_total_m3,
++                    "water_draw_total_m3": self._water_draw_total_m3,
++                    "other_loss_total_m3": max(
++                        0.0,
++                        self._water_draw_total_m3
++                        - self._product_water_total_m3,
++                    ),
++                },
++                "materials": {
++                    "preform_count": int(self.controller.line.total_count),
++                    "cap_count": self._station_completions(cfg.stations["cap"]),
++                    "label_count": self._station_completions(cfg.stations["label"]),
++                    "case_count": self._station_completions(
++                        cfg.stations["case_pack"]) // cfg.bottles_per_case,
++                    "pallet_count": (
++                        self._station_completions(cfg.stations["case_pack"])
++                        // cfg.bottles_per_case
++                    ) // cfg.cases_per_pallet,
++                },
++                "energy": {
++                    "plant_active_power_kw": _round(
++                        sum(loads.values()) + cfg.base_load_kw, 3),
++                    "plant_energy_total_kwh": self._plant_energy_total_kwh,
++                    "base_load_kw": cfg.base_load_kw,
++                },
++                "finished_goods": {
++                    "receipt_count": self._finished_goods_receipts(),
++                    "dispatch_count": self._dispatch_count,
++                    "inventory_count": self._finished_goods_inventory(),
++                },
++            }
++
++            return {
++                "workspace_id": self.workspace_id,
++                "plant_id": self._plant_id(),
++                "plant_name": self._nodes_by_id[self._plant_id()].name,
++                "factory": {
++                    "run_state": self.controller.run_state.value,
++                    "operating_state": self._operating_state(running),
++                    "simulation_time_s": _round(self._clock_s),
++                    "production_elapsed_s":
++                        _round(self._production_elapsed_s),
++                    "dwell_number": self.controller.line.conveyor.dwell_number,
++                },
++                "hierarchy": [node.as_dict() for node in self._hierarchy],
++                "nodes": node_tree,
++                "balances": balances,
++                "target_line": project_target_line(
++                    self.controller, limit=event_limit),
++                "recent_events": list(self._events),
++            }
++
++    def hierarchy(self) -> list[HierarchyNode]:
++        return list(self._hierarchy)
++
++    def iter_node_signals(self, snapshot: Optional[dict] = None):
++        """Yield ``(source_id, signal_id, signal)`` for every exposed fact."""
++        data = self.snapshot() if snapshot is None else snapshot
++        for source_id, entry in data["nodes"].items():
++            for signal_id, signal in (entry.get("signals") or {}).items():
++                yield source_id, signal_id, signal
+diff --git a/tests/test_dday_b3_bottled_water_ui.py b/tests/test_dday_b3_bottled_water_ui.py
+index 651b309..7b1d449 100644
+--- a/tests/test_dday_b3_bottled_water_ui.py
++++ b/tests/test_dday_b3_bottled_water_ui.py
+@@ -59,9 +59,19 @@ SKIN_ASSETS = (
+ 
+ @pytest.fixture()
+ def client(monkeypatch):
+-    """Fresh app bound to a freshly reset Bottled Water runtime."""
++    """Fresh app bound to a freshly reset Bottled Water runtime.
++
++    The autonomous server-side clock (DDAY-B4) is disabled here so the tests
++    drive production deterministically; autonomy itself is covered by the B4
++    test module and by the live SMOKE-BW-FACTORY check.
++    """
+     monkeypatch.delenv("BOTTLED_WATER_CONFIG", raising=False)
+-    app = create_app(config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml", dt_s=1.0)
++    monkeypatch.delenv("BOTTLED_WATER_FACTORY_CONFIG", raising=False)
++    app = create_app(
++        config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
++        dt_s=1.0,
++        factory_autorun=False,
++    )
+     with TestClient(app) as test_client:
+         test_client.post("/bottled-water-demo/reset")
+         yield test_client
+@@ -304,10 +314,12 @@ def test_b3_05b_control_surface_exposes_only_the_allowed_operator_controls(clien
+                       "release", "retry", "manual"):
+         assert forbidden not in lowered, f"skin page exposes {forbidden!r}"
+ 
+-    # The skin can only call the five operator controls plus the clock tick.
++    # The skin can only call the five operator controls, never a production
++    # step (DDAY-B4 made the skin observer-only).
+     js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
+     calls = re.findall(r"bw(?:Post|Action)\('([^']+)'\)", js)
+-    assert sorted(calls) == ["/advance", "/pause", "/reset", "/resume", "/start", "/stop"]
++    assert sorted(calls) == ["/pause", "/reset", "/resume", "/start", "/stop"]
++    assert "/advance" not in js
+ 
+     # No quality-decision endpoint is reachable from the skin or the API.
+     for path in ("/bottled-water-demo/disposition", "/bottled-water-demo/decision",
+@@ -397,6 +409,7 @@ def test_b3_07b_inspection_failure_and_reject_are_observable(client, monkeypatch
+         app = create_app(
+             config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
+             dt_s=1.0,
++            factory_autorun=False,
+         )
+         with TestClient(app) as failing_client:
+             failing_client.post("/bottled-water-demo/reset")
+@@ -464,9 +477,11 @@ def test_b3_08c_skin_interaction_is_selection_only():
+     js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
+ 
+     assert "This panel is read-only." in js
+-    # The only POSTs are the five operator controls plus the presentation tick.
++    # The only POSTs are the five operator controls: the skin never requests a
++    # production step (DDAY-B4 server-side autonomy).
+     posts = re.findall(r"bw(?:Post|Action)\('([^']+)'\)", js)
+-    assert sorted(posts) == sorted(["/start", "/pause", "/resume", "/stop", "/reset", "/advance"])
++    assert sorted(posts) == sorted(["/start", "/pause", "/resume", "/stop", "/reset"])
++    assert "/advance" not in js
+ 
+ 
+ # ═══════════════════════════════════════════════════════════════
+@@ -489,6 +504,7 @@ def test_b3_09b_api_exposes_no_later_slice_endpoint(client):
+     assert bw_paths == {
+         "/bottled-water-demo",
+         "/bottled-water-demo/state",
++        "/bottled-water-demo/factory",
+         "/bottled-water-demo/static/{filename}",
+         "/bottled-water-demo/unit/{unit_id}",
+         "/bottled-water-demo/start",
+diff --git a/tests/test_dday_b4_bottled_water_factory.py b/tests/test_dday_b4_bottled_water_factory.py
+new file mode 100644
+index 0000000..b4ea1d3
+--- /dev/null
++++ b/tests/test_dday_b4_bottled_water_factory.py
+@@ -0,0 +1,848 @@
++"""DDAY-B4 — Bottled Water whole-factory simulation + autonomous runtime tests.
++
++Governed by .ai-harness/tasks/DDAY-B4.json (authored from SA Issue #105).
++
++Every test exercises the real composition over the real B2 line runtime and the
++real frozen B1 topology contract — no mocked factory data. Coverage maps 1:1 to
++the 21 required verifications of Issue #105 §14.
++"""
++
++from __future__ import annotations
++
++import json
++import re
++import sys
++import tempfile
++import time
++from pathlib import Path
++
++import pytest
++import yaml
++
++fastapi = pytest.importorskip("fastapi")
++pytest.importorskip("httpx")
++
++from fastapi.testclient import TestClient
++
++from virtual_factory.assembly.line_runtime import LineRunState
++from virtual_factory.ui.api import create_app
++from virtual_factory.workspaces.bottled_water import (
++    BottledWaterFactory,
++    load_hierarchy,
++)
++
++REPO_ROOT = Path(__file__).resolve().parent.parent
++WORKSPACE = REPO_ROOT / "configs" / "workspaces" / "bottled-water-dday"
++LINE_YAML = WORKSPACE / "line.yaml"
++FACTORY_YAML = WORKSPACE / "factory.yaml"
++TOPOLOGY_YAML = WORKSPACE / "topology.yaml"
++STATIC = REPO_ROOT / "src" / "virtual_factory" / "ui" / "static"
++
++APP_CONFIG = REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml"
++
++RAW_CONFIG = yaml.safe_load(FACTORY_YAML.read_text(encoding="utf-8"))
++TOPOLOGY = yaml.safe_load(TOPOLOGY_YAML.read_text(encoding="utf-8"))
++
++NOMINAL_DWELL_S = 20.0
++BOTTLE_VOLUME_M3 = RAW_CONFIG["line"]["bottle_volume_m3"]
++TANK_CAPACITY_M3 = RAW_CONFIG["water_treatment"]["tank_capacity_m3"]
++TANK_HIGH_PCT = RAW_CONFIG["water_treatment"]["tank_high_level_pct"]
++TANK_LOW_PCT = RAW_CONFIG["water_treatment"]["tank_low_level_pct"]
++RECOVERY = RAW_CONFIG["water_treatment"]["recovery_factor"]
++PROCESS_EFFICIENCY = RAW_CONFIG["line"]["process_efficiency"]
++AIR_SETPOINT_BAR = RAW_CONFIG["utilities"]["compressed_air"]["setpoint_bar"]
++AIR_SAG_BAR = RAW_CONFIG["utilities"]["compressed_air"]["production_sag_bar"]
++AIR_RUNNING_KW = RAW_CONFIG["utilities"]["compressed_air"]["running_kw"]
++AIR_STANDBY_KW = RAW_CONFIG["utilities"]["compressed_air"]["standby_kw"]
++BASE_LOAD_KW = RAW_CONFIG["plant"]["base_load_kw"]
++
++STATIONS = RAW_CONFIG["line"]["stations"]
++FILL, CAP, LABEL = STATIONS["fill"], STATIONS["cap"], STATIONS["label"]
++CASE_PACK, PALLETIZE = STATIONS["case_pack"], STATIONS["palletize"]
++FEED, RO, TANK = "BW-WT-FEED01", "BW-WT-RO01", "BW-WT-TK01"
++COMPRESSOR, CHILLER, PUMP, METER = (
++    "BW-UT-CMP01", "BW-UT-CHL01", "BW-UT-PMP01", "BW-UT-PWR01",
++)
++FG = "BW-WH-FG01"
++LINE_AREA, PREP_AREA = "BW-FP", "BW-BP"
++
++# Workspace-domain isolation: no other line's vocabulary may leak out.
++FORBIDDEN_PATTERNS = (
++    re.compile(r"assy", re.IGNORECASE),
++    re.compile(r"tipa", re.IGNORECASE),
++    re.compile(r"pre-assy", re.IGNORECASE),
++    re.compile(r"sso2", re.IGNORECASE),
++    re.compile(r"rso2", re.IGNORECASE),
++    re.compile(r"ap05_jam", re.IGNORECASE),
++    re.compile(r"\bAP\d{2}\b"),
++)
++
++# Calculated KPIs belong to FactoriX IIoT / PlantOS, never to VF raw facts.
++FORBIDDEN_KPI_FIELDS = (
++    "oee", "availability", "performance_pct", "quality_pct", "energy_per",
++    "utilization", "health_score", "predictive",
++)
++
++
++def _factory() -> BottledWaterFactory:
++    return BottledWaterFactory(
++        line_config_path=LINE_YAML,
++        factory_config_path=FACTORY_YAML,
++    )
++
++
++def _run(factory: BottledWaterFactory, steps: int, dt: float = 1.0) -> None:
++    for _ in range(steps):
++        factory.step(dt)
++
++
++def _signal(snapshot: dict, node_id: str, signal_id: str):
++    return snapshot["nodes"][node_id]["signals"][signal_id]["value"]
++
++
++def _digest(snapshot: dict) -> str:
++    import hashlib
++
++    canonical = json.dumps(snapshot, sort_keys=True, default=str)
++    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
++
++
++def _trace_station_units(factory: BottledWaterFactory, station_id: str) -> int:
++    """Independent per-station completion count, straight from the line trace."""
++    return len({
++        event.wip_id
++        for event in factory.controller.line.trace
++        if event.event_type == "STATION_COMPLETE" and event.position == station_id
++    })
++
++
++@pytest.fixture()
++def client(monkeypatch):
++    """Fresh app with the server-side clock disabled for determinism."""
++    monkeypatch.delenv("BOTTLED_WATER_CONFIG", raising=False)
++    monkeypatch.delenv("BOTTLED_WATER_FACTORY_CONFIG", raising=False)
++    app = create_app(config_path=APP_CONFIG, dt_s=1.0, factory_autorun=False)
++    with TestClient(app) as test_client:
++        test_client.post("/bottled-water-demo/reset")
++        yield test_client
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-1 / B4-2 — server-side autonomous runtime, browser-independent
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_01_start_progresses_server_side_without_any_advance_call(
++    monkeypatch,
++):
++    """START progresses production on the server with no /advance from a client."""
++    monkeypatch.delenv("BOTTLED_WATER_CONFIG", raising=False)
++    monkeypatch.delenv("BOTTLED_WATER_FACTORY_CONFIG", raising=False)
++    app = create_app(
++        config_path=APP_CONFIG,
++        dt_s=1.0,
++        factory_autorun=True,
++        factory_tick_interval_s=0.05,
++    )
++    with TestClient(app) as autonomous:
++        autonomous.post("/bottled-water-demo/start")
++        deadline = time.time() + 10.0
++        snapshot = autonomous.get("/bottled-water-demo/factory").json()
++        while (time.time() < deadline
++               and snapshot["factory"]["simulation_time_s"] < NOMINAL_DWELL_S):
++            time.sleep(0.05)
++            snapshot = autonomous.get("/bottled-water-demo/factory").json()
++
++    assert snapshot["factory"]["run_state"] == "RUNNING"
++    assert snapshot["factory"]["simulation_time_s"] >= NOMINAL_DWELL_S
++    assert snapshot["target_line"]["dwell_number"] >= 1
++    assert snapshot["target_line"]["counts"]["total"] >= 1
++    # The tank/aggregate models progressed too, not just the line.
++    assert snapshot["balances"]["water"]["raw_water_feed_total_m3"] > 0.0
++    assert snapshot["balances"]["energy"]["plant_energy_total_kwh"] > 0.0
++
++
++def test_b4_02_simulation_runs_with_the_b3_page_never_opened(monkeypatch):
++    """Not opening the B3 page at all must not affect simulation progress."""
++    monkeypatch.delenv("BOTTLED_WATER_CONFIG", raising=False)
++    monkeypatch.delenv("BOTTLED_WATER_FACTORY_CONFIG", raising=False)
++    app = create_app(
++        config_path=APP_CONFIG,
++        dt_s=1.0,
++        factory_autorun=True,
++        factory_tick_interval_s=0.05,
++    )
++    with TestClient(app, raise_server_exceptions=True) as autonomous:
++        # Only the factory projection is ever requested — no skin, no assets.
++        autonomous.post("/bottled-water-demo/start")
++        deadline = time.time() + 10.0
++        first = autonomous.get("/bottled-water-demo/factory").json()
++        time.sleep(0.3)
++        second = autonomous.get("/bottled-water-demo/factory").json()
++        while (time.time() < deadline
++               and second["factory"]["simulation_time_s"] < 20.0):
++            time.sleep(0.05)
++            second = autonomous.get("/bottled-water-demo/factory").json()
++
++    assert first["factory"]["simulation_time_s"] >= 0.0
++    assert second["factory"]["simulation_time_s"] > first["factory"][
++        "simulation_time_s"]
++    assert second["target_line"]["counts"]["total"] >= 1
++
++
++def test_b4_02b_the_skin_never_posts_a_production_step():
++    """The B3 skin is observer-only: it polls state and posts no step."""
++    js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
++
++    assert "/advance" not in js
++    posts = re.findall(r"bw(?:Post|Action)\('([^']+)'\)", js)
++    assert sorted(posts) == ["/pause", "/reset", "/resume", "/start", "/stop"]
++    # It reads state and it does not carry a client-side production clock.
++    assert "bwGet('/state')" in js
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-3 … B4-6 — control semantics
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_03_pause_freezes_target_line_and_aggregate_progression():
++    factory = _factory()
++    factory.start()
++    _run(factory, 100)
++    running = factory.snapshot()
++    assert running["factory"]["simulation_time_s"] == 100.0
++    assert running["target_line"]["counts"]["total"] == 5
++
++    factory.pause()
++    _run(factory, 200)
++    paused = factory.snapshot()
++
++    assert paused["factory"]["run_state"] == LineRunState.PAUSED.value
++    assert paused["factory"]["simulation_time_s"] == 100.0
++    assert paused["factory"]["production_elapsed_s"] == 100.0
++    assert paused["target_line"]["counts"] == running["target_line"]["counts"]
++    assert paused["target_line"]["simulation_time_s"] == running["target_line"][
++        "simulation_time_s"]
++    # Every conserved quantity is frozen; only the instantaneous load reading
++    # differs (a paused plant reports standby, and no simulated time passes, so
++    # no energy accrues either).
++    assert paused["balances"]["water"] == running["balances"]["water"]
++    assert paused["balances"]["materials"] == running["balances"]["materials"]
++    assert paused["balances"]["finished_goods"] == running["balances"][
++        "finished_goods"]
++    assert paused["balances"]["energy"]["plant_energy_total_kwh"] == running[
++        "balances"]["energy"]["plant_energy_total_kwh"]
++
++
++def test_b4_04_resume_continues_from_the_preserved_state():
++    factory = _factory()
++    factory.start()
++    _run(factory, 100)
++    factory.pause()
++    _run(factory, 50)
++    held = factory.snapshot()
++
++    factory.resume()
++    assert factory.controller.run_state is LineRunState.RUNNING
++    _run(factory, 100)
++    resumed = factory.snapshot()
++
++    assert held["factory"]["simulation_time_s"] == 100.0
++    assert resumed["factory"]["simulation_time_s"] == 200.0
++    assert resumed["target_line"]["counts"]["total"] == 10
++    # No state was rebuilt: the tank and counters carried over.
++    assert resumed["balances"]["water"]["raw_water_feed_total_m3"] > held[
++        "balances"]["water"]["raw_water_feed_total_m3"]
++
++
++def test_b4_05_stop_halts_progression_without_becoming_fault():
++    factory = _factory()
++    factory.start()
++    _run(factory, 100)
++    before = factory.snapshot()
++
++    factory.stop()
++    assert factory.controller.run_state is LineRunState.STOPPED
++    _run(factory, 200)
++    after = factory.snapshot()
++
++    assert after["factory"]["run_state"] == "STOPPED"
++    assert after["target_line"]["counts"] == before["target_line"]["counts"]
++    assert after["target_line"]["dwell_number"] == before["target_line"][
++        "dwell_number"]
++    assert after["balances"]["materials"] == before["balances"]["materials"]
++    assert after["nodes"]["BW-DEMO-01"]["signals"]["operating_state"][
++        "value"] == "STOPPED"
++    # STOP is a controlled stop, never a fault.
++    assert "FAULT" not in json.dumps(after)
++    assert all(
++        entry["signals"].get("operating_state", {}).get("value") != "FAULT"
++        for entry in after["nodes"].values()
++    )
++    # The plant stays energized: only standby/base load accrues energy, so the
++    # cumulative meter still only moves forward.
++    assert after["balances"]["energy"]["plant_energy_total_kwh"] >= before[
++        "balances"]["energy"]["plant_energy_total_kwh"]
++    assert after["balances"]["energy"]["plant_active_power_kw"] < before[
++        "balances"]["energy"]["plant_active_power_kw"]
++
++
++def test_b4_06_reset_returns_the_deterministic_initial_state():
++    fresh = _factory()
++    factory = _factory()
++    factory.start()
++    _run(factory, 300)
++    factory.pause()
++    _run(factory, 40)
++
++    factory.reset()
++    initial = factory.snapshot()
++
++    assert factory.controller.run_state is LineRunState.STOPPED
++    assert initial["factory"]["simulation_time_s"] == 0.0
++    assert initial["factory"]["production_elapsed_s"] == 0.0
++    assert initial["target_line"]["counts"] == {"total": 0, "good": 0,
++                                                "reject": 0}
++    assert initial["target_line"]["units_on_line"] == 0
++    assert initial["balances"]["materials"]["preform_count"] == 0
++    assert initial["balances"]["finished_goods"]["dispatch_count"] == 0
++    assert initial["balances"]["water"]["tank_volume_m3"] == pytest.approx(
++        TANK_CAPACITY_M3 * RAW_CONFIG["water_treatment"][
++            "tank_initial_fill_fraction"])
++    assert _digest(initial) == _digest(fresh.snapshot())
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-7 — deterministic replay
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_07_identical_control_sequences_produce_identical_state_traces():
++    traces = []
++    for _ in range(2):
++        factory = _factory()
++        factory.start()
++        _run(factory, 250)
++        factory.pause()
++        _run(factory, 30)
++        factory.resume()
++        _run(factory, 250)
++        traces.append([
++            _digest(factory.snapshot()) for _ in range(1)
++        ] + [_digest(factory.snapshot())])
++
++    assert traces[0] == traces[1]
++
++    other = _factory()
++    other.start()
++    _run(other, 251)
++    assert _digest(other.snapshot()) != traces[0][0]
++
++
++def test_b4_07b_step_size_does_not_change_simulation_truth():
++    """step(N) and N x step(1) must reach the same deterministic state."""
++    coarse = _factory()
++    fine = _factory()
++    coarse.start()
++    fine.start()
++
++    for _ in range(20):
++        coarse.step(20.0)
++        _run(fine, 20)
++
++    assert _digest(coarse.snapshot()) == _digest(fine.snapshot())
++
++
++def test_b4_07c_no_wall_clock_leaks_into_simulation_facts():
++    factory = _factory()
++    factory.start()
++    _run(factory, 20)
++    first = factory.snapshot()
++    time.sleep(0.25)
++    second = factory.snapshot()
++
++    assert _digest(first) == _digest(second)
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-8 / B4-9 / B4-10 — hierarchy, taxonomy and fact attribution
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_08_b1_hierarchy_appears_exactly_with_one_parent_per_asset():
++    factory = _factory()
++    factory.start()
++    _run(factory, 60)
++    snapshot = factory.snapshot()
++
++    expected: dict[str, str] = {}
++    for area in TOPOLOGY["areas"]:
++        expected[area["id"]] = TOPOLOGY["plant"]["id"]
++        for asset in area.get("assets", ()):
++            expected[asset["id"]] = area["id"]
++
++    nodes = snapshot["nodes"]
++    assert snapshot["plant_id"] == TOPOLOGY["plant"]["id"]
++    assert set(nodes) == set(expected) | {TOPOLOGY["plant"]["id"]}
++
++    for node_id, entry in nodes.items():
++        assert entry["source_id"] == node_id
++        assert entry["entity_type"] in ("plant", "area", "asset")
++        assert entry["parent_source_id"] == expected.get(node_id)
++        assert entry["role"]
++    assert nodes[TOPOLOGY["plant"]["id"]]["parent_source_id"] is None
++
++    # Every asset has exactly one parent, and it is an area of the plant.
++    area_ids = {area["id"] for area in TOPOLOGY["areas"]}
++    for node_id, entry in nodes.items():
++        if entry["entity_type"] == "asset":
++            assert entry["parent_source_id"] in area_ids
++    asset_counts = sum(
++        1 for entry in nodes.values() if entry["entity_type"] == "asset"
++    )
++    assert asset_counts == sum(len(a.get("assets", ())) for a in TOPOLOGY["areas"])
++
++
++def test_b4_09_source_ids_are_unique_and_the_blower_is_not_duplicated():
++    _topology, nodes = load_hierarchy(TOPOLOGY_YAML)
++    ids = [node.source_id for node in nodes]
++
++    assert len(ids) == len(set(ids))
++    blowers = [node for node in nodes if "blow" in node.name.lower()]
++    assert len(blowers) == 1
++    assert blowers[0].source_id == "BW-FP-BLW01"
++    assert blowers[0].parent_source_id == "BW-FP"
++
++    # Bottle Preparation stays a logical area owning no physical asset.
++    assert not [
++        node for node in nodes if node.parent_source_id == PREP_AREA
++    ]
++    assert any(node.source_id == PREP_AREA and node.entity_type == "area"
++               for node in nodes)
++
++
++def test_b4_10_every_exposed_fact_is_attributeable_to_a_hierarchy_node():
++    factory = _factory()
++    factory.start()
++    _run(factory, 120)
++    snapshot = factory.snapshot()
++
++    valid_nodes = set(snapshot["nodes"])
++    seen = 0
++    for source_id, signal_id, signal in factory.iter_node_signals(snapshot):
++        seen += 1
++        assert source_id in valid_nodes
++        assert signal_id
++        assert set(signal) == {
++            "value", "unit", "quality", "provenance", "simulation_time_s",
++        }
++        assert signal["unit"]
++        assert signal["quality"] == "GOOD"
++        assert signal["provenance"] in ("SIMULATED_RAW", "CONFIGURED_TARGET")
++        assert isinstance(signal["simulation_time_s"], (int, float))
++        assert "workspace_id" in snapshot["nodes"][source_id]
++        assert snapshot["nodes"][source_id]["workspace_id"] == (
++            snapshot["workspace_id"])
++
++    assert seen > 40
++    # No FactoriX platform canonical identity is invented by VF.
++    combined = json.dumps(snapshot)
++    for invented in ("vendor", "model_number", "serial", "canonical_id",
++                     "platform_id", "device_id"):
++        assert invented not in combined
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-11 / B4-12 — water and material conservation
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_11_water_balance_is_coherent_and_the_tank_stays_bounded():
++    factory = _factory()
++    factory.start()
++
++    idle_seen = False
++    previous_at_high = False
++    for step in range(1500):
++        factory.step(1.0)
++        if step % 5:
++            continue
++        snapshot = factory.snapshot()
++        water = snapshot["balances"]["water"]
++        # Bounded tank: never below empty, never past the high-level limit.
++        assert 0.0 <= water["tank_volume_m3"] <= water["tank_high_volume_m3"]
++        assert water["tank_high_volume_m3"] <= TANK_CAPACITY_M3
++        assert water["tank_volume_m3"] == pytest.approx(
++            water["tank_initial_volume_m3"]
++            + water["treated_water_total_m3"]
++            - water["water_draw_total_m3"],
++            abs=1e-12,
++        )
++        assert water["treated_water_total_m3"] == pytest.approx(
++            water["raw_water_feed_total_m3"] * RECOVERY, rel=1e-12)
++        assert water["ro_reject_total_m3"] == pytest.approx(
++            water["raw_water_feed_total_m3"]
++            - water["treated_water_total_m3"], rel=1e-12)
++        assert water["product_water_total_m3"] <= water["water_draw_total_m3"]
++
++        feed_flow = _signal(snapshot, FEED, "water_flow")
++        treated_flow = _signal(snapshot, RO, "production_flow")
++        # The feed never delivers more than its nominal flow, and treated water
++        # is always exactly the recovered fraction of the raw water taken.
++        assert 0.0 <= feed_flow <= RAW_CONFIG["water_treatment"][
++            "raw_water_flow_m3h"]
++        assert treated_flow == pytest.approx(feed_flow * RECOVERY, rel=1e-6)
++        at_high = water["tank_volume_m3"] >= water["tank_high_volume_m3"]
++        if at_high:
++            idle_seen = True
++            if previous_at_high:
++                # The tank entered this step already at the high limit, so the
++                # feed must have delivered nothing.
++                assert feed_flow == 0.0
++        previous_at_high = at_high
++
++    assert idle_seen, "the tank high-level rule never engaged"
++    assert TANK_LOW_PCT < TANK_HIGH_PCT
++
++    # Once the tank sits at the high limit the feed is fully shut off.
++    assert _signal(factory.snapshot(), FEED, "water_flow") == 0.0
++
++
++def test_b4_11b_the_tank_level_rule_has_hysteresis_and_drains():
++    factory = _factory()
++    factory.start()
++
++    at_high = None
++    for _ in range(1500):
++        factory.step(1.0)
++        snapshot = factory.snapshot()
++        water = snapshot["balances"]["water"]
++        if water["tank_volume_m3"] >= water["tank_high_volume_m3"]:
++            at_high = snapshot
++            break
++    assert at_high is not None, "the tank never reached the high-level rule"
++
++    factory.step(1.0)
++    saturated = factory.snapshot()
++    assert _signal(saturated, FEED, "water_flow") == 0.0
++    assert _signal(saturated, RO, "production_flow") == 0.0
++    assert _signal(saturated, FEED, "operating_state") == "IDLE"
++
++    for _ in range(400):
++        factory.step(1.0)
++    after = factory.snapshot()
++
++    high_water = at_high["balances"]["water"]
++    later_water = after["balances"]["water"]
++    assert later_water["tank_volume_m3"] < high_water["tank_volume_m3"]
++    assert later_water["water_draw_total_m3"] > high_water["water_draw_total_m3"]
++    assert later_water["water_draw_total_m3"] == pytest.approx(
++        later_water["product_water_total_m3"]
++        + later_water["other_loss_total_m3"],
++        abs=1e-12,
++    )
++    # The feed stays latched off while the level is inside the hysteresis band.
++    assert later_water["tank_volume_m3"] > later_water["tank_low_volume_m3"]
++    assert _signal(after, FEED, "water_flow") == 0.0
++
++
++def test_b4_12_consumption_follows_real_production_counts():
++    factory = _factory()
++    factory.start()
++    for _ in range(20):
++        factory.step(NOMINAL_DWELL_S)
++    snapshot = factory.snapshot()
++
++    line = factory.controller.line
++    filled = _trace_station_units(factory, FILL)
++    capped = _trace_station_units(factory, CAP)
++    labeled = _trace_station_units(factory, LABEL)
++    packed = _trace_station_units(factory, CASE_PACK)
++
++    materials = snapshot["balances"]["materials"]
++    water = snapshot["balances"]["water"]
++
++    # Preforms follow units introduced; downstream material follows the units
++    # that actually reached that station.
++    assert materials["preform_count"] == line.total_count
++    assert materials["cap_count"] == capped
++    assert materials["label_count"] == labeled
++    assert materials["case_count"] == packed // RAW_CONFIG["packaging"][
++        "bottles_per_case"]
++    assert materials["pallet_count"] == materials["case_count"] // (
++        RAW_CONFIG["packaging"]["cases_per_pallet"])
++
++    # Filled water is exactly the bottles that were actually filled.
++    assert water["product_water_total_m3"] == pytest.approx(
++        filled * BOTTLE_VOLUME_M3, rel=1e-9)
++    assert water["water_draw_total_m3"] == pytest.approx(
++        water["product_water_total_m3"] / PROCESS_EFFICIENCY, rel=1e-9)
++    # Downstream material can never exceed upstream material.
++    assert labeled <= capped <= filled <= materials["preform_count"]
++
++
++def test_b4_12b_rejected_units_still_consume_already_used_material():
++    """A FAIL at Inspection ejects the bottle after cap and fill were consumed."""
++    text = LINE_YAML.read_text(encoding="utf-8")
++    derived = text.replace("    scenario: PASS\n", "    scenario: ALWAYS_FAIL\n", 1)
++    assert derived != text
++    factory_text = FACTORY_YAML.read_text(encoding="utf-8")
++
++    with tempfile.TemporaryDirectory(prefix="dday-b4-") as tmp:
++        line_path = Path(tmp) / "line.yaml"
++        line_path.write_text(derived, encoding="utf-8")
++        factory_path = Path(tmp) / "factory.yaml"
++        factory_path.write_text(factory_text, encoding="utf-8")
++
++        factory = BottledWaterFactory(line_path, factory_path)
++        factory.start()
++        for _ in range(20):
++            factory.step(NOMINAL_DWELL_S)
++        snapshot = factory.snapshot()
++
++        rejects = snapshot["target_line"]["counts"]["reject"]
++        materials = snapshot["balances"]["materials"]
++        filled = _trace_station_units(factory, FILL)
++        capped = _trace_station_units(factory, CAP)
++        labeled = _trace_station_units(factory, LABEL)
++
++        assert rejects > 0
++        assert capped >= rejects, "rejected bottles must still consume caps"
++        assert materials["cap_count"] == capped
++        assert materials["label_count"] == labeled <= capped
++        # Water was consumed for every bottle that reached the filler.
++        assert snapshot["balances"]["water"]["product_water_total_m3"] == (
++            pytest.approx(filled * BOTTLE_VOLUME_M3, rel=1e-9))
++        assert filled >= capped >= rejects
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-13 / B4-14 — utilities causality and energy conservation
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_13_utilities_respond_causally_to_production_load():
++    factory = _factory()
++    factory.start()
++    _run(factory, 200)
++    running = factory.snapshot()
++
++    assert _signal(running, COMPRESSOR, "air_pressure") == pytest.approx(
++        AIR_SETPOINT_BAR - AIR_SAG_BAR, abs=1e-6)
++    assert _signal(running, COMPRESSOR, "operating_state") == "RUNNING"
++    assert _signal(running, COMPRESSOR, "active_power") == AIR_RUNNING_KW
++    assert _signal(running, PUMP, "operating_state") == "RUNNING"
++    assert _signal(running, FEED, "water_flow") > 0.0
++
++    factory.stop()
++    _run(factory, 120)
++    stopped = factory.snapshot()
++
++    # Production stopped -> air demand drops -> pressure recovers -> the
++    # compressor unloads; the chiller and treatment feed follow. Support
++    # equipment reports its own load state rather than a blanket STOPPED...
++    assert _signal(stopped, COMPRESSOR, "air_pressure") == pytest.approx(
++        AIR_SETPOINT_BAR, abs=1e-6)
++    assert _signal(stopped, COMPRESSOR, "operating_state") == "IDLE"
++    assert _signal(stopped, COMPRESSOR, "active_power") == AIR_STANDBY_KW
++    assert _signal(stopped, CHILLER, "operating_state") == "IDLE"
++    assert _signal(stopped, FEED, "water_flow") == 0.0
++    assert _signal(stopped, RO, "production_flow") == 0.0
++    # ... while process equipment of the stopped plant reports STOPPED.
++    assert _signal(stopped, FEED, "operating_state") == "STOPPED"
++    assert _signal(stopped, LINE_AREA, "operating_state") == "STOPPED"
++    assert (stopped["balances"]["energy"]["plant_active_power_kw"]
++            < running["balances"]["energy"]["plant_active_power_kw"])
++
++
++def test_b4_14_energy_is_monotonic_and_integrated_from_power():
++    factory = _factory()
++    factory.start()
++
++    previous = 0.0
++    for step in range(400):
++        factory.step(1.0)
++        if step % 10:
++            continue
++        snapshot = factory.snapshot()
++        total = snapshot["balances"]["energy"]["plant_energy_total_kwh"]
++        assert total >= previous
++        previous = total
++
++    snapshot = factory.snapshot()
++    asset_energy = sum(
++        entry["signals"]["energy_total"]["value"]
++        for entry in snapshot["nodes"].values()
++        if "energy_total" in entry["signals"]
++    )
++    clock_s = snapshot["factory"]["simulation_time_s"]
++    expected = asset_energy + BASE_LOAD_KW * clock_s / 3600.0
++
++    assert snapshot["balances"]["energy"]["plant_energy_total_kwh"] == (
++        pytest.approx(expected, rel=1e-12))
++    assert _signal(snapshot, METER, "plant_energy_total") == snapshot[
++        "balances"]["energy"]["plant_energy_total_kwh"]
++
++
++def test_b4_14b_energy_only_accrues_when_simulated_time_advances():
++    factory = _factory()
++    factory.start()
++    _run(factory, 60)
++    running_energy = factory.snapshot()["balances"]["energy"][
++        "plant_energy_total_kwh"]
++
++    factory.pause()
++    _run(factory, 200)
++    assert factory.snapshot()["balances"]["energy"][
++        "plant_energy_total_kwh"] == running_energy
++
++    # Let the utilities settle to their stopped standby load, then integrate.
++    factory.stop()
++    _run(factory, 120)
++    settled = factory.snapshot()
++    before = settled["balances"]["energy"]["plant_energy_total_kwh"]
++    standby_kw = settled["balances"]["energy"]["plant_active_power_kw"]
++    # A stopped plant draws only base + standby load, far below full production.
++    assert standby_kw < 30.0
++
++    _run(factory, 600)
++    after = factory.snapshot()
++    assert after["balances"]["energy"]["plant_energy_total_kwh"] > before
++    # Pure power x time integration at the settled standby load.
++    assert after["balances"]["energy"]["plant_energy_total_kwh"] == (
++        pytest.approx(before + standby_kw * 600.0 / 3600.0, rel=1e-12))
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-15 — warehouse / finished goods follow-through
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_15_finished_goods_follow_completed_good_production():
++    factory = _factory()
++    factory.start()
++    _run(factory, 40)
++    early = factory.snapshot()
++    assert early["balances"]["finished_goods"]["receipt_count"] == 0
++    assert early["balances"]["finished_goods"]["inventory_count"] == 0
++    assert early["balances"]["finished_goods"]["dispatch_count"] == 0
++
++    for _ in range(20):
++        factory.step(NOMINAL_DWELL_S)
++    later = factory.snapshot()
++
++    good = later["target_line"]["counts"]["good"]
++    goods = later["balances"]["finished_goods"]
++    assert good > 0
++    assert goods["receipt_count"] == good == _signal(later, FG, "receipt_count")
++    assert goods["dispatch_count"] > 0
++    assert goods["inventory_count"] == goods["receipt_count"] - goods[
++        "dispatch_count"]
++    assert goods["inventory_count"] == _signal(later, FG, "inventory_count")
++    assert goods["inventory_count"] >= 0
++
++    before = goods["dispatch_count"]
++    factory.stop()
++    _run(factory, 120)
++    drained = factory.snapshot()["balances"]["finished_goods"]
++    assert drained["dispatch_count"] >= before
++    assert drained["inventory_count"] == drained["receipt_count"] - drained[
++        "dispatch_count"]
++    assert drained["inventory_count"] >= 0
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-16 / B4-17 — raw-fact boundary and domain isolation
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_16_no_calculated_kpi_is_published(client):
++    client.post("/bottled-water-demo/start")
++    for _ in range(6):
++        client.post("/bottled-water-demo/advance")
++
++    payload = client.get("/bottled-water-demo/factory").json()
++    serialised = json.dumps(payload).lower()
++
++    for kpi in FORBIDDEN_KPI_FIELDS:
++        assert kpi not in serialised, f"calculated KPI leaked: {kpi}"
++    assert set(payload["balances"]) == {
++        "water", "materials", "energy", "finished_goods",
++    }
++    assert set(payload["target_line"]["counts"]) == {"total", "good", "reject"}
++
++
++def test_b4_17_no_foreign_line_semantics_leak_into_the_factory_state(client):
++    client.post("/bottled-water-demo/start")
++    for _ in range(8):
++        client.post("/bottled-water-demo/advance")
++
++    payload = client.get("/bottled-water-demo/factory").json()
++    serialised = json.dumps(payload)
++    for pattern in FORBIDDEN_PATTERNS:
++        assert not pattern.search(serialised), (
++            f"foreign-line vocabulary in the factory projection: {pattern.pattern}"
++        )
++
++    # Nor may it leak into the raw process event stream.
++    for event in payload["target_line"]["recent_events"]:
++        assert event["event_type"] != "LINE_ENTRY"
++
++
++# ═══════════════════════════════════════════════════════════════
++# B4-18 / B4-19 — B3 skin still works; regression intact
++# ═══════════════════════════════════════════════════════════════
++
++def test_b4_18_b3_target_line_ui_still_works_as_observer_and_control(client):
++    page = client.get("/bottled-water-demo")
++    assert page.status_code == 200 and "Bottled Water" in page.text
++    for name in ("bottled_water_demo.js", "bottled_water_demo.css"):
++        assert client.get(f"/bottled-water-demo/static/{name}").status_code == 200
++
++    assert client.post("/bottled-water-demo/start").status_code == 200
++    assert client.get("/bottled-water-demo/state").json()["run_state"] == "RUNNING"
++    assert client.post("/bottled-water-demo/pause").json()["run_state"] == "PAUSED"
++    assert client.post("/bottled-water-demo/resume").json()["run_state"] == "RUNNING"
++    assert client.post("/bottled-water-demo/stop").json()["run_state"] == "STOPPED"
++    assert client.post("/bottled-water-demo/reset").json()["run_state"] == "STOPPED"
++
++    # The skin and the factory projection read the same runtime instance.
++    factory = client.get("/bottled-water-demo/factory").json()
++    state = client.get("/bottled-water-demo/state").json()
++    assert factory["target_line"]["route"] == state["route"] == TOPOLOGY[
++        "areas"][2]["route"]
++
++
++def test_b4_19_legacy_and_other_endpoints_still_serve(client):
++    assert client.get("/health").json()["status"] == "ok"
++    assert client.get("/").status_code == 200
++    assert client.get("/assy-demo").status_code == 200
++    assert client.get("/status").status_code == 200
++    assert client.post(
++        "/assy-demo/reset", json={"scenario": "HAPPY_PATH"}).status_code == 200
++
++    # The Bottled Water factory must not be a second ASSY universe.
++    routes = {route.path for route in client.app.routes}
++    assert "/bottled-water-demo/factory" in routes
++    assert not any(path.startswith("/bottled-water-demo/assy")
++                   for path in routes)
++
++
++def test_b4_19b_factory_owns_exactly_one_runtime_instance(client):
++    factory = client.get("/bottled-water-demo/factory").json()
++    client.post("/bottled-water-demo/start")
++    for _ in range(4):
++        client.post("/bottled-water-demo/advance")
++    after = client.get("/bottled-water-demo/factory").json()
++    state = client.get("/bottled-water-demo/state").json()
++
++    assert after["target_line"]["counts"]["total"] == 4
++    assert state["counts"]["total"] == 4
++    assert after["factory"]["run_state"] == state["run_state"] == "RUNNING"
++    assert after["target_line"] == state
++    assert factory["factory"]["simulation_time_s"] == 0.0
++    assert after["factory"]["simulation_time_s"] == 80.0
++
++
++def test_b4_20_debug_advance_seam_stays_out_of_the_operator_surface(client):
++    html = (STATIC / "bottled_water_demo.html").read_text(encoding="utf-8")
++    buttons = re.findall(r'id="(bw-btn-[a-z]+)"', html)
++    assert buttons == ["bw-btn-start", "bw-btn-pause", "bw-btn-resume",
++                       "bw-btn-stop", "bw-btn-reset"]
++
++    factory_js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
++    assert "/advance" not in factory_js
++    assert client.post("/bottled-water-demo/advance").status_code == 200
+\ No newline at end of file
