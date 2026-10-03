@@ -18,7 +18,10 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from virtual_factory.assembly.line_runtime import (
+    AssyLineConfig,
     AssyLineRuntime,
+    LineRunState,
+    load_assy_config_from_yaml,
 )
 from virtual_factory.assembly.station_contracts import CompletionMode
 from virtual_factory.assembly.demo_snapshot import (
@@ -79,10 +82,28 @@ class DemoController:
     # VF-DM-DEMO-ASSY-MES-02 — optional six-sub-line MES contract bridge
     mes_bridge: Optional[AssyMesBridge] = None
 
+    # B2 — generic single-line workspace (Bottled Water); None for ASSY
+    _line: Optional[AssyLineRuntime] = None
+    _generic_profile: bool = False
+
     # --- Initialization ---
 
     def initialize(self) -> AssyDemoSnapshot:
-        """Load config, create composition with 6 contexts, seed WIPs."""
+        """Load config, create composition with 6 contexts, seed WIPs.
+
+        B2: when the configuration declares a generic single-line profile, one
+        ``AssyLineRuntime`` is driven directly instead of the six-sub-line ASSY
+        composition. The ASSY path is unchanged.
+        """
+        config = load_assy_config_from_yaml(self.config_path)
+        if config.is_generic_profile:
+            self._generic_profile = True
+            self._composition = None
+            self._line = AssyLineRuntime(config=config)
+            return AssyDemoSnapshot()
+
+        self._generic_profile = False
+        self._line = None
         self._composition = AssyDemoComposition(
             config_path=self.config_path,
             scenario=self.scenario,
@@ -90,6 +111,56 @@ class DemoController:
         )
         self._composition.initialize()
         return self.snapshot()
+
+    # --- B2 generic single-line workspace API ---
+
+    @property
+    def is_generic_line(self) -> bool:
+        """True when this controller drives a generic single-line workspace."""
+        return self._generic_profile
+
+    @property
+    def line(self) -> Optional[AssyLineRuntime]:
+        """The generic single-line runtime, or None for the ASSY composition."""
+        return self._line
+
+    def _require_line(self) -> AssyLineRuntime:
+        if self._line is None:
+            raise RuntimeError(
+                "Generic line not initialized — call initialize() first"
+            )
+        return self._line
+
+    @property
+    def run_state(self) -> LineRunState:
+        """RUNNING / PAUSED / STOPPED of the generic line."""
+        return self._require_line().run_state
+
+    def start(self) -> LineRunState:
+        """START — begin automatic progression."""
+        return self._require_line().start()
+
+    def pause(self) -> LineRunState:
+        """PAUSE — freeze progression, preserving state."""
+        return self._require_line().pause()
+
+    def resume(self) -> LineRunState:
+        """RESUME — continue from the preserved state."""
+        return self._require_line().resume()
+
+    def stop(self) -> LineRunState:
+        """STOP — controlled stop (never FAULT)."""
+        return self._require_line().stop()
+
+    def advance(self) -> list:
+        """Advance the generic line by one deterministic production cycle."""
+        return self._require_line().advance_cycle()
+
+    def line_facts(self) -> dict:
+        """Raw outward facts for the generic line (no KPI derivation)."""
+        return self._require_line().line_facts()
+
+    # --- Initialization (legacy ASSY path continued) ---
 
     # --- Control Actions ---
 
@@ -109,8 +180,15 @@ class DemoController:
         """Execute one demo cycle across all contexts, excluding any
         AP05_JAM-faulted sub-line (frozen while the fault is active).
 
+        B2: for a generic single-line workspace this advances exactly one
+        deterministic production cycle.
+
         Returns snapshot for the currently selected context.
         """
+        if self._generic_profile:
+            self.advance()
+            return AssyDemoSnapshot()
+
         if self._composition is None:
             return AssyDemoSnapshot()
 
@@ -122,7 +200,15 @@ class DemoController:
         return self.snapshot()
 
     def snapshot(self) -> AssyDemoSnapshot:
-        """Build detached snapshot for the currently selected context."""
+        """Build detached snapshot for the currently selected context.
+
+        B2: generic single-line workspaces expose their outward raw facts
+        through ``line_facts()`` instead of the TIPA-shaped demo snapshot, whose
+        station labels and motor semantics must not leak into non-TIPA
+        workspaces.
+        """
+        if self._generic_profile:
+            return AssyDemoSnapshot()
         if self._composition is None:
             return AssyDemoSnapshot()
         return self._composition.snapshot()
@@ -131,6 +217,9 @@ class DemoController:
 
     @property
     def is_running(self) -> bool:
+        if self._generic_profile:
+            return (self._line is not None
+                    and self._line.run_state == LineRunState.RUNNING)
         return self._auto_running
 
     def start_auto(self) -> None:
@@ -153,7 +242,12 @@ class DemoController:
 
     @property
     def runtime(self) -> Optional[AssyLineRuntime]:
-        """The runtime for the currently selected context (backward compat)."""
+        """The runtime for the currently selected context (backward compat).
+
+        B2: for a generic single-line workspace this is the single line runtime.
+        """
+        if self._generic_profile:
+            return self._line
         if self._composition is None:
             return None
         ctx = self._composition.selected_context
@@ -162,6 +256,8 @@ class DemoController:
     @property
     def cycle(self) -> int:
         """Demo step number (presentation clock)."""
+        if self._generic_profile:
+            return self._line.conveyor.dwell_number if self._line else 0
         if self._composition is None:
             return 0
         return self._composition.demo_step_number
