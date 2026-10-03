@@ -1,0 +1,68 @@
+# B1 scenario contract only. Runtime implementation is B5.
+id: BW-CAP-DEG-01
+name: Capper deterministic degradation
+target_asset: BW-FP-CAP01
+deterministic: true
+manual_trigger_required: false
+
+phases:
+  - id: NORMAL
+    expected_effects:
+      - stable_drive_load
+      - stable_motor_current
+      - stable_vibration
+      - stable_temperature
+      - nominal_speed
+  - id: DEGRADING
+    expected_effects:
+      - drive_load_increases
+      - motor_current_increases
+      - vibration_rms_increases
+      - bearing_temperature_increases_with_lag
+      - speed_begins_to_decrease
+  - id: WARNING
+    expected_effects:
+      - warning_alarm_raised
+      - cycle_time_increases
+      - upstream_accumulation_may_increase
+      - downstream_gap_may_appear
+  - id: INTERMITTENT_STOP
+    expected_effects:
+      - operating_state_transitions_to_fault_then_stopped
+      - downtime_start_event
+      - production_count_growth_slows_or_stops
+      - power_profile_changes
+  - id: RECOVERY
+    expected_effects:
+      - downtime_end_event
+      - alarm_cleared
+      - operating_state_returns_running
+      - signals_return_toward_normal
+      - line_throughput_recovers
+
+hidden_ground_truth:
+  publish: false
+  examples:
+    - degradation_factor
+    - injected_fault_strength
+    - scenario_internal_phase_timer
+
+manual_interaction:
+  allowed:
+    - start
+    - stop
+    - pause
+    - resume
+    - declare_downtime_code
+    - declare_failure_code
+  rule: >
+    Downtime/failure code enriches an already-existing runtime event. It MUST
+    NOT be used as the causal trigger that creates the simulated fault.
+
+plantos_calculated_impacts:
+  not_published_by_vf:
+    - oee
+    - availability
+    - performance
+    - quality_percentage
+    - energy_per_unit
