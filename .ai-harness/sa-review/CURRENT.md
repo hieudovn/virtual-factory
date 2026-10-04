@@ -46,4 +46,9 @@ python .ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py
 python -m pytest -q
 python .ai-harness/scripts/run_task_gate.py --task .ai-harness/tasks/DDAY-B4-C01.json --token <token>
 
+Machine gate (first READY derivation):
+  exit 0, P01-P24 PASS, A01-A14 14/14
+  SHA 9b51cbc47b34d65f72b604c6578adbf1d2eb2de4
+  CI run 37170631556 success
+
 NOT authorized: merge, B5, or any later slice.

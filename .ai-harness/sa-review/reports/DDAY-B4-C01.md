@@ -2,9 +2,11 @@
 
 ## Status
 
-**IMPLEMENTED — PR OPEN — READY FOR SA REVIEW** (local acceptance complete;
-exact-head CI and the canonical task-gate result are recorded in
-`.ai-harness/traces/DDAY-B4-C01/` after the evidence commit).
+**IMPLEMENTED — PR OPEN — READY FOR SA REVIEW**
+
+Machine-derived by the full canonical task gate (exit 0, P01–P24 all PASS,
+acceptance A01–A14 all PASS). See
+`.ai-harness/sa-review/evidence/DDAY-B4-C01/05-machine-gate-status.md`.
 
 The PM does not self-certify `COMPLETE`, `CLOSED` or `SA APPROVED`.
 
