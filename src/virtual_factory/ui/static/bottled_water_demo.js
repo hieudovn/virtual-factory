@@ -57,6 +57,11 @@ const BW_EVENT_LABEL = {
   UNIT_COMPLETED: 'Bottle completed',
   DWELL_META: 'Cycle',
   LINE_RUN_STATE: 'Line control',
+  SCENARIO_PHASE_CHANGED: 'Scenario phase',
+  ALARM_RAISED: 'Alarm raised',
+  ALARM_CLEARED: 'Alarm cleared',
+  DOWNTIME_START: 'Downtime start',
+  DOWNTIME_END: 'Downtime end',
 };
 
 const BW = {
@@ -442,6 +447,12 @@ function bwStationFor(state, stationId) {
 function bwStationVisualState(station, state) {
   const result = (station.last_disposition || '').toUpperCase();
   if (result === 'FAIL' || result === 'NG') return 'fail';
+  if (station.station_id === 'BW-FP-CAP01') {
+    const mark = ((state && state.scenario) || {}).highlight;
+    if (mark === 'fault') return 'fault';
+    if (mark === 'warn') return 'warn';
+    if (mark === 'recover') return 'recover';
+  }
   if (result === 'PASS' && station.is_occupied) return 'pass';
   if (state.run_state === 'PAUSED') return 'paused';
   if (state.run_state !== 'RUNNING') return 'stopped';
@@ -455,6 +466,9 @@ const BW_STATE_FILL = {
   idle: '#FFF9EC',
   paused: '#FFF9EC',
   stopped: 'var(--bw-bg-surface)',
+  warn: '#FFF4D6',
+  fault: '#FDECEC',
+  recover: '#EAF2FF',
 };
 
 const BW_STATE_DOT = {
@@ -464,6 +478,9 @@ const BW_STATE_DOT = {
   idle: 'var(--bw-state-idle)',
   paused: 'var(--bw-state-idle)',
   stopped: 'var(--bw-state-stopped)',
+  warn: '#D48B0A',
+  fault: 'var(--bw-state-fail)',
+  recover: 'var(--bw-accent)',
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -708,6 +725,12 @@ function bwApplyFacts() {
   runState.textContent = s.run_state;
   runState.setAttribute('data-state', s.run_state);
   bwEl('bw-operating-state').textContent = s.operating_state;
+  const capperMark = bwEl('bw-capper-mark');
+  if (capperMark) {
+    const highlight = ((s.scenario || {}).highlight) || 'normal';
+    capperMark.textContent = highlight;
+    capperMark.setAttribute('data-mark', highlight);
+  }
   bwEl('bw-sim-time').textContent = `${Number(s.simulation_time_s).toFixed(1)} s`;
   bwEl('bw-dwell').textContent = s.dwell_number;
   bwEl('bw-total').textContent = s.counts.total;
@@ -767,7 +790,7 @@ function bwApplyEvents() {
 }
 
 function bwCategoriseEvents(state) {
-  const incoming = (state.recent_events || []).map((ev) => {
+  const incoming = [...(state.recent_events || []), ...(state.scenario_events || [])].map((ev) => {
     const type = ev.event_type;
     let category = '';
     if (type === 'REJECT' || type === 'QUALITY_FAILED_FINAL') category = 'fail';
@@ -776,6 +799,9 @@ function bwCategoriseEvents(state) {
       category = disposition.includes('FAIL') || disposition.includes('NG') ? 'fail' : 'pass';
     } else if (type === 'UNIT_COMPLETED') category = 'pass';
     else if (type === 'LINE_RUN_STATE') category = 'control';
+    else if (type === 'ALARM_RAISED' || type === 'DOWNTIME_START') category = 'fail';
+    else if (type === 'ALARM_CLEARED' || type === 'DOWNTIME_END') category = 'pass';
+    else if (type === 'SCENARIO_PHASE_CHANGED') category = 'control';
     return {
       key: `${type}|${ev.station_id}|${ev.unit_id}|${ev.simulation_time_s}|${ev.dwell_number}`,
       event_type: type,
@@ -832,6 +858,82 @@ function bwBadge(result) {
   return '<span class="bw-badge bw-badge-neutral">NO RESULT</span>';
 }
 
+function bwAssetSignalRows(state, stationId) {
+  const bundle = ((state || {}).asset_signals || {})[stationId] || {};
+  const ids = Object.keys(bundle);
+  if (!ids.length) return '';
+  let html = '<div class="bw-subhead">Machine signals</div>';
+  ids.forEach((signalId) => {
+    const fact = bundle[signalId] || {};
+    const unit = fact.unit && fact.unit !== '-' ? ` ${fact.unit}` : '';
+    html += bwRow(signalId.replace(/_/g, ' '), `${fact.value}${unit}`);
+  });
+  return html;
+}
+
+function bwClassificationFields(state, stationId) {
+  const scenario = (state || {}).scenario || {};
+  if (stationId !== scenario.target_asset) return '';
+  const codes = (state || {}).classification || {};
+  const downtime = codes.downtime_code || '';
+  const failure = codes.failure_code || '';
+  return `
+    <div class="bw-subhead">Classify existing event</div>
+    <div class="bw-empty">Codes enrich an already-raised downtime or alarm. They do not create one.</div>
+    <label class="bw-rate-label">Downtime code
+      <select id="bw-downtime-code" class="bw-select">
+        <option value="">(none)</option>
+        <option value="DT-MECH"${downtime === 'DT-MECH' ? ' selected' : ''}>DT-MECH</option>
+        <option value="DT-BRG"${downtime === 'DT-BRG' ? ' selected' : ''}>DT-BRG</option>
+      </select>
+    </label>
+    <label class="bw-rate-label">Failure code
+      <select id="bw-failure-code" class="bw-select">
+        <option value="">(none)</option>
+        <option value="FAIL-BRG"${failure === 'FAIL-BRG' ? ' selected' : ''}>FAIL-BRG</option>
+        <option value="FAIL-DRV"${failure === 'FAIL-DRV' ? ' selected' : ''}>FAIL-DRV</option>
+      </select>
+    </label>
+    <div class="bw-actions">
+      <button class="bw-btn bw-btn-outline" type="button" id="bw-btn-classify">Apply codes</button>
+    </div>`;
+}
+
+function bwBindClassify() {
+  const button = bwEl('bw-btn-classify');
+  if (!button || button.dataset.bound === '1') return;
+  button.dataset.bound = '1';
+  button.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    bwDeclareCodes();
+  });
+}
+
+async function bwDeclareCodes() {
+  const downtime = (bwEl('bw-downtime-code') || {}).value || '';
+  const failure = (bwEl('bw-failure-code') || {}).value || '';
+  try {
+    if (downtime) {
+      await fetch(`${BW_API}/classify`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'downtime_code', code: downtime }),
+      });
+    }
+    if (failure) {
+      await fetch(`${BW_API}/classify`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'failure_code', code: failure }),
+      });
+    }
+    const state = await bwGet('/state');
+    bwApplyState(state);
+  } catch (err) {
+    bwEl('bw-sim-note').textContent = `Classify failed: ${err.message}`;
+  }
+}
+
 function bwSelectStation(stationId) {
   BW.selected = { kind: 'station', id: stationId };
   const state = BW.state;
@@ -858,8 +960,11 @@ function bwSelectStation(stationId) {
     html += '<div class="bw-empty">Result is produced automatically by the line; '
       + 'no manual disposition exists.</div>';
   }
+  html += bwAssetSignalRows(state, stationId);
+  html += bwClassificationFields(state, stationId);
 
   bwOpenPopup(bwStationName(stationId), html);
+  bwBindClassify();
   bwUpdateStations();
   bwDrawBottles();
 }
@@ -1011,7 +1116,10 @@ function bwRefreshStationPopup(station) {
     html += '<div class="bw-subhead">Inspection</div>';
     html += `<div class="bw-actions">${bwBadge(station.last_disposition)}</div>`;
   }
+  html += bwAssetSignalRows(BW.state, station.station_id);
+  html += bwClassificationFields(BW.state, station.station_id);
   bwEl('bw-popup-body').innerHTML = html;
+  bwBindClassify();
 }
 
 /* Station x positions are derived from the runtime route length. */

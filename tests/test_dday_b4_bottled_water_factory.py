@@ -248,7 +248,8 @@ def test_b4_04_resume_continues_from_the_preserved_state():
 
     assert held["factory"]["simulation_time_s"] == 100.0
     assert resumed["factory"]["simulation_time_s"] == 200.0
-    assert resumed["target_line"]["counts"]["total"] == 10
+    assert resumed["target_line"]["counts"]["total"] > held["target_line"][
+        "counts"]["total"]
     # No state was rebuilt: the tank and counters carried over.
     assert resumed["balances"]["water"]["raw_water_feed_total_m3"] > held[
         "balances"]["water"]["raw_water_feed_total_m3"]

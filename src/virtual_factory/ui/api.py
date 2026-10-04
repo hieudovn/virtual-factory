@@ -24,7 +24,7 @@ def create_app(
     factory_tick_interval_s: float | None = None,
 ):
     """Create a FastAPI app backed by one RuntimeService instance."""
-    from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+    from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
@@ -646,7 +646,10 @@ def create_app(
         20–30 events, so the default window covers more than one cycle and the
         skin never misses a cycle's events between polls.
         """
-        return _bw_projection(_get_bw_controller(), limit=limit)
+        factory = _get_bw_factory()
+        return factory.overlay_line_projection(
+            _bw_projection(factory.controller, limit=limit)
+        )
 
     @app.get("/bottled-water-demo/static/{filename}", include_in_schema=False)
     def bottled_water_static(filename: str) -> FileResponse:
@@ -728,6 +731,24 @@ def create_app(
         factory = _get_bw_factory()
         factory.reset()
         return _bw_projection(factory.controller)
+
+    @app.post("/bottled-water-demo/classify")
+    def bottled_water_classify(payload: dict = Body(...)) -> dict:
+        """Attach a downtime/failure code to an existing scenario context.
+
+        Human classification never starts the abnormal condition and never
+        changes Capper signal physics.
+        """
+        from fastapi.responses import JSONResponse
+
+        factory = _get_bw_factory()
+        try:
+            factory.classify(str(payload.get("kind", "")), str(payload.get("code", "")))
+        except ValueError as exc:
+            return JSONResponse(status_code=400, content={"detail": str(exc)})
+        return factory.overlay_line_projection(
+            _bw_projection(factory.controller)
+        )
 
     @app.post("/bottled-water-demo/advance")
     def bottled_water_advance() -> dict:

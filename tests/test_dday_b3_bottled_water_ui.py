@@ -513,6 +513,7 @@ def test_b3_09b_api_exposes_no_later_slice_endpoint(client):
         "/bottled-water-demo/stop",
         "/bottled-water-demo/reset",
         "/bottled-water-demo/advance",
+        "/bottled-water-demo/classify",
     }
 
 

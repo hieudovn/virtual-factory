@@ -44,6 +44,10 @@ import yaml
 
 from virtual_factory.assembly.demo_controller import DemoController
 from virtual_factory.assembly.line_runtime import LineRunState
+from virtual_factory.workspaces.capper_degradation import (
+    CapperDegradationScenario,
+    load_runtime_config,
+)
 
 WORKSPACE_ID = "bottled-water-dday"
 
@@ -81,7 +85,35 @@ EQUIPMENT_CLASS_BY_ROLE = {
 #: Line stations whose completion count drives a packaging material counter.
 STATION_KEYS = ("fill", "cap", "label", "case_pack", "palletize")
 
-MAX_FACTORY_EVENTS = 20
+MAX_FACTORY_EVENTS = 48
+
+HIDDEN_TRUTH_KEYS = (
+    "degradation_factor",
+    "injected_fault_strength",
+    "scenario_internal_phase_timer",
+    "phase_timer",
+    "fault_strength",
+    "_factor",
+    "_phase_elapsed_s",
+    "_bearing_temp_c",
+)
+
+FORBIDDEN_KPI_KEYS = (
+    "oee",
+    "availability",
+    "performance",
+    "quality_percentage",
+    "quality_pct",
+    "energy_per_unit",
+    "energy_per",
+    "health_score",
+    "asset_health",
+    "anomaly_score",
+    "anomaly",
+    "rul",
+    "remaining_useful",
+    "predictive",
+)
 
 #: Float tolerance for tank-level limit comparisons (volume, m3).
 _TANK_EPSILON_M3 = 1e-12
@@ -497,6 +529,28 @@ class BottledWaterFactory:
         self._pump_node = self._node_by_role_any("pump", exclude=("feed",))
         self._prep_area = self._node_by_role("preparation_area")
         self._line_area = self._node_by_role("production_line")
+        self._cap_node = self._config.stations.get("cap") or self._node_by_role(
+            "capper"
+        )
+
+        workspace_dir = Path(self.factory_config_path).resolve().parent
+        packaged = (
+            Path(__file__).resolve().parents[3]
+            / "configs" / "workspaces" / WORKSPACE_ID / "scenarios"
+        )
+        contract_path = (
+            workspace_dir / "scenarios" / "capper_degradation.contract.yaml"
+        )
+        runtime_path = (
+            workspace_dir / "scenarios" / "capper_degradation.runtime.yaml"
+        )
+        if not contract_path.is_file():
+            contract_path = packaged / "capper_degradation.contract.yaml"
+        if not runtime_path.is_file():
+            runtime_path = packaged / "capper_degradation.runtime.yaml"
+        self._scenario = CapperDegradationScenario(
+            load_runtime_config(runtime_path, contract_path)
+        )
 
         self._initialise_state()
 
@@ -552,6 +606,8 @@ class BottledWaterFactory:
 
         self._events: deque = deque(maxlen=MAX_FACTORY_EVENTS)
         self._last_noted_state = LineRunState.STOPPED.value
+        self._scenario.reset()
+        self._record_scenario_events(self._scenario.advance(0.0, 0.0))
 
     def _reset(self) -> None:
         self.controller.reset()
@@ -611,6 +667,37 @@ class BottledWaterFactory:
             self._note_run_state()
             return self.controller.run_state.value
 
+    def classify(self, kind: str, code: str) -> dict:
+        """Enrich the existing/pending downtime context. Never steps the model."""
+        with self._lock:
+            result = self._scenario.classify(kind, code)
+            self._apply_classification_to_recent_events()
+            return result
+
+    def _apply_classification_to_recent_events(self) -> None:
+        codes = self._scenario.classification()
+        for event in self._events:
+            if event.get("event_type") not in ("DOWNTIME_START", "DOWNTIME_END"):
+                continue
+            if codes.get("downtime_code"):
+                event["downtime_code"] = codes["downtime_code"]
+            if codes.get("failure_code"):
+                event["failure_code"] = codes["failure_code"]
+
+    def _record_scenario_event(self, event: dict) -> None:
+        codes = self._scenario.classification()
+        payload = dict(event)
+        if payload.get("event_type") in ("DOWNTIME_START", "DOWNTIME_END"):
+            if codes.get("downtime_code"):
+                payload["downtime_code"] = codes["downtime_code"]
+            if codes.get("failure_code"):
+                payload["failure_code"] = codes["failure_code"]
+        self._events.append(payload)
+
+    def _record_scenario_events(self, events: list[dict]) -> None:
+        for event in events:
+            self._record_scenario_event(event)
+
     def advance_debug_cycle(self) -> float:
         """Manual/debug seam: force exactly one line cycle.
 
@@ -626,6 +713,10 @@ class BottledWaterFactory:
             if delta > 0.0:
                 self._dwell_acc_s = 0.0
                 self._integrate_elapsed(delta)
+                if self.controller.run_state is LineRunState.RUNNING:
+                    self._record_scenario_events(
+                        self._scenario.advance(delta, self._clock_s)
+                    )
                 self._apply_draw()
             return delta
 
@@ -654,10 +745,17 @@ class BottledWaterFactory:
         self._integrate_elapsed(dt)
 
         if run_state is LineRunState.RUNNING:
-            self._dwell_acc_s += dt
-            if self._dwell_acc_s >= self._nominal_dwell_s - 1e-9:
-                self._dwell_acc_s -= self._nominal_dwell_s
-                self._produce_one_cycle()
+            self._record_scenario_events(
+                self._scenario.advance(dt, self._clock_s)
+            )
+            if self._scenario.production_inhibited():
+                self._dwell_acc_s = 0.0
+            else:
+                self._dwell_acc_s += dt
+                effective = self._scenario.effective_dwell_s(self._nominal_dwell_s)
+                if self._dwell_acc_s >= effective - 1e-9:
+                    self._dwell_acc_s -= effective
+                    self._produce_one_cycle()
 
         self._apply_draw()
 
@@ -850,8 +948,14 @@ class BottledWaterFactory:
 
         loads: dict[str, float] = {}
         feed_active = self._feed_active()
+        run_state = self.controller.run_state.value
         for station_id, (standby, running_kw) in cfg.line_loads.items():
-            loads[station_id] = running_kw if running else standby
+            if station_id == self._cap_node:
+                loads[station_id] = self._scenario.capper_active_power_kw(
+                    run_state, standby, running_kw
+                )
+            else:
+                loads[station_id] = running_kw if running else standby
         if self._feed_node:
             loads[self._feed_node] = (
                 cfg.feed_running_kw if feed_active else cfg.feed_standby_kw
@@ -977,8 +1081,25 @@ class BottledWaterFactory:
         put(self._line_area, "reject_count",
             int(self.controller.line.reject_count), "bottle")
 
+        run_state_value = self.controller.run_state.value
         for station_id in self._route:
-            put(station_id, "operating_state", self._operating_state(running), "-")
+            if station_id == self._cap_node:
+                put(
+                    station_id,
+                    "operating_state",
+                    self._scenario.capper_operating_state(run_state_value),
+                    "-",
+                )
+            else:
+                put(station_id, "operating_state",
+                    self._operating_state(running), "-")
+
+        for signal_id, (value, unit) in self._scenario.published_signals(
+            run_state_value
+        ).items():
+            if signal_id == "operating_state":
+                continue
+            put(self._cap_node, signal_id, value, unit)
 
         put(stations["fill"], "fill_rate", _round(fill_rate, 3), "bottle/min")
         put(stations["fill"], "product_water_total_m3",
@@ -1106,6 +1227,9 @@ class BottledWaterFactory:
                 },
             }
 
+            target_line = self.overlay_line_projection(
+                project_target_line(self.controller, limit=event_limit)
+            )
             return {
                 "workspace_id": self.workspace_id,
                 "plant_id": self._plant_id(),
@@ -1118,13 +1242,52 @@ class BottledWaterFactory:
                         _round(self._production_elapsed_s),
                     "dwell_number": self.controller.line.conveyor.dwell_number,
                 },
+                "scenario": self._scenario.public_context(),
+                "classification": self._scenario.classification(),
                 "hierarchy": [node.as_dict() for node in self._hierarchy],
                 "nodes": node_tree,
                 "balances": balances,
-                "target_line": project_target_line(
-                    self.controller, limit=event_limit),
+                "target_line": target_line,
                 "recent_events": list(self._events),
             }
+
+    def overlay_line_projection(self, projection: dict) -> dict:
+        """Attach scenario context and Capper raw facts to the B3 line view.
+
+        Used by both ``/state`` and the factory ``target_line`` so they stay
+        the same object. Hidden ground truth is not copied here.
+        """
+        overlaid = dict(projection)
+        overlaid["scenario"] = self._scenario.public_context()
+        overlaid["classification"] = self._scenario.classification()
+        run_state = self.controller.run_state.value
+        signals = {}
+        for signal_id, (value, unit) in self._scenario.published_signals(
+            run_state
+        ).items():
+            signals[signal_id] = self._signal(value, unit)
+        overlaid["asset_signals"] = {self._cap_node: signals}
+        overlaid["scenario_events"] = [
+            {
+                "event_type": event["event_type"],
+                "station_id": event.get("station_id") or event.get("source_id"),
+                "unit_id": event.get("unit_id", ""),
+                "detail": event.get("detail", ""),
+                "simulation_time_s": event.get("simulation_time_s"),
+                "dwell_number": event.get("dwell_number", 0),
+                "downtime_code": event.get("downtime_code"),
+                "failure_code": event.get("failure_code"),
+            }
+            for event in self._events
+            if event.get("event_type") in (
+                "SCENARIO_PHASE_CHANGED",
+                "ALARM_RAISED",
+                "ALARM_CLEARED",
+                "DOWNTIME_START",
+                "DOWNTIME_END",
+            )
+        ]
+        return overlaid
 
     def hierarchy(self) -> list[HierarchyNode]:
         return list(self._hierarchy)

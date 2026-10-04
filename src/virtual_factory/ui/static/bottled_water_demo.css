@@ -456,6 +456,13 @@ html, body {
 .bw-dot-idle { background: var(--bw-state-idle); }
 .bw-dot-pass { background: var(--bw-state-pass); }
 .bw-dot-fail { background: var(--bw-state-fail); }
+.bw-dot-warn { background: #D48B0A; }
+.bw-dot-fault { background: var(--bw-state-fail); }
+.bw-dot-recover { background: var(--bw-accent); }
+
+#bw-capper-mark[data-mark="warn"] { color: #D48B0A; }
+#bw-capper-mark[data-mark="fault"] { color: var(--bw-state-fail); }
+#bw-capper-mark[data-mark="recover"] { color: var(--bw-accent); }
 
 .bw-legend-hint { color: var(--bw-text-muted); }
 
