@@ -778,14 +778,11 @@ class BottledWaterFactory:
 
         if run_state is LineRunState.RUNNING:
             self._advance_scenarios(dt)
-            if self._capper_enabled and self._scenario.production_inhibited():
+            if self._production_inhibited():
                 self._dwell_acc_s = 0.0
             else:
                 self._dwell_acc_s += dt
-                effective = (
-                    self._scenario.effective_dwell_s(self._nominal_dwell_s)
-                    if self._capper_enabled else self._nominal_dwell_s
-                )
+                effective = self._effective_dwell_s()
                 if self._dwell_acc_s >= effective - 1e-9:
                     self._dwell_acc_s -= effective
                     self._produce_one_cycle()
@@ -878,6 +875,23 @@ class BottledWaterFactory:
             self._record_scenario_events(
                 self._compressor.advance(dt, self._clock_s)
             )
+
+    def _production_inhibited(self) -> bool:
+        capper = self._capper_enabled and self._scenario.production_inhibited()
+        compressor = (
+            self._compressor_enabled and self._compressor.production_inhibited()
+        )
+        return capper or compressor
+
+    def _effective_dwell_s(self) -> float:
+        dwell = self._nominal_dwell_s
+        if self._capper_enabled:
+            dwell = self._scenario.effective_dwell_s(self._nominal_dwell_s)
+        if self._compressor_enabled:
+            dwell = max(
+                dwell, self._compressor.effective_dwell_s(self._nominal_dwell_s)
+            )
+        return dwell
 
     def _integrate_air(self, dt: float) -> None:
         cfg = self._config
@@ -1019,10 +1033,17 @@ class BottledWaterFactory:
                 cfg.ro_running_kw if feed_active else cfg.ro_standby_kw
             )
         if self._compressor_node:
-            loads[self._compressor_node] = (
-                cfg.air_running_kw if self._compressor_loading()
-                else cfg.air_standby_kw
-            )
+            loaded = self._compressor_loading()
+            if self._compressor_enabled:
+                loads[self._compressor_node] = (
+                    self._compressor.compressor_active_power_kw(
+                        cfg.air_standby_kw, cfg.air_running_kw, loaded
+                    )
+                )
+            else:
+                loads[self._compressor_node] = (
+                    cfg.air_running_kw if loaded else cfg.air_standby_kw
+                )
         if self._chiller_node:
             loads[self._chiller_node] = (
                 cfg.chiller_running_kw if running else cfg.chiller_standby_kw

@@ -38,7 +38,9 @@ CMP = "BW-UT-CMP01"
 PHASES = (
     "NORMAL", "DEGRADING", "WARNING", "INTERMITTENT_STOP", "RECOVERY",
 )
-CMP_PHASES = ("NORMAL", "PRESSURE_SAG", "RECOVERY")
+CMP_PHASES = (
+    "NORMAL", "DEGRADING", "LOW_PRESSURE_WARNING", "UNDERSUPPLY", "RECOVERY",
+)
 
 _failures: list[str] = []
 
@@ -67,7 +69,13 @@ def _short_compressor() -> CompressorPressureScenario:
     )
     return CompressorPressureScenario(replace(
         config,
-        phase_duration_s={"NORMAL": 2.0, "PRESSURE_SAG": 20.0, "RECOVERY": 16.0},
+        phase_duration_s={
+            "NORMAL": 22.0,
+            "DEGRADING": 8.0,
+            "LOW_PRESSURE_WARNING": 8.0,
+            "UNDERSUPPLY": 22.0,
+            "RECOVERY": 24.0,
+        },
     ))
 
 
@@ -150,8 +158,8 @@ def main() -> int:
     for _ in range(90):
         at_capper_fault.step(1.0)
     later = at_capper_fault.snapshot()
-    claim(later["compressor_scenario"]["phase"] == "PRESSURE_SAG",
-          "compressor sag starts at t=240 after Capper recovery")
+    claim(later["compressor_scenario"]["phase"] == "DEGRADING",
+          "compressor DEGRADING starts at t=240 after Capper recovery")
     claim(later["scenario"]["phase"] == "RECOVERY",
           "Capper remains in RECOVERY when compressor sag begins")
 
@@ -163,11 +171,14 @@ def main() -> int:
     )
     isolated.start()
     seen_cmp = [isolated.snapshot()["compressor_scenario"]["phase"]]
-    for _ in range(50):
+    totals = {}
+    for _ in range(90):
         isolated.step(1.0)
-        phase = isolated.snapshot()["compressor_scenario"]["phase"]
+        snapshot = isolated.snapshot()
+        phase = snapshot["compressor_scenario"]["phase"]
         if phase != seen_cmp[-1]:
             seen_cmp.append(phase)
+            totals[phase] = snapshot["target_line"]["counts"]["total"]
     cmp_types = [
         event["event_type"] for event in _events(isolated.snapshot(), CMP)
     ]
@@ -177,6 +188,17 @@ def main() -> int:
     claim(cmp_types.count("DOWNTIME_START") == 0, "compressor has no downtime")
     claim(isolated.snapshot()["scenario"]["phase"] == "NORMAL",
           "Capper stays NORMAL when disabled")
+    under_total = totals.get("UNDERSUPPLY")
+    recovery_total = isolated.snapshot()["target_line"]["counts"]["total"]
+    claim(under_total is not None, "UNDERSUPPLY was reached")
+    claim(under_total > 0, "production occurred before UNDERSUPPLY")
+    claim(recovery_total >= under_total, "counts never go backwards after inhibit")
+    goods = isolated.snapshot()["balances"]["finished_goods"]
+    claim(
+        goods["receipt_count"]
+        == isolated.snapshot()["target_line"]["counts"]["good"],
+        "FG receipts follow actual good output",
+    )
 
     print("\n" + "=" * 72)
     if _failures:

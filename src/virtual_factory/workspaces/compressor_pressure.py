@@ -1,11 +1,13 @@
-"""DDAY-B5 — Bottled Water Compressor secondary utility scenario.
+"""DDAY-B5-C01 — Bottled Water Compressor secondary utility scenario.
 
 A small bounded state machine that realises ``BW-CMP-SAG-01`` on
-``BW-UT-CMP01``. It is a workspace helper, not a generic scenario
-framework and not a compressor-train physics model.
+``BW-UT-CMP01`` as the Issue #107 5-phase causal story:
 
-Hidden ground truth (sag factor, timers) lives only on this object
-and must never be copied into the outward industrial projection.
+``NORMAL → DEGRADING → LOW_PRESSURE_WARNING → UNDERSUPPLY → RECOVERY``
+
+It is a workspace helper, not a generic scenario framework and not a
+compressor-train physics model. Hidden ground truth lives only on this
+object and must never be copied into the outward industrial projection.
 """
 
 from __future__ import annotations
@@ -18,7 +20,9 @@ import yaml
 
 PHASES = (
     "NORMAL",
-    "PRESSURE_SAG",
+    "DEGRADING",
+    "LOW_PRESSURE_WARNING",
+    "UNDERSUPPLY",
     "RECOVERY",
 )
 
@@ -48,15 +52,19 @@ class CompressorRuntimeConfig:
     scenario_id: str
     target_asset: str
     phase_duration_s: dict[str, float]
+    cycle_time_factor: dict[str, float]
+    degrading_target_bar: float
+    warning_target_bar: float
     sag_floor_bar: float
     recovery_target_bar: float
     fall_bar_per_s: float
     rise_bar_per_s: float
+    power_span_fraction: float
     highlight: dict[str, str]
 
 
 def load_compressor_phases(contract_path: str | Path) -> tuple[str, str, tuple[str, ...]]:
-    """Read identity and the frozen phase order from the B5 contract."""
+    """Read identity and the frozen phase order from the compressor contract."""
     data = yaml.safe_load(Path(contract_path).read_text(encoding="utf-8")) or {}
     scenario_id = data.get("id")
     target = data.get("target_asset")
@@ -88,25 +96,32 @@ def load_compressor_runtime(
     }
     if any(durations[name] <= 0.0 for name in PHASES[:-1]):
         raise ValueError("every phase before RECOVERY must have a positive duration")
+    factors = dict(_get(data, "cycle_time_factor", {}) or {})
     highlight = dict(_get(data, "highlight", {}) or {})
 
     return CompressorRuntimeConfig(
         scenario_id=scenario_id,
         target_asset=target,
         phase_duration_s=durations,
+        cycle_time_factor={
+            name: float(factors.get(name, 1.0)) for name in PHASES
+        },
+        degrading_target_bar=float(_get(data, "signals.degrading_target_bar", 6.1)),
+        warning_target_bar=float(_get(data, "signals.warning_target_bar", 5.8)),
         sag_floor_bar=float(_get(data, "signals.sag_floor_bar", 5.6)),
         recovery_target_bar=float(_get(data, "signals.recovery_target_bar", 6.4)),
         fall_bar_per_s=float(_get(data, "signals.fall_bar_per_s", 0.04)),
         rise_bar_per_s=float(_get(data, "signals.rise_bar_per_s", 0.04)),
+        power_span_fraction=float(_get(data, "signals.power_span_fraction", 0.15)),
         highlight={name: str(highlight.get(name, "normal")) for name in PHASES},
     )
 
 
 class CompressorPressureScenario:
-    """Deterministic one-shot compressor pressure-sag scenario.
+    """Deterministic one-shot compressor undersupply scenario.
 
-    Time is simulated time supplied by the factory. The object never reads
-    wall-clock time. It never inhibits production and never emits downtime.
+    Time is simulated time supplied by the factory. Classification is not
+    stored here and never feeds back into pressure, phase, or inhibit.
     """
 
     def __init__(self, config: CompressorRuntimeConfig) -> None:
@@ -144,17 +159,28 @@ class CompressorPressureScenario:
             "highlight": self.config.highlight.get(self._phase, "normal"),
         }
 
+    def cycle_time_factor(self) -> float:
+        return float(self.config.cycle_time_factor[self._phase])
+
     def production_inhibited(self) -> bool:
-        return False
+        return self._phase == "UNDERSUPPLY"
+
+    def effective_dwell_s(self, nominal_dwell_s: float) -> float:
+        factor = self.cycle_time_factor()
+        if factor <= 0.0:
+            return float("inf")
+        return nominal_dwell_s * factor
 
     def overrides_pressure(self) -> bool:
-        return self._phase in ("PRESSURE_SAG", "RECOVERY")
+        return self._phase != "NORMAL"
 
     def pressure_target_bar(self) -> float:
-        if self._phase == "PRESSURE_SAG":
+        if self._phase == "DEGRADING":
+            return self.config.degrading_target_bar
+        if self._phase == "LOW_PRESSURE_WARNING":
+            return self.config.warning_target_bar
+        if self._phase == "UNDERSUPPLY":
             return self.config.sag_floor_bar
-        if self._phase == "RECOVERY":
-            return self.config.recovery_target_bar
         return self.config.recovery_target_bar
 
     def step_pressure(self, current_bar: float, dt_s: float) -> float:
@@ -167,6 +193,13 @@ class CompressorPressureScenario:
         if current_bar < target:
             return min(target, current_bar + self.config.rise_bar_per_s * dt_s)
         return current_bar
+
+    def compressor_active_power_kw(self, standby_kw: float, running_kw: float,
+                                   loaded: bool) -> float:
+        """Loaded power rises with the hidden sag factor. Not a KPI."""
+        if not loaded:
+            return standby_kw
+        return running_kw * (1.0 + self.config.power_span_fraction * self._factor())
 
     def advance(self, dt_s: float, simulation_time_s: float) -> list[dict]:
         """Advance scenario truth by ``dt_s`` simulated seconds.
@@ -216,11 +249,11 @@ class CompressorPressureScenario:
         ))
 
     def _maybe_raise_phase_events(self, simulation_time_s: float) -> None:
-        if self._phase == "PRESSURE_SAG" and not self._alarm_raised:
+        if self._phase == "LOW_PRESSURE_WARNING" and not self._alarm_raised:
             self._alarm_raised = True
             self._pending_events.append(self._event(
                 EVENT_ALARM_RAISED,
-                "compressor pressure sag",
+                "compressor low pressure",
                 simulation_time_s,
             ))
         if self._phase == "RECOVERY" and self._alarm_raised and not self._alarm_cleared:
@@ -256,8 +289,13 @@ class CompressorPressureScenario:
 
     def _factor(self) -> float:
         """Internal injected-sag strength in [0, 1]. Not publishable."""
+        progress = self._phase_progress()
         if self._phase == "NORMAL":
             return 0.0
-        if self._phase == "PRESSURE_SAG":
+        if self._phase == "DEGRADING":
+            return 0.15 + 0.35 * progress
+        if self._phase == "LOW_PRESSURE_WARNING":
+            return 0.50 + 0.35 * progress
+        if self._phase == "UNDERSUPPLY":
             return 1.0
-        return max(0.0, 1.0 - self._phase_progress())
+        return max(0.0, 1.0 - progress)

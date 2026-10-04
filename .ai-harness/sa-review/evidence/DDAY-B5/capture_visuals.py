@@ -130,7 +130,8 @@ def main() -> int:
             ("scenario", "WARNING", "10-visual-warning.png"),
             ("scenario", "INTERMITTENT_STOP", "10-visual-fault.png"),
             ("scenario", "RECOVERY", "10-visual-recovery.png"),
-            ("compressor_scenario", "PRESSURE_SAG", "10-visual-compressor-sag.png"),
+            ("compressor_scenario", "LOW_PRESSURE_WARNING", "10-visual-compressor-warning.png"),
+            ("compressor_scenario", "UNDERSUPPLY", "10-visual-compressor-undersupply.png"),
             ("compressor_scenario", "RECOVERY", "10-visual-compressor-recover.png"),
         )
         for field, phase, filename in captures:

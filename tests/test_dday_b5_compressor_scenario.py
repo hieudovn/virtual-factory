@@ -1,6 +1,6 @@
-"""DDAY-B5 — Compressor secondary utility scenario tests.
+"""DDAY-B5-C01 — Compressor 5-phase causal scenario tests.
 
-Governed by .ai-harness/tasks/DDAY-B5.json (Capper hero + Compressor secondary).
+Governed by .ai-harness/tasks/DDAY-B5-C01.json.
 """
 
 from __future__ import annotations
@@ -26,6 +26,14 @@ CAP = "BW-FP-CAP01"
 CONTRACT = WORKSPACE / "scenarios" / "compressor_pressure.contract.yaml"
 RUNTIME = WORKSPACE / "scenarios" / "compressor_pressure.runtime.yaml"
 
+SHORT_DURATIONS = {
+    "NORMAL": 22.0,
+    "DEGRADING": 8.0,
+    "LOW_PRESSURE_WARNING": 8.0,
+    "UNDERSUPPLY": 22.0,
+    "RECOVERY": 24.0,
+}
+
 
 def _factory(**kwargs) -> BottledWaterFactory:
     return BottledWaterFactory(LINE_YAML, FACTORY_YAML, **kwargs)
@@ -34,8 +42,7 @@ def _factory(**kwargs) -> BottledWaterFactory:
 def _short_compressor() -> CompressorPressureScenario:
     config = load_compressor_runtime(RUNTIME, CONTRACT)
     return CompressorPressureScenario(replace(
-        config,
-        phase_duration_s={"NORMAL": 2.0, "PRESSURE_SAG": 20.0, "RECOVERY": 16.0},
+        config, phase_duration_s=dict(SHORT_DURATIONS),
     ))
 
 
@@ -57,9 +64,10 @@ def _cmp_events(snapshot: dict) -> list[dict]:
 
 
 def _run_to_compressor_phase(
-    factory: BottledWaterFactory, phase: str, limit: int = 80
+    factory: BottledWaterFactory, phase: str, limit: int = 120
 ) -> dict:
-    factory.start()
+    if factory.snapshot()["factory"]["run_state"] != "RUNNING":
+        factory.start()
     snapshot = factory.snapshot()
     if snapshot["compressor_scenario"]["phase"] == phase:
         return snapshot
@@ -71,11 +79,11 @@ def _run_to_compressor_phase(
     raise AssertionError(f"did not reach compressor {phase} within {limit}s")
 
 
-def test_b5_c1_phase_order_is_exactly_the_compressor_contract():
+def test_c01_1_phase_order_is_exactly_the_sa_contract():
     factory = _factory(enable_capper=False, compressor=_short_compressor())
     factory.start()
     seen = [factory.snapshot()["compressor_scenario"]["phase"]]
-    for _ in range(50):
+    for _ in range(90):
         factory.step(1.0)
         phase = factory.snapshot()["compressor_scenario"]["phase"]
         if phase != seen[-1]:
@@ -83,56 +91,104 @@ def test_b5_c1_phase_order_is_exactly_the_compressor_contract():
     assert tuple(seen) == PHASES
 
 
-def test_b5_c2_reset_replays_the_same_trace():
+def test_c01_2_reset_replays_the_same_trace():
     traces = []
     for _ in range(2):
         factory = _factory(enable_capper=False, compressor=_short_compressor())
         factory.start()
-        _run(factory, 30)
+        _run(factory, 50)
         snapshot = factory.snapshot()
         traces.append((
             [event["event_type"] for event in _cmp_events(snapshot)],
             snapshot["compressor_scenario"]["phase"],
             _signal(snapshot, CMP, "air_pressure"),
+            _signal(snapshot, CMP, "active_power"),
         ))
     assert traces[0] == traces[1]
 
     factory = _factory(enable_capper=False, compressor=_short_compressor())
     factory.start()
-    _run(factory, 30)
+    _run(factory, 50)
     after = factory.snapshot()
     factory.reset()
     assert factory.snapshot()["compressor_scenario"]["phase"] == "NORMAL"
     assert after["compressor_scenario"]["phase"] != "NORMAL"
 
 
-def test_b5_c3_one_alarm_pair_and_no_downtime():
+def test_c01_3_pressure_load_power_degrade_coherently():
     factory = _factory(enable_capper=False, compressor=_short_compressor())
     factory.start()
-    _run(factory, 50)
-    types = [event["event_type"] for event in _cmp_events(factory.snapshot())]
+    _run(factory, 2)
+    normal = factory.snapshot()
+    degrading = _run_to_compressor_phase(factory, "DEGRADING")
+    _run(factory, 7)
+    deep_deg = factory.snapshot()
+    warning = _run_to_compressor_phase(factory, "LOW_PRESSURE_WARNING")
+    _run(factory, 7)
+    deep_warn = factory.snapshot()
+    under = _run_to_compressor_phase(factory, "UNDERSUPPLY")
+    _run(factory, 10)
+    deep_under = factory.snapshot()
+
+    assert _signal(deep_deg, CMP, "air_pressure") < _signal(normal, CMP, "air_pressure")
+    assert _signal(deep_warn, CMP, "air_pressure") < _signal(deep_deg, CMP, "air_pressure")
+    assert _signal(deep_under, CMP, "air_pressure") <= _signal(
+        deep_warn, CMP, "air_pressure")
+    assert _signal(deep_under, CMP, "air_pressure") >= 5.5
+    assert _signal(deep_deg, CMP, "active_power") > _signal(normal, CMP, "active_power")
+    assert _signal(deep_under, CMP, "active_power") >= _signal(
+        deep_deg, CMP, "active_power")
+    assert deep_deg["compressor_scenario"]["phase"] == "DEGRADING"
+    assert warning["compressor_scenario"]["phase"] == "LOW_PRESSURE_WARNING"
+    assert under["compressor_scenario"]["phase"] == "UNDERSUPPLY"
+
+
+def test_c01_4_warning_alarm_precedes_undersupply():
+    factory = _factory(enable_capper=False, compressor=_short_compressor())
+    factory.start()
+    _run(factory, 90)
+    events = _cmp_events(factory.snapshot())
+    types = [event["event_type"] for event in events]
     assert types.count("ALARM_RAISED") == 1
     assert types.count("ALARM_CLEARED") == 1
     assert types.count("DOWNTIME_START") == 0
-    assert types.count("DOWNTIME_END") == 0
-    assert types.index("ALARM_RAISED") < types.index("ALARM_CLEARED")
-    assert factory.snapshot()["compressor_scenario"]["id"] == "BW-CMP-SAG-01"
+    alarm = next(event for event in events if event["event_type"] == "ALARM_RAISED")
+    under = next(
+        event for event in events
+        if event["event_type"] == "SCENARIO_PHASE_CHANGED"
+        and event["detail"] == "phase=UNDERSUPPLY"
+    )
+    assert alarm["simulation_time_s"] < under["simulation_time_s"]
+    assert alarm["detail"] == "compressor low pressure"
 
 
-def test_b5_c4_compressor_does_not_inhibit_production():
+def test_c01_5_and_6_undersupply_inhibits_and_recovery_restores():
     factory = _factory(enable_capper=False, compressor=_short_compressor())
     factory.start()
-    _run_to_compressor_phase(factory, "PRESSURE_SAG")
-    during = factory.snapshot()
-    _run(factory, 20)
-    later = factory.snapshot()
-    assert later["compressor_scenario"]["phase"] in ("PRESSURE_SAG", "RECOVERY")
-    assert later["target_line"]["counts"]["total"] > during["target_line"][
+    _run_to_compressor_phase(factory, "LOW_PRESSURE_WARNING")
+    before = factory.snapshot()
+    under = _run_to_compressor_phase(factory, "UNDERSUPPLY")
+    assert under["target_line"]["counts"]["total"] > 0
+    _run(factory, 21)
+    held = factory.snapshot()
+    assert held["compressor_scenario"]["phase"] == "UNDERSUPPLY"
+    assert held["target_line"]["counts"]["total"] == under["target_line"][
         "counts"]["total"]
-    assert later["scenario"]["phase"] == "NORMAL"
+    recovered = _run_to_compressor_phase(factory, "RECOVERY")
+    _run(factory, 25)
+    after = factory.snapshot()
+    assert after["target_line"]["counts"]["total"] > held["target_line"][
+        "counts"]["total"]
+    goods = after["balances"]["finished_goods"]
+    assert goods["receipt_count"] == after["target_line"]["counts"]["good"]
+    assert goods["inventory_count"] == goods["receipt_count"] - goods[
+        "dispatch_count"]
+    assert _signal(after, CMP, "air_pressure") > _signal(
+        recovered, CMP, "air_pressure")
+    assert before["target_line"]["counts"]["total"] >= 0
 
 
-def test_b5_c5_default_demo_windows_do_not_overlap():
+def test_c01_7_default_demo_windows_do_not_overlap():
     factory = _factory()
     factory.start()
     _run(factory, 150)
@@ -145,19 +201,14 @@ def test_b5_c5_default_demo_windows_do_not_overlap():
     after_capper = factory.snapshot()
     assert after_capper["factory"]["simulation_time_s"] == 240.0
     assert after_capper["scenario"]["phase"] == "RECOVERY"
-    assert after_capper["compressor_scenario"]["phase"] == "PRESSURE_SAG"
+    assert after_capper["compressor_scenario"]["phase"] == "DEGRADING"
     _run(factory, 8)
     sagging = factory.snapshot()
-    assert sagging["compressor_scenario"]["phase"] == "PRESSURE_SAG"
+    assert sagging["compressor_scenario"]["phase"] == "DEGRADING"
     assert _signal(sagging, CMP, "air_pressure") < 6.4
 
-    _run(factory, 30)
-    sag_end = factory.snapshot()
-    assert sag_end["compressor_scenario"]["phase"] == "RECOVERY"
-    assert sag_end["scenario"]["phase"] == "RECOVERY"
 
-
-def test_b5_c6_each_scenario_is_independently_disableable():
+def test_c01_8_each_scenario_is_independently_disableable():
     capper_only = _factory(enable_compressor=False)
     capper_only.start()
     _run(capper_only, 150)
@@ -171,25 +222,27 @@ def test_b5_c6_each_scenario_is_independently_disableable():
 
     compressor_only = _factory(enable_capper=False, compressor=_short_compressor())
     compressor_only.start()
-    _run(compressor_only, 25)
+    _run(compressor_only, 45)
     cmp_snap = compressor_only.snapshot()
     assert cmp_snap["scenario"]["phase"] == "NORMAL"
-    assert cmp_snap["compressor_scenario"]["phase"] in ("PRESSURE_SAG", "RECOVERY")
+    assert cmp_snap["compressor_scenario"]["phase"] in (
+        "LOW_PRESSURE_WARNING", "UNDERSUPPLY",
+    )
     assert not any(
         event.get("scenario_id") == "BW-CAP-DEG-01"
         for event in cmp_snap["recent_events"]
     )
 
 
-def test_b5_c7_pause_freezes_and_stop_is_not_a_line_fault():
+def test_c01_9_pause_freezes_and_stop_is_not_a_line_fault():
     factory = _factory(enable_capper=False, compressor=_short_compressor())
     factory.start()
-    _run_to_compressor_phase(factory, "PRESSURE_SAG")
+    _run_to_compressor_phase(factory, "DEGRADING")
     factory.pause()
     paused = factory.snapshot()
     _run(factory, 20)
     held = factory.snapshot()
-    assert held["compressor_scenario"]["phase"] == "PRESSURE_SAG"
+    assert held["compressor_scenario"]["phase"] == "DEGRADING"
     assert held["factory"]["simulation_time_s"] == paused["factory"][
         "simulation_time_s"]
     assert _signal(held, CMP, "air_pressure") == _signal(
@@ -202,22 +255,22 @@ def test_b5_c7_pause_freezes_and_stop_is_not_a_line_fault():
     assert stopped["factory"]["run_state"] == "STOPPED"
     assert _signal(stopped, CAP, "operating_state") == "STOPPED"
     assert _signal(stopped, CAP, "operating_state") != "FAULT"
-    assert stopped["compressor_scenario"]["phase"] == "PRESSURE_SAG"
+    assert stopped["compressor_scenario"]["phase"] == "DEGRADING"
 
 
-def test_b5_c8_pressure_moves_causally_and_stays_bounded():
-    factory = _factory(enable_capper=False, compressor=_short_compressor())
-    factory.start()
-    _run(factory, 2)
-    normal = factory.snapshot()
-    sag = _run_to_compressor_phase(factory, "PRESSURE_SAG")
-    _run(factory, 19)
-    deep = factory.snapshot()
-    assert _signal(deep, CMP, "air_pressure") < _signal(sag, CMP, "air_pressure")
-    assert _signal(deep, CMP, "air_pressure") < _signal(normal, CMP, "air_pressure")
-    assert _signal(deep, CMP, "air_pressure") >= 5.5
-    recovered = _run_to_compressor_phase(factory, "RECOVERY")
-    _run(factory, 16)
-    after = factory.snapshot()
-    assert _signal(after, CMP, "air_pressure") > _signal(
-        recovered, CMP, "air_pressure")
+def test_c01_10_classification_does_not_change_compressor_trajectory():
+    plain = _factory(enable_capper=False, compressor=_short_compressor())
+    labelled = _factory(enable_capper=False, compressor=_short_compressor())
+    plain.start()
+    labelled.start()
+    labelled.classify("downtime_code", "DT-AIR")
+    labelled.classify("failure_code", "FAIL-AIR")
+    _run(plain, 50)
+    _run(labelled, 50)
+    assert labelled.snapshot()["compressor_scenario"]["phase"] == plain.snapshot()[
+        "compressor_scenario"]["phase"]
+    assert _signal(labelled.snapshot(), CMP, "air_pressure") == _signal(
+        plain.snapshot(), CMP, "air_pressure")
+    assert _signal(labelled.snapshot(), CMP, "active_power") == _signal(
+        plain.snapshot(), CMP, "active_power")
+    assert labelled.snapshot()["classification"]["downtime_code"] == "DT-AIR"

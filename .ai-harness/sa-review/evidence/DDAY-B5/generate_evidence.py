@@ -60,7 +60,7 @@ def main() -> None:
     factory_b.start()
     samples = []
     cmp_samples = []
-    for step in range(280):
+    for step in range(340):
         factory_a.step(1.0)
         factory_b.step(1.0)
         snap = factory_a.snapshot()
@@ -92,6 +92,10 @@ def main() -> None:
                 "phase": snap["compressor_scenario"]["phase"],
                 "highlight": snap["compressor_scenario"]["highlight"],
                 "air_pressure": snap["nodes"][CMP]["signals"]["air_pressure"]["value"],
+                "active_power": snap["nodes"][CMP]["signals"]["active_power"]["value"],
+                "total": snap["target_line"]["counts"]["total"],
+                "good": snap["target_line"]["counts"]["good"],
+                "fg_receipts": snap["balances"]["finished_goods"]["receipt_count"],
                 "capper_phase": snap["scenario"]["phase"],
             })
     final_a = factory_a.snapshot()
@@ -174,7 +178,7 @@ def main() -> None:
     )
     (HERE / "03-replay-digest.md").write_text(
         "# DDAY-B5 — deterministic replay\n\n"
-        f"Two independent 280 s runs produced the same snapshot digest:\n\n"
+        f"Two independent 340 s runs produced the same snapshot digest:\n\n"
         f"`{payload['digest']}`\n\n"
         f"Match: **{payload['replay_digest_match']}**\n",
         encoding="utf-8",
@@ -211,8 +215,9 @@ def main() -> None:
             f"{row['air_pressure']} | {row['capper_phase']} |\n"
             for row in cmp_samples
         )
-        + "\nDefault demo is non-overlapping: compressor PRESSURE_SAG begins "
-        "only after Capper RECOVERY.\n",
+        + "\nDefault demo is non-overlapping: compressor DEGRADING begins "
+        "only after Capper RECOVERY. UNDERSUPPLY inhibits production; "
+        "FG receipts follow actual good output.\n",
         encoding="utf-8",
     )
     (HERE / "07-hidden-truth-scan.md").write_text(
