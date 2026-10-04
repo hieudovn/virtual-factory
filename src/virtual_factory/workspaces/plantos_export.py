@@ -31,8 +31,19 @@ TOPIC_PATTERN = f"{TOPIC_PREFIX}/{{kind}}/{{asset_id}}/{{signal_or_event}}"
 PROVENANCE_RAW = "SIMULATED_RAW"
 QUALITY_GOOD = "GOOD"
 UTC_EPOCH = datetime(2026, 10, 3, 0, 0, 0, tzinfo=timezone.utc)
+TIMESTAMP_KIND = "simulated_source_utc"
 ADAPTER_ROLE = "vf_unit_test_aid_not_plantos_historian"
 INGESTION_PATH = "local_in_memory_plantos_compatible"
+TIMESTAMP_SEMANTICS = {
+    "timestamp": TIMESTAMP_KIND,
+    "timestamp_meaning": (
+        "Deterministic simulated-source UTC instant for ordering and replay "
+        "(frozen epoch 2026-10-03T00:00:00.000Z + simulation_time_s). "
+        "Not wall-clock receipt time."
+    ),
+    "simulation_time_s": "simulation_elapsed_seconds",
+    "receipt_time": "plantos_or_runtime_owned_not_generated_by_vf",
+}
 
 ACCEPTED_AREAS = ("BW-WT", "BW-BP", "BW-FP", "BW-UT", "BW-WH")
 DRILL_DOWN = {"BW-FP": "/bottled-water-demo"}
@@ -139,9 +150,21 @@ def build_topic(kind: str, asset_id: str, signal_or_event: str) -> str:
 
 
 def utc_timestamp(simulation_time_s: float | None) -> str:
-    """Canonical UTC boundary timestamp derived from the frozen D-Day epoch."""
+    """Deterministic simulated-source UTC instant, not wall-clock receipt time.
+
+    ``timestamp = 2026-10-03T00:00:00Z + simulation_time_s``. PlantOS/runtime
+    may attach a transport receipt time; VF does not generate that as source
+    truth.
+    """
     instant = UTC_EPOCH + timedelta(seconds=float(simulation_time_s or 0.0))
     return instant.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def _is_exported_entry(entry: dict) -> bool:
+    if entry.get("not_exported"):
+        return False
+    status = str(entry.get("export_status") or "EXPORTED").upper()
+    return status == "EXPORTED"
 
 
 def load_export_dictionary(path: str | Path | None = None) -> dict:
@@ -158,15 +181,37 @@ def selected_signal_entries(dictionary: Optional[dict] = None) -> list[dict]:
     return [dict(entry) for entry in data.get("signals") or ()]
 
 
+def declared_unavailable_entries(dictionary: Optional[dict] = None) -> list[dict]:
+    data = dictionary or load_export_dictionary()
+    return [dict(entry) for entry in data.get("unavailable") or ()]
+
+
 def selected_event_entries(dictionary: Optional[dict] = None) -> list[dict]:
     data = dictionary or load_export_dictionary()
     return [dict(entry) for entry in data.get("events") or ()]
 
 
+def exported_signal_entries(dictionary: Optional[dict] = None) -> list[dict]:
+    return [
+        entry for entry in selected_signal_entries(dictionary)
+        if _is_exported_entry(entry)
+    ]
+
+
+def unavailable_signal_entries(dictionary: Optional[dict] = None) -> list[dict]:
+    declared = declared_unavailable_entries(dictionary)
+    if declared:
+        return declared
+    return [
+        entry for entry in selected_signal_entries(dictionary)
+        if not _is_exported_entry(entry)
+    ]
+
+
 def selected_signal_keys(dictionary: Optional[dict] = None) -> list[tuple[str, str]]:
     return [
         (str(entry["source_id"]), str(entry["signal_id"]))
-        for entry in selected_signal_entries(dictionary)
+        for entry in exported_signal_entries(dictionary)
     ]
 
 
@@ -177,7 +222,16 @@ def lookup_signal_entry(
 ) -> dict:
     for entry in selected_signal_entries(dictionary):
         if entry.get("source_id") == source_id and entry.get("signal_id") == signal_id:
+            if not _is_exported_entry(entry):
+                raise UnmappedExportError(
+                    f"unavailable export signal {source_id}.{signal_id}; not exported"
+                )
             return entry
+    for entry in unavailable_signal_entries(dictionary):
+        if entry.get("source_id") == source_id and entry.get("signal_id") == signal_id:
+            raise UnmappedExportError(
+                f"unavailable export signal {source_id}.{signal_id}; not exported"
+            )
     raise UnmappedExportError(
         f"unmapped export signal {source_id}.{signal_id}; fail closed"
     )
@@ -240,6 +294,7 @@ def _envelope_base(
         "source_id": source_id,
         "asset_id": source_id,
         "timestamp": utc_timestamp(simulation_time_s),
+        "timestamp_kind": TIMESTAMP_KIND,
         "simulation_time_s": simulation_time_s,
         "quality": quality,
         "provenance": provenance,
@@ -390,7 +445,7 @@ def map_snapshot(
     selected = dictionary or load_export_dictionary()
     messages: list[PublishedMessage] = []
     nodes = snapshot.get("nodes") or {}
-    for entry in selected_signal_entries(selected):
+    for entry in exported_signal_entries(selected):
         source_id = str(entry["source_id"])
         signal_id = str(entry["signal_id"])
         if source_id not in nodes or signal_id not in (nodes[source_id].get("signals") or {}):
@@ -560,9 +615,10 @@ def dictionary_summary(dictionary: Optional[dict] = None) -> dict:
         "workspace_id": selected.get("workspace_id", WORKSPACE_ID),
         "plant_source_id": selected.get("plant_source_id", PLANT_SOURCE_ID),
         "fail_closed": bool(selected.get("fail_closed", True)),
+        "timestamp_semantics": dict(selected.get("timestamp_semantics") or TIMESTAMP_SEMANTICS),
         "families": families,
         "required_families": list(REQUIRED_SIGNAL_FAMILIES),
-        "signal_count": len(selected_signal_entries(selected)),
+        "signal_count": len(exported_signal_entries(selected)),
         "event_types": [
             str(entry["event_type"]) for entry in selected_event_entries(selected)
         ],
@@ -578,8 +634,20 @@ def dictionary_summary(dictionary: Optional[dict] = None) -> dict:
                 "quality": entry.get("quality"),
                 "provenance": entry.get("provenance"),
                 "plantos_mapping_key": entry.get("plantos_mapping_key"),
+                "export_status": entry.get("export_status", "EXPORTED"),
             }
-            for entry in selected_signal_entries(selected)
+            for entry in exported_signal_entries(selected)
+        ],
+        "unavailable": [
+            {
+                "source_id": entry.get("source_id"),
+                "signal_id": entry.get("signal_id"),
+                "family": entry.get("family"),
+                "export_status": entry.get("export_status", "UNAVAILABLE"),
+                "not_exported": True,
+                "reason": entry.get("reason"),
+            }
+            for entry in unavailable_signal_entries(selected)
         ],
     }
 
@@ -654,6 +722,7 @@ class ExportBundle:
             "plant_source_id": self.snapshot.get("plant_id", PLANT_SOURCE_ID),
             "plant_id": self.snapshot.get("plant_id"),
             "simulation_time_s": factory.get("simulation_time_s"),
+            "timestamp_semantics": dict(TIMESTAMP_SEMANTICS),
             "topic_pattern": TOPIC_PATTERN,
             "ingestion_path": INGESTION_PATH,
             "adapter_role": ADAPTER_ROLE,

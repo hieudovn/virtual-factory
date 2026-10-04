@@ -1,6 +1,7 @@
-# DDAY-B6-C01 selected VF→PlantOS export dictionary.
+# DDAY-B6 selected VF→PlantOS export dictionary.
 # Small allowlist only. Unmapped factory signals are not exported and must
 # not be invented as PlantOS semantics. Reuses B1 contract_version.
+# C02 completes required coverage and states timestamp semantics.
 contract_version: dday-bw-b1-v1
 workspace_id: bottled-water-dday
 plant_source_id: BW-DEMO-01
@@ -9,6 +10,14 @@ default_provenance: SIMULATED_RAW
 utc_epoch: "2026-10-03T00:00:00.000Z"
 topic_pattern: "virtual-factory/bottled-water-dday/{kind}/{asset_id}/{signal_or_event}"
 fail_closed: true
+timestamp_semantics:
+  timestamp: simulated_source_utc
+  timestamp_meaning: >
+    Deterministic simulated-source UTC instant for ordering and replay
+    (frozen epoch 2026-10-03T00:00:00.000Z + simulation_time_s).
+    Not wall-clock receipt time.
+  simulation_time_s: simulation_elapsed_seconds
+  receipt_time: plantos_or_runtime_owned_not_generated_by_vf
 
 families:
   wt: Water Treatment process measurements
@@ -175,6 +184,58 @@ signals:
     plantos_entity: Signal
     plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:bearing_temperature
 
+  - source_id: BW-FP-CAP01
+    signal_id: speed
+    area_id: BW-FP
+    family: capper
+    semantic_role: production_rate
+    datatype: float
+    unit: bottle/min
+    cadence: 1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:speed
+
+  - source_id: BW-FP-CAP01
+    signal_id: cycle_time
+    area_id: BW-FP
+    family: capper
+    semantic_role: production_cycle
+    datatype: float
+    unit: s
+    cadence: per_cycle_or_1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:cycle_time
+
+  - source_id: BW-FP-CAP01
+    signal_id: cap_torque
+    area_id: BW-FP
+    family: capper
+    semantic_role: condition_measurement
+    datatype: float
+    unit: N.m
+    cadence: per_cycle_or_1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:cap_torque
+
+  - source_id: BW-FP-FIL01
+    signal_id: fill_rate
+    area_id: BW-FP
+    family: production
+    semantic_role: production_rate
+    datatype: float
+    unit: bottle/min
+    cadence: 1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-FIL01/signal:fill_rate
+
   - source_id: BW-UT-CMP01
     signal_id: operating_state
     area_id: BW-UT
@@ -201,6 +262,32 @@ signals:
     plantos_entity: Signal
     plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:air_pressure
 
+  - source_id: BW-UT-CMP01
+    signal_id: active_power
+    area_id: BW-UT
+    family: compressor
+    semantic_role: energy_measurement
+    datatype: float
+    unit: kW
+    cadence: 1-2s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:active_power
+
+  - source_id: BW-UT-CMP01
+    signal_id: energy_total
+    area_id: BW-UT
+    family: compressor
+    semantic_role: energy_measurement
+    datatype: float
+    unit: kWh
+    cadence: 2-5s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:energy_total
+
   - source_id: BW-WH-FG01
     signal_id: inventory_count
     area_id: BW-WH
@@ -226,6 +313,19 @@ signals:
     provenance: SIMULATED_RAW
     plantos_entity: Signal
     plantos_mapping_key: plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:receipt_count
+
+  - source_id: BW-WH-FG01
+    signal_id: dispatch_count
+    area_id: BW-WH
+    family: fg
+    semantic_role: inventory_count
+    datatype: integer
+    unit: bottle
+    cadence: on_change_or_1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:dispatch_count
 
   - source_id: BW-UT-PWR01
     signal_id: plant_active_power
@@ -313,3 +413,27 @@ events:
     provenance: SIMULATED_RAW
     plantos_entity: Event
     plantos_mapping_key: plant:BW-DEMO-01/event:SCENARIO_PHASE_CHANGED
+
+unavailable:
+  - source_id: BW-UT-CMP01
+    signal_id: load
+    area_id: BW-UT
+    family: compressor
+    semantic_role: condition_measurement
+    export_status: UNAVAILABLE
+    not_exported: true
+    reason: >
+      No dedicated compressor load/drive_load raw signal exists on the factory
+      snapshot. Electrical load is already published as BW-UT-CMP01.active_power.
+      C02 does not fabricate a load fact.
+
+  - source_id: BW-FP
+    signal_id: target_rate
+    area_id: BW-FP
+    family: production
+    semantic_role: configured_target
+    export_status: UNAVAILABLE
+    not_exported: true
+    reason: >
+      B1 configured_targets.BW-FP.target_rate is CONFIGURED_TARGET metadata and
+      is not published as a factory raw signal. C02 does not invent it.

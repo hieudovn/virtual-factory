@@ -1,32 +1,23 @@
 # SA REVIEW INBOX
 
-Task: DDAY-B6-C01 — VF→PlantOS contract fidelity
+Task: DDAY-B6-C02 — selected dictionary coverage + timestamp semantics
 Status: implementation pushed; machine status is derived by `run_task_gate.py`
 
 Authority:
-SA Issue hieudovn/virtual-factory#111 (C01 ONLY)
-Parent: DDAY-B6 / #110
+SA Issue hieudovn/virtual-factory#112 (C02 ONLY)
+Parent: DDAY-B6-C01 / #111
+Grandparent: DDAY-B6 / #110
 PR: hieudovn/virtual-factory#101 (base main, head sa/dday-track-b-20261003)
 
 Baselines:
-SA-reviewed B6 head / C01 baseline: 9e76f406246ecd989eda1f23def283fa93408e1b
+SA-reviewed C01 head / C02 baseline: e0763b9dfb3b42d57e95f6c4bb234f59f8f63ab5
 origin/main (harness expected_base_sha): f5261c8ca18cd4e01779c0274b55270ba028b4e5
 
 What was done:
-- Versioned outward envelope (contract_version, plant_source_id, source_id, UTC timestamp, simulation_time_s).
-- Selected D-Day export dictionary with fail-closed mapping.
-- Durable Capper/Compressor/process/condition examples from accepted B5 scenarios.
-- Whole Factory Overview left accepted.
-- PlantOS ingest/historian not claimed; exact repo-access gap recorded.
+- Completed selected-signal coverage from existing raw facts.
+- Marked unavailable required items UNAVAILABLE / NOT EXPORTED.
+- Clarified timestamp as simulated-source UTC, not wall-clock receipt time.
+- Overview, Capper/Compressor, MQTT gateway, and PlantOS production code frozen.
 
-Local verification:
-  C01 + B6 tests PASS
-  Full suite / smoke / exact-head CI are collected by the task gate
-
-Evidence:
-.ai-harness/sa-review/evidence/DDAY-B6-C01/
-Report:
-.ai-harness/sa-review/reports/DDAY-B6-C01.md
-
-NOT authorized: merge, B7, or any later slice.
+NOT authorized: merge, B7, or PlantOS ingest-proof slice.
 The PM does not self-certify COMPLETE / CLOSED / SA APPROVED.
