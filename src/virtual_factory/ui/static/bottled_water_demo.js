@@ -731,6 +731,21 @@ function bwApplyFacts() {
     capperMark.textContent = highlight;
     capperMark.setAttribute('data-mark', highlight);
   }
+  const cmp = s.compressor_scenario || {};
+  const cmpMark = bwEl('bw-cmp-mark');
+  if (cmpMark) {
+    const highlight = cmp.highlight || 'normal';
+    cmpMark.textContent = highlight;
+    cmpMark.setAttribute('data-mark', highlight);
+  }
+  const air = bwEl('bw-air-pressure');
+  if (air) {
+    const bar = cmp.air_pressure_bar;
+    air.textContent = (bar == null || Number.isNaN(Number(bar)))
+      ? '—'
+      : `${Number(bar).toFixed(3)} bar`;
+    air.setAttribute('data-mark', cmp.highlight || 'normal');
+  }
   bwEl('bw-sim-time').textContent = `${Number(s.simulation_time_s).toFixed(1)} s`;
   bwEl('bw-dwell').textContent = s.dwell_number;
   bwEl('bw-total').textContent = s.counts.total;

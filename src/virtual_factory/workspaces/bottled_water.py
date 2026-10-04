@@ -48,6 +48,10 @@ from virtual_factory.workspaces.capper_degradation import (
     CapperDegradationScenario,
     load_runtime_config,
 )
+from virtual_factory.workspaces.compressor_pressure import (
+    CompressorPressureScenario,
+    load_compressor_runtime,
+)
 
 WORKSPACE_ID = "bottled-water-dday"
 
@@ -96,6 +100,8 @@ HIDDEN_TRUTH_KEYS = (
     "_factor",
     "_phase_elapsed_s",
     "_bearing_temp_c",
+    "sag_factor",
+    "injected_sag_strength",
 )
 
 FORBIDDEN_KPI_KEYS = (
@@ -463,6 +469,21 @@ def project_target_line(ctrl: DemoController, limit: int = 60) -> dict:
     }
 
 
+def _scenario_files(
+    workspace_dir: Path,
+    packaged: Path,
+    stem: str,
+) -> tuple[Path, Path]:
+    """Resolve a workspace scenario pair, falling back to the packaged copy."""
+    contract_path = workspace_dir / "scenarios" / f"{stem}.contract.yaml"
+    runtime_path = workspace_dir / "scenarios" / f"{stem}.runtime.yaml"
+    if not contract_path.is_file():
+        contract_path = packaged / f"{stem}.contract.yaml"
+    if not runtime_path.is_file():
+        runtime_path = packaged / f"{stem}.runtime.yaml"
+    return contract_path, runtime_path
+
+
 # ═══════════════════════════════════════════════════════════════
 # Whole-factory composition
 # ═══════════════════════════════════════════════════════════════
@@ -480,6 +501,10 @@ class BottledWaterFactory:
         self,
         line_config_path: str | Path,
         factory_config_path: str | Path,
+        *,
+        enable_capper: bool = True,
+        enable_compressor: bool = True,
+        compressor: Optional[CompressorPressureScenario] = None,
     ) -> None:
         self.line_config_path = str(line_config_path)
         self.factory_config_path = str(factory_config_path)
@@ -538,19 +563,24 @@ class BottledWaterFactory:
             Path(__file__).resolve().parents[3]
             / "configs" / "workspaces" / WORKSPACE_ID / "scenarios"
         )
-        contract_path = (
-            workspace_dir / "scenarios" / "capper_degradation.contract.yaml"
+        capper_contract, capper_runtime = _scenario_files(
+            workspace_dir, packaged, "capper_degradation"
         )
-        runtime_path = (
-            workspace_dir / "scenarios" / "capper_degradation.runtime.yaml"
-        )
-        if not contract_path.is_file():
-            contract_path = packaged / "capper_degradation.contract.yaml"
-        if not runtime_path.is_file():
-            runtime_path = packaged / "capper_degradation.runtime.yaml"
         self._scenario = CapperDegradationScenario(
-            load_runtime_config(runtime_path, contract_path)
+            load_runtime_config(capper_runtime, capper_contract)
         )
+        self._capper_enabled = bool(enable_capper)
+
+        if compressor is not None:
+            self._compressor = compressor
+        else:
+            cmp_contract, cmp_runtime = _scenario_files(
+                workspace_dir, packaged, "compressor_pressure"
+            )
+            self._compressor = CompressorPressureScenario(
+                load_compressor_runtime(cmp_runtime, cmp_contract)
+            )
+        self._compressor_enabled = bool(enable_compressor)
 
         self._initialise_state()
 
@@ -607,7 +637,11 @@ class BottledWaterFactory:
         self._events: deque = deque(maxlen=MAX_FACTORY_EVENTS)
         self._last_noted_state = LineRunState.STOPPED.value
         self._scenario.reset()
-        self._record_scenario_events(self._scenario.advance(0.0, 0.0))
+        self._compressor.reset()
+        if self._capper_enabled:
+            self._record_scenario_events(self._scenario.advance(0.0, 0.0))
+        if self._compressor_enabled:
+            self._record_scenario_events(self._compressor.advance(0.0, 0.0))
 
     def _reset(self) -> None:
         self.controller.reset()
@@ -714,9 +748,7 @@ class BottledWaterFactory:
                 self._dwell_acc_s = 0.0
                 self._integrate_elapsed(delta)
                 if self.controller.run_state is LineRunState.RUNNING:
-                    self._record_scenario_events(
-                        self._scenario.advance(delta, self._clock_s)
-                    )
+                    self._advance_scenarios(delta)
                 self._apply_draw()
             return delta
 
@@ -745,14 +777,15 @@ class BottledWaterFactory:
         self._integrate_elapsed(dt)
 
         if run_state is LineRunState.RUNNING:
-            self._record_scenario_events(
-                self._scenario.advance(dt, self._clock_s)
-            )
-            if self._scenario.production_inhibited():
+            self._advance_scenarios(dt)
+            if self._capper_enabled and self._scenario.production_inhibited():
                 self._dwell_acc_s = 0.0
             else:
                 self._dwell_acc_s += dt
-                effective = self._scenario.effective_dwell_s(self._nominal_dwell_s)
+                effective = (
+                    self._scenario.effective_dwell_s(self._nominal_dwell_s)
+                    if self._capper_enabled else self._nominal_dwell_s
+                )
                 if self._dwell_acc_s >= effective - 1e-9:
                     self._dwell_acc_s -= effective
                     self._produce_one_cycle()
@@ -835,8 +868,29 @@ class BottledWaterFactory:
         self._treated_water_total_m3 += treated_m3
         self._reject_water_total_m3 += raw_m3 - treated_m3
 
+    def _advance_scenarios(self, dt: float) -> None:
+        """Advance enabled scenario helpers by ``dt`` simulated seconds."""
+        if self._capper_enabled:
+            self._record_scenario_events(
+                self._scenario.advance(dt, self._clock_s)
+            )
+        if self._compressor_enabled:
+            self._record_scenario_events(
+                self._compressor.advance(dt, self._clock_s)
+            )
+
     def _integrate_air(self, dt: float) -> None:
         cfg = self._config
+        if (
+            self._compressor_enabled
+            and self._compressor.overrides_pressure()
+        ):
+            pressure = self._compressor.step_pressure(self._air_pressure_bar, dt)
+            self._air_pressure_bar = max(
+                cfg.air_min_bar, min(cfg.air_max_bar, pressure)
+            )
+            return
+
         target = cfg.air_setpoint_bar
         if self._currently_running():
             target -= cfg.air_production_sag_bar
@@ -950,7 +1004,7 @@ class BottledWaterFactory:
         feed_active = self._feed_active()
         run_state = self.controller.run_state.value
         for station_id, (standby, running_kw) in cfg.line_loads.items():
-            if station_id == self._cap_node:
+            if station_id == self._cap_node and self._capper_enabled:
                 loads[station_id] = self._scenario.capper_active_power_kw(
                     run_state, standby, running_kw
                 )
@@ -1083,7 +1137,7 @@ class BottledWaterFactory:
 
         run_state_value = self.controller.run_state.value
         for station_id in self._route:
-            if station_id == self._cap_node:
+            if station_id == self._cap_node and self._capper_enabled:
                 put(
                     station_id,
                     "operating_state",
@@ -1094,12 +1148,13 @@ class BottledWaterFactory:
                 put(station_id, "operating_state",
                     self._operating_state(running), "-")
 
-        for signal_id, (value, unit) in self._scenario.published_signals(
-            run_state_value
-        ).items():
-            if signal_id == "operating_state":
-                continue
-            put(self._cap_node, signal_id, value, unit)
+        if self._capper_enabled:
+            for signal_id, (value, unit) in self._scenario.published_signals(
+                run_state_value
+            ).items():
+                if signal_id == "operating_state":
+                    continue
+                put(self._cap_node, signal_id, value, unit)
 
         put(stations["fill"], "fill_rate", _round(fill_rate, 3), "bottle/min")
         put(stations["fill"], "product_water_total_m3",
@@ -1243,6 +1298,10 @@ class BottledWaterFactory:
                     "dwell_number": self.controller.line.conveyor.dwell_number,
                 },
                 "scenario": self._scenario.public_context(),
+                "compressor_scenario": {
+                    **self._compressor.public_context(),
+                    "air_pressure_bar": _round(self._air_pressure_bar, 3),
+                },
                 "classification": self._scenario.classification(),
                 "hierarchy": [node.as_dict() for node in self._hierarchy],
                 "nodes": node_tree,
@@ -1259,14 +1318,30 @@ class BottledWaterFactory:
         """
         overlaid = dict(projection)
         overlaid["scenario"] = self._scenario.public_context()
+        overlaid["compressor_scenario"] = {
+            **self._compressor.public_context(),
+            "air_pressure_bar": _round(self._air_pressure_bar, 3),
+        }
         overlaid["classification"] = self._scenario.classification()
         run_state = self.controller.run_state.value
         signals = {}
-        for signal_id, (value, unit) in self._scenario.published_signals(
-            run_state
-        ).items():
-            signals[signal_id] = self._signal(value, unit)
-        overlaid["asset_signals"] = {self._cap_node: signals}
+        if self._capper_enabled:
+            for signal_id, (value, unit) in self._scenario.published_signals(
+                run_state
+            ).items():
+                signals[signal_id] = self._signal(value, unit)
+        asset_signals = {self._cap_node: signals} if signals else {}
+        if self._compressor_node:
+            asset_signals[self._compressor_node] = {
+                "operating_state": self._signal(
+                    self._operating_state(self._compressor_loading(), True),
+                    "-",
+                ),
+                "air_pressure": self._signal(
+                    _round(self._air_pressure_bar, 3), "bar"
+                ),
+            }
+        overlaid["asset_signals"] = asset_signals
         overlaid["scenario_events"] = [
             {
                 "event_type": event["event_type"],

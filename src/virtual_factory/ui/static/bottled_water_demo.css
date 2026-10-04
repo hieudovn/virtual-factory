@@ -463,6 +463,10 @@ html, body {
 #bw-capper-mark[data-mark="warn"] { color: #D48B0A; }
 #bw-capper-mark[data-mark="fault"] { color: var(--bw-state-fail); }
 #bw-capper-mark[data-mark="recover"] { color: var(--bw-accent); }
+#bw-cmp-mark[data-mark="warn"],
+#bw-air-pressure[data-mark="warn"] { color: #D48B0A; }
+#bw-cmp-mark[data-mark="recover"],
+#bw-air-pressure[data-mark="recover"] { color: var(--bw-accent); }
 
 .bw-legend-hint { color: var(--bw-text-muted); }
 

@@ -1,0 +1,28 @@
+# B5 runtime parameters for the secondary compressor scenario BW-CMP-SAG-01.
+# Phase order is declared in compressor_pressure.contract.yaml.
+# Default NORMAL is long enough that PRESSURE_SAG cannot overlap the Capper
+# hero window (Capper RECOVERY completes at t=210 s).
+
+scenario_id: BW-CMP-SAG-01
+target_asset: BW-UT-CMP01
+contract_ref: compressor_pressure.contract.yaml
+
+# Simulated-time phase durations (s). Scenario time advances only while the
+# factory run_state is RUNNING. PAUSE and operator STOP freeze this clock.
+phase_duration_s:
+  NORMAL: 240
+  PRESSURE_SAG: 30
+  RECOVERY: 24
+
+signals:
+  sag_floor_bar: 5.60          # below B4 production sag (6.4), at/above B4 min
+  recovery_target_bar: 6.40    # B4 running target: setpoint 7.0 - sag 0.6
+  fall_bar_per_s: 0.040        # 0.80 bar in 20 s from 6.40 toward 5.60
+  rise_bar_per_s: 0.040
+
+# Visible highlight token for the B3 skin (must not leak hidden truth).
+# No fault token — this is a pressure excursion, not a line stop.
+highlight:
+  NORMAL: normal
+  PRESSURE_SAG: warn
+  RECOVERY: recover

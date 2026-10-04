@@ -1,0 +1,52 @@
+# B5 secondary utility scenario. Not a B1 frozen hero contract.
+# Capper BW-CAP-DEG-01 remains the authoritative D-Day hero story.
+id: BW-CMP-SAG-01
+name: Compressor deterministic pressure sag
+target_asset: BW-UT-CMP01
+deterministic: true
+manual_trigger_required: false
+role: secondary_utility
+hero: false
+
+phases:
+  - id: NORMAL
+    expected_effects:
+      - air_pressure_follows_b4_utility_model
+      - compressor_loads_from_production_demand
+  - id: PRESSURE_SAG
+    expected_effects:
+      - air_pressure_falls_below_production_sag
+      - warning_alarm_raised
+      - compressor_remains_loaded
+      - production_cadence_unchanged
+  - id: RECOVERY
+    expected_effects:
+      - alarm_cleared
+      - air_pressure_returns_toward_production_sag
+      - no_downtime_pair
+
+hidden_ground_truth:
+  publish: false
+  examples:
+    - sag_factor
+    - injected_sag_strength
+    - scenario_internal_phase_timer
+
+manual_interaction:
+  allowed:
+    - start
+    - stop
+    - pause
+    - resume
+  rule: >
+    Compressor sag is automatic and simpler than the Capper hero story.
+    It MUST NOT inhibit production and MUST NOT emit downtime events.
+
+plantos_calculated_impacts:
+  not_published_by_vf:
+    - oee
+    - availability
+    - performance
+    - quality_percentage
+    - energy_per_unit
+    - health_score

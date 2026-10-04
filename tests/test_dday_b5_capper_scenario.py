@@ -64,8 +64,11 @@ def _walk_keys(node, acc: set[str]) -> None:
             _walk_keys(item, acc)
 
 
-def _event_types(snapshot: dict) -> list[str]:
-    return [event["event_type"] for event in snapshot["recent_events"]]
+def _event_types(snapshot: dict, source_id: str | None = None) -> list[str]:
+    events = snapshot["recent_events"]
+    if source_id is not None:
+        events = [event for event in events if event.get("source_id") == source_id]
+    return [event["event_type"] for event in events]
 
 
 def _run_to_phase(factory: BottledWaterFactory, phase: str, limit: int = 400) -> dict:
@@ -178,7 +181,7 @@ def test_b5_05_and_06_alarm_and_downtime_pair_once():
     factory = _factory()
     factory.start()
     _run(factory, 220)
-    types = _event_types(factory.snapshot())
+    types = _event_types(factory.snapshot(), CAP)
     assert types.count("ALARM_RAISED") == 1
     assert types.count("ALARM_CLEARED") == 1
     assert types.count("DOWNTIME_START") == 1
@@ -189,6 +192,7 @@ def test_b5_05_and_06_alarm_and_downtime_pair_once():
     phases = [
         event["detail"] for event in factory.snapshot()["recent_events"]
         if event["event_type"] == "SCENARIO_PHASE_CHANGED"
+        and event.get("source_id") == CAP
     ]
     assert phases == [f"phase={name}" for name in PHASES]
 
@@ -309,6 +313,7 @@ def test_b5_16_skin_exposes_capper_condition_without_redesign(client):
                   "mqtt", "opcua", "plantos", "docker"):
         assert later not in combined
     assert "bw-capper-mark" in html
+    assert "bw-cmp-mark" in html
     assert "ALARM_RAISED" in js
     assert "/classify" in js
     assert "bw-dot-warn" in css

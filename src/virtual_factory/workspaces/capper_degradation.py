@@ -306,6 +306,7 @@ class CapperDegradationScenario:
     def _event(self, event_type: str, detail: str, simulation_time_s: float) -> dict:
         return {
             "event_type": event_type,
+            "scenario_id": self.config.scenario_id,
             "source_id": self.config.target_asset,
             "station_id": self.config.target_asset,
             "detail": detail,
