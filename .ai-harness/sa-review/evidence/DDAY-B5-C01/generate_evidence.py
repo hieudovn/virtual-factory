@@ -132,12 +132,31 @@ def main() -> None:
 
     default = _factory()
     default.start()
-    for _ in range(150):
+    default_cmp = []
+    mid = None
+    after_capper = None
+    for step in range(340):
         default.step(1.0)
-    mid = default.snapshot()
-    for _ in range(90):
-        default.step(1.0)
-    after_capper = default.snapshot()
+        snap = default.snapshot()
+        if step + 1 == 150:
+            mid = snap
+        if step + 1 == 240:
+            after_capper = snap
+        if (
+            not default_cmp
+            or snap["compressor_scenario"]["phase"] != default_cmp[-1]["phase"]
+        ):
+            default_cmp.append({
+                "step": step + 1,
+                "phase": snap["compressor_scenario"]["phase"],
+                "air_pressure": _signal(snap, CMP, "air_pressure"),
+                "total": snap["target_line"]["counts"]["total"],
+                "good": snap["target_line"]["counts"]["good"],
+                "fg_receipts": snap["balances"]["finished_goods"]["receipt_count"],
+                "capper_phase": snap["scenario"]["phase"],
+            })
+    if mid is None or after_capper is None:
+        raise RuntimeError("default demo did not reach t=150 / t=240")
 
     keys: set[str] = set()
     _walk_keys(final, keys)
@@ -188,6 +207,7 @@ def main() -> None:
             "capper": after_capper["scenario"]["phase"],
             "compressor": after_capper["compressor_scenario"]["phase"],
         },
+        "default_compressor_samples": default_cmp,
         "capper_files_changed_vs_cced390": capper_diff.splitlines(),
         "hidden_hits": hidden_hits,
         "kpi_hits": kpi_hits,
@@ -233,7 +253,16 @@ def main() -> None:
         f"- Compressor downtime events: `{payload['downtime_count']}`\n"
         f"- Low-pressure alarms: `{payload['alarm_raised_count']}`\n\n"
         "UNDERSUPPLY inhibits `_produce_one_cycle()` at the composition layer. "
-        "No compressor downtime pair. Capper remains the hero downtime story.\n",
+        "No compressor downtime pair. Capper remains the hero downtime story.\n\n"
+        "Default demo compressor windows:\n\n"
+        "| t | phase | air_pressure | total | good | fg | capper |\n"
+        "|---|---|---|---|---|---|---|\n"
+        + "".join(
+            f"| {row['step']} | {row['phase']} | {row['air_pressure']} | "
+            f"{row['total']} | {row['good']} | {row['fg_receipts']} | "
+            f"{row['capper_phase']} |\n"
+            for row in default_cmp
+        ),
         encoding="utf-8",
     )
     (HERE / "04-non-overlap.md").write_text(

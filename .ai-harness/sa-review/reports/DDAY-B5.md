@@ -1,5 +1,9 @@
 # DDAY-B5 — Capper Hero + Compressor Secondary — SA Review Report
 
+> Superseded for the compressor story by **DDAY-B5-C01**. The 3-phase
+> `NORMAL → PRESSURE_SAG → RECOVERY` helper at `cced390` was SA-rejected.
+> See `.ai-harness/sa-review/reports/DDAY-B5-C01.md`. Capper is unchanged.
+
 ## Status
 
 Machine status is derived by the full canonical task gate. See

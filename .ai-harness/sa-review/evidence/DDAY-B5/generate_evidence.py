@@ -198,26 +198,36 @@ def main() -> None:
     )
     (HERE / "06-production-impact.md").write_text(
         "# DDAY-B5 — production / FG impact\n\n"
+        "Capper hero window:\n\n"
         + "\n".join(
             f"- {row['phase']}: total={row['total']} good={row['good']} "
             f"fg={row['fg_receipts']} cycle_time={row['cycle_time']}"
             for row in samples
         )
-        + "\n",
+        + "\n\nCompressor secondary window:\n\n"
+        + "\n".join(
+            f"- t={row['step']} {row['phase']}: total={row['total']} "
+            f"good={row['good']} fg={row['fg_receipts']}"
+            for row in cmp_samples
+        )
+        + "\n\nUNDERSUPPLY freezes line counts and FG receipts. "
+        "FG follows actual good output.\n",
         encoding="utf-8",
     )
     (HERE / "11-compressor.md").write_text(
         "# DDAY-B5 — compressor secondary scenario\n\n"
-        "| t (first sample) | compressor phase | highlight | air_pressure | capper phase |\n"
-        "|---|---|---|---|---|\n"
+        "| t | compressor phase | highlight | air_pressure | total | good | fg | capper |\n"
+        "|---|---|---|---|---|---|---|---|\n"
         + "".join(
             f"| {row['step']} | {row['phase']} | {row['highlight']} | "
-            f"{row['air_pressure']} | {row['capper_phase']} |\n"
+            f"{row['air_pressure']} | {row['total']} | {row['good']} | "
+            f"{row['fg_receipts']} | {row['capper_phase']} |\n"
             for row in cmp_samples
         )
         + "\nDefault demo is non-overlapping: compressor DEGRADING begins "
-        "only after Capper RECOVERY. UNDERSUPPLY inhibits production; "
-        "FG receipts follow actual good output.\n",
+        "only after Capper RECOVERY. UNDERSUPPLY inhibits production "
+        "(totals freeze from t=284 to t=304); FG receipts follow actual "
+        "good output.\n",
         encoding="utf-8",
     )
     (HERE / "07-hidden-truth-scan.md").write_text(

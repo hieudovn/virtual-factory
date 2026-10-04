@@ -1,6 +1,7 @@
 # DDAY-B5 — scope audit vs `b6dcb08`
 
 - `.ai-harness/sa-review/CURRENT.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5-C01/generate_evidence.py`
 - `.ai-harness/sa-review/evidence/DDAY-B5/01-baseline-and-scope.md`
 - `.ai-harness/sa-review/evidence/DDAY-B5/02-phase-table.md`
 - `.ai-harness/sa-review/evidence/DDAY-B5/03-replay-digest.md`
@@ -10,14 +11,19 @@
 - `.ai-harness/sa-review/evidence/DDAY-B5/07-hidden-truth-scan.md`
 - `.ai-harness/sa-review/evidence/DDAY-B5/08-classification.md`
 - `.ai-harness/sa-review/evidence/DDAY-B5/09-scope-audit.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/10-visual-compressor-recover.png`
+- `.ai-harness/sa-review/evidence/DDAY-B5/10-visual-compressor-sag.png`
 - `.ai-harness/sa-review/evidence/DDAY-B5/10-visual-fault.png`
 - `.ai-harness/sa-review/evidence/DDAY-B5/10-visual-recovery.png`
 - `.ai-harness/sa-review/evidence/DDAY-B5/10-visual-warning.png`
 - `.ai-harness/sa-review/evidence/DDAY-B5/10-visual.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/11-compressor.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/capture_visuals.py`
 - `.ai-harness/sa-review/evidence/DDAY-B5/generate_evidence.py`
 - `.ai-harness/sa-review/evidence/DDAY-B5/machine-evidence.json`
 - `.ai-harness/sa-review/evidence/DDAY-B5/smoke_capper_scenario.py`
 - `.ai-harness/sa-review/reports/DDAY-B5.md`
+- `.ai-harness/tasks/DDAY-B5-C01.json`
 - `.ai-harness/tasks/DDAY-B5.json`
 - `configs/workspaces/bottled-water-dday/scenarios/capper_degradation.runtime.yaml`
 - `configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.contract.yaml`

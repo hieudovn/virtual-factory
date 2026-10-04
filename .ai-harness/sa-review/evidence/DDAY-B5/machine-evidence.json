@@ -1,9 +1,9 @@
 {
   "task": "DDAY-B5",
   "baseline": "b6dcb08a1263e7a84792ea8697d3202fa5e79912",
-  "head": "1c34ecf40e21f9c8ef2e6bb73f1a8d10fc9a8fb9",
+  "head": "e74f5dcff1dccf469db8c31dc58aa61a60bcd7d9",
   "replay_digest_match": true,
-  "digest": "894be0bb3aee9349df82043c8ccb1b112a21f41d87415f6aef4a3d0f5178a177",
+  "digest": "9370bbac413c313114b84309077d68e3c7ad503ef14b39d69d8c8a57dd5abaa4",
   "phase_samples": [
     {
       "step": 1,
@@ -102,20 +102,54 @@
       "phase": "NORMAL",
       "highlight": "normal",
       "air_pressure": 6.98,
+      "active_power": 2.0,
+      "total": 0,
+      "good": 0,
+      "fg_receipts": 0,
       "capper_phase": "NORMAL"
     },
     {
       "step": 240,
-      "phase": "PRESSURE_SAG",
+      "phase": "DEGRADING",
       "highlight": "warn",
       "air_pressure": 6.4,
+      "active_power": 15.337,
+      "total": 9,
+      "good": 2,
+      "fg_receipts": 2,
       "capper_phase": "RECOVERY"
     },
     {
-      "step": 270,
+      "step": 264,
+      "phase": "LOW_PRESSURE_WARNING",
+      "highlight": "warn",
+      "air_pressure": 6.1,
+      "active_power": 16.125,
+      "total": 10,
+      "good": 3,
+      "fg_receipts": 3,
+      "capper_phase": "RECOVERY"
+    },
+    {
+      "step": 284,
+      "phase": "UNDERSUPPLY",
+      "highlight": "fault",
+      "air_pressure": 5.8,
+      "active_power": 17.25,
+      "total": 11,
+      "good": 4,
+      "fg_receipts": 4,
+      "capper_phase": "RECOVERY"
+    },
+    {
+      "step": 304,
       "phase": "RECOVERY",
       "highlight": "recover",
       "air_pressure": 5.6,
+      "active_power": 17.25,
+      "total": 11,
+      "good": 4,
+      "fg_receipts": 4,
       "capper_phase": "RECOVERY"
     }
   ],
@@ -182,26 +216,38 @@
     },
     {
       "event_type": "SCENARIO_PHASE_CHANGED",
-      "detail": "phase=PRESSURE_SAG",
-      "simulation_time_s": 240.0,
-      "source_id": "BW-UT-CMP01"
-    },
-    {
-      "event_type": "ALARM_RAISED",
-      "detail": "compressor pressure sag",
+      "detail": "phase=DEGRADING",
       "simulation_time_s": 240.0,
       "source_id": "BW-UT-CMP01"
     },
     {
       "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=LOW_PRESSURE_WARNING",
+      "simulation_time_s": 264.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "ALARM_RAISED",
+      "detail": "compressor low pressure",
+      "simulation_time_s": 264.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=UNDERSUPPLY",
+      "simulation_time_s": 284.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
       "detail": "phase=RECOVERY",
-      "simulation_time_s": 270.0,
+      "simulation_time_s": 304.0,
       "source_id": "BW-UT-CMP01"
     },
     {
       "event_type": "ALARM_CLEARED",
       "detail": "compressor pressure restored",
-      "simulation_time_s": 270.0,
+      "simulation_time_s": 304.0,
       "source_id": "BW-UT-CMP01"
     }
   ],
@@ -215,6 +261,7 @@
   "kpi_hits": [],
   "files_vs_b5_baseline": [
     ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5-C01/generate_evidence.py",
     ".ai-harness/sa-review/evidence/DDAY-B5/01-baseline-and-scope.md",
     ".ai-harness/sa-review/evidence/DDAY-B5/02-phase-table.md",
     ".ai-harness/sa-review/evidence/DDAY-B5/03-replay-digest.md",
@@ -224,14 +271,19 @@
     ".ai-harness/sa-review/evidence/DDAY-B5/07-hidden-truth-scan.md",
     ".ai-harness/sa-review/evidence/DDAY-B5/08-classification.md",
     ".ai-harness/sa-review/evidence/DDAY-B5/09-scope-audit.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/10-visual-compressor-recover.png",
+    ".ai-harness/sa-review/evidence/DDAY-B5/10-visual-compressor-sag.png",
     ".ai-harness/sa-review/evidence/DDAY-B5/10-visual-fault.png",
     ".ai-harness/sa-review/evidence/DDAY-B5/10-visual-recovery.png",
     ".ai-harness/sa-review/evidence/DDAY-B5/10-visual-warning.png",
     ".ai-harness/sa-review/evidence/DDAY-B5/10-visual.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/11-compressor.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/capture_visuals.py",
     ".ai-harness/sa-review/evidence/DDAY-B5/generate_evidence.py",
     ".ai-harness/sa-review/evidence/DDAY-B5/machine-evidence.json",
     ".ai-harness/sa-review/evidence/DDAY-B5/smoke_capper_scenario.py",
     ".ai-harness/sa-review/reports/DDAY-B5.md",
+    ".ai-harness/tasks/DDAY-B5-C01.json",
     ".ai-harness/tasks/DDAY-B5.json",
     "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.runtime.yaml",
     "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.contract.yaml",
