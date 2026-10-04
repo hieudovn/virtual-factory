@@ -21,7 +21,8 @@ phases:
       - compressor_load_and_power_increase
   - id: LOW_PRESSURE_WARNING
     expected_effects:
-      - warning_alarm_raised
+      - phase_may_enter_before_threshold
+      - warning_alarm_raised_only_after_pressure_crosses_warning_threshold
       - air_pressure_continues_to_fall
       - warning_precedes_undersupply
   - id: UNDERSUPPLY

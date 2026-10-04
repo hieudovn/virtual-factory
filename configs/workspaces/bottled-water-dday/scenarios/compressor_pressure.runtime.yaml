@@ -26,6 +26,7 @@ cycle_time_factor:
 signals:
   degrading_target_bar: 6.10
   warning_target_bar: 5.80
+  warning_threshold_bar: 5.80
   sag_floor_bar: 5.60
   recovery_target_bar: 6.40
   fall_bar_per_s: 0.040

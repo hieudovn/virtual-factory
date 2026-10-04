@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import yaml
 
@@ -55,6 +55,7 @@ class CompressorRuntimeConfig:
     cycle_time_factor: dict[str, float]
     degrading_target_bar: float
     warning_target_bar: float
+    warning_threshold_bar: float
     sag_floor_bar: float
     recovery_target_bar: float
     fall_bar_per_s: float
@@ -108,6 +109,10 @@ def load_compressor_runtime(
         },
         degrading_target_bar=float(_get(data, "signals.degrading_target_bar", 6.1)),
         warning_target_bar=float(_get(data, "signals.warning_target_bar", 5.8)),
+        warning_threshold_bar=float(_get(
+            data, "signals.warning_threshold_bar",
+            _get(data, "signals.warning_target_bar", 5.8),
+        )),
         sag_floor_bar=float(_get(data, "signals.sag_floor_bar", 5.6)),
         recovery_target_bar=float(_get(data, "signals.recovery_target_bar", 6.4)),
         fall_bar_per_s=float(_get(data, "signals.fall_bar_per_s", 0.04)),
@@ -120,8 +125,9 @@ def load_compressor_runtime(
 class CompressorPressureScenario:
     """Deterministic one-shot compressor undersupply scenario.
 
-    Time is simulated time supplied by the factory. Classification is not
-    stored here and never feeds back into pressure, phase, or inhibit.
+    Time is simulated time supplied by the factory. Classification is an
+    optional post-event annotation and never feeds back into pressure,
+    phase, or inhibit.
     """
 
     def __init__(self, config: CompressorRuntimeConfig) -> None:
@@ -136,6 +142,8 @@ class CompressorPressureScenario:
         self._alarm_raised = False
         self._alarm_cleared = False
         self._pending_events: list[dict] = []
+        self._downtime_code: Optional[str] = None
+        self._failure_code: Optional[str] = None
         self._emit_phase("NORMAL", 0.0)
 
     @property
@@ -157,6 +165,8 @@ class CompressorPressureScenario:
             "target_asset": self.config.target_asset,
             "phase": self._phase,
             "highlight": self.config.highlight.get(self._phase, "normal"),
+            "downtime_code": self._downtime_code,
+            "failure_code": self._failure_code,
         }
 
     def cycle_time_factor(self) -> float:
@@ -248,21 +258,94 @@ class CompressorPressureScenario:
             simulation_time_s,
         ))
 
-    def _maybe_raise_phase_events(self, simulation_time_s: float) -> None:
-        if self._phase == "LOW_PRESSURE_WARNING" and not self._alarm_raised:
+    def observe_pressure(
+        self, pressure_bar: float, simulation_time_s: float
+    ) -> list[dict]:
+        """Raise the low-pressure alarm only after the raw threshold is crossed.
+
+        The LOW_PRESSURE_WARNING phase may already be active. This method
+        never changes phase, pressure, or production inhibit.
+        """
+        observed = round(float(pressure_bar), 3)
+        threshold = round(float(self.config.warning_threshold_bar), 3)
+        if (
+            not self._alarm_raised
+            and self._phase in ("LOW_PRESSURE_WARNING", "UNDERSUPPLY")
+            and observed <= threshold
+        ):
             self._alarm_raised = True
-            self._pending_events.append(self._event(
+            event = self._event(
                 EVENT_ALARM_RAISED,
                 "compressor low pressure",
                 simulation_time_s,
-            ))
+            )
+            self._stamp_classification(event)
+            self._pending_events.append(event)
+        return self._take_events()
+
+    def _maybe_raise_phase_events(self, simulation_time_s: float) -> None:
         if self._phase == "RECOVERY" and self._alarm_raised and not self._alarm_cleared:
             self._alarm_cleared = True
-            self._pending_events.append(self._event(
+            event = self._event(
                 EVENT_ALARM_CLEARED,
                 "compressor pressure restored",
                 simulation_time_s,
-            ))
+            )
+            self._stamp_classification(event)
+            self._pending_events.append(event)
+
+    def classify(self, kind: str, code: str) -> dict:
+        """Attach a human code to the existing/pending compressor context.
+
+        Never mutates phase, pressure, timers, or production inhibit.
+        """
+        if kind not in ("downtime_code", "failure_code"):
+            raise ValueError(f"unsupported classification kind: {kind!r}")
+        cleaned = str(code).strip()
+        if not cleaned:
+            raise ValueError("classification code must be non-empty")
+        if kind == "downtime_code":
+            self._downtime_code = cleaned
+        else:
+            self._failure_code = cleaned
+        return {
+            "kind": kind,
+            "code": cleaned,
+            "scenario_id": self.config.scenario_id,
+            "target_asset": self.config.target_asset,
+            "attached_to_phase": self._phase,
+        }
+
+    def classification(self) -> dict:
+        return {
+            "downtime_code": self._downtime_code,
+            "failure_code": self._failure_code,
+        }
+
+    def _stamp_classification(self, event: dict) -> None:
+        if self._downtime_code:
+            event["downtime_code"] = self._downtime_code
+        if self._failure_code:
+            event["failure_code"] = self._failure_code
+
+    def accepts_classification(self, event: dict) -> bool:
+        """True when this event is compressor abnormal context."""
+        belongs = (
+            event.get("scenario_id") == self.config.scenario_id
+            or event.get("source_id") == self.config.target_asset
+        )
+        if not belongs:
+            return False
+        event_type = event.get("event_type")
+        if event_type in (EVENT_ALARM_RAISED, EVENT_ALARM_CLEARED):
+            return True
+        return (
+            event_type == EVENT_PHASE
+            and event.get("detail") in (
+                "phase=LOW_PRESSURE_WARNING",
+                "phase=UNDERSUPPLY",
+            )
+        )
 
     def _event(self, event_type: str, detail: str, simulation_time_s: float) -> dict:
         return {

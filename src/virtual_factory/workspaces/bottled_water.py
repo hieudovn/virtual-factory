@@ -701,32 +701,48 @@ class BottledWaterFactory:
             self._note_run_state()
             return self.controller.run_state.value
 
-    def classify(self, kind: str, code: str) -> dict:
-        """Enrich the existing/pending downtime context. Never steps the model."""
+    def classify(self, kind: str, code: str, target: str | None = None) -> dict:
+        """Enrich existing/pending abnormal context. Never steps the model."""
         with self._lock:
-            result = self._scenario.classify(kind, code)
+            destination = self._classify_destination(target)
+            if destination == "compressor":
+                result = self._compressor.classify(kind, code)
+            else:
+                result = self._scenario.classify(kind, code)
             self._apply_classification_to_recent_events()
             return result
 
+    def _classify_destination(self, target: str | None) -> str:
+        cleaned = str(target or "").strip()
+        if cleaned in ("", "capper", "BW-FP-CAP01", "BW-CAP-DEG-01"):
+            return "capper"
+        if cleaned in ("compressor", "BW-UT-CMP01", "BW-CMP-SAG-01"):
+            return "compressor"
+        raise ValueError(f"unsupported classification target: {target!r}")
+
     def _apply_classification_to_recent_events(self) -> None:
-        codes = self._scenario.classification()
+        capper_codes = self._scenario.classification()
+        compressor_codes = self._compressor.classification()
         for event in self._events:
-            if event.get("event_type") not in ("DOWNTIME_START", "DOWNTIME_END"):
-                continue
-            if codes.get("downtime_code"):
-                event["downtime_code"] = codes["downtime_code"]
-            if codes.get("failure_code"):
-                event["failure_code"] = codes["failure_code"]
+            if event.get("event_type") in ("DOWNTIME_START", "DOWNTIME_END"):
+                self._stamp_codes(event, capper_codes)
+            elif self._compressor.accepts_classification(event):
+                self._stamp_codes(event, compressor_codes)
 
     def _record_scenario_event(self, event: dict) -> None:
-        codes = self._scenario.classification()
         payload = dict(event)
         if payload.get("event_type") in ("DOWNTIME_START", "DOWNTIME_END"):
-            if codes.get("downtime_code"):
-                payload["downtime_code"] = codes["downtime_code"]
-            if codes.get("failure_code"):
-                payload["failure_code"] = codes["failure_code"]
+            self._stamp_codes(payload, self._scenario.classification())
+        elif self._compressor.accepts_classification(payload):
+            self._stamp_codes(payload, self._compressor.classification())
         self._events.append(payload)
+
+    @staticmethod
+    def _stamp_codes(event: dict, codes: dict) -> None:
+        if codes.get("downtime_code"):
+            event["downtime_code"] = codes["downtime_code"]
+        if codes.get("failure_code"):
+            event["failure_code"] = codes["failure_code"]
 
     def _record_scenario_events(self, events: list[dict]) -> None:
         for event in events:
@@ -872,6 +888,11 @@ class BottledWaterFactory:
                 self._scenario.advance(dt, self._clock_s)
             )
         if self._compressor_enabled:
+            self._record_scenario_events(
+                self._compressor.observe_pressure(
+                    self._air_pressure_bar, self._clock_s
+                )
+            )
             self._record_scenario_events(
                 self._compressor.advance(dt, self._clock_s)
             )

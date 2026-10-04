@@ -29,7 +29,7 @@ RUNTIME = WORKSPACE / "scenarios" / "compressor_pressure.runtime.yaml"
 SHORT_DURATIONS = {
     "NORMAL": 22.0,
     "DEGRADING": 8.0,
-    "LOW_PRESSURE_WARNING": 8.0,
+    "LOW_PRESSURE_WARNING": 12.0,
     "UNDERSUPPLY": 22.0,
     "RECOVERY": 24.0,
 }
@@ -274,3 +274,133 @@ def test_c01_10_classification_does_not_change_compressor_trajectory():
     assert _signal(labelled.snapshot(), CMP, "active_power") == _signal(
         plain.snapshot(), CMP, "active_power")
     assert labelled.snapshot()["classification"]["downtime_code"] == "DT-AIR"
+
+
+def _warning_threshold(factory: BottledWaterFactory) -> float:
+    return float(factory._compressor.config.warning_threshold_bar)
+
+
+def test_c02_1_and_2_alarm_waits_for_pressure_threshold():
+    factory = _factory(enable_capper=False, compressor=_short_compressor())
+    factory.start()
+    warning = _run_to_compressor_phase(factory, "LOW_PRESSURE_WARNING")
+    threshold = _warning_threshold(factory)
+    assert _signal(warning, CMP, "air_pressure") > threshold
+    assert not any(
+        event["event_type"] == "ALARM_RAISED" for event in _cmp_events(warning)
+    )
+
+    alarm_snap = None
+    for _ in range(20):
+        factory.step(1.0)
+        snap = factory.snapshot()
+        if any(
+            event["event_type"] == "ALARM_RAISED" for event in _cmp_events(snap)
+        ):
+            alarm_snap = snap
+            break
+    assert alarm_snap is not None
+    assert alarm_snap["compressor_scenario"]["phase"] == "LOW_PRESSURE_WARNING"
+    assert _signal(alarm_snap, CMP, "air_pressure") <= threshold
+    under = _run_to_compressor_phase(factory, "UNDERSUPPLY")
+    alarm = next(
+        event for event in _cmp_events(under)
+        if event["event_type"] == "ALARM_RAISED"
+    )
+    under_event = next(
+        event for event in _cmp_events(under)
+        if event["event_type"] == "SCENARIO_PHASE_CHANGED"
+        and event["detail"] == "phase=UNDERSUPPLY"
+    )
+    assert alarm["simulation_time_s"] < under_event["simulation_time_s"]
+
+
+def test_c02_3_and_4_targeted_classify_enriches_compressor_context():
+    plain = _factory(enable_capper=False, compressor=_short_compressor())
+    labelled = _factory(enable_capper=False, compressor=_short_compressor())
+    plain.start()
+    labelled.start()
+    labelled.classify("downtime_code", "DT-AIR", target="compressor")
+    labelled.classify("failure_code", "FAIL-AIR", target="BW-UT-CMP01")
+    _run(plain, 70)
+    _run(labelled, 70)
+    labelled_snap = labelled.snapshot()
+    plain_snap = plain.snapshot()
+    assert labelled_snap["compressor_scenario"]["phase"] == plain_snap[
+        "compressor_scenario"]["phase"]
+    assert _signal(labelled_snap, CMP, "air_pressure") == _signal(
+        plain_snap, CMP, "air_pressure")
+    assert labelled_snap["target_line"]["counts"]["total"] == plain_snap[
+        "target_line"]["counts"]["total"]
+    assert labelled_snap["compressor_scenario"]["downtime_code"] == "DT-AIR"
+    assert labelled_snap["compressor_scenario"]["failure_code"] == "FAIL-AIR"
+    assert labelled_snap["classification"]["downtime_code"] is None
+    cmp_events = _cmp_events(labelled_snap)
+    stamped = [
+        event for event in cmp_events
+        if event.get("downtime_code") == "DT-AIR"
+        and event.get("failure_code") == "FAIL-AIR"
+    ]
+    assert any(event["event_type"] == "ALARM_RAISED" for event in stamped)
+    assert any(
+        event["event_type"] == "SCENARIO_PHASE_CHANGED"
+        and event["detail"] == "phase=UNDERSUPPLY"
+        for event in stamped
+    )
+
+
+def test_c02_5_matched_control_run_shows_lower_abnormal_output():
+    abnormal = _factory(enable_capper=False)
+    control = _factory(enable_capper=False, enable_compressor=False)
+    abnormal.start()
+    control.start()
+
+    def _both_to(seconds: int) -> tuple[dict, dict]:
+        while abnormal.snapshot()["factory"]["simulation_time_s"] < seconds:
+            abnormal.step(1.0)
+            control.step(1.0)
+        return abnormal.snapshot(), control.snapshot()
+
+    at_under, control_under = _both_to(284)
+    assert at_under["compressor_scenario"]["phase"] == "UNDERSUPPLY"
+    assert control_under["compressor_scenario"]["phase"] == "NORMAL"
+    assert at_under["target_line"]["counts"]["total"] == control_under[
+        "target_line"]["counts"]["total"]
+    assert at_under["target_line"]["counts"]["good"] == control_under[
+        "target_line"]["counts"]["good"]
+    assert at_under["balances"]["finished_goods"]["receipt_count"] == (
+        control_under["balances"]["finished_goods"]["receipt_count"]
+    )
+
+    at_recover, control_recover = _both_to(304)
+    assert at_recover["compressor_scenario"]["phase"] == "RECOVERY"
+    assert at_recover["target_line"]["counts"]["total"] == at_under[
+        "target_line"]["counts"]["total"]
+    assert at_recover["target_line"]["counts"]["good"] == at_under[
+        "target_line"]["counts"]["good"]
+    assert at_recover["balances"]["finished_goods"]["receipt_count"] == (
+        at_under["balances"]["finished_goods"]["receipt_count"]
+    )
+    assert control_recover["target_line"]["counts"]["total"] > at_recover[
+        "target_line"]["counts"]["total"]
+    assert control_recover["target_line"]["counts"]["good"] > at_recover[
+        "target_line"]["counts"]["good"]
+    assert control_recover["balances"]["finished_goods"]["receipt_count"] > (
+        at_recover["balances"]["finished_goods"]["receipt_count"]
+    )
+
+    after, control_after = _both_to(340)
+    assert after["target_line"]["counts"]["total"] > at_recover[
+        "target_line"]["counts"]["total"]
+    assert after["target_line"]["counts"]["good"] > at_recover[
+        "target_line"]["counts"]["good"]
+    assert after["balances"]["finished_goods"]["receipt_count"] > (
+        at_recover["balances"]["finished_goods"]["receipt_count"]
+    )
+    assert after["balances"]["finished_goods"]["receipt_count"] == after[
+        "target_line"]["counts"]["good"]
+    assert (
+        after["target_line"]["counts"]["total"]
+        - at_recover["target_line"]["counts"]["total"]
+    ) >= 1
+    _ = control_after

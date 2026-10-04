@@ -72,7 +72,7 @@ def _short_compressor() -> CompressorPressureScenario:
         phase_duration_s={
             "NORMAL": 22.0,
             "DEGRADING": 8.0,
-            "LOW_PRESSURE_WARNING": 8.0,
+            "LOW_PRESSURE_WARNING": 12.0,
             "UNDERSUPPLY": 22.0,
             "RECOVERY": 24.0,
         },

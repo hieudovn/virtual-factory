@@ -743,7 +743,11 @@ def create_app(
 
         factory = _get_bw_factory()
         try:
-            factory.classify(str(payload.get("kind", "")), str(payload.get("code", "")))
+            factory.classify(
+            str(payload.get("kind", "")),
+            str(payload.get("code", "")),
+            target=payload.get("target"),
+        )
         except ValueError as exc:
             return JSONResponse(status_code=400, content={"detail": str(exc)})
         return factory.overlay_line_projection(
