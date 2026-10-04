@@ -2,16 +2,26 @@
   "task_id": "DDAY-B5",
   "repository": "hieudovn/virtual-factory",
   "requested_gate": "ready_for_sa_review",
-  "gate_type": "D-DAY TRACK B — CAPPER DETERMINISTIC ABNORMAL SCENARIO",
+  "gate_type": "D-DAY TRACK B — CAPPER HERO + COMPRESSOR SECONDARY SCENARIOS",
   "issue": "hieudovn/virtual-factory#107",
   "parent_issue": "hieudovn/virtual-factory#105",
   "pr": "hieudovn/virtual-factory#101",
-  "objective": "Implement the already-frozen B1 hero scenario BW-CAP-DEG-01 for BW-FP-CAP01 as a small deterministic causal abnormal scenario: NORMAL → DEGRADING → WARNING → INTERMITTENT_STOP → RECOVERY. Demonstrate machine-condition deterioration, warning before downtime, production impact, recovery, and raw facts/events suitable for later PlantOS use. Do not simulate KPI values. Manual downtime/failure classification may only enrich an already-existing event.",
+  "objective": "Implement the already-frozen B1 hero scenario BW-CAP-DEG-01 for BW-FP-CAP01 as a small deterministic causal abnormal scenario: NORMAL → DEGRADING → WARNING → INTERMITTENT_STOP → RECOVERY. Also implement a simpler secondary compressor utility scenario BW-CMP-SAG-01 for BW-UT-CMP01: NORMAL → PRESSURE_SAG → RECOVERY. Capper remains the hero production-impact story. Compressor is a bounded air-pressure excursion with one alarm pair and no production inhibit / no downtime. Both are deterministic, independently testable, and non-overlapping in the default demo story. Do not simulate KPI values. Manual downtime/failure classification may only enrich an already-existing Capper event.",
+  "conservative_interpretation": {
+    "issue_107_live_read": "The live Issue #107 body could not be re-fetched in this run (GitHub App token has no issues:read; GraphQL unresolved / REST 403). The original #107 Capper contract was already implemented at a1e0a30. The 2026-10-04 SA instruction explicitly added a Compressor scenario update and required: Capper = hero abnormal; Compressor = simpler secondary utility; both deterministic; independently testable; non-overlapping in the default demo story.",
+    "compressor_id": "BW-CMP-SAG-01",
+    "compressor_phases": ["NORMAL", "PRESSURE_SAG", "RECOVERY"],
+    "non_overlap": "Default compressor NORMAL duration is 240 s simulated. Capper abnormal window is 102–210 s (DEGRADING through RECOVERY). Compressor PRESSURE_SAG therefore starts after the Capper story has finished.",
+    "independence": "Each helper can be disabled at factory construction. Tests may inject a short-duration compressor config and disable Capper, and vice versa.",
+    "no_generic_framework": "Compressor is a sibling workspace helper, not a shared scenario engine.",
+    "b1_frozen": "workspace.contract.yaml and capper_degradation.contract.yaml stay Capper-authoritative. Compressor contract lives beside them under scenarios/ as a B5 addition."
+  },
   "explicit_non_objectives": [
     "No PlantOS/MQTT integration (B6)",
     "No VPS/Docker deployment (B7)",
     "No new generic scenario framework",
     "No full bearing physics / remaining-useful-life model",
+    "No compressor-train physics or reuse of equipment/compressor_train.py",
     "No predictive analytics/ML",
     "No canonical KPI calculation (OEE/availability/performance/quality%/energy-per-unit/health/anomaly/RUL)",
     "No WMS/MES workflows",
@@ -20,13 +30,16 @@
     "No manual quality/rework/release workflow",
     "No invasive quality-engine change (quality impact is optional and omitted)",
     "No redesign of the generic discrete engine or B2 line semantics",
+    "No reinterpretation of the frozen B1 Capper phase order",
+    "No compressor production inhibit or second downtime story in the default demo",
     "No unrelated harness/flaky-test cleanup",
     "No merge of PR #101"
   ],
   "required_branch": "sa/dday-track-b-20261003",
   "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
   "sa_expected_baseline_sha": "b6dcb08a1263e7a84792ea8697d3202fa5e79912",
-  "baseline_semantics_note": "The harness compares expected_base_sha to origin/main and diffs HEAD against it, so expected_base_sha must be origin/main. sa_expected_baseline_sha is the Issue #107 expected baseline (accepted DDAY-B4-C01 head) and must equal the branch head before the first B5 write.",
+  "correction_baseline_sha": "a1e0a307bb360f05323690fe1831ef462f1acf71",
+  "baseline_semantics_note": "The harness compares expected_base_sha to origin/main and diffs HEAD against it, so expected_base_sha must be origin/main. sa_expected_baseline_sha is the original Issue #107 expected baseline (accepted DDAY-B4-C01 head). correction_baseline_sha is the first-B5 READY head (a1e0a30) and must equal the branch head before the first Compressor-update write.",
   "working_tree_required": "clean",
   "allowed_paths": [
     "configs/workspaces/bottled-water-dday/",
@@ -57,7 +70,7 @@
     "docs/plans/",
     "src/virtual_factory/assembly/line_runtime.py"
   ],
-  "allowed_paths_note": "Entries from src/virtual_factory/assembly/demo_controller.py onwards are frozen DDAY-B1/B2/B2-C01/B3/B4/B4-C01 artifacts already committed on this branch and therefore present in the diff against origin/main; they are listed only so the harness allowlist diff check is truthful. B5 is authorized to modify only the SA allowlist in Issue #107. The B5-scope changed-file check against the B5 baseline b6dcb08 proves which files B5 actually touched.",
+  "allowed_paths_note": "Entries from src/virtual_factory/assembly/demo_controller.py onwards are frozen DDAY-B1/B2/B2-C01/B3/B4/B4-C01 artifacts already committed on this branch and therefore present in the diff against origin/main; they are listed only so the harness allowlist diff check is truthful. This correction is authorized to modify only the SA allowlist in Issue #107 plus the Compressor sibling under scenarios/ and workspaces/. Frozen B1 files workspace.contract.yaml, topology.yaml, signals.yaml, line.yaml and capper_degradation.contract.yaml are not rewritten.",
   "sa_allowed_paths": [
     "configs/workspaces/bottled-water-dday/scenarios/",
     "configs/workspaces/bottled-water-dday/factory.yaml only for small scenario-related parameters if necessary",
@@ -112,12 +125,16 @@
     "Capper raw signals on BW-FP-CAP01: operating_state, speed, cycle_time, motor_current, drive_load, vibration_rms, bearing_temperature, cap_torque, plus existing B4 active_power/energy_total",
     "Causal monotonic/bounded signal model with deterministic temperature lag",
     "Production impact via composition-level cadence/inhibit (no second discrete engine)",
-    "Deterministic raw events: SCENARIO_PHASE_CHANGED, ALARM_RAISED, ALARM_CLEARED, DOWNTIME_START, DOWNTIME_END",
-    "Minimal downtime/failure code classification that never causes the abnormal condition",
-    "Minimal B3 UI highlight + inspector signals + event-strip + classification fields",
+    "Deterministic raw Capper events: SCENARIO_PHASE_CHANGED, ALARM_RAISED, ALARM_CLEARED, DOWNTIME_START, DOWNTIME_END",
+    "Simpler secondary BW-CMP-SAG-01 helper for BW-UT-CMP01: NORMAL → PRESSURE_SAG → RECOVERY, config-driven, no generic framework",
+    "Compressor overlays existing B4 air_pressure / operating_state / active_power only; no production inhibit; no downtime pair",
+    "Default demo story is non-overlapping: compressor PRESSURE_SAG starts after Capper RECOVERY completes",
+    "Each scenario independently disableable and independently testable",
+    "Minimal downtime/failure code classification that never causes the abnormal condition (Capper only)",
+    "Minimal B3 UI highlight + inspector signals + event-strip + classification fields; compressor mark without forbidden B3 skin strings",
     "Hidden ground-truth fields absent from outward projection",
     "No KPI/health/anomaly/RUL fields",
-    "tests covering Issue #107 §16 verifications",
+    "tests covering Issue #107 §16 verifications plus compressor independence / non-overlap",
     ".ai-harness/sa-review/evidence/DDAY-B5/ and .ai-harness/sa-review/reports/DDAY-B5.md + CURRENT.md"
   ],
   "required_tests": [
@@ -139,7 +156,14 @@
     "B5-16 B3 UI remains functional and Capper abnormal state is visibly understandable",
     "B5-17 B2/B3/B4/legacy ASSY regression remains green",
     "B5-18 full suite passes subject only to the previously disclosed flake policy",
-    "B5-19 exact-head invariant holds"
+    "B5-19 exact-head invariant holds",
+    "B5-C1 compressor phase order is exactly NORMAL → PRESSURE_SAG → RECOVERY",
+    "B5-C2 compressor same config + reset replays the same pressure/event trace",
+    "B5-C3 compressor raises and clears exactly one alarm and never emits downtime",
+    "B5-C4 compressor does not inhibit production or change Capper cadence",
+    "B5-C5 default demo windows do not overlap (Capper abnormal ends before compressor sag)",
+    "B5-C6 compressor can be exercised with Capper disabled and Capper can be exercised with compressor disabled",
+    "B5-C7 PAUSE freezes compressor time; operator STOP does not turn compressor sag into a line fault"
   ],
   "required_smoke_checks": [
     {
@@ -147,7 +171,7 @@
       "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B5/smoke_capper_scenario.py"],
       "execution_policy": "local_or_ci",
       "required": true,
-      "description": "In-process B5 smoke: deterministic phase order, one alarm pair, one downtime pair, production inhibit, classification non-causality, no hidden-truth or KPI leakage."
+      "description": "In-process B5 smoke: Capper hero plus compressor secondary; deterministic phase orders; one Capper alarm/downtime pair; one compressor alarm pair; non-overlap; independence; no hidden-truth or KPI leakage."
     },
     {
       "id": "SMOKE-BW-FACTORY",
@@ -186,7 +210,8 @@
     "Do not change B2/B3 line semantics",
     "Do not publish calculated KPIs or hidden ground truth as telemetry",
     "Do not use human classification as the causal trigger of the fault",
-    "Do not delete or weaken existing tests except to keep B4 exact-cadence assertions coherent with the authorized production-impact model",
+    "Do not let compressor sag overlap Capper abnormal phases in the default demo",
+    "Do not delete or weaken existing tests except to keep B4 exact-cadence assertions coherent with the authorized production-impact model and to filter Capper events by source when compressor events share the factory window",
     "Do not self-certify COMPLETE / CLOSED / SA APPROVED"
   ],
   "stop_conditions": [
@@ -220,5 +245,5 @@
     "may_merge": false,
     "may_start_next_task": false
   },
-  "_note": "Authored by the PM from SA Issue #107 (DDAY-B5 — Capper Deterministic Abnormal Scenario), which was read in full after user OAuth. B5 only. No merge authorization. The PM may not self-certify COMPLETE or CLOSED."
+  "_note": "Updated by the PM from the original SA Issue #107 Capper contract plus the 2026-10-04 Compressor scenario instruction. Live #107 could not be re-read (issues:read missing). Conservative interpretation is recorded in conservative_interpretation. B5 only. No merge authorization. The PM may not self-certify COMPLETE or CLOSED."
 }
