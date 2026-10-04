@@ -805,12 +805,22 @@ class BottledWaterFactory:
             self._pending_draw_m3 += product_m3 / self._config.process_efficiency
 
     def _apply_draw(self) -> None:
+        """Take as much pending Filler demand as the tank can supply.
+
+        Unmet demand stays on the pending ledger. Silently zeroing the
+        remainder would destroy conservation under low-water conditions.
+        """
         if self._pending_draw_m3 <= 0.0:
             return
-        drawn = min(self._pending_draw_m3, self._tank_volume_m3)
-        self._tank_volume_m3 -= drawn
+        available = max(0.0, self._tank_volume_m3)
+        drawn = min(self._pending_draw_m3, available)
+        self._tank_volume_m3 = available - drawn
         self._water_draw_total_m3 += drawn
-        self._pending_draw_m3 = 0.0
+        self._pending_draw_m3 -= drawn
+
+    def _water_request_total_m3(self) -> float:
+        """Cumulative Filler demand: water actually drawn plus still unmet."""
+        return self._water_draw_total_m3 + self._pending_draw_m3
 
     def _station_completions(self, station_id: Optional[str]) -> int:
         if not station_id:
@@ -1064,6 +1074,8 @@ class BottledWaterFactory:
                     "tank_level_pct": self._tank_level_pct(),
                     "product_water_total_m3": self._product_water_total_m3,
                     "water_draw_total_m3": self._water_draw_total_m3,
+                    "unmet_water_demand_m3": self._pending_draw_m3,
+                    "water_request_total_m3": self._water_request_total_m3(),
                     "other_loss_total_m3": max(
                         0.0,
                         self._water_draw_total_m3

@@ -480,6 +480,13 @@ def test_b4_11_water_balance_is_coherent_and_the_tank_stays_bounded():
             water["raw_water_feed_total_m3"]
             - water["treated_water_total_m3"], rel=1e-12)
         assert water["product_water_total_m3"] <= water["water_draw_total_m3"]
+        assert water["unmet_water_demand_m3"] == pytest.approx(0.0, abs=1e-12)
+        assert water["water_request_total_m3"] == pytest.approx(
+            water["water_draw_total_m3"] + water["unmet_water_demand_m3"],
+            abs=1e-12,
+        )
+        assert water["water_request_total_m3"] == pytest.approx(
+            water["product_water_total_m3"] / PROCESS_EFFICIENCY, rel=1e-12)
 
         feed_flow = _signal(snapshot, FEED, "water_flow")
         treated_flow = _signal(snapshot, RO, "production_flow")
@@ -610,6 +617,105 @@ def test_b4_12b_rejected_units_still_consume_already_used_material():
         assert snapshot["balances"]["water"]["product_water_total_m3"] == (
             pytest.approx(filled * BOTTLE_VOLUME_M3, rel=1e-9))
         assert filled >= capped >= rejects
+
+
+# ═══════════════════════════════════════════════════════════════
+# DDAY-B4-C01 — unmet water demand + B3 evidence restore
+# ═══════════════════════════════════════════════════════════════
+
+B3_BASELINE = "23b6208266751a8c508b0d96fd7a736dffc5676c"
+B3_EVIDENCE_FILES = (
+    ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
+)
+
+
+def test_c01_unmet_water_demand_is_preserved_and_later_satisfied():
+    """Empty-tank Filler demand must not disappear; later inventory pays it.
+
+    Pre-fix ``_apply_draw()`` did ``pending = 0`` after taking ``min(pending,
+    tank)``, so a starved request was silently destroyed. That is the SA
+    blocker on Issue #106 / PR #101.
+    """
+    factory = _factory()
+    request = 0.01
+    factory._tank_volume_m3 = 0.0
+    factory._pending_draw_m3 = request
+
+    factory._apply_draw()
+    starved = factory.snapshot()["balances"]["water"]
+    assert starved["unmet_water_demand_m3"] == pytest.approx(request)
+    assert starved["water_draw_total_m3"] == pytest.approx(0.0)
+    assert starved["water_request_total_m3"] == pytest.approx(request)
+    assert starved["tank_volume_m3"] == pytest.approx(0.0)
+
+    factory._tank_volume_m3 = 0.004
+    factory._apply_draw()
+    partial = factory.snapshot()["balances"]["water"]
+    assert partial["unmet_water_demand_m3"] == pytest.approx(0.006)
+    assert partial["water_draw_total_m3"] == pytest.approx(0.004)
+    assert partial["water_request_total_m3"] == pytest.approx(request)
+    assert partial["tank_volume_m3"] == pytest.approx(0.0)
+
+    factory._tank_volume_m3 = 0.02
+    factory._apply_draw()
+    paid = factory.snapshot()["balances"]["water"]
+    assert paid["unmet_water_demand_m3"] == pytest.approx(0.0)
+    assert paid["water_draw_total_m3"] == pytest.approx(request)
+    assert paid["water_request_total_m3"] == pytest.approx(request)
+    assert paid["tank_volume_m3"] == pytest.approx(0.014)
+
+
+def test_c01_starved_fill_completions_keep_the_request_ledger():
+    """A real fill completion against an empty tank leaves unmet demand."""
+    factory = _factory()
+    factory.start()
+    factory._tank_volume_m3 = 0.0
+    factory._feed_enabled = False
+
+    _run(factory, 80)
+    water = factory.snapshot()["balances"]["water"]
+    assert water["product_water_total_m3"] > 0.0
+    expected_request = water["product_water_total_m3"] / PROCESS_EFFICIENCY
+    assert water["unmet_water_demand_m3"] == pytest.approx(expected_request)
+    assert water["water_draw_total_m3"] == pytest.approx(0.0)
+    assert water["water_request_total_m3"] == pytest.approx(expected_request)
+
+    factory._feed_enabled = True
+    factory._tank_volume_m3 = expected_request + 0.05
+    factory._apply_draw()
+    paid = factory.snapshot()["balances"]["water"]
+    assert paid["unmet_water_demand_m3"] == pytest.approx(0.0)
+    assert paid["water_draw_total_m3"] == pytest.approx(expected_request)
+    assert paid["water_request_total_m3"] == pytest.approx(
+        paid["water_draw_total_m3"] + paid["unmet_water_demand_m3"])
+
+
+def test_c01_accepted_b3_evidence_files_match_b3_baseline():
+    """The two SA-named B3 evidence files must equal the closed B3 head."""
+    import subprocess
+
+    result = subprocess.run(
+        ["git", "diff", "--name-only", B3_BASELINE, "HEAD", "--", *B3_EVIDENCE_FILES],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    dirty = [line for line in result.stdout.splitlines() if line.strip()]
+    assert dirty == [], f"B3 evidence files differ from {B3_BASELINE}: {dirty}"
+
+    worktree = subprocess.run(
+        ["git", "diff", "--name-only", B3_BASELINE, "--", *B3_EVIDENCE_FILES],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    dirty_wt = [line for line in worktree.stdout.splitlines() if line.strip()]
+    assert dirty_wt == [], (
+        f"B3 evidence files differ from {B3_BASELINE} in the worktree: {dirty_wt}"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
