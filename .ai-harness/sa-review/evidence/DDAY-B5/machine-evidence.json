@@ -1,9 +1,9 @@
 {
   "task": "DDAY-B5",
   "baseline": "b6dcb08a1263e7a84792ea8697d3202fa5e79912",
-  "head": "7abff27473cf92615766815f749fa77970b16400",
+  "head": "1c34ecf40e21f9c8ef2e6bb73f1a8d10fc9a8fb9",
   "replay_digest_match": true,
-  "digest": "97c8bbb90b775cda00b1e2091ed3da31e7e2da62ff770f15507fe7ec0397f36e",
+  "digest": "894be0bb3aee9349df82043c8ccb1b112a21f41d87415f6aef4a3d0f5178a177",
   "phase_samples": [
     {
       "step": 1,
@@ -19,7 +19,9 @@
       "vibration_rms": 1.1,
       "bearing_temperature": 41.0,
       "cap_torque": 1.6,
-      "operating_state": "RUNNING"
+      "operating_state": "RUNNING",
+      "compressor_phase": "NORMAL",
+      "air_pressure": 6.98
     },
     {
       "step": 102,
@@ -35,7 +37,9 @@
       "vibration_rms": 1.76,
       "bearing_temperature": 41.275,
       "cap_torque": 1.6,
-      "operating_state": "RUNNING"
+      "operating_state": "RUNNING",
+      "compressor_phase": "NORMAL",
+      "air_pressure": 6.4
     },
     {
       "step": 126,
@@ -51,7 +55,9 @@
       "vibration_rms": 3.08,
       "bearing_temperature": 47.875,
       "cap_torque": 1.6,
-      "operating_state": "RUNNING"
+      "operating_state": "RUNNING",
+      "compressor_phase": "NORMAL",
+      "air_pressure": 6.4
     },
     {
       "step": 150,
@@ -67,7 +73,9 @@
       "vibration_rms": 5.5,
       "bearing_temperature": 56.0666,
       "cap_torque": 1.6,
-      "operating_state": "FAULT"
+      "operating_state": "FAULT",
+      "compressor_phase": "NORMAL",
+      "air_pressure": 6.4
     },
     {
       "step": 170,
@@ -83,7 +91,32 @@
       "vibration_rms": 5.5,
       "bearing_temperature": 61.7833,
       "cap_torque": 1.6,
-      "operating_state": "RUNNING"
+      "operating_state": "RUNNING",
+      "compressor_phase": "NORMAL",
+      "air_pressure": 6.4
+    }
+  ],
+  "compressor_phase_samples": [
+    {
+      "step": 1,
+      "phase": "NORMAL",
+      "highlight": "normal",
+      "air_pressure": 6.98,
+      "capper_phase": "NORMAL"
+    },
+    {
+      "step": 240,
+      "phase": "PRESSURE_SAG",
+      "highlight": "warn",
+      "air_pressure": 6.4,
+      "capper_phase": "RECOVERY"
+    },
+    {
+      "step": 270,
+      "phase": "RECOVERY",
+      "highlight": "recover",
+      "air_pressure": 5.6,
+      "capper_phase": "RECOVERY"
     }
   ],
   "events": [
@@ -92,6 +125,12 @@
       "detail": "phase=NORMAL",
       "simulation_time_s": 0.0,
       "source_id": "BW-FP-CAP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=NORMAL",
+      "simulation_time_s": 0.0,
+      "source_id": "BW-UT-CMP01"
     },
     {
       "event_type": "SCENARIO_PHASE_CHANGED",
@@ -140,6 +179,30 @@
       "detail": "capper warning cleared",
       "simulation_time_s": 170.0,
       "source_id": "BW-FP-CAP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=PRESSURE_SAG",
+      "simulation_time_s": 240.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "ALARM_RAISED",
+      "detail": "compressor pressure sag",
+      "simulation_time_s": 240.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=RECOVERY",
+      "simulation_time_s": 270.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "ALARM_CLEARED",
+      "detail": "compressor pressure restored",
+      "simulation_time_s": 270.0,
+      "source_id": "BW-UT-CMP01"
     }
   ],
   "classification": {
@@ -161,20 +224,28 @@
     ".ai-harness/sa-review/evidence/DDAY-B5/07-hidden-truth-scan.md",
     ".ai-harness/sa-review/evidence/DDAY-B5/08-classification.md",
     ".ai-harness/sa-review/evidence/DDAY-B5/09-scope-audit.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/10-visual-fault.png",
+    ".ai-harness/sa-review/evidence/DDAY-B5/10-visual-recovery.png",
+    ".ai-harness/sa-review/evidence/DDAY-B5/10-visual-warning.png",
+    ".ai-harness/sa-review/evidence/DDAY-B5/10-visual.md",
     ".ai-harness/sa-review/evidence/DDAY-B5/generate_evidence.py",
     ".ai-harness/sa-review/evidence/DDAY-B5/machine-evidence.json",
     ".ai-harness/sa-review/evidence/DDAY-B5/smoke_capper_scenario.py",
     ".ai-harness/sa-review/reports/DDAY-B5.md",
     ".ai-harness/tasks/DDAY-B5.json",
     "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.runtime.yaml",
+    "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.contract.yaml",
+    "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.runtime.yaml",
     "src/virtual_factory/ui/api.py",
     "src/virtual_factory/ui/static/bottled_water_demo.css",
     "src/virtual_factory/ui/static/bottled_water_demo.html",
     "src/virtual_factory/ui/static/bottled_water_demo.js",
     "src/virtual_factory/workspaces/bottled_water.py",
     "src/virtual_factory/workspaces/capper_degradation.py",
+    "src/virtual_factory/workspaces/compressor_pressure.py",
     "tests/test_dday_b3_bottled_water_ui.py",
     "tests/test_dday_b4_bottled_water_factory.py",
-    "tests/test_dday_b5_capper_scenario.py"
+    "tests/test_dday_b5_capper_scenario.py",
+    "tests/test_dday_b5_compressor_scenario.py"
   ]
 }

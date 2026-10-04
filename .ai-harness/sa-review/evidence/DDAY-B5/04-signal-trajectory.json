@@ -13,7 +13,9 @@
     "vibration_rms": 1.1,
     "bearing_temperature": 41.0,
     "cap_torque": 1.6,
-    "operating_state": "RUNNING"
+    "operating_state": "RUNNING",
+    "compressor_phase": "NORMAL",
+    "air_pressure": 6.98
   },
   {
     "step": 102,
@@ -29,7 +31,9 @@
     "vibration_rms": 1.76,
     "bearing_temperature": 41.275,
     "cap_torque": 1.6,
-    "operating_state": "RUNNING"
+    "operating_state": "RUNNING",
+    "compressor_phase": "NORMAL",
+    "air_pressure": 6.4
   },
   {
     "step": 126,
@@ -45,7 +49,9 @@
     "vibration_rms": 3.08,
     "bearing_temperature": 47.875,
     "cap_torque": 1.6,
-    "operating_state": "RUNNING"
+    "operating_state": "RUNNING",
+    "compressor_phase": "NORMAL",
+    "air_pressure": 6.4
   },
   {
     "step": 150,
@@ -61,7 +67,9 @@
     "vibration_rms": 5.5,
     "bearing_temperature": 56.0666,
     "cap_torque": 1.6,
-    "operating_state": "FAULT"
+    "operating_state": "FAULT",
+    "compressor_phase": "NORMAL",
+    "air_pressure": 6.4
   },
   {
     "step": 170,
@@ -77,6 +85,8 @@
     "vibration_rms": 5.5,
     "bearing_temperature": 61.7833,
     "cap_torque": 1.6,
-    "operating_state": "RUNNING"
+    "operating_state": "RUNNING",
+    "compressor_phase": "NORMAL",
+    "air_pressure": 6.4
   }
 ]

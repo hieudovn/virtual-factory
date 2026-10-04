@@ -22,6 +22,7 @@ from virtual_factory.workspaces.bottled_water import (
 WORKSPACE = REPO / "configs" / "workspaces" / "bottled-water-dday"
 B5_BASE = "b6dcb08a1263e7a84792ea8697d3202fa5e79912"
 CAP = "BW-FP-CAP01"
+CMP = "BW-UT-CMP01"
 
 
 def _git(*args: str) -> str:
@@ -58,7 +59,8 @@ def main() -> None:
     factory_a.start()
     factory_b.start()
     samples = []
-    for step in range(220):
+    cmp_samples = []
+    for step in range(280):
         factory_a.step(1.0)
         factory_b.step(1.0)
         snap = factory_a.snapshot()
@@ -78,6 +80,19 @@ def main() -> None:
                 "bearing_temperature": _signal(snap, "bearing_temperature"),
                 "cap_torque": _signal(snap, "cap_torque"),
                 "operating_state": _signal(snap, "operating_state"),
+                "compressor_phase": snap["compressor_scenario"]["phase"],
+                "air_pressure": snap["nodes"][CMP]["signals"]["air_pressure"]["value"],
+            })
+        if (
+            not cmp_samples
+            or snap["compressor_scenario"]["phase"] != cmp_samples[-1]["phase"]
+        ):
+            cmp_samples.append({
+                "step": step + 1,
+                "phase": snap["compressor_scenario"]["phase"],
+                "highlight": snap["compressor_scenario"]["highlight"],
+                "air_pressure": snap["nodes"][CMP]["signals"]["air_pressure"]["value"],
+                "capper_phase": snap["scenario"]["phase"],
             })
     final_a = factory_a.snapshot()
     final_b = factory_b.snapshot()
@@ -123,6 +138,7 @@ def main() -> None:
         "replay_digest_match": _digest(final_a) == _digest(final_b),
         "digest": _digest(final_a),
         "phase_samples": samples,
+        "compressor_phase_samples": cmp_samples,
         "events": events,
         "classification": labelled_snap["classification"],
         "classified_vibration": _signal(labelled_snap, "vibration_rms"),
@@ -140,7 +156,8 @@ def main() -> None:
         f"- SA baseline: `{B5_BASE}`\n"
         f"- Head at evidence generation: `{payload['head']}`\n"
         "- Reuses B2 generic line + B4 factory composition; no second engine.\n"
-        "- B1 contract `capper_degradation.contract.yaml` remains authoritative.\n",
+        "- B1 contract `capper_degradation.contract.yaml` remains authoritative.\n"
+        "- Secondary `BW-CMP-SAG-01` lives beside it; default NORMAL=240 s.\n",
         encoding="utf-8",
     )
     (HERE / "02-phase-table.md").write_text(
@@ -157,7 +174,7 @@ def main() -> None:
     )
     (HERE / "03-replay-digest.md").write_text(
         "# DDAY-B5 — deterministic replay\n\n"
-        f"Two independent 220 s runs produced the same snapshot digest:\n\n"
+        f"Two independent 280 s runs produced the same snapshot digest:\n\n"
         f"`{payload['digest']}`\n\n"
         f"Match: **{payload['replay_digest_match']}**\n",
         encoding="utf-8",
@@ -169,7 +186,7 @@ def main() -> None:
         "# DDAY-B5 — alarm / downtime sequence\n\n"
         + "\n".join(
             f"- t={event['simulation_time_s']}s `{event['event_type']}` "
-            f"{event.get('detail')}"
+            f"{event.get('source_id')} {event.get('detail')}"
             for event in events
         )
         + "\n",
@@ -183,6 +200,19 @@ def main() -> None:
             for row in samples
         )
         + "\n",
+        encoding="utf-8",
+    )
+    (HERE / "11-compressor.md").write_text(
+        "# DDAY-B5 — compressor secondary scenario\n\n"
+        "| t (first sample) | compressor phase | highlight | air_pressure | capper phase |\n"
+        "|---|---|---|---|---|\n"
+        + "".join(
+            f"| {row['step']} | {row['phase']} | {row['highlight']} | "
+            f"{row['air_pressure']} | {row['capper_phase']} |\n"
+            for row in cmp_samples
+        )
+        + "\nDefault demo is non-overlapping: compressor PRESSURE_SAG begins "
+        "only after Capper RECOVERY.\n",
         encoding="utf-8",
     )
     (HERE / "07-hidden-truth-scan.md").write_text(
@@ -209,6 +239,7 @@ def main() -> None:
         "digest": payload["digest"],
         "replay_match": payload["replay_digest_match"],
         "phases": [row["phase"] for row in samples],
+        "compressor_phases": [row["phase"] for row in cmp_samples],
         "hidden_hits": hidden_hits,
         "kpi_hits": kpi_hits,
         "files": len(changed),

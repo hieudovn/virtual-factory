@@ -1,7 +1,7 @@
 # DDAY-B5 — deterministic replay
 
-Two independent 220 s runs produced the same snapshot digest:
+Two independent 280 s runs produced the same snapshot digest:
 
-`97c8bbb90b775cda00b1e2091ed3da31e7e2da62ff770f15507fe7ec0397f36e`
+`894be0bb3aee9349df82043c8ccb1b112a21f41d87415f6aef4a3d0f5178a177`
 
 Match: **True**
