@@ -30,9 +30,11 @@ from virtual_factory.workspaces.bottled_water import (
 )
 from virtual_factory.workspaces.plantos_export import (
     ACCEPTED_AREAS,
+    CONTRACT_VERSION,
     DRILL_DOWN,
     FORBIDDEN_KPI_KEYS,
     HIDDEN_TRUTH_KEYS,
+    PLANT_SOURCE_ID,
     RELATIONSHIPS,
     TOPIC_PATTERN,
     TOPIC_PREFIX,
@@ -42,6 +44,7 @@ from virtual_factory.workspaces.plantos_export import (
     overview_from_snapshot,
     publish_via_existing_mqtt,
     resolve_ids,
+    selected_signal_keys,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -109,18 +112,23 @@ def test_b6_01_mapped_topics_and_payloads_match_b1_contract():
             message.kind, message.asset_id, message.signal_or_event
         )
         payload = message.payload
+        assert payload["contract_version"] == CONTRACT_VERSION
         assert payload["workspace_id"] == "bottled-water-dday"
+        assert payload["plant_source_id"] == snapshot["plant_id"] == PLANT_SOURCE_ID
+        assert payload["source_id"] == message.asset_id
         assert payload["asset_id"] == message.asset_id
         assert payload.get("provenance") == "SIMULATED_RAW"
+        assert payload["timestamp"].endswith("Z")
+        assert "T" in payload["timestamp"]
+        assert "timestamp_s" not in payload
+        assert "simulation_time_s" in payload
         if message.kind == "signal":
             assert payload["signal_id"] == message.signal_or_event
             assert "value" in payload
             assert "unit" in payload
-            assert "timestamp_s" in payload
             assert payload.get("quality") == "GOOD"
         else:
             assert payload["event_type"] == message.signal_or_event
-            assert "simulation_time_s" in payload
     assert TOPIC_PATTERN.startswith(TOPIC_PREFIX)
 
 
@@ -155,12 +163,14 @@ def test_b6_03_current_values_equal_factory_snapshot():
         for item in bundle["current_values"]
     }
     compared = 0
-    for asset_id, node in snapshot["nodes"].items():
-        for signal_id, signal in node["signals"].items():
-            assert by_key[(asset_id, signal_id)] == signal["value"]
-            compared += 1
-    assert compared >= 20
+    for asset_id, signal_id in selected_signal_keys():
+        signal = snapshot["nodes"][asset_id]["signals"][signal_id]
+        assert by_key[(asset_id, signal_id)] == signal["value"]
+        compared += 1
+    assert compared >= 12
     assert bundle["simulation_time_s"] == snapshot["factory"]["simulation_time_s"]
+    exported = {(item["asset_id"], item["signal_or_event"]) for item in bundle["current_values"]}
+    assert exported <= set(selected_signal_keys())
 
 
 def test_b6_04_historian_retains_timestamped_samples():
@@ -170,14 +180,24 @@ def test_b6_04_historian_retains_timestamped_samples():
     first = factory.plantos_export()
     assert first["message_count"] > 0
     first_times = {
-        item["payload"]["timestamp_s"]
+        item["payload"]["simulation_time_s"]
+        for item in first["historian"]
+        if item["kind"] == "signal"
+    }
+    first_utc = {
+        item["payload"]["timestamp"]
         for item in first["historian"]
         if item["kind"] == "signal"
     }
     _run(factory, 6)
     second = factory.plantos_export()
     second_times = {
-        item["payload"]["timestamp_s"]
+        item["payload"]["simulation_time_s"]
+        for item in second["historian"]
+        if item["kind"] == "signal"
+    }
+    second_utc = {
+        item["payload"]["timestamp"]
         for item in second["historian"]
         if item["kind"] == "signal"
     }
@@ -185,6 +205,11 @@ def test_b6_04_historian_retains_timestamped_samples():
     assert len(second_times) >= 2
     assert first_times
     assert max(second_times) > min(first_times)
+    assert first_utc
+    assert max(second_utc) > min(first_utc)
+    for item in second["historian"]:
+        assert item["payload"]["timestamp"].endswith("Z")
+        assert "timestamp_s" not in item["payload"]
 
 
 def test_b6_05_events_include_downtime_alarm_and_phase():

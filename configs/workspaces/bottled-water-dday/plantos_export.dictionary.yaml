@@ -1,0 +1,315 @@
+# DDAY-B6-C01 selected VF→PlantOS export dictionary.
+# Small allowlist only. Unmapped factory signals are not exported and must
+# not be invented as PlantOS semantics. Reuses B1 contract_version.
+contract_version: dday-bw-b1-v1
+workspace_id: bottled-water-dday
+plant_source_id: BW-DEMO-01
+default_quality: GOOD
+default_provenance: SIMULATED_RAW
+utc_epoch: "2026-10-03T00:00:00.000Z"
+topic_pattern: "virtual-factory/bottled-water-dday/{kind}/{asset_id}/{signal_or_event}"
+fail_closed: true
+
+families:
+  wt: Water Treatment process measurements
+  production: Filling & Packaging production counts and machine state
+  capper: Capper hero condition and machine state
+  compressor: Compressor utility pressure and machine state
+  fg: Finished-goods inventory
+  energy: Plant electrical energy
+
+signals:
+  - source_id: BW-WT-FEED01
+    signal_id: water_flow
+    area_id: BW-WT
+    family: wt
+    semantic_role: process_measurement
+    datatype: float
+    unit: m3/h
+    cadence: 2s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-FEED01/signal:water_flow
+
+  - source_id: BW-WT-RO01
+    signal_id: production_flow
+    area_id: BW-WT
+    family: wt
+    semantic_role: process_measurement
+    datatype: float
+    unit: m3/h
+    cadence: 2s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-RO01/signal:production_flow
+
+  - source_id: BW-WT-TK01
+    signal_id: level
+    area_id: BW-WT
+    family: wt
+    semantic_role: process_measurement
+    datatype: float
+    unit: "%"
+    cadence: 2-5s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-TK01/signal:level
+
+  - source_id: BW-FP
+    signal_id: operating_state
+    area_id: BW-FP
+    family: production
+    semantic_role: machine_state
+    datatype: enum
+    unit: "-"
+    cadence: on_change_plus_heartbeat
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:operating_state
+
+  - source_id: BW-FP
+    signal_id: total_count
+    area_id: BW-FP
+    family: production
+    semantic_role: production_count
+    datatype: integer
+    unit: bottle
+    cadence: on_change_or_1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:total_count
+
+  - source_id: BW-FP
+    signal_id: good_count
+    area_id: BW-FP
+    family: production
+    semantic_role: production_count
+    datatype: integer
+    unit: bottle
+    cadence: on_change_or_1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:good_count
+
+  - source_id: BW-FP
+    signal_id: reject_count
+    area_id: BW-FP
+    family: production
+    semantic_role: production_count
+    datatype: integer
+    unit: bottle
+    cadence: on_change_or_1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:reject_count
+
+  - source_id: BW-FP-CAP01
+    signal_id: operating_state
+    area_id: BW-FP
+    family: capper
+    semantic_role: machine_state
+    datatype: enum
+    unit: "-"
+    cadence: on_change_plus_heartbeat
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:operating_state
+
+  - source_id: BW-FP-CAP01
+    signal_id: motor_current
+    area_id: BW-FP
+    family: capper
+    semantic_role: condition_measurement
+    datatype: float
+    unit: A
+    cadence: 1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:motor_current
+
+  - source_id: BW-FP-CAP01
+    signal_id: drive_load
+    area_id: BW-FP
+    family: capper
+    semantic_role: condition_measurement
+    datatype: float
+    unit: "%"
+    cadence: 1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:drive_load
+
+  - source_id: BW-FP-CAP01
+    signal_id: vibration_rms
+    area_id: BW-FP
+    family: capper
+    semantic_role: condition_measurement
+    datatype: float
+    unit: mm/s
+    cadence: 1-2s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:vibration_rms
+
+  - source_id: BW-FP-CAP01
+    signal_id: bearing_temperature
+    area_id: BW-FP
+    family: capper
+    semantic_role: condition_measurement
+    datatype: float
+    unit: degC
+    cadence: 2-5s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:bearing_temperature
+
+  - source_id: BW-UT-CMP01
+    signal_id: operating_state
+    area_id: BW-UT
+    family: compressor
+    semantic_role: machine_state
+    datatype: enum
+    unit: "-"
+    cadence: on_change_plus_heartbeat
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:operating_state
+
+  - source_id: BW-UT-CMP01
+    signal_id: air_pressure
+    area_id: BW-UT
+    family: compressor
+    semantic_role: utility_measurement
+    datatype: float
+    unit: bar
+    cadence: 2s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:air_pressure
+
+  - source_id: BW-WH-FG01
+    signal_id: inventory_count
+    area_id: BW-WH
+    family: fg
+    semantic_role: inventory_count
+    datatype: integer
+    unit: bottle
+    cadence: on_change_or_1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:inventory_count
+
+  - source_id: BW-WH-FG01
+    signal_id: receipt_count
+    area_id: BW-WH
+    family: fg
+    semantic_role: inventory_count
+    datatype: integer
+    unit: bottle
+    cadence: on_change_or_1s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:receipt_count
+
+  - source_id: BW-UT-PWR01
+    signal_id: plant_active_power
+    area_id: BW-UT
+    family: energy
+    semantic_role: energy_measurement
+    datatype: float
+    unit: kW
+    cadence: 1-2s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-PWR01/signal:plant_active_power
+
+  - source_id: BW-UT-PWR01
+    signal_id: plant_energy_total
+    area_id: BW-UT
+    family: energy
+    semantic_role: energy_measurement
+    datatype: float
+    unit: kWh
+    cadence: 2-5s
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Signal
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-PWR01/signal:plant_energy_total
+
+events:
+  - event_type: MACHINE_STATE_CHANGED
+    semantic_role: operational_event
+    datatype: event
+    unit: "-"
+    cadence: event
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_mapping_key: plant:BW-DEMO-01/event:MACHINE_STATE_CHANGED
+
+  - event_type: ALARM_RAISED
+    semantic_role: operational_event
+    datatype: event
+    unit: "-"
+    cadence: event
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_mapping_key: plant:BW-DEMO-01/event:ALARM_RAISED
+
+  - event_type: ALARM_CLEARED
+    semantic_role: operational_event
+    datatype: event
+    unit: "-"
+    cadence: event
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_mapping_key: plant:BW-DEMO-01/event:ALARM_CLEARED
+
+  - event_type: DOWNTIME_START
+    semantic_role: operational_event
+    datatype: event
+    unit: "-"
+    cadence: event
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_mapping_key: plant:BW-DEMO-01/event:DOWNTIME_START
+
+  - event_type: DOWNTIME_END
+    semantic_role: operational_event
+    datatype: event
+    unit: "-"
+    cadence: event
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_mapping_key: plant:BW-DEMO-01/event:DOWNTIME_END
+
+  - event_type: SCENARIO_PHASE_CHANGED
+    semantic_role: operational_event
+    datatype: event
+    unit: "-"
+    cadence: event
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_mapping_key: plant:BW-DEMO-01/event:SCENARIO_PHASE_CHANGED

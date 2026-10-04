@@ -1,0 +1,356 @@
+{
+  "task_id": "DDAY-B6-C01",
+  "baseline_b6_reviewed": "9e76f406246ecd989eda1f23def283fa93408e1b",
+  "head": "512ad27eb3fc59ba5979d0a567720619c895918f",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "changed_files_vs_b6_reviewed": [
+    ".ai-harness/tasks/DDAY-B6-C01.json"
+  ],
+  "contract_version": "dday-bw-b1-v1",
+  "accepted_areas": [
+    "BW-WT",
+    "BW-BP",
+    "BW-FP",
+    "BW-UT",
+    "BW-WH"
+  ],
+  "export_dictionary": {
+    "contract_version": "dday-bw-b1-v1",
+    "workspace_id": "bottled-water-dday",
+    "plant_source_id": "BW-DEMO-01",
+    "fail_closed": true,
+    "families": [
+      "capper",
+      "compressor",
+      "energy",
+      "fg",
+      "production",
+      "wt"
+    ],
+    "required_families": [
+      "wt",
+      "production",
+      "capper",
+      "compressor",
+      "fg",
+      "energy"
+    ],
+    "signal_count": 18,
+    "event_types": [
+      "MACHINE_STATE_CHANGED",
+      "ALARM_RAISED",
+      "ALARM_CLEARED",
+      "DOWNTIME_START",
+      "DOWNTIME_END",
+      "SCENARIO_PHASE_CHANGED"
+    ],
+    "signals": [
+      {
+        "source_id": "BW-WT-FEED01",
+        "signal_id": "water_flow",
+        "family": "wt",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "unit": "m3/h",
+        "cadence": "2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-FEED01/signal:water_flow"
+      },
+      {
+        "source_id": "BW-WT-RO01",
+        "signal_id": "production_flow",
+        "family": "wt",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "unit": "m3/h",
+        "cadence": "2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-RO01/signal:production_flow"
+      },
+      {
+        "source_id": "BW-WT-TK01",
+        "signal_id": "level",
+        "family": "wt",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "unit": "%",
+        "cadence": "2-5s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-TK01/signal:level"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "operating_state",
+        "family": "production",
+        "semantic_role": "machine_state",
+        "datatype": "enum",
+        "unit": "-",
+        "cadence": "on_change_plus_heartbeat",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:operating_state"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "total_count",
+        "family": "production",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:total_count"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "good_count",
+        "family": "production",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:good_count"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "reject_count",
+        "family": "production",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:reject_count"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "operating_state",
+        "family": "capper",
+        "semantic_role": "machine_state",
+        "datatype": "enum",
+        "unit": "-",
+        "cadence": "on_change_plus_heartbeat",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:operating_state"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "motor_current",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "A",
+        "cadence": "1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:motor_current"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "drive_load",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "%",
+        "cadence": "1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:drive_load"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "vibration_rms",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "mm/s",
+        "cadence": "1-2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:vibration_rms"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "bearing_temperature",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "degC",
+        "cadence": "2-5s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:bearing_temperature"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "operating_state",
+        "family": "compressor",
+        "semantic_role": "machine_state",
+        "datatype": "enum",
+        "unit": "-",
+        "cadence": "on_change_plus_heartbeat",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:operating_state"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "air_pressure",
+        "family": "compressor",
+        "semantic_role": "utility_measurement",
+        "datatype": "float",
+        "unit": "bar",
+        "cadence": "2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:air_pressure"
+      },
+      {
+        "source_id": "BW-WH-FG01",
+        "signal_id": "inventory_count",
+        "family": "fg",
+        "semantic_role": "inventory_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:inventory_count"
+      },
+      {
+        "source_id": "BW-WH-FG01",
+        "signal_id": "receipt_count",
+        "family": "fg",
+        "semantic_role": "inventory_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:receipt_count"
+      },
+      {
+        "source_id": "BW-UT-PWR01",
+        "signal_id": "plant_active_power",
+        "family": "energy",
+        "semantic_role": "energy_measurement",
+        "datatype": "float",
+        "unit": "kW",
+        "cadence": "1-2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-PWR01/signal:plant_active_power"
+      },
+      {
+        "source_id": "BW-UT-PWR01",
+        "signal_id": "plant_energy_total",
+        "family": "energy",
+        "semantic_role": "energy_measurement",
+        "datatype": "float",
+        "unit": "kWh",
+        "cadence": "2-5s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-PWR01/signal:plant_energy_total"
+      }
+    ]
+  },
+  "sample_envelope": {
+    "contract_version": "dday-bw-b1-v1",
+    "workspace_id": "bottled-water-dday",
+    "plant_source_id": "BW-DEMO-01",
+    "source_id": "BW-WT-FEED01",
+    "asset_id": "BW-WT-FEED01",
+    "timestamp": "2026-10-03T00:00:08.000Z",
+    "simulation_time_s": 8.0,
+    "quality": "GOOD",
+    "provenance": "SIMULATED_RAW",
+    "signal_id": "water_flow",
+    "value": 1.2,
+    "unit": "m3/h",
+    "semantic_role": "process_measurement",
+    "datatype": "float",
+    "cadence": "2s",
+    "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-FEED01/signal:water_flow"
+  },
+  "adapter_role": "vf_unit_test_aid_not_plantos_historian",
+  "plantos_ingestion_proven": false,
+  "plantos_historian_proven": false,
+  "plantos_compatibility": {
+    "checked_at_workspace": "/workspace",
+    "environment_repos": [
+      "github.com/hieudovn/virtual-factory"
+    ],
+    "accessible_hieudovn_repos": [
+      "hieudovn/virtual-factory",
+      "hieudovn/NOVA-knowledge-hub",
+      "hieudovn/manufacturing-data-platform",
+      "hieudovn/testrepo"
+    ],
+    "plantos_named_repos": [],
+    "plantos_repo_present_locally": false,
+    "known_non_plantos": {
+      "hieudovn/manufacturing-data-platform": "Avenue MDP, not PlantOS",
+      "hieudovn/NOVA-knowledge-hub": "knowledge hub, not PlantOS",
+      "hieudovn/testrepo": "test repository, not PlantOS"
+    },
+    "vf_adapter_only": true,
+    "wtp_ingest_used": false,
+    "live_probe": true,
+    "plantos_ingestion_proven": false,
+    "plantos_historian_proven": false,
+    "gap": {
+      "plantos_ingestion_proven": false,
+      "plantos_historian_proven": false,
+      "requires_plantos_production_changes": "UNKNOWN_UNTIL_REPO_ACCESS",
+      "blocked_by": [
+        "PlantOS repository is not present in this Cloud Agent environment",
+        "Only github.com/hieudovn/virtual-factory is linked to the environment",
+        "No PlantOS test/runtime ingest or historian interface is importable here"
+      ],
+      "not_used_as_substitute": [
+        "simulators/wtp HTTP POST /api/v1/measurements/ingest is a different plant and is not authorized as a PlantOS substitute.",
+        "hieudovn/manufacturing-data-platform is Avenue MDP, not PlantOS",
+        "VF PlantosLocalIngestion is an adapter/unit-test aid only"
+      ],
+      "minimal_sa_authorization_required": [
+        "Grant this agent read access to the current PlantOS repo and the exact Track A branch/SHA.",
+        "If that PlantOS branch already accepts the B6 MQTT JSON envelope (contract_version, workspace_id, plant_source_id, source_id, UTC timestamp, unit/quality/provenance, selected dictionary keys) without production-code changes, authorize a follow-up proof-only slice to ingest and query those samples.",
+        "If that PlantOS branch cannot accept the envelope, authorize the exact minimal PlantOS adapter/ingest change. That change is out of DDAY-B6-C01 scope."
+      ]
+    }
+  },
+  "overview_area_ids": [
+    "BW-WT",
+    "BW-BP",
+    "BW-FP",
+    "BW-UT",
+    "BW-WH"
+  ],
+  "durable": {
+    "capper_warning_phase": "WARNING",
+    "capper_downtime_phase": "INTERMITTENT_STOP",
+    "capper_recovery_phase": "RECOVERY",
+    "compressor_warning_phase": "LOW_PRESSURE_WARNING",
+    "compressor_undersupply_phase": "UNDERSUPPLY",
+    "classified": true,
+    "process_history_count": 334,
+    "condition_history_count": 334,
+    "final_event_types": [
+      "ALARM_CLEARED",
+      "ALARM_RAISED",
+      "DOWNTIME_END",
+      "DOWNTIME_START",
+      "MACHINE_STATE_CHANGED",
+      "SCENARIO_PHASE_CHANGED"
+    ]
+  }
+}

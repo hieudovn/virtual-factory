@@ -1,0 +1,316 @@
+{
+  "contract_version": "dday-bw-b1-v1",
+  "topic_pattern": "virtual-factory/bottled-water-dday/{kind}/{asset_id}/{signal_or_event}",
+  "adapter_role": "vf_unit_test_aid_not_plantos_historian",
+  "plantos_ingestion_proven": false,
+  "plantos_historian_proven": false,
+  "id_resolution": {
+    "plant": "BW-DEMO-01",
+    "areas": [
+      "BW-WT",
+      "BW-BP",
+      "BW-FP",
+      "BW-UT",
+      "BW-WH"
+    ],
+    "accepted_areas": [
+      "BW-WT",
+      "BW-BP",
+      "BW-FP",
+      "BW-UT",
+      "BW-WH"
+    ],
+    "line_mapping": {
+      "vf_id": "BW-FP",
+      "plantos_entity": "Area",
+      "metadata": {
+        "role": "production_line"
+      }
+    },
+    "machine_mapping": {
+      "plantos_entity": "Asset"
+    },
+    "published_ids": [
+      "BW-DEMO-01",
+      "BW-FP",
+      "BW-FP-CAP01",
+      "BW-UT-CMP01",
+      "BW-UT-PWR01",
+      "BW-WH-FG01",
+      "BW-WT-FEED01",
+      "BW-WT-RO01",
+      "BW-WT-TK01"
+    ],
+    "unresolved_ids": [],
+    "resolved": true,
+    "areas_match_contract": true
+  },
+  "current_values": [
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/water_flow",
+      "kind": "signal",
+      "asset_id": "BW-WT-FEED01",
+      "signal_or_event": "water_flow",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-WT-FEED01",
+        "asset_id": "BW-WT-FEED01",
+        "timestamp": "2026-10-03T00:00:08.000Z",
+        "simulation_time_s": 8.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "signal_id": "water_flow",
+        "value": 1.2,
+        "unit": "m3/h",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "cadence": "2s",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-FEED01/signal:water_flow"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-RO01/production_flow",
+      "kind": "signal",
+      "asset_id": "BW-WT-RO01",
+      "signal_or_event": "production_flow",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-WT-RO01",
+        "asset_id": "BW-WT-RO01",
+        "timestamp": "2026-10-03T00:00:08.000Z",
+        "simulation_time_s": 8.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "signal_id": "production_flow",
+        "value": 0.9,
+        "unit": "m3/h",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "cadence": "2s",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-RO01/signal:production_flow"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-TK01/level",
+      "kind": "signal",
+      "asset_id": "BW-WT-TK01",
+      "signal_or_event": "level",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-WT-TK01",
+        "asset_id": "BW-WT-TK01",
+        "timestamp": "2026-10-03T00:00:08.000Z",
+        "simulation_time_s": 8.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "signal_id": "level",
+        "value": 70.5,
+        "unit": "%",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "cadence": "2-5s",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-TK01/signal:level"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-FP/operating_state",
+      "kind": "signal",
+      "asset_id": "BW-FP",
+      "signal_or_event": "operating_state",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-FP",
+        "asset_id": "BW-FP",
+        "timestamp": "2026-10-03T00:00:08.000Z",
+        "simulation_time_s": 8.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "signal_id": "operating_state",
+        "value": "RUNNING",
+        "unit": "-",
+        "semantic_role": "machine_state",
+        "datatype": "enum",
+        "cadence": "on_change_plus_heartbeat",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:operating_state"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-FP/total_count",
+      "kind": "signal",
+      "asset_id": "BW-FP",
+      "signal_or_event": "total_count",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-FP",
+        "asset_id": "BW-FP",
+        "timestamp": "2026-10-03T00:00:08.000Z",
+        "simulation_time_s": 8.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "signal_id": "total_count",
+        "value": 0,
+        "unit": "bottle",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "cadence": "on_change_or_1s",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:total_count"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-FP/good_count",
+      "kind": "signal",
+      "asset_id": "BW-FP",
+      "signal_or_event": "good_count",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-FP",
+        "asset_id": "BW-FP",
+        "timestamp": "2026-10-03T00:00:08.000Z",
+        "simulation_time_s": 8.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "signal_id": "good_count",
+        "value": 0,
+        "unit": "bottle",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "cadence": "on_change_or_1s",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:good_count"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-FP/reject_count",
+      "kind": "signal",
+      "asset_id": "BW-FP",
+      "signal_or_event": "reject_count",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-FP",
+        "asset_id": "BW-FP",
+        "timestamp": "2026-10-03T00:00:08.000Z",
+        "simulation_time_s": 8.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "signal_id": "reject_count",
+        "value": 0,
+        "unit": "bottle",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "cadence": "on_change_or_1s",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:reject_count"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-FP-CAP01/operating_state",
+      "kind": "signal",
+      "asset_id": "BW-FP-CAP01",
+      "signal_or_event": "operating_state",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-FP-CAP01",
+        "asset_id": "BW-FP-CAP01",
+        "timestamp": "2026-10-03T00:00:08.000Z",
+        "simulation_time_s": 8.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "signal_id": "operating_state",
+        "value": "RUNNING",
+        "unit": "-",
+        "semantic_role": "machine_state",
+        "datatype": "enum",
+        "cadence": "on_change_plus_heartbeat",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:operating_state",
+        "scenario_id": "BW-CAP-DEG-01"
+      }
+    }
+  ],
+  "events": [
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-FP-CAP01/SCENARIO_PHASE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-FP-CAP01",
+      "signal_or_event": "SCENARIO_PHASE_CHANGED",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-FP-CAP01",
+        "asset_id": "BW-FP-CAP01",
+        "timestamp": "2026-10-03T00:00:00.000Z",
+        "simulation_time_s": 0.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "event_type": "SCENARIO_PHASE_CHANGED",
+        "semantic_role": "operational_event",
+        "datatype": "event",
+        "cadence": "event",
+        "plantos_mapping_key": "plant:BW-DEMO-01/event:SCENARIO_PHASE_CHANGED",
+        "detail": "phase=NORMAL",
+        "scenario_id": "BW-CAP-DEG-01"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-UT-CMP01/SCENARIO_PHASE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-UT-CMP01",
+      "signal_or_event": "SCENARIO_PHASE_CHANGED",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-UT-CMP01",
+        "asset_id": "BW-UT-CMP01",
+        "timestamp": "2026-10-03T00:00:00.000Z",
+        "simulation_time_s": 0.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "event_type": "SCENARIO_PHASE_CHANGED",
+        "semantic_role": "operational_event",
+        "datatype": "event",
+        "cadence": "event",
+        "plantos_mapping_key": "plant:BW-DEMO-01/event:SCENARIO_PHASE_CHANGED",
+        "detail": "phase=NORMAL",
+        "scenario_id": "BW-CMP-SAG-01"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-DEMO-01/MACHINE_STATE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-DEMO-01",
+      "signal_or_event": "MACHINE_STATE_CHANGED",
+      "payload": {
+        "contract_version": "dday-bw-b1-v1",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-DEMO-01",
+        "asset_id": "BW-DEMO-01",
+        "timestamp": "2026-10-03T00:00:00.000Z",
+        "simulation_time_s": 0.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "event_type": "MACHINE_STATE_CHANGED",
+        "semantic_role": "operational_event",
+        "datatype": "event",
+        "cadence": "event",
+        "plantos_mapping_key": "plant:BW-DEMO-01/event:MACHINE_STATE_CHANGED",
+        "detail": "run_state=RUNNING"
+      }
+    }
+  ]
+}

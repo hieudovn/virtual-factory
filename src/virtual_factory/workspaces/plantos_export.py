@@ -1,31 +1,38 @@
-"""DDAY-B6 — workspace-local PlantOS-compatible export (view, not a simulator).
+"""DDAY-B6 / B6-C01 — workspace-local PlantOS export view (not a simulator).
 
-Maps the existing Bottled Water factory snapshot onto the frozen B1 MQTT JSON
-contract. This module does not own factory state, does not copy topology into a
-second runtime, does not calculate PlantOS KPIs, and does not edit generic
-protocol or telemetry code.
+Maps the existing Bottled Water factory snapshot onto the frozen B1 MQTT
+topic shape and the C01 versioned envelope. This module does not own
+factory state, does not copy topology into a second runtime, does not
+calculate PlantOS KPIs, and does not edit generic protocol or telemetry
+code.
 
-Primary topic shape (B1):
+Primary topic shape (B1, preserved):
     virtual-factory/bottled-water-dday/{kind}/{asset_id}/{signal_or_event}
 
-REST/debug consumers read the in-memory sink. Optional live MQTT delivery may
-compose the existing ``MqttGateway.publish_raw`` without changing that class.
+The in-memory sink is a VF adapter / unit-test aid. It is not a PlantOS
+historian.
 """
 
 from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
 import yaml
 
 WORKSPACE_ID = "bottled-water-dday"
+CONTRACT_VERSION = "dday-bw-b1-v1"
+PLANT_SOURCE_ID = "BW-DEMO-01"
 TOPIC_PREFIX = f"virtual-factory/{WORKSPACE_ID}"
 TOPIC_PATTERN = f"{TOPIC_PREFIX}/{{kind}}/{{asset_id}}/{{signal_or_event}}"
 PROVENANCE_RAW = "SIMULATED_RAW"
 QUALITY_GOOD = "GOOD"
+UTC_EPOCH = datetime(2026, 10, 3, 0, 0, 0, tzinfo=timezone.utc)
+ADAPTER_ROLE = "vf_unit_test_aid_not_plantos_historian"
+INGESTION_PATH = "local_in_memory_plantos_compatible"
 
 ACCEPTED_AREAS = ("BW-WT", "BW-BP", "BW-FP", "BW-UT", "BW-WH")
 DRILL_DOWN = {"BW-FP": "/bottled-water-demo"}
@@ -101,11 +108,88 @@ _PACKAGED_TOPOLOGY = (
     / WORKSPACE_ID
     / "topology.yaml"
 )
+_PACKAGED_DICTIONARY = (
+    Path(__file__).resolve().parents[3]
+    / "configs"
+    / "workspaces"
+    / WORKSPACE_ID
+    / "plantos_export.dictionary.yaml"
+)
+
+REQUIRED_SIGNAL_FAMILIES = ("wt", "production", "capper", "compressor", "fg", "energy")
+REQUIRED_ENVELOPE_FIELDS = (
+    "contract_version",
+    "workspace_id",
+    "plant_source_id",
+    "source_id",
+    "timestamp",
+    "simulation_time_s",
+    "quality",
+    "provenance",
+)
+
+
+class UnmappedExportError(ValueError):
+    """Fail-closed: an unlisted signal or event must not become PlantOS semantics."""
 
 
 def build_topic(kind: str, asset_id: str, signal_or_event: str) -> str:
     """B1 topic for one signal or event. No generic gateway topic rewrite."""
     return f"{TOPIC_PREFIX}/{kind}/{asset_id}/{signal_or_event}"
+
+
+def utc_timestamp(simulation_time_s: float | None) -> str:
+    """Canonical UTC boundary timestamp derived from the frozen D-Day epoch."""
+    instant = UTC_EPOCH + timedelta(seconds=float(simulation_time_s or 0.0))
+    return instant.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def load_export_dictionary(path: str | Path | None = None) -> dict:
+    """Read the selected D-Day export dictionary. Mapping contract, not state."""
+    dictionary_path = Path(path) if path else _PACKAGED_DICTIONARY
+    data = yaml.safe_load(dictionary_path.read_text(encoding="utf-8")) or {}
+    if not data.get("signals") or not data.get("events"):
+        raise ValueError(f"export dictionary missing signals/events: {dictionary_path}")
+    return data
+
+
+def selected_signal_entries(dictionary: Optional[dict] = None) -> list[dict]:
+    data = dictionary or load_export_dictionary()
+    return [dict(entry) for entry in data.get("signals") or ()]
+
+
+def selected_event_entries(dictionary: Optional[dict] = None) -> list[dict]:
+    data = dictionary or load_export_dictionary()
+    return [dict(entry) for entry in data.get("events") or ()]
+
+
+def selected_signal_keys(dictionary: Optional[dict] = None) -> list[tuple[str, str]]:
+    return [
+        (str(entry["source_id"]), str(entry["signal_id"]))
+        for entry in selected_signal_entries(dictionary)
+    ]
+
+
+def lookup_signal_entry(
+    source_id: str,
+    signal_id: str,
+    dictionary: Optional[dict] = None,
+) -> dict:
+    for entry in selected_signal_entries(dictionary):
+        if entry.get("source_id") == source_id and entry.get("signal_id") == signal_id:
+            return entry
+    raise UnmappedExportError(
+        f"unmapped export signal {source_id}.{signal_id}; fail closed"
+    )
+
+
+def lookup_event_entry(event_type: str, dictionary: Optional[dict] = None) -> dict:
+    for entry in selected_event_entries(dictionary):
+        if entry.get("event_type") == event_type:
+            return entry
+    raise UnmappedExportError(
+        f"unmapped export event {event_type}; fail closed"
+    )
 
 
 def _blocked_name(name: str) -> bool:
@@ -133,43 +217,88 @@ def _scenario_id_for(asset_id: str, snapshot: dict) -> Optional[str]:
     return None
 
 
+def _simulation_time(snapshot: dict, *candidates) -> float:
+    for value in candidates:
+        if value is not None:
+            return float(value)
+    factory = snapshot.get("factory") or {}
+    return float(factory.get("simulation_time_s") or 0.0)
+
+
+def _envelope_base(
+    snapshot: dict,
+    source_id: str,
+    simulation_time_s: float,
+    *,
+    quality: str = QUALITY_GOOD,
+    provenance: str = PROVENANCE_RAW,
+) -> dict:
+    return {
+        "contract_version": CONTRACT_VERSION,
+        "workspace_id": snapshot.get("workspace_id", WORKSPACE_ID),
+        "plant_source_id": snapshot.get("plant_id", PLANT_SOURCE_ID),
+        "source_id": source_id,
+        "asset_id": source_id,
+        "timestamp": utc_timestamp(simulation_time_s),
+        "simulation_time_s": simulation_time_s,
+        "quality": quality,
+        "provenance": provenance,
+    }
+
+
 def _signal_payload(
     snapshot: dict,
     asset_id: str,
     signal_id: str,
     signal: dict,
+    entry: dict,
 ) -> dict:
-    payload = {
-        "workspace_id": snapshot.get("workspace_id", WORKSPACE_ID),
-        "asset_id": asset_id,
+    simulation_time_s = _simulation_time(
+        snapshot,
+        signal.get("simulation_time_s"),
+    )
+    payload = _envelope_base(
+        snapshot,
+        asset_id,
+        simulation_time_s,
+        quality=signal.get("quality", entry.get("quality", QUALITY_GOOD)),
+        provenance=signal.get("provenance", entry.get("provenance", PROVENANCE_RAW)),
+    )
+    payload.update({
         "signal_id": signal_id,
         "value": signal.get("value"),
-        "unit": signal.get("unit"),
-        "timestamp_s": signal.get("simulation_time_s",
-                                  snapshot.get("factory", {}).get("simulation_time_s")),
-        "quality": signal.get("quality", QUALITY_GOOD),
-        "provenance": signal.get("provenance", PROVENANCE_RAW),
-    }
+        "unit": signal.get("unit", entry.get("unit")),
+        "semantic_role": entry.get("semantic_role"),
+        "datatype": entry.get("datatype"),
+        "cadence": entry.get("cadence"),
+        "plantos_mapping_key": entry.get("plantos_mapping_key"),
+    })
     scenario_id = _scenario_id_for(asset_id, snapshot)
     if scenario_id:
         payload["scenario_id"] = scenario_id
     return payload
 
 
-def _event_payload(snapshot: dict, event: dict) -> dict:
+def _event_payload(snapshot: dict, event: dict, entry: dict) -> dict:
     asset_id = (
         event.get("source_id")
         or event.get("station_id")
         or event.get("asset_id")
         or snapshot.get("plant_id")
     )
-    payload = {
-        "workspace_id": snapshot.get("workspace_id", WORKSPACE_ID),
-        "event_type": event.get("event_type"),
-        "asset_id": asset_id,
-        "simulation_time_s": event.get("simulation_time_s"),
-        "provenance": event.get("provenance", PROVENANCE_RAW),
-    }
+    simulation_time_s = _simulation_time(snapshot, event.get("simulation_time_s"))
+    payload = _envelope_base(
+        snapshot,
+        str(asset_id),
+        simulation_time_s,
+        quality=event.get("quality", entry.get("quality", QUALITY_GOOD)),
+        provenance=event.get("provenance", entry.get("provenance", PROVENANCE_RAW)),
+    )
+    payload["event_type"] = event.get("event_type")
+    payload["semantic_role"] = entry.get("semantic_role")
+    payload["datatype"] = entry.get("datatype")
+    payload["cadence"] = entry.get("cadence")
+    payload["plantos_mapping_key"] = entry.get("plantos_mapping_key")
     if event.get("detail"):
         payload["detail"] = event["detail"]
     if event.get("downtime_code"):
@@ -178,9 +307,7 @@ def _event_payload(snapshot: dict, event: dict) -> dict:
         payload["planned"] = bool(event.get("planned", False))
     if event.get("failure_code"):
         payload["failure_code"] = event["failure_code"]
-    if event.get("quality"):
-        payload["quality"] = event["quality"]
-    scenario_id = event.get("scenario_id") or _scenario_id_for(asset_id, snapshot)
+    scenario_id = event.get("scenario_id") or _scenario_id_for(str(asset_id), snapshot)
     if scenario_id:
         payload["scenario_id"] = scenario_id
     return payload
@@ -206,38 +333,78 @@ class PublishedMessage:
         }
 
 
-def map_snapshot(snapshot: dict) -> list[PublishedMessage]:
-    """Project the existing factory snapshot into B1 MQTT JSON messages."""
+def map_selected_signal(
+    snapshot: dict,
+    source_id: str,
+    signal_id: str,
+    dictionary: Optional[dict] = None,
+) -> PublishedMessage:
+    """Map one selected signal. Unlisted IDs fail closed."""
+    entry = lookup_signal_entry(source_id, signal_id, dictionary)
+    if _blocked_name(source_id) or _blocked_name(signal_id):
+        raise UnmappedExportError(
+            f"blocked export signal {source_id}.{signal_id}; fail closed"
+        )
+    node = (snapshot.get("nodes") or {}).get(source_id) or {}
+    signal = (node.get("signals") or {}).get(signal_id)
+    if not isinstance(signal, dict):
+        raise UnmappedExportError(
+            f"selected signal {source_id}.{signal_id} missing from factory snapshot"
+        )
+    payload = _signal_payload(snapshot, source_id, signal_id, signal, entry)
+    return PublishedMessage(
+        topic=build_topic("signal", source_id, signal_id),
+        kind="signal",
+        asset_id=source_id,
+        signal_or_event=signal_id,
+        payload=payload,
+    )
+
+
+def map_selected_event(
+    snapshot: dict,
+    event: dict,
+    dictionary: Optional[dict] = None,
+) -> PublishedMessage:
+    """Map one selected event. Unlisted types fail closed."""
+    event_type = str(event.get("event_type") or "")
+    entry = lookup_event_entry(event_type, dictionary)
+    if _blocked_name(event_type):
+        raise UnmappedExportError(f"blocked export event {event_type}; fail closed")
+    payload = _event_payload(snapshot, event, entry)
+    asset_id = str(payload["source_id"])
+    return PublishedMessage(
+        topic=build_topic("event", asset_id, event_type),
+        kind="event",
+        asset_id=asset_id,
+        signal_or_event=event_type,
+        payload=payload,
+    )
+
+
+def map_snapshot(
+    snapshot: dict,
+    dictionary: Optional[dict] = None,
+) -> list[PublishedMessage]:
+    """Project only the selected D-Day dictionary onto MQTT JSON messages."""
+    selected = dictionary or load_export_dictionary()
     messages: list[PublishedMessage] = []
-    for asset_id, node in (snapshot.get("nodes") or {}).items():
-        for signal_id, signal in (node.get("signals") or {}).items():
-            if _blocked_name(signal_id) or _blocked_name(asset_id):
-                continue
-            payload = _signal_payload(snapshot, asset_id, signal_id, signal)
-            messages.append(
-                PublishedMessage(
-                    topic=build_topic("signal", asset_id, signal_id),
-                    kind="signal",
-                    asset_id=asset_id,
-                    signal_or_event=signal_id,
-                    payload=payload,
-                )
-            )
+    nodes = snapshot.get("nodes") or {}
+    for entry in selected_signal_entries(selected):
+        source_id = str(entry["source_id"])
+        signal_id = str(entry["signal_id"])
+        if source_id not in nodes or signal_id not in (nodes[source_id].get("signals") or {}):
+            continue
+        messages.append(map_selected_signal(snapshot, source_id, signal_id, selected))
     for event in snapshot.get("recent_events") or ():
         event_type = str(event.get("event_type") or "")
-        if not event_type or _blocked_name(event_type):
+        if not event_type:
             continue
-        payload = _event_payload(snapshot, event)
-        asset_id = str(payload["asset_id"])
-        messages.append(
-            PublishedMessage(
-                topic=build_topic("event", asset_id, event_type),
-                kind="event",
-                asset_id=asset_id,
-                signal_or_event=event_type,
-                payload=payload,
-            )
-        )
+        try:
+            lookup_event_entry(event_type, selected)
+        except UnmappedExportError:
+            continue
+        messages.append(map_selected_event(snapshot, event, selected))
     return messages
 
 
@@ -381,10 +548,46 @@ def overview_from_snapshot(snapshot: dict) -> dict:
     }
 
 
-class PlantosLocalIngestion:
-    """In-memory PlantOS-compatible ingestion path (local proof only)."""
+def dictionary_summary(dictionary: Optional[dict] = None) -> dict:
+    selected = dictionary or load_export_dictionary()
+    families = sorted({
+        str(entry.get("family"))
+        for entry in selected_signal_entries(selected)
+        if entry.get("family")
+    })
+    return {
+        "contract_version": selected.get("contract_version", CONTRACT_VERSION),
+        "workspace_id": selected.get("workspace_id", WORKSPACE_ID),
+        "plant_source_id": selected.get("plant_source_id", PLANT_SOURCE_ID),
+        "fail_closed": bool(selected.get("fail_closed", True)),
+        "families": families,
+        "required_families": list(REQUIRED_SIGNAL_FAMILIES),
+        "signal_count": len(selected_signal_entries(selected)),
+        "event_types": [
+            str(entry["event_type"]) for entry in selected_event_entries(selected)
+        ],
+        "signals": [
+            {
+                "source_id": entry["source_id"],
+                "signal_id": entry["signal_id"],
+                "family": entry.get("family"),
+                "semantic_role": entry.get("semantic_role"),
+                "datatype": entry.get("datatype"),
+                "unit": entry.get("unit"),
+                "cadence": entry.get("cadence"),
+                "quality": entry.get("quality"),
+                "provenance": entry.get("provenance"),
+                "plantos_mapping_key": entry.get("plantos_mapping_key"),
+            }
+            for entry in selected_signal_entries(selected)
+        ],
+    }
 
-    def __init__(self, signal_capacity: int = 4000, event_capacity: int = 240) -> None:
+
+class PlantosLocalIngestion:
+    """VF adapter / unit-test aid. Not a PlantOS historian."""
+
+    def __init__(self, signal_capacity: int = 8000, event_capacity: int = 400) -> None:
         self._signals: deque[PublishedMessage] = deque(maxlen=signal_capacity)
         self._events: deque[PublishedMessage] = deque(maxlen=event_capacity)
         self._current: dict[tuple[str, str], PublishedMessage] = {}
@@ -443,15 +646,24 @@ class ExportBundle:
 
     def as_dict(self) -> dict:
         factory = self.snapshot.get("factory") or {}
+        from virtual_factory.workspaces.plantos_compat import compatibility_status
+
         return {
+            "contract_version": CONTRACT_VERSION,
             "workspace_id": self.snapshot.get("workspace_id", WORKSPACE_ID),
+            "plant_source_id": self.snapshot.get("plant_id", PLANT_SOURCE_ID),
             "plant_id": self.snapshot.get("plant_id"),
             "simulation_time_s": factory.get("simulation_time_s"),
             "topic_pattern": TOPIC_PATTERN,
-            "ingestion_path": "local_in_memory_plantos_compatible",
+            "ingestion_path": INGESTION_PATH,
+            "adapter_role": ADAPTER_ROLE,
+            "plantos_ingestion_proven": False,
+            "plantos_historian_proven": False,
+            "plantos_compatibility": compatibility_status(),
+            "export_dictionary": dictionary_summary(),
             "id_resolution": self.id_resolution,
             "current_values": self.sink.current_values(),
-            "historian": self.sink.historian(),
+            "historian": self.sink.historian(limit=240),
             "events": self.sink.events(),
             "overview": overview_from_snapshot(self.snapshot),
             "message_count": self.sink.message_count,
