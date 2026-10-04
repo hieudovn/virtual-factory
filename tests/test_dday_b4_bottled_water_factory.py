@@ -624,10 +624,14 @@ def test_b4_12b_rejected_units_still_consume_already_used_material():
 # ═══════════════════════════════════════════════════════════════
 
 B3_BASELINE = "23b6208266751a8c508b0d96fd7a736dffc5676c"
-B3_EVIDENCE_FILES = (
-    ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
-    ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
-)
+B3_EVIDENCE_SHA256 = {
+    ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py": (
+        "46015c6dfa9863b0e00a1944e2be439b6598c784968c74055c7434f95f7e8c57"
+    ),
+    ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py": (
+        "afe0c7a013244dbc67f31d11dc18029bdfce3b625f5a301aafb0f7e3c7eabeb3"
+    ),
+}
 
 
 def test_c01_unmet_water_demand_is_preserved_and_later_satisfied():
@@ -695,30 +699,21 @@ def test_c01_starved_fill_completions_keep_the_request_ledger():
 
 
 def test_c01_accepted_b3_evidence_files_match_b3_baseline():
-    """The two SA-named B3 evidence files must equal the closed B3 head."""
-    import subprocess
+    """The two SA-named B3 evidence files must equal the closed B3 head.
 
-    result = subprocess.run(
-        ["git", "diff", "--name-only", B3_BASELINE, "HEAD", "--", *B3_EVIDENCE_FILES],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    dirty = [line for line in result.stdout.splitlines() if line.strip()]
-    assert dirty == [], f"B3 evidence files differ from {B3_BASELINE}: {dirty}"
+    Compared by content SHA-256 of the 23b6208 blobs so CI shallow clones
+    do not need that historical commit (git diff against a missing SHA
+    exits 128).
+    """
+    import hashlib
 
-    worktree = subprocess.run(
-        ["git", "diff", "--name-only", B3_BASELINE, "--", *B3_EVIDENCE_FILES],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    dirty_wt = [line for line in worktree.stdout.splitlines() if line.strip()]
-    assert dirty_wt == [], (
-        f"B3 evidence files differ from {B3_BASELINE} in the worktree: {dirty_wt}"
-    )
+    for relpath, expected in B3_EVIDENCE_SHA256.items():
+        payload = (REPO_ROOT / relpath).read_bytes()
+        digest = hashlib.sha256(payload).hexdigest()
+        assert digest == expected, (
+            f"{relpath} SHA-256 {digest} != B3 baseline {B3_BASELINE} "
+            f"blob {expected}"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════
