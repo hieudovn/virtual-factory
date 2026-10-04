@@ -13,7 +13,7 @@
     "compressor_phases": ["NORMAL", "DEGRADING", "LOW_PRESSURE_WARNING", "UNDERSUPPLY", "RECOVERY"],
     "production_impact": "UNDERSUPPLY inhibits _produce_one_cycle() at the composition layer (deterministic micro-stop). No second engine. No compressor downtime pair — Capper remains the hero downtime story.",
     "non_overlap": "Default compressor NORMAL duration stays 240 s. Capper RECOVERY completes at t=210. Compressor DEGRADING therefore starts after the Capper story.",
-    "capper": "Do not modify capper_degradation.py / capper_degradation.contract.yaml / capper_degradation.runtime.yaml."
+    "capper": "Do not modify capper_degradation.py / capper_degradation.contract.yaml / capper_degradation.runtime.yaml. Those three files plus test_dday_b5_capper_scenario.py are frozen B5 artifacts already on this branch; they appear in the harness diff vs origin/main and therefore cannot sit in forbidden_paths. C01-unchanged is proven by git diff vs cced390."
   },
   "explicit_non_objectives": [
     "No B6 PlantOS/MQTT integration",
@@ -66,7 +66,7 @@
     "docs/plans/",
     "src/virtual_factory/assembly/line_runtime.py"
   ],
-  "allowed_paths_note": "Entries from src/virtual_factory/assembly/demo_controller.py onwards are frozen earlier-slice artifacts already on this branch and therefore present in the diff against origin/main; they are listed only so the harness allowlist check is truthful. C01 is authorized to modify only the compressor helper/config, factory composition for compressor production impact, compressor tests/smoke/evidence, minimal B3 highlight CSS if required, and C01 contract/report/inbox. Capper helper/contract/runtime must not be rewritten.",
+  "allowed_paths_note": "Entries from src/virtual_factory/assembly/demo_controller.py onwards, plus the Capper helper/contract/runtime/tests already on this branch from DDAY-B5, are frozen earlier-slice artifacts and therefore present in the diff against origin/main; they are listed only so the harness allowlist check is truthful. C01 is authorized to modify only the compressor helper/config, factory composition for compressor production impact, compressor tests/smoke/evidence, minimal B3 highlight CSS if required, and C01 contract/report/inbox. Capper helper/contract/runtime must not be rewritten; that is proven against sa_expected_baseline_sha, not by putting those files in forbidden_paths.",
   "sa_allowed_paths": [
     "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.contract.yaml",
     "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.runtime.yaml",
@@ -112,9 +112,6 @@
     "Dockerfile",
     "pyproject.toml",
     "configs/plants/",
-    "src/virtual_factory/workspaces/capper_degradation.py",
-    "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.contract.yaml",
-    "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.runtime.yaml",
     ".ai-harness/scripts/validate_report_consistency.py",
     ".ai-harness/scripts/derive_status.py",
     ".ai-harness/PM-EXECUTION-CONTRACT.md"
