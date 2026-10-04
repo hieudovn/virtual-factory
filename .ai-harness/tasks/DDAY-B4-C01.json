@@ -81,8 +81,6 @@
     "src/virtual_factory/assembly/quality_records.py",
     "src/virtual_factory/assembly/conveyor.py",
     "src/virtual_factory/assembly/demo_snapshot.py",
-    "src/virtual_factory/assembly/line_runtime.py",
-    "src/virtual_factory/assembly/demo_controller.py",
     "src/virtual_factory/ui/runtime_service.py",
     "src/virtual_factory/ui/static/assy_demo.js",
     "src/virtual_factory/ui/static/assy_demo.css",

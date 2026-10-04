@@ -86,9 +86,6 @@ def capture_api_binding() -> dict:
     app = create_app(
         config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
         dt_s=1.0,
-        # DDAY-B4: this B3 evidence is captured through the deterministic step
-        # seam, so the autonomous server-side clock is disabled here.
-        factory_autorun=False,
     )
 
     def scan_for_forbidden(text: str) -> list[str]:
