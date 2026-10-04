@@ -1,0 +1,89 @@
+{
+  "task": "DDAY-B5-C02",
+  "baseline": "3b9cc8c2d5afbeb47dae798592a5ce32b58131fc",
+  "head": "4fc6f0f7cf647b4651e5494f03972d4107f65c87",
+  "warning_threshold_bar": 5.8,
+  "warning_entry": {
+    "step": 30,
+    "pressure": 6.24,
+    "alarm_events": 0
+  },
+  "alarm_sample": {
+    "step": 41,
+    "phase": "LOW_PRESSURE_WARNING",
+    "pressure": 5.8
+  },
+  "alarm_after_threshold": true,
+  "classified_context": {
+    "downtime_code": "DT-AIR",
+    "failure_code": "FAIL-AIR",
+    "top_level_downtime_code": null
+  },
+  "stamped_events": [
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=LOW_PRESSURE_WARNING",
+      "downtime_code": "DT-AIR",
+      "failure_code": "FAIL-AIR"
+    },
+    {
+      "event_type": "ALARM_RAISED",
+      "detail": "compressor low pressure",
+      "downtime_code": "DT-AIR",
+      "failure_code": "FAIL-AIR"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=UNDERSUPPLY",
+      "downtime_code": "DT-AIR",
+      "failure_code": "FAIL-AIR"
+    },
+    {
+      "event_type": "ALARM_CLEARED",
+      "detail": "compressor pressure restored",
+      "downtime_code": "DT-AIR",
+      "failure_code": "FAIL-AIR"
+    }
+  ],
+  "control_samples": {
+    "284": {
+      "abnormal_phase": "UNDERSUPPLY",
+      "abnormal_total": 14,
+      "abnormal_good": 7,
+      "abnormal_fg": 7,
+      "control_total": 14,
+      "control_good": 7,
+      "control_fg": 7
+    },
+    "304": {
+      "abnormal_phase": "RECOVERY",
+      "abnormal_total": 14,
+      "abnormal_good": 7,
+      "abnormal_fg": 7,
+      "control_total": 15,
+      "control_good": 8,
+      "control_fg": 8
+    },
+    "340": {
+      "abnormal_phase": "RECOVERY",
+      "abnormal_total": 15,
+      "abnormal_good": 8,
+      "abnormal_fg": 8,
+      "control_total": 17,
+      "control_good": 10,
+      "control_fg": 10
+    }
+  },
+  "capper_files_changed_vs_3b9cc8c": [],
+  "files_vs_c02_baseline": [
+    ".ai-harness/sa-review/evidence/DDAY-B5-C02/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/DDAY-B5/smoke_capper_scenario.py",
+    ".ai-harness/tasks/DDAY-B5-C02.json",
+    "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.contract.yaml",
+    "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.runtime.yaml",
+    "src/virtual_factory/ui/api.py",
+    "src/virtual_factory/workspaces/bottled_water.py",
+    "src/virtual_factory/workspaces/compressor_pressure.py",
+    "tests/test_dday_b5_compressor_scenario.py"
+  ]
+}
