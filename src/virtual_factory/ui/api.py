@@ -636,6 +636,19 @@ def create_app(
         """
         return _get_bw_factory().snapshot()
 
+    @app.get("/bottled-water-demo/plantos-export")
+    def bottled_water_plantos_export() -> dict:
+        """B6 debug path: PlantOS-compatible messages from the same factory.
+
+        Workspace-local mapper + in-memory ingestion. Not a second simulator
+        and not a calculated KPI feed.
+        """
+        return _get_bw_factory().plantos_export()
+
+    @app.get("/bottled-water-demo/overview", include_in_schema=False)
+    def bottled_water_overview_page() -> FileResponse:
+        return FileResponse(static_dir / "bottled_water_overview.html")
+
     @app.get("/bottled-water-demo/state")
     def bottled_water_state(
         limit: int = Query(default=60, ge=0, le=200),

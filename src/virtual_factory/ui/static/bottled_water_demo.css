@@ -155,6 +155,7 @@ html, body {
 }
 
 .vf-chip-live { color: var(--bw-state-run); border-color: #CBE7D8; background: #F1FAF5; }
+a.vf-chip { text-decoration: none; color: var(--bw-accent); }
 
 /* ══════════════════ Facts strip ══════════════════ */
 

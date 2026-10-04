@@ -505,6 +505,8 @@ def test_b3_09b_api_exposes_no_later_slice_endpoint(client):
         "/bottled-water-demo",
         "/bottled-water-demo/state",
         "/bottled-water-demo/factory",
+        "/bottled-water-demo/plantos-export",
+        "/bottled-water-demo/overview",
         "/bottled-water-demo/static/{filename}",
         "/bottled-water-demo/unit/{unit_id}",
         "/bottled-water-demo/start",

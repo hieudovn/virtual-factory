@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bottled Water Factory — Whole Factory Overview</title>
+<link rel="stylesheet" href="/bottled-water-demo/static/bottled_water_overview.css">
+</head>
+<body>
+<div id="app">
+  <header id="vf-topbar">
+    <div class="vf-tb-left">
+      <div class="vf-logo">
+        <span class="vf-logo-mark">VF</span>
+        <div>
+          <span class="vf-logo-text">VIRTUAL FACTORY</span>
+          <span class="vf-logo-sub" id="ov-plant-name">Bottled Water Factory</span>
+        </div>
+      </div>
+      <span class="vf-tb-divider"></span>
+      <div class="vf-tb-context">
+        <span class="vf-tb-line">Whole factory overview</span>
+        <span class="vf-tb-ids" id="ov-identity">BW-DEMO-01</span>
+      </div>
+    </div>
+    <div class="vf-tb-right">
+      <span class="vf-chip" id="ov-run-chip">STOPPED</span>
+      <span class="vf-chip" id="ov-time-chip">t=0.0 s</span>
+    </div>
+  </header>
+
+  <section id="ov-facts">
+    <div class="ov-fact">
+      <span class="ov-fact-label">Run state</span>
+      <span class="ov-fact-value" id="ov-run-state">STOPPED</span>
+    </div>
+    <div class="ov-fact">
+      <span class="ov-fact-label">Operating state</span>
+      <span class="ov-fact-value" id="ov-operating-state">STOPPED</span>
+    </div>
+    <div class="ov-fact">
+      <span class="ov-fact-label">Simulation time</span>
+      <span class="ov-fact-value" id="ov-sim-time">0.0 s</span>
+    </div>
+    <div class="ov-controls">
+      <button id="ov-btn-start" class="ov-btn ov-btn-primary" onclick="ovStart()">▶ START</button>
+      <button id="ov-btn-pause" class="ov-btn" onclick="ovPause()">⏸ PAUSE</button>
+      <button id="ov-btn-resume" class="ov-btn" onclick="ovResume()">▶ RESUME</button>
+      <button id="ov-btn-stop" class="ov-btn" onclick="ovStop()">■ STOP</button>
+      <button id="ov-btn-reset" class="ov-btn ov-btn-outline" onclick="ovReset()">↻ RESET</button>
+    </div>
+  </section>
+
+  <section id="ov-relationships" aria-label="Process and utility relationships">
+    <h2>Process / utility relationships</h2>
+    <ul id="ov-relationship-list">
+      <li data-from="BW-WT" data-to="BW-FP" data-kind="process">BW-WT → BW-FP · treated water → filler</li>
+      <li data-from="BW-BP" data-to="BW-FP" data-kind="process">BW-BP → BW-FP · prepared bottles → blower/infeed</li>
+      <li data-from="BW-UT" data-to="BW-FP" data-kind="utility">BW-UT → BW-FP · compressed air → line</li>
+      <li data-from="BW-FP" data-to="BW-WH" data-kind="process">BW-FP → BW-WH · good bottles → finished goods</li>
+    </ul>
+  </section>
+
+  <main id="ov-areas" aria-label="Factory areas">
+    <article class="ov-area" id="area-BW-WT" data-area="BW-WT">
+      <header>
+        <span class="ov-area-id">BW-WT</span>
+        <h3>Water Treatment</h3>
+        <span class="ov-abnormal" data-abnormal="false">NORMAL</span>
+      </header>
+      <dl class="ov-raw">
+        <div><dt>Tank level</dt><dd data-raw="tank_level_pct">—</dd></div>
+        <div><dt>Treated flow</dt><dd data-raw="treated_water_flow_m3h">—</dd></div>
+        <div><dt>Tank volume</dt><dd data-raw="tank_volume_m3">—</dd></div>
+      </dl>
+    </article>
+
+    <span class="ov-arrow" aria-hidden="true">→</span>
+
+    <article class="ov-area" id="area-BW-BP" data-area="BW-BP">
+      <header>
+        <span class="ov-area-id">BW-BP</span>
+        <h3>Bottle Preparation</h3>
+        <span class="ov-abnormal" data-abnormal="false">NORMAL</span>
+      </header>
+      <dl class="ov-raw">
+        <div><dt>Operating state</dt><dd data-raw="operating_state">—</dd></div>
+        <div><dt>Preform count</dt><dd data-raw="preform_count">—</dd></div>
+      </dl>
+    </article>
+
+    <span class="ov-arrow" aria-hidden="true">→</span>
+
+    <article class="ov-area ov-area-line" id="area-BW-FP" data-area="BW-FP">
+      <header>
+        <span class="ov-area-id">BW-FP</span>
+        <h3>Filling &amp; Packaging</h3>
+        <span class="ov-abnormal" data-abnormal="false">NORMAL</span>
+      </header>
+      <dl class="ov-raw">
+        <div><dt>Total</dt><dd data-raw="total_count">—</dd></div>
+        <div><dt>Good</dt><dd data-raw="good_count">—</dd></div>
+        <div><dt>Reject</dt><dd data-raw="reject_count">—</dd></div>
+      </dl>
+      <a id="ov-fp-drilldown" class="ov-drilldown" href="/bottled-water-demo">Open Filling &amp; Packaging line →</a>
+    </article>
+
+    <span class="ov-arrow" aria-hidden="true">→</span>
+
+    <article class="ov-area" id="area-BW-WH" data-area="BW-WH">
+      <header>
+        <span class="ov-area-id">BW-WH</span>
+        <h3>Warehouse / Dispatch</h3>
+        <span class="ov-abnormal" data-abnormal="false">NORMAL</span>
+      </header>
+      <dl class="ov-raw">
+        <div><dt>Inventory</dt><dd data-raw="inventory_count">—</dd></div>
+        <div><dt>Receipts</dt><dd data-raw="receipt_count">—</dd></div>
+        <div><dt>Dispatch</dt><dd data-raw="dispatch_count">—</dd></div>
+      </dl>
+    </article>
+
+    <article class="ov-area ov-area-utility" id="area-BW-UT" data-area="BW-UT">
+      <header>
+        <span class="ov-area-id">BW-UT</span>
+        <h3>Utilities</h3>
+        <span class="ov-abnormal" data-abnormal="false">NORMAL</span>
+      </header>
+      <dl class="ov-raw">
+        <div><dt>Air pressure</dt><dd data-raw="air_pressure_bar">—</dd></div>
+        <div><dt>Plant power</dt><dd data-raw="plant_active_power_kw">—</dd></div>
+      </dl>
+      <p class="ov-utility-note">utility feed → BW-FP</p>
+    </article>
+  </main>
+</div>
+<script src="/bottled-water-demo/static/bottled_water_overview.js"></script>
+</body>
+</html>

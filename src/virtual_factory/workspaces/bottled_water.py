@@ -52,6 +52,11 @@ from virtual_factory.workspaces.compressor_pressure import (
     CompressorPressureScenario,
     load_compressor_runtime,
 )
+from virtual_factory.workspaces.plantos_export import (
+    PlantosLocalIngestion,
+    export_bundle,
+    map_snapshot,
+)
 
 WORKSPACE_ID = "bottled-water-dday"
 
@@ -582,6 +587,8 @@ class BottledWaterFactory:
             )
         self._compressor_enabled = bool(enable_compressor)
 
+        # B6 local ingestion sink: a view of this factory, not a second runtime.
+        self._export_sink = PlantosLocalIngestion()
         self._initialise_state()
 
     # --- hierarchy helpers ---
@@ -642,6 +649,20 @@ class BottledWaterFactory:
             self._record_scenario_events(self._scenario.advance(0.0, 0.0))
         if self._compressor_enabled:
             self._record_scenario_events(self._compressor.advance(0.0, 0.0))
+        if getattr(self, "_export_sink", None) is not None:
+            self._export_sink.clear()
+            self._publish_export()
+
+    def _publish_export(self) -> None:
+        """Map the current snapshot into the local PlantOS-compatible sink."""
+        if getattr(self, "_export_sink", None) is None:
+            return
+        self._export_sink.ingest(map_snapshot(self.snapshot()))
+
+    def plantos_export(self) -> dict:
+        """Debug/verification bundle over the single factory snapshot."""
+        with self._lock:
+            return export_bundle(self.snapshot(), self._export_sink)
 
     def _reset(self) -> None:
         self.controller.reset()
@@ -675,30 +696,35 @@ class BottledWaterFactory:
         with self._lock:
             self.controller.start()
             self._note_run_state()
+            self._publish_export()
             return self.controller.run_state.value
 
     def pause(self) -> str:
         with self._lock:
             self.controller.pause()
             self._note_run_state()
+            self._publish_export()
             return self.controller.run_state.value
 
     def resume(self) -> str:
         with self._lock:
             self.controller.resume()
             self._note_run_state()
+            self._publish_export()
             return self.controller.run_state.value
 
     def stop(self) -> str:
         with self._lock:
             self.controller.stop()
             self._note_run_state()
+            self._publish_export()
             return self.controller.run_state.value
 
     def reset(self) -> str:
         with self._lock:
             self._reset()
             self._note_run_state()
+            self._publish_export()
             return self.controller.run_state.value
 
     def classify(self, kind: str, code: str, target: str | None = None) -> dict:
@@ -710,6 +736,7 @@ class BottledWaterFactory:
             else:
                 result = self._scenario.classify(kind, code)
             self._apply_classification_to_recent_events()
+            self._publish_export()
             return result
 
     def _classify_destination(self, target: str | None) -> str:
@@ -766,6 +793,7 @@ class BottledWaterFactory:
                 if self.controller.run_state is LineRunState.RUNNING:
                     self._advance_scenarios(delta)
                 self._apply_draw()
+            self._publish_export()
             return delta
 
     # --- deterministic clock ---
@@ -782,6 +810,7 @@ class BottledWaterFactory:
                 chunk = min(remaining, sub_step)
                 self._sub_step(chunk)
                 remaining -= chunk
+            self._publish_export()
 
     def _sub_step(self, dt: float) -> None:
         run_state = self.controller.run_state
