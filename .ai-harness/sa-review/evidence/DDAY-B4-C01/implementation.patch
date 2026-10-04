@@ -1,0 +1,808 @@
+diff --git a/.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py b/.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py
+index 9e4cf50..e3c7de3 100644
+--- a/.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py
++++ b/.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py
+@@ -86,9 +86,6 @@ def capture_api_binding() -> dict:
+     app = create_app(
+         config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
+         dt_s=1.0,
+-        # DDAY-B4: this B3 evidence is captured through the deterministic step
+-        # seam, so the autonomous server-side clock is disabled here.
+-        factory_autorun=False,
+     )
+ 
+     def scan_for_forbidden(text: str) -> list[str]:
+diff --git a/.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py b/.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py
+index e1b63b9..69ce6c6 100644
+--- a/.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py
++++ b/.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py
+@@ -70,10 +70,6 @@ def _serve(config_path: Path, port: int):
+     app = create_app(
+         config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
+         dt_s=1.0,
+-        # DDAY-B4: the B3 contract is checked with the deterministic step seam,
+-        # so the autonomous server-side clock is disabled here. Autonomy itself
+-        # is proven by SMOKE-BW-FACTORY.
+-        factory_autorun=False,
+     )
+     server = uvicorn.Server(uvicorn.Config(
+         app, host="127.0.0.1", port=port, log_level="error"))
+diff --git a/.ai-harness/sa-review/evidence/DDAY-B4-C01/smoke_unmet_water.py b/.ai-harness/sa-review/evidence/DDAY-B4-C01/smoke_unmet_water.py
+new file mode 100644
+index 0000000..80c806c
+--- /dev/null
++++ b/.ai-harness/sa-review/evidence/DDAY-B4-C01/smoke_unmet_water.py
+@@ -0,0 +1,104 @@
++#!/usr/bin/env python3
++"""DDAY-B4-C01 — unmet-water conservation smoke.
++
++Task: DDAY-B4-C01 (SA Issue #106 / PR #101).
++
++Proves the empty-tank Filler draw does not silently discard pending demand,
++and that later tank inventory satisfies the preserved request.
++
++Exit code 0 = every claim proven. Any failed claim exits non-zero.
++"""
++
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++
++def _find_repo_root(start: Path) -> Path:
++    for candidate in (start, *start.parents):
++        if (candidate / "src" / "virtual_factory").is_dir():
++            return candidate
++    raise RuntimeError("repository root not found")
++
++
++REPO_ROOT = _find_repo_root(Path(__file__).resolve())
++sys.path.insert(0, str(REPO_ROOT / "src"))
++
++from virtual_factory.workspaces.bottled_water import BottledWaterFactory
++
++WORKSPACE = REPO_ROOT / "configs" / "workspaces" / "bottled-water-dday"
++
++_failures: list[str] = []
++
++
++def claim(condition: bool, description: str) -> None:
++    print(f"  [{'PASS' if condition else 'FAIL'}] {description}")
++    if not condition:
++        _failures.append(description)
++
++
++def _approx(left: float, right: float, tol: float = 1e-12) -> bool:
++    return abs(left - right) <= tol
++
++
++def main() -> int:
++    print("=" * 72)
++    print("DDAY-B4-C01 — unmet water demand conservation")
++    print("=" * 72)
++
++    factory = BottledWaterFactory(
++        line_config_path=WORKSPACE / "line.yaml",
++        factory_config_path=WORKSPACE / "factory.yaml",
++    )
++    request = 0.01
++    factory._tank_volume_m3 = 0.0
++    factory._pending_draw_m3 = request
++    factory._apply_draw()
++    water = factory.snapshot()["balances"]["water"]
++
++    print("\n[1] empty tank must preserve unmet demand")
++    claim(_approx(water["unmet_water_demand_m3"], request),
++          "unmet demand equals the requested draw")
++    claim(_approx(water["water_draw_total_m3"], 0.0),
++          "no water was taken from an empty tank")
++    claim(_approx(water["water_request_total_m3"], request),
++          "request ledger still holds the original demand")
++
++    print("\n[2] partial inventory pays part of the ledger")
++    factory._tank_volume_m3 = 0.004
++    factory._apply_draw()
++    water = factory.snapshot()["balances"]["water"]
++    claim(_approx(water["unmet_water_demand_m3"], 0.006),
++          "unmet remainder is 0.006 m3")
++    claim(_approx(water["water_draw_total_m3"], 0.004),
++          "0.004 m3 was drawn")
++    claim(_approx(water["water_request_total_m3"],
++                  water["water_draw_total_m3"] + water["unmet_water_demand_m3"]),
++          "request = draw + unmet")
++
++    print("\n[3] later inventory clears the remainder")
++    factory._tank_volume_m3 = 0.02
++    factory._apply_draw()
++    water = factory.snapshot()["balances"]["water"]
++    claim(_approx(water["unmet_water_demand_m3"], 0.0),
++          "no unmet demand remains")
++    claim(_approx(water["water_draw_total_m3"], request),
++          "the original request was fully drawn")
++    claim(_approx(water["tank_volume_m3"], 0.014),
++          "tank retains the unused remainder")
++
++    print("\n" + "=" * 72)
++    if _failures:
++        print(f"SMOKE FAILED — {len(_failures)} claim(s) failed:")
++        for failure in _failures:
++            print(f"  - {failure}")
++        print("=" * 72)
++        return 1
++    print("SMOKE PASSED — unmet water demand is preserved and later satisfied")
++    print("=" * 72)
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/.ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_ui.py b/.ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_ui.py
+new file mode 100644
+index 0000000..543394c
+--- /dev/null
++++ b/.ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_ui.py
+@@ -0,0 +1,296 @@
++#!/usr/bin/env python3
++"""DDAY-B4-owned Bottled Water 2D skin smoke (B3 contract, B4 clock).
++
++Task: DDAY-B4-C01 (SA Issue #106 / PR #101).
++Owned by: .ai-harness/sa-review/evidence/DDAY-B4/
++Not a mutation of the accepted B3 evidence file.
++
++The accepted B3 smoke at 23b6208 starts create_app() without factory_autorun=
++False. After B4 the default server clock races the /advance seam that the B3
++contract uses. This B4-owned copy keeps that deterministic seam so the B3
++visual/control claims remain checkable without editing historical B3 evidence.
++
++Starts the real FastAPI app on a real socket and drives it over real HTTP. No
++mocks, no TestClient shortcuts. Proves:
++
++  page + assets served
++  state projection bound to the running B2 line
++  all 8 frozen stations in order
++  operator control semantics (START/PAUSE/RESUME/STOP/RESET)
++  inspection PASS/FAIL + reject observable
++  read-only unit selection context
++  no foreign-line vocabulary in the page, the projection or the API surface
++
++Exit code 0 = every claim proven. Any failed claim exits non-zero.
++"""
++
++from __future__ import annotations
++
++import json
++import socket
++import sys
++import tempfile
++import threading
++import time
++from pathlib import Path
++
++
++def _find_repo_root(start: Path) -> Path:
++    for candidate in (start, *start.parents):
++        if (candidate / "src" / "virtual_factory").is_dir():
++            return candidate
++    raise RuntimeError("repository root not found")
++
++
++REPO_ROOT = _find_repo_root(Path(__file__).resolve())
++sys.path.insert(0, str(REPO_ROOT / "src"))
++
++CONFIG_PATH = REPO_ROOT / "configs" / "workspaces" / "bottled-water-dday" / "line.yaml"
++EXPECTED_ROUTE = [
++    "BW-FP-BLW01", "BW-FP-RIN01", "BW-FP-FIL01", "BW-FP-CAP01",
++    "BW-FP-INS01", "BW-FP-LAB01", "BW-FP-CPK01", "BW-FP-PAL01",
++]
++INSPECTION = "BW-FP-INS01"
++
++_failures: list[str] = []
++
++
++def claim(condition: bool, description: str) -> None:
++    print(f"  [{'PASS' if condition else 'FAIL'}] {description}")
++    if not condition:
++        _failures.append(description)
++
++
++def _free_port() -> int:
++    with socket.socket() as sock:
++        sock.bind(("127.0.0.1", 0))
++        return sock.getsockname()[1]
++
++
++def _serve(config_path: Path, port: int):
++    """Start the real app with uvicorn on a background thread."""
++    import uvicorn
++
++    from virtual_factory.ui.api import create_app
++
++    app = create_app(
++        config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
++        dt_s=1.0,
++        # DDAY-B4: the B3 contract is checked with the deterministic step seam,
++        # so the autonomous server-side clock is disabled here. Autonomy itself
++        # is proven by SMOKE-BW-FACTORY.
++        factory_autorun=False,
++    )
++    server = uvicorn.Server(uvicorn.Config(
++        app, host="127.0.0.1", port=port, log_level="error"))
++    thread = threading.Thread(target=server.run, daemon=True)
++    thread.start()
++
++    deadline = time.time() + 30
++    while time.time() < deadline:
++        if server.started:
++            return server, thread
++        time.sleep(0.1)
++    raise RuntimeError("server did not start")
++
++
++def _client(port: int):
++    import httpx
++    return httpx.Client(base_url=f"http://127.0.0.1:{port}", timeout=20.0)
++
++
++def _derive_failing_config(directory: Path) -> Path:
++    text = CONFIG_PATH.read_text(encoding="utf-8")
++    derived = text.replace("    scenario: PASS\n", "    scenario: ALWAYS_FAIL\n", 1)
++    if derived == text:
++        raise RuntimeError("could not derive the failing-inspection configuration")
++    path = directory / "line-fail.yaml"
++    path.write_text(derived, encoding="utf-8")
++    return path
++
++
++def main() -> int:
++    print("=" * 72)
++    print("DDAY-B3 — Bottled Water 2D skin live HTTP smoke")
++    print(f"app config : {REPO_ROOT / 'configs' / 'plants' / 'continuous_mvp_01.yaml'}")
++    print(f"line config: {CONFIG_PATH}")
++    print("=" * 72)
++
++    port = _free_port()
++    server, _thread = _serve(REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml", port)
++
++    try:
++        with _client(port) as client:
++            client.post("/bottled-water-demo/reset")
++
++            # ── 1. Page + assets ────────────────────────────────────────────
++            print("\n[1] page and skin assets over HTTP")
++            page = client.get("/bottled-water-demo")
++            claim(page.status_code == 200, "page served (200)")
++            claim("text/html" in page.headers.get("content-type", ""),
++                  "page content-type is text/html")
++            claim("Bottled Water" in page.text, "page is the Bottled Water skin")
++            for name in ("bottled_water_demo.js", "bottled_water_demo.css"):
++                asset = client.get(f"/bottled-water-demo/static/{name}")
++                claim(asset.status_code == 200 and len(asset.text) > 500,
++                      f"asset served: {name}")
++
++            # ── 2. State projection bound to the runtime ────────────────────
++            print("\n[2] state projection bound to the running line")
++            state = client.get("/bottled-water-demo/state").json()
++            claim(state["line_id"] == "BW-FP", "line identity BW-FP")
++            claim(state["unit_type"] == "bottle" and state["product_code"] == "WATER-500ML",
++                  "unit metadata bottle / WATER-500ML")
++            claim(state["run_state"] == "STOPPED", "line starts STOPPED")
++            claim(state["counts"] == {"total": 0, "good": 0, "reject": 0},
++                  "counts start at zero")
++
++            client.post("/bottled-water-demo/advance")
++            claim(client.get("/bottled-water-demo/state").json()["counts"]["total"] == 0,
++                  "no progression before START")
++
++            # ── 3. Frozen 8-station route ───────────────────────────────────
++            print("\n[3] frozen 8-station route")
++            claim(state["route"] == EXPECTED_ROUTE, "route equals the frozen order")
++            claim([s["station_id"] for s in state["stations"]] == EXPECTED_ROUTE,
++                  "stations are ordered as configured")
++            claim(len(state["stations"]) == 8, "exactly 8 stations")
++            claim(state["quality_checkpoints"] == [INSPECTION],
++                  "exactly one quality checkpoint (Inspection)")
++
++            # ── 4. Operator controls ────────────────────────────────────────
++            print("\n[4] operator control semantics")
++            claim(client.post("/bottled-water-demo/start").json()["run_state"] == "RUNNING",
++                  "START enters RUNNING")
++            for _ in range(8):
++                state = client.post("/bottled-water-demo/advance").json()
++            claim(state["counts"]["total"] == 8, "8 bottles released")
++            claim(state["counts"]["good"] == 1, "1 good bottle after 8 cycles")
++            claim(state["units_on_line"] == 7, "7 bottles on the line")
++
++            paused = client.post("/bottled-water-demo/pause").json()
++            claim(paused["run_state"] == "PAUSED", "PAUSE enters PAUSED")
++            frozen = client.get("/bottled-water-demo/state").json()
++            for _ in range(3):
++                client.post("/bottled-water-demo/advance")
++            now = client.get("/bottled-water-demo/state").json()
++            claim(now == frozen, "PAUSE froze progression and preserved state")
++
++            claim(client.post("/bottled-water-demo/resume").json()["run_state"] == "RUNNING",
++                  "RESUME enters RUNNING")
++            resumed = client.post("/bottled-water-demo/advance").json()
++            claim(resumed["simulation_time_s"] == frozen["simulation_time_s"] + frozen["nominal_dwell_s"],
++                  "RESUME continued from the preserved simulation time")
++            claim(resumed["counts"]["total"] == frozen["counts"]["total"] + 1,
++                  "RESUME continued production")
++
++            stopped = client.post("/bottled-water-demo/stop").json()
++            claim(stopped["run_state"] == "STOPPED" and stopped["operating_state"] == "STOPPED",
++                  "STOP is a controlled stop")
++            before = stopped["simulation_time_s"]
++            client.post("/bottled-water-demo/advance")
++            claim(client.get("/bottled-water-demo/state").json()["simulation_time_s"] == before,
++                  "no progression after STOP")
++            claim("FAULT" not in str(client.get("/bottled-water-demo/state").json()),
++                  "STOP produced no FAULT")
++
++            reset = client.post("/bottled-water-demo/reset").json()
++            claim(reset["counts"] == {"total": 0, "good": 0, "reject": 0}
++                  and reset["units_on_line"] == 0
++                  and reset["simulation_time_s"] == 0.0
++                  and reset["dwell_number"] == 0,
++                  "RESET restored the known initial state")
++
++            # ── 5. Inspection PASS + selection context ──────────────────────
++            print("\n[5] inspection indication and read-only selection")
++            client.post("/bottled-water-demo/start")
++            for _ in range(8):
++                client.post("/bottled-water-demo/advance")
++            state = client.get("/bottled-water-demo/state?limit=200").json()
++            inspection = next(s for s in state["stations"] if s["station_id"] == INSPECTION)
++            claim(inspection["is_quality_checkpoint"], "Inspection is flagged as the checkpoint")
++            claim(inspection["last_disposition"] == "PASS", "Inspection published PASS")
++            claim(any(e["event_type"] == "QUALITY_RESULT" and e["station_id"] == INSPECTION
++                      for e in state["recent_events"]),
++                  "inspection result present in the event feed")
++
++            unit_id = next(s["unit_id"] for s in state["stations"] if s["unit_id"])
++            detail = client.get(f"/bottled-water-demo/unit/{unit_id}")
++            claim(detail.status_code == 200, f"unit inspector resolves ({unit_id})")
++            claim(detail.json()["unit_type"] == "bottle", "unit context carries bottle identity")
++            claim(client.get("/bottled-water-demo/unit/BTL-999999").status_code == 404,
++                  "unknown unit fails closed (404)")
++            claim(client.post("/bottled-water-demo/disposition").status_code == 404,
++                  "no manual disposition endpoint exists")
++
++            # ── 6. Isolation ────────────────────────────────────────────────
++            print("\n[6] workspace isolation")
++            forbidden = ["assy", "tipa", "pre-assy", "sso2", "rso2", "ap05_jam"]
++            import re
++            patterns = [re.compile(p, re.IGNORECASE) for p in forbidden]
++            patterns.append(re.compile(r"\bAP\d{2}\b"))
++
++            page_text = client.get("/bottled-water-demo").text
++            js_text = client.get("/bottled-water-demo/static/bottled_water_demo.js").text
++            css_text = client.get("/bottled-water-demo/static/bottled_water_demo.css").text
++            projection = str(state)
++            for label, text in (("page", page_text), ("script", js_text),
++                                ("style", css_text), ("projection", projection)):
++                hits = [m.group(0) for p in patterns for m in [p.search(text)] if m]
++                claim(not hits, f"{label} carries no foreign-line vocabulary")
++                if hits:
++                    print(f"        leak: {hits[:3]}")
++
++            bw_paths = None
++            claim("assy_demo" not in page_text, "page loads only its own assets")
++
++        # ── 7. Failing inspection over live HTTP ───────────────────────────
++        print("\n[7] failing inspection and reject over live HTTP")
++        with tempfile.TemporaryDirectory(prefix="dday-b3-smoke-") as tmp:
++            failing_config = _derive_failing_config(Path(tmp))
++            import os
++            os.environ["BOTTLED_WATER_CONFIG"] = str(failing_config)
++            fail_port = _free_port()
++            fail_server, _ = _serve(REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
++                                    fail_port)
++            try:
++                with _client(fail_port) as client:
++                    client.post("/bottled-water-demo/reset")
++                    client.post("/bottled-water-demo/start")
++                    for _ in range(12):
++                        state = client.post("/bottled-water-demo/advance").json()
++                    state = client.get("/bottled-water-demo/state?limit=200").json()
++
++                    inspection = next(
++                        s for s in state["stations"] if s["station_id"] == INSPECTION)
++                    claim(inspection["last_disposition"] in ("FAIL", "NG"),
++                          f"Inspection published a failure ({inspection['last_disposition']})")
++                    claim(state["counts"]["reject"] == 8, "8 bottles rejected")
++                    claim(state["counts"]["good"] == 0, "no rejected bottle counted good")
++                    claim(state["last_reject"].startswith("BTL-"),
++                          "last rejected bottle is identified")
++                    claim(any(e["event_type"] == "REJECT" for e in state["recent_events"]),
++                          "reject present in the event feed")
++                    claim(state["counts"]["good"] + state["counts"]["reject"]
++                          <= state["counts"]["total"],
++                          "count invariant holds")
++            finally:
++                fail_server.should_exit = True
++                os.environ.pop("BOTTLED_WATER_CONFIG", None)
++    finally:
++        server.should_exit = True
++
++    print("\n" + "=" * 72)
++    if _failures:
++        print(f"SMOKE FAILED — {len(_failures)} claim(s) failed:")
++        for failure in _failures:
++            print(f"  - {failure}")
++        print("=" * 72)
++        return 1
++    print("SMOKE PASSED — Bottled Water 2D skin verified over live HTTP")
++    print("=" * 72)
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/.ai-harness/tasks/DDAY-B4-C01.json b/.ai-harness/tasks/DDAY-B4-C01.json
+new file mode 100644
+index 0000000..d825b4d
+--- /dev/null
++++ b/.ai-harness/tasks/DDAY-B4-C01.json
+@@ -0,0 +1,195 @@
++{
++  "task_id": "DDAY-B4-C01",
++  "repository": "hieudovn/virtual-factory",
++  "requested_gate": "ready_for_sa_review",
++  "gate_type": "D-DAY TRACK B — DDAY-B4 CORRECTION (UNMET WATER CONSERVATION + B3 EVIDENCE RESTORE)",
++  "issue": "hieudovn/virtual-factory#106",
++  "parent_issue": "hieudovn/virtual-factory#105",
++  "pr": "hieudovn/virtual-factory#101",
++  "objective": "Bounded correction of the two SA-verified DDAY-B4 blockers, without broadening B4. (a) Preserve or otherwise account for unmet Filler water demand in src/virtual_factory/workspaces/bottled_water.py: _apply_draw() must not silently destroy pending demand when the tank cannot satisfy the requested draw; the aggregate model must fail consistently under low-water conditions as well as the nominal trajectory. Smallest acceptable correction; no starvation/interlock engine. (b) Restore the two accepted B3 evidence files exactly to the accepted B3 baseline 23b6208266751a8c508b0d96fd7a736dffc5676c: .ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py and .ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py. Put any B4-specific compatibility/smoke logic in B4-owned evidence/tests instead.",
++  "explicit_non_objectives": [
++    "No B5 or later slice work (no Capper degradation, no PlantOS/MQTT, no deployment)",
++    "No merge of PR #101",
++    "No detailed starvation/interlock engine unless necessary",
++    "No rewrite of B2/B3 line semantics",
++    "No mutation of any other accepted B3 evidence artifact beyond the two named restore files",
++    "No new engine, no fork, no KPI calculation",
++    "No weakening or deletion of existing tests",
++    "No self-certification of COMPLETE / CLOSED / SA APPROVED"
++  ],
++  "required_branch": "sa/dday-track-b-20261003",
++  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
++  "sa_expected_baseline_sha": "0f9606bbc8690e80cfdbf9c4105bcfa998e6e0e8",
++  "baseline_semantics_note": "As for DDAY-B4: the harness compares 'expected_base_sha' to origin/main and diffs it against HEAD, so it must be origin/main. 'sa_expected_baseline_sha' is the B4 head reviewed by SA (PR #101 comment 2026-10-03T15:35:49Z) and must equal the branch head before the first C01 write. Issue #106 was not readable via the available GitHub token (403/404); this contract is authored from that SA review comment plus the explicit user execution order, which name the same two blockers.",
++  "working_tree_required": "clean",
++  "allowed_paths": [
++    "src/virtual_factory/workspaces/",
++    "tests/test_dday_b4_bottled_water_factory.py",
++    ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
++    ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
++    ".ai-harness/sa-review/evidence/DDAY-B4/",
++    ".ai-harness/tasks/DDAY-B4-C01.json",
++    ".ai-harness/sa-review/evidence/DDAY-B4-C01/",
++    ".ai-harness/sa-review/reports/DDAY-B4-C01.md",
++    ".ai-harness/sa-review/CURRENT.md",
++    "configs/workspaces/bottled-water-dday/",
++    "src/virtual_factory/assembly/demo_controller.py",
++    "src/virtual_factory/ui/api.py",
++    "src/virtual_factory/ui/static/bottled_water_demo.js",
++    "src/virtual_factory/ui/static/bottled_water_demo.html",
++    "src/virtual_factory/ui/static/bottled_water_demo.css",
++    "tests/",
++    ".ai-harness/tasks/DDAY-B4.json",
++    ".ai-harness/tasks/DDAY-B2.json",
++    ".ai-harness/tasks/DDAY-B2-C01.json",
++    ".ai-harness/tasks/DDAY-B3.json",
++    ".ai-harness/sa-review/evidence/DDAY-B2/",
++    ".ai-harness/sa-review/evidence/DDAY-B2-C01/",
++    ".ai-harness/sa-review/evidence/DDAY-B3/",
++    ".ai-harness/sa-review/reports/",
++    ".ai-harness/scripts/run_task_gate.py",
++    ".ai-harness/tests/",
++    "docs/plans/",
++    "src/virtual_factory/assembly/line_runtime.py"
++  ],
++  "allowed_paths_note": "Entries from configs/workspaces/bottled-water-dday/ onwards are frozen DDAY-B1/B2/B2-C01/B3/B4 artifacts already committed on this branch and therefore present in the diff against origin/main; they are listed only so the harness allowlist diff check is truthful. C01 is authorized to modify only: bottled_water.py, test_dday_b4_bottled_water_factory.py, the two named B3 evidence files (restore-to-baseline only), B4-owned evidence/tests for compatibility smoke, DDAY-B4-C01 contract/evidence/report, and CURRENT.md. The C01-scope changed-file check against the C01 baseline 0f9606b proves which files C01 actually touched.",
++  "sa_allowed_paths": [
++    "src/virtual_factory/workspaces/bottled_water.py",
++    "tests/test_dday_b4_bottled_water_factory.py",
++    ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py (restore exactly to 23b6208)",
++    ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py (restore exactly to 23b6208)",
++    "B4-owned evidence/tests for any B4-specific smoke/compatibility logic",
++    ".ai-harness/tasks/DDAY-B4-C01.json",
++    ".ai-harness/sa-review/evidence/DDAY-B4-C01/",
++    ".ai-harness/sa-review/reports/DDAY-B4-C01.md",
++    ".ai-harness/sa-review/CURRENT.md under existing governance"
++  ],
++  "forbidden_paths": [
++    "src/virtual_factory/core/",
++    "src/virtual_factory/telemetry/",
++    "src/virtual_factory/protocols/",
++    "src/virtual_factory/scenarios/",
++    "src/virtual_factory/equipment/",
++    "src/virtual_factory/balance/",
++    "src/virtual_factory/control/",
++    "src/virtual_factory/instrumentation/",
++    "src/virtual_factory/actuation/",
++    "src/virtual_factory/assembly/assy_mes_bridge.py",
++    "src/virtual_factory/assembly/observation_bridge.py",
++    "src/virtual_factory/assembly/demo_composition.py",
++    "src/virtual_factory/assembly/station_contracts.py",
++    "src/virtual_factory/assembly/quality_records.py",
++    "src/virtual_factory/assembly/conveyor.py",
++    "src/virtual_factory/assembly/demo_snapshot.py",
++    "src/virtual_factory/ui/runtime_service.py",
++    "src/virtual_factory/ui/static/assy_demo.js",
++    "src/virtual_factory/ui/static/assy_demo.css",
++    "src/virtual_factory/ui/static/assy_demo.html",
++    "src/virtual_factory/ui/static/index.html",
++    "src/virtual_factory/ui/static/app.js",
++    "src/virtual_factory/main.py",
++    "simulators/",
++    "deploy/",
++    "docs/deployment/",
++    "docker-compose.yml",
++    "docker-compose.assy.yml",
++    "Dockerfile",
++    "pyproject.toml",
++    "configs/plants/",
++    ".ai-harness/scripts/validate_report_consistency.py",
++    ".ai-harness/scripts/derive_status.py",
++    ".ai-harness/PM-EXECUTION-CONTRACT.md"
++  ],
++  "required_deliverables": [
++    "Unmet-water conservation fix in src/virtual_factory/workspaces/bottled_water.py: pending Filler draw is preserved when the tank cannot satisfy it; unmet demand is accounted in the factory water balance; no silent discard",
++    "Focused test(s) that force the low-water / unmet-demand edge and prove demand is preserved and later satisfied",
++    "The two accepted B3 evidence files restored byte-for-byte to 23b6208266751a8c508b0d96fd7a736dffc5676c",
++    "Any B4-specific UI-smoke compatibility logic lives under .ai-harness/sa-review/evidence/DDAY-B4/ (not in restored B3 files)",
++    ".ai-harness/sa-review/evidence/DDAY-B4-C01/ (pre-fix reproduction, post-fix conservation proof, B3 restore proof, tests, gate result, scope audit)",
++    ".ai-harness/sa-review/reports/DDAY-B4-C01.md and .ai-harness/sa-review/CURRENT.md"
++  ],
++  "required_tests": [
++    "C01-1 reproduce pre-fix silent discard of unmet water demand",
++    "C01-2 unmet demand is preserved when the tank cannot satisfy the requested draw",
++    "C01-3 later tank availability satisfies the preserved demand (request = draw + unmet)",
++    "C01-4 the two B3 evidence files match the accepted B3 baseline 23b6208 exactly",
++    "C01-5 B4-owned UI smoke (if required) does not mutate the restored B3 files",
++    "C01-6 existing B4 water-balance tests and full repository suite pass",
++    "C01-7 remote branch HEAD = PR #101 head = exact-head CI head = reported review SHA"
++  ],
++  "required_smoke_checks": [
++    {
++      "id": "SMOKE-BW-FACTORY",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_factory.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "B4 autonomous-runtime smoke regression over real HTTP."
++    },
++    {
++      "id": "SMOKE-BW-UI",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_ui.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "B4-owned copy of the B3 UI smoke with factory_autorun=False so the restored B3 evidence file is not mutated."
++    },
++    {
++      "id": "SMOKE-BW",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "B2 line-runtime regression (line semantics unchanged)."
++    },
++    {
++      "id": "SMOKE-BW-UNMET",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B4-C01/smoke_unmet_water.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "C01 unmet-water conservation smoke: empty-tank draw preserves pending demand and later satisfies it."
++    }
++  ],
++  "required_remote_evidence": [
++    "Remote branch head equals reported commit SHA",
++    "PR #101 open, base main, head equals remote branch head",
++    "Exact-head CI success for the pushed commit SHA",
++    "Exact-head invariant: remote branch HEAD = PR #101 head SHA = CI head SHA = reported review SHA"
++  ],
++  "forbidden_actions": [
++    "Do not push directly to main",
++    "Do not merge PR #101",
++    "Do not start B5 or any later slice",
++    "Do not modify any forbidden path",
++    "Do not build a detailed starvation/interlock engine",
++    "Do not leave the two B3 evidence files different from 23b6208",
++    "Do not delete or weaken existing tests",
++    "Do not self-certify COMPLETE / CLOSED / SA APPROVED"
++  ],
++  "stop_conditions": [
++    "Accounting for unmet demand requires a starvation/interlock engine or B2/B3 line-semantic change -> STOPPED — SA ARCHITECTURE REVIEW REQUIRED",
++    "A required change falls outside the allowlist -> STOPPED — ALLOWLIST EXPANSION REQUIRED",
++    "Baseline is no longer the expected SHA before the first C01 write -> STOPPED — BASELINE MISMATCH",
++    "origin/main advances materially -> STOPPED — BASELINE ADVANCED",
++    "B5+ scope becomes necessary -> stop C01"
++  ],
++  "acceptance_criteria": [
++    {"id": "A01", "phase": "pre_status", "description": "Repository baseline matches the contract baseline", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
++    {"id": "A02", "phase": "pre_status", "description": "Working tree was clean at preflight", "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}},
++    {"id": "A03", "phase": "pre_status", "description": "Full local test suite passes", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
++    {"id": "A04", "phase": "pre_status", "description": "Required smoke checks reach effective PASS", "rule": {"field": "smoke_checks", "operator": "contains", "expected": "'effective_result': 'PASS'"}},
++    {"id": "A05", "phase": "pre_status", "description": "No blocking issue recorded by the gate pipeline", "rule": {"field": "blocking_issues", "operator": "is_empty", "expected": null}},
++    {"id": "A06", "phase": "pre_status", "description": "No tool failure recorded", "rule": {"field": "tool_failures", "operator": "is_empty", "expected": null}},
++    {"id": "A07", "phase": "pre_status", "description": "No contradictions detected", "rule": {"field": "contradictions", "operator": "is_empty", "expected": null}},
++    {"id": "A08", "phase": "final", "description": "All canonical gate steps executed (P01-P24)", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
++    {"id": "A09", "phase": "final", "description": "All canonical gate steps PASS", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
++    {"id": "A10", "phase": "final", "description": "Implementation commit exists on the remote branch", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}},
++    {"id": "A11", "phase": "final", "description": "Remote branch head is present and reported", "rule": {"field": "implementation.remote_branch_head", "operator": "is_present", "expected": null}},
++    {"id": "A12", "phase": "final", "description": "PR #101 metadata resolved (open PR with base main)", "rule": {"field": "pull_request.number", "operator": "is_present", "expected": null}},
++    {"id": "A13", "phase": "final", "description": "Exact-head CI succeeded for the pushed SHA", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
++    {"id": "A14", "phase": "final", "description": "Runtime authorization boundaries preserved (no merge, no next slice)", "rule": {"field": "authorization.may_merge", "operator": "is_false", "expected": null}}
++  ],
++  "authorization": {
++    "may_open_pr": true,
++    "may_merge": false,
++    "may_start_next_task": false
++  },
++  "_note": "Authored by the PM from the SA REVIEW on PR #101 (2026-10-03T15:35:49Z, Decision: CORRECTION REQUIRED — B4 NOT CLOSED at 0f9606b) and the explicit user execution order for Issue #106. Issue #106 itself was not readable via the available GitHub token (GraphQL unresolved / REST 403). Correction scope only. No merge authorization. The PM may not self-certify COMPLETE or CLOSED."
++}
+diff --git a/src/virtual_factory/workspaces/bottled_water.py b/src/virtual_factory/workspaces/bottled_water.py
+index ff91c27..afe3712 100644
+--- a/src/virtual_factory/workspaces/bottled_water.py
++++ b/src/virtual_factory/workspaces/bottled_water.py
+@@ -805,12 +805,22 @@ class BottledWaterFactory:
+             self._pending_draw_m3 += product_m3 / self._config.process_efficiency
+ 
+     def _apply_draw(self) -> None:
++        """Take as much pending Filler demand as the tank can supply.
++
++        Unmet demand stays on the pending ledger. Silently zeroing the
++        remainder would destroy conservation under low-water conditions.
++        """
+         if self._pending_draw_m3 <= 0.0:
+             return
+-        drawn = min(self._pending_draw_m3, self._tank_volume_m3)
+-        self._tank_volume_m3 -= drawn
++        available = max(0.0, self._tank_volume_m3)
++        drawn = min(self._pending_draw_m3, available)
++        self._tank_volume_m3 = available - drawn
+         self._water_draw_total_m3 += drawn
+-        self._pending_draw_m3 = 0.0
++        self._pending_draw_m3 -= drawn
++
++    def _water_request_total_m3(self) -> float:
++        """Cumulative Filler demand: water actually drawn plus still unmet."""
++        return self._water_draw_total_m3 + self._pending_draw_m3
+ 
+     def _station_completions(self, station_id: Optional[str]) -> int:
+         if not station_id:
+@@ -1064,6 +1074,8 @@ class BottledWaterFactory:
+                     "tank_level_pct": self._tank_level_pct(),
+                     "product_water_total_m3": self._product_water_total_m3,
+                     "water_draw_total_m3": self._water_draw_total_m3,
++                    "unmet_water_demand_m3": self._pending_draw_m3,
++                    "water_request_total_m3": self._water_request_total_m3(),
+                     "other_loss_total_m3": max(
+                         0.0,
+                         self._water_draw_total_m3
+diff --git a/tests/test_dday_b4_bottled_water_factory.py b/tests/test_dday_b4_bottled_water_factory.py
+index b4ea1d3..82604bb 100644
+--- a/tests/test_dday_b4_bottled_water_factory.py
++++ b/tests/test_dday_b4_bottled_water_factory.py
+@@ -480,6 +480,13 @@ def test_b4_11_water_balance_is_coherent_and_the_tank_stays_bounded():
+             water["raw_water_feed_total_m3"]
+             - water["treated_water_total_m3"], rel=1e-12)
+         assert water["product_water_total_m3"] <= water["water_draw_total_m3"]
++        assert water["unmet_water_demand_m3"] == pytest.approx(0.0, abs=1e-12)
++        assert water["water_request_total_m3"] == pytest.approx(
++            water["water_draw_total_m3"] + water["unmet_water_demand_m3"],
++            abs=1e-12,
++        )
++        assert water["water_request_total_m3"] == pytest.approx(
++            water["product_water_total_m3"] / PROCESS_EFFICIENCY, rel=1e-12)
+ 
+         feed_flow = _signal(snapshot, FEED, "water_flow")
+         treated_flow = _signal(snapshot, RO, "production_flow")
+@@ -612,6 +619,108 @@ def test_b4_12b_rejected_units_still_consume_already_used_material():
+         assert filled >= capped >= rejects
+ 
+ 
++# ═══════════════════════════════════════════════════════════════
++# DDAY-B4-C01 — unmet water demand + B3 evidence restore
++# ═══════════════════════════════════════════════════════════════
++
++B3_BASELINE = "23b6208266751a8c508b0d96fd7a736dffc5676c"
++B3_EVIDENCE_FILES = (
++    ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
++    ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
++)
++
++
++def test_c01_unmet_water_demand_is_preserved_and_later_satisfied():
++    """Empty-tank Filler demand must not disappear; later inventory pays it.
++
++    Pre-fix ``_apply_draw()`` did ``pending = 0`` after taking ``min(pending,
++    tank)``, so a starved request was silently destroyed. That is the SA
++    blocker on Issue #106 / PR #101.
++    """
++    factory = _factory()
++    request = 0.01
++    factory._tank_volume_m3 = 0.0
++    factory._pending_draw_m3 = request
++
++    factory._apply_draw()
++    starved = factory.snapshot()["balances"]["water"]
++    assert starved["unmet_water_demand_m3"] == pytest.approx(request)
++    assert starved["water_draw_total_m3"] == pytest.approx(0.0)
++    assert starved["water_request_total_m3"] == pytest.approx(request)
++    assert starved["tank_volume_m3"] == pytest.approx(0.0)
++
++    factory._tank_volume_m3 = 0.004
++    factory._apply_draw()
++    partial = factory.snapshot()["balances"]["water"]
++    assert partial["unmet_water_demand_m3"] == pytest.approx(0.006)
++    assert partial["water_draw_total_m3"] == pytest.approx(0.004)
++    assert partial["water_request_total_m3"] == pytest.approx(request)
++    assert partial["tank_volume_m3"] == pytest.approx(0.0)
++
++    factory._tank_volume_m3 = 0.02
++    factory._apply_draw()
++    paid = factory.snapshot()["balances"]["water"]
++    assert paid["unmet_water_demand_m3"] == pytest.approx(0.0)
++    assert paid["water_draw_total_m3"] == pytest.approx(request)
++    assert paid["water_request_total_m3"] == pytest.approx(request)
++    assert paid["tank_volume_m3"] == pytest.approx(0.014)
++
++
++def test_c01_starved_fill_completions_keep_the_request_ledger():
++    """A real fill completion against an empty tank leaves unmet demand."""
++    factory = _factory()
++    factory.start()
++    factory._tank_volume_m3 = 0.0
++    factory._feed_enabled = False
++    # Freeze the hysteresis latch so treatment cannot refill during this
++    # starvation probe. The production path still creates real Filler demand.
++    factory._update_feed_state = lambda running: None
++
++    _run(factory, 80)
++    water = factory.snapshot()["balances"]["water"]
++    assert water["product_water_total_m3"] > 0.0
++    expected_request = water["product_water_total_m3"] / PROCESS_EFFICIENCY
++    assert water["unmet_water_demand_m3"] == pytest.approx(expected_request)
++    assert water["water_draw_total_m3"] == pytest.approx(0.0)
++    assert water["water_request_total_m3"] == pytest.approx(expected_request)
++
++    factory._feed_enabled = True
++    factory._tank_volume_m3 = expected_request + 0.05
++    factory._apply_draw()
++    paid = factory.snapshot()["balances"]["water"]
++    assert paid["unmet_water_demand_m3"] == pytest.approx(0.0)
++    assert paid["water_draw_total_m3"] == pytest.approx(expected_request)
++    assert paid["water_request_total_m3"] == pytest.approx(
++        paid["water_draw_total_m3"] + paid["unmet_water_demand_m3"])
++
++
++def test_c01_accepted_b3_evidence_files_match_b3_baseline():
++    """The two SA-named B3 evidence files must equal the closed B3 head."""
++    import subprocess
++
++    result = subprocess.run(
++        ["git", "diff", "--name-only", B3_BASELINE, "HEAD", "--", *B3_EVIDENCE_FILES],
++        cwd=REPO_ROOT,
++        capture_output=True,
++        text=True,
++        check=True,
++    )
++    dirty = [line for line in result.stdout.splitlines() if line.strip()]
++    assert dirty == [], f"B3 evidence files differ from {B3_BASELINE}: {dirty}"
++
++    worktree = subprocess.run(
++        ["git", "diff", "--name-only", B3_BASELINE, "--", *B3_EVIDENCE_FILES],
++        cwd=REPO_ROOT,
++        capture_output=True,
++        text=True,
++        check=True,
++    )
++    dirty_wt = [line for line in worktree.stdout.splitlines() if line.strip()]
++    assert dirty_wt == [], (
++        f"B3 evidence files differ from {B3_BASELINE} in the worktree: {dirty_wt}"
++    )
++
++
+ # ═══════════════════════════════════════════════════════════════
+ # B4-13 / B4-14 — utilities causality and energy conservation
+ # ═══════════════════════════════════════════════════════════════

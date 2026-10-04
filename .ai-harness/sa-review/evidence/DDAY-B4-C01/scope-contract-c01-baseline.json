@@ -1,0 +1,21 @@
+{
+  "task_id": "DDAY-B4-C01",
+  "c01_baseline": "0f9606bbc8690e80cfdbf9c4105bcfa998e6e0e8",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "b3_baseline": "23b6208266751a8c508b0d96fd7a736dffc5676c",
+  "implementation_files_vs_c01_baseline": [
+    ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
+    ".ai-harness/sa-review/evidence/DDAY-B4-C01/smoke_unmet_water.py",
+    ".ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_ui.py",
+    ".ai-harness/tasks/DDAY-B4-C01.json",
+    "src/virtual_factory/workspaces/bottled_water.py",
+    "tests/test_dday_b4_bottled_water_factory.py"
+  ],
+  "b3_restore_blobs": {
+    ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py": "e3c7de398b7a755d9b5e5deb51be7dbbc1b4ed94",
+    ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py": "69ce6c62f238bf6faf4d08288f91d7bba61d37b2"
+  },
+  "harness_allowlist": "FILE VALIDATION PASSED (113 file(s))",
+  "c01_scope_allowlist": "FILE VALIDATION PASSED (7 file(s))"
+}
