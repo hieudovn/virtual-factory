@@ -7,6 +7,7 @@ simulator, duplicate topology/state, or calculate PlantOS-owned KPI.
 
 from __future__ import annotations
 
+import hashlib
 import inspect
 import json
 import re
@@ -50,7 +51,15 @@ FACTORY_YAML = WORKSPACE / "factory.yaml"
 TOPOLOGY_YAML = WORKSPACE / "topology.yaml"
 STATIC = REPO_ROOT / "src" / "virtual_factory" / "ui" / "static"
 APP_CONFIG = REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml"
-B5_CLOSED = "449685a3c4c394b4e0654b720ff11f77205b4b48"
+# Content identity of generic protocol/telemetry files at the SA-closed B5
+# head. CI checkouts are shallow and do not contain that commit object, so
+# tests compare SHA-256 rather than `git diff`.
+FROZEN_PROTOCOL_HASHES = {
+    "src/virtual_factory/protocols/mqtt_gateway.py":
+        "f540ef429dbcedfef4baeddbe2f5c41c152d547f057a4a3d93762c6406414872",
+    "src/virtual_factory/telemetry/signal_value.py":
+        "67fb1387495cecc3e9b9f39954166d01bdec2738f3d18331f74d79811fd1c009",
+}
 
 TOPIC_RE = re.compile(
     r"^virtual-factory/bottled-water-dday/(signal|event)/[A-Z0-9-]+/[A-Za-z0-9_]+$"
@@ -232,17 +241,9 @@ def test_b6_07_mapper_is_a_view_not_a_second_simulator():
 
 
 def test_b6_08_existing_mqtt_gateway_unchanged_and_can_carry_payload():
-    import subprocess
-
-    diff = subprocess.check_output(
-        ["git", "diff", "--name-only", B5_CLOSED, "HEAD"],
-        cwd=REPO_ROOT,
-        text=True,
-    )
-    changed = {line.strip() for line in diff.splitlines() if line.strip()}
-    assert "src/virtual_factory/protocols/mqtt_gateway.py" not in changed
-    assert not any(path.startswith("src/virtual_factory/telemetry/") for path in changed)
-    assert not any(path.startswith("src/virtual_factory/protocols/") for path in changed)
+    for rel, expected in FROZEN_PROTOCOL_HASHES.items():
+        digest = hashlib.sha256((REPO_ROOT / rel).read_bytes()).hexdigest()
+        assert digest == expected, f"{rel} changed vs B5-closed content"
 
     factory = _factory()
     factory.start()
@@ -343,12 +344,6 @@ def test_b6_13_bw_fp_drills_down_to_existing_filling_packaging_ui(client):
 
 
 def test_b6_15_protocols_and_telemetry_unchanged_vs_b5_closed_head():
-    import subprocess
-
-    names = subprocess.check_output(
-        ["git", "diff", "--name-only", B5_CLOSED, "--",
-         "src/virtual_factory/protocols", "src/virtual_factory/telemetry"],
-        cwd=REPO_ROOT,
-        text=True,
-    ).strip()
-    assert names == ""
+    for rel, expected in FROZEN_PROTOCOL_HASHES.items():
+        digest = hashlib.sha256((REPO_ROOT / rel).read_bytes()).hexdigest()
+        assert digest == expected, f"{rel} changed vs B5-closed content"
