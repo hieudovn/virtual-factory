@@ -1,3 +1,27 @@
 # DDAY-B5 — scope audit vs `b6dcb08`
 
+- `.ai-harness/sa-review/CURRENT.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/01-baseline-and-scope.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/02-phase-table.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/03-replay-digest.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/04-signal-trajectory.json`
+- `.ai-harness/sa-review/evidence/DDAY-B5/05-events.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/06-production-impact.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/07-hidden-truth-scan.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/08-classification.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/09-scope-audit.md`
+- `.ai-harness/sa-review/evidence/DDAY-B5/generate_evidence.py`
+- `.ai-harness/sa-review/evidence/DDAY-B5/machine-evidence.json`
+- `.ai-harness/sa-review/evidence/DDAY-B5/smoke_capper_scenario.py`
+- `.ai-harness/sa-review/reports/DDAY-B5.md`
 - `.ai-harness/tasks/DDAY-B5.json`
+- `configs/workspaces/bottled-water-dday/scenarios/capper_degradation.runtime.yaml`
+- `src/virtual_factory/ui/api.py`
+- `src/virtual_factory/ui/static/bottled_water_demo.css`
+- `src/virtual_factory/ui/static/bottled_water_demo.html`
+- `src/virtual_factory/ui/static/bottled_water_demo.js`
+- `src/virtual_factory/workspaces/bottled_water.py`
+- `src/virtual_factory/workspaces/capper_degradation.py`
+- `tests/test_dday_b3_bottled_water_ui.py`
+- `tests/test_dday_b4_bottled_water_factory.py`
+- `tests/test_dday_b5_capper_scenario.py`

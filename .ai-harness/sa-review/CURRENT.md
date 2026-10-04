@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
 Task: DDAY-B5 — Capper Deterministic Abnormal Scenario
-Status: IN PROGRESS — implementation present, gate not yet derived
+Status: pending machine gate (local tests/smokes green)
 
 Authority:
 SA Issue hieudovn/virtual-factory#107 (B5 ONLY)
@@ -18,5 +18,14 @@ What was done:
 - Capper raw signals + deterministic alarm/downtime events.
 - Classification enriches existing context only.
 - Minimal B3 highlight / inspector / event-strip / classify fields.
+
+Local verification:
+  B5 12/12 | full suite 1731/1731
+  SMOKE-BW-B5 / FACTORY / UI / BW all PASS
+
+Evidence:
+.ai-harness/sa-review/evidence/DDAY-B5/
+Report:
+.ai-harness/sa-review/reports/DDAY-B5.md
 
 NOT authorized: merge, B6, or any later slice.

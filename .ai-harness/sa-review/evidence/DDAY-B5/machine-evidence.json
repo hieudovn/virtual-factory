@@ -1,7 +1,7 @@
 {
   "task": "DDAY-B5",
   "baseline": "b6dcb08a1263e7a84792ea8697d3202fa5e79912",
-  "head": "94e638254c4a15accc1fae1efe1028e242e3fffc",
+  "head": "7abff27473cf92615766815f749fa77970b16400",
   "replay_digest_match": true,
   "digest": "97c8bbb90b775cda00b1e2091ed3da31e7e2da62ff770f15507fe7ec0397f36e",
   "phase_samples": [
@@ -151,6 +151,30 @@
   "hidden_hits": [],
   "kpi_hits": [],
   "files_vs_b5_baseline": [
-    ".ai-harness/tasks/DDAY-B5.json"
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/01-baseline-and-scope.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/02-phase-table.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/03-replay-digest.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/04-signal-trajectory.json",
+    ".ai-harness/sa-review/evidence/DDAY-B5/05-events.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/06-production-impact.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/07-hidden-truth-scan.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/08-classification.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/09-scope-audit.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/DDAY-B5/machine-evidence.json",
+    ".ai-harness/sa-review/evidence/DDAY-B5/smoke_capper_scenario.py",
+    ".ai-harness/sa-review/reports/DDAY-B5.md",
+    ".ai-harness/tasks/DDAY-B5.json",
+    "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.runtime.yaml",
+    "src/virtual_factory/ui/api.py",
+    "src/virtual_factory/ui/static/bottled_water_demo.css",
+    "src/virtual_factory/ui/static/bottled_water_demo.html",
+    "src/virtual_factory/ui/static/bottled_water_demo.js",
+    "src/virtual_factory/workspaces/bottled_water.py",
+    "src/virtual_factory/workspaces/capper_degradation.py",
+    "tests/test_dday_b3_bottled_water_ui.py",
+    "tests/test_dday_b4_bottled_water_factory.py",
+    "tests/test_dday_b5_capper_scenario.py"
   ]
 }
