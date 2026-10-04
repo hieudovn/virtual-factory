@@ -672,6 +672,9 @@ def test_c01_starved_fill_completions_keep_the_request_ledger():
     factory.start()
     factory._tank_volume_m3 = 0.0
     factory._feed_enabled = False
+    # Freeze the hysteresis latch so treatment cannot refill during this
+    # starvation probe. The production path still creates real Filler demand.
+    factory._update_feed_state = lambda running: None
 
     _run(factory, 80)
     water = factory.snapshot()["balances"]["water"]
