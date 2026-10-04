@@ -128,6 +128,15 @@ _PACKAGED_DICTIONARY = (
 )
 
 REQUIRED_SIGNAL_FAMILIES = ("wt", "production", "capper", "compressor", "fg", "energy")
+COMPLETE_EXPORT_METADATA_FIELDS = (
+    "semantic_role",
+    "datatype",
+    "unit",
+    "cadence",
+    "quality",
+    "provenance",
+    "plantos_mapping_key",
+)
 REQUIRED_ENVELOPE_FIELDS = (
     "contract_version",
     "workspace_id",
@@ -184,6 +193,11 @@ def selected_signal_entries(dictionary: Optional[dict] = None) -> list[dict]:
 def declared_unavailable_entries(dictionary: Optional[dict] = None) -> list[dict]:
     data = dictionary or load_export_dictionary()
     return [dict(entry) for entry in data.get("unavailable") or ()]
+
+
+def review_set_entries(dictionary: Optional[dict] = None) -> list[dict]:
+    data = dictionary or load_export_dictionary()
+    return [dict(entry) for entry in data.get("review_set") or ()]
 
 
 def selected_event_entries(dictionary: Optional[dict] = None) -> list[dict]:
@@ -616,6 +630,7 @@ def dictionary_summary(dictionary: Optional[dict] = None) -> dict:
         "plant_source_id": selected.get("plant_source_id", PLANT_SOURCE_ID),
         "fail_closed": bool(selected.get("fail_closed", True)),
         "timestamp_semantics": dict(selected.get("timestamp_semantics") or TIMESTAMP_SEMANTICS),
+        "review_set": review_set_entries(selected),
         "families": families,
         "required_families": list(REQUIRED_SIGNAL_FAMILIES),
         "signal_count": len(exported_signal_entries(selected)),

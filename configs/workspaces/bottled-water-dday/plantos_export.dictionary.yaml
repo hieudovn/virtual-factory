@@ -19,6 +19,36 @@ timestamp_semantics:
   simulation_time_s: simulation_elapsed_seconds
   receipt_time: plantos_or_runtime_owned_not_generated_by_vf
 
+# Issue #112 required review-set: every fact has an explicit disposition.
+review_set:
+  - { source_id: BW-WT-FEED01, signal_id: water_flow, disposition: EXPORTED }
+  - { source_id: BW-WT-RO01, signal_id: production_flow, disposition: EXPORTED }
+  - { source_id: BW-WT-TK01, signal_id: level, disposition: EXPORTED }
+  - { source_id: BW-FP, signal_id: operating_state, disposition: EXPORTED }
+  - { source_id: BW-FP, signal_id: total_count, disposition: EXPORTED }
+  - { source_id: BW-FP, signal_id: good_count, disposition: EXPORTED }
+  - { source_id: BW-FP, signal_id: reject_count, disposition: EXPORTED }
+  - { source_id: BW-FP, signal_id: target_rate, disposition: UNAVAILABLE }
+  - { source_id: BW-FP-FIL01, signal_id: fill_rate, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: operating_state, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: speed, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: cycle_time, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: cap_torque, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: motor_current, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: drive_load, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: vibration_rms, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: bearing_temperature, disposition: EXPORTED }
+  - { source_id: BW-UT-CMP01, signal_id: operating_state, disposition: EXPORTED }
+  - { source_id: BW-UT-CMP01, signal_id: air_pressure, disposition: EXPORTED }
+  - { source_id: BW-UT-CMP01, signal_id: active_power, disposition: EXPORTED }
+  - { source_id: BW-UT-CMP01, signal_id: energy_total, disposition: EXPORTED }
+  - { source_id: BW-UT-CMP01, signal_id: load, disposition: UNAVAILABLE }
+  - { source_id: BW-WH-FG01, signal_id: inventory_count, disposition: EXPORTED }
+  - { source_id: BW-WH-FG01, signal_id: receipt_count, disposition: EXPORTED }
+  - { source_id: BW-WH-FG01, signal_id: dispatch_count, disposition: EXPORTED }
+  - { source_id: BW-UT-PWR01, signal_id: plant_active_power, disposition: EXPORTED }
+  - { source_id: BW-UT-PWR01, signal_id: plant_energy_total, disposition: EXPORTED }
+
 families:
   wt: Water Treatment process measurements
   production: Filling & Packaging production counts and machine state

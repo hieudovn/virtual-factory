@@ -22,6 +22,11 @@ Contract source: PR #101 comment 5978193630 plus the user C02 order.
 | BW-UT-CMP01 | load | No dedicated load/drive_load raw signal. Electrical load is `active_power`. |
 | BW-FP | target_rate | B1 CONFIGURED_TARGET metadata; not a factory raw signal. |
 
+## Issue #112 review-set disposition
+
+The dictionary `review_set` lists every required fact as `EXPORTED` or
+`UNAVAILABLE`. See `plantos_export.dictionary.yaml`.
+
 ## Timestamp truth
 
 - `timestamp` = deterministic **simulated-source UTC** (`2026-10-03T00:00:00Z + simulation_time_s`) for ordering/replay

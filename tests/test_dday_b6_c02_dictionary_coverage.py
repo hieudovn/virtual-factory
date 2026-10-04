@@ -9,13 +9,18 @@ import pytest
 
 from virtual_factory.workspaces.bottled_water import BottledWaterFactory
 from virtual_factory.workspaces.plantos_export import (
+    COMPLETE_EXPORT_METADATA_FIELDS,
+    FORBIDDEN_KPI_KEYS,
+    HIDDEN_TRUTH_KEYS,
     TIMESTAMP_KIND,
     TIMESTAMP_SEMANTICS,
     UnmappedExportError,
     dictionary_summary,
+    exported_signal_entries,
     load_export_dictionary,
     lookup_signal_entry,
     map_snapshot,
+    review_set_entries,
     selected_signal_keys,
     unavailable_signal_entries,
     utc_timestamp,
@@ -158,3 +163,61 @@ def test_c02_07_frozen_overview_scenarios_and_mqtt_unchanged():
     for rel, expected in FROZEN_C01_HASHES.items():
         digest = hashlib.sha256((REPO_ROOT / rel).read_bytes()).hexdigest()
         assert digest == expected, f"{rel} changed vs C01-closed content"
+
+
+def test_c02_08_review_set_has_explicit_disposition_for_every_fact():
+    review = review_set_entries()
+    assert review
+    exported = set(selected_signal_keys())
+    unavailable = {
+        (entry["source_id"], entry["signal_id"])
+        for entry in unavailable_signal_entries()
+    }
+    for item in review:
+        key = (item["source_id"], item["signal_id"])
+        disposition = item["disposition"]
+        assert disposition in {"EXPORTED", "UNAVAILABLE"}, item
+        if disposition == "EXPORTED":
+            assert key in exported, key
+        else:
+            assert key in unavailable, key
+            assert key not in exported
+    required = {
+        ("BW-FP-CAP01", "speed"),
+        ("BW-FP-CAP01", "cycle_time"),
+        ("BW-FP-CAP01", "cap_torque"),
+        ("BW-UT-CMP01", "active_power"),
+        ("BW-UT-CMP01", "energy_total"),
+        ("BW-UT-CMP01", "load"),
+        ("BW-WH-FG01", "dispatch_count"),
+        ("BW-FP-FIL01", "fill_rate"),
+        ("BW-FP", "target_rate"),
+    }
+    present = {(item["source_id"], item["signal_id"]) for item in review}
+    assert required <= present
+
+
+def test_c02_09_every_exported_item_has_complete_metadata():
+    for entry in exported_signal_entries():
+        for field in COMPLETE_EXPORT_METADATA_FIELDS:
+            assert entry.get(field), (entry.get("source_id"), entry.get("signal_id"), field)
+    factory = _factory()
+    snapshot = _run(factory)
+    for message in map_snapshot(snapshot):
+        payload = message.payload
+        assert payload.get("timestamp_kind") == TIMESTAMP_KIND
+        for field in ("contract_version", "workspace_id", "plant_source_id",
+                      "source_id", "timestamp", "simulation_time_s",
+                      "quality", "provenance"):
+            assert payload.get(field) not in (None, ""), (message.topic, field)
+
+
+def test_c02_10_no_kpi_or_hidden_truth_leakage():
+    import json
+    factory = _factory()
+    _run(factory)
+    serialised = json.dumps(factory.plantos_export()).lower()
+    for hidden in HIDDEN_TRUTH_KEYS:
+        assert hidden.lower() not in serialised
+    for kpi in FORBIDDEN_KPI_KEYS:
+        assert kpi.lower() not in serialised
