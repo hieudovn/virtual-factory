@@ -1,10 +1,26 @@
 {
   "task_id": "DDAY-B6-C01",
   "baseline_b6_reviewed": "9e76f406246ecd989eda1f23def283fa93408e1b",
-  "head": "512ad27eb3fc59ba5979d0a567720619c895918f",
+  "head": "08b197bf0aee45140d2b50ce67df252295c56002",
   "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
   "changed_files_vs_b6_reviewed": [
-    ".ai-harness/tasks/DDAY-B6-C01.json"
+    ".ai-harness/sa-review/CURRENT.md",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/01-baseline-and-scope.md",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/02-envelope-and-dictionary.md",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/03-plantos-gap.md",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/durable-examples.json",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/export-sample.json",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/machine-evidence.json",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/plantos-compatibility.json",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/smoke_contract_fidelity.py",
+    ".ai-harness/sa-review/reports/DDAY-B6-C01.md",
+    ".ai-harness/tasks/DDAY-B6-C01.json",
+    "configs/workspaces/bottled-water-dday/plantos_export.dictionary.yaml",
+    "src/virtual_factory/workspaces/plantos_compat.py",
+    "src/virtual_factory/workspaces/plantos_export.py",
+    "tests/test_dday_b6_c01_contract_fidelity.py",
+    "tests/test_dday_b6_plantos_integration.py"
   ],
   "contract_version": "dday-bw-b1-v1",
   "accepted_areas": [
