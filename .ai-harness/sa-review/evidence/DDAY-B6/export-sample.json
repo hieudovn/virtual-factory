@@ -1,0 +1,421 @@
+{
+  "topic_pattern": "virtual-factory/bottled-water-dday/{kind}/{asset_id}/{signal_or_event}",
+  "ingestion_path": "local_in_memory_plantos_compatible",
+  "id_resolution": {
+    "plant": "BW-DEMO-01",
+    "areas": [
+      "BW-WT",
+      "BW-BP",
+      "BW-FP",
+      "BW-UT",
+      "BW-WH"
+    ],
+    "accepted_areas": [
+      "BW-WT",
+      "BW-BP",
+      "BW-FP",
+      "BW-UT",
+      "BW-WH"
+    ],
+    "line_mapping": {
+      "vf_id": "BW-FP",
+      "plantos_entity": "Area",
+      "metadata": {
+        "role": "production_line"
+      }
+    },
+    "machine_mapping": {
+      "plantos_entity": "Asset"
+    },
+    "published_ids": [
+      "BW-BP",
+      "BW-DEMO-01",
+      "BW-FP",
+      "BW-FP-BLW01",
+      "BW-FP-CAP01",
+      "BW-FP-CPK01",
+      "BW-FP-FIL01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-PAL01",
+      "BW-FP-RIN01",
+      "BW-UT-CHL01",
+      "BW-UT-CMP01",
+      "BW-UT-PMP01",
+      "BW-UT-PWR01",
+      "BW-WH-FG01",
+      "BW-WT-FEED01",
+      "BW-WT-RO01",
+      "BW-WT-TK01"
+    ],
+    "unresolved_ids": [],
+    "resolved": true,
+    "areas_match_contract": true
+  },
+  "current_values": [
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-DEMO-01/run_state",
+      "kind": "signal",
+      "asset_id": "BW-DEMO-01",
+      "signal_or_event": "run_state",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-DEMO-01",
+        "signal_id": "run_state",
+        "value": "RUNNING",
+        "unit": "-",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-DEMO-01/operating_state",
+      "kind": "signal",
+      "asset_id": "BW-DEMO-01",
+      "signal_or_event": "operating_state",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-DEMO-01",
+        "signal_id": "operating_state",
+        "value": "RUNNING",
+        "unit": "-",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/operating_state",
+      "kind": "signal",
+      "asset_id": "BW-WT-FEED01",
+      "signal_or_event": "operating_state",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-FEED01",
+        "signal_id": "operating_state",
+        "value": "RUNNING",
+        "unit": "-",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/water_flow",
+      "kind": "signal",
+      "asset_id": "BW-WT-FEED01",
+      "signal_or_event": "water_flow",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-FEED01",
+        "signal_id": "water_flow",
+        "value": 1.2,
+        "unit": "m3/h",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/raw_water_total_m3",
+      "kind": "signal",
+      "asset_id": "BW-WT-FEED01",
+      "signal_or_event": "raw_water_total_m3",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-FEED01",
+        "signal_id": "raw_water_total_m3",
+        "value": 0.004000000000000001,
+        "unit": "m3",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/active_power",
+      "kind": "signal",
+      "asset_id": "BW-WT-FEED01",
+      "signal_or_event": "active_power",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-FEED01",
+        "signal_id": "active_power",
+        "value": 3.0,
+        "unit": "kW",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/energy_total",
+      "kind": "signal",
+      "asset_id": "BW-WT-FEED01",
+      "signal_or_event": "energy_total",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-FEED01",
+        "signal_id": "energy_total",
+        "value": 0.01,
+        "unit": "kWh",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-RO01/operating_state",
+      "kind": "signal",
+      "asset_id": "BW-WT-RO01",
+      "signal_or_event": "operating_state",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-RO01",
+        "signal_id": "operating_state",
+        "value": "RUNNING",
+        "unit": "-",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-RO01/production_flow",
+      "kind": "signal",
+      "asset_id": "BW-WT-RO01",
+      "signal_or_event": "production_flow",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-RO01",
+        "signal_id": "production_flow",
+        "value": 0.9,
+        "unit": "m3/h",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-RO01/treated_water_total_m3",
+      "kind": "signal",
+      "asset_id": "BW-WT-RO01",
+      "signal_or_event": "treated_water_total_m3",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-RO01",
+        "signal_id": "treated_water_total_m3",
+        "value": 0.003000000000000001,
+        "unit": "m3",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-RO01/reject_water_total_m3",
+      "kind": "signal",
+      "asset_id": "BW-WT-RO01",
+      "signal_or_event": "reject_water_total_m3",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-RO01",
+        "signal_id": "reject_water_total_m3",
+        "value": 0.0009999999999999996,
+        "unit": "m3",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/signal/BW-WT-RO01/active_power",
+      "kind": "signal",
+      "asset_id": "BW-WT-RO01",
+      "signal_or_event": "active_power",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "asset_id": "BW-WT-RO01",
+        "signal_id": "active_power",
+        "value": 6.0,
+        "unit": "kW",
+        "timestamp_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    }
+  ],
+  "events": [
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-FP-CAP01/SCENARIO_PHASE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-FP-CAP01",
+      "signal_or_event": "SCENARIO_PHASE_CHANGED",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "event_type": "SCENARIO_PHASE_CHANGED",
+        "asset_id": "BW-FP-CAP01",
+        "simulation_time_s": 0.0,
+        "provenance": "SIMULATED_RAW",
+        "detail": "phase=NORMAL",
+        "quality": "GOOD",
+        "scenario_id": "BW-CAP-DEG-01"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-UT-CMP01/SCENARIO_PHASE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-UT-CMP01",
+      "signal_or_event": "SCENARIO_PHASE_CHANGED",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "event_type": "SCENARIO_PHASE_CHANGED",
+        "asset_id": "BW-UT-CMP01",
+        "simulation_time_s": 0.0,
+        "provenance": "SIMULATED_RAW",
+        "detail": "phase=NORMAL",
+        "quality": "GOOD",
+        "scenario_id": "BW-CMP-SAG-01"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-DEMO-01/MACHINE_STATE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-DEMO-01",
+      "signal_or_event": "MACHINE_STATE_CHANGED",
+      "payload": {
+        "workspace_id": "bottled-water-dday",
+        "event_type": "MACHINE_STATE_CHANGED",
+        "asset_id": "BW-DEMO-01",
+        "simulation_time_s": 0.0,
+        "provenance": "SIMULATED_RAW",
+        "detail": "run_state=RUNNING",
+        "quality": "GOOD"
+      }
+    }
+  ],
+  "overview": {
+    "workspace_id": "bottled-water-dday",
+    "plant_id": "BW-DEMO-01",
+    "plant_name": "Bottled Water Factory",
+    "run_state": "RUNNING",
+    "operating_state": "RUNNING",
+    "simulation_time_s": 12.0,
+    "areas": [
+      {
+        "id": "BW-WT",
+        "name": "Water Treatment",
+        "role": "process_area",
+        "entity_type": "area",
+        "raw_values": {
+          "tank_level_pct": 70.7499999999999,
+          "treated_water_flow_m3h": 0.9,
+          "tank_volume_m3": 0.28299999999999964
+        },
+        "abnormal": {
+          "source": "operating_state",
+          "phase": "STOPPED",
+          "abnormal": false
+        },
+        "drill_down": null
+      },
+      {
+        "id": "BW-BP",
+        "name": "Bottle Preparation",
+        "role": "preparation_area",
+        "entity_type": "area",
+        "raw_values": {
+          "operating_state": "RUNNING",
+          "preform_count": 0
+        },
+        "abnormal": {
+          "source": "operating_state",
+          "phase": "RUNNING",
+          "abnormal": false
+        },
+        "drill_down": null
+      },
+      {
+        "id": "BW-FP",
+        "name": "Filling & Packaging Line",
+        "role": "production_line",
+        "entity_type": "area",
+        "raw_values": {
+          "operating_state": "RUNNING",
+          "total_count": 0,
+          "good_count": 0,
+          "reject_count": 0
+        },
+        "abnormal": {
+          "source": "capper_phase",
+          "phase": "NORMAL",
+          "abnormal": false
+        },
+        "drill_down": "/bottled-water-demo"
+      },
+      {
+        "id": "BW-UT",
+        "name": "Utilities",
+        "role": "utility_area",
+        "entity_type": "area",
+        "raw_values": {
+          "air_pressure_bar": 6.76,
+          "plant_active_power_kw": 69.1
+        },
+        "abnormal": {
+          "source": "compressor_phase",
+          "phase": "NORMAL",
+          "abnormal": false
+        },
+        "drill_down": null
+      },
+      {
+        "id": "BW-WH",
+        "name": "Warehouse / Dispatch",
+        "role": "warehouse_interface",
+        "entity_type": "area",
+        "raw_values": {
+          "inventory_count": 0,
+          "receipt_count": 0,
+          "dispatch_count": 0
+        },
+        "abnormal": {
+          "source": "operating_state",
+          "phase": "STOPPED",
+          "abnormal": false
+        },
+        "drill_down": null
+      }
+    ],
+    "relationships": [
+      {
+        "from_area": "BW-WT",
+        "to_area": "BW-FP",
+        "kind": "process",
+        "label": "treated water \u2192 filler"
+      },
+      {
+        "from_area": "BW-BP",
+        "to_area": "BW-FP",
+        "kind": "process",
+        "label": "prepared bottles \u2192 blower/infeed"
+      },
+      {
+        "from_area": "BW-UT",
+        "to_area": "BW-FP",
+        "kind": "utility",
+        "label": "compressed air \u2192 line"
+      },
+      {
+        "from_area": "BW-FP",
+        "to_area": "BW-WH",
+        "kind": "process",
+        "label": "good bottles \u2192 finished goods"
+      }
+    ],
+    "drill_down": {
+      "BW-FP": "/bottled-water-demo"
+    }
+  }
+}

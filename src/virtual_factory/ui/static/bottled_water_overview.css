@@ -133,7 +133,7 @@ html, body {
   padding: 14px;
 }
 .ov-area-line { border-color: var(--bw-accent); box-shadow: 0 0 0 1px var(--bw-accent-light); }
-.ov-area-utility { flex-basis: 100%; max-width: 280px; }
+.ov-area-utility { flex: 1 1 100%; max-width: 320px; }
 .ov-area header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-bottom: 10px; }
 .ov-area-id { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--bw-accent); }
 .ov-area h3 { margin: 0; font-size: 15px; flex: 1 1 auto; }
