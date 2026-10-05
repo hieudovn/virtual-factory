@@ -1,0 +1,29 @@
+{
+  "task_id": "DDAY-B7-X01-C03",
+  "baseline_c02_rejected": "39428b08ff5fbd19efe6dc0701bb64bafa73bf83",
+  "head": "897cf3b3d5f0d367f9e4d4e5dea184c8af7649aa",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "contract_version": "dday-bw-b1-v2",
+  "first_event_publishes": 3,
+  "identical_snapshot_event_publishes": 0,
+  "new_event_publishes": 1,
+  "seen_before_reset": 4,
+  "cursor_after_reset": 0,
+  "after_reset_event_publishes": 3,
+  "six_event_types_present": [
+    "ALARM_CLEARED",
+    "ALARM_RAISED",
+    "DOWNTIME_END",
+    "DOWNTIME_START",
+    "MACHINE_STATE_CHANGED",
+    "SCENARIO_PHASE_CHANGED"
+  ],
+  "six_type_first_publishes": 11,
+  "six_type_replay_publishes": 0,
+  "map_snapshot_event_count": 3,
+  "timeout_error": "QoS-1 ACK not confirmed within timeout; fail closed",
+  "failed_ack_cursor_seen": 0,
+  "plantos_49_authorized": false,
+  "merge_authorized": false,
+  "deploy_authorized": false
+}
