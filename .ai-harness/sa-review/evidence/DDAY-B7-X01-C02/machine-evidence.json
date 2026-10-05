@@ -1,7 +1,7 @@
 {
   "task_id": "DDAY-B7-X01-C02",
   "baseline_c01_rejected": "97e313ab0df6efb19b4374cfd857940f9e5c76fd",
-  "head": "29d579f2a6319a50c78a8a9ab57c6a678651cd0e",
+  "head": "480b53e0f8612974122a042060dd0ccfc892fff3",
   "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
   "contract_version": "dday-bw-b1-v2",
   "idle_mapped_state_events": 0,
