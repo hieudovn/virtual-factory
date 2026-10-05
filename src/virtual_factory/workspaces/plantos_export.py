@@ -531,6 +531,82 @@ def map_snapshot(
     return messages
 
 
+def runtime_event_identity(event: dict) -> tuple:
+    """Stable identity of one retained runtime event.
+
+    Classification stamps are not part of identity, so later enrichment of the
+    same record does not look like a new event to the transport cursor.
+    """
+    return (
+        str(event.get("event_type") or ""),
+        str(
+            event.get("source_id")
+            or event.get("station_id")
+            or event.get("asset_id")
+            or ""
+        ),
+        event.get("simulation_time_s"),
+        event.get("detail"),
+        event.get("scenario_id"),
+    )
+
+
+class ExportSessionCursor:
+    """Tiny per-run/session watermark: each runtime event publishes once."""
+
+    def __init__(self) -> None:
+        self._seen: set[tuple] = set()
+
+    def reset(self) -> None:
+        self._seen.clear()
+
+    @property
+    def seen_count(self) -> int:
+        return len(self._seen)
+
+    def unseen(self, events: Iterable[dict]) -> list[dict]:
+        pending: list[dict] = []
+        for event in events:
+            key = runtime_event_identity(event)
+            if not key[0] or key in self._seen:
+                continue
+            pending.append(event)
+        return pending
+
+    def mark(self, events: Iterable[dict]) -> None:
+        for event in events:
+            key = runtime_event_identity(event)
+            if key[0]:
+                self._seen.add(key)
+
+    def is_seen(self, event: dict) -> bool:
+        key = runtime_event_identity(event)
+        return bool(key[0]) and key in self._seen
+
+
+def map_unseen_transport_events(
+    snapshot: dict,
+    cursor: ExportSessionCursor,
+    dictionary: Optional[dict] = None,
+) -> list[tuple[dict, PublishedMessage]]:
+    """Live transport projection: accepted events not yet published this session.
+
+    Does not mark the cursor and does not mutate snapshot.recent_events.
+    """
+    selected = dictionary or load_export_dictionary()
+    paired: list[tuple[dict, PublishedMessage]] = []
+    for event in cursor.unseen(snapshot.get("recent_events") or ()):
+        event_type = str(event.get("event_type") or "")
+        if not event_type:
+            continue
+        try:
+            lookup_event_entry(event_type, selected)
+        except UnmappedExportError:
+            continue
+        paired.append((event, map_selected_event(snapshot, event, selected)))
+    return paired
+
+
 def resolve_ids(
     messages: Iterable[PublishedMessage],
     snapshot: dict,
@@ -867,5 +943,41 @@ def publish_via_existing_mqtt(gateway: Any, messages: Iterable[PublishedMessage]
             json.dumps(message.payload),
             qos=MQTT_QOS,
         )
+        published += 1
+    return published
+
+
+def publish_snapshot_via_existing_mqtt(
+    gateway: Any,
+    snapshot: dict,
+    cursor: ExportSessionCursor,
+    dictionary: Optional[dict] = None,
+) -> int:
+    """Periodic live export: current signals plus unseen session events.
+
+    Signals remain current-value. Events of all six accepted types publish
+    once per cursor lifetime. The cursor is marked only after a confirmed
+    QoS-1 ACK. snapshot.recent_events is not mutated.
+    """
+    import json
+
+    selected = dictionary or load_export_dictionary()
+    published = 0
+    for message in map_snapshot(snapshot, selected):
+        if message.kind != "signal":
+            continue
+        gateway.publish_raw(
+            message.topic,
+            json.dumps(message.payload),
+            qos=MQTT_QOS,
+        )
+        published += 1
+    for event, message in map_unseen_transport_events(snapshot, cursor, selected):
+        gateway.publish_raw(
+            message.topic,
+            json.dumps(message.payload),
+            qos=MQTT_QOS,
+        )
+        cursor.mark((event,))
         published += 1
     return published

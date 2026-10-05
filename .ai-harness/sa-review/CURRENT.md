@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
 Task: DDAY-B7-X01-C03 — export-session event cursor / watermark
-Status: implementation in progress; machine status is derived by `run_task_gate.py`
+Status: implementation pushed; machine status is derived by `run_task_gate.py`
 
 Authority:
 SA Issue hieudovn/virtual-factory#116 (C03 ONLY)

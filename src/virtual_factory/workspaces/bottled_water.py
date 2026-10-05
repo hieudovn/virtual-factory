@@ -53,6 +53,7 @@ from virtual_factory.workspaces.compressor_pressure import (
     load_compressor_runtime,
 )
 from virtual_factory.workspaces.plantos_export import (
+    ExportSessionCursor,
     PlantosLocalIngestion,
     export_bundle,
     map_snapshot,
@@ -589,7 +590,13 @@ class BottledWaterFactory:
 
         # B6 local ingestion sink: a view of this factory, not a second runtime.
         self._export_sink = PlantosLocalIngestion()
+        self._export_cursor = ExportSessionCursor()
         self._initialise_state()
+
+    @property
+    def export_cursor(self) -> ExportSessionCursor:
+        """Per-run transport watermark. RESET / new run clears it."""
+        return self._export_cursor
 
     # --- hierarchy helpers ---
 
@@ -649,6 +656,8 @@ class BottledWaterFactory:
             self._record_scenario_events(self._scenario.advance(0.0, 0.0))
         if self._compressor_enabled:
             self._record_scenario_events(self._compressor.advance(0.0, 0.0))
+        if getattr(self, "_export_cursor", None) is not None:
+            self._export_cursor.reset()
         if getattr(self, "_export_sink", None) is not None:
             self._export_sink.clear()
             self._publish_export()
