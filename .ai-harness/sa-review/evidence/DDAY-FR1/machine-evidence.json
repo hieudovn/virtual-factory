@@ -1,0 +1,33 @@
+{
+  "task_id": "DDAY-FR1",
+  "baseline_c03_accepted": "320d82fb2fb3339461553e258b09ebee6689615a",
+  "head": "b8b2cdbf060dad3b04e67b38db0da8b96b977a32",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "contract_version": "dday-bw-b1-v2",
+  "profile_id": "dday-bw-runtime-fr1",
+  "exported_measurement_count": 22,
+  "profile_measurement_count": 22,
+  "map_snapshot_signal_count": 22,
+  "event_types": [
+    "MACHINE_STATE_CHANGED",
+    "ALARM_RAISED",
+    "ALARM_CLEARED",
+    "DOWNTIME_START",
+    "DOWNTIME_END",
+    "SCENARIO_PHASE_CHANGED"
+  ],
+  "bounded_horizon_s": 60,
+  "bounded_signal_publishes": 508,
+  "bounded_event_publishes": 3,
+  "bounded_total_publishes": 511,
+  "naive_every_snapshot_signals": 1342,
+  "sim_rate_msg_per_s": 8.517,
+  "fast_motor_current_publishes": 61,
+  "slow_water_flow_publishes": 7,
+  "drain_ok": true,
+  "rejects": 0,
+  "plantos_handoff": false,
+  "plantos_49_authorized": false,
+  "merge_authorized": false,
+  "deploy_authorized": false
+}

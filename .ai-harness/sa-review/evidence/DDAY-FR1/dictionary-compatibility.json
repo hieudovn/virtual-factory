@@ -1,0 +1,172 @@
+{
+  "contract_version": "dday-bw-b1-v2",
+  "profile_id": "dday-bw-runtime-fr1",
+  "dictionary_cadence_unchanged": true,
+  "operating_state_remains_event_only": true,
+  "unavailable_remain_unpublished": [
+    {
+      "source_id": "BW-FP",
+      "signal_id": "target_rate"
+    },
+    {
+      "source_id": "BW-UT-CMP01",
+      "signal_id": "load"
+    }
+  ],
+  "measurements": [
+    {
+      "source_id": "BW-WT-FEED01",
+      "signal_id": "water_flow",
+      "b1_cadence": "2s",
+      "dday_class": "SLOW",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-WT-RO01",
+      "signal_id": "production_flow",
+      "b1_cadence": "2s",
+      "dday_class": "SLOW",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-WT-TK01",
+      "signal_id": "level",
+      "b1_cadence": "2-5s",
+      "dday_class": "SLOW",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP",
+      "signal_id": "total_count",
+      "b1_cadence": "on_change_or_1s",
+      "dday_class": "COUNT",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP",
+      "signal_id": "good_count",
+      "b1_cadence": "on_change_or_1s",
+      "dday_class": "COUNT",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP",
+      "signal_id": "reject_count",
+      "b1_cadence": "on_change_or_1s",
+      "dday_class": "COUNT",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "signal_id": "motor_current",
+      "b1_cadence": "1s",
+      "dday_class": "FAST",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "signal_id": "drive_load",
+      "b1_cadence": "1s",
+      "dday_class": "FAST",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "signal_id": "vibration_rms",
+      "b1_cadence": "1-2s",
+      "dday_class": "FAST",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "signal_id": "bearing_temperature",
+      "b1_cadence": "2-5s",
+      "dday_class": "MEDIUM",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "signal_id": "speed",
+      "b1_cadence": "1s",
+      "dday_class": "FAST",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "signal_id": "cycle_time",
+      "b1_cadence": "per_cycle_or_1s",
+      "dday_class": "FAST",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "signal_id": "cap_torque",
+      "b1_cadence": "per_cycle_or_1s",
+      "dday_class": "FAST",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-FP-FIL01",
+      "signal_id": "fill_rate",
+      "b1_cadence": "1s",
+      "dday_class": "MEDIUM",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-UT-CMP01",
+      "signal_id": "air_pressure",
+      "b1_cadence": "2s",
+      "dday_class": "MEDIUM",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-UT-CMP01",
+      "signal_id": "active_power",
+      "b1_cadence": "1-2s",
+      "dday_class": "MEDIUM",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-UT-CMP01",
+      "signal_id": "energy_total",
+      "b1_cadence": "2-5s",
+      "dday_class": "SLOW",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-WH-FG01",
+      "signal_id": "inventory_count",
+      "b1_cadence": "on_change_or_1s",
+      "dday_class": "COUNT",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-WH-FG01",
+      "signal_id": "receipt_count",
+      "b1_cadence": "on_change_or_1s",
+      "dday_class": "COUNT",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-WH-FG01",
+      "signal_id": "dispatch_count",
+      "b1_cadence": "on_change_or_1s",
+      "dday_class": "COUNT",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-UT-PWR01",
+      "signal_id": "plant_active_power",
+      "b1_cadence": "1-2s",
+      "dday_class": "MEDIUM",
+      "export_status": "EXPORTED"
+    },
+    {
+      "source_id": "BW-UT-PWR01",
+      "signal_id": "plant_energy_total",
+      "b1_cadence": "2-5s",
+      "dday_class": "SLOW",
+      "export_status": "EXPORTED"
+    }
+  ]
+}
