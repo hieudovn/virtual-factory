@@ -23,4 +23,8 @@ The PM does not self-certify `COMPLETE`, `CLOSED`, `SA APPROVED`, or `NEXT SLICE
 
 Replace every-signal-every-snapshot live publishing with FAST 1 s / MEDIUM 5 s / SLOW 10 s / COUNT on-change+heartbeat / EVENT event-driven transport, without changing `map_snapshot()` purity or accepted VF semantics.
 
+## Governance refresh (SA 2026-10-05)
+
+VF SA conditional accept: regenerate `.ai-harness/sa-review/evidence/DDAY-FR1/machine-evidence.json` so `head` equals the reviewed implementation SHA `dd6cfe466832b4c167f49861d27f718291f78699`. Bounded-run figures are unchanged (511 / 8.517 msg/s / 0 reject). No runtime code change.
+
 NOT authorized: merge of PR #101, B7 deploy, PlantOS #49/#54, or PlantOS PM handoff.

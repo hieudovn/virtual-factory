@@ -16,6 +16,10 @@
 - deterministic timestamps
 - topology / route / Capper / Compressor / overview / UI
 
+## Evidence SHA
+
+`machine-evidence.json` `head` must identify reviewed implementation `dd6cfe466832b4c167f49861d27f718291f78699`.
+
 ## Not authorized
 
 - Merge PR #101
