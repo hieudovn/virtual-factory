@@ -742,8 +742,10 @@ def create_app(
         """RESET rebuilds the line and returns the factory to its known initial
         state."""
         factory = _get_bw_factory()
-        factory.reset()
-        return _bw_projection(factory.controller)
+        snap = factory.reset_and_snapshot()
+        projection = _bw_projection(factory.controller)
+        projection["reset_simulation_time_s"] = snap["factory"]["simulation_time_s"]
+        return projection
 
     @app.post("/bottled-water-demo/classify")
     def bottled_water_classify(payload: dict = Body(...)) -> dict:

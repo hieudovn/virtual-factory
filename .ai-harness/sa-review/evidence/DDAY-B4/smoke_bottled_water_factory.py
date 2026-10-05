@@ -178,9 +178,8 @@ def main() -> int:
     _server, _thread = _serve(port, autorun=True, tick_interval_s=0.05)
     try:
         with _client(port) as client:
-            client.post("/bottled-water-demo/reset")
-            reset = client.get("/bottled-water-demo/factory").json()
-            claim(reset["factory"]["simulation_time_s"] == 0.0,
+            reset = client.post("/bottled-water-demo/reset").json()
+            claim(reset["reset_simulation_time_s"] == 0.0,
                   "RESET puts the factory clock back to zero")
 
             initial = client.get("/bottled-water-demo/factory").json()

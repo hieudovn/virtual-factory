@@ -756,6 +756,14 @@ class BottledWaterFactory:
             self._publish_export()
             return self.controller.run_state.value
 
+    def reset_and_snapshot(self) -> dict:
+        """RESET and return the factory snapshot still under the runtime lock."""
+        with self._lock:
+            self._reset()
+            self._note_run_state()
+            self._publish_export()
+            return self.snapshot()
+
     def classify(self, kind: str, code: str, target: str | None = None) -> dict:
         """Enrich existing/pending abnormal context. Never steps the model."""
         with self._lock:
