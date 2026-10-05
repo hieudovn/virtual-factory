@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
 Task: DDAY-FR1 — freeze Bottled Water D-Day runtime profile
-Status: implementation in progress; machine status is derived by `run_task_gate.py`
+Status: implementation pushed; machine status is derived by `run_task_gate.py`
 
 Authority:
 SA Issue hieudovn/virtual-factory#117 (FR1 ONLY)

@@ -35,6 +35,13 @@ scenarios:
   - id: BW-CAP-DEG-01
     ref: configs/workspaces/bottled-water-dday/scenarios/capper_degradation.contract.yaml
 
+runtime_profile:
+  ref: configs/workspaces/bottled-water-dday/runtime.profile.yaml
+  note: >
+    D-Day operating defaults for mixed-cadence live transport.
+    Not a permanent industrial standard. Does not change topology,
+    source IDs, scenario meaning, or contract_version.
+
 outputs:
   namespace: bottled-water-dday
   origin: VF-Simulation

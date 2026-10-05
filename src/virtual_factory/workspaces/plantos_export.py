@@ -145,6 +145,13 @@ _PACKAGED_DICTIONARY = (
     / WORKSPACE_ID
     / "plantos_export.dictionary.yaml"
 )
+_PACKAGED_RUNTIME_PROFILE = (
+    Path(__file__).resolve().parents[3]
+    / "configs"
+    / "workspaces"
+    / WORKSPACE_ID
+    / "runtime.profile.yaml"
+)
 
 REQUIRED_SIGNAL_FAMILIES = ("wt", "production", "capper", "compressor", "fg", "energy")
 COMPLETE_EXPORT_METADATA_FIELDS = (
@@ -607,6 +614,98 @@ def map_unseen_transport_events(
     return paired
 
 
+def load_runtime_profile(path: str | Path | None = None) -> dict:
+    """Read the D-Day mixed-cadence runtime profile. Operating defaults, not a new engine."""
+    profile_path = Path(path) if path else _PACKAGED_RUNTIME_PROFILE
+    data = yaml.safe_load(profile_path.read_text(encoding="utf-8")) or {}
+    if not data.get("measurements") or not data.get("classes"):
+        raise ValueError(f"runtime profile missing measurements/classes: {profile_path}")
+    return data
+
+
+def profile_measurement_map(profile: Optional[dict] = None) -> dict[tuple[str, str], dict]:
+    data = profile or load_runtime_profile()
+    mapped: dict[tuple[str, str], dict] = {}
+    for entry in data.get("measurements") or ():
+        key = (str(entry["source_id"]), str(entry["signal_id"]))
+        mapped[key] = dict(entry)
+    return mapped
+
+
+class RuntimeProfileScheduler:
+    """Per-run live-transport cadence: publish due signals only.
+
+    First observation of a measurement always publishes. Later publishes
+    follow FAST/MEDIUM/SLOW periods or COUNT on-change + heartbeat.
+    Failed/unacked publishes must not call mark().
+    """
+
+    def __init__(self, profile: Optional[dict] = None) -> None:
+        self.profile = profile or load_runtime_profile()
+        self._classes = dict(self.profile.get("classes") or {})
+        self._measurements = profile_measurement_map(self.profile)
+        self._last_sim: dict[tuple[str, str], float] = {}
+        self._last_value: dict[tuple[str, str], Any] = {}
+
+    def reset(self) -> None:
+        self._last_sim.clear()
+        self._last_value.clear()
+
+    def class_for(self, source_id: str, signal_id: str) -> str | None:
+        entry = self._measurements.get((source_id, signal_id))
+        if not entry:
+            return None
+        return str(entry["class"])
+
+    def due_signals(
+        self,
+        messages: Iterable[PublishedMessage],
+        simulation_time_s: float,
+    ) -> list[PublishedMessage]:
+        due: list[PublishedMessage] = []
+        now = float(simulation_time_s)
+        for message in messages:
+            if message.kind != "signal":
+                continue
+            key = (message.asset_id, message.signal_or_event)
+            spec = self._measurements.get(key)
+            if spec is None:
+                continue
+            class_name = str(spec["class"])
+            class_spec = self._classes.get(class_name) or {}
+            last_sim = self._last_sim.get(key)
+            if last_sim is None:
+                due.append(message)
+                continue
+            mode = str(class_spec.get("mode") or "periodic")
+            if mode == "on_change":
+                heartbeat = float(class_spec.get("heartbeat_s") or 0.0)
+                changed = self._last_value.get(key) != message.payload.get("value")
+                aged = heartbeat > 0.0 and (now - last_sim) + 1e-12 >= heartbeat
+                if changed or aged:
+                    due.append(message)
+                continue
+            period = float(class_spec.get("period_s") or 0.0)
+            if period <= 0.0 or (now - last_sim) + 1e-12 >= period:
+                due.append(message)
+        return due
+
+    def mark(
+        self,
+        messages: Iterable[PublishedMessage],
+        simulation_time_s: float,
+    ) -> None:
+        now = float(simulation_time_s)
+        for message in messages:
+            if message.kind != "signal":
+                continue
+            key = (message.asset_id, message.signal_or_event)
+            if key not in self._measurements:
+                continue
+            self._last_sim[key] = now
+            self._last_value[key] = message.payload.get("value")
+
+
 def resolve_ids(
     messages: Iterable[PublishedMessage],
     snapshot: dict,
@@ -952,25 +1051,34 @@ def publish_snapshot_via_existing_mqtt(
     snapshot: dict,
     cursor: ExportSessionCursor,
     dictionary: Optional[dict] = None,
+    scheduler: Optional[RuntimeProfileScheduler] = None,
 ) -> int:
-    """Periodic live export: current signals plus unseen session events.
+    """Periodic live export: due profile signals plus unseen session events.
 
-    Signals remain current-value. Events of all six accepted types publish
-    once per cursor lifetime. The cursor is marked only after a confirmed
-    QoS-1 ACK. snapshot.recent_events is not mutated.
+    Signals follow the D-Day runtime profile when a scheduler is supplied.
+    Events of all six accepted types publish once per cursor lifetime.
+    Cursor/scheduler are marked only after a confirmed QoS-1 ACK.
+    snapshot.recent_events is not mutated.
     """
     import json
 
     selected = dictionary or load_export_dictionary()
+    factory = snapshot.get("factory") or {}
+    simulation_time_s = float(factory.get("simulation_time_s") or 0.0)
     published = 0
-    for message in map_snapshot(snapshot, selected):
-        if message.kind != "signal":
-            continue
+    signal_messages = [
+        message for message in map_snapshot(snapshot, selected) if message.kind == "signal"
+    ]
+    if scheduler is not None:
+        signal_messages = scheduler.due_signals(signal_messages, simulation_time_s)
+    for message in signal_messages:
         gateway.publish_raw(
             message.topic,
             json.dumps(message.payload),
             qos=MQTT_QOS,
         )
+        if scheduler is not None:
+            scheduler.mark((message,), simulation_time_s)
         published += 1
     for event, message in map_unseen_transport_events(snapshot, cursor, selected):
         gateway.publish_raw(

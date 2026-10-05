@@ -55,8 +55,10 @@ from virtual_factory.workspaces.compressor_pressure import (
 from virtual_factory.workspaces.plantos_export import (
     ExportSessionCursor,
     PlantosLocalIngestion,
+    RuntimeProfileScheduler,
     export_bundle,
     map_snapshot,
+    publish_snapshot_via_existing_mqtt,
 )
 
 WORKSPACE_ID = "bottled-water-dday"
@@ -591,12 +593,28 @@ class BottledWaterFactory:
         # B6 local ingestion sink: a view of this factory, not a second runtime.
         self._export_sink = PlantosLocalIngestion()
         self._export_cursor = ExportSessionCursor()
+        self._export_scheduler = RuntimeProfileScheduler()
         self._initialise_state()
 
     @property
     def export_cursor(self) -> ExportSessionCursor:
         """Per-run transport watermark. RESET / new run clears it."""
         return self._export_cursor
+
+    @property
+    def export_scheduler(self) -> RuntimeProfileScheduler:
+        """Per-run mixed-cadence scheduler. RESET / new run clears it."""
+        return self._export_scheduler
+
+    def publish_live_mqtt(self, gateway: Any) -> int:
+        """D-Day live transport: profile-cadence signals + unseen events."""
+        with self._lock:
+            return publish_snapshot_via_existing_mqtt(
+                gateway,
+                self.snapshot(),
+                self._export_cursor,
+                scheduler=self._export_scheduler,
+            )
 
     # --- hierarchy helpers ---
 
@@ -658,6 +676,8 @@ class BottledWaterFactory:
             self._record_scenario_events(self._compressor.advance(0.0, 0.0))
         if getattr(self, "_export_cursor", None) is not None:
             self._export_cursor.reset()
+        if getattr(self, "_export_scheduler", None) is not None:
+            self._export_scheduler.reset()
         if getattr(self, "_export_sink", None) is not None:
             self._export_sink.clear()
             self._publish_export()
