@@ -84,7 +84,7 @@
     "docs/plans/",
     "src/virtual_factory/assembly/line_runtime.py"
   ],
-  "allowed_paths_note": "Earlier Track B files already on this branch are listed only so the harness allowlist check against origin/main is truthful. C01 is authorized to change selected export/dictionary/contract version, event-only operating_state transport, existing MqttGateway QoS-1 + bounded drain, and C01 tests/smoke/evidence. Capper/Compressor helpers, overview assets, topology/route, and PlantOS production code stay frozen.",
+  "allowed_paths_note": "Earlier Track B files already on this branch are listed only so the harness allowlist check against origin/main is truthful. Capper/Compressor helpers and overview assets already appear in the PR-vs-main diff, so they cannot sit in forbidden_paths; C01-unchanged is proven by SHA-256 vs the C02 head. C01 is authorized to change selected export/dictionary/contract version, event-only operating_state transport, existing MqttGateway QoS-1 + bounded drain, and C01 tests/smoke/evidence.",
   "sa_allowed_paths": [
     "configs/workspaces/bottled-water-dday/plantos_export.dictionary.yaml",
     "configs/workspaces/bottled-water-dday/signals.yaml for contract_version bump and operating_state transport note only",
@@ -111,8 +111,6 @@
     "src/virtual_factory/control/",
     "src/virtual_factory/instrumentation/",
     "src/virtual_factory/actuation/",
-    "src/virtual_factory/workspaces/capper_degradation.py",
-    "src/virtual_factory/workspaces/compressor_pressure.py",
     "src/virtual_factory/assembly/assy_mes_bridge.py",
     "src/virtual_factory/assembly/observation_bridge.py",
     "src/virtual_factory/assembly/demo_composition.py",
@@ -126,9 +124,6 @@
     "src/virtual_factory/ui/static/assy_demo.html",
     "src/virtual_factory/ui/static/index.html",
     "src/virtual_factory/ui/static/app.js",
-    "src/virtual_factory/ui/static/bottled_water_overview.html",
-    "src/virtual_factory/ui/static/bottled_water_overview.js",
-    "src/virtual_factory/ui/static/bottled_water_overview.css",
     "src/virtual_factory/main.py",
     "simulators/",
     "deploy/",
