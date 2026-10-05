@@ -1,24 +1,23 @@
 # SA REVIEW INBOX
 
-Task: DDAY-B7-X01-C03 — export-session event cursor / watermark
-Status: implementation pushed; machine status is derived by `run_task_gate.py`
+Task: DDAY-FR1 — freeze Bottled Water D-Day runtime profile
+Status: implementation in progress; machine status is derived by `run_task_gate.py`
 
 Authority:
-SA Issue hieudovn/virtual-factory#116 (C03 ONLY)
-Parent: DDAY-B7-X01-C02 / #115
-Grandparent: DDAY-B7-X01-C01 / #114
-Great-grandparent: DDAY-B7-X01 / #113
+SA Issue hieudovn/virtual-factory#117 (FR1 ONLY)
+Parent program: PlantOS #54 DDAY-FINAL-01 (do not hand to PlantOS PM)
 PR: hieudovn/virtual-factory#101 (base main, head sa/dday-track-b-20261003)
 
 Baselines:
-SA-rejected C02 head / C03 baseline: 39428b08ff5fbd19efe6dc0701bb64bafa73bf83
+SA-accepted C03 / FR1 baseline: 320d82fb2fb3339461553e258b09ebee6689615a
 origin/main (harness expected_base_sha): f5261c8ca18cd4e01779c0274b55270ba028b4e5
+contract_version: dday-bw-b1-v2
 
 What this slice does:
-- Adds a tiny export-session cursor so retained recent_events publish once per run/session.
-- Keeps map_snapshot() a pure full projection.
-- Applies the watermark to all six accepted event types.
-- RESET / new run resets the cursor.
+- Adds one machine-readable D-Day runtime profile.
+- Maps all 22 EXPORTED measurements to FAST/MEDIUM/SLOW/COUNT.
+- Keeps state/alarm/downtime/scenario event-driven.
+- Applies mixed cadence on the live MQTT transport path.
 
-NOT authorized: merge, deploy, or PlantOS #49.
+NOT authorized: merge, deploy, PlantOS handoff, or PlantOS #49/#54.
 The PM does not self-certify COMPLETE / CLOSED / SA APPROVED.
