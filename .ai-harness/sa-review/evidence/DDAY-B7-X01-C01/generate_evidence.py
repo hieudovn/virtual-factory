@@ -58,7 +58,11 @@ def main() -> None:
     class _Fake:
         def publish(self, topic, payload, qos=0, retain=False):
             recorded.append({"topic": topic, "qos": qos})
-            return type("Result", (), {"rc": 0})()
+            handle = type("Result", (), {})()
+            handle.rc = 0
+            handle.is_published = lambda: True
+            handle.wait_for_publish = lambda timeout=1.0: None
+            return handle
 
         def disconnect(self) -> None:
             self.disconnected = True

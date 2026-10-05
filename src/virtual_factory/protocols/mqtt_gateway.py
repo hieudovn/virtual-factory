@@ -22,6 +22,10 @@ PUBLISH_ACK_TIMEOUT_S = 2.0
 DRAIN_TIMEOUT_S = 2.0
 
 
+class MqttPublishError(RuntimeError):
+    """QoS-1 publish was not acknowledged or returned a failing rc."""
+
+
 @dataclass(slots=True)
 class MqttGateway:
     """Simple MQTT JSON publisher for publishable SignalValue frames."""
@@ -33,6 +37,7 @@ class MqttGateway:
     enabled: bool = True
     client: Any | None = field(default=None, repr=False)
     _pending: list = field(default_factory=list, repr=False)
+    _undelivered: list = field(default_factory=list, repr=False)
     _loop_started: bool = field(default=False, repr=False)
 
     def connect(self, retries: int = 20, delay_s: float = 1.0) -> None:
@@ -74,20 +79,31 @@ class MqttGateway:
             if not self._wait_for_ack(result, leftover):
                 remaining.append(result)
         drained = len(self._pending) - len(remaining)
+        self._undelivered.extend(remaining)
         self._pending = []
+        leftover = len(self._undelivered)
         return {
             "drained": drained,
-            "remaining": len(remaining),
-            "timed_out": bool(remaining),
+            "remaining": leftover,
+            "timed_out": leftover > 0,
+            "ok": leftover == 0,
             "timeout_s": float(timeout_s),
         }
 
     def disconnect(self, drain_timeout_s: float = DRAIN_TIMEOUT_S) -> dict:
-        """Drain the outstanding publish tail, then disconnect."""
+        """Drain the outstanding publish tail, then disconnect.
+
+        An undelivered tail is an explicit failure. The client is still
+        dropped so shutdown cannot hang.
+        """
         summary = self.drain_pending(timeout_s=drain_timeout_s)
         if self.client is not None:
             self._stop_network_loop()
             self.client.disconnect()
+        if not summary["ok"]:
+            raise MqttPublishError(
+                f"undelivered tail {summary['remaining']}; fail closed"
+            )
         return summary
 
     def publish_frame(self, frame: list[SignalValue]) -> None:
@@ -128,11 +144,18 @@ class MqttGateway:
         if qos is None:
             qos = DEFAULT_QOS
         result = self.client.publish(topic, payload, qos=qos, retain=retain)
+        rc = getattr(result, "rc", None)
+        if rc is None:
+            raise MqttPublishError("publish returned no rc; fail closed")
+        if rc != 0:
+            raise MqttPublishError(f"publish rc={rc}; fail closed")
         self._pending.append(result)
-        self._wait_for_ack(result, ack_timeout_s)
-        if self._is_published(result):
-            self._pending = [item for item in self._pending if item is not result]
-        return result.rc if hasattr(result, "rc") else 0
+        if qos >= 1 and not self._wait_for_ack(result, ack_timeout_s):
+            raise MqttPublishError(
+                "QoS-1 ACK not confirmed within timeout; fail closed"
+            )
+        self._pending = [item for item in self._pending if item is not result]
+        return rc
 
     def _start_network_loop(self) -> None:
         if self.client is not None and hasattr(self.client, "loop_start") and not self._loop_started:
@@ -155,7 +178,7 @@ class MqttGateway:
                 return bool(checker())
             except Exception:
                 return False
-        return not hasattr(result, "wait_for_publish")
+        return False
 
     def _wait_for_ack(self, result: Any, timeout_s: float) -> bool:
         if timeout_s <= 0:

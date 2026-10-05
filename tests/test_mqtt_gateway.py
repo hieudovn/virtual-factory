@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from virtual_factory.protocols.mqtt_gateway import MqttGateway
+from virtual_factory.protocols.mqtt_gateway import MqttGateway, MqttPublishError
 from virtual_factory.telemetry.signal_value import SignalValue
 
 
@@ -161,6 +161,16 @@ class _AckHandle:
             raise TimeoutError("publish acknowledgement timed out")
 
 
+def test_publish_raw_negative_rc_is_not_delivered() -> None:
+    class _Fail:
+        def publish(self, topic, payload, qos=0, retain=False):
+            return type("Result", (), {"rc": 1})()
+
+    gateway = MqttGateway(client=_Fail())
+    with pytest.raises(MqttPublishError, match="rc=1"):
+        gateway.publish_raw("vf/bad", "x")
+
+
 def test_publish_raw_defaults_to_acknowledged_qos1() -> None:
     fake_client = AckClient()
     gateway = MqttGateway(client=fake_client)
@@ -193,10 +203,13 @@ def test_disconnect_drains_outstanding_tail_before_client_drop() -> None:
 def test_drain_pending_is_bounded_when_ack_does_not_arrive() -> None:
     fake_client = AckClient(delay_before_ack=10.0)
     gateway = MqttGateway(client=fake_client)
-    gateway.publish_raw("vf/slow", "x", ack_timeout_s=0.01)
+    with pytest.raises(MqttPublishError, match="ACK not confirmed"):
+        gateway.publish_raw("vf/slow", "x", ack_timeout_s=0.01)
 
     summary = gateway.drain_pending(timeout_s=0.02)
 
     assert summary["timed_out"] is True
+    assert summary["ok"] is False
     assert summary["remaining"] == 1
-    assert gateway._pending == []
+    with pytest.raises(MqttPublishError, match="undelivered tail"):
+        gateway.disconnect(drain_timeout_s=0.01)

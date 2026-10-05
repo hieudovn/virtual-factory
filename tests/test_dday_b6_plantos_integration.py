@@ -277,7 +277,11 @@ def test_b6_08_existing_mqtt_gateway_unchanged_and_can_carry_payload():
     class _Fake:
         def publish(self, topic, payload, qos=0, retain=False):
             recorded.append((topic, payload, qos, retain))
-            return type("Result", (), {"rc": 0})()
+            handle = type("Result", (), {})()
+            handle.rc = 0
+            handle.is_published = lambda: True
+            handle.wait_for_publish = lambda timeout=1.0: None
+            return handle
 
     gateway = MqttGateway(enabled=True, client=_Fake())
     published = publish_via_existing_mqtt(gateway, messages[:3])

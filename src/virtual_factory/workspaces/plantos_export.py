@@ -417,6 +417,11 @@ def _event_payload(snapshot: dict, event: dict, entry: dict) -> dict:
     payload["datatype"] = entry.get("datatype")
     payload["cadence"] = entry.get("cadence")
     payload["plantos_mapping_key"] = entry.get("plantos_mapping_key")
+    if event.get("event_type") == OPERATING_STATE_EVENT_TYPE:
+        payload["not_a_measurement"] = True
+        payload["transport_kind"] = TRANSPORT_KIND_EVENT_ONLY
+        if event.get("detail"):
+            payload["operating_state"] = str(event["detail"]).split("=")[-1]
     if event.get("detail"):
         payload["detail"] = event["detail"]
     if event.get("downtime_code"):
@@ -479,57 +484,6 @@ def map_selected_signal(
     )
 
 
-def map_event_only_state(
-    snapshot: dict,
-    source_id: str,
-    signal_id: str = "operating_state",
-    dictionary: Optional[dict] = None,
-) -> PublishedMessage:
-    """Map enum operating_state as an event, never as a measurement."""
-    entry = lookup_event_only_entry(source_id, signal_id, dictionary)
-    if _blocked_name(source_id) or _blocked_name(signal_id):
-        raise UnmappedExportError(
-            f"blocked event-only state {source_id}.{signal_id}; fail closed"
-        )
-    node = (snapshot.get("nodes") or {}).get(source_id) or {}
-    signal = (node.get("signals") or {}).get(signal_id)
-    if not isinstance(signal, dict):
-        raise UnmappedExportError(
-            f"event-only state {source_id}.{signal_id} missing from factory snapshot"
-        )
-    event_type = str(entry.get("plantos_event_type") or OPERATING_STATE_EVENT_TYPE)
-    event_entry = lookup_event_entry(event_type, dictionary)
-    simulation_time_s = _simulation_time(snapshot, signal.get("simulation_time_s"))
-    payload = _envelope_base(
-        snapshot,
-        source_id,
-        simulation_time_s,
-        quality=signal.get("quality", entry.get("quality", QUALITY_GOOD)),
-        provenance=signal.get("provenance", entry.get("provenance", PROVENANCE_RAW)),
-    )
-    payload.update({
-        "event_type": event_type,
-        "operating_state": signal.get("value"),
-        "detail": f"operating_state={signal.get('value')}",
-        "semantic_role": entry.get("semantic_role", event_entry.get("semantic_role")),
-        "datatype": "enum",
-        "cadence": entry.get("cadence", event_entry.get("cadence")),
-        "plantos_mapping_key": entry.get("plantos_mapping_key"),
-        "transport_kind": entry.get("transport_kind", TRANSPORT_KIND_EVENT_ONLY),
-        "not_a_measurement": True,
-    })
-    scenario_id = _scenario_id_for(source_id, snapshot)
-    if scenario_id:
-        payload["scenario_id"] = scenario_id
-    return PublishedMessage(
-        topic=build_topic("event", source_id, event_type),
-        kind="event",
-        asset_id=source_id,
-        signal_or_event=event_type,
-        payload=payload,
-    )
-
-
 def map_selected_event(
     snapshot: dict,
     event: dict,
@@ -565,12 +519,6 @@ def map_snapshot(
         if source_id not in nodes or signal_id not in (nodes[source_id].get("signals") or {}):
             continue
         messages.append(map_selected_signal(snapshot, source_id, signal_id, selected))
-    for entry in event_only_state_entries(selected):
-        source_id = str(entry["source_id"])
-        signal_id = str(entry["signal_id"])
-        if source_id not in nodes or signal_id not in (nodes[source_id].get("signals") or {}):
-            continue
-        messages.append(map_event_only_state(snapshot, source_id, signal_id, selected))
     for event in snapshot.get("recent_events") or ():
         event_type = str(event.get("event_type") or "")
         if not event_type:
@@ -886,7 +834,7 @@ class ExportBundle:
             "current_values": self.sink.current_values(),
             "historian": self.sink.historian(limit=240),
             "events": self.sink.events(),
-            "event_only_states": self.sink.event_only_states(),
+            "event_only_states": dictionary_summary()["event_only_states"],
             "overview": overview_from_snapshot(self.snapshot),
             "message_count": self.sink.message_count,
         }
@@ -909,7 +857,7 @@ def export_bundle(
 
 
 def publish_via_existing_mqtt(gateway: Any, messages: Iterable[PublishedMessage]) -> int:
-    """Deliver mapped payloads through existing MqttGateway.publish_raw at QoS 1."""
+    """Deliver mapped payloads at QoS 1. Count only confirmed deliveries."""
     published = 0
     import json
 

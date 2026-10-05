@@ -87,36 +87,32 @@ def test_c01_01_operating_state_is_not_a_measurement_signal():
         assert raw in {"RUNNING", "IDLE", "STOPPED", "FAULT", "UNKNOWN"}
 
 
-def test_c01_02_operating_state_uses_event_only_machine_state_changed():
+def test_c01_02_operating_state_is_event_only_metadata_not_synthesized():
     factory = _factory()
     snapshot = _run(factory)
-    messages = [
-        item for item in map_snapshot(snapshot)
-        if item.payload.get("transport_kind") == TRANSPORT_KIND_EVENT_ONLY
-    ]
-    by_asset = {item.asset_id: item for item in messages}
     assert set(event_only_state_keys()) == set(SELECTED_STATES)
-    for source_id, _signal_id in SELECTED_STATES:
-        message = by_asset[source_id]
-        assert message.kind == "event"
-        assert message.signal_or_event == OPERATING_STATE_EVENT_TYPE
-        assert message.topic.endswith(f"/event/{source_id}/{OPERATING_STATE_EVENT_TYPE}")
-        payload = message.payload
-        assert payload["event_type"] == OPERATING_STATE_EVENT_TYPE
-        assert payload["not_a_measurement"] is True
-        assert payload["operating_state"] == snapshot["nodes"][source_id]["signals"]["operating_state"]["value"]
-        assert payload["contract_version"] == CONTRACT_VERSION
-        assert "value" not in payload or payload.get("signal_id") != "operating_state"
-    bundle = factory.plantos_export()
-    states = {
-        item["asset_id"]: item["payload"]
-        for item in bundle["event_only_states"]
+    runtime = [
+        event for event in snapshot.get("recent_events") or ()
+        if event.get("event_type") == OPERATING_STATE_EVENT_TYPE
+    ]
+    mapped = [
+        item for item in map_snapshot(snapshot)
+        if item.payload.get("event_type") == OPERATING_STATE_EVENT_TYPE
+    ]
+    assert len(mapped) == len(runtime)
+    assert not any(item.kind == "signal" and item.signal_or_event == "operating_state" for item in map_snapshot(snapshot))
+    metadata = {
+        (item["source_id"], item["signal_id"]): item
+        for item in dictionary_summary()["event_only_states"]
     }
-    for source_id, _signal_id in SELECTED_STATES:
-        assert states[source_id]["not_a_measurement"] is True
-        assert states[source_id]["event_type"] == OPERATING_STATE_EVENT_TYPE
-    event_types = {item["payload"]["event_type"] for item in bundle["events"]}
-    assert OPERATING_STATE_EVENT_TYPE in event_types
+    for source_id, signal_id in SELECTED_STATES:
+        entry = metadata[(source_id, signal_id)]
+        assert entry["not_a_measurement"] is True
+        assert entry["transport_kind"] == TRANSPORT_KIND_EVENT_ONLY
+        assert entry["event_type"] == OPERATING_STATE_EVENT_TYPE
+    if mapped:
+        assert mapped[0].payload["contract_version"] == CONTRACT_VERSION
+        assert mapped[0].payload.get("not_a_measurement") is True
 
 
 def test_c01_03_all_six_event_types_remain():
@@ -155,7 +151,11 @@ def test_c01_05_mqtt_publish_raw_is_acknowledged_qos1():
     class _Fake:
         def publish(self, topic, payload, qos=0, retain=False):
             recorded.append((topic, payload, qos, retain))
-            return type("Result", (), {"rc": 0})()
+            handle = type("Result", (), {})()
+            handle.rc = 0
+            handle.is_published = lambda: True
+            handle.wait_for_publish = lambda timeout=1.0: None
+            return handle
 
     gateway = MqttGateway(enabled=True, client=_Fake())
     published = publish_via_existing_mqtt(gateway, messages)

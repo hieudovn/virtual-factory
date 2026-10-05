@@ -26,6 +26,7 @@ from virtual_factory.workspaces.plantos_export import (
     SIX_EVENT_TYPES,
     TRANSPORT_KIND_EVENT_ONLY,
     UnmappedExportError,
+    dictionary_summary,
     lookup_signal_entry,
     map_snapshot,
     publish_via_existing_mqtt,
@@ -41,6 +42,17 @@ def claim(condition: bool, description: str) -> None:
     print(f"  [{'PASS' if condition else 'FAIL'}] {description}")
     if not condition:
         _failures.append(description)
+
+
+class _Ack:
+    def __init__(self) -> None:
+        self.rc = 0
+
+    def is_published(self) -> bool:
+        return True
+
+    def wait_for_publish(self, timeout: float = 1.0) -> None:
+        return None
 
 
 def main() -> int:
@@ -72,15 +84,24 @@ def main() -> int:
         closed = "not a measurement" in str(exc)
     claim(closed, "compressor operating_state lookup fails as non-measurement")
 
-    event_only = [
-        item for item in messages
-        if item.payload.get("transport_kind") == TRANSPORT_KIND_EVENT_ONLY
+    metadata = dictionary_summary()["event_only_states"]
+    claim(len(metadata) == 3, f"three EVENT_ONLY operating_state dictionary rows ({len(metadata)})")
+    claim(all(item["event_type"] == OPERATING_STATE_EVENT_TYPE for item in metadata),
+          "event-only metadata uses MACHINE_STATE_CHANGED")
+    claim(all(item.get("not_a_measurement") is True for item in metadata),
+          "event-only metadata is marked not_a_measurement")
+    claim(all(item.get("transport_kind") == TRANSPORT_KIND_EVENT_ONLY for item in metadata),
+          "event-only transport kind is disclosed")
+    runtime = [
+        event for event in snapshot.get("recent_events") or ()
+        if event.get("event_type") == OPERATING_STATE_EVENT_TYPE
     ]
-    claim(len(event_only) == 3, f"three event-only operating_state messages ({len(event_only)})")
-    claim(all(item.payload["event_type"] == OPERATING_STATE_EVENT_TYPE for item in event_only),
-          "event-only transport uses MACHINE_STATE_CHANGED")
-    claim(all(item.payload.get("not_a_measurement") is True for item in event_only),
-          "event-only payloads are marked not_a_measurement")
+    mapped = [
+        item for item in messages
+        if item.payload.get("event_type") == OPERATING_STATE_EVENT_TYPE
+    ]
+    claim(len(mapped) == len(runtime),
+          "mapped MACHINE_STATE_CHANGED equals runtime event records")
     types = [entry["event_type"] for entry in selected_event_entries()]
     claim(types == list(SIX_EVENT_TYPES), f"six event types remain {types}")
     claim(CONTRACT_VERSION == "dday-bw-b1-v2", "module contract_version is v2")
@@ -93,7 +114,7 @@ def main() -> int:
     class _Fake:
         def publish(self, topic, payload, qos=0, retain=False):
             recorded.append((topic, payload, qos, retain))
-            return type("Result", (), {"rc": 0})()
+            return _Ack()
 
         def disconnect(self) -> None:
             self.disconnected = True
@@ -104,7 +125,7 @@ def main() -> int:
     claim(DEFAULT_QOS == MQTT_QOS == 1, "default MQTT QoS is 1")
     claim({item[2] for item in recorded} == {1}, "every publish_raw used QoS 1")
     summary = gateway.disconnect(drain_timeout_s=0.2)
-    claim(summary["timed_out"] is False, "bounded drain completed before disconnect")
+    claim(summary["ok"] is True, "bounded drain completed before disconnect")
     claim(getattr(gateway.client, "disconnected", False) is True, "client disconnected after drain")
 
     print()
