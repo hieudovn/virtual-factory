@@ -49,8 +49,6 @@ LINE_YAML = WORKSPACE / "line.yaml"
 FACTORY_YAML = WORKSPACE / "factory.yaml"
 DICTIONARY_YAML = WORKSPACE / "plantos_export.dictionary.yaml"
 FROZEN_PROTOCOL_HASHES = {
-    "src/virtual_factory/protocols/mqtt_gateway.py":
-        "f540ef429dbcedfef4baeddbe2f5c41c152d547f057a4a3d93762c6406414872",
     "src/virtual_factory/telemetry/signal_value.py":
         "67fb1387495cecc3e9b9f39954166d01bdec2738f3d18331f74d79811fd1c009",
 }

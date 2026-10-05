@@ -1,8 +1,9 @@
 # DDAY-B6 selected VF→PlantOS export dictionary.
 # Small allowlist only. Unmapped factory signals are not exported and must
-# not be invented as PlantOS semantics. Reuses B1 contract_version.
-# C02 completes required coverage and states timestamp semantics.
-contract_version: dday-bw-b1-v1
+# not be invented as PlantOS semantics.
+# B7-X01-C01: contract_version dday-bw-b1-v2; enum operating_state is
+# event-only / non-measurement and is not a PlantOS measurement ingest.
+contract_version: dday-bw-b1-v2
 workspace_id: bottled-water-dday
 plant_source_id: BW-DEMO-01
 default_quality: GOOD
@@ -18,19 +19,27 @@ timestamp_semantics:
     Not wall-clock receipt time.
   simulation_time_s: simulation_elapsed_seconds
   receipt_time: plantos_or_runtime_owned_not_generated_by_vf
+transport_semantics:
+  operating_state: event_only_non_measurement
+  operating_state_event_type: MACHINE_STATE_CHANGED
+  operating_state_not_a_measurement: true
+  mqtt_qos: 1
+  mqtt_acknowledged_delivery: true
+  mqtt_drain_before_disconnect: true
 
 # Issue #112 required review-set: every fact has an explicit disposition.
+# B7-X01-C01 adds EVENT_ONLY for enum operating_state (not a measurement).
 review_set:
   - { source_id: BW-WT-FEED01, signal_id: water_flow, disposition: EXPORTED }
   - { source_id: BW-WT-RO01, signal_id: production_flow, disposition: EXPORTED }
   - { source_id: BW-WT-TK01, signal_id: level, disposition: EXPORTED }
-  - { source_id: BW-FP, signal_id: operating_state, disposition: EXPORTED }
+  - { source_id: BW-FP, signal_id: operating_state, disposition: EVENT_ONLY }
   - { source_id: BW-FP, signal_id: total_count, disposition: EXPORTED }
   - { source_id: BW-FP, signal_id: good_count, disposition: EXPORTED }
   - { source_id: BW-FP, signal_id: reject_count, disposition: EXPORTED }
   - { source_id: BW-FP, signal_id: target_rate, disposition: UNAVAILABLE }
   - { source_id: BW-FP-FIL01, signal_id: fill_rate, disposition: EXPORTED }
-  - { source_id: BW-FP-CAP01, signal_id: operating_state, disposition: EXPORTED }
+  - { source_id: BW-FP-CAP01, signal_id: operating_state, disposition: EVENT_ONLY }
   - { source_id: BW-FP-CAP01, signal_id: speed, disposition: EXPORTED }
   - { source_id: BW-FP-CAP01, signal_id: cycle_time, disposition: EXPORTED }
   - { source_id: BW-FP-CAP01, signal_id: cap_torque, disposition: EXPORTED }
@@ -38,7 +47,7 @@ review_set:
   - { source_id: BW-FP-CAP01, signal_id: drive_load, disposition: EXPORTED }
   - { source_id: BW-FP-CAP01, signal_id: vibration_rms, disposition: EXPORTED }
   - { source_id: BW-FP-CAP01, signal_id: bearing_temperature, disposition: EXPORTED }
-  - { source_id: BW-UT-CMP01, signal_id: operating_state, disposition: EXPORTED }
+  - { source_id: BW-UT-CMP01, signal_id: operating_state, disposition: EVENT_ONLY }
   - { source_id: BW-UT-CMP01, signal_id: air_pressure, disposition: EXPORTED }
   - { source_id: BW-UT-CMP01, signal_id: active_power, disposition: EXPORTED }
   - { source_id: BW-UT-CMP01, signal_id: energy_total, disposition: EXPORTED }
@@ -98,19 +107,6 @@ signals:
     plantos_mapping_key: plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-TK01/signal:level
 
   - source_id: BW-FP
-    signal_id: operating_state
-    area_id: BW-FP
-    family: production
-    semantic_role: machine_state
-    datatype: enum
-    unit: "-"
-    cadence: on_change_plus_heartbeat
-    quality: GOOD
-    provenance: SIMULATED_RAW
-    plantos_entity: Signal
-    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:operating_state
-
-  - source_id: BW-FP
     signal_id: total_count
     area_id: BW-FP
     family: production
@@ -148,19 +144,6 @@ signals:
     provenance: SIMULATED_RAW
     plantos_entity: Signal
     plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:reject_count
-
-  - source_id: BW-FP-CAP01
-    signal_id: operating_state
-    area_id: BW-FP
-    family: capper
-    semantic_role: machine_state
-    datatype: enum
-    unit: "-"
-    cadence: on_change_plus_heartbeat
-    quality: GOOD
-    provenance: SIMULATED_RAW
-    plantos_entity: Signal
-    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:operating_state
 
   - source_id: BW-FP-CAP01
     signal_id: motor_current
@@ -267,19 +250,6 @@ signals:
     plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-FIL01/signal:fill_rate
 
   - source_id: BW-UT-CMP01
-    signal_id: operating_state
-    area_id: BW-UT
-    family: compressor
-    semantic_role: machine_state
-    datatype: enum
-    unit: "-"
-    cadence: on_change_plus_heartbeat
-    quality: GOOD
-    provenance: SIMULATED_RAW
-    plantos_entity: Signal
-    plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:operating_state
-
-  - source_id: BW-UT-CMP01
     signal_id: air_pressure
     area_id: BW-UT
     family: compressor
@@ -382,6 +352,58 @@ signals:
     provenance: SIMULATED_RAW
     plantos_entity: Signal
     plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-PWR01/signal:plant_energy_total
+
+event_only_states:
+  - source_id: BW-FP
+    signal_id: operating_state
+    area_id: BW-FP
+    family: production
+    semantic_role: machine_state
+    datatype: enum
+    unit: "-"
+    cadence: on_change_plus_heartbeat
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_event_type: MACHINE_STATE_CHANGED
+    transport_kind: event_only_non_measurement
+    not_a_measurement: true
+    export_status: EVENT_ONLY
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/event:MACHINE_STATE_CHANGED
+
+  - source_id: BW-FP-CAP01
+    signal_id: operating_state
+    area_id: BW-FP
+    family: capper
+    semantic_role: machine_state
+    datatype: enum
+    unit: "-"
+    cadence: on_change_plus_heartbeat
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_event_type: MACHINE_STATE_CHANGED
+    transport_kind: event_only_non_measurement
+    not_a_measurement: true
+    export_status: EVENT_ONLY
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/event:MACHINE_STATE_CHANGED
+
+  - source_id: BW-UT-CMP01
+    signal_id: operating_state
+    area_id: BW-UT
+    family: compressor
+    semantic_role: machine_state
+    datatype: enum
+    unit: "-"
+    cadence: on_change_plus_heartbeat
+    quality: GOOD
+    provenance: SIMULATED_RAW
+    plantos_entity: Event
+    plantos_event_type: MACHINE_STATE_CHANGED
+    transport_kind: event_only_non_measurement
+    not_a_measurement: true
+    export_status: EVENT_ONLY
+    plantos_mapping_key: plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/event:MACHINE_STATE_CHANGED
 
 events:
   - event_type: MACHINE_STATE_CHANGED

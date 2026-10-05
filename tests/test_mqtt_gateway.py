@@ -18,8 +18,9 @@ class FakeClient:
     def disconnect(self) -> None:
         self.disconnected = True
 
-    def publish(self, topic: str, payload: str) -> None:
-        self.published.append((topic, payload))
+    def publish(self, topic: str, payload: str, qos: int = 0, retain: bool = False):
+        self.published.append((topic, payload, qos, retain))
+        return type("Result", (), {"rc": 0})()
 
 
 class FlakyConnectClient(FakeClient):
@@ -121,3 +122,81 @@ def test_connect_retries_then_raises_runtime_error() -> None:
         gateway.connect(retries=3, delay_s=0.0)
 
     assert fake_client.connect_attempts == 3
+
+
+class AckClient(FakeClient):
+    def __init__(self, delay_before_ack: float = 0.0) -> None:
+        super().__init__()
+        self.delay_before_ack = delay_before_ack
+        self.loop_started = False
+        self.loop_stopped = False
+
+    def loop_start(self) -> None:
+        self.loop_started = True
+
+    def loop_stop(self) -> None:
+        self.loop_stopped = True
+
+    def publish(self, topic: str, payload: str, qos: int = 0, retain: bool = False):
+        handle = _AckHandle(delay_s=self.delay_before_ack)
+        self.published.append((topic, payload, qos, retain, handle))
+        return handle
+
+
+class _AckHandle:
+    def __init__(self, delay_s: float = 0.0) -> None:
+        self.rc = 0
+        self.delay_s = delay_s
+        self.acked = delay_s <= 0
+        self.waited = []
+
+    def is_published(self) -> bool:
+        return self.acked
+
+    def wait_for_publish(self, timeout: float = 1.0) -> None:
+        self.waited.append(timeout)
+        if self.delay_s <= timeout:
+            self.acked = True
+        else:
+            raise TimeoutError("publish acknowledgement timed out")
+
+
+def test_publish_raw_defaults_to_acknowledged_qos1() -> None:
+    fake_client = AckClient()
+    gateway = MqttGateway(client=fake_client)
+
+    rc = gateway.publish_raw("vf/demo", '{"ok": true}')
+
+    assert rc == 0
+    assert fake_client.published[0][2] == 1
+    assert fake_client.published[0][4].acked is True
+    assert fake_client.published[0][4].waited
+
+
+def test_disconnect_drains_outstanding_tail_before_client_drop() -> None:
+    fake_client = AckClient(delay_before_ack=0.0)
+    gateway = MqttGateway(host="mqtt.local", port=1884, client=fake_client)
+    gateway.connect()
+    gateway.publish_raw("vf/one", "1")
+    gateway.publish_raw("vf/two", "2")
+
+    summary = gateway.disconnect()
+
+    assert summary["remaining"] == 0
+    assert summary["timed_out"] is False
+    assert summary["drained"] >= 0
+    assert fake_client.disconnected is True
+    assert fake_client.loop_started is True
+    assert fake_client.loop_stopped is True
+
+
+def test_drain_pending_is_bounded_when_ack_does_not_arrive() -> None:
+    fake_client = AckClient(delay_before_ack=10.0)
+    gateway = MqttGateway(client=fake_client)
+    gateway.publish_raw("vf/slow", "x", ack_timeout_s=0.01)
+
+    summary = gateway.drain_pending(timeout_s=0.02)
+
+    assert summary["timed_out"] is True
+    assert summary["remaining"] == 1
+    assert gateway._pending == []

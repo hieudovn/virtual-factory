@@ -58,8 +58,6 @@ APP_CONFIG = REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml"
 # head. CI checkouts are shallow and do not contain that commit object, so
 # tests compare SHA-256 rather than `git diff`.
 FROZEN_PROTOCOL_HASHES = {
-    "src/virtual_factory/protocols/mqtt_gateway.py":
-        "f540ef429dbcedfef4baeddbe2f5c41c152d547f057a4a3d93762c6406414872",
     "src/virtual_factory/telemetry/signal_value.py":
         "67fb1387495cecc3e9b9f39954166d01bdec2738f3d18331f74d79811fd1c009",
 }
@@ -285,6 +283,7 @@ def test_b6_08_existing_mqtt_gateway_unchanged_and_can_carry_payload():
     published = publish_via_existing_mqtt(gateway, messages[:3])
     assert published == 3
     assert recorded[0][0].startswith(f"{TOPIC_PREFIX}/signal/")
+    assert recorded[0][2] == 1
     payload = json.loads(recorded[0][1])
     assert payload["workspace_id"] == "bottled-water-dday"
     assert inspect.getsource(MqttGateway.build_topic)

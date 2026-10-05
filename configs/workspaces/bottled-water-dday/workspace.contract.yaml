@@ -3,7 +3,7 @@
 # Runtime wiring is intentionally deferred to B2 and MUST reuse the existing
 # Virtual Factory discrete foundation used by the TIPA ASSY workspace.
 
-contract_version: dday-bw-b1-v1
+contract_version: dday-bw-b1-v2
 contract_status: FROZEN_CANDIDATE
 workspace_id: bottled-water-dday
 workspace_type: demo

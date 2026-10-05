@@ -93,8 +93,8 @@ def main() -> int:
           "semantics say timestamp is not wall-clock receipt time")
     review = review_set_entries()
     claim(len(review) >= 9, "review-set dispositions are machine-readable")
-    claim(all(item.get("disposition") in {"EXPORTED", "UNAVAILABLE"} for item in review),
-          "every review-set fact has EXPORTED or UNAVAILABLE")
+    claim(all(item.get("disposition") in {"EXPORTED", "UNAVAILABLE", "EVENT_ONLY"} for item in review),
+          "every review-set fact has EXPORTED, UNAVAILABLE, or EVENT_ONLY")
     meta_ok = all(
         all(entry.get(field) for field in COMPLETE_EXPORT_METADATA_FIELDS)
         for entry in exported_signal_entries()

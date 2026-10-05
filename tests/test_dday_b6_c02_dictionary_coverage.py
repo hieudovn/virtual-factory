@@ -35,8 +35,6 @@ FROZEN_C01_HASHES = {
         "c5b2883a9a5ca50878a9cc7bab850ad0a296df19e73c0a6fc62c56a499e0891b",
     "src/virtual_factory/workspaces/compressor_pressure.py":
         "f35a639aced026e497edb53174034b207b86a6d0fa12db63fe7c80f18ca1ac08",
-    "src/virtual_factory/protocols/mqtt_gateway.py":
-        "f540ef429dbcedfef4baeddbe2f5c41c152d547f057a4a3d93762c6406414872",
     "src/virtual_factory/ui/static/bottled_water_overview.html":
         "46ab475e5594014f0e2bd4384b0bb46e0623c6a8f2f4a453565346d1e961b8ae",
     "src/virtual_factory/ui/static/bottled_water_overview.js":
@@ -176,12 +174,15 @@ def test_c02_08_review_set_has_explicit_disposition_for_every_fact():
     for item in review:
         key = (item["source_id"], item["signal_id"])
         disposition = item["disposition"]
-        assert disposition in {"EXPORTED", "UNAVAILABLE"}, item
+        assert disposition in {"EXPORTED", "UNAVAILABLE", "EVENT_ONLY"}, item
         if disposition == "EXPORTED":
             assert key in exported, key
-        else:
+        elif disposition == "UNAVAILABLE":
             assert key in unavailable, key
             assert key not in exported
+        else:
+            assert key not in exported
+            assert key not in unavailable
     required = {
         ("BW-FP-CAP01", "speed"),
         ("BW-FP-CAP01", "cycle_time"),

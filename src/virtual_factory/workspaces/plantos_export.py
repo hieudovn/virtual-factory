@@ -24,7 +24,7 @@ from typing import Any, Iterable, Optional
 import yaml
 
 WORKSPACE_ID = "bottled-water-dday"
-CONTRACT_VERSION = "dday-bw-b1-v1"
+CONTRACT_VERSION = "dday-bw-b1-v2"
 PLANT_SOURCE_ID = "BW-DEMO-01"
 TOPIC_PREFIX = f"virtual-factory/{WORKSPACE_ID}"
 TOPIC_PATTERN = f"{TOPIC_PREFIX}/{{kind}}/{{asset_id}}/{{signal_or_event}}"
@@ -32,6 +32,17 @@ PROVENANCE_RAW = "SIMULATED_RAW"
 QUALITY_GOOD = "GOOD"
 UTC_EPOCH = datetime(2026, 10, 3, 0, 0, 0, tzinfo=timezone.utc)
 TIMESTAMP_KIND = "simulated_source_utc"
+TRANSPORT_KIND_EVENT_ONLY = "event_only_non_measurement"
+OPERATING_STATE_EVENT_TYPE = "MACHINE_STATE_CHANGED"
+SIX_EVENT_TYPES = (
+    "MACHINE_STATE_CHANGED",
+    "ALARM_RAISED",
+    "ALARM_CLEARED",
+    "DOWNTIME_START",
+    "DOWNTIME_END",
+    "SCENARIO_PHASE_CHANGED",
+)
+MQTT_QOS = 1
 ADAPTER_ROLE = "vf_unit_test_aid_not_plantos_historian"
 INGESTION_PATH = "local_in_memory_plantos_compatible"
 TIMESTAMP_SEMANTICS = {
@@ -43,6 +54,14 @@ TIMESTAMP_SEMANTICS = {
     ),
     "simulation_time_s": "simulation_elapsed_seconds",
     "receipt_time": "plantos_or_runtime_owned_not_generated_by_vf",
+}
+TRANSPORT_SEMANTICS = {
+    "operating_state": TRANSPORT_KIND_EVENT_ONLY,
+    "operating_state_event_type": OPERATING_STATE_EVENT_TYPE,
+    "operating_state_not_a_measurement": True,
+    "mqtt_qos": MQTT_QOS,
+    "mqtt_acknowledged_delivery": True,
+    "mqtt_drain_before_disconnect": True,
 }
 
 ACCEPTED_AREAS = ("BW-WT", "BW-BP", "BW-FP", "BW-UT", "BW-WH")
@@ -205,6 +224,18 @@ def selected_event_entries(dictionary: Optional[dict] = None) -> list[dict]:
     return [dict(entry) for entry in data.get("events") or ()]
 
 
+def event_only_state_entries(dictionary: Optional[dict] = None) -> list[dict]:
+    data = dictionary or load_export_dictionary()
+    return [dict(entry) for entry in data.get("event_only_states") or ()]
+
+
+def event_only_state_keys(dictionary: Optional[dict] = None) -> list[tuple[str, str]]:
+    return [
+        (str(entry["source_id"]), str(entry["signal_id"]))
+        for entry in event_only_state_entries(dictionary)
+    ]
+
+
 def exported_signal_entries(dictionary: Optional[dict] = None) -> list[dict]:
     return [
         entry for entry in selected_signal_entries(dictionary)
@@ -229,11 +260,29 @@ def selected_signal_keys(dictionary: Optional[dict] = None) -> list[tuple[str, s
     ]
 
 
+def lookup_event_only_entry(
+    source_id: str,
+    signal_id: str,
+    dictionary: Optional[dict] = None,
+) -> dict:
+    for entry in event_only_state_entries(dictionary):
+        if entry.get("source_id") == source_id and entry.get("signal_id") == signal_id:
+            return entry
+    raise UnmappedExportError(
+        f"unmapped event-only state {source_id}.{signal_id}; fail closed"
+    )
+
+
 def lookup_signal_entry(
     source_id: str,
     signal_id: str,
     dictionary: Optional[dict] = None,
 ) -> dict:
+    for entry in event_only_state_entries(dictionary):
+        if entry.get("source_id") == source_id and entry.get("signal_id") == signal_id:
+            raise UnmappedExportError(
+                f"event-only non-measurement {source_id}.{signal_id}; not a measurement"
+            )
     for entry in selected_signal_entries(dictionary):
         if entry.get("source_id") == source_id and entry.get("signal_id") == signal_id:
             if not _is_exported_entry(entry):
@@ -430,6 +479,57 @@ def map_selected_signal(
     )
 
 
+def map_event_only_state(
+    snapshot: dict,
+    source_id: str,
+    signal_id: str = "operating_state",
+    dictionary: Optional[dict] = None,
+) -> PublishedMessage:
+    """Map enum operating_state as an event, never as a measurement."""
+    entry = lookup_event_only_entry(source_id, signal_id, dictionary)
+    if _blocked_name(source_id) or _blocked_name(signal_id):
+        raise UnmappedExportError(
+            f"blocked event-only state {source_id}.{signal_id}; fail closed"
+        )
+    node = (snapshot.get("nodes") or {}).get(source_id) or {}
+    signal = (node.get("signals") or {}).get(signal_id)
+    if not isinstance(signal, dict):
+        raise UnmappedExportError(
+            f"event-only state {source_id}.{signal_id} missing from factory snapshot"
+        )
+    event_type = str(entry.get("plantos_event_type") or OPERATING_STATE_EVENT_TYPE)
+    event_entry = lookup_event_entry(event_type, dictionary)
+    simulation_time_s = _simulation_time(snapshot, signal.get("simulation_time_s"))
+    payload = _envelope_base(
+        snapshot,
+        source_id,
+        simulation_time_s,
+        quality=signal.get("quality", entry.get("quality", QUALITY_GOOD)),
+        provenance=signal.get("provenance", entry.get("provenance", PROVENANCE_RAW)),
+    )
+    payload.update({
+        "event_type": event_type,
+        "operating_state": signal.get("value"),
+        "detail": f"operating_state={signal.get('value')}",
+        "semantic_role": entry.get("semantic_role", event_entry.get("semantic_role")),
+        "datatype": "enum",
+        "cadence": entry.get("cadence", event_entry.get("cadence")),
+        "plantos_mapping_key": entry.get("plantos_mapping_key"),
+        "transport_kind": entry.get("transport_kind", TRANSPORT_KIND_EVENT_ONLY),
+        "not_a_measurement": True,
+    })
+    scenario_id = _scenario_id_for(source_id, snapshot)
+    if scenario_id:
+        payload["scenario_id"] = scenario_id
+    return PublishedMessage(
+        topic=build_topic("event", source_id, event_type),
+        kind="event",
+        asset_id=source_id,
+        signal_or_event=event_type,
+        payload=payload,
+    )
+
+
 def map_selected_event(
     snapshot: dict,
     event: dict,
@@ -465,6 +565,12 @@ def map_snapshot(
         if source_id not in nodes or signal_id not in (nodes[source_id].get("signals") or {}):
             continue
         messages.append(map_selected_signal(snapshot, source_id, signal_id, selected))
+    for entry in event_only_state_entries(selected):
+        source_id = str(entry["source_id"])
+        signal_id = str(entry["signal_id"])
+        if source_id not in nodes or signal_id not in (nodes[source_id].get("signals") or {}):
+            continue
+        messages.append(map_event_only_state(snapshot, source_id, signal_id, selected))
     for event in snapshot.get("recent_events") or ():
         event_type = str(event.get("event_type") or "")
         if not event_type:
@@ -630,6 +736,7 @@ def dictionary_summary(dictionary: Optional[dict] = None) -> dict:
         "plant_source_id": selected.get("plant_source_id", PLANT_SOURCE_ID),
         "fail_closed": bool(selected.get("fail_closed", True)),
         "timestamp_semantics": dict(selected.get("timestamp_semantics") or TIMESTAMP_SEMANTICS),
+        "transport_semantics": dict(selected.get("transport_semantics") or TRANSPORT_SEMANTICS),
         "review_set": review_set_entries(selected),
         "families": families,
         "required_families": list(REQUIRED_SIGNAL_FAMILIES),
@@ -664,6 +771,18 @@ def dictionary_summary(dictionary: Optional[dict] = None) -> dict:
             }
             for entry in unavailable_signal_entries(selected)
         ],
+        "event_only_states": [
+            {
+                "source_id": entry["source_id"],
+                "signal_id": entry["signal_id"],
+                "event_type": entry.get("plantos_event_type", OPERATING_STATE_EVENT_TYPE),
+                "transport_kind": entry.get("transport_kind", TRANSPORT_KIND_EVENT_ONLY),
+                "not_a_measurement": True,
+                "export_status": entry.get("export_status", "EVENT_ONLY"),
+                "plantos_mapping_key": entry.get("plantos_mapping_key"),
+            }
+            for entry in event_only_state_entries(selected)
+        ],
     }
 
 
@@ -674,12 +793,14 @@ class PlantosLocalIngestion:
         self._signals: deque[PublishedMessage] = deque(maxlen=signal_capacity)
         self._events: deque[PublishedMessage] = deque(maxlen=event_capacity)
         self._current: dict[tuple[str, str], PublishedMessage] = {}
+        self._current_states: dict[tuple[str, str], PublishedMessage] = {}
         self._seen_events: set[tuple] = set()
 
     def clear(self) -> None:
         self._signals.clear()
         self._events.clear()
         self._current.clear()
+        self._current_states.clear()
         self._seen_events.clear()
 
     def ingest(self, messages: Iterable[PublishedMessage]) -> None:
@@ -688,6 +809,18 @@ class PlantosLocalIngestion:
                 self._current[(message.asset_id, message.signal_or_event)] = message
                 self._signals.append(message)
                 continue
+            if message.payload.get("not_a_measurement") or message.payload.get(
+                "transport_kind"
+            ) == TRANSPORT_KIND_EVENT_ONLY:
+                state_key = (message.asset_id, "operating_state")
+                previous = self._current_states.get(state_key)
+                self._current_states[state_key] = message
+                if (
+                    previous is not None
+                    and previous.payload.get("operating_state")
+                    == message.payload.get("operating_state")
+                ):
+                    continue
             key = (
                 message.asset_id,
                 message.signal_or_event,
@@ -719,6 +852,9 @@ class PlantosLocalIngestion:
             items = items[-limit:]
         return [message.as_dict() for message in items]
 
+    def event_only_states(self) -> list[dict]:
+        return [message.as_dict() for message in self._current_states.values()]
+
 
 @dataclass
 class ExportBundle:
@@ -738,6 +874,7 @@ class ExportBundle:
             "plant_id": self.snapshot.get("plant_id"),
             "simulation_time_s": factory.get("simulation_time_s"),
             "timestamp_semantics": dict(TIMESTAMP_SEMANTICS),
+            "transport_semantics": dict(TRANSPORT_SEMANTICS),
             "topic_pattern": TOPIC_PATTERN,
             "ingestion_path": INGESTION_PATH,
             "adapter_role": ADAPTER_ROLE,
@@ -749,6 +886,7 @@ class ExportBundle:
             "current_values": self.sink.current_values(),
             "historian": self.sink.historian(limit=240),
             "events": self.sink.events(),
+            "event_only_states": self.sink.event_only_states(),
             "overview": overview_from_snapshot(self.snapshot),
             "message_count": self.sink.message_count,
         }
@@ -771,11 +909,15 @@ def export_bundle(
 
 
 def publish_via_existing_mqtt(gateway: Any, messages: Iterable[PublishedMessage]) -> int:
-    """Deliver mapped payloads through unchanged MqttGateway.publish_raw."""
+    """Deliver mapped payloads through existing MqttGateway.publish_raw at QoS 1."""
     published = 0
     import json
 
     for message in messages:
-        gateway.publish_raw(message.topic, json.dumps(message.payload))
+        gateway.publish_raw(
+            message.topic,
+            json.dumps(message.payload),
+            qos=MQTT_QOS,
+        )
         published += 1
     return published

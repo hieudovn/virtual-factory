@@ -1,5 +1,5 @@
 # B1 signal/event dictionary — raw facts only.
-contract_version: dday-bw-b1-v1
+contract_version: dday-bw-b1-v2
 default_provenance: SIMULATED_RAW
 
 common_machine_signals:
@@ -8,6 +8,9 @@ common_machine_signals:
     values: [RUNNING, IDLE, STOPPED, FAULT, UNKNOWN]
     unit: '-'
     cadence: on_change_plus_heartbeat
+    plantos_transport: event_only_non_measurement
+    plantos_event_type: MACHINE_STATE_CHANGED
+    not_a_measurement: true
   speed: { datatype: float, unit: bottle/min, cadence: 1s }
   cycle_time: { datatype: float, unit: s, cadence: per_cycle_or_1s }
   total_count: { datatype: integer, unit: bottle, cadence: on_change_or_1s }
@@ -80,6 +83,9 @@ invariants:
 
 publish_contract:
   primary: mqtt_json
+  qos: 1
+  acknowledged_delivery: true
+  drain_before_disconnect: true
   topic_pattern: 'virtual-factory/bottled-water-dday/{kind}/{asset_id}/{signal_or_event}'
   debug: [rest, websocket, csv_jsonl]
   optional: [opcua]

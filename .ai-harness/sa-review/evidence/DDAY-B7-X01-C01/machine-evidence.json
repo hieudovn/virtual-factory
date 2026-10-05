@@ -1,0 +1,660 @@
+{
+  "task_id": "DDAY-B7-X01-C01",
+  "baseline_c02_reviewed": "f0f5428e21d3f63f22c3e1419600dd63a30b1f75",
+  "head": "a37b28d087096f05ca3774c774d715453c4bd3d1",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "contract_version": "dday-bw-b1-v2",
+  "mqtt_qos": 1,
+  "default_qos": 1,
+  "six_event_types": [
+    "MACHINE_STATE_CHANGED",
+    "ALARM_RAISED",
+    "ALARM_CLEARED",
+    "DOWNTIME_START",
+    "DOWNTIME_END",
+    "SCENARIO_PHASE_CHANGED"
+  ],
+  "export_dictionary": {
+    "contract_version": "dday-bw-b1-v2",
+    "workspace_id": "bottled-water-dday",
+    "plant_source_id": "BW-DEMO-01",
+    "fail_closed": true,
+    "timestamp_semantics": {
+      "timestamp": "simulated_source_utc",
+      "timestamp_meaning": "Deterministic simulated-source UTC instant for ordering and replay (frozen epoch 2026-10-03T00:00:00.000Z + simulation_time_s). Not wall-clock receipt time.\n",
+      "simulation_time_s": "simulation_elapsed_seconds",
+      "receipt_time": "plantos_or_runtime_owned_not_generated_by_vf"
+    },
+    "transport_semantics": {
+      "operating_state": "event_only_non_measurement",
+      "operating_state_event_type": "MACHINE_STATE_CHANGED",
+      "operating_state_not_a_measurement": true,
+      "mqtt_qos": 1,
+      "mqtt_acknowledged_delivery": true,
+      "mqtt_drain_before_disconnect": true
+    },
+    "review_set": [
+      {
+        "source_id": "BW-WT-FEED01",
+        "signal_id": "water_flow",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WT-RO01",
+        "signal_id": "production_flow",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WT-TK01",
+        "signal_id": "level",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "operating_state",
+        "disposition": "EVENT_ONLY"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "total_count",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "good_count",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "reject_count",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "target_rate",
+        "disposition": "UNAVAILABLE"
+      },
+      {
+        "source_id": "BW-FP-FIL01",
+        "signal_id": "fill_rate",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "operating_state",
+        "disposition": "EVENT_ONLY"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "speed",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "cycle_time",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "cap_torque",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "motor_current",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "drive_load",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "vibration_rms",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "bearing_temperature",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "operating_state",
+        "disposition": "EVENT_ONLY"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "air_pressure",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "active_power",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "energy_total",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "load",
+        "disposition": "UNAVAILABLE"
+      },
+      {
+        "source_id": "BW-WH-FG01",
+        "signal_id": "inventory_count",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WH-FG01",
+        "signal_id": "receipt_count",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WH-FG01",
+        "signal_id": "dispatch_count",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-PWR01",
+        "signal_id": "plant_active_power",
+        "disposition": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-PWR01",
+        "signal_id": "plant_energy_total",
+        "disposition": "EXPORTED"
+      }
+    ],
+    "families": [
+      "capper",
+      "compressor",
+      "energy",
+      "fg",
+      "production",
+      "wt"
+    ],
+    "required_families": [
+      "wt",
+      "production",
+      "capper",
+      "compressor",
+      "fg",
+      "energy"
+    ],
+    "signal_count": 22,
+    "event_types": [
+      "MACHINE_STATE_CHANGED",
+      "ALARM_RAISED",
+      "ALARM_CLEARED",
+      "DOWNTIME_START",
+      "DOWNTIME_END",
+      "SCENARIO_PHASE_CHANGED"
+    ],
+    "signals": [
+      {
+        "source_id": "BW-WT-FEED01",
+        "signal_id": "water_flow",
+        "family": "wt",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "unit": "m3/h",
+        "cadence": "2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-FEED01/signal:water_flow",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WT-RO01",
+        "signal_id": "production_flow",
+        "family": "wt",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "unit": "m3/h",
+        "cadence": "2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-RO01/signal:production_flow",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WT-TK01",
+        "signal_id": "level",
+        "family": "wt",
+        "semantic_role": "process_measurement",
+        "datatype": "float",
+        "unit": "%",
+        "cadence": "2-5s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-TK01/signal:level",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "total_count",
+        "family": "production",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:total_count",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "good_count",
+        "family": "production",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:good_count",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "reject_count",
+        "family": "production",
+        "semantic_role": "production_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/signal:reject_count",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "motor_current",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "A",
+        "cadence": "1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:motor_current",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "drive_load",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "%",
+        "cadence": "1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:drive_load",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "vibration_rms",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "mm/s",
+        "cadence": "1-2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:vibration_rms",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "bearing_temperature",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "degC",
+        "cadence": "2-5s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:bearing_temperature",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "speed",
+        "family": "capper",
+        "semantic_role": "production_rate",
+        "datatype": "float",
+        "unit": "bottle/min",
+        "cadence": "1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:speed",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "cycle_time",
+        "family": "capper",
+        "semantic_role": "production_cycle",
+        "datatype": "float",
+        "unit": "s",
+        "cadence": "per_cycle_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:cycle_time",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "cap_torque",
+        "family": "capper",
+        "semantic_role": "condition_measurement",
+        "datatype": "float",
+        "unit": "N.m",
+        "cadence": "per_cycle_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/signal:cap_torque",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-FP-FIL01",
+        "signal_id": "fill_rate",
+        "family": "production",
+        "semantic_role": "production_rate",
+        "datatype": "float",
+        "unit": "bottle/min",
+        "cadence": "1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-FIL01/signal:fill_rate",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "air_pressure",
+        "family": "compressor",
+        "semantic_role": "utility_measurement",
+        "datatype": "float",
+        "unit": "bar",
+        "cadence": "2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:air_pressure",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "active_power",
+        "family": "compressor",
+        "semantic_role": "energy_measurement",
+        "datatype": "float",
+        "unit": "kW",
+        "cadence": "1-2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:active_power",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "energy_total",
+        "family": "compressor",
+        "semantic_role": "energy_measurement",
+        "datatype": "float",
+        "unit": "kWh",
+        "cadence": "2-5s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/signal:energy_total",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WH-FG01",
+        "signal_id": "inventory_count",
+        "family": "fg",
+        "semantic_role": "inventory_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:inventory_count",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WH-FG01",
+        "signal_id": "receipt_count",
+        "family": "fg",
+        "semantic_role": "inventory_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:receipt_count",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-WH-FG01",
+        "signal_id": "dispatch_count",
+        "family": "fg",
+        "semantic_role": "inventory_count",
+        "datatype": "integer",
+        "unit": "bottle",
+        "cadence": "on_change_or_1s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WH/asset:BW-WH-FG01/signal:dispatch_count",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-PWR01",
+        "signal_id": "plant_active_power",
+        "family": "energy",
+        "semantic_role": "energy_measurement",
+        "datatype": "float",
+        "unit": "kW",
+        "cadence": "1-2s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-PWR01/signal:plant_active_power",
+        "export_status": "EXPORTED"
+      },
+      {
+        "source_id": "BW-UT-PWR01",
+        "signal_id": "plant_energy_total",
+        "family": "energy",
+        "semantic_role": "energy_measurement",
+        "datatype": "float",
+        "unit": "kWh",
+        "cadence": "2-5s",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-PWR01/signal:plant_energy_total",
+        "export_status": "EXPORTED"
+      }
+    ],
+    "unavailable": [
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "load",
+        "family": "compressor",
+        "export_status": "UNAVAILABLE",
+        "not_exported": true,
+        "reason": "No dedicated compressor load/drive_load raw signal exists on the factory snapshot. Electrical load is already published as BW-UT-CMP01.active_power. C02 does not fabricate a load fact.\n"
+      },
+      {
+        "source_id": "BW-FP",
+        "signal_id": "target_rate",
+        "family": "production",
+        "export_status": "UNAVAILABLE",
+        "not_exported": true,
+        "reason": "B1 configured_targets.BW-FP.target_rate is CONFIGURED_TARGET metadata and is not published as a factory raw signal. C02 does not invent it.\n"
+      }
+    ],
+    "event_only_states": [
+      {
+        "source_id": "BW-FP",
+        "signal_id": "operating_state",
+        "event_type": "MACHINE_STATE_CHANGED",
+        "transport_kind": "event_only_non_measurement",
+        "not_a_measurement": true,
+        "export_status": "EVENT_ONLY",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/event:MACHINE_STATE_CHANGED"
+      },
+      {
+        "source_id": "BW-FP-CAP01",
+        "signal_id": "operating_state",
+        "event_type": "MACHINE_STATE_CHANGED",
+        "transport_kind": "event_only_non_measurement",
+        "not_a_measurement": true,
+        "export_status": "EVENT_ONLY",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/event:MACHINE_STATE_CHANGED"
+      },
+      {
+        "source_id": "BW-UT-CMP01",
+        "signal_id": "operating_state",
+        "event_type": "MACHINE_STATE_CHANGED",
+        "transport_kind": "event_only_non_measurement",
+        "not_a_measurement": true,
+        "export_status": "EVENT_ONLY",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/event:MACHINE_STATE_CHANGED"
+      }
+    ]
+  },
+  "event_only_messages": [
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-FP/MACHINE_STATE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-FP",
+      "signal_or_event": "MACHINE_STATE_CHANGED",
+      "payload": {
+        "contract_version": "dday-bw-b1-v2",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-FP",
+        "asset_id": "BW-FP",
+        "timestamp": "2026-10-03T00:00:12.000Z",
+        "timestamp_kind": "simulated_source_utc",
+        "simulation_time_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "event_type": "MACHINE_STATE_CHANGED",
+        "operating_state": "RUNNING",
+        "detail": "operating_state=RUNNING",
+        "semantic_role": "machine_state",
+        "datatype": "enum",
+        "cadence": "on_change_plus_heartbeat",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/event:MACHINE_STATE_CHANGED",
+        "transport_kind": "event_only_non_measurement",
+        "not_a_measurement": true
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-FP-CAP01/MACHINE_STATE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-FP-CAP01",
+      "signal_or_event": "MACHINE_STATE_CHANGED",
+      "payload": {
+        "contract_version": "dday-bw-b1-v2",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-FP-CAP01",
+        "asset_id": "BW-FP-CAP01",
+        "timestamp": "2026-10-03T00:00:12.000Z",
+        "timestamp_kind": "simulated_source_utc",
+        "simulation_time_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "event_type": "MACHINE_STATE_CHANGED",
+        "operating_state": "RUNNING",
+        "detail": "operating_state=RUNNING",
+        "semantic_role": "machine_state",
+        "datatype": "enum",
+        "cadence": "on_change_plus_heartbeat",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/event:MACHINE_STATE_CHANGED",
+        "transport_kind": "event_only_non_measurement",
+        "not_a_measurement": true,
+        "scenario_id": "BW-CAP-DEG-01"
+      }
+    },
+    {
+      "topic": "virtual-factory/bottled-water-dday/event/BW-UT-CMP01/MACHINE_STATE_CHANGED",
+      "kind": "event",
+      "asset_id": "BW-UT-CMP01",
+      "signal_or_event": "MACHINE_STATE_CHANGED",
+      "payload": {
+        "contract_version": "dday-bw-b1-v2",
+        "workspace_id": "bottled-water-dday",
+        "plant_source_id": "BW-DEMO-01",
+        "source_id": "BW-UT-CMP01",
+        "asset_id": "BW-UT-CMP01",
+        "timestamp": "2026-10-03T00:00:12.000Z",
+        "timestamp_kind": "simulated_source_utc",
+        "simulation_time_s": 12.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "event_type": "MACHINE_STATE_CHANGED",
+        "operating_state": "RUNNING",
+        "detail": "operating_state=RUNNING",
+        "semantic_role": "machine_state",
+        "datatype": "enum",
+        "cadence": "on_change_plus_heartbeat",
+        "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/event:MACHINE_STATE_CHANGED",
+        "transport_kind": "event_only_non_measurement",
+        "not_a_measurement": true,
+        "scenario_id": "BW-CMP-SAG-01"
+      }
+    }
+  ],
+  "measurement_operating_state_topics": [],
+  "mqtt_publish_count": 28,
+  "mqtt_qos_values": [
+    1
+  ],
+  "mqtt_drain": {
+    "drained": 0,
+    "remaining": 0,
+    "timed_out": false,
+    "timeout_s": 0.2
+  },
+  "frozen_hashes_match": true,
+  "frozen_hashes": {
+    "src/virtual_factory/workspaces/capper_degradation.py": "c5b2883a9a5ca50878a9cc7bab850ad0a296df19e73c0a6fc62c56a499e0891b",
+    "src/virtual_factory/workspaces/compressor_pressure.py": "f35a639aced026e497edb53174034b207b86a6d0fa12db63fe7c80f18ca1ac08",
+    "src/virtual_factory/ui/static/bottled_water_overview.html": "46ab475e5594014f0e2bd4384b0bb46e0623c6a8f2f4a453565346d1e961b8ae",
+    "src/virtual_factory/ui/static/bottled_water_overview.js": "aba11b2b9c434da2c5aaec794904bd7e4278c9b2030188fccc53fe2cba093425",
+    "src/virtual_factory/ui/static/bottled_water_overview.css": "8d4424b81772e591b8c5ce9ccb81fd5d03c4a9dd07517b942e877f94f4b21dc5"
+  },
+  "sample_envelope": {
+    "contract_version": "dday-bw-b1-v2",
+    "workspace_id": "bottled-water-dday",
+    "plant_source_id": "BW-DEMO-01",
+    "source_id": "BW-WT-FEED01",
+    "asset_id": "BW-WT-FEED01",
+    "timestamp": "2026-10-03T00:00:12.000Z",
+    "timestamp_kind": "simulated_source_utc",
+    "simulation_time_s": 12.0,
+    "quality": "GOOD",
+    "provenance": "SIMULATED_RAW",
+    "signal_id": "water_flow",
+    "value": 1.2,
+    "unit": "m3/h",
+    "semantic_role": "process_measurement",
+    "datatype": "float",
+    "cadence": "2s",
+    "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-WT/asset:BW-WT-FEED01/signal:water_flow"
+  },
+  "plantos_49_authorized": false,
+  "merge_authorized": false,
+  "deploy_authorized": false
+}
