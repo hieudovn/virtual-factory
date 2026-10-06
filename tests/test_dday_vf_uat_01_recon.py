@@ -23,7 +23,31 @@ def _git(*args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=REPO, text=True).strip()
 
 
+def _ensure_commit(sha: str) -> None:
+    t = subprocess.run(
+        ["git", "cat-file", "-t", sha], cwd=REPO, capture_output=True, text=True
+    )
+    if t.returncode == 0 and t.stdout.strip() == "commit":
+        probe = subprocess.run(
+            ["git", "cat-file", "-e", f"{sha}:configs/workspaces/bottled-water-dday/workspace.contract.yaml"],
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+        )
+        if probe.returncode == 0:
+            return
+    fetched = subprocess.run(
+        ["git", "fetch", "--no-tags", "--depth=1", "origin", sha],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+    )
+    if fetched.returncode != 0:
+        raise RuntimeError(f"cannot fetch {sha}: {fetched.stderr.strip()}")
+
+
 def _blob_exists(sha: str, path: str) -> bool:
+    _ensure_commit(sha)
     r = subprocess.run(
         ["git", "cat-file", "-e", f"{sha}:{path}"],
         cwd=REPO,
@@ -33,8 +57,13 @@ def _blob_exists(sha: str, path: str) -> bool:
     return r.returncode == 0
 
 
+def _blob_bytes(sha: str, path: str) -> bytes:
+    _ensure_commit(sha)
+    return subprocess.check_output(["git", "show", f"{sha}:{path}"], cwd=REPO)
+
+
 def _show(sha: str, path: str) -> str:
-    return _git("show", f"{sha}:{path}")
+    return _blob_bytes(sha, path).decode("utf-8")
 
 
 def test_uat01_r1_c03_sha_has_no_fr1_profile_or_scheduler():
@@ -62,12 +91,14 @@ def test_uat01_r2_fr1_lineage_and_evidence_only_child():
     assert len(mapped) == 22
     assert "class RuntimeProfileScheduler" in _show(FR1, "src/virtual_factory/workspaces/plantos_export.py")
     assert "def publish_live_mqtt" in _show(FR1, "src/virtual_factory/workspaces/bottled_water.py")
-    dict_bytes = subprocess.check_output(["git", "show", f"{FR1}:{DICTIONARY}"], cwd=REPO)
+    dict_bytes = _blob_bytes(FR1, DICTIONARY)
     import hashlib
 
     assert hashlib.sha256(dict_bytes).hexdigest() == DICT_SHA
-    c03_dict = subprocess.check_output(["git", "show", f"{C03}:{DICTIONARY}"], cwd=REPO)
+    c03_dict = _blob_bytes(C03, DICTIONARY)
     assert hashlib.sha256(c03_dict).hexdigest() == DICT_SHA
+    _ensure_commit(FR1)
+    _ensure_commit(FR1_EVIDENCE)
     diff = _git("diff", "--name-only", FR1, FR1_EVIDENCE)
     names = {line for line in diff.splitlines() if line}
     assert names == {

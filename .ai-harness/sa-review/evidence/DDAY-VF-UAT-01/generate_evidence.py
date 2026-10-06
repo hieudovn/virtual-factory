@@ -27,7 +27,31 @@ def _git(*args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=REPO, text=True).strip()
 
 
+def _ensure_commit(sha: str) -> None:
+    t = subprocess.run(
+        ["git", "cat-file", "-t", sha], cwd=REPO, capture_output=True, text=True
+    )
+    if t.returncode == 0 and t.stdout.strip() == "commit":
+        probe = subprocess.run(
+            ["git", "cat-file", "-e", f"{sha}:configs/workspaces/bottled-water-dday/workspace.contract.yaml"],
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+        )
+        if probe.returncode == 0:
+            return
+    fetched = subprocess.run(
+        ["git", "fetch", "--no-tags", "--depth=1", "origin", sha],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+    )
+    if fetched.returncode != 0:
+        raise RuntimeError(f"cannot fetch {sha}: {fetched.stderr.strip()}")
+
+
 def _blob_exists(sha: str, path: str) -> bool:
+    _ensure_commit(sha)
     r = subprocess.run(
         ["git", "cat-file", "-e", f"{sha}:{path}"],
         cwd=REPO,
@@ -38,6 +62,7 @@ def _blob_exists(sha: str, path: str) -> bool:
 
 
 def _sha256_blob(sha: str, path: str) -> str | None:
+    _ensure_commit(sha)
     r = subprocess.run(["git", "show", f"{sha}:{path}"], cwd=REPO, capture_output=True)
     if r.returncode != 0:
         return None
@@ -58,6 +83,7 @@ def _which(name: str) -> bool:
 
 def main() -> None:
     profile_at_c03 = _blob_exists(C03, PROFILE)
+    _ensure_commit(C03)
     scheduler_grep = subprocess.run(
         ["git", "grep", "RuntimeProfileScheduler", C03, "--", "*.py"],
         cwd=REPO,

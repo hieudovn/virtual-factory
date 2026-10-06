@@ -23,7 +23,31 @@ def claim(condition: bool, description: str) -> None:
         _failures.append(description)
 
 
+def _ensure_commit(sha: str) -> None:
+    t = subprocess.run(
+        ["git", "cat-file", "-t", sha], cwd=REPO, capture_output=True, text=True
+    )
+    if t.returncode == 0 and t.stdout.strip() == "commit":
+        probe = subprocess.run(
+            ["git", "cat-file", "-e", f"{sha}:configs/workspaces/bottled-water-dday/workspace.contract.yaml"],
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+        )
+        if probe.returncode == 0:
+            return
+    fetched = subprocess.run(
+        ["git", "fetch", "--no-tags", "--depth=1", "origin", sha],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+    )
+    if fetched.returncode != 0:
+        raise RuntimeError(f"cannot fetch {sha}: {fetched.stderr.strip()}")
+
+
 def _blob_exists(sha: str, path: str) -> bool:
+    _ensure_commit(sha)
     r = subprocess.run(
         ["git", "cat-file", "-e", f"{sha}:{path}"],
         cwd=REPO,
