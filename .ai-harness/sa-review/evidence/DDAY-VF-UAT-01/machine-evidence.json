@@ -1,0 +1,74 @@
+{
+  "task_id": "DDAY-VF-UAT-01",
+  "slice": "pre_deployment_recon_only",
+  "head": "96a43b92dbbf99f178407048b44117124a022eae",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "c03_accepted_sha": "320d82fb2fb3339461553e258b09ebee6689615a",
+  "fr1_implementation_sha": "dd6cfe466832b4c167f49861d27f718291f78699",
+  "fr1_evidence_sha": "96a43b92dbbf99f178407048b44117124a022eae",
+  "c03_sha_has_runtime_profile": false,
+  "c03_sha_has_runtime_profile_scheduler": false,
+  "fr1_profile_id": "dday-bw-runtime-fr1",
+  "contract_version": "dday-bw-b1-v2",
+  "dictionary_sha256_c03": "cbe389ec7d3c022a78b7853044f08ba148a7b8a41e374931973683c8886b07ca",
+  "dictionary_sha256_fr1": "cbe389ec7d3c022a78b7853044f08ba148a7b8a41e374931973683c8886b07ca",
+  "persistent_bw_mqtt_entrypoint": false,
+  "entrypoint_findings": {
+    "dockerfile_cmd": "virtual-factory run --steps 60 --quiet",
+    "serve_mqtt": "RuntimeService publish_frame on generic MVP, not plantos_export",
+    "http_autorun": "BottledWaterFactory.step only; no publish_live_mqtt",
+    "systemd": "deploy/virtual-factory.service is Compressor Train OPC UA",
+    "vf2_dockerfile": "unrelated PIM runtime",
+    "cli_parsers": [
+      "run",
+      "serve",
+      "validate",
+      "generate",
+      "parse"
+    ]
+  },
+  "mqtt_gateway_username_password_api": false,
+  "timestamp_epoch": "2026-10-03T00:00:00.000Z",
+  "timestamp_formula": "UTC_EPOCH + simulation_time_s",
+  "uat_live_inspect": {
+    "result": "UNKNOWN",
+    "plantos_net": "UNKNOWN",
+    "plantos_emqx_1883": "UNREACHABLE",
+    "edge_dday_01": "UNKNOWN",
+    "auth_policy": "UNKNOWN",
+    "invented_credentials": false,
+    "reason": [
+      "docker CLI not present in recon environment",
+      "plantos-emqx:1883 not reachable ([Errno -2] Name or service not known)"
+    ],
+    "sa_stated_topology": {
+      "network": "plantos-net",
+      "broker": "plantos-emqx:1883",
+      "edge": "plantos-edge-dday / EDGE-DDAY-01",
+      "source": "VF SA deployment review on Issue #118 (2026-10-06T22:55:18Z)",
+      "independently_verified": false,
+      "prior_publisher_credential_flags": "none (SA: internal path without credential flags)"
+    }
+  },
+  "tdengine_max_source_timestamp": {
+    "result": "UNKNOWN",
+    "measured_max": null,
+    "measured_max_simulation_time_s": null,
+    "historian_modified": false,
+    "sa_stated_lower_bound_simulation_time_s": 610.0,
+    "sa_stated_lower_bound_timestamp": "2026-10-03T00:10:10.000Z",
+    "epoch": "2026-10-03T00:00:00.000Z",
+    "reason": "no TDengine endpoint/credentials in this recon environment; did not query or patch historian",
+    "next_publish_must_be_strictly_after": "independently measured max (unknown here); not less than SA lower bound t>=610s"
+  },
+  "hero_scenario_windows_s": {
+    "capper_recovery_completes_s": 210,
+    "compressor_normal_before_degrade_s": 240,
+    "compressor_recovery_completes_s": 328
+  },
+  "deploy_authorized": false,
+  "plantos_handoff": false,
+  "merge_authorized": false,
+  "launcher_implemented": false,
+  "warmup_implemented": false
+}
