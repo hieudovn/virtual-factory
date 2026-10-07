@@ -10,5 +10,6 @@ UAT remains BLOCKED. This folder is recon evidence, not a live runtime report.
 6. [Proposed warmup](06-proposed-warmup.md) — not implemented
 7. [Limitations](07-limitations.md)
 8. [C01 durable runtime](08-c01-runtime.md) — implemented locally; not deployed
+9. [UAT host / Run A](09-uat-host.md) — inspected live; Run B HOLD
 
-C01 report phrase: `DDAY-VF-UAT-01-C01 — DURABLE RUNTIME READY FOR VF SA REVIEW`
+UAT-02 report phrase: `DDAY-VF-UAT — VF RUNTIME READY FOR INTEGRATION REVIEW` (Run A live; Run B HOLD)
