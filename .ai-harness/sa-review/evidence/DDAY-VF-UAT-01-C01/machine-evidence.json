@@ -1,7 +1,7 @@
 {
   "task_id": "DDAY-VF-UAT-01-C01",
   "baseline_recon_sha": "485af9ac24c66f69db29ef308a144cfebe1e054b",
-  "head": "485af9ac24c66f69db29ef308a144cfebe1e054b",
+  "head": "00f8d9e19940e325519de0da550aacf77f8c3b4b",
   "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
   "command": "dday-bw-runtime",
   "cli": "virtual-factory dday-bw-runtime --mqtt-host plantos-emqx --mqtt-port 1883 --mqtt-client-id vf-dday-bw-demo-01",
