@@ -1,0 +1,82 @@
+# B1 machine-readable topology contract — Bottled Water D-Day
+plant:
+  id: BW-DEMO-01
+  name: Bottled Water Factory
+  fidelity: aggregate_basic
+
+areas:
+  - id: BW-WT
+    name: Water Treatment
+    role: process_area
+    fidelity: aggregate_basic
+    assets:
+      - { id: BW-WT-FEED01, name: Raw Water Feed, role: feed }
+      - { id: BW-WT-RO01, name: Filtration / RO, role: treatment }
+      - { id: BW-WT-TK01, name: Treated Water Storage, role: storage }
+
+  - id: BW-BP
+    name: Bottle Preparation
+    role: preparation_area
+    fidelity: aggregate_basic
+    note: >
+      Logical preparation area only. The physical Blower/Infeed asset is owned
+      by BW-FP to avoid duplicate asset identity.
+
+  - id: BW-FP
+    name: Filling & Packaging Line
+    role: production_line
+    fidelity: detailed_basic
+    route:
+      - BW-FP-BLW01
+      - BW-FP-RIN01
+      - BW-FP-FIL01
+      - BW-FP-CAP01
+      - BW-FP-INS01
+      - BW-FP-LAB01
+      - BW-FP-CPK01
+      - BW-FP-PAL01
+    assets:
+      - { id: BW-FP-BLW01, name: Blower / Infeed, role: blower_infeed }
+      - { id: BW-FP-RIN01, name: Rinser, role: rinser }
+      - { id: BW-FP-FIL01, name: Filler, role: filler }
+      - { id: BW-FP-CAP01, name: Capper, role: capper, hero_abnormal: true }
+      - { id: BW-FP-INS01, name: Inspection, role: quality_inspection }
+      - { id: BW-FP-LAB01, name: Labeler, role: labeler }
+      - { id: BW-FP-CPK01, name: Case Packer, role: case_packer }
+      - { id: BW-FP-PAL01, name: Palletizer, role: palletizer }
+
+  - id: BW-UT
+    name: Utilities
+    role: utility_area
+    fidelity: aggregate_basic
+    assets:
+      - { id: BW-UT-CMP01, name: Air Compressor, role: compressed_air }
+      - { id: BW-UT-CHL01, name: Chiller, role: cooling }
+      - { id: BW-UT-PMP01, name: Utility Pump, role: pump }
+      - { id: BW-UT-PWR01, name: Main Power Meter, role: power_meter }
+
+  - id: BW-WH
+    name: Warehouse / Dispatch
+    role: warehouse_interface
+    fidelity: aggregate_basic
+    assets:
+      - { id: BW-WH-FG01, name: Finished Goods Interface, role: finished_goods }
+
+simulation_simplifications:
+  - no_full_batch_or_recipe_semantics
+  - no_manual_operator_checklists
+  - no_manual_quality_disposition
+  - bottle_flow_detailed_only_on_target_line
+  - case_packer_and_palletizer_may_use_aggregate_cycles
+  - inspection_may_combine_fill_cap_label_checks
+  - non_target_areas_publish_aggregate_operational_facts_only
+
+plantos_mapping:
+  plant: BW-DEMO-01
+  areas: [BW-WT, BW-BP, BW-FP, BW-UT, BW-WH]
+  line_mapping:
+    vf_id: BW-FP
+    plantos_entity: Area
+    metadata: { role: production_line }
+  machine_mapping:
+    plantos_entity: Asset

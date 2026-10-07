@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bottled Water Factory — Filling &amp; Packaging Line</title>
+<link rel="stylesheet" href="/bottled-water-demo/static/bottled_water_demo.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══════════════════════════════════════
+       TOP APPLICATION BAR
+       ═══════════════════════════════════════ -->
+  <header id="vf-topbar">
+    <div class="vf-tb-left">
+      <div class="vf-logo">
+        <span class="vf-logo-mark">VF</span>
+        <div>
+          <span class="vf-logo-text">VIRTUAL FACTORY</span>
+          <span class="vf-logo-sub" id="bw-plant-name">Bottled Water Factory</span>
+        </div>
+      </div>
+      <span class="vf-tb-divider"></span>
+      <div class="vf-tb-context">
+        <span class="vf-tb-line" id="bw-line-label">Filling &amp; Packaging Line</span>
+        <span class="vf-tb-ids" id="bw-identity">BW-DEMO-01 · BW-FP</span>
+      </div>
+    </div>
+    <div class="vf-tb-right">
+      <a class="vf-chip" id="bw-factory-link" href="/bottled-water-demo/overview">Whole factory</a>
+      <span class="vf-chip" id="bw-product-chip">bottle · WATER-500ML</span>
+      <span class="vf-chip vf-chip-live" id="bw-live-chip">● LIVE</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════
+       PRODUCTION FACTS STRIP (raw facts only)
+       ═══════════════════════════════════════ -->
+  <section id="bw-facts">
+    <div class="bw-fact">
+      <span class="bw-fact-label">Run state</span>
+      <span class="bw-fact-value bw-run-state" id="bw-run-state">STOPPED</span>
+    </div>
+    <div class="bw-fact">
+      <span class="bw-fact-label">Operating state</span>
+      <span class="bw-fact-value" id="bw-operating-state">STOPPED</span>
+    </div>
+    <div class="bw-fact">
+      <span class="bw-fact-label">Capper</span>
+      <span class="bw-fact-value" id="bw-capper-mark" data-mark="normal">normal</span>
+    </div>
+    <div class="bw-fact">
+      <span class="bw-fact-label">Compressor</span>
+      <span class="bw-fact-value" id="bw-cmp-mark" data-mark="normal">normal</span>
+    </div>
+    <div class="bw-fact">
+      <span class="bw-fact-label">Air pressure</span>
+      <span class="bw-fact-value" id="bw-air-pressure">7.000 bar</span>
+    </div>
+    <div class="bw-fact">
+      <span class="bw-fact-label">Simulation time</span>
+      <span class="bw-fact-value" id="bw-sim-time">0.0 s</span>
+    </div>
+    <div class="bw-fact">
+      <span class="bw-fact-label">Dwell</span>
+      <span class="bw-fact-value" id="bw-dwell">0</span>
+    </div>
+    <div class="bw-fact bw-fact-count">
+      <span class="bw-fact-label">Total bottles</span>
+      <span class="bw-fact-value" id="bw-total">0</span>
+    </div>
+    <div class="bw-fact bw-fact-count">
+      <span class="bw-fact-label">Good</span>
+      <span class="bw-fact-value bw-good" id="bw-good">0</span>
+    </div>
+    <div class="bw-fact bw-fact-count">
+      <span class="bw-fact-label">Reject</span>
+      <span class="bw-fact-value bw-reject" id="bw-reject">0</span>
+    </div>
+    <div class="bw-fact">
+      <span class="bw-fact-label">On line</span>
+      <span class="bw-fact-value" id="bw-on-line">0</span>
+    </div>
+    <div class="bw-fact bw-fact-inspection">
+      <span class="bw-fact-label">Inspection</span>
+      <span class="bw-fact-value" id="bw-inspection">no result yet</span>
+    </div>
+  </section>
+
+  <main id="bw-main">
+
+    <!-- ═══════════════════════════════════════
+         TARGET LINE CANVAS
+         ═══════════════════════════════════════ -->
+    <div id="bw-canvas-area">
+      <svg id="bw-svg" viewBox="0 0 1920 640" preserveAspectRatio="xMidYMid meet"
+           role="img" aria-label="Bottled water filling and packaging line">
+        <defs id="bw-defs"></defs>
+        <g id="bw-grid"></g>
+        <g id="bw-conveyor"></g>
+        <g id="bw-stations"></g>
+        <g id="bw-flow"></g>
+        <g id="bw-bottles"></g>
+      </svg>
+
+      <!-- Floating simulation control -->
+      <div id="bw-sim-panel">
+        <div class="bw-sim-title">Line control</div>
+        <div class="bw-sim-status">
+          <span id="bw-sim-clock" class="bw-status-time">t=0s</span>
+          <span id="bw-sim-dwell" class="bw-status-item">DWELL 0</span>
+          <span id="bw-sim-state" class="bw-status-item">STOPPED</span>
+        </div>
+        <div id="bw-sim-note" class="bw-sim-note">Line stopped — press START</div>
+        <div class="bw-sim-controls">
+          <button id="bw-btn-start"  class="bw-btn bw-btn-primary" onclick="bwStart()">▶ START</button>
+          <button id="bw-btn-pause"  class="bw-btn" onclick="bwPause()">⏸ PAUSE</button>
+          <button id="bw-btn-resume" class="bw-btn" onclick="bwResume()">▶ RESUME</button>
+          <button id="bw-btn-stop"   class="bw-btn" onclick="bwStop()">■ STOP</button>
+          <button id="bw-btn-reset"  class="bw-btn bw-btn-outline" onclick="bwReset()">↻ RESET</button>
+        </div>
+        <div class="bw-sim-rate">
+          <label class="bw-rate-label">Refresh
+            <select id="bw-rate" class="bw-select" onchange="bwSetRate(this.value)">
+              <option value="900">0.5x</option>
+              <option value="600" selected>1x</option>
+              <option value="300">2x</option>
+              <option value="150">4x</option>
+            </select>
+          </label>
+          <span class="bw-rate-hint">display only — the server clock drives production</span>
+        </div>
+      </div>
+
+      <!-- Selection popup -->
+      <div id="bw-popup" class="bw-hidden">
+        <div id="bw-popup-header">
+          <span id="bw-popup-title">Machine</span>
+          <button id="bw-popup-close" onclick="bwClosePopup()" title="Close">×</button>
+        </div>
+        <div id="bw-popup-body"></div>
+      </div>
+
+      <div id="bw-legend">
+        <span><i class="bw-dot bw-dot-run"></i> running</span>
+        <span><i class="bw-dot bw-dot-idle"></i> idle</span>
+        <span><i class="bw-dot bw-dot-pass"></i> pass</span>
+        <span><i class="bw-dot bw-dot-fail"></i> fail / reject</span>
+        <span><i class="bw-dot bw-dot-warn"></i> capper / air warn</span>
+        <span><i class="bw-dot bw-dot-fault"></i> capper fault</span>
+        <span><i class="bw-dot bw-dot-recover"></i> capper / air recover</span>
+        <span class="bw-legend-hint">click a machine or a bottle</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         EVENT STRIP
+         ═══════════════════════════════════════ -->
+    <aside id="bw-events">
+      <div class="bw-events-head">
+        <span>Line events</span>
+        <span class="bw-events-count" id="bw-events-count">0</span>
+      </div>
+      <ul id="bw-event-list"></ul>
+    </aside>
+
+  </main>
+</div>
+
+<script src="/bottled-water-demo/static/bottled_water_demo.js"></script>
+</body>
+</html>

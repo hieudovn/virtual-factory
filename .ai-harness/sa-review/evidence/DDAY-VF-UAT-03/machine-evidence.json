@@ -1,0 +1,37 @@
+{
+  "task_id": "DDAY-VF-UAT-03",
+  "evidence_role": "canonical_current",
+  "canonical_current": true,
+  "authority": "Issue #120 plus PlantOS SA-accepted coordinated UAT",
+  "deployed_vf_runtime_sha": "d7db6d0909da968c2b4a4ea2cdb712e5d7601282",
+  "plantos_accepted_uat_merge_sha": "a1695c5457515e2b565a5f9fe107c1e18b3e0879",
+  "uat02_historical_head": "a8d5ecba1b0794251fd9c618c338de449263a0b0",
+  "closeout_implementation_sha": "5c475e7a9d3bd42581f73cbbde3e57556cf61c38",
+  "workspace_id": "bottled-water-dday",
+  "profile_id": "dday-bw-runtime-fr1",
+  "contract_version": "dday-bw-b1-v2",
+  "dictionary_sha256": "cbe389ec7d3c022a78b7853044f08ba148a7b8a41e374931973683c8886b07ca",
+  "run_a": {
+    "status": "completed",
+    "reached_center_tdengine_ui": true,
+    "historical_snapshot": "DDAY-VF-UAT-02"
+  },
+  "reset_dday_receive_epoch": {
+    "succeeded": true,
+    "same_edge_process": true
+  },
+  "run_b": {
+    "status": "completed",
+    "started": true,
+    "reused_vf_source_timestamps": true,
+    "accepted_at_later_edge_receipt_timestamp": true,
+    "tdengine_latest_advanced": true,
+    "live_ui_advanced": true
+  },
+  "run_b_hold_current": false,
+  "run_b_completed": true,
+  "vf_product_changed": false,
+  "uat_redeployed_this_slice": false,
+  "merge_authorized": false,
+  "password_stored_in_repo": false
+}

@@ -1,0 +1,79 @@
+# PlantOS + Virtual Factory D-Day — B2 runnable Bottled Water hero line
+#
+# This is a RUNTIME CONFIGURATION for the existing Virtual Factory discrete line
+# runtime (src/virtual_factory/assembly/line_runtime.py). It is not a new
+# engine, not a new telemetry framework and not a new scenario framework.
+#
+# Frozen target route (B1 topology contract, area BW-FP):
+#   BW-FP-BLW01  Blower / Infeed
+#   BW-FP-RIN01  Rinser
+#   BW-FP-FIL01  Filler
+#   BW-FP-CAP01  Capper
+#   BW-FP-INS01  Inspection          <- consolidated automated quality checkpoint
+#   BW-FP-LAB01  Labeler
+#   BW-FP-CPK01  Case Packer         <- aggregate cycle
+#   BW-FP-PAL01  Palletizer          <- aggregate cycle
+#
+# Linked by configuration only. Plant identity, station identity, unit metadata
+# and the quality checkpoint below are declared here — nothing is hard-coded in
+# the runtime for this workspace.
+
+plant:
+  id: BW-DEMO-01
+  name: "Bottled Water Factory"
+  type: discrete_assembly
+
+line:
+  id: BW-FP
+  label: "Filling & Packaging Line"
+  # "generic" => the runtime uses configured operations only, with no station-id
+  # specific domain behaviour. The other supported profile keeps the frozen
+  # legacy station semantics untouched.
+  profile: generic
+
+unit:
+  id_prefix: BTL
+  unit_type: bottle
+  product_code: WATER-500ML
+
+conveyor:
+  nominal_line_dwell_time_s: 20.0
+  index_movement_duration_s: 0.0
+  positions:
+    - BW-FP-BLW01
+    - BW-FP-RIN01
+    - BW-FP-FIL01
+    - BW-FP-CAP01
+    - BW-FP-INS01
+    - BW-FP-LAB01
+    - BW-FP-CPK01
+    - BW-FP-PAL01
+
+# Logical/basic cycle durations only (D-Day simplification). No filling-head
+# physics, rotary kinematics or liquid hydraulics are modelled.
+station_durations:
+  BW-FP-BLW01: 12.0
+  BW-FP-RIN01: 10.0
+  BW-FP-FIL01: 18.0
+  BW-FP-CAP01: 14.0
+  BW-FP-INS01: 8.0
+  BW-FP-LAB01: 10.0
+  BW-FP-CPK01: 16.0
+  BW-FP-PAL01: 18.0
+
+# Automated quality checkpoints. Inspection is one consolidated checkpoint
+# (fill / cap / label checks may be combined). PASS continues down the line;
+# FAIL ejects the unit as a reject and the line keeps running — there is no
+# manual inspection result, no quality disposition, no release and no rework.
+quality_stations:
+  BW-FP-INS01:
+    config_key: inspection
+    check_type: VISUAL_INSPECTION
+    on_fail: reject
+    max_attempts: 1
+    scenario: PASS
+
+simulation:
+  time_multiplier: 1.0
+  timing_behavior: DETERMINISTIC
+  random_seed: 42

@@ -1,0 +1,50 @@
+{
+  "task_id": "DDAY-B7-X01-C02",
+  "baseline_c01_rejected": "97e313ab0df6efb19b4374cfd857940f9e5c76fd",
+  "head": "480b53e0f8612974122a042060dd0ccfc892fff3",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "contract_version": "dday-bw-b1-v2",
+  "idle_mapped_state_events": 0,
+  "start_runtime_state_events": 1,
+  "start_mapped_state_events": 1,
+  "pause_runtime_state_events": 2,
+  "pause_mapped_state_events": 2,
+  "identical_snapshot_delta": 0,
+  "event_only_metadata": [
+    {
+      "source_id": "BW-FP",
+      "signal_id": "operating_state",
+      "event_type": "MACHINE_STATE_CHANGED",
+      "transport_kind": "event_only_non_measurement",
+      "not_a_measurement": true,
+      "export_status": "EVENT_ONLY",
+      "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP/event:MACHINE_STATE_CHANGED"
+    },
+    {
+      "source_id": "BW-FP-CAP01",
+      "signal_id": "operating_state",
+      "event_type": "MACHINE_STATE_CHANGED",
+      "transport_kind": "event_only_non_measurement",
+      "not_a_measurement": true,
+      "export_status": "EVENT_ONLY",
+      "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-FP/asset:BW-FP-CAP01/event:MACHINE_STATE_CHANGED"
+    },
+    {
+      "source_id": "BW-UT-CMP01",
+      "signal_id": "operating_state",
+      "event_type": "MACHINE_STATE_CHANGED",
+      "transport_kind": "event_only_non_measurement",
+      "not_a_measurement": true,
+      "export_status": "EVENT_ONLY",
+      "plantos_mapping_key": "plant:BW-DEMO-01/area:BW-UT/asset:BW-UT-CMP01/event:MACHINE_STATE_CHANGED"
+    }
+  ],
+  "confirmed_deliveries": 3,
+  "confirmed_drain_ok": true,
+  "timeout_error": "QoS-1 ACK not confirmed within timeout; fail closed",
+  "drain_fail_ok": false,
+  "shutdown_error": "undelivered tail 1; fail closed",
+  "plantos_49_authorized": false,
+  "merge_authorized": false,
+  "deploy_authorized": false
+}

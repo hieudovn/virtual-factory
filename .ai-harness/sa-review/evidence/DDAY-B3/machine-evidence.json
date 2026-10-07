@@ -1,0 +1,685 @@
+{
+  "task_id": "DDAY-B3",
+  "parent_task": "DDAY-B2",
+  "issue": 104,
+  "pr": 101,
+  "git": {
+    "branch": "sa/dday-track-b-20261003",
+    "local_head": "9fcbeb49d2983ab0536cf7bd6842c524bb3ef72c",
+    "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+    "b3_baseline_sha": "f311edeeda595b3bcbc1a53dece5f9812a6435b1",
+    "working_tree_status": "?? .ai-harness/sa-review/evidence/DDAY-B3/",
+    "name_status_vs_b3_baseline": [
+      "A\t.ai-harness/tasks/DDAY-B3.json",
+      "M\tsrc/virtual_factory/ui/api.py",
+      "A\tsrc/virtual_factory/ui/static/bottled_water_demo.css",
+      "A\tsrc/virtual_factory/ui/static/bottled_water_demo.html",
+      "A\tsrc/virtual_factory/ui/static/bottled_water_demo.js",
+      "A\ttests/test_dday_b3_bottled_water_ui.py"
+    ],
+    "changed_vs_b3_baseline": [
+      ".ai-harness/tasks/DDAY-B3.json",
+      "src/virtual_factory/ui/api.py",
+      "src/virtual_factory/ui/static/bottled_water_demo.css",
+      "src/virtual_factory/ui/static/bottled_water_demo.html",
+      "src/virtual_factory/ui/static/bottled_water_demo.js",
+      "tests/test_dday_b3_bottled_water_ui.py"
+    ],
+    "diffstat_vs_b3_baseline": [
+      ".ai-harness/tasks/DDAY-B3.json                     |  185 ++++",
+      " src/virtual_factory/ui/api.py                      |  201 ++++",
+      " .../ui/static/bottled_water_demo.css               |  521 ++++++++++",
+      " .../ui/static/bottled_water_demo.html              |  157 +++",
+      " .../ui/static/bottled_water_demo.js                | 1063 ++++++++++++++++++++",
+      " tests/test_dday_b3_bottled_water_ui.py             |  523 ++++++++++",
+      " 6 files changed, 2650 insertions(+)"
+    ],
+    "changed_vs_origin_main": [
+      ".ai-harness/sa-review/CURRENT.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/01-semantic-isolation.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/02-harness-gate-repair.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/03-task-gate-result.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/04-tests-and-regression.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/05-scope-audit.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/implementation.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-b2.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-full.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-harness.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-regression.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/machine-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/postfix-proof.txt",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/prefix-reproduction.txt",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/reproduction_probe.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/scope-contract-c01-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/smoke_semantic_isolation.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2/01-baseline-and-state.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/02-reuse-map.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/03-implementation.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/04-route-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/05-quality-and-count-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/06-control-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/07-determinism-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/08-assy-regression.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/09-test-results.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/10-scope-and-leakage-audit.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/11-machine-gate-status.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2/implementation-only.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B2/implementation.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2-full.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2-regression.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/machine-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2/scope-contract-b2-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py",
+      ".ai-harness/sa-review/reports/DDAY-B2-C01.md",
+      ".ai-harness/sa-review/reports/DDAY-B2.md",
+      ".ai-harness/scripts/run_task_gate.py",
+      ".ai-harness/tasks/DDAY-B2-C01.json",
+      ".ai-harness/tasks/DDAY-B2.json",
+      ".ai-harness/tasks/DDAY-B3.json",
+      ".ai-harness/tests/test_gate_report_provisional.py",
+      "configs/workspaces/bottled-water-dday/line.yaml",
+      "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.contract.yaml",
+      "configs/workspaces/bottled-water-dday/signals.yaml",
+      "configs/workspaces/bottled-water-dday/topology.yaml",
+      "configs/workspaces/bottled-water-dday/workspace.contract.yaml",
+      "docs/plans/PLANTOS_DDAY_TRACK_B_B1_WORKSPACE_CONTRACT.md",
+      "docs/plans/PLANTOS_DDAY_TRACK_B_VF_SA_HANDOFF.md",
+      "src/virtual_factory/assembly/demo_controller.py",
+      "src/virtual_factory/assembly/line_runtime.py",
+      "src/virtual_factory/ui/api.py",
+      "src/virtual_factory/ui/static/bottled_water_demo.css",
+      "src/virtual_factory/ui/static/bottled_water_demo.html",
+      "src/virtual_factory/ui/static/bottled_water_demo.js",
+      "tests/test_dday_b2_bottled_water_line.py",
+      "tests/test_dday_b3_bottled_water_ui.py"
+    ]
+  },
+  "api_binding": {
+    "route": [
+      "BW-FP-BLW01",
+      "BW-FP-RIN01",
+      "BW-FP-FIL01",
+      "BW-FP-CAP01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-CPK01",
+      "BW-FP-PAL01"
+    ],
+    "route_matches_frozen": true,
+    "station_order": [
+      "BW-FP-BLW01",
+      "BW-FP-RIN01",
+      "BW-FP-FIL01",
+      "BW-FP-CAP01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-CPK01",
+      "BW-FP-PAL01"
+    ],
+    "station_sequences": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "quality_checkpoints": [
+      "BW-FP-INS01"
+    ],
+    "initial": {
+      "run_state": "STOPPED",
+      "counts": {
+        "total": 0,
+        "good": 0,
+        "reject": 0
+      },
+      "units_on_line": 0
+    },
+    "running": {
+      "counts": {
+        "total": 8,
+        "good": 1,
+        "reject": 0
+      },
+      "units_on_line": 7,
+      "dwell_number": 8,
+      "simulation_time_s": 160.0,
+      "operating_state": "RUNNING"
+    },
+    "inspection_disposition": "PASS",
+    "occupied_stations": [
+      {
+        "station_id": "BW-FP-RIN01",
+        "unit_id": "BTL-000008",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station"
+      },
+      {
+        "station_id": "BW-FP-FIL01",
+        "unit_id": "BTL-000007",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station"
+      },
+      {
+        "station_id": "BW-FP-CAP01",
+        "unit_id": "BTL-000006",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station"
+      },
+      {
+        "station_id": "BW-FP-INS01",
+        "unit_id": "BTL-000005",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station"
+      },
+      {
+        "station_id": "BW-FP-LAB01",
+        "unit_id": "BTL-000004",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station"
+      },
+      {
+        "station_id": "BW-FP-CPK01",
+        "unit_id": "BTL-000003",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station"
+      },
+      {
+        "station_id": "BW-FP-PAL01",
+        "unit_id": "BTL-000002",
+        "unit_type": "bottle",
+        "product_code": "WATER-500ML",
+        "unit_status": "completed_station"
+      }
+    ],
+    "controls": {
+      "no_progression_before_start": true,
+      "start": "RUNNING",
+      "pause_froze_state": true,
+      "resume_continued_time": true,
+      "stop_state": "STOPPED",
+      "no_progression_after_stop": true,
+      "reset_state": "STOPPED",
+      "reset_counts": {
+        "total": 0,
+        "good": 0,
+        "reject": 0
+      },
+      "reset_units_on_line": 0,
+      "reset_simulation_time_s": 0.0,
+      "reset_dwell_number": 0
+    },
+    "unit_context": {
+      "detail": "Unit not found: 'BTL-000008'"
+    },
+    "selectable_read_only": {
+      "unknown_unit_status": 404,
+      "disposition_endpoint_status": 404
+    },
+    "endpoints": [
+      "/bottled-water-demo",
+      "/bottled-water-demo/advance",
+      "/bottled-water-demo/pause",
+      "/bottled-water-demo/reset",
+      "/bottled-water-demo/resume",
+      "/bottled-water-demo/start",
+      "/bottled-water-demo/state",
+      "/bottled-water-demo/static/{filename}",
+      "/bottled-water-demo/stop",
+      "/bottled-water-demo/unit/{unit_id}"
+    ],
+    "isolation": {
+      "projection_hits": [],
+      "page_hits": [],
+      "asset_hits": {
+        "bottled_water_demo.html": [],
+        "bottled_water_demo.js": [],
+        "bottled_water_demo.css": []
+      },
+      "page_references_other_skin": false
+    }
+  },
+  "static_audit": {
+    "assets": {
+      "bottled_water_demo.html": {
+        "bytes": 6731,
+        "foreign_line_hits": []
+      },
+      "bottled_water_demo.js": {
+        "bytes": 46516,
+        "foreign_line_hits": []
+      },
+      "bottled_water_demo.css": {
+        "bytes": 13562,
+        "foreign_line_hits": []
+      }
+    },
+    "later_slice_terms": {
+      "degradation": false,
+      "degrading": false,
+      "water treatment": false,
+      "utilities": false,
+      "warehouse": false,
+      "mqtt": false,
+      "opcua": false,
+      "plantos": false,
+      "dockerfile": false
+    },
+    "later_slice_terms_present": [],
+    "artwork_builders": [
+      "blower",
+      "rinser",
+      "filler",
+      "capper",
+      "inspection",
+      "labeler",
+      "packer",
+      "palletizer",
+      "generic"
+    ],
+    "post_calls": [
+      "/advance",
+      "/pause",
+      "/reset",
+      "/resume",
+      "/start",
+      "/stop"
+    ],
+    "operator_buttons": [
+      "bw-btn-start",
+      "bw-btn-pause",
+      "bw-btn-resume",
+      "bw-btn-stop",
+      "bw-btn-reset"
+    ]
+  },
+  "browser": {
+    "screenshots": [
+      "01-target-line-running.png (130373 bytes)",
+      "02-paused.png (131337 bytes)",
+      "04-inspection-station.png (145825 bytes)",
+      "05-bottle-inspector.png (155952 bytes)",
+      "03-stopped.png (130787 bytes)",
+      "03b-after-reset.png (84285 bytes)",
+      "06-reject-running.png (129609 bytes)",
+      "07-reject-inspection.png (142872 bytes)"
+    ],
+    "vocabulary_clean": true,
+    "vocabulary": {
+      "running": {
+        "stringsScanned": 233,
+        "hits": []
+      },
+      "paused": {
+        "stringsScanned": 232,
+        "hits": []
+      },
+      "paused_after_wait": {
+        "stringsScanned": 232,
+        "hits": []
+      },
+      "inspection_inspector": {
+        "stringsScanned": 244,
+        "hits": []
+      },
+      "unit_inspector": {
+        "stringsScanned": 253,
+        "hits": []
+      },
+      "stopped": {
+        "stringsScanned": 253,
+        "hits": []
+      },
+      "reset": {
+        "stringsScanned": 137,
+        "hits": []
+      },
+      "resumed": {
+        "stringsScanned": 180,
+        "hits": []
+      },
+      "reject_running": {
+        "stringsScanned": 233,
+        "hits": []
+      },
+      "reject_inspector": {
+        "stringsScanned": 244,
+        "hits": []
+      }
+    },
+    "station_click_proof": {
+      "tag": "rect",
+      "cls": "bw-hit",
+      "matched": true,
+      "point": {
+        "x": 746,
+        "y": 492
+      }
+    },
+    "bottle_click_proof": {
+      "tag": "rect",
+      "cls": "bw-bottle-hit",
+      "matched": true,
+      "point": {
+        "x": 1228,
+        "y": 566
+      }
+    },
+    "reject_station_click_proof": {
+      "tag": "rect",
+      "cls": "bw-hit",
+      "matched": true,
+      "point": {
+        "x": 746,
+        "y": 492
+      }
+    },
+    "states": {
+      "running": {
+        "facts": {
+          "run": "RUNNING",
+          "operating": "RUNNING",
+          "time": "300.0 s",
+          "dwell": "15",
+          "total": "15",
+          "good": "8",
+          "reject": "0",
+          "onLine": "7",
+          "inspection": "PASS \u2014 continues",
+          "simNote": "Line running \u2014 7 bottle(s) on the line"
+        },
+        "station_count": 8,
+        "bottle_count": 7,
+        "popup_open": false,
+        "popup_title": "Machine",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "paused": {
+        "facts": {
+          "run": "PAUSED",
+          "operating": "RUNNING",
+          "time": "320.0 s",
+          "dwell": "16",
+          "total": "16",
+          "good": "9",
+          "reject": "0",
+          "onLine": "7",
+          "inspection": "PASS \u2014 continues",
+          "simNote": "Line paused \u2014 progression frozen, state preserved"
+        },
+        "station_count": 8,
+        "bottle_count": 7,
+        "popup_open": false,
+        "popup_title": "Machine",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "paused_after_wait": {
+        "facts": {
+          "run": "PAUSED",
+          "operating": "RUNNING",
+          "time": "320.0 s",
+          "dwell": "16",
+          "total": "16",
+          "good": "9",
+          "reject": "0",
+          "onLine": "7",
+          "inspection": "PASS \u2014 continues",
+          "simNote": "Line paused \u2014 progression frozen, state preserved"
+        },
+        "station_count": 8,
+        "bottle_count": 7,
+        "popup_open": false,
+        "popup_title": "Machine",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "inspection_inspector": {
+        "facts": {
+          "run": "PAUSED",
+          "operating": "RUNNING",
+          "time": "320.0 s",
+          "dwell": "16",
+          "total": "16",
+          "good": "9",
+          "reject": "0",
+          "onLine": "7",
+          "inspection": "PASS \u2014 continues",
+          "simNote": "Line paused \u2014 progression frozen, state preserved"
+        },
+        "station_count": 8,
+        "bottle_count": 7,
+        "popup_open": true,
+        "popup_title": "Inspection",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "unit_inspector": {
+        "facts": {
+          "run": "PAUSED",
+          "operating": "RUNNING",
+          "time": "320.0 s",
+          "dwell": "16",
+          "total": "16",
+          "good": "9",
+          "reject": "0",
+          "onLine": "7",
+          "inspection": "PASS \u2014 continues",
+          "simNote": "Line paused \u2014 progression frozen, state preserved"
+        },
+        "station_count": 8,
+        "bottle_count": 7,
+        "popup_open": true,
+        "popup_title": "Bottle BTL-000010",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "stopped": {
+        "facts": {
+          "run": "STOPPED",
+          "operating": "STOPPED",
+          "time": "320.0 s",
+          "dwell": "16",
+          "total": "16",
+          "good": "9",
+          "reject": "0",
+          "onLine": "7",
+          "inspection": "PASS \u2014 continues",
+          "simNote": "Line stopped \u2014 controlled stop, not a fault"
+        },
+        "station_count": 8,
+        "bottle_count": 7,
+        "popup_open": false,
+        "popup_title": "Bottle BTL-000010",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "reset": {
+        "facts": {
+          "run": "STOPPED",
+          "operating": "STOPPED",
+          "time": "0.0 s",
+          "dwell": "0",
+          "total": "0",
+          "good": "0",
+          "reject": "0",
+          "onLine": "0",
+          "inspection": "no result yet",
+          "simNote": "Line stopped \u2014 controlled stop, not a fault"
+        },
+        "station_count": 8,
+        "bottle_count": 0,
+        "popup_open": false,
+        "popup_title": "Bottle BTL-000010",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "resumed": {
+        "facts": {
+          "run": "RUNNING",
+          "operating": "RUNNING",
+          "time": "40.0 s",
+          "dwell": "2",
+          "total": "2",
+          "good": "0",
+          "reject": "0",
+          "onLine": "2",
+          "inspection": "no result yet",
+          "simNote": "Line running \u2014 2 bottle(s) on the line"
+        },
+        "station_count": 8,
+        "bottle_count": 2,
+        "popup_open": false,
+        "popup_title": "Bottle BTL-000010",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "reject_running": {
+        "facts": {
+          "run": "RUNNING",
+          "operating": "RUNNING",
+          "time": "380.0 s",
+          "dwell": "19",
+          "total": "19",
+          "good": "0",
+          "reject": "15",
+          "onLine": "4",
+          "inspection": "NG \u2014 rejected",
+          "simNote": "Line running \u2014 4 bottle(s) on the line"
+        },
+        "station_count": 8,
+        "bottle_count": 4,
+        "popup_open": false,
+        "popup_title": "Machine",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      },
+      "reject_inspector": {
+        "facts": {
+          "run": "PAUSED",
+          "operating": "RUNNING",
+          "time": "380.0 s",
+          "dwell": "19",
+          "total": "19",
+          "good": "0",
+          "reject": "15",
+          "onLine": "4",
+          "inspection": "NG \u2014 rejected",
+          "simNote": "Line paused \u2014 progression frozen, state preserved"
+        },
+        "station_count": 8,
+        "bottle_count": 4,
+        "popup_open": true,
+        "popup_title": "Inspection",
+        "buttons": [
+          "\u25b6 START",
+          "\u23f8 PAUSE",
+          "\u25b6 RESUME",
+          "\u25a0 STOP",
+          "\u21bb RESET",
+          "\u00d7"
+        ]
+      }
+    }
+  },
+  "tests_b3": {
+    "command": "python -m pytest -q tests/test_dday_b3_bottled_water_ui.py",
+    "exit_code": 0,
+    "junit": "junit-b3.xml",
+    "collected": 23,
+    "passed": 23,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "tests_ui_regression": {
+    "command": "python -m pytest -q tests/test_api.py tests/test_assy_demo.py tests/test_demo_composition.py tests/test_demo_overview.py tests/test_dday_b2_bottled_water_line.py tests/test_runtime_service.py",
+    "exit_code": 0,
+    "junit": "junit-b3-ui-regression.xml",
+    "collected": 141,
+    "passed": 141,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "tests_full": {
+    "command": "python -m pytest -q <full suite>",
+    "exit_code": 0,
+    "junit": "junit-b3-full.xml",
+    "collected": 1689,
+    "passed": 1689,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  }
+}

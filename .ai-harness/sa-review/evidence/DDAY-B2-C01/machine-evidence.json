@@ -1,0 +1,350 @@
+{
+  "task_id": "DDAY-B2-C01",
+  "parent_task": "DDAY-B2",
+  "issue": 103,
+  "parent_issue": 102,
+  "pr": 101,
+  "git": {
+    "branch": "sa/dday-track-b-20261003",
+    "local_head": "54fafa66405738cb2af97708f8045b869c6cfafd",
+    "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+    "c01_baseline_sha": "0a1d18e42b5a28009ae05a6e916f9e942a857b38",
+    "working_tree_status": "?? .ai-harness/sa-review/evidence/DDAY-B2-C01/generate_evidence.py\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/implementation.patch\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-b2.xml\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-full.xml\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-harness.xml\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-regression.xml\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/machine-evidence.json\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/postfix-proof.txt\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/prefix-reproduction.txt\n?? .ai-harness/sa-review/evidence/DDAY-B2-C01/reproduction_probe.py",
+    "name_status_vs_c01_baseline": [
+      "A\t.ai-harness/sa-review/evidence/DDAY-B2-C01/scope-contract-c01-baseline.json",
+      "A\t.ai-harness/sa-review/evidence/DDAY-B2-C01/smoke_semantic_isolation.py",
+      "M\t.ai-harness/scripts/run_task_gate.py",
+      "A\t.ai-harness/tasks/DDAY-B2-C01.json",
+      "A\t.ai-harness/tests/test_gate_report_provisional.py",
+      "M\tsrc/virtual_factory/assembly/line_runtime.py",
+      "M\ttests/test_dday_b2_bottled_water_line.py"
+    ],
+    "changed_vs_c01_baseline": [
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/scope-contract-c01-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/smoke_semantic_isolation.py",
+      ".ai-harness/scripts/run_task_gate.py",
+      ".ai-harness/tasks/DDAY-B2-C01.json",
+      ".ai-harness/tests/test_gate_report_provisional.py",
+      "src/virtual_factory/assembly/line_runtime.py",
+      "tests/test_dday_b2_bottled_water_line.py"
+    ],
+    "changed_vs_origin_main": [
+      ".ai-harness/sa-review/CURRENT.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/scope-contract-c01-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/smoke_semantic_isolation.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2/01-baseline-and-state.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/02-reuse-map.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/03-implementation.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/04-route-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/05-quality-and-count-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/06-control-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/07-determinism-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/08-assy-regression.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/09-test-results.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/10-scope-and-leakage-audit.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/11-machine-gate-status.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2/implementation-only.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B2/implementation.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2-full.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2-regression.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/machine-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2/scope-contract-b2-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py",
+      ".ai-harness/sa-review/reports/DDAY-B2.md",
+      ".ai-harness/scripts/run_task_gate.py",
+      ".ai-harness/tasks/DDAY-B2-C01.json",
+      ".ai-harness/tasks/DDAY-B2.json",
+      ".ai-harness/tests/test_gate_report_provisional.py",
+      "configs/workspaces/bottled-water-dday/line.yaml",
+      "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.contract.yaml",
+      "configs/workspaces/bottled-water-dday/signals.yaml",
+      "configs/workspaces/bottled-water-dday/topology.yaml",
+      "configs/workspaces/bottled-water-dday/workspace.contract.yaml",
+      "docs/plans/PLANTOS_DDAY_TRACK_B_B1_WORKSPACE_CONTRACT.md",
+      "docs/plans/PLANTOS_DDAY_TRACK_B_VF_SA_HANDOFF.md",
+      "src/virtual_factory/assembly/demo_controller.py",
+      "src/virtual_factory/assembly/line_runtime.py",
+      "tests/test_dday_b2_bottled_water_line.py"
+    ],
+    "diffstat_vs_c01_baseline": [
+      ".../DDAY-B2-C01/scope-contract-c01-baseline.json   | 297 +++++++++++++++++++++",
+      " .../DDAY-B2-C01/smoke_semantic_isolation.py        | 216 +++++++++++++++",
+      " .ai-harness/scripts/run_task_gate.py               |  67 ++++-",
+      " .ai-harness/tasks/DDAY-B2-C01.json                 | 165 ++++++++++++",
+      " .ai-harness/tests/test_gate_report_provisional.py  | 140 ++++++++++",
+      " src/virtual_factory/assembly/line_runtime.py       |  12 +-",
+      " tests/test_dday_b2_bottled_water_line.py           | 111 +++++++-",
+      " 7 files changed, 987 insertions(+), 21 deletions(-)"
+    ],
+    "implementation_patch": "implementation.patch"
+  },
+  "semantic_isolation": {
+    "route": [
+      "BW-FP-BLW01",
+      "BW-FP-RIN01",
+      "BW-FP-FIL01",
+      "BW-FP-CAP01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-CPK01",
+      "BW-FP-PAL01"
+    ],
+    "states": {
+      "entry": {
+        "manufacturing_status": "in_line",
+        "lifecycle": "in_line"
+      },
+      "in_progress": {
+        "manufacturing_status": "in_line",
+        "units_on_line": 1
+      },
+      "station_completion": {
+        "manufacturing_status": "completed_station"
+      },
+      "route_completion": {
+        "lifecycle": "released",
+        "good_count": 1
+      },
+      "reject": {
+        "lifecycle": "rejected",
+        "reject_count": 8,
+        "good_count": 0
+      }
+    },
+    "leak_sweep": {
+      "entry": {
+        "strings_scanned": 139,
+        "findings": []
+      },
+      "in_progress": {
+        "strings_scanned": 143,
+        "findings": []
+      },
+      "station_completion": {
+        "strings_scanned": 290,
+        "findings": []
+      },
+      "reject": {
+        "strings_scanned": 372,
+        "findings": []
+      }
+    },
+    "all_sweeps_clean": true,
+    "also_scanned": {
+      "entry_facts": 122,
+      "contracts_and_trace_and_units": 10,
+      "findings": []
+    },
+    "legacy_profile": {
+      "is_generic": false,
+      "introduce_to_assy_lifecycle": "in_assy",
+      "IN_ASSY_value": "in_assy",
+      "IN_LINE_value": "in_line",
+      "distinct_values": true
+    }
+  },
+  "harness_repair": {
+    "implementation_sha_at_capture": "54fafa66405738cb2af97708f8045b869c6cfafd",
+    "p21_generated_report_contains_sha": true,
+    "p21_generated_report_sha12": true,
+    "validate_report_consistency_on_generated_report": {
+      "passed": true,
+      "issues": []
+    },
+    "report_without_sha_fails_closed": {
+      "passed": false,
+      "issues": [
+        "Report does not reference head SHA 54fafa664057"
+      ]
+    },
+    "pr_state_normalization": {
+      "raw_api_value": "open",
+      "normalized_open": "OPEN",
+      "normalized_closed": "CLOSED",
+      "idempotent_for_uppercase": true,
+      "derive_status_for_closed_pr": "NOT READY \u2014 GOVERNANCE FAILURE",
+      "derive_status_for_open_pr": "IMPLEMENTED \u2014 PR OPEN \u2014 READY FOR SA REVIEW"
+    }
+  },
+  "tests_b2": {
+    "command": "python -m pytest -q tests/test_dday_b2_bottled_water_line.py",
+    "exit_code": 0,
+    "junit": "junit-c01-b2.xml",
+    "collected": 19,
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "tests_harness": {
+    "command": "python -m pytest -q .ai-harness/tests/test_gate_report_provisional.py .ai-harness/tests/test_validate_report_consistency.py",
+    "exit_code": 0,
+    "junit": "junit-c01-harness.xml",
+    "collected": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "tests_regression": {
+    "command": "python -m pytest -q tests/test_assy_line.py tests/test_assy_demo.py tests/test_demo_composition.py tests/test_demo_overview.py tests/test_quality.py tests/test_ops02_operation_execution.py tests/test_ops02_schema_contract.py tests/test_ops03_interaction.py tests/test_ops03_contract_loader.py tests/test_ops04_c01.py tests/test_auto_equiv_01.py tests/test_auto_timing.py tests/test_auto_timing_runtime.py tests/test_auto_timing_snapshot.py tests/test_assy_mes_bridge_v1.py tests/test_demo_assy_mes_v1.py tests/test_assy_mes_03_evidence.py tests/test_m6_int_01.py tests/test_sim_val_01_feed.py tests/test_sub_line_identity.py tests/test_vf_contract_finality_01.py tests/test_manual_e2e_01.py tests/test_m3_s03_tipa.py",
+    "exit_code": 0,
+    "junit": "junit-c01-regression.xml",
+    "collected": 575,
+    "passed": 575,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "tests_full": {
+    "command": "python -m pytest -q <full suite>",
+    "exit_code": 0,
+    "junit": "junit-c01-full.xml",
+    "collected": 1666,
+    "passed": 1666,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "task_gate": {
+    "record": ".ai-harness/traces/DDAY-B2-C01/evidence.json",
+    "report": ".ai-harness/traces/DDAY-B2-C01/gate-report.md",
+    "derived_status": "IMPLEMENTED \u2014 PR OPEN \u2014 READY FOR SA REVIEW",
+    "exit_code": 0,
+    "requested_gate_satisfied": true,
+    "implementation_sha": "54fafa66405738cb2af97708f8045b869c6cfafd",
+    "pipeline_steps": {
+      "P01": "PASS",
+      "P02": "PASS",
+      "P03": "PASS",
+      "P04": "PASS",
+      "P05": "PASS",
+      "P06": "PASS",
+      "P07": "PASS",
+      "P08": "PASS",
+      "P09": "PASS",
+      "P10": "PASS",
+      "P11": "PASS",
+      "P12": "PASS",
+      "P13": "PASS",
+      "P14": "PASS",
+      "P15": "PASS",
+      "P16": "PASS",
+      "P17": "PASS",
+      "P18": "PASS",
+      "P19": "PASS",
+      "P20": "PASS",
+      "P21": "PASS",
+      "P22": "PASS",
+      "P23": "PASS",
+      "P24": "PASS"
+    },
+    "acceptance": {
+      "A01": "PASS",
+      "A02": "PASS",
+      "A03": "PASS",
+      "A04": "PASS",
+      "A05": "PASS",
+      "A06": "PASS",
+      "A07": "PASS",
+      "A08": "PASS",
+      "A09": "PASS",
+      "A10": "PASS",
+      "A11": "PASS",
+      "A12": "PASS",
+      "A13": "PASS",
+      "A14": "PASS"
+    },
+    "invariants": {
+      "remote_branch_equals_pr_head": true,
+      "pr_head_equals_implementation_sha": true,
+      "ci_head_equals_pr_head": true,
+      "smoke_vf_effective_pass": false,
+      "smoke_vf2_effective_pass": false,
+      "evidence_validator_exit_zero": true,
+      "report_consistency_exit_zero": true
+    },
+    "ci": {
+      "run_id": 37097045285,
+      "event": "pull_request",
+      "workflow": "VF-DM CI",
+      "branch": "sa/dday-track-b-20261003",
+      "head_sha": "54fafa66405738cb2af97708f8045b869c6cfafd",
+      "status": "completed",
+      "conclusion": "success",
+      "required_steps": [],
+      "jobs": [
+        {
+          "id": 111128981333,
+          "name": "test",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Install",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke \u2014 virtual-factory validate",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke \u2014 VF2 validate",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 schema validation",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 self-tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 valid fixtures",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 invalid fixtures (expect non-zero)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 status derivation",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 status enum rejection",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 baseline contract gate",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "annotations": 0
+    },
+    "pull_request": {
+      "number": 101,
+      "state": "OPEN",
+      "base_branch": "main",
+      "base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+      "head_branch": "sa/dday-track-b-20261003",
+      "head_sha": "54fafa66405738cb2af97708f8045b869c6cfafd",
+      "draft": false,
+      "merged": false,
+      "merged_at": null,
+      "merge_commit_sha": "431a9f67d69427bb7fb53729765f615be4cd0dcb"
+    }
+  }
+}

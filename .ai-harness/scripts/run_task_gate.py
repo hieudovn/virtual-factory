@@ -115,6 +115,46 @@ def _normalize_smoke_command(cmd: list[str]) -> list[str]:
     return cmd
 
 
+def _write_gate_report(path, title: str, tid: str, status: str, gate: str,
+                       satisfied, exit_code, steps: list[dict], impl_sha: str,
+                       pipeline_integrity: dict | None = None) -> None:
+    """Write a gate report that identifies the exact implementation head.
+
+    C01-B: P22 validates the provisional report against the evidence via
+    validate_report_consistency.py, which fails closed when the report does not
+    reference ``implementation.commit_sha``. The report is therefore required to
+    state the implementation SHA; validation itself is unchanged.
+    """
+    with open(path, "w") as f:
+        f.write(f"# {title} — {tid}\n\n")
+        f.write(f"**Status**: {status}\n")
+        f.write(f"**Gate**: {gate} | **Satisfied**: {satisfied} | **Exit**: {exit_code}\n")
+        f.write(f"**Implementation SHA**: {impl_sha}\n")
+        if pipeline_integrity is not None:
+            pi = pipeline_integrity
+            f.write(f"**Pipeline**: expected={CANONICAL_IDS} actual={pi.get('actual_ids', [])} "
+                    f"missing={pi.get('missing_ids', [])} dups={pi.get('duplicate_ids', [])}\n")
+        if steps:
+            f.write("\n## Pipeline\n")
+            for s in steps:
+                f.write(f"- [{s['result']}] {s['id']} {s['name']}\n")
+
+
+def _normalize_pr_state(evidence: dict) -> dict:
+    """Align the PR state with the harness' canonical representation (C01-B).
+
+    The GitHub REST API reports ``open``/``closed`` while ``derive_status.py``
+    and the harness evidence fixtures use ``OPEN``/``CLOSED``. Only the
+    representation is aligned: the underlying checks (PR open, not draft, base
+    main, head/CI equality) are unchanged and still fail closed for a closed or
+    non-open PR.
+    """
+    pr_block = evidence.get("pull_request")
+    if isinstance(pr_block, dict) and isinstance(pr_block.get("state"), str):
+        pr_block["state"] = pr_block["state"].upper()
+    return evidence
+
+
 def _resolve_pr(contract: dict, token: str | None) -> int | None:
     """Resolve the open PR for the task's required_branch with base=main.
 
@@ -243,6 +283,11 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     with open(ep) as f: evidence = json.load(f)
     reg.record("P09", "PR metadata", True, "PASS" if evidence.get("pull_request", {}).get("number") else "FAIL")
 
+    # C01-B: align the PR state representation before status derivation and
+    # acceptance evaluation (the REST API source reports lowercase).
+    _normalize_pr_state(evidence)
+    with open(ep, "w") as f: json.dump(evidence, f, indent=2)
+
     # P10: CI
     print("\n" + "=" * 50 + "\nP10: Exact-head CI")
     cim = _run("verify_exact_head_ci.py", [str(ep), "--sha", sha, "--branch", branch] +
@@ -368,9 +413,11 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
     evidence["derived_status"] = final_status; evidence["requested_gate"] = requested_gate
     evidence["exit_code"] = ec; evidence["requested_gate_satisfied"] = ec == 0
     reg.record("P20", "Provisional status", True, "PASS")
-    with open(rp_prov, "w") as f:
-        f.write(f"# Gate Report (Provisional) — {tid}\n\n**Status**: {final_status}\n**Gate**: {requested_gate} | **Satisfied**: {ec==0} | **Exit**: {ec}\n")
-        for s in reg.steps: f.write(f"- [{s['result']}] {s['id']} {s['name']}\n")
+    _write_gate_report(
+        rp_prov, "Gate Report (Provisional)", tid, final_status, requested_gate,
+        ec == 0, ec, reg.steps,
+        evidence.get("implementation", {}).get("commit_sha", ""),
+    )
     reg.record("P21", "Provisional report", True, "PASS")
 
     # P22: Validate provisional evidence + report
@@ -445,13 +492,13 @@ def run_task_gate(task_path: str, report_only: bool = False, token: str | None =
         evidence["exit_code"] = 1
     evidence["report_generation_result"] = "success"
     with open(ep, "w") as f: json.dump(evidence, f, indent=2)
-    with open(rp_final, "w") as f:
-        f.write(f"# Gate Report — {tid}\n\n**Status**: {final_status}\n")
-        f.write(f"**Gate**: {requested_gate} | **Satisfied**: {evidence.get('requested_gate_satisfied',False)} | **Exit**: {evidence.get('exit_code')}\n")
-        pi = evidence.get("pipeline_integrity", {})
-        f.write(f"**Pipeline**: expected={CANONICAL_IDS} actual={pi.get('actual_ids',[])} missing={pi.get('missing_ids',[])} dups={pi.get('duplicate_ids',[])}\n\n")
-        f.write("## Pipeline\n")
-        for s in reg.steps: f.write(f"- [{s['result']}] {s['id']} {s['name']}\n")
+    _write_gate_report(
+        rp_final, "Gate Report", tid, final_status, requested_gate,
+        evidence.get("requested_gate_satisfied", False),
+        evidence.get("exit_code"), reg.steps,
+        evidence.get("implementation", {}).get("commit_sha", ""),
+        pipeline_integrity=evidence.get("pipeline_integrity", {}),
+    )
 
     duration = time.time() - t0
     print(f"\n{'='*50}\nGATE COMPLETE ({duration:.1f}s)")

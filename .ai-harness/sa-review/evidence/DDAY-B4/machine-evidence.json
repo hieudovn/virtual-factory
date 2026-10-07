@@ -1,0 +1,1084 @@
+{
+  "task_id": "DDAY-B4",
+  "parent_task": "DDAY-B3",
+  "issue": 105,
+  "pr": 101,
+  "git": {
+    "branch": "sa/dday-track-b-20261003",
+    "local_head": "9d4f43275c34f62a8a55b410fd427e469f7004ee",
+    "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+    "b4_baseline_sha": "23b6208266751a8c508b0d96fd7a736dffc5676c",
+    "b4_implementation_sha": "ae560c02e259ed91a9609b36b5dff060dc9d4fd4",
+    "working_tree_status": "M .ai-harness/sa-review/evidence/DDAY-B4/generate_evidence.py\n M .ai-harness/sa-review/evidence/DDAY-B4/implementation.patch\n M .ai-harness/sa-review/evidence/DDAY-B4/scope-contract-b4-baseline.json",
+    "name_status_vs_b4_baseline": [
+      "M\t.ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
+      "M\t.ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
+      "A\t.ai-harness/tasks/DDAY-B4.json",
+      "A\tconfigs/workspaces/bottled-water-dday/factory.yaml",
+      "M\tsrc/virtual_factory/ui/api.py",
+      "M\tsrc/virtual_factory/ui/static/bottled_water_demo.html",
+      "M\tsrc/virtual_factory/ui/static/bottled_water_demo.js",
+      "A\tsrc/virtual_factory/workspaces/__init__.py",
+      "A\tsrc/virtual_factory/workspaces/bottled_water.py",
+      "M\ttests/test_dday_b3_bottled_water_ui.py",
+      "A\ttests/test_dday_b4_bottled_water_factory.py"
+    ],
+    "changed_vs_b4_baseline": [
+      ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
+      ".ai-harness/tasks/DDAY-B4.json",
+      "configs/workspaces/bottled-water-dday/factory.yaml",
+      "src/virtual_factory/ui/api.py",
+      "src/virtual_factory/ui/static/bottled_water_demo.html",
+      "src/virtual_factory/ui/static/bottled_water_demo.js",
+      "src/virtual_factory/workspaces/__init__.py",
+      "src/virtual_factory/workspaces/bottled_water.py",
+      "tests/test_dday_b3_bottled_water_ui.py",
+      "tests/test_dday_b4_bottled_water_factory.py"
+    ],
+    "diffstat_vs_b4_baseline": [
+      ".../evidence/DDAY-B3/generate_evidence.py          |    3 +",
+      " .../evidence/DDAY-B3/smoke_bottled_water_ui.py     |    4 +",
+      " .ai-harness/tasks/DDAY-B4.json                     |  211 ++++",
+      " configs/workspaces/bottled-water-dday/factory.yaml |   84 ++",
+      " src/virtual_factory/ui/api.py                      |  227 ++--",
+      " .../ui/static/bottled_water_demo.html              |    4 +-",
+      " .../ui/static/bottled_water_demo.js                |   14 +-",
+      " src/virtual_factory/workspaces/__init__.py         |   24 +",
+      " src/virtual_factory/workspaces/bottled_water.py    | 1125 ++++++++++++++++++++",
+      " tests/test_dday_b3_bottled_water_ui.py             |   28 +-",
+      " tests/test_dday_b4_bottled_water_factory.py        |  848 +++++++++++++++",
+      " 11 files changed, 2448 insertions(+), 124 deletions(-)"
+    ],
+    "diffstat_implementation_only": [
+      ".../evidence/DDAY-B3/generate_evidence.py          |    3 +",
+      " .../evidence/DDAY-B3/smoke_bottled_water_ui.py     |    4 +",
+      " configs/workspaces/bottled-water-dday/factory.yaml |   84 ++",
+      " src/virtual_factory/ui/api.py                      |  227 ++--",
+      " .../ui/static/bottled_water_demo.html              |    4 +-",
+      " .../ui/static/bottled_water_demo.js                |   14 +-",
+      " src/virtual_factory/workspaces/__init__.py         |   24 +",
+      " src/virtual_factory/workspaces/bottled_water.py    | 1125 ++++++++++++++++++++",
+      " tests/test_dday_b3_bottled_water_ui.py             |   28 +-",
+      " tests/test_dday_b4_bottled_water_factory.py        |  848 +++++++++++++++",
+      " 10 files changed, 2237 insertions(+), 124 deletions(-)"
+    ],
+    "changed_vs_origin_main": [
+      ".ai-harness/sa-review/CURRENT.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/01-semantic-isolation.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/02-harness-gate-repair.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/03-task-gate-result.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/04-tests-and-regression.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/05-scope-audit.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/implementation.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-b2.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-full.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-harness.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/junit-c01-regression.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/machine-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/postfix-proof.txt",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/prefix-reproduction.txt",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/reproduction_probe.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/scope-contract-c01-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2-C01/smoke_semantic_isolation.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2/01-baseline-and-state.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/02-reuse-map.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/03-implementation.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/04-route-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/05-quality-and-count-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/06-control-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/07-determinism-proof.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/08-assy-regression.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/09-test-results.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/10-scope-and-leakage-audit.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/11-machine-gate-status.md",
+      ".ai-harness/sa-review/evidence/DDAY-B2/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B2/implementation-only.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B2/implementation.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2-full.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2-regression.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/junit-dday-b2.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B2/machine-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2/scope-contract-b2-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py",
+      ".ai-harness/sa-review/evidence/DDAY-B3/01-baseline-and-reuse.md",
+      ".ai-harness/sa-review/evidence/DDAY-B3/02-api-runtime-binding.md",
+      ".ai-harness/sa-review/evidence/DDAY-B3/03-visual-evidence.md",
+      ".ai-harness/sa-review/evidence/DDAY-B3/04-tests-and-scope.md",
+      ".ai-harness/sa-review/evidence/DDAY-B3/05-machine-gate-status.md",
+      ".ai-harness/sa-review/evidence/DDAY-B3/browser-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B3/capture_visual_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B3/flaky-reset-disclosure.txt",
+      ".ai-harness/sa-review/evidence/DDAY-B3/flaky_reset_disclosure.py",
+      ".ai-harness/sa-review/evidence/DDAY-B3/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B3/implementation.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B3/junit-b3-full.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B3/junit-b3-ui-regression.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B3/junit-b3.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B3/machine-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B3/scope-contract-b3-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/01-target-line-running.png",
+      ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/02-paused.png",
+      ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/03-stopped.png",
+      ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/03b-after-reset.png",
+      ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/04-inspection-station.png",
+      ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/05-bottle-inspector.png",
+      ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/06-reject-running.png",
+      ".ai-harness/sa-review/evidence/DDAY-B3/screenshots/07-reject-inspection.png",
+      ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py",
+      ".ai-harness/sa-review/evidence/DDAY-B4/01-baseline-scope-and-reuse.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/02-autonomous-runtime.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/03-factory-state-and-taxonomy.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/04-conservation-and-process-consistency.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/05-determinism-ui-and-tests.md",
+      ".ai-harness/sa-review/evidence/DDAY-B4/factory-state-sample.json",
+      ".ai-harness/sa-review/evidence/DDAY-B4/flaky-reset-disclosure.txt",
+      ".ai-harness/sa-review/evidence/DDAY-B4/flaky_reset_disclosure.py",
+      ".ai-harness/sa-review/evidence/DDAY-B4/generate_evidence.py",
+      ".ai-harness/sa-review/evidence/DDAY-B4/implementation.patch",
+      ".ai-harness/sa-review/evidence/DDAY-B4/junit-b4-full.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B4/junit-b4-regression-rerun.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B4/junit-b4-regression.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B4/junit-b4.xml",
+      ".ai-harness/sa-review/evidence/DDAY-B4/machine-evidence.json",
+      ".ai-harness/sa-review/evidence/DDAY-B4/scope-contract-b4-baseline.json",
+      ".ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_factory.py",
+      ".ai-harness/sa-review/reports/DDAY-B2-C01.md",
+      ".ai-harness/sa-review/reports/DDAY-B2.md",
+      ".ai-harness/sa-review/reports/DDAY-B3.md",
+      ".ai-harness/sa-review/reports/DDAY-B4.md",
+      ".ai-harness/scripts/run_task_gate.py",
+      ".ai-harness/tasks/DDAY-B2-C01.json",
+      ".ai-harness/tasks/DDAY-B2.json",
+      ".ai-harness/tasks/DDAY-B3.json",
+      ".ai-harness/tasks/DDAY-B4.json",
+      ".ai-harness/tests/test_gate_report_provisional.py",
+      "configs/workspaces/bottled-water-dday/factory.yaml",
+      "configs/workspaces/bottled-water-dday/line.yaml",
+      "configs/workspaces/bottled-water-dday/scenarios/capper_degradation.contract.yaml",
+      "configs/workspaces/bottled-water-dday/signals.yaml",
+      "configs/workspaces/bottled-water-dday/topology.yaml",
+      "configs/workspaces/bottled-water-dday/workspace.contract.yaml",
+      "docs/plans/PLANTOS_DDAY_TRACK_B_B1_WORKSPACE_CONTRACT.md",
+      "docs/plans/PLANTOS_DDAY_TRACK_B_VF_SA_HANDOFF.md",
+      "src/virtual_factory/assembly/demo_controller.py",
+      "src/virtual_factory/assembly/line_runtime.py",
+      "src/virtual_factory/ui/api.py",
+      "src/virtual_factory/ui/static/bottled_water_demo.css",
+      "src/virtual_factory/ui/static/bottled_water_demo.html",
+      "src/virtual_factory/ui/static/bottled_water_demo.js",
+      "src/virtual_factory/workspaces/__init__.py",
+      "src/virtual_factory/workspaces/bottled_water.py",
+      "tests/test_dday_b2_bottled_water_line.py",
+      "tests/test_dday_b3_bottled_water_ui.py",
+      "tests/test_dday_b4_bottled_water_factory.py"
+    ]
+  },
+  "autonomy": {
+    "headless": true,
+    "browser_opened": false,
+    "page_requests_after_production": 1,
+    "advance_requests": [],
+    "http_calls_issued": [
+      "POST /bottled-water-demo/reset",
+      "GET /bottled-water-demo/factory",
+      "POST /bottled-water-demo/start",
+      "GET /bottled-water-demo"
+    ],
+    "stopped_state": {
+      "run_state": "STOPPED",
+      "counts": {
+        "total": 0,
+        "good": 0,
+        "reject": 0
+      },
+      "simulation_time_s_after_0_6s": 10.0,
+      "counts_after_0_6s": {
+        "total": 0,
+        "good": 0,
+        "reject": 0
+      },
+      "plant_energy_total_kwh_after_0_6s": 0.033888888888888885
+    },
+    "samples": [
+      {
+        "wall_s": 0.001,
+        "simulation_time_s": 10.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.033888888888888885
+      },
+      {
+        "wall_s": 0.055,
+        "simulation_time_s": 11.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.04947222222222222
+      },
+      {
+        "wall_s": 0.108,
+        "simulation_time_s": 12.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.06505555555555556
+      },
+      {
+        "wall_s": 0.162,
+        "simulation_time_s": 13.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.08425
+      },
+      {
+        "wall_s": 0.215,
+        "simulation_time_s": 14.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.10344444444444445
+      },
+      {
+        "wall_s": 0.267,
+        "simulation_time_s": 15.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.1226388888888889
+      },
+      {
+        "wall_s": 0.319,
+        "simulation_time_s": 16.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.14183333333333334
+      },
+      {
+        "wall_s": 0.372,
+        "simulation_time_s": 17.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.16102777777777777
+      },
+      {
+        "wall_s": 0.426,
+        "simulation_time_s": 18.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.18022222222222223
+      },
+      {
+        "wall_s": 0.479,
+        "simulation_time_s": 19.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.1994166666666667
+      },
+      {
+        "wall_s": 0.531,
+        "simulation_time_s": 20.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.21861111111111114
+      },
+      {
+        "wall_s": 0.584,
+        "simulation_time_s": 21.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.2378055555555556
+      },
+      {
+        "wall_s": 0.636,
+        "simulation_time_s": 22.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.25700000000000006
+      },
+      {
+        "wall_s": 0.689,
+        "simulation_time_s": 23.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.2761944444444445
+      },
+      {
+        "wall_s": 0.742,
+        "simulation_time_s": 24.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.295388888888889
+      },
+      {
+        "wall_s": 0.795,
+        "simulation_time_s": 25.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.31458333333333344
+      },
+      {
+        "wall_s": 0.848,
+        "simulation_time_s": 26.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.3337777777777779
+      },
+      {
+        "wall_s": 0.901,
+        "simulation_time_s": 27.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.35297222222222235
+      },
+      {
+        "wall_s": 0.953,
+        "simulation_time_s": 28.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.3721666666666668
+      },
+      {
+        "wall_s": 1.006,
+        "simulation_time_s": 29.0,
+        "dwell_number": 0,
+        "total_count": 0,
+        "plant_energy_total_kwh": 0.39136111111111127
+      },
+      {
+        "wall_s": 1.06,
+        "simulation_time_s": 30.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.41055555555555573
+      },
+      {
+        "wall_s": 1.113,
+        "simulation_time_s": 31.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.4297500000000002
+      },
+      {
+        "wall_s": 1.165,
+        "simulation_time_s": 32.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.44894444444444465
+      },
+      {
+        "wall_s": 1.218,
+        "simulation_time_s": 33.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.4681388888888891
+      },
+      {
+        "wall_s": 1.27,
+        "simulation_time_s": 34.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.48733333333333356
+      },
+      {
+        "wall_s": 1.324,
+        "simulation_time_s": 35.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.506527777777778
+      },
+      {
+        "wall_s": 1.377,
+        "simulation_time_s": 36.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.5257222222222224
+      },
+      {
+        "wall_s": 1.43,
+        "simulation_time_s": 37.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.5449166666666668
+      },
+      {
+        "wall_s": 1.482,
+        "simulation_time_s": 38.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.5641111111111112
+      },
+      {
+        "wall_s": 1.535,
+        "simulation_time_s": 39.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.5833055555555556
+      },
+      {
+        "wall_s": 1.587,
+        "simulation_time_s": 40.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.6025
+      },
+      {
+        "wall_s": 1.641,
+        "simulation_time_s": 41.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.6216944444444444
+      },
+      {
+        "wall_s": 1.695,
+        "simulation_time_s": 42.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.6408888888888888
+      },
+      {
+        "wall_s": 1.747,
+        "simulation_time_s": 43.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.6600833333333332
+      },
+      {
+        "wall_s": 1.8,
+        "simulation_time_s": 44.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.6792777777777776
+      },
+      {
+        "wall_s": 1.852,
+        "simulation_time_s": 45.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.698472222222222
+      },
+      {
+        "wall_s": 1.906,
+        "simulation_time_s": 46.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.7176666666666665
+      },
+      {
+        "wall_s": 1.96,
+        "simulation_time_s": 47.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.7368611111111109
+      },
+      {
+        "wall_s": 2.013,
+        "simulation_time_s": 48.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.7560555555555553
+      },
+      {
+        "wall_s": 2.066,
+        "simulation_time_s": 49.0,
+        "dwell_number": 1,
+        "total_count": 1,
+        "plant_energy_total_kwh": 0.7752499999999997
+      }
+    ],
+    "final": {
+      "run_state": "RUNNING",
+      "simulation_time_s": 50.0,
+      "dwell_number": 2,
+      "counts": {
+        "total": 2,
+        "good": 0,
+        "reject": 0
+      },
+      "units_on_line": 2,
+      "plant_energy_total_kwh": 0.7944444444444441
+    },
+    "progression_without_advance": true
+  },
+  "projection": {
+    "sample_file": "factory-state-sample.json",
+    "workspace_id": "bottled-water-dday",
+    "plant_id": "BW-DEMO-01",
+    "factory": {
+      "run_state": "RUNNING",
+      "operating_state": "RUNNING",
+      "simulation_time_s": 500.0,
+      "production_elapsed_s": 500.0,
+      "dwell_number": 25
+    },
+    "top_level_keys": [
+      "balances",
+      "factory",
+      "hierarchy",
+      "nodes",
+      "plant_id",
+      "plant_name",
+      "recent_events",
+      "target_line",
+      "workspace_id"
+    ],
+    "node_count": 22,
+    "signal_count": 69,
+    "signals": [
+      {
+        "source_id": "BW-DEMO-01",
+        "signal_id": "run_state",
+        "value": "RUNNING",
+        "unit": "-",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-DEMO-01",
+        "signal_id": "operating_state",
+        "value": "RUNNING",
+        "unit": "-",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-FEED01",
+        "signal_id": "operating_state",
+        "value": "IDLE",
+        "unit": "-",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-FEED01",
+        "signal_id": "water_flow",
+        "value": 0.0,
+        "unit": "m3/h",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-FEED01",
+        "signal_id": "raw_water_total_m3",
+        "value": 0.0878014184397265,
+        "unit": "m3",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-FEED01",
+        "signal_id": "active_power",
+        "value": 0.5,
+        "unit": "kW",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-FEED01",
+        "signal_id": "energy_total",
+        "value": 0.2527777777777762,
+        "unit": "kWh",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-RO01",
+        "signal_id": "operating_state",
+        "value": "IDLE",
+        "unit": "-",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-RO01",
+        "signal_id": "production_flow",
+        "value": 0.0,
+        "unit": "m3/h",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-RO01",
+        "signal_id": "treated_water_total_m3",
+        "value": 0.06585106382979473,
+        "unit": "m3",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-RO01",
+        "signal_id": "reject_water_total_m3",
+        "value": 0.021950354609931624,
+        "unit": "m3",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      },
+      {
+        "source_id": "BW-WT-RO01",
+        "signal_id": "active_power",
+        "value": 0.3,
+        "unit": "kW",
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW",
+        "simulation_time_s": 500.0
+      }
+    ],
+    "balances": {
+      "water": {
+        "raw_water_feed_total_m3": 0.0878014184397265,
+        "treated_water_total_m3": 0.06585106382979473,
+        "ro_reject_total_m3": 0.021950354609931624,
+        "recovery_factor": 0.75,
+        "tank_initial_volume_m3": 0.27999999999999997,
+        "tank_volume_m3": 0.3336170212765956,
+        "tank_capacity_m3": 0.4,
+        "tank_high_volume_m3": 0.34,
+        "tank_low_volume_m3": 0.24,
+        "tank_level_pct": 83.40425531914889,
+        "product_water_total_m3": 0.011500000000000007,
+        "water_draw_total_m3": 0.012234042553191495,
+        "other_loss_total_m3": 0.0007340425531914881
+      },
+      "materials": {
+        "preform_count": 25,
+        "cap_count": 22,
+        "label_count": 20,
+        "case_count": 3,
+        "pallet_count": 1
+      },
+      "energy": {
+        "plant_active_power_kw": 60.9,
+        "plant_energy_total_kwh": 9.052444444444516,
+        "base_load_kw": 6.0
+      },
+      "finished_goods": {
+        "receipt_count": 18,
+        "dispatch_count": 17,
+        "inventory_count": 1
+      }
+    },
+    "recent_events": [
+      {
+        "event_type": "MACHINE_STATE_CHANGED",
+        "source_id": "BW-DEMO-01",
+        "detail": "run_state=RUNNING",
+        "simulation_time_s": 0.0,
+        "quality": "GOOD",
+        "provenance": "SIMULATED_RAW"
+      }
+    ],
+    "kpi_hits": [],
+    "foreign_semantics_hits": [],
+    "invented_identity_hits": [],
+    "reuses_b3_target_line_facts": true
+  },
+  "hierarchy": {
+    "node_count": 22,
+    "plant_count": 1,
+    "area_count": 5,
+    "asset_count": 16,
+    "ids_unique": true,
+    "every_asset_has_exactly_one_parent": true,
+    "every_asset_parent_is_an_area": true,
+    "projection_matches_frozen_topology": true,
+    "blower_nodes": [
+      {
+        "source_id": "BW-FP-BLW01",
+        "name": "Blower / Infeed",
+        "parent_source_id": "BW-FP"
+      }
+    ],
+    "bottle_preparation_assets": [],
+    "taxonomy_fields": [
+      "entity_type",
+      "equipment_class",
+      "name",
+      "parent_source_id",
+      "role",
+      "signals",
+      "source_id",
+      "workspace_id"
+    ],
+    "equipment_classes": [
+      "blower",
+      "capper",
+      "case_packer",
+      "chiller",
+      "compressor",
+      "fg_interface",
+      "filler",
+      "inspector",
+      "labeler",
+      "palletizer",
+      "power_meter",
+      "pump",
+      "rinser",
+      "ro_skid",
+      "storage_tank"
+    ],
+    "all_nodes_carry_workspace_id": true
+  },
+  "conservation": {
+    "steps": 4000,
+    "sample_points": 16,
+    "violations": [],
+    "identity_errors": [],
+    "tank_volume_min_m3": 0.240532,
+    "tank_volume_max_m3": 0.34,
+    "tank_high_volume_m3": 0.34,
+    "tank_capacity_m3": 0.4,
+    "high_level_rule_engaged": true,
+    "flows": {
+      "filled_units": 198,
+      "capped_units": 197,
+      "labeled_units": 195,
+      "packed_units": 194
+    },
+    "final_balances": {
+      "water": {
+        "raw_water_feed_total_m3": 0.0878014184397265,
+        "treated_water_total_m3": 0.06585106382979473,
+        "ro_reject_total_m3": 0.021950354609931624,
+        "recovery_factor": 0.75,
+        "tank_initial_volume_m3": 0.27999999999999997,
+        "tank_volume_m3": 0.2405319148936148,
+        "tank_capacity_m3": 0.4,
+        "tank_high_volume_m3": 0.34,
+        "tank_low_volume_m3": 0.24,
+        "tank_level_pct": 60.132978723403696,
+        "product_water_total_m3": 0.09900000000000007,
+        "water_draw_total_m3": 0.10531914893617035,
+        "other_loss_total_m3": 0.006319148936170277
+      },
+      "materials": {
+        "preform_count": 200,
+        "cap_count": 197,
+        "label_count": 195,
+        "case_count": 32,
+        "pallet_count": 16
+      },
+      "energy": {
+        "plant_active_power_kw": 60.9,
+        "plant_energy_total_kwh": 68.26077777777692,
+        "base_load_kw": 6.0
+      },
+      "finished_goods": {
+        "receipt_count": 193,
+        "dispatch_count": 192,
+        "inventory_count": 1
+      }
+    },
+    "final_factory": {
+      "run_state": "RUNNING",
+      "operating_state": "RUNNING",
+      "simulation_time_s": 4000.0,
+      "production_elapsed_s": 4000.0,
+      "dwell_number": 200
+    },
+    "plant_active_power_kw": 60.9,
+    "energy_identity_asset_energy_kwh": 61.594111
+  },
+  "utilities": {
+    "running": {
+      "compressor": {
+        "operating_state": "RUNNING",
+        "air_pressure": 6.4,
+        "active_power": 15.0,
+        "energy_total": 1.2427777777777747
+      },
+      "line_area": {
+        "operating_state": "RUNNING",
+        "total_count": 15,
+        "good_count": 8,
+        "reject_count": 0
+      },
+      "plant_active_power_kw": 60.9
+    },
+    "stopped": {
+      "compressor": {
+        "operating_state": "IDLE",
+        "air_pressure": 7.0,
+        "active_power": 2.0,
+        "energy_total": 1.4491666666666885
+      },
+      "line_area": {
+        "operating_state": "STOPPED",
+        "total_count": 15,
+        "good_count": 8,
+        "reject_count": 0
+      },
+      "plant_active_power_kw": 12.2
+    },
+    "pressure_sags_under_load": true,
+    "compressor_unloads_when_stopped": true,
+    "feed_idles_when_stopped": true,
+    "plant_load_drops_when_stopped": true
+  },
+  "determinism": {
+    "identical_control_sequences": true,
+    "reset_returns_initial_state": true,
+    "step_size_irrelevant": true,
+    "digests": [
+      "001f6302522358908aae01be64a8e9eaf8f6196d8d9c9bdc4b34a920f73c71c2",
+      "cd6afb6fd3aa922e7c9b64c67cb76809d2731eb94d53963566f1f2cc1b391155",
+      "f0992cbd29e780a4e83d76384d5da08f52320c613be33b6479b864a622f44a9b",
+      "7dfbce999f3a1c23c6395b583400807d432aee6eb12976eea023e0cca43172de",
+      "23e999dd757fa64bc23c88d850073b08871637b035c7a484bfe9d7c580c6e4c7",
+      "001f6302522358908aae01be64a8e9eaf8f6196d8d9c9bdc4b34a920f73c71c2"
+    ],
+    "fresh_instance_initial_digest": "001f6302522358908aae01be64a8e9eaf8f6196d8d9c9bdc4b34a920f73c71c2",
+    "control_semantics": {
+      "running": {
+        "run_state": "RUNNING",
+        "simulation_time_s": 100.0,
+        "counts": {
+          "total": 5,
+          "good": 0,
+          "reject": 0
+        }
+      },
+      "paused": {
+        "run_state": "PAUSED",
+        "simulation_time_s": 100.0,
+        "counts": {
+          "total": 5,
+          "good": 0,
+          "reject": 0
+        },
+        "conserved_quantities_frozen": true
+      },
+      "resumed": {
+        "run_state": "RUNNING",
+        "simulation_time_s": 200.0,
+        "counts": {
+          "total": 10,
+          "good": 3,
+          "reject": 0
+        }
+      },
+      "stopped": {
+        "run_state": "STOPPED",
+        "simulation_time_s": 400.0,
+        "counts": {
+          "total": 10,
+          "good": 3,
+          "reject": 0
+        },
+        "counts_frozen_vs_resumed": true,
+        "fault_present": false
+      }
+    },
+    "pause_freezes_conserved_quantities": true,
+    "stop_halts_production_only": true
+  },
+  "b3_observer": {
+    "skin_posts": [
+      "/pause",
+      "/reset",
+      "/resume",
+      "/start",
+      "/stop"
+    ],
+    "skin_posts_advance": false,
+    "skin_polls_state": true,
+    "operator_buttons": [
+      "bw-btn-start",
+      "bw-btn-pause",
+      "bw-btn-resume",
+      "bw-btn-stop",
+      "bw-btn-reset"
+    ],
+    "refresh_control_is_display_only": true,
+    "page_serves": true,
+    "bw_routes": [
+      "/bottled-water-demo",
+      "/bottled-water-demo/advance",
+      "/bottled-water-demo/factory",
+      "/bottled-water-demo/pause",
+      "/bottled-water-demo/reset",
+      "/bottled-water-demo/resume",
+      "/bottled-water-demo/start",
+      "/bottled-water-demo/state",
+      "/bottled-water-demo/static/{filename}",
+      "/bottled-water-demo/stop",
+      "/bottled-water-demo/unit/{unit_id}"
+    ],
+    "skin_and_factory_share_one_runtime": true,
+    "factory_clock_matches_line_clock_after_debug_advance": true
+  },
+  "tests_b4": {
+    "command": "python -m pytest -q tests/test_dday_b4_bottled_water_factory.py",
+    "exit_code": 0,
+    "junit": "junit-b4.xml",
+    "collected": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "tests_regression": {
+    "command": "python -m pytest -q tests/test_api.py tests/test_assy_demo.py tests/test_demo_composition.py tests/test_demo_overview.py tests/test_dday_b2_bottled_water_line.py tests/test_dday_b3_bottled_water_ui.py tests/test_runtime_service.py",
+    "exit_code": 1,
+    "junit": "junit-b4-regression.xml",
+    "collected": 164,
+    "passed": 163,
+    "failed": 1,
+    "skipped": 0,
+    "errors": 0,
+    "result": "FAIL"
+  },
+  "tests_regression_rerun": {
+    "command": "python -m pytest -q tests/test_api.py tests/test_assy_demo.py tests/test_demo_composition.py tests/test_demo_overview.py tests/test_dday_b2_bottled_water_line.py tests/test_dday_b3_bottled_water_ui.py tests/test_runtime_service.py",
+    "exit_code": 0,
+    "junit": "junit-b4-regression-rerun.xml",
+    "collected": 164,
+    "passed": 164,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "tests_full": {
+    "command": "python -m pytest -q <full suite>",
+    "exit_code": 0,
+    "junit": "junit-b4-full.xml",
+    "collected": 1716,
+    "passed": 1716,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "result": "PASS"
+  },
+  "task_gate": {
+    "record": ".ai-harness/traces/DDAY-B4/evidence.json",
+    "report": ".ai-harness/traces/DDAY-B4/gate-report.md",
+    "derived_status": "IMPLEMENTED \u2014 PR OPEN \u2014 READY FOR SA REVIEW",
+    "exit_code": 0,
+    "requested_gate_satisfied": true,
+    "implementation_sha": "9d4f43275c34f62a8a55b410fd427e469f7004ee",
+    "pipeline_steps": {
+      "P01": "PASS",
+      "P02": "PASS",
+      "P03": "PASS",
+      "P04": "PASS",
+      "P05": "PASS",
+      "P06": "PASS",
+      "P07": "PASS",
+      "P08": "PASS",
+      "P09": "PASS",
+      "P10": "PASS",
+      "P11": "PASS",
+      "P12": "PASS",
+      "P13": "PASS",
+      "P14": "PASS",
+      "P15": "PASS",
+      "P16": "PASS",
+      "P17": "PASS",
+      "P18": "PASS",
+      "P19": "PASS",
+      "P20": "PASS",
+      "P21": "PASS",
+      "P22": "PASS",
+      "P23": "PASS",
+      "P24": "PASS"
+    },
+    "acceptance": {
+      "A01": "PASS",
+      "A02": "PASS",
+      "A03": "PASS",
+      "A04": "PASS",
+      "A05": "PASS",
+      "A06": "PASS",
+      "A07": "PASS",
+      "A08": "PASS",
+      "A09": "PASS",
+      "A10": "PASS",
+      "A11": "PASS",
+      "A12": "PASS",
+      "A13": "PASS",
+      "A14": "PASS"
+    },
+    "invariants": {
+      "remote_branch_equals_pr_head": true,
+      "pr_head_equals_implementation_sha": true,
+      "ci_head_equals_pr_head": true,
+      "smoke_vf_effective_pass": false,
+      "smoke_vf2_effective_pass": false,
+      "evidence_validator_exit_zero": true,
+      "report_consistency_exit_zero": true
+    },
+    "ci": {
+      "run_id": 37133165235,
+      "event": "pull_request",
+      "workflow": "VF-DM CI",
+      "branch": "sa/dday-track-b-20261003",
+      "head_sha": "9d4f43275c34f62a8a55b410fd427e469f7004ee",
+      "status": "completed",
+      "conclusion": "success",
+      "required_steps": [],
+      "jobs": [
+        {
+          "id": 111232188979,
+          "name": "test",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Install",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke \u2014 virtual-factory validate",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke \u2014 VF2 validate",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 schema validation",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 self-tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 valid fixtures",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 invalid fixtures (expect non-zero)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 status derivation",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 status enum rejection",
+              "conclusion": "success"
+            },
+            {
+              "name": "Harness \u2014 baseline contract gate",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "annotations": 0
+    }
+  }
+}

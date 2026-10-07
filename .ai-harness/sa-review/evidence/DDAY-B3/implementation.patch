@@ -1,0 +1,2689 @@
+diff --git a/.ai-harness/tasks/DDAY-B3.json b/.ai-harness/tasks/DDAY-B3.json
+new file mode 100644
+index 0000000..84a7add
+--- /dev/null
++++ b/.ai-harness/tasks/DDAY-B3.json
+@@ -0,0 +1,185 @@
++{
++  "task_id": "DDAY-B3",
++  "repository": "hieudovn/virtual-factory",
++  "requested_gate": "ready_for_sa_review",
++  "gate_type": "D-DAY TRACK B — BOTTLED WATER 2D TARGET-LINE SKIN",
++  "issue": "hieudovn/virtual-factory#104",
++  "parent_issue": "hieudovn/virtual-factory#102",
++  "pr": "hieudovn/virtual-factory#101",
++  "objective": "Create a dedicated Bottled Water 2D visual skin for the already-running B2 target line, reusing existing VF UI/rendering mechanics (SVG canvas/viewport, pan/zoom, selection + inspector, animation clock/polling, runtime control wiring, state highlighting, B2 generic line facts) while providing workspace-specific bottled-water station artwork. No TIPA ASSY artwork, icons, APxx semantics or factory layout may be reused. The UI must bind to the B2 Bottled Water runtime, not mocked data.",
++  "explicit_non_objectives": [
++    "No new simulation engine",
++    "No Capper degradation implementation (B5)",
++    "No Water Treatment / Utilities / Warehouse simulation (B4)",
++    "No PlantOS integration or MQTT redesign (B6)",
++    "No VPS/Docker deployment (B7)",
++    "No OEE/KPI calculation",
++    "No manual MES/operator workflows (no quality decision, release, retry, rework, checklist, approval)",
++    "No downtime/failure code entry (belongs to the later abnormal/downtime slice)",
++    "No changes to B2 line semantics unless a visual blocker is proven",
++    "No generic snapshot or observation-architecture redesign",
++    "No material rewrite of the existing TIPA ASSY UI",
++    "No fix of the unrelated flaky reset test or the PR-state normalization debt"
++  ],
++  "required_branch": "sa/dday-track-b-20261003",
++  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
++  "sa_expected_baseline_sha": "f311edeeda595b3bcbc1a53dece5f9812a6435b1",
++  "baseline_semantics_note": "As for DDAY-B2/C01: the harness compares 'expected_base_sha' to origin/main and diffs it against HEAD, so it must be origin/main. 'sa_expected_baseline_sha' is the baseline issued in Issue #104 and was verified equal to the branch head before the first B3 write.",
++  "working_tree_required": "clean",
++  "allowed_paths": [
++    "src/virtual_factory/ui/static/",
++    "src/virtual_factory/ui/api.py",
++    "src/virtual_factory/assembly/demo_controller.py",
++    "tests/",
++    ".ai-harness/tasks/DDAY-B3.json",
++    ".ai-harness/sa-review/evidence/DDAY-B3/",
++    ".ai-harness/sa-review/reports/DDAY-B3.md",
++    ".ai-harness/sa-review/CURRENT.md",
++    ".ai-harness/tasks/DDAY-B2.json",
++    ".ai-harness/tasks/DDAY-B2-C01.json",
++    ".ai-harness/sa-review/evidence/DDAY-B2/",
++    ".ai-harness/sa-review/evidence/DDAY-B2-C01/",
++    ".ai-harness/sa-review/reports/DDAY-B2.md",
++    ".ai-harness/sa-review/reports/DDAY-B2-C01.md",
++    ".ai-harness/scripts/run_task_gate.py",
++    ".ai-harness/tests/",
++    "configs/workspaces/bottled-water-dday/",
++    "docs/plans/"
++  ],
++  "allowed_paths_note": "Entries after CURRENT.md are frozen DDAY-B1/B2/B2-C01 artifacts already committed on this branch (plus the C01 harness repair) and therefore present in the diff against origin/main; they are listed only so the harness allowlist diff check is truthful and are NOT authorized for modification in B3. The B3-scope changed-file check against the B3 baseline f311ede in the evidence proves which files B3 actually touched.",
++  "sa_allowed_paths": [
++    "src/virtual_factory/ui/static/ for new Bottled Water UI assets and minimal shared UI reuse",
++    "src/virtual_factory/ui/api.py only if required for Bottled Water runtime selection / line-facts/control endpoints",
++    "src/virtual_factory/assembly/demo_controller.py only if a very small generic read/control seam is required",
++    "relevant tests/ only",
++    ".ai-harness/tasks/DDAY-B3.json",
++    ".ai-harness/sa-review/evidence/DDAY-B3/",
++    ".ai-harness/sa-review/reports/DDAY-B3.md",
++    ".ai-harness/sa-review/CURRENT.md under existing governance"
++  ],
++  "forbidden_paths": [
++    "src/virtual_factory/core/",
++    "src/virtual_factory/telemetry/",
++    "src/virtual_factory/protocols/",
++    "src/virtual_factory/scenarios/",
++    "src/virtual_factory/equipment/",
++    "src/virtual_factory/balance/",
++    "src/virtual_factory/control/",
++    "src/virtual_factory/instrumentation/",
++    "src/virtual_factory/actuation/",
++    "src/virtual_factory/assembly/line_runtime.py",
++    "src/virtual_factory/assembly/assy_mes_bridge.py",
++    "src/virtual_factory/assembly/observation_bridge.py",
++    "src/virtual_factory/assembly/demo_composition.py",
++    "src/virtual_factory/assembly/station_contracts.py",
++    "src/virtual_factory/assembly/quality_records.py",
++    "src/virtual_factory/assembly/conveyor.py",
++    "src/virtual_factory/assembly/demo_snapshot.py",
++    "src/virtual_factory/ui/runtime_service.py",
++    "src/virtual_factory/ui/static/assy_demo.js",
++    "src/virtual_factory/ui/static/assy_demo.css",
++    "src/virtual_factory/ui/static/assy_demo.html",
++    "src/virtual_factory/ui/static/index.html",
++    "src/virtual_factory/ui/static/app.js",
++    "simulators/",
++    "deploy/",
++    "docs/deployment/",
++    "docker-compose.yml",
++    "docker-compose.assy.yml",
++    "Dockerfile",
++    "pyproject.toml",
++    "configs/plants/",
++    ".ai-harness/scripts/validate_report_consistency.py",
++    ".ai-harness/scripts/derive_status.py",
++    ".ai-harness/PM-EXECUTION-CONTRACT.md"
++  ],
++  "required_deliverables": [
++    "src/virtual_factory/ui/static/bottled_water_demo.html — dedicated Bottled Water 2D target-line page",
++    "src/virtual_factory/ui/static/bottled_water_demo.js — workspace-specific skin with bottled-water station artwork, bottle/unit tokens, flow, controls and inspector",
++    "src/virtual_factory/ui/static/bottled_water_demo.css — workspace-specific visual styling (bright/clean industrial)",
++    "src/virtual_factory/ui/api.py — minimal domain-neutral Bottled Water endpoints: page, static, line-facts projection, and START/PAUSE/RESUME/STOP/RESET/ADVANCE control",
++    "tests/test_dday_b3_bottled_water_ui.py — API, projection, control-semantics, isolation and skin-asset tests",
++    ".ai-harness/sa-review/evidence/DDAY-B3/ (evidence, screenshots, machine record)",
++    ".ai-harness/sa-review/reports/DDAY-B3.md and .ai-harness/sa-review/CURRENT.md"
++  ],
++  "required_tests": [
++    "B3-1 Bottled Water UI route reachable and bound to the B2 runtime (not mocked)",
++    "B3-2 all 8 frozen stations present in correct order",
++    "B3-3 Bottled Water skin is visually distinct: no APxx/TIPA visual vocabulary in the BW UI assets or API projection",
++    "B3-4 unit movement facts correspond to runtime positions",
++    "B3-5 START/PAUSE/RESUME/STOP/RESET work through the API and preserve B2 semantics",
++    "B3-6 total/good/reject and line state visible and tracking runtime facts",
++    "B3-7 Inspection PASS/FAIL/reject observable without manual disposition",
++    "B3-8 station/unit selection context available without adding manual decisions",
++    "B3-9 no B4/B5/B6/B7 implementation mixed in",
++    "B3-10 relevant UI/API/runtime regression tests pass",
++    "B3-11 full suite passes (or a pre-existing flaky failure is reproduced/disclosed separately and the exact-head rerun is green)"
++  ],
++  "required_smoke_checks": [
++    {
++      "id": "SMOKE-BW-UI",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B3/smoke_bottled_water_ui.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "Live HTTP smoke against the real B3 app: BW page served, state projection bound to the B2 runtime, all 8 stations in order, START/PAUSE/RESUME/STOP/RESET semantics, inspection indication, no TIPA/APxx vocabulary."
++    },
++    {
++      "id": "SMOKE-BW",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "B2 runtime regression smoke (must remain green: B3 must not change line semantics)."
++    }
++  ],
++  "required_remote_evidence": [
++    "Remote branch head equals reported commit SHA",
++    "PR #101 open, base main, head equals remote branch head",
++    "Exact-head CI success for the pushed commit SHA",
++    "Exact-head invariant: remote branch HEAD = PR #101 head SHA = CI head SHA = reported review SHA"
++  ],
++  "forbidden_actions": [
++    "Do not push directly to main",
++    "Do not merge PR #101",
++    "Do not start B4 or any later slice",
++    "Do not modify any forbidden path, including line_runtime.py and the existing TIPA ASSY UI assets",
++    "Do not change B2 line semantics to make the visualization work",
++    "Do not implement Capper degradation, Water Treatment/Utilities/Warehouse, PlantOS integration or deployment",
++    "Do not publish calculated KPIs (OEE/availability/performance/quality%/energy-per-unit/utilization/health score)",
++    "Do not add manual quality decision, release, retry, rework, checklist or approval UI",
++    "Do not reuse TIPA ASSY artwork/icons/APxx semantics in the Bottled Water skin",
++    "Do not delete or weaken existing tests",
++    "Do not self-certify COMPLETE / CLOSED / SA APPROVED"
++  ],
++  "stop_conditions": [
++    "B3 would require changing discrete engine behaviour -> STOPPED — SA ARCHITECTURE REVIEW REQUIRED",
++    "A generic snapshot/API redesign becomes necessary -> STOPPED — SA ARCHITECTURE REVIEW REQUIRED",
++    "The existing TIPA UI must be materially rewritten rather than reused safely -> STOPPED — SA DECISION REQUIRED",
++    "B4+ scope becomes necessary -> stop B3",
++    "A required change falls outside the allowlist -> STOPPED — ALLOWLIST EXPANSION REQUIRED",
++    "Baseline is no longer the expected SHA before the first B3 write -> STOPPED — BASELINE MISMATCH",
++    "origin/main advances materially -> STOPPED — BASELINE ADVANCED",
++    "B2 line semantics regress -> STOPPED — REGRESSION REQUIRES SA REVIEW"
++  ],
++  "acceptance_criteria": [
++    {"id": "A01", "phase": "pre_status", "description": "Repository baseline matches the contract baseline", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
++    {"id": "A02", "phase": "pre_status", "description": "Working tree was clean at preflight", "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}},
++    {"id": "A03", "phase": "pre_status", "description": "Full local test suite passes", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
++    {"id": "A04", "phase": "pre_status", "description": "Required smoke checks reach effective PASS", "rule": {"field": "smoke_checks", "operator": "contains", "expected": "'effective_result': 'PASS'"}},
++    {"id": "A05", "phase": "pre_status", "description": "No blocking issue recorded by the gate pipeline", "rule": {"field": "blocking_issues", "operator": "is_empty", "expected": null}},
++    {"id": "A06", "phase": "pre_status", "description": "No tool failure recorded", "rule": {"field": "tool_failures", "operator": "is_empty", "expected": null}},
++    {"id": "A07", "phase": "pre_status", "description": "No contradictions detected", "rule": {"field": "contradictions", "operator": "is_empty", "expected": null}},
++    {"id": "A08", "phase": "final", "description": "All canonical gate steps executed (P01-P24)", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
++    {"id": "A09", "phase": "final", "description": "All canonical gate steps PASS", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
++    {"id": "A10", "phase": "final", "description": "Implementation commit exists on the remote branch", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}},
++    {"id": "A11", "phase": "final", "description": "Remote branch head is present and reported", "rule": {"field": "implementation.remote_branch_head", "operator": "is_present", "expected": null}},
++    {"id": "A12", "phase": "final", "description": "PR #101 metadata resolved (open PR with base main)", "rule": {"field": "pull_request.number", "operator": "is_present", "expected": null}},
++    {"id": "A13", "phase": "final", "description": "Exact-head CI succeeded for the pushed SHA", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
++    {"id": "A14", "phase": "final", "description": "Runtime authorization boundaries preserved (no merge, no next slice)", "rule": {"field": "authorization.may_merge", "operator": "is_false", "expected": null}}
++  ],
++  "authorization": {
++    "may_open_pr": true,
++    "may_merge": false,
++    "may_start_next_task": false
++  },
++  "_note": "Authored by the PM from SA Issue #104 (DDAY-B3 — Bottled Water 2D Target-Line Skin). B3 only. No merge authorization. The PM may not self-certify COMPLETE or CLOSED."
++}
+diff --git a/src/virtual_factory/ui/api.py b/src/virtual_factory/ui/api.py
+index bab1053..996bca8 100644
+--- a/src/virtual_factory/ui/api.py
++++ b/src/virtual_factory/ui/api.py
+@@ -531,4 +531,205 @@ def create_app(
+                     content={"detail": f"Sub-line not found: {sub_line_id!r}"},
+                 )
+ 
++    # ═══════════════════════════════════════════════════
++    # DDAY-B3 — Bottled Water 2D target-line skin
++    #
++    # Binds the dedicated Bottled Water skin to the B2 generic single-line
++    # runtime. The projection below is raw operational facts only: no KPI is
++    # calculated here and no hidden scenario truth is exposed.
++    # ═══════════════════════════════════════════════════
++
++    _bw_controller: dict = {"instance": None}
++
++    def _bw_config_path() -> str:
++        """Resolve the Bottled Water workspace config (env override supported)."""
++        default = (
++            Path(__file__).resolve().parent.parent.parent.parent
++            / "configs" / "workspaces" / "bottled-water-dday" / "line.yaml"
++        )
++        return os.environ.get("BOTTLED_WATER_CONFIG", str(default))
++
++    def _get_bw_controller():
++        if _bw_controller["instance"] is None:
++            from virtual_factory.assembly.demo_controller import DemoController
++            ctrl = DemoController(config_path=_bw_config_path())
++            ctrl.initialize()
++            if not ctrl.is_generic_line:
++                raise RuntimeError(
++                    "Bottled Water workspace requires a generic single-line "
++                    "configuration"
++                )
++            _bw_controller["instance"] = ctrl
++        return _bw_controller["instance"]
++
++    def _bw_projection(ctrl, limit: int = 60) -> dict:
++        """Domain-neutral outward projection of the B2 generic line runtime.
++
++        Reads only public runtime surfaces. Counts and states are raw facts.
++        """
++        line = ctrl.line
++        facts = ctrl.line_facts()
++        checkpoints = [
++            station_id
++            for station_id, contract in line.station_contracts.items()
++            if contract.capabilities.quality_decision
++        ]
++
++        stations = []
++        for sequence, entry in enumerate(facts["positions"]):
++            station_id = entry["position_id"]
++            stations.append({
++                "sequence": sequence,
++                "station_id": station_id,
++                "unit_id": entry["unit_id"],
++                "unit_type": entry["unit_type"],
++                "product_code": entry["product_code"],
++                "unit_status": entry["manufacturing_status"],
++                "is_occupied": entry["is_occupied"],
++                "is_quality_checkpoint": station_id in checkpoints,
++                "last_disposition": line.last_quality_disposition(station_id),
++            })
++
++        events = [
++            {
++                "event_type": event.event_type,
++                "station_id": event.position,
++                "unit_id": event.wip_id,
++                "detail": event.detail,
++                "simulation_time_s": event.simulation_time_s,
++                "dwell_number": event.dwell_number,
++            }
++            for event in line.trace[-limit:]
++        ]
++
++        return {
++            "workspace_id": "bottled-water-dday",
++            "plant_id": facts["plant_id"],
++            "line_id": facts["line_id"],
++            "line_label": facts["line_label"],
++            "run_state": facts["run_state"],
++            "operating_state": facts["operating_state"],
++            "simulation_time_s": facts["simulation_time_s"],
++            "dwell_number": facts["dwell_number"],
++            "nominal_dwell_s": facts["nominal_dwell_s"],
++            "unit_type": facts["unit_type"],
++            "product_code": facts["product_code"],
++            "route": facts["route"],
++            "stations": stations,
++            "counts": {
++                "total": facts["total_count"],
++                "good": facts["good_count"],
++                "reject": facts["reject_count"],
++            },
++            "units_on_line": facts["units_on_line"],
++            "quality_checkpoints": checkpoints,
++            "last_reject": next(
++                (e["unit_id"] for e in reversed(events)
++                 if e["event_type"] == "REJECT"), ""),
++            "recent_events": events,
++        }
++
++    @app.get("/bottled-water-demo/state")
++    def bottled_water_state(
++        limit: int = Query(default=60, ge=0, le=200),
++    ) -> dict:
++        """Raw line facts for the Bottled Water skin (no KPI calculation).
++
++        `limit` bounds the event window. A full production cycle emits roughly
++        20–30 events, so the default window covers more than one cycle and the
++        skin never misses a cycle's events between polls.
++        """
++        return _bw_projection(_get_bw_controller(), limit=limit)
++
++    @app.get("/bottled-water-demo/static/{filename}", include_in_schema=False)
++    def bottled_water_static(filename: str) -> FileResponse:
++        return FileResponse(static_dir / filename)
++
++    @app.get("/bottled-water-demo", include_in_schema=False)
++    def bottled_water_page() -> FileResponse:
++        return FileResponse(static_dir / "bottled_water_demo.html")
++
++    @app.get("/bottled-water-demo/unit/{unit_id}")
++    def bottled_water_unit(unit_id: str) -> dict:
++        """Context for one unit at a selected point (selection is read-only)."""
++        from fastapi.responses import JSONResponse
++        ctrl = _get_bw_controller()
++        line = ctrl.line
++        unit = line.get_wip(unit_id)
++        if unit is None:
++            return JSONResponse(
++                status_code=404,
++                content={"detail": f"Unit not found: {unit_id!r}"},
++            )
++        history = line.get_quality_history(unit_id)
++        return {
++            "unit_id": unit.wip_id,
++            "unit_type": unit.unit_type,
++            "product_code": unit.product_code,
++            "unit_sequence": unit.unit_sequence,
++            "unit_status": unit.lifecycle.value,
++            "current_station_id": unit.current_position,
++            "stations_completed": unit.station_count,
++            "rejected": unit.rejected,
++            "counted_good": unit.counted_good,
++            "quality_status": line.get_current_quality_status(unit_id).value,
++            "quality_records": [
++                {
++                    "record_id": record.record_id,
++                    "station_id": record.station_id,
++                    "check_type": record.check_type.value,
++                    "disposition": record.disposition,
++                    "attempt_number": record.attempt_number,
++                    "simulation_time_s": record.simulation_time_s,
++                    "reason_code": record.reason_code,
++                }
++                for record in (history.records if history else ())
++            ],
++        }
++
++    # Controls: exactly the operator set allowed by the B3 contract.
++    @app.post("/bottled-water-demo/start")
++    def bottled_water_start() -> dict:
++        ctrl = _get_bw_controller()
++        ctrl.start()
++        return _bw_projection(ctrl)
++
++    @app.post("/bottled-water-demo/pause")
++    def bottled_water_pause() -> dict:
++        ctrl = _get_bw_controller()
++        ctrl.pause()
++        return _bw_projection(ctrl)
++
++    @app.post("/bottled-water-demo/resume")
++    def bottled_water_resume() -> dict:
++        ctrl = _get_bw_controller()
++        ctrl.resume()
++        return _bw_projection(ctrl)
++
++    @app.post("/bottled-water-demo/stop")
++    def bottled_water_stop() -> dict:
++        ctrl = _get_bw_controller()
++        ctrl.stop()
++        return _bw_projection(ctrl)
++
++    @app.post("/bottled-water-demo/reset")
++    def bottled_water_reset() -> dict:
++        """RESET rebuilds the line and returns it to its known initial state."""
++        ctrl = _get_bw_controller()
++        ctrl.reset()
++        return _bw_projection(ctrl)
++
++    @app.post("/bottled-water-demo/advance")
++    def bottled_water_advance() -> dict:
++        """Animation-clock tick: one deterministic production cycle.
++
++        Not an operator control — the skin's presentation clock calls this while
++        the line is RUNNING. The runtime itself refuses to advance unless the
++        run state is RUNNING, so operator semantics are preserved.
++        """
++        ctrl = _get_bw_controller()
++        ctrl.advance()
++        return _bw_projection(ctrl)
++
+     return app
++
+diff --git a/src/virtual_factory/ui/static/bottled_water_demo.css b/src/virtual_factory/ui/static/bottled_water_demo.css
+new file mode 100644
+index 0000000..4994291
+--- /dev/null
++++ b/src/virtual_factory/ui/static/bottled_water_demo.css
+@@ -0,0 +1,521 @@
++/* ══════════════════════════════════════════════════════════════
++   DDAY-B3 — Bottled Water 2D target-line skin
++   Workspace-specific visual skin for the Bottled Water Filling &
++   Packaging line. Bright/clean industrial D-Day styling.
++
++   Design tokens below follow the existing VF visual conventions
++   (surface/border/text/accent scale + pass/hold/fail state colours).
++   No other line's skin stylesheet is imported: the Bottled Water skin
++   owns its own artwork and layout.
++   ══════════════════════════════════════════════════════════════ */
++
++:root {
++  /* Surfaces */
++  --bw-bg-page: #F7F9FC;
++  --bw-bg-surface: #FFFFFF;
++  --bw-bg-canvas: #FAFBFD;
++  --bw-bg-popup: rgba(255, 255, 255, 0.97);
++
++  /* Borders */
++  --bw-border: #D9E1EA;
++  --bw-border-light: #EEF2F6;
++  --bw-border-strong: #C5CDD5;
++
++  /* Text */
++  --bw-text: #172033;
++  --bw-text-secondary: #5D6A7D;
++  --bw-text-muted: #8A95A8;
++
++  /* Accent */
++  --bw-accent: #2F6FDB;
++  --bw-accent-light: #EAF2FF;
++  --bw-accent-hover: #2563C0;
++
++  /* Production state colours (VF state convention) */
++  --bw-state-run: #35A866;
++  --bw-state-idle: #E0A11A;
++  --bw-state-pass: #35A866;
++  --bw-state-fail: #D64545;
++  --bw-state-stopped: #8A95A8;
++  --bw-state-selected: #2F6FDB;
++
++  /* Bottled water machine palette */
++  --bw-steel: #AEB8C4;
++  --bw-steel-dark: #7C8794;
++  --bw-steel-light: #DCE3EA;
++  --bw-water: #3FA9DC;
++  --bw-water-light: #BFE3F5;
++  --bw-bottle: #D9EEF9;
++  --bw-bottle-edge: #7FBEDC;
++  --bw-cap: #2F6FDB;
++  --bw-case: #C4A882;
++  --bw-case-dark: #8B7355;
++  --bw-conveyor: #8B95A3;
++  --bw-conveyor-frame: #6B7583;
++  --bw-conveyor-roller: #D5DBE1;
++  --bw-grid-minor: #EEF2F6;
++
++  /* Scale */
++  --bw-xs: 4px;
++  --bw-sm: 8px;
++  --bw-md: 12px;
++  --bw-lg: 16px;
++  --bw-xl: 24px;
++  --bw-radius-sm: 4px;
++  --bw-radius-md: 8px;
++  --bw-radius-lg: 12px;
++  --bw-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
++  --bw-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
++  --bw-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
++}
++
++* { box-sizing: border-box; }
++
++html, body {
++  margin: 0;
++  padding: 0;
++  height: 100%;
++  overflow: hidden;
++  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
++  color: var(--bw-text);
++  background: var(--bw-bg-page);
++}
++
++#app {
++  display: flex;
++  flex-direction: column;
++  height: 100vh;
++}
++
++/* ══════════════════ Top bar ══════════════════ */
++
++#vf-topbar {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  height: 58px;
++  padding: 0 var(--bw-lg);
++  background: var(--bw-bg-surface);
++  border-bottom: 1px solid var(--bw-border);
++  box-shadow: var(--bw-shadow-sm);
++  flex: 0 0 auto;
++  z-index: 20;
++}
++
++.vf-tb-left, .vf-tb-right { display: flex; align-items: center; gap: var(--bw-md); }
++
++.vf-logo { display: flex; align-items: center; gap: var(--bw-sm); }
++
++.vf-logo-mark {
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  width: 32px;
++  height: 32px;
++  border-radius: var(--bw-radius-md);
++  background: var(--bw-accent);
++  color: #fff;
++  font-weight: 700;
++  font-size: 13px;
++  letter-spacing: 0.04em;
++}
++
++.vf-logo-text {
++  display: block;
++  font-size: 12px;
++  font-weight: 700;
++  letter-spacing: 0.09em;
++}
++
++.vf-logo-sub {
++  display: block;
++  font-size: 11px;
++  color: var(--bw-text-secondary);
++}
++
++.vf-tb-divider {
++  width: 1px;
++  height: 30px;
++  background: var(--bw-border);
++}
++
++.vf-tb-context { display: flex; flex-direction: column; line-height: 1.25; }
++
++.vf-tb-line { font-size: 14px; font-weight: 600; }
++
++.vf-tb-ids { font-size: 11px; color: var(--bw-text-muted); letter-spacing: 0.03em; }
++
++.vf-chip {
++  padding: 4px 10px;
++  border: 1px solid var(--bw-border);
++  border-radius: 999px;
++  font-size: 11px;
++  color: var(--bw-text-secondary);
++  background: var(--bw-bg-page);
++}
++
++.vf-chip-live { color: var(--bw-state-run); border-color: #CBE7D8; background: #F1FAF5; }
++
++/* ══════════════════ Facts strip ══════════════════ */
++
++#bw-facts {
++  display: flex;
++  align-items: stretch;
++  gap: 1px;
++  padding: 0 var(--bw-lg);
++  background: var(--bw-bg-surface);
++  border-bottom: 1px solid var(--bw-border);
++  flex: 0 0 auto;
++  overflow-x: auto;
++}
++
++.bw-fact {
++  display: flex;
++  flex-direction: column;
++  justify-content: center;
++  gap: 2px;
++  padding: var(--bw-sm) var(--bw-lg) var(--bw-sm) 0;
++  margin-right: var(--bw-lg);
++  border-right: 1px solid var(--bw-border-light);
++  min-width: 92px;
++}
++
++.bw-fact:last-child { border-right: none; }
++
++.bw-fact-label {
++  font-size: 10px;
++  text-transform: uppercase;
++  letter-spacing: 0.07em;
++  color: var(--bw-text-muted);
++  white-space: nowrap;
++}
++
++.bw-fact-value { font-size: 17px; font-weight: 600; white-space: nowrap; }
++
++.bw-fact-count .bw-fact-value { font-variant-numeric: tabular-nums; }
++
++.bw-good { color: var(--bw-state-pass); }
++.bw-reject { color: var(--bw-state-fail); }
++
++.bw-run-state[data-state="RUNNING"] { color: var(--bw-state-run); }
++.bw-run-state[data-state="PAUSED"] { color: var(--bw-state-idle); }
++.bw-run-state[data-state="STOPPED"] { color: var(--bw-state-stopped); }
++
++.bw-fact-inspection .bw-fact-value { font-size: 14px; }
++#bw-inspection[data-result="PASS"] { color: var(--bw-state-pass); }
++#bw-inspection[data-result="FAIL"],
++#bw-inspection[data-result="NG"] { color: var(--bw-state-fail); }
++
++/* ══════════════════ Main layout ══════════════════ */
++
++#bw-main {
++  display: flex;
++  flex: 1 1 auto;
++  min-height: 0;
++}
++
++#bw-canvas-area {
++  position: relative;
++  flex: 1 1 auto;
++  min-width: 0;
++  background: var(--bw-bg-canvas);
++  overflow: hidden;
++}
++
++#bw-svg { width: 100%; height: 100%; display: block; cursor: grab; }
++#bw-svg.bw-panning { cursor: grabbing; }
++
++/* Station interaction */
++.bw-station { cursor: pointer; }
++.bw-station .bw-station-body {
++  transition: filter 120ms ease, stroke 120ms ease;
++}
++.bw-station:hover .bw-station-body { filter: brightness(1.04); }
++.bw-station.bw-selected .bw-station-body {
++  stroke: var(--bw-state-selected);
++  stroke-width: 2.5;
++}
++
++.bw-bottle { cursor: pointer; }
++.bw-bottle.bw-selected .bw-bottle-body {
++  stroke: var(--bw-state-selected);
++  stroke-width: 2;
++}
++
++/* ══════════════════ Sim panel ══════════════════ */
++
++#bw-sim-panel {
++  position: absolute;
++  left: var(--bw-lg);
++  bottom: var(--bw-lg);
++  width: 268px;
++  padding: var(--bw-md);
++  background: var(--bw-bg-popup);
++  border: 1px solid var(--bw-border);
++  border-radius: var(--bw-radius-lg);
++  box-shadow: var(--bw-shadow-md);
++  backdrop-filter: blur(4px);
++  z-index: 10;
++}
++
++.bw-sim-title {
++  font-size: 10px;
++  text-transform: uppercase;
++  letter-spacing: 0.08em;
++  color: var(--bw-text-muted);
++  margin-bottom: var(--bw-sm);
++}
++
++.bw-sim-status {
++  display: flex;
++  align-items: center;
++  gap: var(--bw-sm);
++  font-size: 11px;
++  color: var(--bw-text-secondary);
++  margin-bottom: var(--bw-sm);
++}
++
++.bw-status-time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--bw-text); }
++
++.bw-status-item {
++  padding: 2px 7px;
++  border-radius: 999px;
++  background: var(--bw-bg-page);
++  border: 1px solid var(--bw-border-light);
++}
++
++#bw-sim-state[data-state="RUNNING"] { color: var(--bw-state-run); }
++#bw-sim-state[data-state="PAUSED"] { color: var(--bw-state-idle); }
++#bw-sim-state[data-state="STOPPED"] { color: var(--bw-state-stopped); }
++
++.bw-sim-note {
++  font-size: 11px;
++  color: var(--bw-text-secondary);
++  min-height: 16px;
++  margin-bottom: var(--bw-sm);
++}
++
++.bw-sim-controls {
++  display: grid;
++  grid-template-columns: 1fr 1fr;
++  gap: 6px;
++}
++
++.bw-btn {
++  padding: 7px 8px;
++  border: 1px solid var(--bw-border-strong);
++  border-radius: var(--bw-radius-sm);
++  background: var(--bw-bg-surface);
++  color: var(--bw-text);
++  font-size: 11px;
++  font-weight: 600;
++  letter-spacing: 0.03em;
++  cursor: pointer;
++}
++
++.bw-btn:hover:not(:disabled) { border-color: var(--bw-accent); color: var(--bw-accent); }
++.bw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
++
++.bw-btn-primary {
++  background: var(--bw-accent);
++  border-color: var(--bw-accent);
++  color: #fff;
++}
++.bw-btn-primary:hover:not(:disabled) { background: var(--bw-accent-hover); color: #fff; }
++
++.bw-btn-outline { grid-column: span 2; }
++
++.bw-sim-rate {
++  margin-top: var(--bw-sm);
++  padding-top: var(--bw-sm);
++  border-top: 1px solid var(--bw-border-light);
++}
++
++.bw-rate-label { display: block; font-size: 10px; color: var(--bw-text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
++
++.bw-select {
++  margin-top: 3px;
++  width: 100%;
++  padding: 4px 6px;
++  font-size: 11px;
++  border: 1px solid var(--bw-border);
++  border-radius: var(--bw-radius-sm);
++  background: var(--bw-bg-surface);
++  color: var(--bw-text);
++}
++
++.bw-rate-hint { display: block; margin-top: 4px; font-size: 10px; color: var(--bw-text-muted); }
++
++/* ══════════════════ Popup / inspector ══════════════════ */
++
++#bw-popup {
++  position: absolute;
++  top: var(--bw-lg);
++  right: var(--bw-lg);
++  width: 300px;
++  background: var(--bw-bg-popup);
++  border: 1px solid var(--bw-border);
++  border-radius: var(--bw-radius-lg);
++  box-shadow: var(--bw-shadow-lg);
++  backdrop-filter: blur(4px);
++  z-index: 12;
++}
++
++.bw-hidden { display: none !important; }
++
++#bw-popup-header {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  padding: var(--bw-md);
++  border-bottom: 1px solid var(--bw-border-light);
++  font-size: 13px;
++  font-weight: 600;
++}
++
++#bw-popup-close {
++  border: none;
++  background: transparent;
++  font-size: 18px;
++  line-height: 1;
++  color: var(--bw-text-muted);
++  cursor: pointer;
++}
++
++#bw-popup-body { padding: var(--bw-md); max-height: 46vh; overflow-y: auto; }
++
++.bw-row {
++  display: flex;
++  justify-content: space-between;
++  gap: var(--bw-sm);
++  padding: 4px 0;
++  font-size: 12px;
++  border-bottom: 1px solid var(--bw-border-light);
++}
++
++.bw-row:last-child { border-bottom: none; }
++
++.bw-row-label { color: var(--bw-text-secondary); }
++
++.bw-row-value { font-weight: 600; text-align: right; word-break: break-word; }
++
++.bw-subhead {
++  margin: var(--bw-md) 0 4px;
++  font-size: 10px;
++  text-transform: uppercase;
++  letter-spacing: 0.08em;
++  color: var(--bw-text-muted);
++}
++
++.bw-empty { font-size: 11px; color: var(--bw-text-muted); padding: 4px 0; }
++
++.bw-badge {
++  display: inline-block;
++  padding: 2px 8px;
++  border-radius: 999px;
++  font-size: 10px;
++  font-weight: 700;
++  letter-spacing: 0.04em;
++}
++
++.bw-badge-pass { background: #EAF7F0; color: var(--bw-state-pass); }
++.bw-badge-fail { background: #FDECEC; color: var(--bw-state-fail); }
++.bw-badge-neutral { background: var(--bw-bg-page); color: var(--bw-text-secondary); }
++
++.bw-actions { margin-top: var(--bw-md); }
++
++/* ══════════════════ Legend ══════════════════ */
++
++#bw-legend {
++  position: absolute;
++  right: var(--bw-lg);
++  bottom: var(--bw-lg);
++  display: flex;
++  align-items: center;
++  gap: var(--bw-md);
++  padding: 6px var(--bw-md);
++  background: var(--bw-bg-popup);
++  border: 1px solid var(--bw-border);
++  border-radius: 999px;
++  box-shadow: var(--bw-shadow-sm);
++  font-size: 10px;
++  color: var(--bw-text-secondary);
++  z-index: 10;
++}
++
++.bw-dot {
++  display: inline-block;
++  width: 8px;
++  height: 8px;
++  border-radius: 50%;
++  margin-right: 4px;
++  vertical-align: middle;
++}
++
++.bw-dot-run { background: var(--bw-state-run); }
++.bw-dot-idle { background: var(--bw-state-idle); }
++.bw-dot-pass { background: var(--bw-state-pass); }
++.bw-dot-fail { background: var(--bw-state-fail); }
++
++.bw-legend-hint { color: var(--bw-text-muted); }
++
++/* ══════════════════ Event strip ══════════════════ */
++
++#bw-events {
++  flex: 0 0 268px;
++  background: var(--bw-bg-surface);
++  border-left: 1px solid var(--bw-border);
++  display: flex;
++  flex-direction: column;
++  min-height: 0;
++}
++
++.bw-events-head {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  padding: var(--bw-md);
++  font-size: 11px;
++  text-transform: uppercase;
++  letter-spacing: 0.07em;
++  color: var(--bw-text-muted);
++  border-bottom: 1px solid var(--bw-border-light);
++}
++
++.bw-events-count {
++  padding: 1px 7px;
++  border-radius: 999px;
++  background: var(--bw-bg-page);
++  border: 1px solid var(--bw-border-light);
++  color: var(--bw-text-secondary);
++}
++
++#bw-event-list {
++  list-style: none;
++  margin: 0;
++  padding: var(--bw-sm);
++  overflow-y: auto;
++  flex: 1 1 auto;
++}
++
++#bw-event-list li {
++  padding: 6px var(--bw-sm);
++  margin-bottom: 4px;
++  border-left: 2px solid var(--bw-border);
++  border-radius: 0 var(--bw-radius-sm) var(--bw-radius-sm) 0;
++  background: var(--bw-bg-page);
++  font-size: 11px;
++  line-height: 1.35;
++}
++
++#bw-event-list li.bw-ev-pass { border-left-color: var(--bw-state-pass); }
++#bw-event-list li.bw-ev-fail { border-left-color: var(--bw-state-fail); }
++#bw-event-list li.bw-ev-control { border-left-color: var(--bw-accent); }
++
++.bw-ev-time { color: var(--bw-text-muted); font-variant-numeric: tabular-nums; margin-right: 4px; }
++.bw-ev-type { font-weight: 600; }
++.bw-ev-meta { display: block; color: var(--bw-text-secondary); }
++
++@media (prefers-reduced-motion: reduce) {
++  .bw-station .bw-station-body { transition: none; }
++}
+diff --git a/src/virtual_factory/ui/static/bottled_water_demo.html b/src/virtual_factory/ui/static/bottled_water_demo.html
+new file mode 100644
+index 0000000..815c52f
+--- /dev/null
++++ b/src/virtual_factory/ui/static/bottled_water_demo.html
+@@ -0,0 +1,157 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width, initial-scale=1.0">
++<title>Bottled Water Factory — Filling &amp; Packaging Line</title>
++<link rel="stylesheet" href="/bottled-water-demo/static/bottled_water_demo.css">
++</head>
++<body>
++<div id="app">
++
++  <!-- ═══════════════════════════════════════
++       TOP APPLICATION BAR
++       ═══════════════════════════════════════ -->
++  <header id="vf-topbar">
++    <div class="vf-tb-left">
++      <div class="vf-logo">
++        <span class="vf-logo-mark">VF</span>
++        <div>
++          <span class="vf-logo-text">VIRTUAL FACTORY</span>
++          <span class="vf-logo-sub" id="bw-plant-name">Bottled Water Factory</span>
++        </div>
++      </div>
++      <span class="vf-tb-divider"></span>
++      <div class="vf-tb-context">
++        <span class="vf-tb-line" id="bw-line-label">Filling &amp; Packaging Line</span>
++        <span class="vf-tb-ids" id="bw-identity">BW-DEMO-01 · BW-FP</span>
++      </div>
++    </div>
++    <div class="vf-tb-right">
++      <span class="vf-chip" id="bw-product-chip">bottle · WATER-500ML</span>
++      <span class="vf-chip vf-chip-live" id="bw-live-chip">● LIVE</span>
++    </div>
++  </header>
++
++  <!-- ═══════════════════════════════════════
++       PRODUCTION FACTS STRIP (raw facts only)
++       ═══════════════════════════════════════ -->
++  <section id="bw-facts">
++    <div class="bw-fact">
++      <span class="bw-fact-label">Run state</span>
++      <span class="bw-fact-value bw-run-state" id="bw-run-state">STOPPED</span>
++    </div>
++    <div class="bw-fact">
++      <span class="bw-fact-label">Operating state</span>
++      <span class="bw-fact-value" id="bw-operating-state">STOPPED</span>
++    </div>
++    <div class="bw-fact">
++      <span class="bw-fact-label">Simulation time</span>
++      <span class="bw-fact-value" id="bw-sim-time">0.0 s</span>
++    </div>
++    <div class="bw-fact">
++      <span class="bw-fact-label">Dwell</span>
++      <span class="bw-fact-value" id="bw-dwell">0</span>
++    </div>
++    <div class="bw-fact bw-fact-count">
++      <span class="bw-fact-label">Total bottles</span>
++      <span class="bw-fact-value" id="bw-total">0</span>
++    </div>
++    <div class="bw-fact bw-fact-count">
++      <span class="bw-fact-label">Good</span>
++      <span class="bw-fact-value bw-good" id="bw-good">0</span>
++    </div>
++    <div class="bw-fact bw-fact-count">
++      <span class="bw-fact-label">Reject</span>
++      <span class="bw-fact-value bw-reject" id="bw-reject">0</span>
++    </div>
++    <div class="bw-fact">
++      <span class="bw-fact-label">On line</span>
++      <span class="bw-fact-value" id="bw-on-line">0</span>
++    </div>
++    <div class="bw-fact bw-fact-inspection">
++      <span class="bw-fact-label">Inspection</span>
++      <span class="bw-fact-value" id="bw-inspection">no result yet</span>
++    </div>
++  </section>
++
++  <main id="bw-main">
++
++    <!-- ═══════════════════════════════════════
++         TARGET LINE CANVAS
++         ═══════════════════════════════════════ -->
++    <div id="bw-canvas-area">
++      <svg id="bw-svg" viewBox="0 0 1920 640" preserveAspectRatio="xMidYMid meet"
++           role="img" aria-label="Bottled water filling and packaging line">
++        <defs id="bw-defs"></defs>
++        <g id="bw-grid"></g>
++        <g id="bw-conveyor"></g>
++        <g id="bw-stations"></g>
++        <g id="bw-flow"></g>
++        <g id="bw-bottles"></g>
++      </svg>
++
++      <!-- Floating simulation control -->
++      <div id="bw-sim-panel">
++        <div class="bw-sim-title">Line control</div>
++        <div class="bw-sim-status">
++          <span id="bw-sim-clock" class="bw-status-time">t=0s</span>
++          <span id="bw-sim-dwell" class="bw-status-item">DWELL 0</span>
++          <span id="bw-sim-state" class="bw-status-item">STOPPED</span>
++        </div>
++        <div id="bw-sim-note" class="bw-sim-note">Line stopped — press START</div>
++        <div class="bw-sim-controls">
++          <button id="bw-btn-start"  class="bw-btn bw-btn-primary" onclick="bwStart()">▶ START</button>
++          <button id="bw-btn-pause"  class="bw-btn" onclick="bwPause()">⏸ PAUSE</button>
++          <button id="bw-btn-resume" class="bw-btn" onclick="bwResume()">▶ RESUME</button>
++          <button id="bw-btn-stop"   class="bw-btn" onclick="bwStop()">■ STOP</button>
++          <button id="bw-btn-reset"  class="bw-btn bw-btn-outline" onclick="bwReset()">↻ RESET</button>
++        </div>
++        <div class="bw-sim-rate">
++          <label class="bw-rate-label">Presentation rate
++            <select id="bw-rate" class="bw-select" onchange="bwSetRate(this.value)">
++              <option value="900">0.5x</option>
++              <option value="600" selected>1x</option>
++              <option value="300">2x</option>
++              <option value="150">4x</option>
++            </select>
++          </label>
++          <span class="bw-rate-hint">pacing only — simulation stays deterministic</span>
++        </div>
++      </div>
++
++      <!-- Selection popup -->
++      <div id="bw-popup" class="bw-hidden">
++        <div id="bw-popup-header">
++          <span id="bw-popup-title">Machine</span>
++          <button id="bw-popup-close" onclick="bwClosePopup()" title="Close">×</button>
++        </div>
++        <div id="bw-popup-body"></div>
++      </div>
++
++      <div id="bw-legend">
++        <span><i class="bw-dot bw-dot-run"></i> running</span>
++        <span><i class="bw-dot bw-dot-idle"></i> idle</span>
++        <span><i class="bw-dot bw-dot-pass"></i> pass</span>
++        <span><i class="bw-dot bw-dot-fail"></i> fail / reject</span>
++        <span class="bw-legend-hint">click a machine or a bottle</span>
++      </div>
++    </div>
++
++    <!-- ═══════════════════════════════════════
++         EVENT STRIP
++         ═══════════════════════════════════════ -->
++    <aside id="bw-events">
++      <div class="bw-events-head">
++        <span>Line events</span>
++        <span class="bw-events-count" id="bw-events-count">0</span>
++      </div>
++      <ul id="bw-event-list"></ul>
++    </aside>
++
++  </main>
++</div>
++
++<script src="/bottled-water-demo/static/bottled_water_demo.js"></script>
++</body>
++</html>
+diff --git a/src/virtual_factory/ui/static/bottled_water_demo.js b/src/virtual_factory/ui/static/bottled_water_demo.js
+new file mode 100644
+index 0000000..6d64642
+--- /dev/null
++++ b/src/virtual_factory/ui/static/bottled_water_demo.js
+@@ -0,0 +1,1063 @@
++/* ══════════════════════════════════════════════════════════════
++   DDAY-B3 — Bottled Water 2D target-line skin
++
++   Binds the Bottled Water Filling & Packaging line to the B2 generic
++   single-line runtime. The station order is taken from the runtime
++   route returned by the API, so the drawing always follows the real
++   line rather than a duplicated layout constant.
++
++   Reuses the existing VF UI *mechanics*: a viewBox SVG canvas with
++   pan/zoom, a presentation clock that paces engine ticks, selection
++   with a floating popup, state highlighting by data attribute, and
++   reduced-motion-aware interpolation of unit movement.
++   ══════════════════════════════════════════════════════════════ */
++
++'use strict';
++
++const BW_API = '/bottled-water-demo';
++
++/* Full canvas reference box (viewBox; not a fixed pixel size). */
++const BW_CANVAS = { w: 1920, h: 640 };
++const BW_FIT = { x: 0, y: 0, w: BW_CANVAS.w, h: BW_CANVAS.h };
++
++const BW_LAYOUT = {
++  marginX: 150,
++  conveyorTop: 410,
++  conveyorH: 44,
++  conveyorLeft: 60,
++  conveyorRight: 1860,
++  stationTop: 200,
++  stationW: 172,
++  stationH: 140,
++  labelY: 500,
++  artY: 272,
++};
++
++const BW_MAX_EVENTS = 40;
++const BW_POLL_MS = 350;
++const BW_MOVE_MS = 420;
++
++/* Friendly presentation labels. Raw event names stay authoritative in the API. */
++const BW_EVENT_LABEL = {
++  UNIT_ENTERED: 'Bottle entered line',
++  WIP_MOVED: 'Bottle moved',
++  STATION_START: 'Station start',
++  STATION_COMPLETE: 'Station complete',
++  STATION_PROGRESS: 'Station working',
++  STATION_ACTION: 'Station action',
++  OPERATION_RETRY: 'Station retry',
++  OPERATION_TERMINAL: 'Station terminated',
++  OPERATION_WAITING_COMMAND: 'Station waiting',
++  QUALITY_START: 'Inspection start',
++  QUALITY_OBSERVED: 'Inspection observed',
++  QUALITY_RESULT: 'Inspection result',
++  QUALITY_HOLD: 'Inspection hold',
++  QUALITY_FAILED_FINAL: 'Inspection failed',
++  REJECT: 'Bottle rejected',
++  UNIT_COMPLETED: 'Bottle completed',
++  DWELL_META: 'Cycle',
++  LINE_RUN_STATE: 'Line control',
++};
++
++const BW = {
++  state: null,
++  prevState: null,
++  route: [],
++  stationX: {},
++  stationNodes: {},
++  selected: { kind: '', id: '' },
++  bottles: new Map(),
++  events: [],
++  eventKeys: new Set(),
++  timer: null,
++  rateMs: 600,
++  busy: false,
++  view: { ...BW_FIT },
++  motion: new Map(),
++  rafId: null,
++  reducedMotion: false,
++  didPan: false,
++};
++
++/* ══════════════════════════════════════════════════════════════
++   Workspace-specific station artwork
++
++   Each machine is a stylized industrial symbol drawn from bottling
++   vocabulary: no shared drawing is borrowed from any other line.
++   All coordinates are relative to the machine centre (0,0).
++   ══════════════════════════════════════════════════════════════ */
++
++const BW_ART = {
++  /* Bottle infeed + air blower: hopper feeding a blower housing. */
++  blower() {
++    return `
++      <path d="M-52,-46 L14,-46 L4,-22 L-42,-22 Z" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <rect x="-52" y="-50" width="66" height="6" rx="3" fill="var(--bw-steel-dark)"/>
++      <circle cx="34" cy="-34" r="17" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <path d="M34,-45 A11,11 0 0 1 45,-34" fill="none" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <path d="M34,-23 A11,11 0 0 1 23,-34" fill="none" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <circle cx="34" cy="-34" r="3.5" fill="var(--bw-steel-dark)"/>
++      <rect x="-60" y="-14" width="120" height="30" rx="6" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <path d="M-30,-4 L6,-4" stroke="var(--bw-water)" stroke-width="2.5" stroke-linecap="round"/>
++      <path d="M-30,4 L6,4" stroke="var(--bw-water)" stroke-width="2.5" stroke-linecap="round"/>
++      <path d="M-30,11 L2,11" stroke="var(--bw-water)" stroke-width="2.5" stroke-linecap="round"/>
++    `;
++  },
++
++  /* Rinser: spray nozzles over a bottle. */
++  rinser() {
++    const drops = [-26, 0, 26]
++      .map((dx) => `<path d="M${dx},-18 l0,10" stroke="var(--bw-water)" stroke-width="2.5" stroke-linecap="round"/>
++                    <circle cx="${dx}" cy="-4" r="2.5" fill="var(--bw-water)"/>`).join('');
++    return `
++      <rect x="-54" y="-46" width="108" height="12" rx="4" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <rect x="-40" y="-34" width="12" height="8" rx="2" fill="var(--bw-steel-dark)"/>
++      <rect x="-6" y="-34" width="12" height="8" rx="2" fill="var(--bw-steel-dark)"/>
++      <rect x="28" y="-34" width="12" height="8" rx="2" fill="var(--bw-steel-dark)"/>
++      ${drops}
++      <rect x="-19" y="10" width="38" height="34" rx="8" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="2"/>
++      <rect x="-8" y="0" width="16" height="12" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="2"/>
++      <rect x="-9" y="-16" width="18" height="8" rx="2" fill="var(--bw-bottle-edge)"/>
++    `;
++  },
++
++  /* Filler: manifold with nozzles filling a bottle to level. */
++  filler() {
++    return `
++      <rect x="-56" y="-52" width="112" height="16" rx="5" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <rect x="-4" y="-36" width="8" height="64" rx="3" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="1.5"/>
++      <path d="M-44,-36 l0,16" stroke="var(--bw-steel-dark)" stroke-width="5" stroke-linecap="round"/>
++      <path d="M0,-36 l0,16" stroke="var(--bw-steel-dark)" stroke-width="5" stroke-linecap="round"/>
++      <path d="M44,-36 l0,16" stroke="var(--bw-steel-dark)" stroke-width="5" stroke-linecap="round"/>
++      <rect x="-19" y="12" width="38" height="34" rx="8" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="2"/>
++      <rect x="-14" y="22" width="28" height="21" rx="5" fill="var(--bw-water)"/>
++      <rect x="-8" y="2" width="16" height="12" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="2"/>
++      <rect x="-9" y="-14" width="18" height="8" rx="2" fill="var(--bw-cap)"/>
++    `;
++  },
++
++  /* Capper: rotating head applying a cap. */
++  capper() {
++    return `
++      <rect x="-50" y="-54" width="100" height="14" rx="4" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <rect x="-26" y="-40" width="52" height="16" rx="4" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <path d="M-24,-24 L-30,-6 L30,-6 L24,-24 Z" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <path d="M-34,-40 A34,10 0 0 1 34,-40" fill="none" stroke="var(--bw-steel-dark)" stroke-width="1.5" stroke-dasharray="4 4"/>
++      <rect x="-11" y="-6" width="22" height="10" rx="3" fill="var(--bw-cap)"/>
++      <rect x="-8" y="4" width="16" height="12" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="2"/>
++      <rect x="-19" y="14" width="38" height="32" rx="8" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="2"/>
++      <rect x="-14" y="26" width="28" height="17" rx="5" fill="var(--bw-water)"/>
++    `;
++  },
++
++  /* Inspection: camera with light cone over a bottle. */
++  inspection() {
++    return `
++      <rect x="-44" y="-56" width="72" height="34" rx="6" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <circle cx="4" cy="-39" r="12" fill="#2A3341" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <circle cx="4" cy="-39" r="5" fill="var(--bw-water-light)"/>
++      <path d="M-52,-52 L-44,-44" stroke="var(--bw-steel-dark)" stroke-width="3" stroke-linecap="round"/>
++      <path d="M-14,-22 L-30,6 L38,6 L22,-22 Z" fill="var(--bw-water-light)" fill-opacity="0.45" stroke="var(--bw-water)" stroke-width="1.5" stroke-dasharray="5 4"/>
++      <rect x="-19" y="10" width="38" height="36" rx="8" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="2"/>
++      <rect x="-14" y="24" width="28" height="19" rx="5" fill="var(--bw-water)"/>
++      <path d="M-6,28 l5,6 l10,-12" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
++    `;
++  },
++
++  /* Labeler: label roll feeding an applicator. */
++  labeler() {
++    return `
++      <circle cx="-36" cy="-30" r="19" fill="var(--bw-bg-surface)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <circle cx="-36" cy="-30" r="7" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="1.5"/>
++      <path d="M-17,-24 L22,-6" stroke="var(--bw-accent)" stroke-width="3.5" stroke-linecap="round"/>
++      <rect x="20" y="-14" width="26" height="14" rx="3" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <rect x="-30" y="-56" width="60" height="10" rx="4" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="1.5"/>
++      <rect x="-19" y="12" width="38" height="36" rx="8" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="2"/>
++      <rect x="-19" y="26" width="38" height="14" fill="var(--bw-accent)" fill-opacity="0.85"/>
++      <rect x="-14" y="18" width="28" height="12" rx="3" fill="var(--bw-water)"/>
++    `;
++  },
++
++  /* Case packer: bottles dropping into a case. */
++  packer() {
++    const tops = [-30, 0, 30]
++      .map((dx) => `<rect x="${dx - 8}" y="-40" width="16" height="12" rx="4" fill="var(--bw-bottle)" stroke="var(--bw-bottle-edge)" stroke-width="1.5"/>
++                     <rect x="${dx - 5}" y="-44" width="10" height="6" rx="2" fill="var(--bw-cap)"/>`).join('');
++    return `
++      <rect x="-56" y="-56" width="112" height="10" rx="4" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="1.5"/>
++      ${tops}
++      <path d="M0,-24 l0,14" stroke="var(--bw-steel-dark)" stroke-width="3" stroke-linecap="round"/>
++      <path d="M-7,-16 l7,8 l7,-8" fill="none" stroke="var(--bw-steel-dark)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++      <rect x="-52" y="-2" width="104" height="46" rx="5" fill="var(--bw-case)" stroke="var(--bw-case-dark)" stroke-width="2.5"/>
++      <path d="M-52,12 L52,12" stroke="var(--bw-case-dark)" stroke-width="1.5"/>
++      <rect x="-22" y="20" width="44" height="16" rx="2" fill="var(--bw-bg-surface)" fill-opacity="0.7"/>
++    `;
++  },
++
++  /* Palletizer: gantry placing a case onto a pallet stack. */
++  palletizer() {
++    const slats = [-46, -24, -2, 20, 42]
++      .map((dx) => `<rect x="${dx}" y="30" width="12" height="9" rx="2" fill="var(--bw-case-dark)"/>`).join('');
++    return `
++      <rect x="-58" y="-58" width="116" height="9" rx="4" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="1.5"/>
++      <rect x="30" y="-49" width="13" height="42" rx="3" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="1.5"/>
++      <path d="M-26,-7 L-26,-30 L30,-30" fill="none" stroke="var(--bw-steel-dark)" stroke-width="3" stroke-linecap="round"/>
++      <path d="M-33,-14 L-26,-7 L-19,-14" fill="none" stroke="var(--bw-steel-dark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
++      <rect x="-40" y="4" width="52" height="22" rx="3" fill="var(--bw-case)" stroke="var(--bw-case-dark)" stroke-width="2"/>
++      <rect x="-40" y="30" width="72" height="22" rx="3" fill="var(--bw-case-dark)" fill-opacity="0.35"/>
++      ${slats}
++      <rect x="-46" y="39" width="96" height="7" rx="2" fill="var(--bw-case-dark)"/>
++    `;
++  },
++
++  /* Fallback for a station id the skin does not know yet. */
++  generic() {
++    return `
++      <rect x="-52" y="-46" width="104" height="30" rx="6" fill="var(--bw-steel)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++      <circle cx="-22" cy="-31" r="8" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="1.5"/>
++      <circle cx="22" cy="-31" r="8" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="1.5"/>
++      <rect x="-40" y="-10" width="80" height="34" rx="6" fill="var(--bw-steel-light)" stroke="var(--bw-steel-dark)" stroke-width="2"/>
++    `;
++  },
++};
++
++/* Which artwork belongs to each frozen station of this workspace. */
++const BW_STATION_ART = {
++  'BW-FP-BLW01': 'blower',
++  'BW-FP-RIN01': 'rinser',
++  'BW-FP-FIL01': 'filler',
++  'BW-FP-CAP01': 'capper',
++  'BW-FP-INS01': 'inspection',
++  'BW-FP-LAB01': 'labeler',
++  'BW-FP-CPK01': 'packer',
++  'BW-FP-PAL01': 'palletizer',
++};
++
++/* ══════════════════════════════════════════════════════════════
++   Small helpers
++   ══════════════════════════════════════════════════════════════ */
++
++function bwEl(id) { return document.getElementById(id); }
++
++function bwEscape(value) {
++  return String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => ({
++    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
++  }[ch]));
++}
++
++function bwHumanise(value) {
++  const text = String(value || '').replace(/_/g, ' ').trim();
++  return text ? text.charAt(0).toUpperCase() + text.slice(1) : '—';
++}
++
++function bwShort(id) {
++  return String(id || '').replace(/^BW-FP-/, '');
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Canvas geometry + viewport (pan / zoom)
++   ══════════════════════════════════════════════════════════════ */
++
++function bwApplyView() {
++  const v = BW.view;
++  bwEl('bw-svg').setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`);
++}
++
++function bwSvgPoint(evt) {
++  const svg = bwEl('bw-svg');
++  const pt = svg.createSVGPoint();
++  pt.x = evt.clientX;
++  pt.y = evt.clientY;
++  return pt.matrixTransform(svg.getScreenCTM().inverse());
++}
++
++function bwZoom(factor, evt) {
++  const anchor = evt ? bwSvgPoint(evt) : {
++    x: BW.view.x + BW.view.w / 2, y: BW.view.y + BW.view.h / 2,
++  };
++  const nextW = Math.max(520, Math.min(3600, BW.view.w * factor));
++  const scale = nextW / BW.view.w;
++  const nextH = BW.view.h * scale;
++  BW.view = {
++    x: anchor.x - (anchor.x - BW.view.x) * scale,
++    y: anchor.y - (anchor.y - BW.view.y) * scale,
++    w: nextW,
++    h: nextH,
++  };
++  bwApplyView();
++}
++
++function bwFitView() {
++  BW.view = { ...BW_FIT };
++  bwApplyView();
++}
++
++function bwInstallViewport() {
++  const svg = bwEl('bw-svg');
++  let dragging = false;
++  let captured = false;
++  let origin = null;
++  let startView = null;
++  let moved = false;
++
++  svg.addEventListener('wheel', (evt) => {
++    evt.preventDefault();
++    bwZoom(evt.deltaY < 0 ? 0.9 : 1.1, evt);
++  }, { passive: false });
++
++  svg.addEventListener('pointerdown', (evt) => {
++    if (evt.button !== 0) return;
++    dragging = true;
++    moved = false;
++    origin = { x: evt.clientX, y: evt.clientY };
++    startView = { ...BW.view };
++    // The pointer is deliberately NOT captured here: capturing on press
++    // retargets the follow-up mouseup/click to the canvas, which would swallow
++    // clicks on a machine or bottle. Capture starts only once a real drag
++    // begins.
++  });
++
++  svg.addEventListener('pointermove', (evt) => {
++    if (!dragging || !origin) return;
++    const dxPx = evt.clientX - origin.x;
++    const dyPx = evt.clientY - origin.y;
++
++    if (!moved) {
++      if (Math.hypot(dxPx, dyPx) < 4) return;   // click, not a drag
++      moved = true;
++      BW.didPan = true;
++      svg.classList.add('bw-panning');
++      try {
++        svg.setPointerCapture(evt.pointerId);
++        captured = true;
++      } catch (err) { captured = false; }
++    }
++
++    const rect = svg.getBoundingClientRect();
++    const dx = dxPx * (BW.view.w / Math.max(rect.width, 1));
++    const dy = dyPx * (BW.view.h / Math.max(rect.height, 1));
++    BW.view = { ...startView, x: startView.x - dx, y: startView.y - dy };
++    bwApplyView();
++  });
++
++  const endDrag = (evt) => {
++    if (!dragging) return;
++    dragging = false;
++    origin = null;
++    svg.classList.remove('bw-panning');
++    if (captured && evt && evt.pointerId != null) {
++      try { svg.releasePointerCapture(evt.pointerId); } catch (err) { /* already released */ }
++    }
++    captured = false;
++    moved = false;
++  };
++  svg.addEventListener('pointerup', endDrag);
++  svg.addEventListener('pointercancel', endDrag);
++  svg.addEventListener('dblclick', bwFitView);
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Static line drawing (conveyor, flow, grid)
++   ══════════════════════════════════════════════════════════════ */
++
++function bwDrawGrid() {
++  const lines = [];
++  for (let x = 0; x <= BW_CANVAS.w; x += 80) {
++    lines.push(`<path d="M${x},0 L${x},${BW_CANVAS.h}" stroke="var(--bw-grid-minor)" stroke-width="1"/>`);
++  }
++  for (let y = 0; y <= BW_CANVAS.h; y += 80) {
++    lines.push(`<path d="M0,${y} L${BW_CANVAS.w},${y}" stroke="var(--bw-grid-minor)" stroke-width="1"/>`);
++  }
++  bwEl('bw-grid').innerHTML = lines.join('');
++}
++
++function bwDrawConveyor() {
++  const L = BW_LAYOUT.conveyorLeft;
++  const R = BW_LAYOUT.conveyorRight;
++  const top = BW_LAYOUT.conveyorTop;
++  const h = BW_LAYOUT.conveyorH;
++
++  let rollers = '';
++  for (let x = L + 18; x < R - 8; x += 34) {
++    rollers += `<rect x="${x}" y="${top + 8}" width="7" height="${h - 16}" rx="3" fill="var(--bw-conveyor-roller)"/>`;
++  }
++
++  let chevrons = '';
++  for (let x = L + 90; x < R - 40; x += 220) {
++    chevrons += `<path d="M${x},${top + h / 2 - 9} l13,9 l-13,9" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
++  }
++
++  bwEl('bw-conveyor').innerHTML = `
++    <rect x="${L}" y="${top + h}" width="${R - L}" height="10" rx="4" fill="var(--bw-conveyor-frame)"/>
++    <rect x="${L}" y="${top}" width="${R - L}" height="${h}" rx="8" fill="var(--bw-conveyor)" stroke="var(--bw-conveyor-frame)" stroke-width="2"/>
++    ${rollers}
++    ${chevrons}
++    <text x="${L - 14}" y="${top + h / 2 + 5}" text-anchor="end" font-size="13" font-weight="700" fill="var(--bw-text-muted)">IN</text>
++    <text x="${R + 14}" y="${top + h / 2 + 5}" font-size="13" font-weight="700" fill="var(--bw-text-muted)">OUT</text>
++  `;
++}
++
++function bwDrawFlow() {
++  const parts = [];
++  for (let i = 0; i < BW.route.length - 1; i += 1) {
++    const x1 = BW.stationX[BW.route[i]];
++    const x2 = BW.stationX[BW.route[i + 1]];
++    const y = BW_LAYOUT.conveyorTop - 12;
++    const mid = (x1 + x2) / 2;
++    parts.push(`
++      <path d="M${x1 + 34},${y} L${x2 - 34},${y}" stroke="var(--bw-steel-dark)" stroke-width="2" stroke-dasharray="7 6" stroke-opacity="0.7"/>
++      <path d="M${mid - 7},${y - 6} l8,6 l-8,6" fill="none" stroke="var(--bw-steel-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++    `);
++  }
++  bwEl('bw-flow').innerHTML = parts.join('');
++}
++
++/* The flow/grid layers are decorative: never let them swallow a machine click. */
++function bwMakeNonInteractive(layerId) {
++  bwEl(layerId).setAttribute('pointer-events', 'none');
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Data binding helpers
++   ══════════════════════════════════════════════════════════════ */
++
++async function bwGet(path) {
++  const res = await fetch(`${BW_API}${path}`, { headers: { Accept: 'application/json' } });
++  if (!res.ok) throw new Error(`${path} → ${res.status}`);
++  return res.json();
++}
++
++async function bwPost(path) {
++  const res = await fetch(`${BW_API}${path}`, {
++    method: 'POST', headers: { Accept: 'application/json' },
++  });
++  if (!res.ok) throw new Error(`${path} → ${res.status}`);
++  return res.json();
++}
++
++function bwStationFor(state, stationId) {
++  return (state.stations || []).find((s) => s.station_id === stationId) || null;
++}
++
++function bwStationVisualState(station, state) {
++  const result = (station.last_disposition || '').toUpperCase();
++  if (result === 'FAIL' || result === 'NG') return 'fail';
++  if (result === 'PASS' && station.is_occupied) return 'pass';
++  if (state.run_state === 'PAUSED') return 'paused';
++  if (state.run_state !== 'RUNNING') return 'stopped';
++  return station.is_occupied ? 'run' : 'idle';
++}
++
++const BW_STATE_FILL = {
++  run: 'var(--bw-accent-light)',
++  pass: '#EAF7F0',
++  fail: '#FDECEC',
++  idle: '#FFF9EC',
++  paused: '#FFF9EC',
++  stopped: 'var(--bw-bg-surface)',
++};
++
++const BW_STATE_DOT = {
++  run: 'var(--bw-state-run)',
++  pass: 'var(--bw-state-pass)',
++  fail: 'var(--bw-state-fail)',
++  idle: 'var(--bw-state-idle)',
++  paused: 'var(--bw-state-idle)',
++  stopped: 'var(--bw-state-stopped)',
++};
++
++/* ══════════════════════════════════════════════════════════════
++   Station rendering
++
++   Station nodes are built once per route and then only have their
++   attributes updated. Rebuilding the layer on every poll would break
++   pointer dispatch (the node under the cursor can be replaced between
++   pointerdown and click), so a running line would swallow machine
++   clicks.
++   ══════════════════════════════════════════════════════════════ */
++
++function bwBuildStations() {
++  const bodyTop = BW_LAYOUT.stationTop;
++  const parts = [];
++  BW.stationNodes = {};
++
++  BW.route.forEach((stationId, index) => {
++    const cx = BW.stationX[stationId];
++    const artKind = BW_STATION_ART[stationId] || 'generic';
++    const left = cx - BW_LAYOUT.stationW / 2;
++    const uid = `bw-st-${index}`;
++
++    parts.push(`
++      <g class="bw-station" data-station-id="${bwEscape(stationId)}"
++         tabindex="0" role="button" aria-label="${bwEscape(bwStationName(stationId))}">
++        <rect class="bw-station-body" x="${left}" y="${bodyTop}"
++              width="${BW_LAYOUT.stationW}" height="${BW_LAYOUT.stationH}" rx="14"
++              fill="var(--bw-bg-surface)" stroke="var(--bw-border)" stroke-width="1.5"/>
++        <rect x="${left}" y="${bodyTop}" width="${BW_LAYOUT.stationW}" height="26" rx="14"
++              fill="var(--bw-steel-light)" fill-opacity="0.65" pointer-events="none"/>
++        <circle class="bw-station-dot" cx="${left + 16}" cy="${bodyTop + 13}" r="5"
++                fill="var(--bw-state-stopped)" pointer-events="none"/>
++        <text x="${left + BW_LAYOUT.stationW / 2}" y="${bodyTop + 18}" text-anchor="middle"
++              font-size="12" font-weight="700" fill="var(--bw-text-secondary)"
++              pointer-events="none">${bwEscape(bwShort(stationId))}</text>
++        <g transform="translate(${cx}, ${BW_LAYOUT.artY})" pointer-events="none">${BW_ART[artKind]()}</g>
++        <g class="bw-badge-g" data-uid="${uid}" pointer-events="none" style="display:none">
++          <rect class="bw-badge-rect" x="${cx - 37}" y="${bodyTop + BW_LAYOUT.stationH + 10}"
++                width="74" height="20" rx="10"
++                fill="var(--bw-bg-surface)" stroke="var(--bw-text-muted)" stroke-width="1.2"/>
++          <text class="bw-badge-text" x="${cx}" y="${bodyTop + BW_LAYOUT.stationH + 24}"
++                text-anchor="middle" font-size="11" font-weight="700"
++                fill="var(--bw-text-muted)">NO RESULT</text>
++        </g>
++        <text x="${cx}" y="${BW_LAYOUT.labelY}" text-anchor="middle" font-size="14"
++              font-weight="600" fill="var(--bw-text)" pointer-events="none">${bwEscape(bwStationName(stationId))}</text>
++        <text x="${cx}" y="${BW_LAYOUT.labelY + 19}" text-anchor="middle" font-size="11"
++              fill="var(--bw-text-muted)" pointer-events="none">step ${index + 1} of ${BW.route.length}</text>
++        <!-- Explicit hit area: exactly the machine body, never the label band. -->
++        <rect class="bw-hit" x="${left}" y="${bodyTop}" width="${BW_LAYOUT.stationW}"
++              height="${BW_LAYOUT.stationH}" rx="14" fill="transparent"
++              stroke="transparent" style="pointer-events:all"/>
++      </g>
++    `);
++  });
++
++  const host = bwEl('bw-stations');
++  host.innerHTML = parts.join('');
++  host.querySelectorAll('.bw-station').forEach((node) => {
++    const stationId = node.getAttribute('data-station-id');
++    BW.stationNodes[stationId] = {
++      group: node,
++      body: node.querySelector('.bw-station-body'),
++      dot: node.querySelector('.bw-station-dot'),
++      badgeGroup: node.querySelector('.bw-badge-g'),
++      badgeRect: node.querySelector('.bw-badge-rect'),
++      badgeText: node.querySelector('.bw-badge-text'),
++    };
++    node.addEventListener('click', (evt) => {
++      evt.stopPropagation();
++      bwSelectStation(stationId);
++    });
++    node.addEventListener('keydown', (evt) => {
++      if (evt.key !== 'Enter' && evt.key !== ' ') return;
++      evt.preventDefault();
++      evt.stopPropagation();
++      bwSelectStation(stationId);
++    });
++  });
++}
++
++function bwUpdateStations() {
++  const state = BW.state;
++  BW.route.forEach((stationId) => {
++    const nodes = BW.stationNodes[stationId];
++    if (!nodes) return;
++    const station = bwStationFor(state, stationId) || { is_occupied: false };
++    const visual = bwStationVisualState(station, state);
++    const selected = BW.selected.kind === 'station' && BW.selected.id === stationId;
++
++    nodes.body.setAttribute('fill', BW_STATE_FILL[visual]);
++    nodes.dot.setAttribute('fill', BW_STATE_DOT[visual]);
++    nodes.group.classList.toggle('bw-selected', selected);
++
++    if (station.is_quality_checkpoint) {
++      const result = (station.last_disposition || '').toUpperCase();
++      let text = 'NO RESULT';
++      let fill = 'var(--bw-text-muted)';
++      let bg = 'var(--bw-bg-surface)';
++      if (result === 'PASS') { text = 'PASS'; fill = 'var(--bw-state-pass)'; bg = '#EAF7F0'; }
++      else if (result === 'FAIL' || result === 'NG') {
++        text = result; fill = 'var(--bw-state-fail)'; bg = '#FDECEC';
++      }
++      nodes.badgeGroup.style.display = '';
++      nodes.badgeText.textContent = text;
++      nodes.badgeText.setAttribute('fill', fill);
++      nodes.badgeRect.setAttribute('fill', bg);
++      nodes.badgeRect.setAttribute('stroke', fill);
++    } else {
++      nodes.badgeGroup.style.display = 'none';
++    }
++  });
++}
++
++/* Workspace display names for the frozen route. */
++const BW_STATION_NAME = {
++  'BW-FP-BLW01': 'Blower / Infeed',
++  'BW-FP-RIN01': 'Rinser',
++  'BW-FP-FIL01': 'Filler',
++  'BW-FP-CAP01': 'Capper',
++  'BW-FP-INS01': 'Inspection',
++  'BW-FP-LAB01': 'Labeler',
++  'BW-FP-CPK01': 'Case Packer',
++  'BW-FP-PAL01': 'Palletizer',
++};
++
++function bwStationName(stationId) {
++  return BW_STATION_NAME[stationId] || stationId;
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Bottle tokens + movement
++   ══════════════════════════════════════════════════════════════ */
++
++function bwBottleSvg(unitId, rejected) {
++  const bodyFill = rejected ? '#FDECEC' : 'var(--bw-bottle)';
++  const bodyEdge = rejected ? 'var(--bw-state-fail)' : 'var(--bw-bottle-edge)';
++  const liquid = rejected ? '#F4C7C7' : 'var(--bw-water)';
++  return `
++    <g class="bw-bottle" data-unit-id="${bwEscape(unitId)}">
++      <rect class="bw-bottle-body" x="-13" y="-42" width="26" height="42" rx="7"
++            fill="${bodyFill}" stroke="${bodyEdge}" stroke-width="1.5"/>
++      <rect x="-9" y="-30" width="18" height="26" rx="5" fill="${liquid}"/>
++      <rect x="-6" y="-52" width="12" height="11" fill="${bodyFill}" stroke="${bodyEdge}" stroke-width="1.2"/>
++      <rect x="-8" y="-59" width="16" height="8" rx="2" fill="var(--bw-cap)"/>
++      <!-- Whole-token hit area so the bottle is clickable over its silhouette. -->
++      <rect class="bw-bottle-hit" x="-14" y="-60" width="28" height="61" rx="8"
++            fill="transparent" stroke="transparent" style="pointer-events:all"/>
++    </g>
++  `;
++}
++
++/* Interpolate a bottle between two station x positions (VF motion convention). */
++function bwAnimateBottle(entry, toX) {
++  const fromX = entry.x;
++  if (BW.reducedMotion) {
++    entry.x = toX;
++    entry.node.setAttribute('transform', `translate(${toX}, ${BW.bottleY})`);
++    return;
++  }
++  BW.motion.set(entry.unitId, {
++    node: entry.node, fromX, toX, start: performance.now(), duration: BW_MOVE_MS,
++  });
++}
++
++function bwBottleFrame(now) {
++  BW.motion.forEach((plan, unitId) => {
++    const t = Math.min((now - plan.start) / plan.duration, 1);
++    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
++    const x = plan.fromX + (plan.toX - plan.fromX) * ease;
++    plan.node.setAttribute('transform', `translate(${x}, ${BW.bottleY})`);
++    if (t >= 1) BW.motion.delete(unitId);
++  });
++  if (BW.motion.size) {
++    BW.rafId = requestAnimationFrame(bwBottleFrame);
++  } else {
++    BW.rafId = null;
++  }
++}
++
++function bwDrawBottles() {
++  const state = BW.state;
++  const host = bwEl('bw-bottles');
++  const seen = new Set();
++
++  (state.stations || []).forEach((station) => {
++    if (!station.unit_id) return;
++    seen.add(station.unit_id);
++    const toX = BW.stationX[station.station_id];
++    if (toX == null) return;
++
++    let entry = BW.bottles.get(station.unit_id);
++    if (!entry) {
++      host.insertAdjacentHTML('beforeend', bwBottleSvg(station.unit_id, false));
++      const node = host.querySelector(`[data-unit-id="${CSS.escape(station.unit_id)}"]`);
++      node.addEventListener('click', (evt) => {
++        evt.stopPropagation();
++        bwSelectUnit(station.unit_id);
++      });
++      entry = { node, x: toX, unitId: station.unit_id };
++      BW.bottles.set(station.unit_id, entry);
++      entry.node.setAttribute('transform', `translate(${toX}, ${BW.bottleY})`);
++      return;
++    }
++
++    if (station.unit_status === 'rejected') {
++      entry.node.querySelectorAll('rect').forEach((r) => {
++        r.setAttribute('fill', '#FDECEC');
++        r.setAttribute('stroke', 'var(--bw-state-fail)');
++      });
++    }
++
++    if (entry.x !== toX) bwAnimateBottle(entry, toX);
++    if (BW.selected.kind === 'unit' && BW.selected.id === station.unit_id) {
++      entry.node.classList.add('bw-selected');
++    }
++  });
++
++  BW.bottles.forEach((entry, unitId) => {
++    if (seen.has(unitId)) return;
++    entry.node.remove();
++    BW.bottles.delete(unitId);
++    BW.motion.delete(unitId);
++  });
++
++  if (BW.motion.size && BW.rafId == null) BW.rafId = requestAnimationFrame(bwBottleFrame);
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Facts, clock and event strip
++   ══════════════════════════════════════════════════════════════ */
++
++function bwApplyFacts() {
++  const s = BW.state;
++  bwEl('bw-plant-name').textContent = s.plant_id || 'Bottled Water Factory';
++  bwEl('bw-line-label').textContent = s.line_label || s.line_id || '';
++  bwEl('bw-identity').textContent = `${s.plant_id} · ${s.line_id}`;
++  bwEl('bw-product-chip').textContent = `${s.unit_type} · ${s.product_code}`;
++
++  const runState = bwEl('bw-run-state');
++  runState.textContent = s.run_state;
++  runState.setAttribute('data-state', s.run_state);
++  bwEl('bw-operating-state').textContent = s.operating_state;
++  bwEl('bw-sim-time').textContent = `${Number(s.simulation_time_s).toFixed(1)} s`;
++  bwEl('bw-dwell').textContent = s.dwell_number;
++  bwEl('bw-total').textContent = s.counts.total;
++  bwEl('bw-good').textContent = s.counts.good;
++  bwEl('bw-reject').textContent = s.counts.reject;
++  bwEl('bw-on-line').textContent = s.units_on_line;
++
++  const checkpoint = (s.quality_checkpoints || [])[0];
++  const station = checkpoint ? bwStationFor(s, checkpoint) : null;
++  const result = station && station.last_disposition ? station.last_disposition.toUpperCase() : '';
++  const inspection = bwEl('bw-inspection');
++  inspection.textContent = result
++    ? `${result}${result === 'PASS' ? ' — continues' : ' — rejected'}`
++    : 'no result yet';
++  inspection.setAttribute('data-result', result);
++
++  const simState = bwEl('bw-sim-state');
++  simState.textContent = s.run_state;
++  simState.setAttribute('data-state', s.run_state);
++  bwEl('bw-sim-clock').textContent = `t=${Number(s.simulation_time_s).toFixed(0)}s`;
++  bwEl('bw-sim-dwell').textContent = `DWELL ${s.dwell_number}`;
++
++  const notes = {
++    RUNNING: `Line running — ${s.units_on_line} bottle(s) on the line`,
++    PAUSED: 'Line paused — progression frozen, state preserved',
++    STOPPED: 'Line stopped — controlled stop, not a fault',
++  };
++  bwEl('bw-sim-note').textContent = notes[s.run_state] || s.run_state;
++
++  const running = s.run_state === 'RUNNING';
++  const paused = s.run_state === 'PAUSED';
++  bwEl('bw-btn-start').disabled = running;
++  bwEl('bw-btn-pause').disabled = !running;
++  bwEl('bw-btn-resume').disabled = !paused;
++  bwEl('bw-btn-stop').disabled = s.run_state === 'STOPPED';
++  bwEl('bw-live-chip').textContent = running ? '● LIVE' : '○ IDLE';
++}
++
++function bwApplyEvents() {
++  const list = bwEl('bw-event-list');
++  const items = BW.events.slice(-BW_MAX_EVENTS).reverse();
++  list.innerHTML = items.map((ev) => {
++    const label = BW_EVENT_LABEL[ev.event_type] || bwHumanise(ev.event_type);
++    const cls = ev.category === 'pass' ? ' bw-ev-pass'
++      : ev.category === 'fail' ? ' bw-ev-fail'
++        : ev.category === 'control' ? ' bw-ev-control' : '';
++    const meta = [];
++    if (ev.station_id) meta.push(bwStationName(ev.station_id));
++    if (ev.unit_id) meta.push(ev.unit_id);
++    return `<li class="${cls.trim()}">
++      <span class="bw-ev-time">t=${Number(ev.simulation_time_s).toFixed(0)}s</span>
++      <span class="bw-ev-type">${bwEscape(label)}</span>
++      ${meta.length ? `<span class="bw-ev-meta">${bwEscape(meta.join(' · '))}</span>` : ''}
++    </li>`;
++  }).join('');
++  bwEl('bw-events-count').textContent = BW.events.length;
++}
++
++function bwCategoriseEvents(state) {
++  const incoming = (state.recent_events || []).map((ev) => {
++    const type = ev.event_type;
++    let category = '';
++    if (type === 'REJECT' || type === 'QUALITY_FAILED_FINAL') category = 'fail';
++    else if (type === 'QUALITY_RESULT') {
++      const disposition = (ev.detail || '').toUpperCase();
++      category = disposition.includes('FAIL') || disposition.includes('NG') ? 'fail' : 'pass';
++    } else if (type === 'UNIT_COMPLETED') category = 'pass';
++    else if (type === 'LINE_RUN_STATE') category = 'control';
++    return {
++      key: `${type}|${ev.station_id}|${ev.unit_id}|${ev.simulation_time_s}|${ev.dwell_number}`,
++      event_type: type,
++      station_id: ev.station_id,
++      unit_id: ev.unit_id,
++      detail: ev.detail,
++      simulation_time_s: ev.simulation_time_s,
++      dwell_number: ev.dwell_number,
++      category,
++    };
++  });
++
++  if (!BW.state) {
++    BW.events = incoming;
++    incoming.forEach((ev) => BW.eventKeys.add(ev.key));
++    return;
++  }
++  incoming.forEach((ev) => {
++    if (BW.eventKeys.has(ev.key)) return;
++    BW.eventKeys.add(ev.key);
++    BW.events.push(ev);
++  });
++  if (BW.events.length > 400) {
++    BW.events = BW.events.slice(-200);
++    BW.eventKeys = new Set(BW.events.map((e) => e.key));
++  }
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Selection + popup
++   ══════════════════════════════════════════════════════════════ */
++
++function bwClosePopup() {
++  bwEl('bw-popup').classList.add('bw-hidden');
++  BW.selected = { kind: '', id: '' };
++  if (BW.state) { bwUpdateStations(); bwDrawBottles(); }
++}
++
++function bwOpenPopup(title, bodyHtml) {
++  bwEl('bw-popup-title').textContent = title;
++  bwEl('bw-popup-body').innerHTML = bodyHtml;
++  bwEl('bw-popup').classList.remove('bw-hidden');
++}
++
++function bwRow(label, value) {
++  return `<div class="bw-row"><span class="bw-row-label">${bwEscape(label)}</span>
++          <span class="bw-row-value">${bwEscape(value)}</span></div>`;
++}
++
++function bwBadge(result) {
++  const value = (result || '').toUpperCase();
++  if (value === 'PASS') return '<span class="bw-badge bw-badge-pass">PASS</span>';
++  if (value === 'FAIL' || value === 'NG') return `<span class="bw-badge bw-badge-fail">${bwEscape(value)}</span>`;
++  return '<span class="bw-badge bw-badge-neutral">NO RESULT</span>';
++}
++
++function bwSelectStation(stationId) {
++  BW.selected = { kind: 'station', id: stationId };
++  const state = BW.state;
++  const station = bwStationFor(state, stationId);
++  const index = BW.route.indexOf(stationId);
++  const visual = bwStationVisualState(station || { is_occupied: false }, state);
++
++  let html = '';
++  html += bwRow('Station', stationId);
++  html += bwRow('Step', `${index + 1} of ${BW.route.length}`);
++  html += bwRow('Display state', bwHumanise(visual === 'run' ? 'running'
++    : visual === 'pass' ? 'running — inspection passed'
++      : visual === 'fail' ? 'inspection failed — reject'
++        : visual));
++  html += bwRow('Occupied', station && station.is_occupied ? 'yes' : 'no');
++  if (station && station.unit_id) {
++    html += bwRow('Bottle', station.unit_id);
++    html += bwRow('Product', `${station.unit_type} · ${station.product_code}`);
++    html += bwRow('Unit status', bwHumanise(station.unit_status));
++  }
++  if (station && station.is_quality_checkpoint) {
++    html += '<div class="bw-subhead">Inspection</div>';
++    html += `<div class="bw-actions">${bwBadge(station.last_disposition)}</div>`;
++    html += '<div class="bw-empty">Result is produced automatically by the line; '
++      + 'no manual disposition exists.</div>';
++  }
++
++  bwOpenPopup(bwStationName(stationId), html);
++  bwUpdateStations();
++  bwDrawBottles();
++}
++
++async function bwSelectUnit(unitId) {
++  BW.selected = { kind: 'unit', id: unitId };
++  // Open immediately so the panel cannot be raced closed by a slow request.
++  bwOpenPopup(`Bottle ${unitId}`, '<div class="bw-empty">Reading unit context…</div>');
++  bwDrawBottles();
++
++  let detail = null;
++  try {
++    detail = await bwGet(`/unit/${encodeURIComponent(unitId)}`);
++  } catch (err) {
++    bwEl('bw-popup-body').innerHTML =
++      '<div class="bw-empty">Unit is no longer on the line.</div>';
++    return;
++  }
++
++  let html = '';
++  html += bwRow('Bottle', detail.unit_id);
++  html += bwRow('Product', `${detail.unit_type} · ${detail.product_code}`);
++  html += bwRow('Unit status', bwHumanise(detail.unit_status));
++  html += bwRow('At station', detail.current_station_id
++    ? `${bwStationName(detail.current_station_id)} (${bwShort(detail.current_station_id)})` : '—');
++  html += bwRow('Stations completed', detail.stations_completed);
++  html += bwRow('Rejected', detail.rejected ? 'yes' : 'no');
++  html += bwRow('Counted good', detail.counted_good ? 'yes' : 'no');
++  html += bwRow('Quality status', bwHumanise(detail.quality_status));
++
++  html += '<div class="bw-subhead">Quality records</div>';
++  if (detail.quality_records.length) {
++    detail.quality_records.forEach((record) => {
++      html += `<div class="bw-row"><span class="bw-row-label">${bwEscape(bwStationName(record.station_id))} · attempt ${record.attempt_number}</span>
++               <span class="bw-row-value">${bwBadge(record.disposition)}</span></div>`;
++    });
++  } else {
++    html += '<div class="bw-empty">No inspection reached yet.</div>';
++  }
++
++  html += '<div class="bw-subhead">Movement</div>';
++  html += '<div class="bw-empty">Position, status and counts are read from the '
++    + 'running line. This panel is read-only.</div>';
++
++  bwOpenPopup(`Bottle ${unitId}`, html);
++  bwDrawBottles();
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Operator controls (START / PAUSE / RESUME / STOP / RESET)
++   ══════════════════════════════════════════════════════════════ */
++
++async function bwAction(path) {
++  try {
++    const state = await bwPost(path);
++    bwApplyState(state);
++  } catch (err) {
++    bwEl('bw-sim-note').textContent = `Control failed: ${err.message}`;
++  }
++}
++
++function bwStart() { return bwAction('/start'); }
++function bwPause() { return bwAction('/pause'); }
++function bwResume() { return bwAction('/resume'); }
++function bwStop() { return bwAction('/stop'); }
++
++function bwReset() {
++  BW.events = [];
++  BW.eventKeys.clear();
++  BW.motion.clear();
++  BW.bottles.forEach((entry) => entry.node.remove());
++  BW.bottles.clear();
++  bwClosePopup();
++  return bwAction('/reset');
++}
++
++function bwSetRate(value) {
++  BW.rateMs = Math.max(80, Number(value) || 600);
++  bwRestartClock();
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Presentation clock — paces engine ticks while the line RUNNING
++
++   The simulation itself is step driven and deterministic; this clock
++   only decides when the next tick is requested. PAUSE/STOP make the
++   runtime refuse to advance, so operator semantics stay with the
++   runtime, not the skin.
++   ══════════════════════════════════════════════════════════════ */
++
++async function bwTick() {
++  if (BW.busy) return;
++  BW.busy = true;
++  try {
++    const running = BW.state && BW.state.run_state === 'RUNNING';
++    const state = running ? await bwPost('/advance') : await bwGet('/state');
++    bwApplyState(state);
++  } catch (err) {
++    bwEl('bw-sim-note').textContent = `Line link unavailable: ${err.message}`;
++  } finally {
++    BW.busy = false;
++  }
++}
++
++function bwRestartClock() {
++  if (BW.timer) clearInterval(BW.timer);
++  BW.timer = setInterval(bwTick, BW.rateMs);
++}
++
++/* ══════════════════════════════════════════════════════════════
++   State application
++   ══════════════════════════════════════════════════════════════ */
++
++function bwApplyState(state) {
++  BW.prevState = BW.state;
++  BW.state = state;
++
++  if (state.route.join('|') !== BW.route.join('|')) {
++    BW.route = state.route.slice();
++    bwComputeLayout();
++    bwDrawConveyor();
++    bwDrawFlow();
++    bwBuildStations();
++  }
++
++  bwCategoriseEvents(state);
++  bwApplyFacts();
++  bwUpdateStations();
++  bwDrawBottles();
++  bwApplyEvents();
++
++  if (BW.selected.kind === 'station' && BW.selected.id) {
++    const station = bwStationFor(state, BW.selected.id);
++    if (station) bwRefreshStationPopup(station);
++  }
++}
++
++function bwRefreshStationPopup(station) {
++  const index = BW.route.indexOf(station.station_id);
++  let html = '';
++  html += bwRow('Station', station.station_id);
++  html += bwRow('Step', `${index + 1} of ${BW.route.length}`);
++  html += bwRow('Occupied', station.is_occupied ? 'yes' : 'no');
++  if (station.unit_id) {
++    html += bwRow('Bottle', station.unit_id);
++    html += bwRow('Unit status', bwHumanise(station.unit_status));
++  }
++  if (station.is_quality_checkpoint) {
++    html += '<div class="bw-subhead">Inspection</div>';
++    html += `<div class="bw-actions">${bwBadge(station.last_disposition)}</div>`;
++  }
++  bwEl('bw-popup-body').innerHTML = html;
++}
++
++/* Station x positions are derived from the runtime route length. */
++function bwComputeLayout() {
++  const count = Math.max(BW.route.length, 1);
++  const span = BW_CANVAS.w - BW_LAYOUT.marginX * 2;
++  const step = count > 1 ? span / (count - 1) : 0;
++  BW.stationX = {};
++  BW.route.forEach((stationId, index) => {
++    BW.stationX[stationId] = BW_LAYOUT.marginX + step * index;
++  });
++  BW.bottleY = BW_LAYOUT.conveyorTop - 4;
++}
++
++/* ══════════════════════════════════════════════════════════════
++   Bootstrap
++   ══════════════════════════════════════════════════════════════ */
++
++async function bwInit() {
++  BW.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
++  window.matchMedia('(prefers-reduced-motion: reduce)')
++    .addEventListener('change', (evt) => { BW.reducedMotion = evt.matches; });
++
++  bwDrawGrid();
++  bwMakeNonInteractive('bw-grid');
++  bwMakeNonInteractive('bw-flow');
++  bwInstallViewport();
++  bwApplyView();
++  // Clicking empty canvas closes the panel; clicking a machine or bottle must
++  // never be treated as a background click, and the click that ends a pan must
++  // be ignored.
++  bwEl('bw-svg').addEventListener('click', (evt) => {
++    if (BW.didPan) { BW.didPan = false; return; }
++    const target = evt.target;
++    if (target && target.closest && target.closest('.bw-station, .bw-bottle')) return;
++    bwClosePopup();
++  });
++
++  try {
++    const state = await bwGet('/state');
++    bwApplyState(state);
++  } catch (err) {
++    bwEl('bw-sim-note').textContent = `Line link unavailable: ${err.message}`;
++    return;
++  }
++  bwRestartClock();
++}
++
++document.addEventListener('DOMContentLoaded', bwInit);
+diff --git a/tests/test_dday_b3_bottled_water_ui.py b/tests/test_dday_b3_bottled_water_ui.py
+new file mode 100644
+index 0000000..651b309
+--- /dev/null
++++ b/tests/test_dday_b3_bottled_water_ui.py
+@@ -0,0 +1,523 @@
++"""DDAY-B3 — Bottled Water 2D target-line skin (API + skin asset) tests.
++
++Governed by .ai-harness/tasks/DDAY-B3.json (authored from SA Issue #104).
++
++These tests exercise the real FastAPI app backed by the real B2 Bottled Water
++runtime — no mocked line data. They cover the UI/API binding, the frozen station
++order, operator control semantics, the inspection indication, the read-only
++selection context and workspace isolation of the visual skin.
++"""
++
++from __future__ import annotations
++
++import re
++from pathlib import Path
++
++import pytest
++
++fastapi = pytest.importorskip("fastapi")
++pytest.importorskip("httpx")
++
++from fastapi.testclient import TestClient
++
++from virtual_factory.ui.api import create_app
++
++REPO_ROOT = Path(__file__).resolve().parent.parent
++STATIC = REPO_ROOT / "src" / "virtual_factory" / "ui" / "static"
++BW_CONFIG = REPO_ROOT / "configs" / "workspaces" / "bottled-water-dday" / "line.yaml"
++
++EXPECTED_ROUTE = [
++    "BW-FP-BLW01",   # Blower / Infeed
++    "BW-FP-RIN01",   # Rinser
++    "BW-FP-FIL01",   # Filler
++    "BW-FP-CAP01",   # Capper
++    "BW-FP-INS01",   # Inspection
++    "BW-FP-LAB01",   # Labeler
++    "BW-FP-CPK01",   # Case Packer
++    "BW-FP-PAL01",   # Palletizer
++]
++INSPECTION = "BW-FP-INS01"
++
++# Workspace-domain isolation: the Bottled Water skin must not carry the visual
++# vocabulary of any other line.
++FORBIDDEN_SKIN_PATTERNS = (
++    re.compile(r"assy", re.IGNORECASE),
++    re.compile(r"tipa", re.IGNORECASE),
++    re.compile(r"pre-assy", re.IGNORECASE),
++    re.compile(r"sso2", re.IGNORECASE),
++    re.compile(r"rso2", re.IGNORECASE),
++    re.compile(r"ap05_jam", re.IGNORECASE),
++    re.compile(r"\bAP\d{2}\b"),
++)
++
++SKIN_ASSETS = (
++    STATIC / "bottled_water_demo.html",
++    STATIC / "bottled_water_demo.js",
++    STATIC / "bottled_water_demo.css",
++)
++
++
++@pytest.fixture()
++def client(monkeypatch):
++    """Fresh app bound to a freshly reset Bottled Water runtime."""
++    monkeypatch.delenv("BOTTLED_WATER_CONFIG", raising=False)
++    app = create_app(config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml", dt_s=1.0)
++    with TestClient(app) as test_client:
++        test_client.post("/bottled-water-demo/reset")
++        yield test_client
++
++
++def _state(client) -> dict:
++    response = client.get("/bottled-water-demo/state")
++    assert response.status_code == 200
++    return response.json()
++
++
++def _start(client) -> None:
++    """START the line (idempotent) — the runtime only advances while RUNNING."""
++    client.post("/bottled-water-demo/start")
++
++
++def _run_cycles(client, cycles: int) -> dict:
++    """Run `cycles` production cycles the way the skin's clock does."""
++    _start(client)
++    state = _state(client)
++    for _ in range(cycles):
++        state = client.post("/bottled-water-demo/advance").json()
++    return state
++
++
++def _event_window(client, limit: int = 200) -> dict:
++    """State projection with a wide event window (the skin accumulates too)."""
++    response = client.get(f"/bottled-water-demo/state?limit={limit}")
++    assert response.status_code == 200
++    return response.json()
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-1 — dedicated UI route reachable and bound to the B2 runtime
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_01_ui_route_and_static_assets_are_served(client):
++    page = client.get("/bottled-water-demo")
++    assert page.status_code == 200
++    assert "text/html" in page.headers["content-type"]
++    assert "Bottled Water" in page.text
++
++    for name in ("bottled_water_demo.js", "bottled_water_demo.css"):
++        asset = client.get(f"/bottled-water-demo/static/{name}")
++        assert asset.status_code == 200
++        assert asset.text.strip()
++
++
++def test_b3_01b_state_is_bound_to_the_b2_runtime_not_mocked(client):
++    state = _state(client)
++
++    assert state["workspace_id"] == "bottled-water-dday"
++    assert state["line_id"] == "BW-FP"
++    assert state["unit_type"] == "bottle"
++    assert state["product_code"] == "WATER-500ML"
++    assert state["run_state"] == "STOPPED"
++    assert state["counts"] == {"total": 0, "good": 0, "reject": 0}
++    assert state["units_on_line"] == 0
++
++    # Advancing the real runtime must move the served facts.
++    after = _run_cycles(client, 1)
++    assert after["counts"]["total"] == 1
++    assert after["dwell_number"] == 1
++    assert after["simulation_time_s"] > 0
++    assert after["units_on_line"] == 1
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-2 — all 8 frozen stations visible in correct order
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_02_all_eight_stations_in_frozen_order(client):
++    state = _state(client)
++
++    assert state["route"] == EXPECTED_ROUTE
++    assert [s["station_id"] for s in state["stations"]] == EXPECTED_ROUTE
++    assert [s["sequence"] for s in state["stations"]] == list(range(8))
++    assert len(state["route"]) == 8
++    assert state["quality_checkpoints"] == [INSPECTION]
++
++
++def test_b3_02b_skin_defines_distinct_artwork_for_every_station():
++    js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
++
++    # One named artwork builder per frozen station, plus a bottle token.
++    artwork = re.findall(r"^  ([a-z]+)\(\) \{", js, re.MULTILINE)
++    for kind in ("blower", "rinser", "filler", "capper", "inspection",
++                 "labeler", "packer", "palletizer"):
++        assert kind in artwork, f"missing station artwork: {kind}"
++
++    for station_id in EXPECTED_ROUTE:
++        assert f"'{station_id}'" in js, f"station {station_id} not mapped in the skin"
++
++    # The station order is read from the runtime route, not hard-coded twice.
++    assert "state.route" in js
++    assert "bwComputeLayout" in js
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-3 — workspace-specific skin, no other line's vocabulary
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_03_skin_assets_carry_no_foreign_line_vocabulary():
++    for path in SKIN_ASSETS:
++        text = path.read_text(encoding="utf-8")
++        for pattern in FORBIDDEN_SKIN_PATTERNS:
++            match = pattern.search(text)
++            assert match is None, (
++                f"{path.name}: leaked {match.group(0)!r}"
++            )
++
++
++def test_b3_03b_skin_does_not_reuse_the_other_line_skin_assets(client):
++    for path in SKIN_ASSETS:
++        text = path.read_text(encoding="utf-8")
++        assert "assy_demo" not in text, f"{path.name} references the other skin"
++
++    # The Bottled Water page must load only its own assets.
++    page = client.get("/bottled-water-demo").text
++    assert "bottled_water_demo.css" in page
++    assert "bottled_water_demo.js" in page
++    assert "assy_demo" not in page
++
++
++def test_b3_03c_api_projection_carries_no_foreign_line_vocabulary(client):
++    _run_cycles(client, 9)
++
++    serialised = str(client.get("/bottled-water-demo/state").json())
++    for pattern in FORBIDDEN_SKIN_PATTERNS:
++        match = pattern.search(serialised)
++        assert match is None, f"API projection leaked {match.group(0)!r}"
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-4 — bottle movement corresponds to runtime positions
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_04_occupied_stations_match_advancing_runtime_positions(client):
++    _run_cycles(client, 3)
++    state = _state(client)
++
++    occupied = [s["station_id"] for s in state["stations"] if s["is_occupied"]]
++    indices = sorted(EXPECTED_ROUTE.index(sid) for sid in occupied)
++
++    # Units index together, so occupancy is a contiguous stretch of the route.
++    assert indices == list(range(indices[0], indices[0] + len(indices)))
++    assert state["units_on_line"] == len(occupied)
++
++    for station in state["stations"]:
++        if station["is_occupied"]:
++            assert station["unit_id"].startswith("BTL-")
++            assert station["unit_type"] == "bottle"
++            assert station["unit_status"]
++
++
++def test_b3_04b_units_progress_downstream_between_ticks(client):
++    _run_cycles(client, 2)
++    first = {s["station_id"]: s["unit_id"] for s in _state(client)["stations"]}
++
++    _run_cycles(client, 1)
++    second = {s["station_id"]: s["unit_id"] for s in _state(client)["stations"]}
++
++    # Every unit that stayed on the line moved to a strictly later station.
++    for station_id, unit_id in first.items():
++        if not unit_id:
++            continue
++        later = [sid for sid, uid in second.items() if uid == unit_id]
++        if later:
++            assert EXPECTED_ROUTE.index(later[0]) > EXPECTED_ROUTE.index(station_id)
++
++    # The skin animates that movement rather than teleporting bottles.
++    js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
++    assert "requestAnimationFrame" in js
++    assert "prefers-reduced-motion" in js
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-5 — operator controls preserve B2 semantics
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_05_start_pause_resume_stop_reset_preserve_b2_semantics(client):
++    assert _state(client)["run_state"] == "STOPPED"
++
++    # STOP is refused before START: everything stays frozen.
++    client.post("/bottled-water-demo/advance")
++    assert _state(client)["counts"]["total"] == 0
++
++    assert client.post("/bottled-water-demo/start").json()["run_state"] == "RUNNING"
++    running = _run_cycles(client, 2)
++    assert running["counts"]["total"] == 2
++
++    # PAUSE freezes progression and preserves the state.
++    paused = client.post("/bottled-water-demo/pause").json()
++    assert paused["run_state"] == "PAUSED"
++    frozen = _state(client)
++    for _ in range(3):
++        client.post("/bottled-water-demo/advance")
++    assert _state(client) == frozen
++
++    # RESUME continues from the preserved state.
++    assert client.post("/bottled-water-demo/resume").json()["run_state"] == "RUNNING"
++    resumed = _run_cycles(client, 1)
++    assert resumed["simulation_time_s"] == frozen["simulation_time_s"] + frozen["nominal_dwell_s"]
++    assert resumed["counts"]["total"] == frozen["counts"]["total"] + 1
++
++    # STOP is a controlled stop, not a fault.
++    stopped = client.post("/bottled-water-demo/stop").json()
++    assert stopped["run_state"] == "STOPPED"
++    assert stopped["operating_state"] == "STOPPED"
++    before_stop = stopped["simulation_time_s"]
++    client.post("/bottled-water-demo/advance")
++    assert _state(client)["simulation_time_s"] == before_stop
++    assert "FAULT" not in str(_state(client))
++
++    # RESET returns the line to its known initial state.
++    reset = client.post("/bottled-water-demo/reset").json()
++    assert reset["run_state"] == "STOPPED"
++    assert reset["counts"] == {"total": 0, "good": 0, "reject": 0}
++    assert reset["units_on_line"] == 0
++    assert reset["simulation_time_s"] == 0.0
++    assert reset["dwell_number"] == 0
++    assert reset["stations"] == [
++        {"sequence": i, "station_id": sid, "unit_id": "", "unit_type": "",
++         "product_code": "", "unit_status": "", "is_occupied": False,
++         "is_quality_checkpoint": sid == INSPECTION, "last_disposition": ""}
++        for i, sid in enumerate(EXPECTED_ROUTE)
++    ]
++
++
++def test_b3_05b_control_surface_exposes_only_the_allowed_operator_controls(client):
++    """Exactly START/PAUSE/RESUME/STOP/RESET are exposed as operator controls."""
++    page = (STATIC / "bottled_water_demo.html").read_text(encoding="utf-8")
++    buttons = re.findall(r'id="(bw-btn-[a-z]+)"', page)
++    assert buttons == ["bw-btn-start", "bw-btn-pause", "bw-btn-resume",
++                       "bw-btn-stop", "bw-btn-reset"]
++
++    # No manual operator-decision surface exists in the page.
++    lowered = page.lower()
++    for forbidden in ("checklist", "approve", "disposition", "rework",
++                      "release", "retry", "manual"):
++        assert forbidden not in lowered, f"skin page exposes {forbidden!r}"
++
++    # The skin can only call the five operator controls plus the clock tick.
++    js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
++    calls = re.findall(r"bw(?:Post|Action)\('([^']+)'\)", js)
++    assert sorted(calls) == ["/advance", "/pause", "/reset", "/resume", "/start", "/stop"]
++
++    # No quality-decision endpoint is reachable from the skin or the API.
++    for path in ("/bottled-water-demo/disposition", "/bottled-water-demo/decision",
++                 "/bottled-water-demo/release", "/bottled-water-demo/retry",
++                 "/bottled-water-demo/rework", "/bottled-water-demo/checklist"):
++        assert client.post(path).status_code == 404, f"{path} unexpectedly exists"
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-6 — counts and line state track runtime facts
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_06_counts_and_state_track_the_runtime(client):
++    _run_cycles(client, 8)
++    state = _state(client)
++
++    assert state["counts"]["total"] == 8
++    assert state["counts"]["good"] == 1
++    assert state["counts"]["reject"] == 0
++    assert state["counts"]["good"] + state["counts"]["reject"] <= state["counts"]["total"]
++    assert state["run_state"] == "RUNNING"
++    assert state["operating_state"] == "RUNNING"
++
++    page = (STATIC / "bottled_water_demo.html").read_text(encoding="utf-8")
++    for field in ("bw-total", "bw-good", "bw-reject", "bw-run-state",
++                  "bw-operating-state", "bw-sim-time", "bw-dwell"):
++        assert f'id="{field}"' in page, f"missing fact display: {field}"
++
++
++def test_b3_06b_projection_publishes_no_calculated_kpi(client):
++    """Raw facts only: no OEE/KPI vocabulary, no derived ratio fields."""
++    _run_cycles(client, 6)
++    state = _state(client)
++
++    assert set(state["counts"]) == {"total", "good", "reject"}
++    serialised = str(state).lower()
++    for kpi in ("oee", "availability", "performance_pct", "quality_pct",
++                "energy_per", "utilization", "health_score"):
++        assert kpi not in serialised
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-7 — inspection PASS / FAIL / reject observable
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_07_inspection_pass_is_observable(client):
++    _run_cycles(client, 8)
++    state = _event_window(client)
++    inspection = next(s for s in state["stations"] if s["station_id"] == INSPECTION)
++
++    assert inspection["is_quality_checkpoint"] is True
++    assert inspection["last_disposition"] == "PASS"
++
++    results = [e for e in state["recent_events"]
++               if e["event_type"] == "QUALITY_RESULT" and e["station_id"] == INSPECTION]
++    assert results, "inspection result must appear in the event feed"
++
++
++def test_b3_07c_event_window_covers_a_whole_production_cycle(client):
++    """The default window must not drop a cycle's events between polls."""
++    _run_cycles(client, 6)
++    default_window = _state(client)["recent_events"]
++    wide_window = _event_window(client)["recent_events"]
++
++    assert len(default_window) == 60
++    assert len(wide_window) > len(default_window)
++
++    # A full cycle emits more than one event, so the window must span a cycle:
++    # the default projection must contain at least one complete dwell marker.
++    dwell_marks = [e for e in default_window if e["event_type"] == "DWELL_META"]
++    assert dwell_marks, "default event window dropped the cycle markers"
++
++
++def test_b3_07b_inspection_failure_and_reject_are_observable(client, monkeypatch):
++    """A failing inspection must be visible without any manual disposition."""
++    import tempfile
++
++    text = BW_CONFIG.read_text(encoding="utf-8")
++    derived = text.replace("    scenario: PASS\n", "    scenario: ALWAYS_FAIL\n", 1)
++    assert derived != text
++
++    with tempfile.TemporaryDirectory(prefix="dday-b3-") as tmp:
++        failing = Path(tmp) / "line-fail.yaml"
++        failing.write_text(derived, encoding="utf-8")
++        monkeypatch.setenv("BOTTLED_WATER_CONFIG", str(failing))
++
++        app = create_app(
++            config_path=REPO_ROOT / "configs" / "plants" / "continuous_mvp_01.yaml",
++            dt_s=1.0,
++        )
++        with TestClient(app) as failing_client:
++            failing_client.post("/bottled-water-demo/reset")
++            failing_client.post("/bottled-water-demo/start")
++            for _ in range(12):
++                state = failing_client.post("/bottled-water-demo/advance").json()
++            state = failing_client.get(
++                "/bottled-water-demo/state?limit=200").json()
++
++            inspection = next(
++                s for s in state["stations"] if s["station_id"] == INSPECTION)
++            assert inspection["last_disposition"] in ("FAIL", "NG")
++            assert state["counts"]["reject"] == 8
++            assert state["counts"]["good"] == 0
++            assert state["last_reject"].startswith("BTL-")
++
++            events = state["recent_events"]
++            assert any(e["event_type"] == "REJECT" for e in events)
++
++            # The result came from the line, with no operator decision endpoint.
++            assert failing_client.post(
++                "/bottled-water-demo/disposition").status_code == 404
++
++    js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
++    assert "no manual disposition exists" in js
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-8 — selection opens useful context, read-only
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_08_station_selection_context_is_available(client):
++    _run_cycles(client, 3)
++    js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
++
++    assert "bwSelectStation" in js
++    assert "bwOpenPopup" in js
++    data = _state(client)
++    assert any(s["is_occupied"] for s in data["stations"])
++    assert any("last_disposition" in s for s in data["stations"])
++
++
++def test_b3_08b_unit_inspector_returns_runtime_context(client):
++    _run_cycles(client, 8)
++    state = _state(client)
++    unit_id = next(s["unit_id"] for s in state["stations"] if s["unit_id"])
++
++    response = client.get(f"/bottled-water-demo/unit/{unit_id}")
++    assert response.status_code == 200
++    detail = response.json()
++
++    assert detail["unit_id"] == unit_id
++    assert detail["unit_type"] == "bottle"
++    assert detail["product_code"] == "WATER-500ML"
++    assert detail["current_station_id"] in EXPECTED_ROUTE
++    assert isinstance(detail["quality_records"], list)
++
++    # Selection is read-only: no decision field is returned or accepted.
++    assert "disposition_endpoint" not in detail
++    assert client.post(f"/bottled-water-demo/unit/{unit_id}").status_code == 405
++    assert client.get("/bottled-water-demo/unit/BTL-999999").status_code == 404
++
++
++def test_b3_08c_skin_interaction_is_selection_only():
++    js = (STATIC / "bottled_water_demo.js").read_text(encoding="utf-8")
++
++    assert "This panel is read-only." in js
++    # The only POSTs are the five operator controls plus the presentation tick.
++    posts = re.findall(r"bw(?:Post|Action)\('([^']+)'\)", js)
++    assert sorted(posts) == sorted(["/start", "/pause", "/resume", "/stop", "/reset", "/advance"])
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-9 — no B4/B5/B6/B7 implementation mixed in
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_09_no_later_slice_implementation_in_the_skin():
++    combined = "\n".join(path.read_text(encoding="utf-8") for path in SKIN_ASSETS).lower()
++
++    for later_slice in ("degradation", "degrading", "warning_phase", "recovery_phase",
++                        "water treatment", "utilities", "warehouse", "palletizing_runtime",
++                        "mqtt", "opcua", "plantos", "docker", "dockerfile"):
++        assert later_slice not in combined, f"skin contains later-slice concern: {later_slice}"
++
++
++def test_b3_09b_api_exposes_no_later_slice_endpoint(client):
++    paths = {route.path for route in client.app.routes}
++    bw_paths = {p for p in paths if p.startswith("/bottled-water-demo")}
++
++    assert bw_paths == {
++        "/bottled-water-demo",
++        "/bottled-water-demo/state",
++        "/bottled-water-demo/static/{filename}",
++        "/bottled-water-demo/unit/{unit_id}",
++        "/bottled-water-demo/start",
++        "/bottled-water-demo/pause",
++        "/bottled-water-demo/resume",
++        "/bottled-water-demo/stop",
++        "/bottled-water-demo/reset",
++        "/bottled-water-demo/advance",
++    }
++
++
++# ═══════════════════════════════════════════════════════════════
++# B3-10 — existing UI/API behaviour is unaffected
++# ═══════════════════════════════════════════════════════════════
++
++def test_b3_10_other_endpoints_still_serve(client):
++    assert client.get("/health").json()["status"] == "ok"
++    assert client.get("/").status_code == 200
++    assert client.get("/assy-demo").status_code == 200
++    assert client.get("/status").status_code == 200
++
++
++def test_b3_10b_bottled_water_runtime_control_is_independent_of_the_other_line(client):
++    """Driving the Bottled Water line must not disturb the other demo line."""
++    other_before = client.post("/assy-demo/reset", json={"scenario": "HAPPY_PATH"}).json()
++    client.post("/bottled-water-demo/start")
++    _run_cycles(client, 4)
++    other_after = client.post("/assy-demo/snapshot").json()
++
++    assert other_before["sub_line_id"] == other_after["sub_line_id"]
++    assert other_after["simulation_time_s"] == 0.0
++    assert _state(client)["counts"]["total"] == 4

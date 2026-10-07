@@ -1,0 +1,200 @@
+{
+  "task": "DDAY-B5-C01",
+  "baseline": "cced390cfad5c9a40361cf2caf6f1916e7003f59",
+  "head": "e74f5dcff1dccf469db8c31dc58aa61a60bcd7d9",
+  "phase_order": [
+    "NORMAL",
+    "DEGRADING",
+    "LOW_PRESSURE_WARNING",
+    "UNDERSUPPLY",
+    "RECOVERY"
+  ],
+  "required_phase_order": [
+    "NORMAL",
+    "DEGRADING",
+    "LOW_PRESSURE_WARNING",
+    "UNDERSUPPLY",
+    "RECOVERY"
+  ],
+  "phase_order_match": true,
+  "replay_digest_match": true,
+  "digest": "1d9affe644496a1d28eacad7609c4303626d1318cae706dc34374e244665a4d4",
+  "phase_samples": [
+    {
+      "step": 1,
+      "phase": "NORMAL",
+      "highlight": "normal",
+      "air_pressure": 6.98,
+      "active_power": 2.0,
+      "total": 0,
+      "good": 0,
+      "fg_receipts": 0
+    },
+    {
+      "step": 22,
+      "phase": "DEGRADING",
+      "highlight": "warn",
+      "air_pressure": 6.56,
+      "active_power": 15.337,
+      "total": 1,
+      "good": 0,
+      "fg_receipts": 0
+    },
+    {
+      "step": 30,
+      "phase": "LOW_PRESSURE_WARNING",
+      "highlight": "warn",
+      "air_pressure": 6.24,
+      "active_power": 16.125,
+      "total": 1,
+      "good": 0,
+      "fg_receipts": 0
+    },
+    {
+      "step": 38,
+      "phase": "UNDERSUPPLY",
+      "highlight": "fault",
+      "air_pressure": 5.92,
+      "active_power": 17.25,
+      "total": 1,
+      "good": 0,
+      "fg_receipts": 0
+    },
+    {
+      "step": 60,
+      "phase": "RECOVERY",
+      "highlight": "recover",
+      "air_pressure": 5.6,
+      "active_power": 17.25,
+      "total": 1,
+      "good": 0,
+      "fg_receipts": 0
+    }
+  ],
+  "events": [
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=NORMAL",
+      "simulation_time_s": 0.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=DEGRADING",
+      "simulation_time_s": 22.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=LOW_PRESSURE_WARNING",
+      "simulation_time_s": 30.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "ALARM_RAISED",
+      "detail": "compressor low pressure",
+      "simulation_time_s": 30.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=UNDERSUPPLY",
+      "simulation_time_s": 38.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "SCENARIO_PHASE_CHANGED",
+      "detail": "phase=RECOVERY",
+      "simulation_time_s": 60.0,
+      "source_id": "BW-UT-CMP01"
+    },
+    {
+      "event_type": "ALARM_CLEARED",
+      "detail": "compressor pressure restored",
+      "simulation_time_s": 60.0,
+      "source_id": "BW-UT-CMP01"
+    }
+  ],
+  "alarm_raised_count": 1,
+  "downtime_count": 0,
+  "undersupply_total": 1,
+  "recovery_total": 1,
+  "final_total": 2,
+  "final_fg_receipts": 0,
+  "final_good": 0,
+  "fg_follows_good": true,
+  "classified_phase": "RECOVERY",
+  "plain_phase": "RECOVERY",
+  "default_at_t150": {
+    "capper": "INTERMITTENT_STOP",
+    "compressor": "NORMAL"
+  },
+  "default_at_t240": {
+    "capper": "RECOVERY",
+    "compressor": "DEGRADING"
+  },
+  "default_compressor_samples": [
+    {
+      "step": 1,
+      "phase": "NORMAL",
+      "air_pressure": 6.98,
+      "total": 0,
+      "good": 0,
+      "fg_receipts": 0,
+      "capper_phase": "NORMAL"
+    },
+    {
+      "step": 240,
+      "phase": "DEGRADING",
+      "air_pressure": 6.4,
+      "total": 9,
+      "good": 2,
+      "fg_receipts": 2,
+      "capper_phase": "RECOVERY"
+    },
+    {
+      "step": 264,
+      "phase": "LOW_PRESSURE_WARNING",
+      "air_pressure": 6.1,
+      "total": 10,
+      "good": 3,
+      "fg_receipts": 3,
+      "capper_phase": "RECOVERY"
+    },
+    {
+      "step": 284,
+      "phase": "UNDERSUPPLY",
+      "air_pressure": 5.8,
+      "total": 11,
+      "good": 4,
+      "fg_receipts": 4,
+      "capper_phase": "RECOVERY"
+    },
+    {
+      "step": 304,
+      "phase": "RECOVERY",
+      "air_pressure": 5.6,
+      "total": 11,
+      "good": 4,
+      "fg_receipts": 4,
+      "capper_phase": "RECOVERY"
+    }
+  ],
+  "capper_files_changed_vs_cced390": [],
+  "hidden_hits": [],
+  "kpi_hits": [],
+  "files_vs_c01_baseline": [
+    ".ai-harness/sa-review/evidence/DDAY-B5-C01/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/DDAY-B5/10-visual.md",
+    ".ai-harness/sa-review/evidence/DDAY-B5/capture_visuals.py",
+    ".ai-harness/sa-review/evidence/DDAY-B5/generate_evidence.py",
+    ".ai-harness/sa-review/evidence/DDAY-B5/smoke_capper_scenario.py",
+    ".ai-harness/tasks/DDAY-B5-C01.json",
+    "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.contract.yaml",
+    "configs/workspaces/bottled-water-dday/scenarios/compressor_pressure.runtime.yaml",
+    "src/virtual_factory/ui/static/bottled_water_demo.css",
+    "src/virtual_factory/workspaces/bottled_water.py",
+    "src/virtual_factory/workspaces/compressor_pressure.py",
+    "tests/test_dday_b5_compressor_scenario.py"
+  ]
+}

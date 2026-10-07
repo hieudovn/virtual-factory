@@ -53,6 +53,7 @@ from virtual_factory.assembly.quality_records import (
     resolve_quality_disposition,
 )
 from virtual_factory.assembly.station_contracts import (
+    Capabilities,
     CompletionMode,
     StationCommand,
     StationContract,
@@ -77,14 +78,34 @@ from virtual_factory.assembly.operation_execution import (
 # WIP State
 # ═══════════════════════════════════════════════════════════════
 
+class LineRunState(str, enum.Enum):
+    """Operator-facing run state of one indexed line (B2).
+
+    Deliberately distinct from ``ConveyorState``: ``STOPPED`` here is a
+    controlled stop requested through the runtime control surface, and it is
+    never a fault. ``FAULT`` is not a run state — a fault is a per-unit or
+    per-station condition, so ``STOPPED != FAULT`` holds structurally.
+    """
+    STOPPED = "STOPPED"
+    RUNNING = "RUNNING"
+    PAUSED = "PAUSED"
+
+
 class WipLifecycle(str, enum.Enum):
-    """ASSY WIP lifecycle states (demo semantic names)."""
+    """ASSY WIP lifecycle states (demo semantic names).
+
+    ``IN_LINE`` (C01) is the domain-neutral entry state used by the generic line
+    profile, so that a non-legacy workspace never publishes the legacy
+    ``IN_ASSY`` semantic. The legacy profile keeps using ``IN_ASSY``.
+    """
     CREATED = "created"
     IN_ASSY = "in_assy"
+    IN_LINE = "in_line"
     AT_STATION = "at_station"
     COMPLETED_STATION = "completed_station"
     JOINED = "joined"
     RELEASED = "released"
+    REJECTED = "rejected"
 
 
 @dataclass(slots=True)
@@ -98,6 +119,29 @@ class AssyWipState:
     parent_wip_ids: tuple[str, ...] = field(default_factory=tuple)
     # M6-INT-01-C01: authoritative release occurrence time (set at RELEASE).
     released_at_sim_s: float = 0.0
+    # B2 generic profile: unit metadata + per-unit outcome bookkeeping.
+    unit_sequence: int = 0
+    unit_type: str = ""
+    product_code: str = ""
+    rejected: bool = False
+    counted_good: bool = False
+
+
+@dataclass
+class QualityStationSpec:
+    """B2: a quality checkpoint declared by configuration, not by station id.
+
+    The ASSY profile keeps its frozen AP06/AP08/AP11 mapping; a generic
+    workspace declares its own checkpoint (for Bottled Water: the consolidated
+    Inspection station) through this spec.
+    """
+
+    config_key: str = ""
+    check_type: CheckType = CheckType.VISUAL_INSPECTION
+    # "hold"   → retry / terminal hold semantics (ASSY behaviour, default)
+    # "reject" → eject the unit at this station and continue the line
+    on_fail: str = "hold"
+    quality: StationQualityConfig = field(default_factory=StationQualityConfig)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -123,6 +167,25 @@ class AssyLineConfig:
     timing_behavior: TimingBehavior = TimingBehavior.DETERMINISTIC
     random_seed: int = 42
     auto_timing_profiles: dict[str, AutoTimingProfile] = field(default_factory=dict)
+
+    # ── B2 generic single-line profile (additive; defaults preserve ASSY) ──
+    line_id: str = ""
+    line_label: str = ""
+    plant_id: str = ""
+    plant_name: str = ""
+    # "assy"    → the frozen TIPA AP station semantics (default, unchanged)
+    # "generic" → no station-id-specific domain behaviour; every station is a
+    #             configured operation, plus optional configured quality checks
+    line_profile: str = "assy"
+    unit_id_prefix: str = "UNIT"
+    unit_type: str = ""
+    product_code: str = ""
+    quality_stations: dict[str, QualityStationSpec] = field(default_factory=dict)
+
+    @property
+    def is_generic_profile(self) -> bool:
+        """True when the config drives the generic (non-AP) station model."""
+        return self.line_profile == "generic"
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,6 +278,40 @@ def load_assy_config_from_yaml(path: str) -> AssyLineConfig:
     if ident:
         config.motor_wip_prefix = ident.get("motor_wip_prefix", "MTR")
 
+    # ── B2 generic single-line profile (additive; absent => ASSY defaults) ──
+    plant_data = data.get("plant", {})
+    if plant_data:
+        config.plant_id = str(plant_data.get("id", config.plant_id))
+        config.plant_name = str(plant_data.get("name", config.plant_name))
+
+    line_data = data.get("line", {})
+    if line_data:
+        config.line_id = str(line_data.get("id", config.line_id))
+        config.line_label = str(line_data.get("label", config.line_label))
+        config.line_profile = str(line_data.get("profile", config.line_profile))
+
+    unit_data = data.get("unit", {})
+    if unit_data:
+        config.unit_id_prefix = str(unit_data.get("id_prefix", config.unit_id_prefix))
+        config.unit_type = str(unit_data.get("unit_type", config.unit_type))
+        config.product_code = str(unit_data.get("product_code", config.product_code))
+
+    for station_id, spec_data in (data.get("quality_stations") or {}).items():
+        spec_data = spec_data or {}
+        spec = QualityStationSpec(
+            config_key=str(spec_data.get("config_key", station_id)),
+            check_type=CheckType(str(spec_data.get("check_type", "VISUAL_INSPECTION"))),
+            on_fail=str(spec_data.get("on_fail", "hold")),
+            quality=StationQualityConfig(
+                max_attempts=int(spec_data.get("max_attempts", 1)),
+                scenario=spec_data.get("scenario", "PASS"),
+            ),
+        )
+        overrides = spec_data.get("overrides", {})
+        if overrides:
+            spec.quality.overrides = {int(k): list(v) for k, v in overrides.items()}
+        config.quality_stations[str(station_id)] = spec
+
     sim = data.get("simulation", {})
     if sim:
         config.simulation_time_multiplier = float(sim.get("time_multiplier", 1.0))
@@ -257,6 +354,51 @@ _QUALITY_STATION_MAP: dict[str, tuple[str, "CheckType"]] = {
     "AP08": ("ap08", CheckType.VISUAL_INSPECTION),
     "AP11": ("ap11", CheckType.FINAL_QC),
 }
+
+# B2 — fallback operation_result by check type for configured (non-AP) checkpoints.
+_QUALITY_CHECKTYPE_RESULT: dict["CheckType", "OperationResult"] = {
+    CheckType.TEST: OperationResult.TEST_COMPLETE,
+    CheckType.VISUAL_INSPECTION: OperationResult.INSPECTION_COMPLETE,
+    CheckType.FINAL_QC: OperationResult.CONFIRMED,
+    CheckType.CHECKLIST: OperationResult.CONFIRMED,
+}
+
+
+def build_line_station_contracts(
+    config: AssyLineConfig,
+) -> dict[str, StationContract]:
+    """Build the station contracts implied by a line configuration.
+
+    ASSY profile → the frozen AP contracts (unchanged behaviour).
+    Generic profile → one execution contract per configured position, plus a
+    quality-decision capability for positions that declare a quality station.
+    No station id is special-cased.
+    """
+    if not config.is_generic_profile:
+        return build_default_assy_contracts(dict(config.station_durations))
+
+    contracts: dict[str, StationContract] = {}
+    for position in config.conveyor.positions:
+        duration = float(config.station_durations.get(position, 60.0))
+        if position in config.quality_stations:
+            contracts[position] = StationContract(
+                station_id=position,
+                capabilities=Capabilities(execution=True, measurement=True,
+                                          quality_decision=True),
+                normal_action=StationCommand.CONFIRM,
+                required_action=StationCommand.CONFIRM,
+                work_duration_s=duration,
+                decision_actions=("PASS", "FAIL", "NG"),
+            )
+        else:
+            contracts[position] = StationContract(
+                station_id=position,
+                capabilities=Capabilities(execution=True),
+                normal_action=StationCommand.DONE,
+                required_action=StationCommand.DONE,
+                work_duration_s=duration,
+            )
+    return contracts
 
 
 def _validate_checklist_completion(
@@ -354,6 +496,14 @@ class AssyLineRuntime:
     _quality_histories: dict[str, QualityHistory] = field(default_factory=dict)
     _quality_seq: int = 0
 
+    # B2 — generic single-line profile state (unused by the ASSY profile)
+    _run_state: "LineRunState" = LineRunState.STOPPED
+    _unit_seq: int = 0
+    _carrier_seq: int = 0
+    _total_count: int = 0
+    _good_count: int = 0
+    _reject_count: int = 0
+
     # OPS-02 — OperationExecution foundation
     station_contracts: dict[str, StationContract] = field(default_factory=dict)
     operation_registry: OperationRegistry = field(default_factory=OperationRegistry)
@@ -372,9 +522,7 @@ class AssyLineRuntime:
         for pos in self.conveyor.positions:
             self._station_elapsed[pos] = 0.0
         if not self.station_contracts:
-            self.station_contracts = build_default_assy_contracts(
-                dict(self.config.station_durations)
-            )
+            self.station_contracts = build_line_station_contracts(self.config)
         self._timing_resolver = TimingResolver(seed=self.config.random_seed)
 
     # -- Properties --
@@ -428,6 +576,24 @@ class AssyLineRuntime:
         self._quality_seq += 1
         return f"QR-{self._quality_seq:04d}"
 
+    def _quality_spec(self, pos: str) -> QualityStationSpec:
+        """Resolve the quality checkpoint definition for a station (B2).
+
+        A configured spec wins (generic workspaces declare their own
+        checkpoints). Otherwise the frozen ASSY AP06/AP08/AP11 mapping is used
+        with unchanged hold/retry behaviour.
+        """
+        spec = self.config.quality_stations.get(pos)
+        if spec is not None:
+            return spec
+        station_key, check_type = _QUALITY_STATION_MAP[pos]
+        return QualityStationSpec(
+            config_key=station_key,
+            check_type=check_type,
+            on_fail="hold",
+            quality=self.config.quality.get(station_key),
+        )
+
     # -- WIP registry --
 
     def get_wip(self, wip_id: str) -> Optional[AssyWipState]:
@@ -470,6 +636,249 @@ class AssyLineRuntime:
         self._station_elapsed["PRE-ASSY"] = 0.0
         self._emit("LINE_ENTRY", position="PRE-ASSY", wip_id=wip_id,
                    detail=f"carrier={carrier_id}")
+
+    # ═══════════════════════════════════════════════════════
+    # GENERIC UNIT FLOW (B2) — used by non-AP line profiles
+    # ═══════════════════════════════════════════════════════
+
+    def produce_unit(self) -> str:
+        """Create one generic unit with the configured metadata.
+
+        Returns the new unit id. Replaces the SSO2/RSO2 upstream for workspaces
+        that have a single material entry, e.g. Bottled Water bottles.
+        """
+        self._unit_seq += 1
+        unit_id = f"{self.config.unit_id_prefix}-{self._unit_seq:06d}"
+        ws = self._add_wip(unit_id)
+        ws.unit_sequence = self._unit_seq
+        ws.unit_type = self.config.unit_type
+        ws.product_code = self.config.product_code
+        self._total_count += 1
+        return unit_id
+
+    def introduce_unit(self, wip_id: str, carrier_id: str,
+                       position: str = "") -> list[LineEvent]:
+        """Introduce a unit at a conveyor position (default: line entry).
+
+        Returns events — does NOT append to ``self._trace``; the caller owns the
+        single append (same convention as ``_execute_ap04_join``).
+        """
+        ws = self._wips.get(wip_id)
+        if ws is None:
+            raise AssyLineError(f"Unknown unit: {wip_id}")
+        entry = position or self.conveyor.positions[0]
+        carrier = self.conveyor.get_carrier(carrier_id)
+        if carrier is None:
+            carrier = self.conveyor.create_carrier(carrier_id)
+        self.conveyor.place_carrier(carrier, entry, wip_id)
+        # C01-A: the generic route must stay domain-neutral — the legacy
+        # IN_ASSY lifecycle is not published for a non-legacy workspace.
+        ws.lifecycle = WipLifecycle.IN_LINE
+        ws.current_position = entry
+        self._station_elapsed[entry] = 0.0
+        return [self._make_event(
+            "UNIT_ENTERED", entry, wip_id,
+            f"carrier={carrier_id} unit_type={ws.unit_type} "
+            f"product_code={ws.product_code}")]
+
+    def _reject_unit(self, pos: str, wip_id: str,
+                     op: OperationExecution) -> list[LineEvent]:
+        """Eject a rejected unit and keep the line moving (B2).
+
+        Used only by configured ``on_fail: reject`` checkpoints. The unit leaves
+        the carrier (the empty carrier continues downstream), the reject count
+        increments once, and the station completes so the line never blocks.
+        """
+        events: list[LineEvent] = []
+        ws = self._wips.get(wip_id)
+        if ws is not None:
+            if not ws.rejected:
+                ws.rejected = True
+                self._reject_count += 1
+            ws.lifecycle = WipLifecycle.REJECTED
+        carrier = self.conveyor.carrier_at(pos)
+        if carrier is not None and carrier.wip_id == wip_id:
+            carrier.clear()
+        op.routing_action = "REJECTED"
+        op.terminal = True
+        op.transition(OperationState.COMPLETED)
+        events.append(self._make_event(
+            "REJECT", pos, wip_id, f"reason={op.quality_result or 'FAIL'}"))
+        return events
+
+    def _count_completed_unit(self) -> list[LineEvent]:
+        """Count a generic-profile unit that finished the last station (B2).
+
+        Called from ``index_line``: the unit is about to index off the line, so
+        its route is complete. Rejected and already-counted units are skipped,
+        which keeps ``good_count + reject_count <= total_count``.
+        """
+        if not self.config.is_generic_profile:
+            return []
+        last_pos = self.conveyor.positions[-1]
+        wip_id = self.conveyor.wip_at(last_pos)
+        if not wip_id or not self.conveyor.is_position_complete(last_pos):
+            return []
+        ws = self._wips.get(wip_id)
+        if ws is None or ws.rejected or ws.counted_good:
+            return []
+        ws.counted_good = True
+        ws.lifecycle = WipLifecycle.RELEASED
+        self._good_count += 1
+        return [self._make_event(
+            "UNIT_COMPLETED", last_pos, wip_id,
+            f"route_complete total={self._total_count} "
+            f"good={self._good_count} reject={self._reject_count}")]
+
+    # ═══════════════════════════════════════════════════════
+    # RUN CONTROLS + RAW FACTS (B2)
+    # ═══════════════════════════════════════════════════════
+
+    @property
+    def run_state(self) -> "LineRunState":
+        return self._run_state
+
+    def start(self) -> "LineRunState":
+        """START — begin automatic progression."""
+        if self._run_state != LineRunState.RUNNING:
+            self._run_state = LineRunState.RUNNING
+            self._emit("LINE_RUN_STATE", detail="state=RUNNING")
+        return self._run_state
+
+    def pause(self) -> "LineRunState":
+        """PAUSE — freeze progression, preserving every bit of state."""
+        if self._run_state == LineRunState.RUNNING:
+            self._run_state = LineRunState.PAUSED
+            self._emit("LINE_RUN_STATE", detail="state=PAUSED")
+        return self._run_state
+
+    def resume(self) -> "LineRunState":
+        """RESUME — continue from the preserved state."""
+        if self._run_state == LineRunState.PAUSED:
+            self._run_state = LineRunState.RUNNING
+            self._emit("LINE_RUN_STATE", detail="state=RUNNING")
+        return self._run_state
+
+    def stop(self) -> "LineRunState":
+        """STOP — controlled stop. Never a fault."""
+        if self._run_state != LineRunState.STOPPED:
+            self._run_state = LineRunState.STOPPED
+            self._emit("LINE_RUN_STATE", detail="state=STOPPED")
+        return self._run_state
+
+    def advance_cycle(self) -> list[LineEvent]:
+        """One deterministic production cycle: feed → dwell → index.
+
+        Only RUNNING advances the line. PAUSED / STOPPED return no events and
+        leave all state (including simulation time) untouched, so RESUME
+        continues from exactly the same position.
+        """
+        if self._run_state != LineRunState.RUNNING:
+            return []
+        events = self._feed_next_unit()
+        if events:
+            self._trace.extend(events)
+        events.extend(self.execute_dwell())
+        if self.conveyor.state == ConveyorState.READY_TO_INDEX:
+            events.extend(self.index_line())
+        return events
+
+    def _feed_next_unit(self) -> list[LineEvent]:
+        """Release the next unit at line entry when the entry is free.
+
+        The line takt (dwell + station durations) governs the release cadence;
+        no wall-clock and no random source is involved.
+        """
+        entry = self.conveyor.positions[0]
+        if self.conveyor.wip_at(entry) is not None:
+            return []
+        unit_id = self.produce_unit()
+        self._carrier_seq += 1
+        return self.introduce_unit(unit_id, f"CAR-{self._carrier_seq:04d}")
+
+    @property
+    def total_count(self) -> int:
+        return self._total_count
+
+    @property
+    def good_count(self) -> int:
+        return self._good_count
+
+    @property
+    def reject_count(self) -> int:
+        return self._reject_count
+
+    def unit_counts(self) -> dict[str, int]:
+        """Raw production counts (no KPI is derived here)."""
+        return {
+            "total_count": self._total_count,
+            "good_count": self._good_count,
+            "reject_count": self._reject_count,
+        }
+
+    def units_on_line(self) -> int:
+        """Units physically on the line (empty carriers excluded)."""
+        return sum(
+            1 for pos in self.conveyor.occupied_positions()
+            if self.conveyor.wip_at(pos) is not None
+        )
+
+    def operating_state(self) -> str:
+        """RUNNING / IDLE / STOPPED raw operating state.
+
+        Deliberately not FAULT and not DOWNTIME: those are not produced by B2,
+        and keeping them out of the enum keeps ``STOPPED != FAULT`` and
+        ``IDLE != DOWNTIME`` true by construction.
+        """
+        if self._run_state == LineRunState.STOPPED:
+            return "STOPPED"
+        if self.units_on_line() == 0:
+            return "IDLE"
+        return "RUNNING"
+
+    def line_facts(self) -> dict:
+        """Outward raw-fact view of the line (B2).
+
+        Raw operational facts only. No OEE / availability / performance /
+        quality% / energy-per-unit / utilization / health score is calculated.
+        """
+        positions = []
+        for pos in self.conveyor.positions:
+            wip_id = self.conveyor.wip_at(pos)
+            ws = self._wips.get(wip_id) if wip_id else None
+            positions.append({
+                "position_id": pos,
+                "unit_id": wip_id or "",
+                "unit_type": ws.unit_type if ws else "",
+                "product_code": ws.product_code if ws else "",
+                "manufacturing_status": ws.lifecycle.value if ws else "",
+                "is_occupied": bool(wip_id),
+            })
+        facts = {
+            "plant_id": self.config.plant_id,
+            "line_id": self.config.line_id,
+            "line_label": self.config.line_label,
+            "line_profile": self.config.line_profile,
+            "unit_type": self.config.unit_type,
+            "product_code": self.config.product_code,
+            "run_state": self._run_state.value,
+            "operating_state": self.operating_state(),
+            "simulation_time_s": self._simulation_time_s,
+            "dwell_number": self.conveyor.dwell_number,
+            "nominal_dwell_s": self.config.conveyor.nominal_line_dwell_time_s,
+            "route": list(self.conveyor.positions),
+            "positions": positions,
+            "units_on_line": self.units_on_line(),
+        }
+        facts.update(self.unit_counts())
+        return facts
+
+    def last_quality_disposition(self, position: str) -> str:
+        """Most recent inspection/quality disposition observed at a station."""
+        for record in reversed(self._trace):
+            if record.event_type == "QUALITY_RESULT" and record.position == position:
+                return record.detail.split("disposition=")[-1].split(" ")[0]
+        return ""
 
     # ═══════════════════════════════════════════════════════
     # DWELL (C01-02: progress + overrun; C01-04: single start)
@@ -565,6 +974,9 @@ class AssyLineRuntime:
                 continue
             wip_id = self.conveyor.wip_at(pos)
             if wip_id is None:
+                # B2: an empty carrier (unit already completed/rejected) does no
+                # work. Complete it so it can never stall an indexed line.
+                self.conveyor.mark_position_complete(pos)
                 continue
 
             ws = self._wips.get(wip_id)
@@ -958,24 +1370,30 @@ class AssyLineRuntime:
             # only after final QC resolved PASS (CLEAR).
             events = self._execute_release_disposition(pos, wip_id, op)
         elif contract.capabilities.quality_decision:
-            station_key, check_type = _QUALITY_STATION_MAP[pos]
+            spec = self._quality_spec(pos)
             # OPS-03-C02: in AUTO the simulator/scenario decides; operator
             # decision only overrides in MANUAL/ASSISTED.
             eff_decision = decision if op.completion_mode != CompletionMode.AUTO else None
             events = self._apply_quality_decision(
-                pos, wip_id, op, station_key, check_type, decision=eff_decision)
+                pos, wip_id, op, spec, decision=eff_decision)
             qstatus = self.get_current_quality_status(wip_id)
             qh = self.get_quality_history(wip_id)
             op.quality_result = qh.last_disposition(pos) if qh else None
             op.attempt_number = qh.attempt_count(pos) if qh else 0
-            if qstatus == QualityStatus.CLEAR:
-                if pos == "AP11":
+            if spec.on_fail == "reject" and op.quality_result in ("FAIL", "NG"):
+                # B2 generic profile: a rejected unit is ejected and the line
+                # keeps running — no retry, no hold, no blocked station.
+                events.extend(self._reject_unit(pos, wip_id, op))
+            elif qstatus == QualityStatus.CLEAR:
+                if contract.capabilities.final_disposition:
                     # OPS-04-C01 (F): final QC passed — now await RELEASE.
                     op.operation_result = OperationResult.CONFIRMED
                     op.transition(OperationState.AWAITING_COMPLETION)
                 else:
-                    op.operation_result = _QUALITY_OPERATION_RESULT.get(
-                        pos, OperationResult.TEST_COMPLETE)
+                    op.operation_result = (
+                        _QUALITY_OPERATION_RESULT.get(pos)
+                        or _QUALITY_CHECKTYPE_RESULT.get(
+                            spec.check_type, OperationResult.TEST_COMPLETE))
                     op.routing_action = "CONTINUE"
                     self._mark_station_complete(wip_id, pos)
                     op.transition(OperationState.COMPLETED)
@@ -1090,8 +1508,10 @@ class AssyLineRuntime:
         if history.current_status == QualityStatus.FAILED_FINAL:
             return events  # idempotent terminal hold — no new observation
 
-        station_key, check_type = _QUALITY_STATION_MAP[pos]
-        qcfg = self.config.quality.get(station_key)
+        spec = self._quality_spec(pos)
+        station_key = spec.config_key
+        check_type = spec.check_type
+        qcfg = spec.quality
         attempt = history.attempt_count(station_key) + 1
 
         ws = self._wips.get(wip_id)
@@ -1101,6 +1521,10 @@ class AssyLineRuntime:
                 motor_seq = int(wip_id.split("-")[-1])
             except (ValueError, IndexError):
                 pass
+        elif ws and ws.unit_sequence:
+            # B2: generic units use their own sequence number so per-unit
+            # quality overrides stay deterministic. ASSY WIPs keep 0.
+            motor_seq = ws.unit_sequence
 
         proposal = resolve_quality_disposition(
             station_key, motor_seq, attempt, qcfg, check_type)
@@ -1160,8 +1584,7 @@ class AssyLineRuntime:
         pos: str,
         wip_id: str,
         op: OperationExecution,
-        station_key: str,
-        check_type: CheckType,
+        spec: QualityStationSpec,
         decision: Optional[str] = None,
     ) -> list[LineEvent]:
         """OPS-04-C01 (C): apply the FINAL disposition to the OBSERVED data.
@@ -1178,7 +1601,9 @@ class AssyLineRuntime:
                 "FAILED_FINAL — awaiting disposition"))
             return events
 
-        qcfg = self.config.quality.get(station_key)
+        station_key = spec.config_key
+        check_type = spec.check_type
+        qcfg = spec.quality
         attempt = history.attempt_count(station_key) + 1
 
         disposition = op.proposed_quality_result or "PASS"
@@ -1340,6 +1765,8 @@ class AssyLineRuntime:
         """Advance all carriers one position.  dwell_number unchanged."""
         events: list[LineEvent] = []
 
+        events.extend(self._count_completed_unit())
+
         snapshot = self.conveyor.index()
         self._simulation_time_s += self.config.conveyor.index_movement_duration_s  # C01-01
 
@@ -1407,6 +1834,13 @@ class AssyLineRuntime:
         self._quality_histories.clear()
         self._quality_seq = 0
         self.operation_registry.clear()
+        # B2: restore the generic-profile run state and production counters.
+        self._run_state = LineRunState.STOPPED
+        self._unit_seq = 0
+        self._carrier_seq = 0
+        self._total_count = 0
+        self._good_count = 0
+        self._reject_count = 0
         # AUTO-TIME-01B: restore deterministic timing stream on reset.
         self._timing_resolver = TimingResolver(seed=self.config.random_seed)
         # AUTO-TIME-01C: restore neutral dwell metrics on reset.

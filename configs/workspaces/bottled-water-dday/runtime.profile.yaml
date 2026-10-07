@@ -1,0 +1,88 @@
+# DDAY-FR1 — Bottled Water D-Day runtime profile.
+#
+# D-Day operating defaults for mixed-cadence live transport.
+# Not a permanent industrial standard. Does not change topology,
+# source IDs, scenario meaning, timestamps, or contract_version.
+#
+# B1 dictionary `cadence` strings remain contract metadata.
+# This file is the live-transport mapping for the 22 EXPORTED measurements.
+
+profile_id: dday-bw-runtime-fr1
+contract_version: dday-bw-b1-v2
+workspace_id: bottled-water-dday
+plant_source_id: BW-DEMO-01
+status: DDAY_OPERATING_DEFAULT
+not_a_permanent_industrial_standard: true
+accepted_vf_baseline: 320d82fb2fb3339461553e258b09ebee6689615a
+
+classes:
+  FAST:
+    period_s: 1.0
+    period_range_s: [1.0, 2.0]
+    mode: periodic
+  MEDIUM:
+    period_s: 5.0
+    period_range_s: [5.0, 5.0]
+    mode: periodic
+  SLOW:
+    period_s: 10.0
+    period_range_s: [10.0, 10.0]
+    mode: periodic
+  COUNT:
+    mode: on_change
+    heartbeat_s: 10.0
+  EVENT:
+    mode: event_driven
+
+measurements:
+  # FAST 1–2 s — Capper electrical / motion / torque
+  - { source_id: BW-FP-CAP01, signal_id: motor_current, class: FAST }
+  - { source_id: BW-FP-CAP01, signal_id: drive_load, class: FAST }
+  - { source_id: BW-FP-CAP01, signal_id: vibration_rms, class: FAST }
+  - { source_id: BW-FP-CAP01, signal_id: speed, class: FAST }
+  - { source_id: BW-FP-CAP01, signal_id: cycle_time, class: FAST }
+  - { source_id: BW-FP-CAP01, signal_id: cap_torque, class: FAST }
+  # MEDIUM ~5 s — filler, compressor, plant power, bearing temperature
+  - { source_id: BW-FP-FIL01, signal_id: fill_rate, class: MEDIUM }
+  - { source_id: BW-UT-CMP01, signal_id: air_pressure, class: MEDIUM }
+  - { source_id: BW-UT-CMP01, signal_id: active_power, class: MEDIUM }
+  - { source_id: BW-UT-PWR01, signal_id: plant_active_power, class: MEDIUM }
+  - { source_id: BW-FP-CAP01, signal_id: bearing_temperature, class: MEDIUM }
+  # SLOW ~10 s — water/RO flow, tank level, cumulative energy
+  - { source_id: BW-WT-FEED01, signal_id: water_flow, class: SLOW }
+  - { source_id: BW-WT-RO01, signal_id: production_flow, class: SLOW }
+  - { source_id: BW-WT-TK01, signal_id: level, class: SLOW }
+  - { source_id: BW-UT-CMP01, signal_id: energy_total, class: SLOW }
+  - { source_id: BW-UT-PWR01, signal_id: plant_energy_total, class: SLOW }
+  # COUNT — on-change + optional low-rate heartbeat
+  - { source_id: BW-FP, signal_id: total_count, class: COUNT }
+  - { source_id: BW-FP, signal_id: good_count, class: COUNT }
+  - { source_id: BW-FP, signal_id: reject_count, class: COUNT }
+  - { source_id: BW-WH-FG01, signal_id: inventory_count, class: COUNT }
+  - { source_id: BW-WH-FG01, signal_id: receipt_count, class: COUNT }
+  - { source_id: BW-WH-FG01, signal_id: dispatch_count, class: COUNT }
+
+event_only_states:
+  - { source_id: BW-FP, signal_id: operating_state, class: EVENT }
+  - { source_id: BW-FP-CAP01, signal_id: operating_state, class: EVENT }
+  - { source_id: BW-UT-CMP01, signal_id: operating_state, class: EVENT }
+
+events:
+  class: EVENT
+  types:
+    - MACHINE_STATE_CHANGED
+    - ALARM_RAISED
+    - ALARM_CLEARED
+    - DOWNTIME_START
+    - DOWNTIME_END
+    - SCENARIO_PHASE_CHANGED
+
+unavailable:
+  - { source_id: BW-FP, signal_id: target_rate }
+  - { source_id: BW-UT-CMP01, signal_id: load }
+
+burst_ceiling_msg_per_s: 250
+note: >
+  Live transport must not be tuned for the artificial ~250 msg/s burst.
+  Signals publish by class; events publish once per session via the
+  existing export-session cursor.

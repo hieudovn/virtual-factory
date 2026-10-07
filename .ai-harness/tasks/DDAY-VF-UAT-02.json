@@ -1,0 +1,151 @@
+{
+  "task_id": "DDAY-VF-UAT-02",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "D-DAY TRACK B — UAT HOST RUN A EVIDENCE (NO VF PRODUCT CHANGE, NO RUN B)",
+  "issue": "hieudovn/virtual-factory#118",
+  "parent_issue": "hieudovn/virtual-factory#119",
+  "pr": "hieudovn/virtual-factory#101",
+  "objective": "Record independently inspected UAT host evidence for the coordinated #118 deploy: frozen VF SHA d7db6d0 is running as virtual-factory-dday on plantos-net publishing to plantos-emqx:1883. Do not change VF product code. Do not start Run B until PlantOS PM confirms Run A reached Center/TDengine/UI and reset_dday_receive_epoch succeeded.",
+  "conservative_interpretation": {
+    "ssh_host": "UAT host 157.10.52.54 / uat.esoft.vn was provided. Credentials are not stored in the repository.",
+    "run_a_live": "At 2026-10-07T02:44:46Z virtual-factory-dday was Up with VF_SOURCE_SHA=d7db6d0909da968c2b4a4ea2cdb712e5d7601282. Edge/Center were a1695c5 and ingesting.",
+    "no_run_b": "At UAT-02 inspect time Run B had not started. That snapshot is now historical_run_a; current state is DDAY-VF-UAT-03.",
+    "no_product_change": "This slice is evidence/report only."
+  },
+  "explicit_non_objectives": [
+    "No VF product/code/timestamp/contract change",
+    "No Run B / VF restart",
+    "No TDengine write",
+    "No PlantOS production-code change from this VF PM",
+    "No public MQTT",
+    "No merge of PR #101",
+    "No self-certification of COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED"
+  ],
+  "required_branch": "sa/dday-track-b-20261003",
+  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "sa_expected_baseline_sha": "d7db6d0909da968c2b4a4ea2cdb712e5d7601282",
+  "working_tree_required": "clean",
+  "allowed_paths": [
+    "tests/",
+    "reports/dday-vf-uat-01/",
+    ".ai-harness/tasks/",
+    ".ai-harness/scripts/",
+    ".ai-harness/tests/",
+    ".ai-harness/sa-review/evidence/DDAY-VF-UAT-02/",
+    ".ai-harness/sa-review/evidence/DDAY-VF-UAT-01-C01/",
+    ".ai-harness/sa-review/evidence/DDAY-VF-UAT-01/",
+    ".ai-harness/sa-review/evidence/DDAY-FR1/",
+    ".ai-harness/sa-review/evidence/DDAY-B7-X01-C01/",
+    ".ai-harness/sa-review/evidence/DDAY-B7-X01-C02/",
+    ".ai-harness/sa-review/evidence/DDAY-B7-X01-C03/",
+    ".ai-harness/sa-review/evidence/DDAY-B6/",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C01/",
+    ".ai-harness/sa-review/evidence/DDAY-B6-C02/",
+    ".ai-harness/sa-review/evidence/DDAY-B5/",
+    ".ai-harness/sa-review/evidence/DDAY-B5-C01/",
+    ".ai-harness/sa-review/evidence/DDAY-B5-C02/",
+    ".ai-harness/sa-review/evidence/DDAY-B4/",
+    ".ai-harness/sa-review/evidence/DDAY-B4-C01/",
+    ".ai-harness/sa-review/evidence/DDAY-B2/",
+    ".ai-harness/sa-review/evidence/DDAY-B2-C01/",
+    ".ai-harness/sa-review/evidence/DDAY-B3/",
+    ".ai-harness/sa-review/reports/",
+    ".ai-harness/sa-review/CURRENT.md",
+    "configs/workspaces/bottled-water-dday/",
+    "src/virtual_factory/",
+    "deploy/dday-vf-uat.compose.yml",
+    "docs/plans/"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/core/",
+    "src/virtual_factory/telemetry/",
+    "src/virtual_factory/scenarios/",
+    "src/virtual_factory/equipment/",
+    "Dockerfile",
+    "docker-compose.yml",
+    "pyproject.toml",
+    ".ai-harness/scripts/derive_status.py",
+    ".ai-harness/PM-EXECUTION-CONTRACT.md"
+  ],
+  "required_deliverables": [
+    "UAT host inspect evidence without secrets",
+    "Run A container/network/broker proof",
+    "FAST/MEDIUM/SLOW/COUNT live MQTT sample",
+    "Historical Run A inspect (superseded by UAT-03)",
+    "SA review report + PR comment"
+  ],
+  "required_tests": [
+    "UAT-02 evidence records frozen SHA and no password",
+    "UAT-02 evidence is a historical Run A snapshot"
+  ],
+  "required_smoke_checks": [
+    {
+      "id": "SMOKE-DDAY-VF-UAT-02",
+      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-VF-UAT-02/smoke_uat_host.py"],
+      "execution_policy": "local_or_ci",
+      "required": true,
+      "description": "Historical Run A snapshot remains consistent."
+    },
+    {
+      "id": "SMOKE-DDAY-VF-UAT-01-C01",
+      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-VF-UAT-01-C01/smoke_durable_runtime.py"],
+      "execution_policy": "local_or_ci",
+      "required": true,
+      "description": "C01 durable runtime regression."
+    },
+    {
+      "id": "SMOKE-BW-DDAY-FR1",
+      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-FR1/smoke_runtime_profile.py"],
+      "execution_policy": "local_or_ci",
+      "required": true,
+      "description": "FR1 mixed-cadence regression."
+    },
+    {
+      "id": "SMOKE-BW-FACTORY",
+      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_factory.py"],
+      "execution_policy": "local_or_ci",
+      "required": true,
+      "description": "B4 autonomous-runtime smoke."
+    }
+  ],
+  "required_remote_evidence": [
+    "Remote branch head equals reported commit SHA",
+    "PR #101 open, base main, head equals remote branch head",
+    "Exact-head CI success for the pushed commit SHA"
+  ],
+  "forbidden_actions": [
+    "Do not push directly to main",
+    "Do not merge PR #101",
+    "Do not restart VF as Run B",
+    "Do not store SSH passwords in the repository",
+    "Do not change VF product semantics",
+    "Do not self-certify COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED"
+  ],
+  "stop_conditions": [
+    "Independent VF product defect found -> stop and report, do not silently patch",
+    "origin/main advances materially -> STOPPED — BASELINE ADVANCED"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "pre_status", "description": "Repository baseline matches the contract baseline", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "pre_status", "description": "Working tree was clean at preflight", "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "pre_status", "description": "Full local test suite passes", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "A04", "phase": "pre_status", "description": "Required smoke checks reach effective PASS", "rule": {"field": "smoke_checks", "operator": "contains", "expected": "'effective_result': 'PASS'"}},
+    {"id": "A05", "phase": "pre_status", "description": "No blocking issue recorded by the gate pipeline", "rule": {"field": "blocking_issues", "operator": "is_empty", "expected": null}},
+    {"id": "A06", "phase": "pre_status", "description": "No tool failure recorded", "rule": {"field": "tool_failures", "operator": "is_empty", "expected": null}},
+    {"id": "A07", "phase": "pre_status", "description": "No contradictions detected", "rule": {"field": "contradictions", "operator": "is_empty", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "All canonical gate steps executed (P01-P24)", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "All canonical gate steps PASS", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "Implementation commit exists on the remote branch", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "Remote branch head is present and reported", "rule": {"field": "implementation.remote_branch_head", "operator": "is_present", "expected": null}},
+    {"id": "A12", "phase": "final", "description": "PR #101 metadata resolved (open PR with base main)", "rule": {"field": "pull_request.number", "operator": "is_present", "expected": null}},
+    {"id": "A13", "phase": "final", "description": "Exact-head CI succeeded for the pushed SHA", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "A14", "phase": "final", "description": "Runtime authorization boundaries preserved (no merge, no next slice)", "rule": {"field": "authorization.may_merge", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  },
+  "_note": "Historical Run A inspect contract. Canonical current closeout is DDAY-VF-UAT-03."
+}

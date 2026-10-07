@@ -1,0 +1,67 @@
+# B5 secondary utility scenario. Not a B1 frozen hero contract.
+# Capper BW-CAP-DEG-01 remains the authoritative D-Day hero story.
+# Phase order is the Issue #107 addendum restored by DDAY-B5-C01.
+id: BW-CMP-SAG-01
+name: Compressor deterministic undersupply
+target_asset: BW-UT-CMP01
+deterministic: true
+manual_trigger_required: false
+role: secondary_utility
+hero: false
+
+phases:
+  - id: NORMAL
+    expected_effects:
+      - air_pressure_follows_b4_utility_model
+      - compressor_loads_from_production_demand
+      - production_cadence_unchanged
+  - id: DEGRADING
+    expected_effects:
+      - air_pressure_begins_to_fall
+      - compressor_load_and_power_increase
+  - id: LOW_PRESSURE_WARNING
+    expected_effects:
+      - phase_may_enter_before_threshold
+      - warning_alarm_raised_only_after_pressure_crosses_warning_threshold
+      - air_pressure_continues_to_fall
+      - warning_precedes_undersupply
+  - id: UNDERSUPPLY
+    expected_effects:
+      - air_pressure_at_or_near_floor
+      - line_cadence_inhibited
+      - production_and_fg_growth_slow_or_stop
+  - id: RECOVERY
+    expected_effects:
+      - alarm_cleared
+      - air_pressure_returns_toward_production_sag
+      - production_resumes
+      - fg_receipts_follow_actual_good_output
+
+hidden_ground_truth:
+  publish: false
+  examples:
+    - sag_factor
+    - injected_sag_strength
+    - scenario_internal_phase_timer
+
+manual_interaction:
+  allowed:
+    - start
+    - stop
+    - pause
+    - resume
+    - declare_downtime_code
+    - declare_failure_code
+  rule: >
+    Classification enriches an already-existing event. It MUST NOT alter the
+    compressor pressure, phase, or production trajectory. Compressor stays
+    simpler than Capper: no compressor downtime pair.
+
+plantos_calculated_impacts:
+  not_published_by_vf:
+    - oee
+    - availability
+    - performance
+    - quality_percentage
+    - energy_per_unit
+    - health_score

@@ -526,25 +526,26 @@ class TestReset:
     def test_reset_creates_fresh_runtimes(self):
         comp = AssyDemoComposition(config_path=str(REAL_CONFIG))
         comp.initialize()
-        old_runtime_ids = {id(ctx.runtime) for ctx in comp.contexts.values()}
+        old_runtimes = [ctx.runtime for ctx in comp.contexts.values()]
 
         comp.step_all()
         comp.step_all()
         comp.reset()
 
-        new_runtime_ids = {id(ctx.runtime) for ctx in comp.contexts.values()}
-        # All new runtime objects
-        assert old_runtime_ids.isdisjoint(new_runtime_ids)
+        new_runtimes = [ctx.runtime for ctx in comp.contexts.values()]
+        # Keep old objects alive so CPython cannot recycle id() values.
+        assert all(old is not new for old in old_runtimes for new in new_runtimes)
 
     def test_reset_creates_fresh_configs(self):
         comp = AssyDemoComposition(config_path=str(REAL_CONFIG))
         comp.initialize()
-        old_config_ids = {id(ctx.config) for ctx in comp.contexts.values()}
+        old_configs = [ctx.config for ctx in comp.contexts.values()]
 
         comp.reset()
 
-        new_config_ids = {id(ctx.config) for ctx in comp.contexts.values()}
-        assert old_config_ids.isdisjoint(new_config_ids)
+        new_configs = [ctx.config for ctx in comp.contexts.values()]
+        # Keep old objects alive so CPython cannot recycle id() values.
+        assert all(old is not new for old in old_configs for new in new_configs)
 
     def test_reset_zeroes_demo_step_number(self):
         comp = AssyDemoComposition(config_path=str(REAL_CONFIG))

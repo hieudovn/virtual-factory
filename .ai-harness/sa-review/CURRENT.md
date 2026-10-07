@@ -1,51 +1,22 @@
 # SA REVIEW INBOX
 
-Task: SHW-PIM-VF-COMPAT-01-C01
-Status: READY FOR SA REVIEW (C01: gap-impact semantics refined to scope-precise)
-Compatibility decision: compatible_with_constraints (unchanged)
+Task: DDAY-VF-UAT-03 — cross-track UAT closeout (evidence only)
+Status: Run B completed per PlantOS SA-accepted coordinated UAT. Machine status is derived by `run_task_gate.py`.
 
-Gate type:
-Cross-project PIM<->VF compatibility review / documentation-evidence only
-(C01 correction gate for Issue #35 — Issue #36)
+Authority:
+SA Issue #120; PlantOS coordinated UAT already SA ACCEPTED
+PR: hieudovn/virtual-factory#101
 
-Authoritative VF baseline:
-main @ b0affc99b5eae175bf2558ad6072afab8cb8960a (post PR #34 merge)
+SHA distinction:
+- deployed VF runtime: d7db6d0909da968c2b4a4ea2cdb712e5d7601282
+- PlantOS accepted UAT merge: a1695c5457515e2b565a5f9fe107c1e18b3e0879
+- UAT-02 historical evidence head: a8d5ecba1b0794251fd9c618c338de449263a0b0
+- this closeout implementation SHA: 5c475e7a9d3bd42581f73cbbde3e57556cf61c38
 
-Reviewed PIM handoff (VERIFIED, unchanged):
-hieudovn/plant-intelligence-model @ main ec7f1266d4a19e5201b689874a2a7a75a022fc5c
-package SHW-PIM-VF-EXPORT-v0.1 (v0.1; source model SHW-PH03-v0.1)
-semantic model identity SHA f23f3c4614f50a1a2e3805f7e887433feb934915
-export artifact hash baseline ea3361a4aca9d25927a4a76c792f3af184e1aabb
-(unchanged by C01)
+Run A reached Center / TDengine / Live UI. reset_dday_receive_epoch succeeded on the same Edge process. VF restarted as deterministic Run B; source timestamps reused; PlantOS accepted at a later Edge receipt timestamp; TDengine/latest and Live UI advanced.
 
-C01 scope-precise gap semantics:
-Runtime scopes: S1 synthetic LogicalOnly simulation; S2 source-mapped /
-site-integrated runtime; S3 site-faithful control/interlock; S4 FirstOrder/
-parameterized execution.
-- 0 blocks_binding (unchanged).
-- GAP-SHW-001 -> S2 (blocks source-mapped/site-integrated binding + source-truth
-  claims; does NOT block S1 synthetic LogicalOnly simulation).
-- GAP-SHW-002 -> S3 (blocks site-faithful control/interlock; does NOT block a
-  simulation-owned logical controller/scenario model, non-site-authoritative).
-- GAP-SHW-010 -> S4 (may block FirstOrder/parameterized execution for affected
-  models; LogicalOnly composition remains feasible).
-- compatible_with_gap: 003,004,006,007,009,010,011; out_of_scope: 005,008,012.
+Current authoritative state: Run B completed. The prior hold is obsolete.
+UAT-02 inspect remains historical_run_a only.
 
-Governance:
-- Runtime NOT_AUTHORIZED (governance state of this gate — NOT a semantic
-  impossibility caused by GAP-001/002/010).
-- PIM package/SHA/hash unchanged; all PIM gaps preserved (not closed/downgraded).
-- No source tags / plant control logic / parameters / site truth invented.
-
-Production code changed: NO
-PH01 started: NO
-
-Report:
-.ai-harness/sa-review/reports/SHW-PIM-VF-COMPAT-01.md
-
-Evidence:
-.ai-harness/sa-review/evidence/SHW-PIM-VF-COMPAT-01/ (6 files: 01…06;
-05 and 06 C01-refined)
-
-
-
+No merge. No VF product change. No UAT redeploy.
+The PM does not self-certify COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED.

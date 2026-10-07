@@ -1,0 +1,53 @@
+# B5 runtime parameters for the frozen B1 contract BW-CAP-DEG-01.
+# Phase order is NOT declared here — the B1 contract remains authoritative.
+# Durations and signal bounds are config-driven so the story is deterministic
+# and replayable without a physics-grade bearing model.
+
+scenario_id: BW-CAP-DEG-01
+target_asset: BW-FP-CAP01
+contract_ref: capper_degradation.contract.yaml
+
+# Simulated-time phase durations (s). Scenario time advances only while the
+# factory run_state is RUNNING. PAUSE and operator STOP freeze this clock.
+phase_duration_s:
+  NORMAL: 102
+  DEGRADING: 24
+  WARNING: 24
+  INTERMITTENT_STOP: 20
+  RECOVERY: 40
+
+# Composition-level cadence vs the B2 nominal line dwell. INTERMITTENT_STOP
+# inhibits production entirely instead of stretching dwell.
+cycle_time_factor:
+  NORMAL: 1.0
+  DEGRADING: 1.25
+  WARNING: 1.55
+  INTERMITTENT_STOP: 0.0
+  RECOVERY: 1.0
+
+# Seconds of INTERMITTENT_STOP spent in FAULT before the Capper reports STOPPED.
+# Factory run_state stays RUNNING — this is machine state, not operator STOP.
+fault_hold_s: 4.0
+
+signals:
+  speed_nominal_bpm: 3.0          # 60 / 20 s dwell
+  cycle_time_nominal_s: 20.0
+  motor_current_nominal_a: 11.0
+  motor_current_span_a: 7.0
+  drive_load_nominal_pct: 42.0
+  drive_load_span_pct: 38.0
+  vibration_nominal_mms: 1.1
+  vibration_span_mms: 4.4
+  bearing_temp_nominal_c: 41.0
+  bearing_temp_span_c: 22.0
+  bearing_temp_lag_tau_s: 12.0
+  cap_torque_nominal_nm: 1.6
+  intermittent_power_kw: 1.2      # changed power profile during FAULT hold
+
+# Visible highlight token for the B3 skin (must not leak hidden truth).
+highlight:
+  NORMAL: normal
+  DEGRADING: warn
+  WARNING: warn
+  INTERMITTENT_STOP: fault
+  RECOVERY: recover

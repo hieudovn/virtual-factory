@@ -1,0 +1,137 @@
+{
+  "task_id": "DDAY-B6",
+  "baseline_b5_closed": "449685a3c4c394b4e0654b720ff11f77205b4b48",
+  "head": "7347c779918f67e525b84317639b3746e521ef52",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "changed_files_vs_b5_closed": [
+    ".ai-harness/sa-review/evidence/DDAY-B6/smoke_plantos_integration.py",
+    ".ai-harness/tasks/DDAY-B6.json",
+    "src/virtual_factory/ui/api.py",
+    "src/virtual_factory/ui/static/bottled_water_demo.css",
+    "src/virtual_factory/ui/static/bottled_water_demo.html",
+    "src/virtual_factory/ui/static/bottled_water_overview.css",
+    "src/virtual_factory/ui/static/bottled_water_overview.html",
+    "src/virtual_factory/ui/static/bottled_water_overview.js",
+    "src/virtual_factory/workspaces/__init__.py",
+    "src/virtual_factory/workspaces/bottled_water.py",
+    "src/virtual_factory/workspaces/plantos_export.py",
+    "tests/test_dday_b3_bottled_water_ui.py",
+    "tests/test_dday_b6_plantos_integration.py"
+  ],
+  "protocols_telemetry_diff": "",
+  "accepted_areas": [
+    "BW-WT",
+    "BW-BP",
+    "BW-FP",
+    "BW-UT",
+    "BW-WH"
+  ],
+  "sample_topics": [
+    "virtual-factory/bottled-water-dday/signal/BW-DEMO-01/run_state",
+    "virtual-factory/bottled-water-dday/signal/BW-DEMO-01/operating_state",
+    "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/operating_state",
+    "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/water_flow",
+    "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/raw_water_total_m3",
+    "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/active_power",
+    "virtual-factory/bottled-water-dday/signal/BW-WT-FEED01/energy_total",
+    "virtual-factory/bottled-water-dday/signal/BW-WT-RO01/operating_state"
+  ],
+  "id_resolution": {
+    "plant": "BW-DEMO-01",
+    "areas": [
+      "BW-WT",
+      "BW-BP",
+      "BW-FP",
+      "BW-UT",
+      "BW-WH"
+    ],
+    "accepted_areas": [
+      "BW-WT",
+      "BW-BP",
+      "BW-FP",
+      "BW-UT",
+      "BW-WH"
+    ],
+    "line_mapping": {
+      "vf_id": "BW-FP",
+      "plantos_entity": "Area",
+      "metadata": {
+        "role": "production_line"
+      }
+    },
+    "machine_mapping": {
+      "plantos_entity": "Asset"
+    },
+    "published_ids": [
+      "BW-BP",
+      "BW-DEMO-01",
+      "BW-FP",
+      "BW-FP-BLW01",
+      "BW-FP-CAP01",
+      "BW-FP-CPK01",
+      "BW-FP-FIL01",
+      "BW-FP-INS01",
+      "BW-FP-LAB01",
+      "BW-FP-PAL01",
+      "BW-FP-RIN01",
+      "BW-UT-CHL01",
+      "BW-UT-CMP01",
+      "BW-UT-PMP01",
+      "BW-UT-PWR01",
+      "BW-WH-FG01",
+      "BW-WT-FEED01",
+      "BW-WT-RO01",
+      "BW-WT-TK01"
+    ],
+    "unresolved_ids": [],
+    "resolved": true,
+    "areas_match_contract": true
+  },
+  "current_value_count": 75,
+  "historian_count": 80,
+  "event_types": [
+    "MACHINE_STATE_CHANGED",
+    "SCENARIO_PHASE_CHANGED"
+  ],
+  "overview_area_ids": [
+    "BW-WT",
+    "BW-BP",
+    "BW-FP",
+    "BW-UT",
+    "BW-WH"
+  ],
+  "overview_relationships": [
+    {
+      "from_area": "BW-WT",
+      "to_area": "BW-FP",
+      "kind": "process",
+      "label": "treated water \u2192 filler"
+    },
+    {
+      "from_area": "BW-BP",
+      "to_area": "BW-FP",
+      "kind": "process",
+      "label": "prepared bottles \u2192 blower/infeed"
+    },
+    {
+      "from_area": "BW-UT",
+      "to_area": "BW-FP",
+      "kind": "utility",
+      "label": "compressed air \u2192 line"
+    },
+    {
+      "from_area": "BW-FP",
+      "to_area": "BW-WH",
+      "kind": "process",
+      "label": "good bottles \u2192 finished goods"
+    }
+  ],
+  "overview_drill_down": {
+    "BW-FP": "/bottled-water-demo"
+  },
+  "kpi_boundary": {
+    "oee_absent": true,
+    "health_score_absent": true
+  },
+  "second_simulator_absent": true
+}

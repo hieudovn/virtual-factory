@@ -1,0 +1,41 @@
+# B5-C01 runtime parameters for BW-CMP-SAG-01.
+# Phase order is declared in compressor_pressure.contract.yaml.
+# Default NORMAL is long enough that DEGRADING cannot overlap the Capper
+# hero window (Capper RECOVERY completes at t=210 s).
+
+scenario_id: BW-CMP-SAG-01
+target_asset: BW-UT-CMP01
+contract_ref: compressor_pressure.contract.yaml
+
+phase_duration_s:
+  NORMAL: 240
+  DEGRADING: 24
+  LOW_PRESSURE_WARNING: 20
+  UNDERSUPPLY: 20
+  RECOVERY: 24
+
+# Composition-level cadence vs the B2 nominal line dwell. UNDERSUPPLY
+# inhibits production entirely (deterministic micro-stop).
+cycle_time_factor:
+  NORMAL: 1.0
+  DEGRADING: 1.0
+  LOW_PRESSURE_WARNING: 1.0
+  UNDERSUPPLY: 0.0
+  RECOVERY: 1.0
+
+signals:
+  degrading_target_bar: 6.10
+  warning_target_bar: 5.80
+  warning_threshold_bar: 5.80
+  sag_floor_bar: 5.60
+  recovery_target_bar: 6.40
+  fall_bar_per_s: 0.040
+  rise_bar_per_s: 0.040
+  power_span_fraction: 0.15
+
+highlight:
+  NORMAL: normal
+  DEGRADING: warn
+  LOW_PRESSURE_WARNING: warn
+  UNDERSUPPLY: fault
+  RECOVERY: recover

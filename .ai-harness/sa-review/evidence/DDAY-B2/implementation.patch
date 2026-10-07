@@ -1,0 +1,1606 @@
+diff --git a/.ai-harness/tasks/DDAY-B2.json b/.ai-harness/tasks/DDAY-B2.json
+new file mode 100644
+index 0000000..2a520fe
+--- /dev/null
++++ b/.ai-harness/tasks/DDAY-B2.json
+@@ -0,0 +1,212 @@
++{
++  "task_id": "DDAY-B2",
++  "repository": "hieudovn/virtual-factory",
++  "requested_gate": "ready_for_sa_review",
++  "gate_type": "D-DAY TRACK B — BOTTLED WATER HERO LINE RUNTIME REUSE (B2 ONLY)",
++  "issue": "hieudovn/virtual-factory#102",
++  "pr": "hieudovn/virtual-factory#101",
++  "objective": "Reuse the existing Virtual Factory discrete foundation that currently serves TIPA ASSY (src/virtual_factory/assembly/line_runtime.py + runtime controls + deterministic timing / WIP lifecycle / quality mechanics) to make the Bottled Water Filling & Packaging target line runnable, automated and deterministic. Target route: BW-FP-BLW01 -> BW-FP-RIN01 -> BW-FP-FIL01 -> BW-FP-CAP01 -> BW-FP-INS01 -> BW-FP-LAB01 -> BW-FP-CPK01 -> BW-FP-PAL01. No new simulator foundation or engine may be created.",
++  "explicit_non_objectives": [
++    "No new bottled-water simulation engine / telemetry framework / scenario framework / protocol stack",
++    "No parallel runtime controller and no forked ASSY engine",
++    "No final 2D Bottled Water skin (B3)",
++    "No Capper degradation scenario (B5)",
++    "No Water Treatment / Utilities / Warehouse runtime (B4)",
++    "No OEE / Availability / Performance / Quality% / energy-per-unit / utilization / health-score calculation",
++    "No PlantOS integration proof (B6) and no VPS/Docker deployment (B7)",
++    "No MQTT redesign, no PIM work, no PLC integration",
++    "No manual checklist / manual inspection result / quality disposition / release / retry / rework / operator approval workflows",
++    "No modification of TIPA ASSY semantics or the frozen B1 contracts"
++  ],
++  "required_branch": "sa/dday-track-b-20261003",
++  "expected_base_sha": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
++  "sa_expected_baseline_sha": "cb908c66ab1de03e1798d9609fdf46d0fc42e675",
++  "baseline_semantics_note": "Two distinct baselines are recorded deliberately. 'expected_base_sha' is the harness baseline semantics used by preflight.py and verify_changed_files.py: the harness compares it to origin/main and diffs it against HEAD, so it must be origin/main. 'sa_expected_baseline_sha' is the SA-issued B2 baseline in Issue #102 (the frozen B1 head), which was verified equal to the branch head before the first B2 write.",
++  "working_tree_required": "clean",
++  "allowed_paths": [
++    "configs/workspaces/bottled-water-dday/",
++    "src/virtual_factory/assembly/line_runtime.py",
++    "src/virtual_factory/assembly/demo_controller.py",
++    "src/virtual_factory/assembly/demo_composition.py",
++    "src/virtual_factory/ui/api.py",
++    "tests/",
++    ".ai-harness/tasks/DDAY-B2.json",
++    ".ai-harness/sa-review/evidence/DDAY-B2/",
++    ".ai-harness/sa-review/reports/DDAY-B2.md",
++    ".ai-harness/sa-review/CURRENT.md",
++    "docs/plans/PLANTOS_DDAY_TRACK_B_VF_SA_HANDOFF.md",
++    "docs/plans/PLANTOS_DDAY_TRACK_B_B1_WORKSPACE_CONTRACT.md"
++  ],
++  "allowed_paths_note": "The last two entries are frozen B1 artifacts already committed on this branch by the B1 slice; they appear in the diff from origin/main and are listed only so the allowlist diff check is truthful. They are NOT authorized for modification in B2.",
++  "sa_allowed_paths": [
++    "configs/workspaces/bottled-water-dday/",
++    "src/virtual_factory/assembly/line_runtime.py",
++    "src/virtual_factory/assembly/demo_controller.py",
++    "src/virtual_factory/assembly/demo_composition.py",
++    "src/virtual_factory/ui/api.py (small generic config-selection seam only)",
++    "relevant tests/",
++    ".ai-harness/tasks/DDAY-B2.json",
++    ".ai-harness/sa-review/evidence/DDAY-B2/",
++    ".ai-harness/sa-review/reports/DDAY-B2.md",
++    ".ai-harness/sa-review/CURRENT.md"
++  ],
++  "forbidden_paths": [
++    "src/virtual_factory/core/",
++    "src/virtual_factory/telemetry/",
++    "src/virtual_factory/protocols/",
++    "src/virtual_factory/scenarios/",
++    "src/virtual_factory/equipment/",
++    "src/virtual_factory/balance/",
++    "src/virtual_factory/control/",
++    "src/virtual_factory/instrumentation/",
++    "src/virtual_factory/actuation/",
++    "src/virtual_factory/assembly/assy_mes_bridge.py",
++    "src/virtual_factory/assembly/observation_bridge.py",
++    "simulators/",
++    "deploy/",
++    "docs/deployment/",
++    "docker-compose.yml",
++    "docker-compose.assy.yml",
++    "Dockerfile",
++    "pyproject.toml",
++    "configs/plants/tipa_assy_demo.yaml"
++  ],
++  "required_deliverables": [
++    "configs/workspaces/bottled-water-dday/line.yaml — runnable Bottled Water target-line runtime config (8 stations, frozen order)",
++    "Generic config-driven extension of src/virtual_factory/assembly/line_runtime.py enabling the single-line Bottled Water profile (unit flow, counters, automatic quality at Inspection, run controls) without altering TIPA ASSY behaviour",
++    "Runtime control surface START / PAUSE / RESUME / STOP / RESET via src/virtual_factory/assembly/demo_controller.py",
++    "tests/test_dday_b2_bottled_water_line.py — T01..T12 evidence-backed tests",
++    "TIPA ASSY regression remains green (existing tests, unmodified)",
++    ".ai-harness/sa-review/evidence/DDAY-B2/ (10 evidence items) and .ai-harness/sa-review/reports/DDAY-B2.md",
++    ".ai-harness/sa-review/CURRENT.md updated to the DDAY-B2 SA review inbox entry"
++  ],
++  "required_tests": [
++    "T01 exact 8-station route/order",
++    "T02 automatic unit progression",
++    "T03 deterministic replay (same config + seed + initial state)",
++    "T04 PASS reaches good downstream completion",
++    "T05 FAIL at Inspection rejects and does not count good",
++    "T06 count invariant good_count + reject_count <= total_count",
++    "T07 START begins automatic progression",
++    "T08 PAUSE freezes progression",
++    "T09 RESUME continues preserved state",
++    "T10 STOP is a controlled stop, not FAULT",
++    "T11 RESET restores valid initial state and deterministic rerun",
++    "T12 no TIPA/APxx leakage in Bottled Water outward/runtime-facing state",
++    "T13 relevant TIPA ASSY regression (existing suite)"
++  ],
++  "required_smoke_checks": [
++    {
++      "id": "SMOKE-BW",
++      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B2/smoke_bottled_water.py"],
++      "execution_policy": "local_or_ci",
++      "required": true,
++      "description": "Live Bottled Water runtime smoke: START -> unit progression -> Inspection result -> good/reject -> downstream completion, plus PAUSE freeze, RESUME continuation and RESET to a known initial state."
++    }
++  ],
++  "required_remote_evidence": [
++    "Remote branch head equals reported commit SHA",
++    "PR #101 open, base main, head equals remote branch head",
++    "Exact-head CI success for the pushed commit SHA",
++    "Exact-head invariant: remote branch HEAD = PR #101 head SHA = CI head SHA = reported review SHA"
++  ],
++  "forbidden_actions": [
++    "Do not push directly to main",
++    "Do not merge PR #101",
++    "Do not start B3 or any later slice",
++    "Do not modify any forbidden path",
++    "Do not implement TIPA/APxx/PRE-ASSY/SSO2/RSO2/ASSY-SLxx/AP05_JAM behaviour in the Bottled Water workspace",
++    "Do not publish calculated KPIs (OEE / Availability / Performance / Quality% / energy-per-unit / utilization / health score) from the simulator",
++    "Do not delete or weaken existing tests",
++    "Do not self-certify COMPLETE / CLOSED / SA APPROVED"
++  ],
++  "stop_conditions": [
++    "Reuse would require a second engine or a significant core/ redesign -> STOPPED — SA ARCHITECTURE REVIEW REQUIRED",
++    "Bottled Water cannot run without APxx/TIPA/AssyMesBridge/AP05_JAM/6-sub-line coupling and the fix is more than a small localized extension -> STOPPED — TIPA COUPLING REQUIRES SA DECISION",
++    "A needed file is outside the allowlist -> STOPPED — ALLOWLIST EXPANSION REQUIRED",
++    "Baseline is no longer the expected SHA before first B2 write -> STOPPED — BASELINE MISMATCH",
++    "origin/main advances materially -> STOPPED — BASELINE ADVANCED",
++    "Genericization materially breaks ASSY semantics -> STOPPED — REGRESSION REQUIRES SA REVIEW",
++    "Work begins to require B3+ scope -> stop B2"
++  ],
++  "acceptance_criteria": [
++    {
++      "id": "A01",
++      "phase": "pre_status",
++      "description": "Repository baseline matches the contract baseline",
++      "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}
++    },
++    {
++      "id": "A02",
++      "phase": "pre_status",
++      "description": "Working tree was clean at preflight",
++      "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}
++    },
++    {
++      "id": "A03",
++      "phase": "pre_status",
++      "description": "Full local test suite passes (includes T01-T13)",
++      "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}
++    },
++    {
++      "id": "A04",
++      "phase": "pre_status",
++      "description": "Required Bottled Water runtime smoke check reaches effective PASS",
++      "rule": {"field": "smoke_checks", "operator": "contains", "expected": "'effective_result': 'PASS'"}
++    },
++    {
++      "id": "A05",
++      "phase": "pre_status",
++      "description": "No blocking issue recorded by the gate pipeline",
++      "rule": {"field": "blocking_issues", "operator": "is_empty", "expected": null}
++    },
++    {
++      "id": "A06",
++      "phase": "pre_status",
++      "description": "No blocking tool failure (no execution_stopped tool failure)",
++      "rule": {"field": "tool_failures", "operator": "is_empty", "expected": null}
++    },
++    {
++      "id": "A07",
++      "phase": "pre_status",
++      "description": "No contradictions detected",
++      "rule": {"field": "contradictions", "operator": "is_empty", "expected": null}
++    },
++    {
++      "id": "A08",
++      "phase": "final",
++      "description": "Implementation commit exists on the remote branch",
++      "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}
++    },
++    {
++      "id": "A09",
++      "phase": "final",
++      "description": "Remote branch head is present and reported",
++      "rule": {"field": "implementation.remote_branch_head", "operator": "is_present", "expected": null}
++    },
++    {
++      "id": "A10",
++      "phase": "final",
++      "description": "PR #101 metadata resolved (open PR with base main)",
++      "rule": {"field": "pull_request.number", "operator": "is_present", "expected": null}
++    },
++    {
++      "id": "A11",
++      "phase": "final",
++      "description": "Exact-head CI succeeded for the pushed SHA",
++      "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}
++    },
++    {
++      "id": "A12",
++      "phase": "final",
++      "description": "Runtime authorization boundaries preserved (no merge, no next slice)",
++      "rule": {"field": "authorization.may_merge", "operator": "is_false", "expected": null}
++    }
++  ],
++  "authorization": {
++    "may_open_pr": true,
++    "may_merge": false,
++    "may_start_next_task": false
++  },
++  "_note": "Authored by the PM from SA Issue #102 (DDAY-B2 — Bottled Water Hero Line Runtime Reuse), which explicitly authorizes the PM to author this contract and execute B2 only. No B3+ scope. No merge authorization. The PM may not self-certify COMPLETE or CLOSED."
++}
+diff --git a/configs/workspaces/bottled-water-dday/line.yaml b/configs/workspaces/bottled-water-dday/line.yaml
+new file mode 100644
+index 0000000..c5619d7
+--- /dev/null
++++ b/configs/workspaces/bottled-water-dday/line.yaml
+@@ -0,0 +1,79 @@
++# PlantOS + Virtual Factory D-Day — B2 runnable Bottled Water hero line
++#
++# This is a RUNTIME CONFIGURATION for the existing Virtual Factory discrete line
++# runtime (src/virtual_factory/assembly/line_runtime.py). It is not a new
++# engine, not a new telemetry framework and not a new scenario framework.
++#
++# Frozen target route (B1 topology contract, area BW-FP):
++#   BW-FP-BLW01  Blower / Infeed
++#   BW-FP-RIN01  Rinser
++#   BW-FP-FIL01  Filler
++#   BW-FP-CAP01  Capper
++#   BW-FP-INS01  Inspection          <- consolidated automated quality checkpoint
++#   BW-FP-LAB01  Labeler
++#   BW-FP-CPK01  Case Packer         <- aggregate cycle
++#   BW-FP-PAL01  Palletizer          <- aggregate cycle
++#
++# Linked by configuration only. Plant identity, station identity, unit metadata
++# and the quality checkpoint below are declared here — nothing is hard-coded in
++# the runtime for this workspace.
++
++plant:
++  id: BW-DEMO-01
++  name: "Bottled Water Factory"
++  type: discrete_assembly
++
++line:
++  id: BW-FP
++  label: "Filling & Packaging Line"
++  # "generic" => the runtime uses configured operations only, with no station-id
++  # specific domain behaviour. The other supported profile keeps the frozen
++  # legacy station semantics untouched.
++  profile: generic
++
++unit:
++  id_prefix: BTL
++  unit_type: bottle
++  product_code: WATER-500ML
++
++conveyor:
++  nominal_line_dwell_time_s: 20.0
++  index_movement_duration_s: 0.0
++  positions:
++    - BW-FP-BLW01
++    - BW-FP-RIN01
++    - BW-FP-FIL01
++    - BW-FP-CAP01
++    - BW-FP-INS01
++    - BW-FP-LAB01
++    - BW-FP-CPK01
++    - BW-FP-PAL01
++
++# Logical/basic cycle durations only (D-Day simplification). No filling-head
++# physics, rotary kinematics or liquid hydraulics are modelled.
++station_durations:
++  BW-FP-BLW01: 12.0
++  BW-FP-RIN01: 10.0
++  BW-FP-FIL01: 18.0
++  BW-FP-CAP01: 14.0
++  BW-FP-INS01: 8.0
++  BW-FP-LAB01: 10.0
++  BW-FP-CPK01: 16.0
++  BW-FP-PAL01: 18.0
++
++# Automated quality checkpoints. Inspection is one consolidated checkpoint
++# (fill / cap / label checks may be combined). PASS continues down the line;
++# FAIL ejects the unit as a reject and the line keeps running — there is no
++# manual inspection result, no quality disposition, no release and no rework.
++quality_stations:
++  BW-FP-INS01:
++    config_key: inspection
++    check_type: VISUAL_INSPECTION
++    on_fail: reject
++    max_attempts: 1
++    scenario: PASS
++
++simulation:
++  time_multiplier: 1.0
++  timing_behavior: DETERMINISTIC
++  random_seed: 42
+diff --git a/src/virtual_factory/assembly/demo_controller.py b/src/virtual_factory/assembly/demo_controller.py
+index a1c4750..214c064 100644
+--- a/src/virtual_factory/assembly/demo_controller.py
++++ b/src/virtual_factory/assembly/demo_controller.py
+@@ -18,7 +18,10 @@ from dataclasses import dataclass, field
+ from typing import Optional
+ 
+ from virtual_factory.assembly.line_runtime import (
++    AssyLineConfig,
+     AssyLineRuntime,
++    LineRunState,
++    load_assy_config_from_yaml,
+ )
+ from virtual_factory.assembly.station_contracts import CompletionMode
+ from virtual_factory.assembly.demo_snapshot import (
+@@ -79,10 +82,28 @@ class DemoController:
+     # VF-DM-DEMO-ASSY-MES-02 — optional six-sub-line MES contract bridge
+     mes_bridge: Optional[AssyMesBridge] = None
+ 
++    # B2 — generic single-line workspace (Bottled Water); None for ASSY
++    _line: Optional[AssyLineRuntime] = None
++    _generic_profile: bool = False
++
+     # --- Initialization ---
+ 
+     def initialize(self) -> AssyDemoSnapshot:
+-        """Load config, create composition with 6 contexts, seed WIPs."""
++        """Load config, create composition with 6 contexts, seed WIPs.
++
++        B2: when the configuration declares a generic single-line profile, one
++        ``AssyLineRuntime`` is driven directly instead of the six-sub-line ASSY
++        composition. The ASSY path is unchanged.
++        """
++        config = load_assy_config_from_yaml(self.config_path)
++        if config.is_generic_profile:
++            self._generic_profile = True
++            self._composition = None
++            self._line = AssyLineRuntime(config=config)
++            return AssyDemoSnapshot()
++
++        self._generic_profile = False
++        self._line = None
+         self._composition = AssyDemoComposition(
+             config_path=self.config_path,
+             scenario=self.scenario,
+@@ -91,6 +112,56 @@ class DemoController:
+         self._composition.initialize()
+         return self.snapshot()
+ 
++    # --- B2 generic single-line workspace API ---
++
++    @property
++    def is_generic_line(self) -> bool:
++        """True when this controller drives a generic single-line workspace."""
++        return self._generic_profile
++
++    @property
++    def line(self) -> Optional[AssyLineRuntime]:
++        """The generic single-line runtime, or None for the ASSY composition."""
++        return self._line
++
++    def _require_line(self) -> AssyLineRuntime:
++        if self._line is None:
++            raise RuntimeError(
++                "Generic line not initialized — call initialize() first"
++            )
++        return self._line
++
++    @property
++    def run_state(self) -> LineRunState:
++        """RUNNING / PAUSED / STOPPED of the generic line."""
++        return self._require_line().run_state
++
++    def start(self) -> LineRunState:
++        """START — begin automatic progression."""
++        return self._require_line().start()
++
++    def pause(self) -> LineRunState:
++        """PAUSE — freeze progression, preserving state."""
++        return self._require_line().pause()
++
++    def resume(self) -> LineRunState:
++        """RESUME — continue from the preserved state."""
++        return self._require_line().resume()
++
++    def stop(self) -> LineRunState:
++        """STOP — controlled stop (never FAULT)."""
++        return self._require_line().stop()
++
++    def advance(self) -> list:
++        """Advance the generic line by one deterministic production cycle."""
++        return self._require_line().advance_cycle()
++
++    def line_facts(self) -> dict:
++        """Raw outward facts for the generic line (no KPI derivation)."""
++        return self._require_line().line_facts()
++
++    # --- Initialization (legacy ASSY path continued) ---
++
+     # --- Control Actions ---
+ 
+     def reset(self) -> AssyDemoSnapshot:
+@@ -109,8 +180,15 @@ class DemoController:
+         """Execute one demo cycle across all contexts, excluding any
+         AP05_JAM-faulted sub-line (frozen while the fault is active).
+ 
++        B2: for a generic single-line workspace this advances exactly one
++        deterministic production cycle.
++
+         Returns snapshot for the currently selected context.
+         """
++        if self._generic_profile:
++            self.advance()
++            return AssyDemoSnapshot()
++
+         if self._composition is None:
+             return AssyDemoSnapshot()
+ 
+@@ -122,7 +200,15 @@ class DemoController:
+         return self.snapshot()
+ 
+     def snapshot(self) -> AssyDemoSnapshot:
+-        """Build detached snapshot for the currently selected context."""
++        """Build detached snapshot for the currently selected context.
++
++        B2: generic single-line workspaces expose their outward raw facts
++        through ``line_facts()`` instead of the TIPA-shaped demo snapshot, whose
++        station labels and motor semantics must not leak into non-TIPA
++        workspaces.
++        """
++        if self._generic_profile:
++            return AssyDemoSnapshot()
+         if self._composition is None:
+             return AssyDemoSnapshot()
+         return self._composition.snapshot()
+@@ -131,6 +217,9 @@ class DemoController:
+ 
+     @property
+     def is_running(self) -> bool:
++        if self._generic_profile:
++            return (self._line is not None
++                    and self._line.run_state == LineRunState.RUNNING)
+         return self._auto_running
+ 
+     def start_auto(self) -> None:
+@@ -153,7 +242,12 @@ class DemoController:
+ 
+     @property
+     def runtime(self) -> Optional[AssyLineRuntime]:
+-        """The runtime for the currently selected context (backward compat)."""
++        """The runtime for the currently selected context (backward compat).
++
++        B2: for a generic single-line workspace this is the single line runtime.
++        """
++        if self._generic_profile:
++            return self._line
+         if self._composition is None:
+             return None
+         ctx = self._composition.selected_context
+@@ -162,6 +256,8 @@ class DemoController:
+     @property
+     def cycle(self) -> int:
+         """Demo step number (presentation clock)."""
++        if self._generic_profile:
++            return self._line.conveyor.dwell_number if self._line else 0
+         if self._composition is None:
+             return 0
+         return self._composition.demo_step_number
+diff --git a/src/virtual_factory/assembly/line_runtime.py b/src/virtual_factory/assembly/line_runtime.py
+index 16a6b90..2e83ff9 100644
+--- a/src/virtual_factory/assembly/line_runtime.py
++++ b/src/virtual_factory/assembly/line_runtime.py
+@@ -53,6 +53,7 @@ from virtual_factory.assembly.quality_records import (
+     resolve_quality_disposition,
+ )
+ from virtual_factory.assembly.station_contracts import (
++    Capabilities,
+     CompletionMode,
+     StationCommand,
+     StationContract,
+@@ -77,6 +78,19 @@ from virtual_factory.assembly.operation_execution import (
+ # WIP State
+ # ═══════════════════════════════════════════════════════════════
+ 
++class LineRunState(str, enum.Enum):
++    """Operator-facing run state of one indexed line (B2).
++
++    Deliberately distinct from ``ConveyorState``: ``STOPPED`` here is a
++    controlled stop requested through the runtime control surface, and it is
++    never a fault. ``FAULT`` is not a run state — a fault is a per-unit or
++    per-station condition, so ``STOPPED != FAULT`` holds structurally.
++    """
++    STOPPED = "STOPPED"
++    RUNNING = "RUNNING"
++    PAUSED = "PAUSED"
++
++
+ class WipLifecycle(str, enum.Enum):
+     """ASSY WIP lifecycle states (demo semantic names)."""
+     CREATED = "created"
+@@ -85,6 +99,7 @@ class WipLifecycle(str, enum.Enum):
+     COMPLETED_STATION = "completed_station"
+     JOINED = "joined"
+     RELEASED = "released"
++    REJECTED = "rejected"
+ 
+ 
+ @dataclass(slots=True)
+@@ -98,6 +113,29 @@ class AssyWipState:
+     parent_wip_ids: tuple[str, ...] = field(default_factory=tuple)
+     # M6-INT-01-C01: authoritative release occurrence time (set at RELEASE).
+     released_at_sim_s: float = 0.0
++    # B2 generic profile: unit metadata + per-unit outcome bookkeeping.
++    unit_sequence: int = 0
++    unit_type: str = ""
++    product_code: str = ""
++    rejected: bool = False
++    counted_good: bool = False
++
++
++@dataclass
++class QualityStationSpec:
++    """B2: a quality checkpoint declared by configuration, not by station id.
++
++    The ASSY profile keeps its frozen AP06/AP08/AP11 mapping; a generic
++    workspace declares its own checkpoint (for Bottled Water: the consolidated
++    Inspection station) through this spec.
++    """
++
++    config_key: str = ""
++    check_type: CheckType = CheckType.VISUAL_INSPECTION
++    # "hold"   → retry / terminal hold semantics (ASSY behaviour, default)
++    # "reject" → eject the unit at this station and continue the line
++    on_fail: str = "hold"
++    quality: StationQualityConfig = field(default_factory=StationQualityConfig)
+ 
+ 
+ # ═══════════════════════════════════════════════════════════════
+@@ -124,6 +162,25 @@ class AssyLineConfig:
+     random_seed: int = 42
+     auto_timing_profiles: dict[str, AutoTimingProfile] = field(default_factory=dict)
+ 
++    # ── B2 generic single-line profile (additive; defaults preserve ASSY) ──
++    line_id: str = ""
++    line_label: str = ""
++    plant_id: str = ""
++    plant_name: str = ""
++    # "assy"    → the frozen TIPA AP station semantics (default, unchanged)
++    # "generic" → no station-id-specific domain behaviour; every station is a
++    #             configured operation, plus optional configured quality checks
++    line_profile: str = "assy"
++    unit_id_prefix: str = "UNIT"
++    unit_type: str = ""
++    product_code: str = ""
++    quality_stations: dict[str, QualityStationSpec] = field(default_factory=dict)
++
++    @property
++    def is_generic_profile(self) -> bool:
++        """True when the config drives the generic (non-AP) station model."""
++        return self.line_profile == "generic"
++
+ 
+ @dataclass(frozen=True, slots=True)
+ class DwellPerformance:
+@@ -215,6 +272,40 @@ def load_assy_config_from_yaml(path: str) -> AssyLineConfig:
+     if ident:
+         config.motor_wip_prefix = ident.get("motor_wip_prefix", "MTR")
+ 
++    # ── B2 generic single-line profile (additive; absent => ASSY defaults) ──
++    plant_data = data.get("plant", {})
++    if plant_data:
++        config.plant_id = str(plant_data.get("id", config.plant_id))
++        config.plant_name = str(plant_data.get("name", config.plant_name))
++
++    line_data = data.get("line", {})
++    if line_data:
++        config.line_id = str(line_data.get("id", config.line_id))
++        config.line_label = str(line_data.get("label", config.line_label))
++        config.line_profile = str(line_data.get("profile", config.line_profile))
++
++    unit_data = data.get("unit", {})
++    if unit_data:
++        config.unit_id_prefix = str(unit_data.get("id_prefix", config.unit_id_prefix))
++        config.unit_type = str(unit_data.get("unit_type", config.unit_type))
++        config.product_code = str(unit_data.get("product_code", config.product_code))
++
++    for station_id, spec_data in (data.get("quality_stations") or {}).items():
++        spec_data = spec_data or {}
++        spec = QualityStationSpec(
++            config_key=str(spec_data.get("config_key", station_id)),
++            check_type=CheckType(str(spec_data.get("check_type", "VISUAL_INSPECTION"))),
++            on_fail=str(spec_data.get("on_fail", "hold")),
++            quality=StationQualityConfig(
++                max_attempts=int(spec_data.get("max_attempts", 1)),
++                scenario=spec_data.get("scenario", "PASS"),
++            ),
++        )
++        overrides = spec_data.get("overrides", {})
++        if overrides:
++            spec.quality.overrides = {int(k): list(v) for k, v in overrides.items()}
++        config.quality_stations[str(station_id)] = spec
++
+     sim = data.get("simulation", {})
+     if sim:
+         config.simulation_time_multiplier = float(sim.get("time_multiplier", 1.0))
+@@ -258,6 +349,51 @@ _QUALITY_STATION_MAP: dict[str, tuple[str, "CheckType"]] = {
+     "AP11": ("ap11", CheckType.FINAL_QC),
+ }
+ 
++# B2 — fallback operation_result by check type for configured (non-AP) checkpoints.
++_QUALITY_CHECKTYPE_RESULT: dict["CheckType", "OperationResult"] = {
++    CheckType.TEST: OperationResult.TEST_COMPLETE,
++    CheckType.VISUAL_INSPECTION: OperationResult.INSPECTION_COMPLETE,
++    CheckType.FINAL_QC: OperationResult.CONFIRMED,
++    CheckType.CHECKLIST: OperationResult.CONFIRMED,
++}
++
++
++def build_line_station_contracts(
++    config: AssyLineConfig,
++) -> dict[str, StationContract]:
++    """Build the station contracts implied by a line configuration.
++
++    ASSY profile → the frozen AP contracts (unchanged behaviour).
++    Generic profile → one execution contract per configured position, plus a
++    quality-decision capability for positions that declare a quality station.
++    No station id is special-cased.
++    """
++    if not config.is_generic_profile:
++        return build_default_assy_contracts(dict(config.station_durations))
++
++    contracts: dict[str, StationContract] = {}
++    for position in config.conveyor.positions:
++        duration = float(config.station_durations.get(position, 60.0))
++        if position in config.quality_stations:
++            contracts[position] = StationContract(
++                station_id=position,
++                capabilities=Capabilities(execution=True, measurement=True,
++                                          quality_decision=True),
++                normal_action=StationCommand.CONFIRM,
++                required_action=StationCommand.CONFIRM,
++                work_duration_s=duration,
++                decision_actions=("PASS", "FAIL", "NG"),
++            )
++        else:
++            contracts[position] = StationContract(
++                station_id=position,
++                capabilities=Capabilities(execution=True),
++                normal_action=StationCommand.DONE,
++                required_action=StationCommand.DONE,
++                work_duration_s=duration,
++            )
++    return contracts
++
+ 
+ def _validate_checklist_completion(
+     items, contract: StationContract,
+@@ -354,6 +490,14 @@ class AssyLineRuntime:
+     _quality_histories: dict[str, QualityHistory] = field(default_factory=dict)
+     _quality_seq: int = 0
+ 
++    # B2 — generic single-line profile state (unused by the ASSY profile)
++    _run_state: "LineRunState" = LineRunState.STOPPED
++    _unit_seq: int = 0
++    _carrier_seq: int = 0
++    _total_count: int = 0
++    _good_count: int = 0
++    _reject_count: int = 0
++
+     # OPS-02 — OperationExecution foundation
+     station_contracts: dict[str, StationContract] = field(default_factory=dict)
+     operation_registry: OperationRegistry = field(default_factory=OperationRegistry)
+@@ -372,9 +516,7 @@ class AssyLineRuntime:
+         for pos in self.conveyor.positions:
+             self._station_elapsed[pos] = 0.0
+         if not self.station_contracts:
+-            self.station_contracts = build_default_assy_contracts(
+-                dict(self.config.station_durations)
+-            )
++            self.station_contracts = build_line_station_contracts(self.config)
+         self._timing_resolver = TimingResolver(seed=self.config.random_seed)
+ 
+     # -- Properties --
+@@ -428,6 +570,24 @@ class AssyLineRuntime:
+         self._quality_seq += 1
+         return f"QR-{self._quality_seq:04d}"
+ 
++    def _quality_spec(self, pos: str) -> QualityStationSpec:
++        """Resolve the quality checkpoint definition for a station (B2).
++
++        A configured spec wins (generic workspaces declare their own
++        checkpoints). Otherwise the frozen ASSY AP06/AP08/AP11 mapping is used
++        with unchanged hold/retry behaviour.
++        """
++        spec = self.config.quality_stations.get(pos)
++        if spec is not None:
++            return spec
++        station_key, check_type = _QUALITY_STATION_MAP[pos]
++        return QualityStationSpec(
++            config_key=station_key,
++            check_type=check_type,
++            on_fail="hold",
++            quality=self.config.quality.get(station_key),
++        )
++
+     # -- WIP registry --
+ 
+     def get_wip(self, wip_id: str) -> Optional[AssyWipState]:
+@@ -471,6 +631,247 @@ class AssyLineRuntime:
+         self._emit("LINE_ENTRY", position="PRE-ASSY", wip_id=wip_id,
+                    detail=f"carrier={carrier_id}")
+ 
++    # ═══════════════════════════════════════════════════════
++    # GENERIC UNIT FLOW (B2) — used by non-AP line profiles
++    # ═══════════════════════════════════════════════════════
++
++    def produce_unit(self) -> str:
++        """Create one generic unit with the configured metadata.
++
++        Returns the new unit id. Replaces the SSO2/RSO2 upstream for workspaces
++        that have a single material entry, e.g. Bottled Water bottles.
++        """
++        self._unit_seq += 1
++        unit_id = f"{self.config.unit_id_prefix}-{self._unit_seq:06d}"
++        ws = self._add_wip(unit_id)
++        ws.unit_sequence = self._unit_seq
++        ws.unit_type = self.config.unit_type
++        ws.product_code = self.config.product_code
++        self._total_count += 1
++        return unit_id
++
++    def introduce_unit(self, wip_id: str, carrier_id: str,
++                       position: str = "") -> list[LineEvent]:
++        """Introduce a unit at a conveyor position (default: line entry).
++
++        Returns events — does NOT append to ``self._trace``; the caller owns the
++        single append (same convention as ``_execute_ap04_join``).
++        """
++        ws = self._wips.get(wip_id)
++        if ws is None:
++            raise AssyLineError(f"Unknown unit: {wip_id}")
++        entry = position or self.conveyor.positions[0]
++        carrier = self.conveyor.get_carrier(carrier_id)
++        if carrier is None:
++            carrier = self.conveyor.create_carrier(carrier_id)
++        self.conveyor.place_carrier(carrier, entry, wip_id)
++        ws.lifecycle = WipLifecycle.IN_ASSY
++        ws.current_position = entry
++        self._station_elapsed[entry] = 0.0
++        return [self._make_event(
++            "UNIT_ENTERED", entry, wip_id,
++            f"carrier={carrier_id} unit_type={ws.unit_type} "
++            f"product_code={ws.product_code}")]
++
++    def _reject_unit(self, pos: str, wip_id: str,
++                     op: OperationExecution) -> list[LineEvent]:
++        """Eject a rejected unit and keep the line moving (B2).
++
++        Used only by configured ``on_fail: reject`` checkpoints. The unit leaves
++        the carrier (the empty carrier continues downstream), the reject count
++        increments once, and the station completes so the line never blocks.
++        """
++        events: list[LineEvent] = []
++        ws = self._wips.get(wip_id)
++        if ws is not None:
++            if not ws.rejected:
++                ws.rejected = True
++                self._reject_count += 1
++            ws.lifecycle = WipLifecycle.REJECTED
++        carrier = self.conveyor.carrier_at(pos)
++        if carrier is not None and carrier.wip_id == wip_id:
++            carrier.clear()
++        op.routing_action = "REJECTED"
++        op.terminal = True
++        op.transition(OperationState.COMPLETED)
++        events.append(self._make_event(
++            "REJECT", pos, wip_id, f"reason={op.quality_result or 'FAIL'}"))
++        return events
++
++    def _count_completed_unit(self) -> list[LineEvent]:
++        """Count a generic-profile unit that finished the last station (B2).
++
++        Called from ``index_line``: the unit is about to index off the line, so
++        its route is complete. Rejected and already-counted units are skipped,
++        which keeps ``good_count + reject_count <= total_count``.
++        """
++        if not self.config.is_generic_profile:
++            return []
++        last_pos = self.conveyor.positions[-1]
++        wip_id = self.conveyor.wip_at(last_pos)
++        if not wip_id or not self.conveyor.is_position_complete(last_pos):
++            return []
++        ws = self._wips.get(wip_id)
++        if ws is None or ws.rejected or ws.counted_good:
++            return []
++        ws.counted_good = True
++        ws.lifecycle = WipLifecycle.RELEASED
++        self._good_count += 1
++        return [self._make_event(
++            "UNIT_COMPLETED", last_pos, wip_id,
++            f"route_complete total={self._total_count} "
++            f"good={self._good_count} reject={self._reject_count}")]
++
++    # ═══════════════════════════════════════════════════════
++    # RUN CONTROLS + RAW FACTS (B2)
++    # ═══════════════════════════════════════════════════════
++
++    @property
++    def run_state(self) -> "LineRunState":
++        return self._run_state
++
++    def start(self) -> "LineRunState":
++        """START — begin automatic progression."""
++        if self._run_state != LineRunState.RUNNING:
++            self._run_state = LineRunState.RUNNING
++            self._emit("LINE_RUN_STATE", detail="state=RUNNING")
++        return self._run_state
++
++    def pause(self) -> "LineRunState":
++        """PAUSE — freeze progression, preserving every bit of state."""
++        if self._run_state == LineRunState.RUNNING:
++            self._run_state = LineRunState.PAUSED
++            self._emit("LINE_RUN_STATE", detail="state=PAUSED")
++        return self._run_state
++
++    def resume(self) -> "LineRunState":
++        """RESUME — continue from the preserved state."""
++        if self._run_state == LineRunState.PAUSED:
++            self._run_state = LineRunState.RUNNING
++            self._emit("LINE_RUN_STATE", detail="state=RUNNING")
++        return self._run_state
++
++    def stop(self) -> "LineRunState":
++        """STOP — controlled stop. Never a fault."""
++        if self._run_state != LineRunState.STOPPED:
++            self._run_state = LineRunState.STOPPED
++            self._emit("LINE_RUN_STATE", detail="state=STOPPED")
++        return self._run_state
++
++    def advance_cycle(self) -> list[LineEvent]:
++        """One deterministic production cycle: feed → dwell → index.
++
++        Only RUNNING advances the line. PAUSED / STOPPED return no events and
++        leave all state (including simulation time) untouched, so RESUME
++        continues from exactly the same position.
++        """
++        if self._run_state != LineRunState.RUNNING:
++            return []
++        events = self._feed_next_unit()
++        if events:
++            self._trace.extend(events)
++        events.extend(self.execute_dwell())
++        if self.conveyor.state == ConveyorState.READY_TO_INDEX:
++            events.extend(self.index_line())
++        return events
++
++    def _feed_next_unit(self) -> list[LineEvent]:
++        """Release the next unit at line entry when the entry is free.
++
++        The line takt (dwell + station durations) governs the release cadence;
++        no wall-clock and no random source is involved.
++        """
++        entry = self.conveyor.positions[0]
++        if self.conveyor.wip_at(entry) is not None:
++            return []
++        unit_id = self.produce_unit()
++        self._carrier_seq += 1
++        return self.introduce_unit(unit_id, f"CAR-{self._carrier_seq:04d}")
++
++    @property
++    def total_count(self) -> int:
++        return self._total_count
++
++    @property
++    def good_count(self) -> int:
++        return self._good_count
++
++    @property
++    def reject_count(self) -> int:
++        return self._reject_count
++
++    def unit_counts(self) -> dict[str, int]:
++        """Raw production counts (no KPI is derived here)."""
++        return {
++            "total_count": self._total_count,
++            "good_count": self._good_count,
++            "reject_count": self._reject_count,
++        }
++
++    def units_on_line(self) -> int:
++        """Units physically on the line (empty carriers excluded)."""
++        return sum(
++            1 for pos in self.conveyor.occupied_positions()
++            if self.conveyor.wip_at(pos) is not None
++        )
++
++    def operating_state(self) -> str:
++        """RUNNING / IDLE / STOPPED raw operating state.
++
++        Deliberately not FAULT and not DOWNTIME: those are not produced by B2,
++        and keeping them out of the enum keeps ``STOPPED != FAULT`` and
++        ``IDLE != DOWNTIME`` true by construction.
++        """
++        if self._run_state == LineRunState.STOPPED:
++            return "STOPPED"
++        if self.units_on_line() == 0:
++            return "IDLE"
++        return "RUNNING"
++
++    def line_facts(self) -> dict:
++        """Outward raw-fact view of the line (B2).
++
++        Raw operational facts only. No OEE / availability / performance /
++        quality% / energy-per-unit / utilization / health score is calculated.
++        """
++        positions = []
++        for pos in self.conveyor.positions:
++            wip_id = self.conveyor.wip_at(pos)
++            ws = self._wips.get(wip_id) if wip_id else None
++            positions.append({
++                "position_id": pos,
++                "unit_id": wip_id or "",
++                "unit_type": ws.unit_type if ws else "",
++                "product_code": ws.product_code if ws else "",
++                "manufacturing_status": ws.lifecycle.value if ws else "",
++                "is_occupied": bool(wip_id),
++            })
++        facts = {
++            "plant_id": self.config.plant_id,
++            "line_id": self.config.line_id,
++            "line_label": self.config.line_label,
++            "line_profile": self.config.line_profile,
++            "unit_type": self.config.unit_type,
++            "product_code": self.config.product_code,
++            "run_state": self._run_state.value,
++            "operating_state": self.operating_state(),
++            "simulation_time_s": self._simulation_time_s,
++            "dwell_number": self.conveyor.dwell_number,
++            "nominal_dwell_s": self.config.conveyor.nominal_line_dwell_time_s,
++            "route": list(self.conveyor.positions),
++            "positions": positions,
++            "units_on_line": self.units_on_line(),
++        }
++        facts.update(self.unit_counts())
++        return facts
++
++    def last_quality_disposition(self, position: str) -> str:
++        """Most recent inspection/quality disposition observed at a station."""
++        for record in reversed(self._trace):
++            if record.event_type == "QUALITY_RESULT" and record.position == position:
++                return record.detail.split("disposition=")[-1].split(" ")[0]
++        return ""
++
+     # ═══════════════════════════════════════════════════════
+     # DWELL (C01-02: progress + overrun; C01-04: single start)
+     # ═══════════════════════════════════════════════════════
+@@ -565,6 +966,9 @@ class AssyLineRuntime:
+                 continue
+             wip_id = self.conveyor.wip_at(pos)
+             if wip_id is None:
++                # B2: an empty carrier (unit already completed/rejected) does no
++                # work. Complete it so it can never stall an indexed line.
++                self.conveyor.mark_position_complete(pos)
+                 continue
+ 
+             ws = self._wips.get(wip_id)
+@@ -958,24 +1362,30 @@ class AssyLineRuntime:
+             # only after final QC resolved PASS (CLEAR).
+             events = self._execute_release_disposition(pos, wip_id, op)
+         elif contract.capabilities.quality_decision:
+-            station_key, check_type = _QUALITY_STATION_MAP[pos]
++            spec = self._quality_spec(pos)
+             # OPS-03-C02: in AUTO the simulator/scenario decides; operator
+             # decision only overrides in MANUAL/ASSISTED.
+             eff_decision = decision if op.completion_mode != CompletionMode.AUTO else None
+             events = self._apply_quality_decision(
+-                pos, wip_id, op, station_key, check_type, decision=eff_decision)
++                pos, wip_id, op, spec, decision=eff_decision)
+             qstatus = self.get_current_quality_status(wip_id)
+             qh = self.get_quality_history(wip_id)
+             op.quality_result = qh.last_disposition(pos) if qh else None
+             op.attempt_number = qh.attempt_count(pos) if qh else 0
+-            if qstatus == QualityStatus.CLEAR:
+-                if pos == "AP11":
++            if spec.on_fail == "reject" and op.quality_result in ("FAIL", "NG"):
++                # B2 generic profile: a rejected unit is ejected and the line
++                # keeps running — no retry, no hold, no blocked station.
++                events.extend(self._reject_unit(pos, wip_id, op))
++            elif qstatus == QualityStatus.CLEAR:
++                if contract.capabilities.final_disposition:
+                     # OPS-04-C01 (F): final QC passed — now await RELEASE.
+                     op.operation_result = OperationResult.CONFIRMED
+                     op.transition(OperationState.AWAITING_COMPLETION)
+                 else:
+-                    op.operation_result = _QUALITY_OPERATION_RESULT.get(
+-                        pos, OperationResult.TEST_COMPLETE)
++                    op.operation_result = (
++                        _QUALITY_OPERATION_RESULT.get(pos)
++                        or _QUALITY_CHECKTYPE_RESULT.get(
++                            spec.check_type, OperationResult.TEST_COMPLETE))
+                     op.routing_action = "CONTINUE"
+                     self._mark_station_complete(wip_id, pos)
+                     op.transition(OperationState.COMPLETED)
+@@ -1090,8 +1500,10 @@ class AssyLineRuntime:
+         if history.current_status == QualityStatus.FAILED_FINAL:
+             return events  # idempotent terminal hold — no new observation
+ 
+-        station_key, check_type = _QUALITY_STATION_MAP[pos]
+-        qcfg = self.config.quality.get(station_key)
++        spec = self._quality_spec(pos)
++        station_key = spec.config_key
++        check_type = spec.check_type
++        qcfg = spec.quality
+         attempt = history.attempt_count(station_key) + 1
+ 
+         ws = self._wips.get(wip_id)
+@@ -1101,6 +1513,10 @@ class AssyLineRuntime:
+                 motor_seq = int(wip_id.split("-")[-1])
+             except (ValueError, IndexError):
+                 pass
++        elif ws and ws.unit_sequence:
++            # B2: generic units use their own sequence number so per-unit
++            # quality overrides stay deterministic. ASSY WIPs keep 0.
++            motor_seq = ws.unit_sequence
+ 
+         proposal = resolve_quality_disposition(
+             station_key, motor_seq, attempt, qcfg, check_type)
+@@ -1160,8 +1576,7 @@ class AssyLineRuntime:
+         pos: str,
+         wip_id: str,
+         op: OperationExecution,
+-        station_key: str,
+-        check_type: CheckType,
++        spec: QualityStationSpec,
+         decision: Optional[str] = None,
+     ) -> list[LineEvent]:
+         """OPS-04-C01 (C): apply the FINAL disposition to the OBSERVED data.
+@@ -1178,7 +1593,9 @@ class AssyLineRuntime:
+                 "FAILED_FINAL — awaiting disposition"))
+             return events
+ 
+-        qcfg = self.config.quality.get(station_key)
++        station_key = spec.config_key
++        check_type = spec.check_type
++        qcfg = spec.quality
+         attempt = history.attempt_count(station_key) + 1
+ 
+         disposition = op.proposed_quality_result or "PASS"
+@@ -1340,6 +1757,8 @@ class AssyLineRuntime:
+         """Advance all carriers one position.  dwell_number unchanged."""
+         events: list[LineEvent] = []
+ 
++        events.extend(self._count_completed_unit())
++
+         snapshot = self.conveyor.index()
+         self._simulation_time_s += self.config.conveyor.index_movement_duration_s  # C01-01
+ 
+@@ -1407,6 +1826,13 @@ class AssyLineRuntime:
+         self._quality_histories.clear()
+         self._quality_seq = 0
+         self.operation_registry.clear()
++        # B2: restore the generic-profile run state and production counters.
++        self._run_state = LineRunState.STOPPED
++        self._unit_seq = 0
++        self._carrier_seq = 0
++        self._total_count = 0
++        self._good_count = 0
++        self._reject_count = 0
+         # AUTO-TIME-01B: restore deterministic timing stream on reset.
+         self._timing_resolver = TimingResolver(seed=self.config.random_seed)
+         # AUTO-TIME-01C: restore neutral dwell metrics on reset.
+diff --git a/tests/test_dday_b2_bottled_water_line.py b/tests/test_dday_b2_bottled_water_line.py
+new file mode 100644
+index 0000000..77dc247
+--- /dev/null
++++ b/tests/test_dday_b2_bottled_water_line.py
+@@ -0,0 +1,526 @@
++"""DDAY-B2 — Bottled Water hero line runtime reuse acceptance tests (T01–T12).
++
++Governed by .ai-harness/tasks/DDAY-B2.json (authored from SA Issue #102).
++
++The tests exercise the *reused* discrete foundation
++(``virtual_factory.assembly.line_runtime``) driven by the Bottled Water
++workspace configuration. No new engine is introduced, so every assertion below
++goes through the same public runtime API that already serves the existing
++discrete workspace.
++
++T13 (relevant legacy regression) is the pre-existing suite and is reported
++separately — it is not duplicated here.
++"""
++
++from __future__ import annotations
++
++import copy
++import re
++from pathlib import Path
++
++import pytest
++
++from virtual_factory.assembly.demo_controller import DemoController
++from virtual_factory.assembly.line_runtime import (
++    AssyLineRuntime,
++    LineRunState,
++    load_assy_config_from_yaml,
++)
++
++REPO_ROOT = Path(__file__).resolve().parent.parent
++CONFIG_PATH = (
++    REPO_ROOT / "configs" / "workspaces" / "bottled-water-dday" / "line.yaml"
++)
++
++# Frozen target route (B1 topology contract, area BW-FP).
++EXPECTED_ROUTE = [
++    "BW-FP-BLW01",   # Blower / Infeed
++    "BW-FP-RIN01",   # Rinser
++    "BW-FP-FIL01",   # Filler
++    "BW-FP-CAP01",   # Capper
++    "BW-FP-INS01",   # Inspection (consolidated checkpoint)
++    "BW-FP-LAB01",   # Labeler
++    "BW-FP-CPK01",   # Case Packer
++    "BW-FP-PAL01",   # Palletizer
++]
++
++INSPECTION = "BW-FP-INS01"
++NOMINAL_DWELL_S = 20.0
++
++# Domain-isolation tokens that must never appear in Bottled Water outward
++# runtime/config/event surfaces.
++FORBIDDEN_LITERALS = (
++    "TIPA", "ASSY", "PRE-ASSY", "AP05_JAM", "SSO2", "RSO2",
++)
++FORBIDDEN_PATTERN = re.compile(r"\bAP\d{2}\b")
++
++
++# ═══════════════════════════════════════════════════════════
++# Helpers
++# ═══════════════════════════════════════════════════════════
++
++def load_config(inspection_scenario: str | None = None):
++    """Load the Bottled Water line config, optionally forcing inspection."""
++    config = load_assy_config_from_yaml(str(CONFIG_PATH))
++    if inspection_scenario is not None:
++        config.quality_stations[INSPECTION].quality.scenario = inspection_scenario
++    return config
++
++
++def make_line(inspection_scenario: str | None = None) -> AssyLineRuntime:
++    return AssyLineRuntime(config=load_config(inspection_scenario))
++
++
++def run_cycles(line: AssyLineRuntime, cycles: int) -> None:
++    for _ in range(cycles):
++        line.advance_cycle()
++
++
++def trace_signature(line: AssyLineRuntime) -> list[tuple]:
++    """Comparable signature of the *production* trace.
++
++    Operator control-plane events (``LINE_RUN_STATE``) are excluded: they record
++    START/PAUSE/RESUME/STOP actions rather than plant progression, so a paused
++    and resumed run must still be production-identical to an uninterrupted one.
++    """
++    return [
++        (e.event_type, e.position, e.wip_id, e.detail,
++         round(e.simulation_time_s, 6), e.dwell_number)
++        for e in line.trace
++        if e.event_type != "LINE_RUN_STATE"
++    ]
++
++
++def run_state_events(line: AssyLineRuntime) -> list[str]:
++    """Ordered control-plane run-state transitions recorded by the runtime."""
++    return [e.detail for e in line.trace if e.event_type == "LINE_RUN_STATE"]
++
++
++def iter_strings(value):
++    """Yield every string found anywhere inside a nested structure."""
++    if isinstance(value, str):
++        yield value
++    elif isinstance(value, dict):
++        for key, item in value.items():
++            yield str(key)
++            yield from iter_strings(item)
++    elif isinstance(value, (list, tuple, set)):
++        for item in value:
++            yield from iter_strings(item)
++
++
++def positions_visited(line: AssyLineRuntime, wip_id: str) -> list[str]:
++    """Ordered list of distinct stations a unit passed through, from the trace.
++
++    Uses movement facts (UNIT_ENTERED + WIP_MOVED) rather than station-complete
++    events, so stations whose completion is expressed as a quality result (the
++    Inspection checkpoint) are included as well.
++    """
++    visited: list[str] = []
++    for event in line.trace:
++        if event.wip_id != wip_id:
++            continue
++        if event.event_type in ("UNIT_ENTERED", "WIP_MOVED"):
++            if not visited or visited[-1] != event.position:
++                visited.append(event.position)
++    return visited
++
++
++def state_neutral_facts(line: AssyLineRuntime) -> dict:
++    """Raw facts excluding the run state (which intentionally changes)."""
++    facts = line.line_facts()
++    facts.pop("run_state", None)
++    facts.pop("operating_state", None)
++    return facts
++
++
++# ═══════════════════════════════════════════════════════════
++# T01 — exact 8-station route/order
++# ═══════════════════════════════════════════════════════════
++
++def test_t01_exact_eight_station_route_and_order():
++    line = make_line()
++
++    assert list(line.conveyor.positions) == EXPECTED_ROUTE
++    assert len(line.conveyor.positions) == 8
++    assert len(set(line.conveyor.positions)) == 8
++
++    # Contract-driven, not adapted: exactly one contract per frozen station id.
++    assert sorted(line.station_contracts) == sorted(EXPECTED_ROUTE)
++
++    # The routing order is the configured conveyor order, and every station has
++    # a configured logical cycle duration.
++    assert list(line.config.conveyor.positions) == EXPECTED_ROUTE
++    for station in EXPECTED_ROUTE:
++        assert station in line.config.station_durations
++
++    # Only the consolidated Inspection checkpoint carries a quality capability.
++    quality_stations = [
++        sid for sid, contract in line.station_contracts.items()
++        if contract.capabilities.quality_decision
++    ]
++    assert quality_stations == [INSPECTION]
++
++
++# ═══════════════════════════════════════════════════════════
++# T02 — automatic unit progression
++# ═══════════════════════════════════════════════════════════
++
++def test_t02_automatic_unit_progression_without_manual_actions():
++    line = make_line()
++    line.start()
++
++    run_cycles(line, 1)
++    assert line.total_count == 1, "a unit must be released automatically at line entry"
++    assert line.units_on_line() == 1
++    assert line.conveyor.wip_at(EXPECTED_ROUTE[0]) is None  # already indexed
++
++    # No manual station command is ever required: nothing waits for operator
++    # input and no command other than the automatic DONE is recorded.
++    assert [e for e in line.trace
++            if e.event_type == "OPERATION_WAITING_COMMAND"] == []
++    assert all(op.command is None or op.command.value == "DONE"
++               for op in line.active_operations())
++
++    run_cycles(line, 7)
++    unit_id = "BTL-000001"
++    ws = line.get_wip(unit_id)
++    assert ws is not None
++    # Unit 1 traversed every station in the frozen order and left the line.
++    assert positions_visited(line, unit_id) == EXPECTED_ROUTE
++    assert line.good_count == 1
++    assert line.simulation_time_s == pytest.approx(8 * NOMINAL_DWELL_S)
++    assert line.conveyor.dwell_number == 8
++
++    # Progression is takt-driven: one new unit per completed cycle while the
++    # entry position is free.
++    assert line.total_count == 8
++    assert line.units_on_line() == 7
++
++
++# ═══════════════════════════════════════════════════════════
++# T03 — deterministic replay
++# ═══════════════════════════════════════════════════════════
++
++def test_t03_deterministic_replay_same_config_seed_initial_state():
++    line_a = make_line()
++    line_b = make_line()
++    line_a.start()
++    line_b.start()
++
++    run_cycles(line_a, 12)
++    run_cycles(line_b, 12)
++
++    assert trace_signature(line_a) == trace_signature(line_b)
++    assert line_a.unit_counts() == line_b.unit_counts()
++    assert line_a.line_facts() == line_b.line_facts()
++    assert line_a.simulation_time_s == line_b.simulation_time_s
++
++    # Replaying the same runtime from reset must reproduce the same trace too.
++    baseline = trace_signature(line_a)
++    line_a.reset()
++    assert line_a.unit_counts() == {
++        "total_count": 0, "good_count": 0, "reject_count": 0}
++    line_a.start()
++    run_cycles(line_a, 12)
++    assert trace_signature(line_a) == baseline
++
++
++# ═══════════════════════════════════════════════════════════
++# T04 — PASS reaches good downstream completion
++# ═══════════════════════════════════════════════════════════
++
++def test_t04_inspection_pass_reaches_good_downstream_completion():
++    line = make_line("PASS")
++    line.start()
++    run_cycles(line, 8)
++
++    results = [e for e in line.trace
++               if e.event_type == "QUALITY_RESULT" and e.position == INSPECTION]
++    assert results, "Inspection must produce an automatic quality result"
++    assert "disposition=PASS" in results[0].detail
++    assert line.last_quality_disposition(INSPECTION) == "PASS"
++
++    completed = [e for e in line.trace if e.event_type == "UNIT_COMPLETED"]
++    assert len(completed) == 1
++    assert completed[0].position == EXPECTED_ROUTE[-1]
++    assert completed[0].wip_id == "BTL-000001"
++
++    ws = line.get_wip("BTL-000001")
++    assert ws is not None
++    assert ws.lifecycle.value == "released"
++    assert ws.rejected is False
++    assert line.good_count == 1
++    assert line.reject_count == 0
++
++    # The good unit passed through the stations downstream of Inspection.
++    visited = positions_visited(line, "BTL-000001")
++    assert visited.index(INSPECTION) < visited.index("BW-FP-LAB01")
++    assert visited[-1] == EXPECTED_ROUTE[-1]
++
++
++# ═══════════════════════════════════════════════════════════
++# T05 — FAIL at Inspection rejects and does not count good
++# ═══════════════════════════════════════════════════════════
++
++def test_t05_inspection_fail_rejects_and_never_counts_good():
++    line = make_line("ALWAYS_FAIL")
++    line.start()
++    run_cycles(line, 12)
++
++    rejects = [e for e in line.trace if e.event_type == "REJECT"]
++    assert rejects, "a failed inspection must reject the unit"
++    assert all(e.position == INSPECTION for e in rejects)
++    assert len(rejects) == line.reject_count == 8
++
++    # No rejected unit is ever counted good, and none completes the route.
++    assert line.good_count == 0
++    assert [e for e in line.trace if e.event_type == "UNIT_COMPLETED"] == []
++    for unit_id in ("BTL-000001", "BTL-000008"):
++        ws = line.get_wip(unit_id)
++        assert ws is not None
++        assert ws.rejected is True
++        assert ws.lifecycle.value == "rejected"
++        assert ws.counted_good is False
++        assert EXPECTED_ROUTE[-1] not in positions_visited(line, unit_id)
++
++    # The line keeps running: rejected units are ejected, not held.
++    assert line.units_on_line() == 4
++    assert line.total_count == 12
++
++    # The rejected unit's carrier is released so it cannot block the takt.
++    rejected_units = {e.wip_id for e in rejects}
++    for position in EXPECTED_ROUTE:
++        carrier = line.conveyor.carrier_at(position)
++        if carrier is not None:
++            assert carrier.wip_id not in rejected_units
++
++
++# ═══════════════════════════════════════════════════════════
++# T06 — count invariant
++# ═══════════════════════════════════════════════════════════
++
++@pytest.mark.parametrize("scenario,cycles", [
++    ("PASS", 1), ("PASS", 8), ("PASS", 20),
++    ("ALWAYS_FAIL", 1), ("ALWAYS_FAIL", 8), ("ALWAYS_FAIL", 20),
++])
++def test_t06_count_invariant(scenario, cycles):
++    line = make_line(scenario)
++    line.start()
++    run_cycles(line, cycles)
++
++    counts = line.unit_counts()
++    assert counts["good_count"] + counts["reject_count"] <= counts["total_count"]
++    assert counts["total_count"] == line.total_count
++    assert line.total_count == cycles  # one unit released per completed cycle
++
++    # Units on the line are still "in progress" and are never double counted.
++    in_progress = counts["total_count"] - counts["good_count"] - counts["reject_count"]
++    assert in_progress == line.units_on_line()
++
++
++# ═══════════════════════════════════════════════════════════
++# T07 — START
++# ═══════════════════════════════════════════════════════════
++
++def test_t07_start_begins_automatic_progression():
++    line = make_line()
++
++    # Before START the line is STOPPED and does not progress at all.
++    assert line.run_state == LineRunState.STOPPED
++    assert line.advance_cycle() == []
++    assert line.simulation_time_s == 0.0
++    assert line.total_count == 0
++
++    state = line.start()
++    assert state == LineRunState.RUNNING
++    assert line.run_state == LineRunState.RUNNING
++
++    events = line.advance_cycle()
++    assert events, "START must allow automatic progression"
++    assert line.simulation_time_s == pytest.approx(NOMINAL_DWELL_S)
++    assert line.total_count == 1
++    assert line.operating_state() == "RUNNING"
++
++
++# ═══════════════════════════════════════════════════════════
++# T08 — PAUSE freezes progression
++# ═══════════════════════════════════════════════════════════
++
++def test_t08_pause_freezes_progression_and_preserves_state():
++    line = make_line()
++    line.start()
++    run_cycles(line, 3)
++
++    frozen_facts = copy.deepcopy(state_neutral_facts(line))
++    frozen_trace = trace_signature(line)
++    frozen_dwell = line.conveyor.dwell_number
++
++    assert line.pause() == LineRunState.PAUSED
++    assert line.run_state == LineRunState.PAUSED
++    for _ in range(5):
++        assert line.advance_cycle() == []
++
++    assert state_neutral_facts(line) == frozen_facts
++    assert trace_signature(line) == frozen_trace
++    assert line.conveyor.dwell_number == frozen_dwell
++    assert line.simulation_time_s == pytest.approx(3 * NOMINAL_DWELL_S)
++    assert run_state_events(line) == ["state=RUNNING", "state=PAUSED"]
++
++
++# ═══════════════════════════════════════════════════════════
++# T09 — RESUME continues preserved state
++# ═══════════════════════════════════════════════════════════
++
++def test_t09_resume_continues_from_preserved_state():
++    control = make_line()
++    control.start()
++    run_cycles(control, 4)
++
++    interrupted = make_line()
++    interrupted.start()
++    run_cycles(interrupted, 3)
++    preserved = copy.deepcopy(state_neutral_facts(interrupted))
++
++    interrupted.pause()
++    for _ in range(4):
++        interrupted.advance_cycle()
++
++    # Nothing moved while paused.
++    assert state_neutral_facts(interrupted) == preserved
++
++    assert interrupted.resume() == LineRunState.RUNNING
++    resumed_events = interrupted.advance_cycle()
++    assert resumed_events, "RESUME must continue the line"
++
++    # The resumed line is indistinguishable from one that never paused.
++    assert trace_signature(interrupted) == trace_signature(control)
++    assert interrupted.line_facts() == control.line_facts()
++    assert interrupted.simulation_time_s == control.simulation_time_s
++    assert run_state_events(interrupted) == [
++        "state=RUNNING", "state=PAUSED", "state=RUNNING"]
++
++
++# ═══════════════════════════════════════════════════════════
++# T10 — STOP is a controlled stop, not FAULT
++# ═══════════════════════════════════════════════════════════
++
++def test_t10_stop_is_controlled_stop_not_fault():
++    line = make_line()
++    line.start()
++    run_cycles(line, 2)
++
++    stopped_at = line.simulation_time_s
++    assert line.stop() == LineRunState.STOPPED
++    assert line.run_state == LineRunState.STOPPED
++    assert line.operating_state() == "STOPPED"
++
++    # A STOP is not a fault and produces no downtime semantics.
++    assert "FAULT" not in {state.value for state in LineRunState}
++    assert LineRunState.STOPPED.value != "FAULT"
++    assert line.operating_state() != "FAULT"
++
++    surface = " ".join(iter_strings(line.line_facts()))
++    surface += " " + " ".join(
++        f"{e.event_type} {e.position} {e.wip_id} {e.detail}" for e in line.trace)
++    assert "FAULT" not in surface
++    assert "DOWNTIME" not in surface
++
++    # Progression stops, and the state is preserved rather than discarded.
++    for _ in range(3):
++        assert line.advance_cycle() == []
++    assert line.simulation_time_s == stopped_at
++    assert line.units_on_line() > 0
++
++
++# ═══════════════════════════════════════════════════════════
++# T11 — RESET restores a valid initial state and deterministic rerun
++# ═══════════════════════════════════════════════════════════
++
++def test_t11_reset_restores_initial_state_and_deterministic_rerun():
++    line = make_line()
++    line.start()
++    run_cycles(line, 5)
++    assert line.total_count == 5
++
++    line.reset()
++
++    # Known initial state.
++    assert line.run_state == LineRunState.STOPPED
++    assert line.unit_counts() == {
++        "total_count": 0, "good_count": 0, "reject_count": 0}
++    assert line.units_on_line() == 0
++    assert line.simulation_time_s == 0.0
++    assert line.conveyor.dwell_number == 0
++    assert line.operating_state() == "STOPPED"
++    assert line.trace == ()
++    for position in EXPECTED_ROUTE:
++        assert line.conveyor.wip_at(position) is None
++
++    # Deterministic rerun from the restored initial state.
++    fresh = make_line()
++    fresh.start()
++    line.start()
++    run_cycles(line, 12)
++    run_cycles(fresh, 12)
++    assert trace_signature(line) == trace_signature(fresh)
++    assert line.line_facts() == fresh.line_facts()
++
++
++# ═══════════════════════════════════════════════════════════
++# T12 — no TIPA/APxx leakage in Bottled Water outward state
++# ═══════════════════════════════════════════════════════════
++
++def _assert_clean(label: str, texts) -> None:
++    for text in texts:
++        for token in FORBIDDEN_LITERALS:
++            assert token not in text, f"{label}: leaked '{token}' in {text!r}"
++        assert not FORBIDDEN_PATTERN.search(text), (
++            f"{label}: leaked APxx station id in {text!r}")
++
++
++def test_t12_no_legacy_domain_leakage_in_outward_surfaces():
++    line = make_line("ALWAYS_FAIL")   # exercise both outcomes
++    line.start()
++    run_cycles(line, 12)
++
++    # 1. Configuration file itself.
++    _assert_clean("config", [CONFIG_PATH.read_text(encoding="utf-8")])
++
++    # 2. Runtime outward raw facts.
++    facts = line.line_facts()
++    _assert_clean("line_facts", list(iter_strings(facts)))
++
++    # 3. Trace events (event type / station / unit / detail).
++    trace_text = [
++        f"{e.event_type} {e.position} {e.wip_id} {e.detail}" for e in line.trace
++    ]
++    _assert_clean("trace", trace_text)
++
++    # 4. Station contracts and unit identities.
++    contract_text = [
++        f"{sid} {contract.to_dict()}" for sid, contract in line.station_contracts.items()
++    ]
++    _assert_clean("contracts", contract_text)
++    _assert_clean("units", [" ".join(line.wip_ids)])
++    assert all(w.startswith("BTL-") for w in line.wip_ids)
++
++    # 5. The legacy demo snapshot path publishes no Bottled Water state.
++    controller = DemoController(config_path=str(CONFIG_PATH))
++    controller.initialize()
++    assert controller.is_generic_line is True
++    legacy = controller.snapshot().to_dict()
++    assert legacy["positions"] == []
++    assert legacy["genealogy"] == []
++    assert legacy["quality_records"] == []
++    assert legacy["production"]["wips_on_line"] == 0
++
++    # 6. The generic workspace surface is the raw-fact view, and it resolves.
++    controller.start()
++    controller.advance()
++    generic_facts = controller.line_facts()
++    assert generic_facts["line_id"] == "BW-FP"
++    assert generic_facts["unit_type"] == "bottle"
++    assert generic_facts["product_code"] == "WATER-500ML"
++    assert generic_facts["route"] == EXPECTED_ROUTE
++    _assert_clean("controller facts", list(iter_strings(generic_facts)))
