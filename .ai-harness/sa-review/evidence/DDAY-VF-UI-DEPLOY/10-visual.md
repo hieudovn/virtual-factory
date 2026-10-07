@@ -14,6 +14,10 @@ URL: `/factorix-sim/overview`
 
 Screenshot: `browser/factorix_sim_overview_fb34d36.webp`
 
+The C01-frozen overview drilldown `href` stays `/bottled-water-demo`. That alias
+serves the same FactoriX Sim factory. Direct `/factorix-sim` remains the
+preferred public entry.
+
 ## Filling & Packaging 8-station line
 
 URL: `/factorix-sim`
