@@ -140,3 +140,33 @@ def test_skin_files_keep_internal_ids():
     assert "BW-FP" in demo
     assert "FACTORIX SIM" in demo
     # Overview source stays C01-frozen; FactoriX chrome is applied at serve time.
+
+
+def test_factorix_primary_surface_is_start_pause_stop(client):
+    import re
+
+    demo_src = DEMO_HTML.read_text(encoding="utf-8")
+    assert re.findall(r'id="(bw-btn-[a-z]+)"', demo_src) == [
+        "bw-btn-start",
+        "bw-btn-pause",
+        "bw-btn-resume",
+        "bw-btn-stop",
+        "bw-btn-reset",
+    ]
+    assert 'id="bw-sim-advanced"' in demo_src
+    assert "/advance" not in (REPO / "src/virtual_factory/ui/static/bottled_water_demo.js").read_text()
+
+    line = client.get("/factorix-sim").text
+    assert 'id="bw-sim-advanced"' in line
+    assert "▶ START" in line and "⏸ PAUSE" in line and "■ STOP" in line
+    assert "bw-sim-advanced-body" in line
+    assert "window.confirm" in (REPO / "src/virtual_factory/ui/static/bottled_water_demo.js").read_text()
+
+    overview = client.get("/factorix-sim/overview").text
+    assert 'class="ov-advanced"' in overview
+    assert "ovResetConfirm" in overview
+    assert overview.index("ov-btn-start") < overview.index("ov-advanced")
+    assert "ov-btn-resume" in overview[overview.index("ov-advanced") :]
+    assert "ov-btn-reset" in overview[overview.index("ov-advanced") :]
+    frozen = OVERVIEW_HTML.read_text(encoding="utf-8")
+    assert 'class="ov-advanced"' not in frozen

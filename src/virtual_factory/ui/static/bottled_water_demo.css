@@ -298,8 +298,48 @@ a.vf-chip { text-decoration: none; color: var(--bw-accent); }
 
 .bw-sim-controls {
   display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.bw-sim-controls > #bw-btn-resume,
+.bw-sim-controls > #bw-btn-reset {
+  display: none;
+}
+
+.bw-sim-advanced {
+  margin-top: var(--bw-sm);
+  padding-top: var(--bw-sm);
+  border-top: 1px solid var(--bw-border-light);
+  font-size: 11px;
+  color: var(--bw-text-secondary);
+}
+
+.bw-sim-advanced summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bw-text-muted);
+}
+
+.bw-sim-advanced-body {
+  display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
+  margin-top: 8px;
+}
+
+.bw-sim-advanced-note {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--bw-text-muted);
+}
+
+.bw-btn-danger {
+  border-color: #b42318;
+  color: #b42318;
 }
 
 .bw-btn {
@@ -324,7 +364,7 @@ a.vf-chip { text-decoration: none; color: var(--bw-accent); }
 }
 .bw-btn-primary:hover:not(:disabled) { background: var(--bw-accent-hover); color: #fff; }
 
-.bw-btn-outline { grid-column: span 2; }
+.bw-btn-outline { grid-column: auto; }
 
 .bw-sim-rate {
   margin-top: var(--bw-sm);

@@ -1,7 +1,7 @@
 # SA REVIEW INBOX
 
 Task: DDAY-VF-UI-DEPLOY — FactoriX Sim UI on UAT
-Status: Deployed on UAT. Machine status is derived by `run_task_gate.py`.
+Status: SA asked for a bounded operator-surface UX correction on PR #122. Machine status is derived by `run_task_gate.py`.
 
 Authority:
 SA Issue #121

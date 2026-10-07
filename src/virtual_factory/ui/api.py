@@ -7,6 +7,38 @@ from pathlib import Path
 
 from virtual_factory.ui.runtime_service import RuntimeService
 
+_OV_CONTROLS_FROZEN = """    <div class="ov-controls">
+      <button id="ov-btn-start" class="ov-btn ov-btn-primary" onclick="ovStart()">▶ START</button>
+      <button id="ov-btn-pause" class="ov-btn" onclick="ovPause()">⏸ PAUSE</button>
+      <button id="ov-btn-resume" class="ov-btn" onclick="ovResume()">▶ RESUME</button>
+      <button id="ov-btn-stop" class="ov-btn" onclick="ovStop()">■ STOP</button>
+      <button id="ov-btn-reset" class="ov-btn ov-btn-outline" onclick="ovReset()">↻ RESET</button>
+    </div>"""
+
+_OV_CONTROLS_PRESENTED = """    <div class="ov-controls">
+      <button id="ov-btn-start" class="ov-btn ov-btn-primary" onclick="ovStart()">▶ START</button>
+      <button id="ov-btn-pause" class="ov-btn" onclick="ovPause()">⏸ PAUSE</button>
+      <button id="ov-btn-stop" class="ov-btn" onclick="ovStop()">■ STOP</button>
+      <details class="ov-advanced">
+        <summary>Advanced</summary>
+        <button id="ov-btn-resume" class="ov-btn" onclick="ovResume()">▶ RESUME</button>
+        <button id="ov-btn-reset" class="ov-btn ov-btn-outline ov-btn-danger" onclick="ovResetConfirm()">↻ RESET</button>
+      </details>
+    </div>
+<style>
+.ov-advanced { margin-left: 8px; font-size: 12px; color: var(--bw-text-secondary); }
+.ov-advanced summary { cursor: pointer; user-select: none; font-weight: 600; }
+.ov-advanced[open] { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ov-btn-danger { border-color: #b42318; color: #b42318; }
+</style>
+<script>
+function ovResetConfirm() {
+  if (window.confirm("RESET returns the whole factory to t=0 and cannot be undone. Continue?")) {
+    ovReset();
+  }
+}
+</script>"""
+
 
 def brand_factorix_html(text: str) -> str:
     """Apply FactoriX Sim chrome without rewriting frozen static files.
@@ -31,6 +63,8 @@ def brand_factorix_html(text: str) -> str:
     )
     for old, new in replacements:
         text = text.replace(old, new)
+    if _OV_CONTROLS_FROZEN in text:
+        text = text.replace(_OV_CONTROLS_FROZEN, _OV_CONTROLS_PRESENTED, 1)
     return text
 
 

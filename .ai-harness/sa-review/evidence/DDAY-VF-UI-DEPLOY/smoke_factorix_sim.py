@@ -63,6 +63,9 @@ def main() -> int:
         claim(state["line_id"] == "BW-FP" and len(state["route"]) == 8, "8-station line")
         claim("BW-FP-CAP01" in state["route"], "Capper remains on the line")
         claim("oee" not in str(snap).lower(), "no OEE in FactoriX Sim factory")
+        claim('id="bw-sim-advanced"' in page.text, "line Advanced panel exists")
+        claim("ov-advanced" in overview_page.text, "overview Advanced panel exists")
+        claim("ovResetConfirm" in overview_page.text, "overview RESET asks for confirmation")
 
     print("SMOKE-DDAY-VF-UI-DEPLOY", "PASS" if not _failures else "FAIL")
     for item in _failures:

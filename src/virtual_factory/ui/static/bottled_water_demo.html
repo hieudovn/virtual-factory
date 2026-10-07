@@ -118,19 +118,24 @@
           <button id="bw-btn-pause"  class="bw-btn" onclick="bwPause()">⏸ PAUSE</button>
           <button id="bw-btn-resume" class="bw-btn" onclick="bwResume()">▶ RESUME</button>
           <button id="bw-btn-stop"   class="bw-btn" onclick="bwStop()">■ STOP</button>
-          <button id="bw-btn-reset"  class="bw-btn bw-btn-outline" onclick="bwReset()">↻ RESET</button>
+          <button id="bw-btn-reset"  class="bw-btn bw-btn-outline bw-btn-danger" onclick="bwReset()">↻ RESET</button>
         </div>
-        <div class="bw-sim-rate">
-          <label class="bw-rate-label">Refresh
-            <select id="bw-rate" class="bw-select" onchange="bwSetRate(this.value)">
-              <option value="900">0.5x</option>
-              <option value="600" selected>1x</option>
-              <option value="300">2x</option>
-              <option value="150">4x</option>
-            </select>
-          </label>
-          <span class="bw-rate-hint">display only — the server clock drives production</span>
-        </div>
+        <details id="bw-sim-advanced" class="bw-sim-advanced">
+          <summary>Advanced</summary>
+          <div id="bw-sim-advanced-body" class="bw-sim-advanced-body"></div>
+          <div class="bw-sim-rate">
+            <label class="bw-rate-label">Refresh
+              <select id="bw-rate" class="bw-select" onchange="bwSetRate(this.value)">
+                <option value="900">0.5x</option>
+                <option value="600" selected>1x</option>
+                <option value="300">2x</option>
+                <option value="150">4x</option>
+              </select>
+            </label>
+            <span class="bw-rate-hint">display only — the server clock drives production</span>
+          </div>
+          <p class="bw-sim-advanced-note">Classify codes on a selected station. RESET returns the factory to t=0.</p>
+        </details>
       </div>
 
       <!-- Selection popup -->
