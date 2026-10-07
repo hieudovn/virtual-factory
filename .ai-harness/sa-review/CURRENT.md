@@ -15,6 +15,8 @@ SHA distinction:
 
 Public: http://157.10.52.54/factorix-sim
 
+Historical: Run B completed per PlantOS SA-accepted coordinated UAT. UAT-02 inspect remains historical_run_a only.
+
 Conservative interpretation: FactoriX Sim HTTP observes the same `dday-bw-runtime` factory. Recreating `virtual-factory-dday` is required to load the listener. MQTT IDs unchanged. Overview source stays C01-frozen; FactoriX chrome is applied at serve time. No Issue #91.
 
 The PM does not self-certify COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED.
