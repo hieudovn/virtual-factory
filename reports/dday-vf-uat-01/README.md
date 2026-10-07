@@ -9,7 +9,8 @@ UAT remains BLOCKED. This folder is recon evidence, not a live runtime report.
 5. [Proposed launcher](05-proposed-launcher.md) — not implemented
 6. [Proposed warmup](06-proposed-warmup.md) — not implemented
 7. [Limitations](07-limitations.md)
-8. [C01 durable runtime](08-c01-runtime.md) — implemented locally; not deployed
-9. [UAT host / Run A](09-uat-host.md) — inspected live; Run B HOLD
+8. [C01 durable runtime](08-c01-runtime.md)
+9. [UAT host / Run A](09-uat-host.md) — historical inspect
+10. [Cross-track closeout](10-cross-track-closeout.md) — canonical current (Run B completed)
 
-UAT-02 report phrase: `DDAY-VF-UAT — VF RUNTIME READY FOR INTEGRATION REVIEW` (Run A live; Run B HOLD)
+UAT-03 report phrase: `DDAY-VF-UAT-03 — CROSS-TRACK CLOSEOUT READY FOR SA REVIEW`

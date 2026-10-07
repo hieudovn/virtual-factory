@@ -1,4 +1,6 @@
-# DDAY-VF-UAT-02 — UAT host / Run A (inspected 2026-10-07T02:44:46Z)
+# DDAY-VF-UAT-02 — historical Run A inspect (2026-10-07T02:44:46Z)
+
+**Historical snapshot only.** Canonical current state is [10-cross-track-closeout.md](10-cross-track-closeout.md). Run B HOLD in this file is the inspect-time fact, not current UAT state.
 
 SSH credentials are **not** recorded here.
 
@@ -53,11 +55,11 @@ FAST payload excerpt: `simulation_time_s=1306.0`, `provenance=SIMULATED_RAW`.
 
 Events remain event-driven. An 8 s subscribe to `.../event/#` received no new events (no phase change in that window). Start `MACHINE_STATE_CHANGED(RUNNING)` occurred at process start before this sample. Zero `signal/.../operating_state`.
 
-## Run A / Run B
+## Run A / Run B (inspect-time)
 
-| Run | Status |
+| Run | Status at 2026-10-07T02:44:46Z |
 |---|---|
-| Run A | **live** since 2026-10-07T02:35:24Z |
-| Run B | **HOLD** — waiting PlantOS PM to confirm Run A reached Center/TDengine/UI and `reset_dday_receive_epoch` succeeded |
+| Run A | live since 2026-10-07T02:35:24Z |
+| Run B | not started yet (historical) |
 
-`reset_dday_receive_epoch` exists in the deployed PlantOS tree at `a1695c5`. This VF PM has not executed it and has not restarted VF.
+Superseded by DDAY-VF-UAT-03: Run B completed under PlantOS merge `a1695c5`.

@@ -1,14 +1,5 @@
-# DDAY-VF-UAT-02 scope — UAT host Run A evidence
+# DDAY-VF-UAT-02 scope — historical Run A inspect
 
-## Authorized
+This folder is the 2026-10-07T02:44:46Z Run A host snapshot.
 
-1. Inspect the UAT host over SSH.
-2. Record container / network / broker / MQTT cadence evidence.
-3. Report to VF SA. Do not change VF product code.
-
-## Not authorized
-
-- Run B / VF restart before PlantOS confirms `reset_dday_receive_epoch`
-- VF timestamp / contract / topology change
-- Storing SSH passwords in git
-- Merge of PR #101
+It is **not** the current canonical UAT state. See DDAY-VF-UAT-03.

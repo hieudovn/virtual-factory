@@ -1,5 +1,8 @@
 {
   "task_id": "DDAY-VF-UAT-02",
+  "evidence_role": "historical_run_a",
+  "canonical_current": false,
+  "superseded_by": "DDAY-VF-UAT-03",
   "inspected_at_utc": "2026-10-07T02:44:46Z",
   "uat_hostname": "uat.esoft.vn",
   "uat_host": "157.10.52.54",

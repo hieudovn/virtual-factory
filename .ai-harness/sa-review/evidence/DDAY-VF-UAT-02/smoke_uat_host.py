@@ -37,8 +37,10 @@ def main() -> int:
     claim(data["mqtt_sample_12s"]["distinct_signals"] == 22, "22 live signals sampled")
     claim(data["mqtt_sample_12s"]["operating_state_signal_publishes"] == 0, "no operating_state signal")
     claim(data["mqtt_sample_12s"]["fast_motor_current"] > data["mqtt_sample_12s"]["slow_water_flow"], "FAST > SLOW")
-    claim(data["run_a_started"] is True, "Run A recorded")
-    claim(data["run_b_started"] is False, "Run B remains hold")
+    claim(data.get("evidence_role") == "historical_run_a", "UAT-02 is a historical Run A snapshot")
+    claim(data.get("canonical_current") is False, "UAT-02 is not the current canonical state")
+    claim(data["run_a_started"] is True, "historical snapshot recorded Run A")
+    claim(data["run_b_started"] is False, "historical snapshot recorded Run B not yet started at inspect time")
     claim(data["vf_product_changed"] is False, "no VF product change")
     blob = EVIDENCE.read_text(encoding="utf-8")
     for path in REPORTS:
