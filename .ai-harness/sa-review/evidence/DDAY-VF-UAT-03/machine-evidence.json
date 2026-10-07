@@ -6,6 +6,7 @@
   "deployed_vf_runtime_sha": "d7db6d0909da968c2b4a4ea2cdb712e5d7601282",
   "plantos_accepted_uat_merge_sha": "a1695c5457515e2b565a5f9fe107c1e18b3e0879",
   "uat02_historical_head": "a8d5ecba1b0794251fd9c618c338de449263a0b0",
+  "closeout_implementation_sha": "5c475e7a9d3bd42581f73cbbde3e57556cf61c38",
   "workspace_id": "bottled-water-dday",
   "profile_id": "dday-bw-runtime-fr1",
   "contract_version": "dday-bw-b1-v2",

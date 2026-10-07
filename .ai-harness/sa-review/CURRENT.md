@@ -11,7 +11,7 @@ SHA distinction:
 - deployed VF runtime: d7db6d0909da968c2b4a4ea2cdb712e5d7601282
 - PlantOS accepted UAT merge: a1695c5457515e2b565a5f9fe107c1e18b3e0879
 - UAT-02 historical evidence head: a8d5ecba1b0794251fd9c618c338de449263a0b0
-- this closeout evidence/PR head: (commit after this file)
+- this closeout implementation SHA: 5c475e7a9d3bd42581f73cbbde3e57556cf61c38
 
 Run A reached Center / TDengine / Live UI. reset_dday_receive_epoch succeeded on the same Edge process. VF restarted as deterministic Run B; source timestamps reused; PlantOS accepted at a later Edge receipt timestamp; TDengine/latest and Live UI advanced.
 
