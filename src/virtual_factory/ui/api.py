@@ -8,6 +8,32 @@ from pathlib import Path
 from virtual_factory.ui.runtime_service import RuntimeService
 
 
+def brand_factorix_html(text: str) -> str:
+    """Apply FactoriX Sim chrome without rewriting frozen static files.
+
+    Overview HTML/JS stay at the accepted C01 hashes. Branding is a serve-time
+    view so dictionary/MQTT frozen-hash tests remain PASS.
+    """
+    replacements = (
+        (
+            "<title>Bottled Water Factory — Whole Factory Overview</title>",
+            "<title>FactoriX Sim — Bottled Water Factory</title>",
+        ),
+        (
+            "<title>Bottled Water Factory — Filling &amp; Packaging Line</title>",
+            "<title>FactoriX Sim — Bottled Water Factory</title>",
+        ),
+        ('<span class="vf-logo-mark">VF</span>', '<span class="vf-logo-mark">FX</span>'),
+        (
+            '<span class="vf-logo-text">VIRTUAL FACTORY</span>',
+            '<span class="vf-logo-text">FACTORIX SIM</span>',
+        ),
+    )
+    for old, new in replacements:
+        text = text.replace(old, new)
+    return text
+
+
 def create_app(
     config_path: str | Path = "configs/plants/continuous_mvp_01.yaml",
     scenario_path: str | Path | None = None,
@@ -31,7 +57,7 @@ def create_app(
     instance and must not start a second autorun clock.
     """
     from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
-    from fastapi.responses import FileResponse
+    from fastapi.responses import FileResponse, HTMLResponse
     from fastapi.staticfiles import StaticFiles
 
     service = RuntimeService(
@@ -676,8 +702,9 @@ def create_app(
         return _get_bw_factory().plantos_export()
 
     @app.get("/bottled-water-demo/overview", include_in_schema=False)
-    def bottled_water_overview_page() -> FileResponse:
-        return FileResponse(static_dir / "bottled_water_overview.html")
+    def bottled_water_overview_page() -> HTMLResponse:
+        raw = (static_dir / "bottled_water_overview.html").read_text(encoding="utf-8")
+        return HTMLResponse(brand_factorix_html(raw))
 
     @app.get("/bottled-water-demo/state")
     def bottled_water_state(
@@ -699,8 +726,9 @@ def create_app(
         return FileResponse(static_dir / filename)
 
     @app.get("/bottled-water-demo", include_in_schema=False)
-    def bottled_water_page() -> FileResponse:
-        return FileResponse(static_dir / "bottled_water_demo.html")
+    def bottled_water_page() -> HTMLResponse:
+        raw = (static_dir / "bottled_water_demo.html").read_text(encoding="utf-8")
+        return HTMLResponse(brand_factorix_html(raw))
 
     @app.get("/bottled-water-demo/unit/{unit_id}")
     def bottled_water_unit(unit_id: str) -> dict:

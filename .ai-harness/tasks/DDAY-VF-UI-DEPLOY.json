@@ -11,6 +11,7 @@
     "issue_121_live_read": "Issue #121 was readable. User order matches the issue body.",
     "single_truth": "A separate UI process that constructs its own BottledWaterFactory would be a second truth. HTTP must bind to the same factory instance the MQTT loop already owns. That requires adding an optional HTTP listener to dday-bw-runtime and recreating virtual-factory-dday once. The recreate is technically required and will be evidenced. MQTT client-id, topics, contract, and PlantOS path stay the same.",
     "no_rebuild": "Reuse bottled_water_demo and bottled_water_overview skins. Branding-only FactoriX Sim. Keep /bottled-water-demo aliases.",
+    "overview_branding": "Overview HTML/JS stay at accepted C01 frozen hashes. FactoriX Sim chrome is applied at HTML serve time so dictionary/MQTT hash locks remain PASS.",
     "no_id_rename": "workspace bottled-water-dday, plant BW-DEMO-01, line BW-FP, MQTT topics, dday-bw-b1-v2 stay unchanged.",
     "no_kpi": "FactoriX Sim remains raw-fact visualization. PlantOS keeps KPI/OEE.",
     "restart_required": "virtual-factory-dday must be recreated to load the HTTP listener. Restart may replay deterministic source timestamps; that is the accepted C01 behavior."

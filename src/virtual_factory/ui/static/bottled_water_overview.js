@@ -3,14 +3,7 @@
 /* Lightweight observer of the existing whole-factory snapshot.
    No second simulator, no KPI calculation. */
 
-function ovPublicPrefix() {
-  const path = (typeof location !== 'undefined' && location.pathname) || '';
-  if (path === '/factorix-sim' || path.indexOf('/factorix-sim/') === 0) {
-    return '/factorix-sim';
-  }
-  return '/bottled-water-demo';
-}
-const OV_API = ovPublicPrefix();
+const OV_API = '/bottled-water-demo';
 const OV_AREAS = ['BW-WT', 'BW-BP', 'BW-FP', 'BW-UT', 'BW-WH'];
 
 function ovSignal(factory, nodeId, signalId) {
@@ -136,9 +129,6 @@ function ovPause() { return ovAction('/pause'); }
 function ovResume() { return ovAction('/resume'); }
 function ovStop() { return ovAction('/stop'); }
 function ovReset() { return ovAction('/reset'); }
-
-const ovLineLink = document.getElementById('ov-fp-drilldown');
-if (ovLineLink) ovLineLink.setAttribute('href', OV_API);
 
 ovRefresh().catch(() => {});
 setInterval(() => { ovRefresh().catch(() => {}); }, 700);

@@ -134,7 +134,9 @@ def test_compose_http_is_loopback_only():
 
 
 def test_skin_files_keep_internal_ids():
-    text = DEMO_HTML.read_text(encoding="utf-8") + OVERVIEW_HTML.read_text(encoding="utf-8")
-    assert "BW-DEMO-01" in text
-    assert "BW-FP" in text
-    assert "FACTORIX SIM" in text
+    demo = DEMO_HTML.read_text(encoding="utf-8")
+    overview = OVERVIEW_HTML.read_text(encoding="utf-8")
+    assert "BW-DEMO-01" in demo and "BW-DEMO-01" in overview
+    assert "BW-FP" in demo
+    assert "FACTORIX SIM" in demo
+    # Overview source stays C01-frozen; FactoriX chrome is applied at serve time.
