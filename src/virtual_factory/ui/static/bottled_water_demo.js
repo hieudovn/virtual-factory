@@ -14,7 +14,14 @@
 
 'use strict';
 
-const BW_API = '/bottled-water-demo';
+function bwPublicPrefix() {
+  const path = (typeof location !== 'undefined' && location.pathname) || '';
+  if (path === '/factorix-sim' || path.indexOf('/factorix-sim/') === 0) {
+    return '/factorix-sim';
+  }
+  return '/bottled-water-demo';
+}
+const BW_API = bwPublicPrefix();
 
 /* Full canvas reference box (viewBox; not a fixed pixel size). */
 const BW_CANVAS = { w: 1920, h: 640 };
@@ -1183,4 +1190,8 @@ async function bwInit() {
   bwRestartClock();
 }
 
-document.addEventListener('DOMContentLoaded', bwInit);
+document.addEventListener('DOMContentLoaded', () => {
+  const factoryLink = document.getElementById('bw-factory-link');
+  if (factoryLink) factoryLink.setAttribute('href', `${BW_API}/overview`);
+  bwInit();
+});

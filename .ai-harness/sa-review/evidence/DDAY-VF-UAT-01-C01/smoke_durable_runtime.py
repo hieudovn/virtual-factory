@@ -121,7 +121,8 @@ def main() -> int:
     compose = yaml.safe_load(COMPOSE.read_text(encoding="utf-8"))
     service = compose["services"]["virtual-factory-dday"]
     claim(service["restart"] == "unless-stopped", "compose restart is unless-stopped")
-    claim("ports" not in service, "compose publishes no public MQTT port")
+    claim(service.get("ports") == ["127.0.0.1:8090:8090"], "compose publishes HTTP on loopback only")
+    claim("1883" not in str(service.get("ports")), "compose publishes no public MQTT port")
     claim("volumes" not in service, "compose has no checkpoint volume")
     claim(
         service["command"]

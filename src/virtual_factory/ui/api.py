@@ -22,8 +22,14 @@ def create_app(
     auto_start: bool = False,
     factory_autorun: bool = True,
     factory_tick_interval_s: float | None = None,
+    bw_factory=None,
 ):
-    """Create a FastAPI app backed by one RuntimeService instance."""
+    """Create a FastAPI app backed by one RuntimeService instance.
+
+    ``bw_factory``, when provided, is the single Bottled Water composition
+    already owned by ``dday-bw-runtime``. The HTTP skin then observes that
+    instance and must not start a second autorun clock.
+    """
     from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
@@ -51,8 +57,11 @@ def create_app(
     # deterministic and is driven exclusively by factories.step().
     # ═══════════════════════════════════════════════════
 
-    _bw_factory: dict = {"instance": None}
+    _bw_factory: dict = {"instance": bw_factory}
     _bw_runner: dict = {"task": None}
+    _bw_injected = bw_factory is not None
+    if _bw_injected:
+        factory_autorun = False
 
     def _bw_workspace_dir() -> Path:
         return (
@@ -168,6 +177,27 @@ def create_app(
     @app.get("/health")
     def health() -> dict:
         return {"status": "ok", "static_dir": str(static_dir.resolve())}
+
+    @app.get("/factorix-sim/health")
+    def factorix_sim_health() -> dict:
+        """Public FactoriX Sim health — same factory the MQTT loop owns."""
+        factory = _get_bw_factory()
+        snap = factory.snapshot()
+        factory_block = snap.get("factory") or {}
+        return {
+            "status": "ok",
+            "product": "FactoriX Sim",
+            "public_route": "/factorix-sim",
+            "alias_route": "/bottled-water-demo",
+            "workspace_id": snap.get("workspace_id") or "bottled-water-dday",
+            "plant_source_id": snap.get("plant_id"),
+            "vf_source_sha": os.environ.get("VF_SOURCE_SHA", "unknown"),
+            "simulation_owner": "dday-bw-runtime" if _bw_injected else "fastapi-autorun",
+            "single_factory": True,
+            "factory_object_id": id(factory),
+            "run_state": factory_block.get("run_state"),
+            "simulation_time_s": factory_block.get("simulation_time_s"),
+        }
 
     @app.get("/status")
     def status() -> dict:
@@ -779,6 +809,38 @@ def create_app(
         factory = _get_bw_factory()
         factory.advance_debug_cycle()
         return _bw_projection(factory.controller)
+
+    # DDAY-VF-UI-DEPLOY — public FactoriX Sim aliases. Same handlers, same
+    # factory. Internal workspace/source IDs are not renamed.
+    for _src, _dest in (
+        ("/bottled-water-demo", "/factorix-sim"),
+        ("/bottled-water-demo/", "/factorix-sim/"),
+        ("/bottled-water-demo/overview", "/factorix-sim/overview"),
+        ("/bottled-water-demo/factory", "/factorix-sim/factory"),
+        ("/bottled-water-demo/state", "/factorix-sim/state"),
+        ("/bottled-water-demo/plantos-export", "/factorix-sim/plantos-export"),
+        ("/bottled-water-demo/static/{filename}", "/factorix-sim/static/{filename}"),
+        ("/bottled-water-demo/unit/{unit_id}", "/factorix-sim/unit/{unit_id}"),
+        ("/bottled-water-demo/start", "/factorix-sim/start"),
+        ("/bottled-water-demo/pause", "/factorix-sim/pause"),
+        ("/bottled-water-demo/resume", "/factorix-sim/resume"),
+        ("/bottled-water-demo/stop", "/factorix-sim/stop"),
+        ("/bottled-water-demo/reset", "/factorix-sim/reset"),
+        ("/bottled-water-demo/classify", "/factorix-sim/classify"),
+        ("/bottled-water-demo/advance", "/factorix-sim/advance"),
+    ):
+        for route in app.router.routes:
+            path = getattr(route, "path", None)
+            methods = getattr(route, "methods", None)
+            endpoint = getattr(route, "endpoint", None)
+            if path == _src and endpoint is not None:
+                app.add_api_route(
+                    _dest,
+                    endpoint,
+                    methods=sorted(methods) if methods else ["GET"],
+                    include_in_schema=False,
+                )
+                break
 
     return app
 
