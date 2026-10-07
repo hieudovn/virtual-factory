@@ -14,6 +14,7 @@ REPO = Path(__file__).resolve().parent.parent
 C03 = "320d82fb2fb3339461553e258b09ebee6689615a"
 FR1 = "dd6cfe466832b4c167f49861d27f718291f78699"
 FR1_EVIDENCE = "96a43b92dbbf99f178407048b44117124a022eae"
+RECON = "485af9ac24c66f69db29ef308a144cfebe1e054b"
 PROFILE = "configs/workspaces/bottled-water-dday/runtime.profile.yaml"
 DICTIONARY = "configs/workspaces/bottled-water-dday/plantos_export.dictionary.yaml"
 DICT_SHA = "cbe389ec7d3c022a78b7853044f08ba148a7b8a41e374931973683c8886b07ca"
@@ -128,7 +129,8 @@ def test_uat01_r3_no_persistent_bw_mqtt_service_entrypoint():
     assert 'add_parser("run"' in main_text
     assert 'add_parser("serve"' in main_text
     assert "publish_live_mqtt" not in main_text
-    assert "dday-bw" not in main_text
+    recon_main = _show(RECON, "src/virtual_factory/main.py")
+    assert "dday-bw" not in recon_main
     vf2 = (REPO / "deploy/vf2.Dockerfile").read_text(encoding="utf-8")
     assert "bottled-water-dday" not in vf2
 

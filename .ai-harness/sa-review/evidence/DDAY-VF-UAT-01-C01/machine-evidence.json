@@ -1,0 +1,75 @@
+{
+  "task_id": "DDAY-VF-UAT-01-C01",
+  "baseline_recon_sha": "485af9ac24c66f69db29ef308a144cfebe1e054b",
+  "head": "485af9ac24c66f69db29ef308a144cfebe1e054b",
+  "origin_main": "f5261c8ca18cd4e01779c0274b55270ba028b4e5",
+  "command": "dday-bw-runtime",
+  "cli": "virtual-factory dday-bw-runtime --mqtt-host plantos-emqx --mqtt-port 1883 --mqtt-client-id vf-dday-bw-demo-01",
+  "compose_artifact": "deploy/dday-vf-uat.compose.yml",
+  "workspace_id": "bottled-water-dday",
+  "profile_id": "dday-bw-runtime-fr1",
+  "contract_version": "dday-bw-b1-v2",
+  "plant_source_id": "BW-DEMO-01",
+  "dictionary_sha256": "cbe389ec7d3c022a78b7853044f08ba148a7b8a41e374931973683c8886b07ca",
+  "dictionary_sha256_expected": "cbe389ec7d3c022a78b7853044f08ba148a7b8a41e374931973683c8886b07ca",
+  "timestamp_epoch": "2026-10-03T00:00:00.000Z",
+  "source_time_reservation": false,
+  "wall_clock_sync": false,
+  "warmup_implemented": false,
+  "checkpoint_implemented": false,
+  "qos": [
+    1
+  ],
+  "bounded_cycles": 11,
+  "fast_motor_current_publishes": 11,
+  "slow_water_flow_publishes": 2,
+  "event_types_observed": [
+    "MACHINE_STATE_CHANGED",
+    "SCENARIO_PHASE_CHANGED"
+  ],
+  "operating_state_signal_publishes": 0,
+  "repeated_source_timestamps_allowed": true,
+  "first_run_event_timestamps": [
+    "2026-10-03T00:00:00.000Z"
+  ],
+  "second_run_event_timestamps": [
+    "2026-10-03T00:00:00.000Z"
+  ],
+  "stopped_event": {
+    "event_type": "MACHINE_STATE_CHANGED",
+    "detail": "run_state=STOPPED",
+    "timestamp": "2026-10-03T00:00:00.000Z"
+  },
+  "shutdown_trace": [
+    {
+      "phase": "stopped_event_publish",
+      "published": 1,
+      "simulation_time_s": 0.0
+    },
+    {
+      "phase": "drain",
+      "drained": 0,
+      "remaining": 0,
+      "timed_out": false,
+      "ok": true,
+      "timeout_s": 2.0
+    }
+  ],
+  "stopped_acked_before_disconnect": true,
+  "mqtt_fail_closed_exit_code": 1,
+  "mqtt_fail_closed_trace": [
+    {
+      "phase": "publish_fail_closed",
+      "error": "QoS-1 ACK not confirmed within timeout; fail closed"
+    },
+    {
+      "phase": "shutdown_fail_closed",
+      "error": "QoS-1 ACK not confirmed within timeout; fail closed"
+    }
+  ],
+  "bounded_run_exit_code": 0,
+  "deploy_authorized": false,
+  "plantos_handoff": false,
+  "merge_authorized": false,
+  "uat_executed": false
+}

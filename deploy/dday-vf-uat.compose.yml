@@ -1,0 +1,38 @@
+# DDAY-VF-UAT-01-C01 — Bottled Water D-Day MQTT runtime (artifact only).
+# Do not deploy to UAT from this slice. No public MQTT port. No secrets.
+# Build from repo root:
+#   VF_SOURCE_SHA=<accepted_sha> docker compose -f deploy/dday-vf-uat.compose.yml build
+
+services:
+  virtual-factory-dday:
+    container_name: virtual-factory-dday
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SOURCE_SHA: ${VF_SOURCE_SHA:-unknown}
+    restart: unless-stopped
+    networks:
+      - plantos-net
+    environment:
+      MQTT_HOST: plantos-emqx
+      MQTT_PORT: "1883"
+      MQTT_CLIENT_ID: vf-dday-bw-demo-01
+    command:
+      - virtual-factory
+      - dday-bw-runtime
+      - --mqtt-host
+      - plantos-emqx
+      - --mqtt-port
+      - "1883"
+      - --mqtt-client-id
+      - vf-dday-bw-demo-01
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  plantos-net:
+    external: true

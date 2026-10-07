@@ -250,6 +250,34 @@ def build_parser() -> argparse.ArgumentParser:
     parse_parser.add_argument("--output", default=None, help="Save config to file.")
     parse_parser.add_argument("--validate", action="store_true", help="Validate parsed config.")
 
+    dday_parser = subparsers.add_parser(
+        "dday-bw-runtime",
+        help="Run the durable Bottled Water D-Day MQTT runtime (FR1 cadence).",
+    )
+    dday_parser.add_argument(
+        "--mqtt-host",
+        default=None,
+        help="MQTT broker host (default: MQTT_HOST or plantos-emqx).",
+    )
+    dday_parser.add_argument("--mqtt-port", type=int, default=1883, help="MQTT broker port.")
+    dday_parser.add_argument(
+        "--mqtt-client-id",
+        default=None,
+        help="MQTT client id (default: MQTT_CLIENT_ID or vf-dday-bw-demo-01).",
+    )
+    dday_parser.add_argument(
+        "--mqtt-connect-retries",
+        type=int,
+        default=20,
+        help="MQTT connection retry attempts.",
+    )
+    dday_parser.add_argument(
+        "--mqtt-connect-delay",
+        type=float,
+        default=1.0,
+        help="Seconds between MQTT connection retry attempts.",
+    )
+
     return parser
 
 
@@ -352,6 +380,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             except Exception as ex:
                 print(f"  Validation error: {ex}")
         return
+
+    if args.command == "dday-bw-runtime":
+        from virtual_factory.workspaces.dday_bw_runtime import run_dday_bw_runtime_cli
+
+        raise SystemExit(run_dday_bw_runtime_cli(args))
 
     if args.command == "parse":
         from virtual_factory.ai.pid_parser import parse_pid_shorthand, parse_and_save

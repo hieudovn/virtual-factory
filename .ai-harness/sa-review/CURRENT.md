@@ -1,24 +1,23 @@
 # SA REVIEW INBOX
 
-Task: DDAY-VF-UAT-01 — pre-deployment reconciliation (UAT remains BLOCKED)
-Status: recon pushed for SA review; machine status is derived by `run_task_gate.py`. No deploy. No runtime change.
+Task: DDAY-VF-UAT-01-C01 — durable Bottled Water MQTT runtime (no UAT deploy)
+Status: implementation pushed for SA review; machine status is derived by `run_task_gate.py`. No deploy. No merge.
 
 Authority:
-SA Issue hieudovn/virtual-factory#118 plus VF SA deployment review (2026-10-06)
-User order: recon only; report PRE-DEPLOYMENT RECON READY FOR SA REVIEW then STOP
+SA Issue hieudovn/virtual-factory#119 plus VF SA TIME-OWNERSHIP ALIGNMENT (2026-10-07T00:15:46Z)
+User order: durable CLI + compose artifact; report DURABLE RUNTIME READY FOR VF SA REVIEW then STOP
 PR: hieudovn/virtual-factory#101 (base main, head sa/dday-track-b-20261003)
 
 Baselines:
-C03 accepted: 320d82fb2fb3339461553e258b09ebee6689615a (no FR1 profile)
-FR1 implementation: dd6cfe466832b4c167f49861d27f718291f78699
-FR1 evidence child: 96a43b92dbbf99f178407048b44117124a022eae
+UAT-01 recon: 485af9ac24c66f69db29ef308a144cfebe1e054b
 origin/main: f5261c8ca18cd4e01779c0274b55270ba028b4e5
 contract_version: dday-bw-b1-v2
+dictionary_sha256: cbe389ec7d3c022a78b7853044f08ba148a7b8a41e374931973683c8886b07ca
 
 What this slice does:
-- Confirms SHA split, missing MQTT entrypoint, timestamp restart collision.
-- Records live UAT/TDengine inspect as UNKNOWN from this agent.
-- Proposes launcher + warmup; does not implement them.
+- Adds `virtual-factory dday-bw-runtime` (bottled-water-dday / dday-bw-runtime-fr1).
+- Adds compose artifact `deploy/dday-vf-uat.compose.yml` (not executed).
+- ACKs final STOPPED, fail-closed MQTT, allows repeated deterministic source timestamps.
 
-NOT authorized: deploy, UAT modify, PlantOS, TDengine writes, public MQTT, merge, PlantOS PM handoff.
-The PM does not self-certify COMPLETE / CLOSED / SA APPROVED / LIVE VF RUNTIME READY.
+NOT authorized: UAT deploy, reservation/warmup, PlantOS, TDengine writes, public MQTT, merge, PlantOS PM handoff.
+The PM does not self-certify COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED.
