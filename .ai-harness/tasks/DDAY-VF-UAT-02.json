@@ -30,6 +30,8 @@
     "tests/",
     "reports/dday-vf-uat-01/",
     ".ai-harness/tasks/",
+    ".ai-harness/scripts/",
+    ".ai-harness/tests/",
     ".ai-harness/sa-review/evidence/DDAY-VF-UAT-02/",
     ".ai-harness/sa-review/evidence/DDAY-VF-UAT-01-C01/",
     ".ai-harness/sa-review/evidence/DDAY-VF-UAT-01/",
