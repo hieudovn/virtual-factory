@@ -277,6 +277,17 @@ def build_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Seconds between MQTT connection retry attempts.",
     )
+    dday_parser.add_argument(
+        "--http-host",
+        default=None,
+        help="Optional FactoriX Sim HTTP bind host (or FACTORIX_SIM_HTTP_HOST).",
+    )
+    dday_parser.add_argument(
+        "--http-port",
+        type=int,
+        default=8090,
+        help="FactoriX Sim HTTP port when --http-host is set (default 8090).",
+    )
 
     return parser
 

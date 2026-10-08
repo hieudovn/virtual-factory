@@ -33,6 +33,7 @@ PLANT_SOURCE_ID = "BW-DEMO-01"
 DEFAULT_MQTT_HOST = "plantos-emqx"
 DEFAULT_MQTT_PORT = 1883
 DEFAULT_CLIENT_ID = "vf-dday-bw-demo-01"
+DEFAULT_HTTP_PORT = 8090
 DICTIONARY_SHA256 = "cbe389ec7d3c022a78b7853044f08ba148a7b8a41e374931973683c8886b07ca"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 WORKSPACE_DIR = REPO_ROOT / "configs" / "workspaces" / WORKSPACE_ID
@@ -70,6 +71,43 @@ def verify_runtime_identity() -> dict:
     }
 
 
+def start_factorix_sim_http(
+    factory: BottledWaterFactory,
+    host: str,
+    port: int,
+) -> dict:
+    """Serve the existing Bottled Water skin against ``factory``.
+
+    The MQTT loop remains the only simulation clock. HTTP is an observer
+    plus the accepted START/PAUSE/RESUME/STOP/RESET control surface.
+    """
+    try:
+        import uvicorn
+    except ImportError as exc:
+        raise RuntimeError(
+            "FactoriX Sim HTTP requires the api extra: pip install -e .[api]"
+        ) from exc
+    from virtual_factory.ui.api import create_app
+
+    app = create_app(
+        auto_start=False,
+        factory_autorun=False,
+        bw_factory=factory,
+    )
+    config = uvicorn.Config(app, host=host, port=int(port), log_level="warning")
+    server = uvicorn.Server(config)
+    thread = threading.Thread(target=server.run, daemon=True, name="factorix-sim-http")
+    thread.start()
+    return {
+        "product": "FactoriX Sim",
+        "http_host": host,
+        "http_port": int(port),
+        "public_route": "/factorix-sim",
+        "factory_object_id": id(factory),
+        "simulation_owner": "dday-bw-runtime",
+    }
+
+
 def _install_stop_signals(stop_flag: threading.Event) -> None:
     def _handle(signum, _frame) -> None:
         stop_flag.set()
@@ -89,6 +127,8 @@ def run_dday_bw_runtime(
     max_cycles: int | None = None,
     pace: bool = True,
     install_signals: bool = True,
+    http_host: str | None = None,
+    http_port: int = DEFAULT_HTTP_PORT,
 ) -> dict:
     """Run one fresh deterministic Bottled Water D-Day MQTT session.
 
@@ -111,6 +151,10 @@ def run_dday_bw_runtime(
     flag = stop_flag or threading.Event()
     if install_signals:
         _install_stop_signals(flag)
+
+    http_info = None
+    if http_host:
+        http_info = start_factorix_sim_http(factory, http_host, http_port)
 
     shutdown_trace: list[dict] = []
     exit_code = 0
@@ -153,16 +197,25 @@ def run_dday_bw_runtime(
         "identity": identity,
         "cycles": cycles,
         "shutdown_trace": shutdown_trace,
+        "http": http_info,
     }
 
 
 def run_dday_bw_runtime_cli(args: Any) -> int:
     host = args.mqtt_host or os.environ.get("MQTT_HOST") or DEFAULT_MQTT_HOST
+    http_host = getattr(args, "http_host", None) or os.environ.get("FACTORIX_SIM_HTTP_HOST")
+    http_port = int(
+        getattr(args, "http_port", 0)
+        or os.environ.get("FACTORIX_SIM_HTTP_PORT")
+        or DEFAULT_HTTP_PORT
+    )
     result = run_dday_bw_runtime(
         mqtt_host=host,
         mqtt_port=int(args.mqtt_port),
         mqtt_client_id=args.mqtt_client_id or os.environ.get("MQTT_CLIENT_ID") or DEFAULT_CLIENT_ID,
         mqtt_connect_retries=int(args.mqtt_connect_retries),
         mqtt_connect_delay=float(args.mqtt_connect_delay),
+        http_host=http_host or None,
+        http_port=http_port,
     )
     return int(result["exit_code"])

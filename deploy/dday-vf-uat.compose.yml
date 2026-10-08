@@ -18,6 +18,10 @@ services:
       MQTT_HOST: plantos-emqx
       MQTT_PORT: "1883"
       MQTT_CLIENT_ID: vf-dday-bw-demo-01
+      FACTORIX_SIM_HTTP_HOST: 0.0.0.0
+      FACTORIX_SIM_HTTP_PORT: "8090"
+    ports:
+      - "127.0.0.1:8090:8090"
     command:
       - virtual-factory
       - dday-bw-runtime

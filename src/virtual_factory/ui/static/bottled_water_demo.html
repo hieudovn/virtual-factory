@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bottled Water Factory — Filling &amp; Packaging Line</title>
+<title>FactoriX Sim — Bottled Water Factory</title>
 <link rel="stylesheet" href="/bottled-water-demo/static/bottled_water_demo.css">
 </head>
 <body>
@@ -15,9 +15,9 @@
   <header id="vf-topbar">
     <div class="vf-tb-left">
       <div class="vf-logo">
-        <span class="vf-logo-mark">VF</span>
+        <span class="vf-logo-mark">FX</span>
         <div>
-          <span class="vf-logo-text">VIRTUAL FACTORY</span>
+          <span class="vf-logo-text">FACTORIX SIM</span>
           <span class="vf-logo-sub" id="bw-plant-name">Bottled Water Factory</span>
         </div>
       </div>
@@ -118,19 +118,24 @@
           <button id="bw-btn-pause"  class="bw-btn" onclick="bwPause()">⏸ PAUSE</button>
           <button id="bw-btn-resume" class="bw-btn" onclick="bwResume()">▶ RESUME</button>
           <button id="bw-btn-stop"   class="bw-btn" onclick="bwStop()">■ STOP</button>
-          <button id="bw-btn-reset"  class="bw-btn bw-btn-outline" onclick="bwReset()">↻ RESET</button>
+          <button id="bw-btn-reset"  class="bw-btn bw-btn-outline bw-btn-danger" onclick="bwReset()">↻ RESET</button>
         </div>
-        <div class="bw-sim-rate">
-          <label class="bw-rate-label">Refresh
-            <select id="bw-rate" class="bw-select" onchange="bwSetRate(this.value)">
-              <option value="900">0.5x</option>
-              <option value="600" selected>1x</option>
-              <option value="300">2x</option>
-              <option value="150">4x</option>
-            </select>
-          </label>
-          <span class="bw-rate-hint">display only — the server clock drives production</span>
-        </div>
+        <details id="bw-sim-advanced" class="bw-sim-advanced">
+          <summary>Advanced</summary>
+          <div id="bw-sim-advanced-body" class="bw-sim-advanced-body"></div>
+          <div class="bw-sim-rate">
+            <label class="bw-rate-label">Refresh
+              <select id="bw-rate" class="bw-select" onchange="bwSetRate(this.value)">
+                <option value="900">0.5x</option>
+                <option value="600" selected>1x</option>
+                <option value="300">2x</option>
+                <option value="150">4x</option>
+              </select>
+            </label>
+            <span class="bw-rate-hint">display only — the server clock drives production</span>
+          </div>
+          <p class="bw-sim-advanced-note">Classify codes on a selected station. RESET returns the factory to t=0.</p>
+        </details>
       </div>
 
       <!-- Selection popup -->

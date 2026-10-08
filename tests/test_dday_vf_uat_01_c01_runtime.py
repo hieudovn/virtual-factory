@@ -140,7 +140,8 @@ def test_c01_entrypoint_starts_correct_workspace_and_profile():
     service = compose["services"]["virtual-factory-dday"]
     assert service["container_name"] == "virtual-factory-dday"
     assert service["restart"] == "unless-stopped"
-    assert "ports" not in service
+    assert service.get("ports") == ["127.0.0.1:8090:8090"]
+    assert "1883" not in str(service.get("ports"))
     assert "volumes" not in service
     assert service["command"] == [
         "virtual-factory",

@@ -1,0 +1,155 @@
+{
+  "task_id": "DDAY-VF-UI-DEPLOY",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "D-DAY TRACK B — FACTORIX SIM UI DEPLOY ON UAT",
+  "issue": "hieudovn/virtual-factory#121",
+  "parent_issue": "hieudovn/virtual-factory#118",
+  "pr": 122,
+  "objective": "Deploy the existing Bottled Water visual skin on UAT as FactoriX Sim at public route /factorix-sim without rebuilding the simulator, without renaming internal workspace/source/topic IDs, and without creating a second independent simulation truth. Keep the accepted MQTT dday-bw-runtime as the single simulation clock. Prove the UI on browser and that PlantOS MQTT integration still works.",
+  "conservative_interpretation": {
+    "issue_121_live_read": "Issue #121 was readable. User order matches the issue body.",
+    "single_truth": "A separate UI process that constructs its own BottledWaterFactory would be a second truth. HTTP must bind to the same factory instance the MQTT loop already owns. That requires adding an optional HTTP listener to dday-bw-runtime and recreating virtual-factory-dday once. The recreate is technically required and will be evidenced. MQTT client-id, topics, contract, and PlantOS path stay the same.",
+    "no_rebuild": "Reuse bottled_water_demo and bottled_water_overview skins. Branding-only FactoriX Sim. Keep /bottled-water-demo aliases.",
+    "overview_branding": "Overview HTML/JS stay at accepted C01 frozen hashes. FactoriX Sim chrome is applied at HTML serve time so dictionary/MQTT hash locks remain PASS.",
+    "operator_surface": "SA comments 6033350048 / 6033350676: primary visible controls are START/PAUSE/STOP only. Resume/Reset stay available under collapsed Advanced. Classify stays on the station popup. Advance is not added to the operator skin because B4 forbids /advance in bottled_water_demo.js; the existing debug HTTP seam remains. RESET asks for window.confirm. No auth/RBAC. B3/B4 button id order in demo.html is preserved; Resume/Reset are relocated in the browser.",
+    "no_id_rename": "workspace bottled-water-dday, plant BW-DEMO-01, line BW-FP, MQTT topics, dday-bw-b1-v2 stay unchanged.",
+    "no_kpi": "FactoriX Sim remains raw-fact visualization. PlantOS keeps KPI/OEE.",
+    "restart_required": "virtual-factory-dday must be recreated to load the HTTP listener. Restart may replay deterministic source timestamps; that is the accepted C01 behavior.",
+    "evidence_refresh": "SA comments 6050598056 / 6050598477: product/UX at 2a50760 PASSed. Refresh committed evidence only so deployed SHA/image, browser wording (START/PAUSE/STOP primary, Advanced, RESET confirm), and PlantOS MQTT health match live UAT. Do not change product code."
+  },
+  "explicit_non_objectives": [
+    "Do not rebuild the simulator or 8-station skin",
+    "Do not rename workspace/source/topic/contract IDs for branding",
+    "Do not run a second independent BottledWaterFactory",
+    "Do not expose MQTT or TDengine publicly",
+    "Do not move PlantOS KPI/OEE into FactoriX Sim",
+    "Do not change PlantOS production code",
+    "Do not start Issue #91 Physical S7",
+    "Do not merge to main",
+    "Do not add authentication or RBAC",
+    "Do not remove Resume/Reset/Classify capabilities or the Advance HTTP debug seam",
+    "Do not change product code in this evidence-refresh pass",
+    "Do not self-certify COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED"
+  ],
+  "required_branch": "cursor/dday-vf-ui-deploy-3dc0",
+  "expected_base_sha": "ee838b0b00704e8f0ed7cd965ac48440cca2b26e",
+  "sa_expected_baseline_sha": "ee838b0b00704e8f0ed7cd965ac48440cca2b26e",
+  "working_tree_required": "clean",
+  "allowed_paths": [
+    "src/virtual_factory/ui/api.py",
+    "src/virtual_factory/ui/static/bottled_water_demo.html",
+    "src/virtual_factory/ui/static/bottled_water_demo.js",
+    "src/virtual_factory/ui/static/bottled_water_demo.css",
+    "src/virtual_factory/ui/static/bottled_water_overview.html",
+    "src/virtual_factory/ui/static/bottled_water_overview.js",
+    "src/virtual_factory/ui/static/bottled_water_overview.css",
+    "src/virtual_factory/workspaces/dday_bw_runtime.py",
+    "src/virtual_factory/main.py",
+    "deploy/dday-vf-uat.compose.yml",
+    "deploy/dday-vf-uat.nginx.conf",
+    "tests/test_dday_vf_ui_deploy.py",
+    "tests/test_dday_vf_uat_01_c01_runtime.py",
+    ".ai-harness/tasks/DDAY-VF-UI-DEPLOY.json",
+    ".ai-harness/sa-review/evidence/DDAY-VF-UI-DEPLOY/",
+    ".ai-harness/sa-review/evidence/DDAY-VF-UAT-01-C01/smoke_durable_runtime.py",
+    ".ai-harness/sa-review/reports/DDAY-VF-UI-DEPLOY.md",
+    ".ai-harness/sa-review/CURRENT.md",
+    "reports/dday-vf-uat-01/"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/core/",
+    "src/virtual_factory/telemetry/",
+    "src/virtual_factory/scenarios/",
+    "src/virtual_factory/equipment/",
+    "src/virtual_factory/protocols/",
+    "Dockerfile",
+    "docker-compose.yml",
+    "pyproject.toml",
+    ".ai-harness/scripts/derive_status.py",
+    ".ai-harness/PM-EXECUTION-CONTRACT.md"
+  ],
+  "required_deliverables": [
+    "FactoriX Sim branding on the existing Bottled Water skin",
+    "Public routes /factorix-sim and /factorix-sim/overview with /bottled-water-demo aliases",
+    "HTTP listener on the same dday-bw-runtime factory instance",
+    "Compose loopback HTTP only; nginx snippet for /factorix-sim",
+    "UAT deploy of FactoriX Sim with MQTT path still working",
+    "Browser evidence: whole-factory, 8-station line, live state, Capper scenario, PlantOS still live",
+    "Primary operator surface shows only START / PAUSE / STOP; Advanced holds Resume/Reset with RESET confirmation"
+  ],
+  "required_tests": [
+    "FactoriX Sim routes alias the existing skin and factory",
+    "Injected factory is the only simulation truth (no autorun second clock)",
+    "Internal workspace/source IDs unchanged",
+    "No KPI/OEE fields added to FactoriX Sim projections",
+    "C01 compose still publishes no public MQTT",
+    "Served FactoriX pages keep START/PAUSE/STOP as the only primary controls",
+    "Resume and Reset remain available under Advanced; RESET requires confirmation",
+    "Demo HTML keeps B3/B4 button ids in source order; /advance stays out of bottled_water_demo.js"
+  ],
+  "required_smoke_checks": [
+    {
+      "id": "SMOKE-DDAY-VF-UI-DEPLOY",
+      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-VF-UI-DEPLOY/smoke_factorix_sim.py"],
+      "execution_policy": "local_or_ci",
+      "required": true,
+      "description": "FactoriX Sim routes, branding, single-truth, no public MQTT."
+    },
+    {
+      "id": "SMOKE-DDAY-VF-UAT-01-C01",
+      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-VF-UAT-01-C01/smoke_durable_runtime.py"],
+      "execution_policy": "local_or_ci",
+      "required": true,
+      "description": "C01 durable MQTT runtime regression."
+    },
+    {
+      "id": "SMOKE-BW-FACTORY",
+      "command": ["python", ".ai-harness/sa-review/evidence/DDAY-B4/smoke_bottled_water_factory.py"],
+      "execution_policy": "local_or_ci",
+      "required": true,
+      "description": "B4 autonomous-runtime smoke."
+    }
+  ],
+  "required_remote_evidence": [
+    "Remote branch head equals reported commit SHA",
+    "PR open, base main, head equals remote branch head",
+    "Exact-head CI success for the pushed commit SHA",
+    "UAT public URL /factorix-sim serves FactoriX Sim",
+    "virtual-factory-dday MQTT path still operational after UI deploy"
+  ],
+  "forbidden_actions": [
+    "Do not push directly to main",
+    "Do not merge",
+    "Do not start Issue #91",
+    "Do not expose MQTT publicly",
+    "Do not create a second simulation factory",
+    "Do not self-certify COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED"
+  ],
+  "stop_conditions": [
+    "Single-truth cannot be preserved -> STOP",
+    "origin/main advances materially -> STOPPED — BASELINE ADVANCED"
+  ],
+  "acceptance_criteria": [
+    {"id": "A01", "phase": "pre_status", "description": "Repository baseline matches the contract baseline", "rule": {"field": "preflight.baseline_match", "operator": "is_true", "expected": null}},
+    {"id": "A02", "phase": "pre_status", "description": "Working tree was clean at preflight", "rule": {"field": "preflight.working_tree_clean", "operator": "is_true", "expected": null}},
+    {"id": "A03", "phase": "pre_status", "description": "Full local test suite passes", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "A04", "phase": "pre_status", "description": "Required smoke checks reach effective PASS", "rule": {"field": "smoke_checks", "operator": "contains", "expected": "'effective_result': 'PASS'"}},
+    {"id": "A05", "phase": "pre_status", "description": "No blocking issue recorded by the gate pipeline", "rule": {"field": "blocking_issues", "operator": "is_empty", "expected": null}},
+    {"id": "A06", "phase": "pre_status", "description": "No tool failure recorded", "rule": {"field": "tool_failures", "operator": "is_empty", "expected": null}},
+    {"id": "A07", "phase": "pre_status", "description": "No contradictions detected", "rule": {"field": "contradictions", "operator": "is_empty", "expected": null}},
+    {"id": "A08", "phase": "final", "description": "All canonical gate steps executed (P01-P24)", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
+    {"id": "A09", "phase": "final", "description": "All canonical gate steps PASS", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
+    {"id": "A10", "phase": "final", "description": "Implementation commit exists on the remote branch", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}},
+    {"id": "A11", "phase": "final", "description": "Remote branch head is present and reported", "rule": {"field": "implementation.remote_branch_head", "operator": "is_present", "expected": null}},
+    {"id": "A12", "phase": "final", "description": "PR metadata resolved (open PR with base main)", "rule": {"field": "pull_request.number", "operator": "is_present", "expected": null}},
+    {"id": "A13", "phase": "final", "description": "Exact-head CI succeeded for the pushed SHA", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "A14", "phase": "final", "description": "Runtime authorization boundaries preserved (no merge, no next slice)", "rule": {"field": "authorization.may_merge", "operator": "is_false", "expected": null}}
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  },
+  "_note": "Report DDAY-VF-UI-DEPLOY — FACTORIX SIM READY FOR SA REVIEW. Then STOP."
+}

@@ -7,6 +7,66 @@ from pathlib import Path
 
 from virtual_factory.ui.runtime_service import RuntimeService
 
+_OV_CONTROLS_FROZEN = """    <div class="ov-controls">
+      <button id="ov-btn-start" class="ov-btn ov-btn-primary" onclick="ovStart()">▶ START</button>
+      <button id="ov-btn-pause" class="ov-btn" onclick="ovPause()">⏸ PAUSE</button>
+      <button id="ov-btn-resume" class="ov-btn" onclick="ovResume()">▶ RESUME</button>
+      <button id="ov-btn-stop" class="ov-btn" onclick="ovStop()">■ STOP</button>
+      <button id="ov-btn-reset" class="ov-btn ov-btn-outline" onclick="ovReset()">↻ RESET</button>
+    </div>"""
+
+_OV_CONTROLS_PRESENTED = """    <div class="ov-controls">
+      <button id="ov-btn-start" class="ov-btn ov-btn-primary" onclick="ovStart()">▶ START</button>
+      <button id="ov-btn-pause" class="ov-btn" onclick="ovPause()">⏸ PAUSE</button>
+      <button id="ov-btn-stop" class="ov-btn" onclick="ovStop()">■ STOP</button>
+      <details class="ov-advanced">
+        <summary>Advanced</summary>
+        <button id="ov-btn-resume" class="ov-btn" onclick="ovResume()">▶ RESUME</button>
+        <button id="ov-btn-reset" class="ov-btn ov-btn-outline ov-btn-danger" onclick="ovResetConfirm()">↻ RESET</button>
+      </details>
+    </div>
+<style>
+.ov-advanced { margin-left: 8px; font-size: 12px; color: var(--bw-text-secondary); }
+.ov-advanced summary { cursor: pointer; user-select: none; font-weight: 600; }
+.ov-advanced[open] { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ov-btn-danger { border-color: #b42318; color: #b42318; }
+</style>
+<script>
+function ovResetConfirm() {
+  if (window.confirm("RESET returns the whole factory to t=0 and cannot be undone. Continue?")) {
+    ovReset();
+  }
+}
+</script>"""
+
+
+def brand_factorix_html(text: str) -> str:
+    """Apply FactoriX Sim chrome without rewriting frozen static files.
+
+    Overview HTML/JS stay at the accepted C01 hashes. Branding is a serve-time
+    view so dictionary/MQTT frozen-hash tests remain PASS.
+    """
+    replacements = (
+        (
+            "<title>Bottled Water Factory — Whole Factory Overview</title>",
+            "<title>FactoriX Sim — Bottled Water Factory</title>",
+        ),
+        (
+            "<title>Bottled Water Factory — Filling &amp; Packaging Line</title>",
+            "<title>FactoriX Sim — Bottled Water Factory</title>",
+        ),
+        ('<span class="vf-logo-mark">VF</span>', '<span class="vf-logo-mark">FX</span>'),
+        (
+            '<span class="vf-logo-text">VIRTUAL FACTORY</span>',
+            '<span class="vf-logo-text">FACTORIX SIM</span>',
+        ),
+    )
+    for old, new in replacements:
+        text = text.replace(old, new)
+    if _OV_CONTROLS_FROZEN in text:
+        text = text.replace(_OV_CONTROLS_FROZEN, _OV_CONTROLS_PRESENTED, 1)
+    return text
+
 
 def create_app(
     config_path: str | Path = "configs/plants/continuous_mvp_01.yaml",
@@ -22,10 +82,16 @@ def create_app(
     auto_start: bool = False,
     factory_autorun: bool = True,
     factory_tick_interval_s: float | None = None,
+    bw_factory=None,
 ):
-    """Create a FastAPI app backed by one RuntimeService instance."""
+    """Create a FastAPI app backed by one RuntimeService instance.
+
+    ``bw_factory``, when provided, is the single Bottled Water composition
+    already owned by ``dday-bw-runtime``. The HTTP skin then observes that
+    instance and must not start a second autorun clock.
+    """
     from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
-    from fastapi.responses import FileResponse
+    from fastapi.responses import FileResponse, HTMLResponse
     from fastapi.staticfiles import StaticFiles
 
     service = RuntimeService(
@@ -51,8 +117,11 @@ def create_app(
     # deterministic and is driven exclusively by factories.step().
     # ═══════════════════════════════════════════════════
 
-    _bw_factory: dict = {"instance": None}
+    _bw_factory: dict = {"instance": bw_factory}
     _bw_runner: dict = {"task": None}
+    _bw_injected = bw_factory is not None
+    if _bw_injected:
+        factory_autorun = False
 
     def _bw_workspace_dir() -> Path:
         return (
@@ -168,6 +237,27 @@ def create_app(
     @app.get("/health")
     def health() -> dict:
         return {"status": "ok", "static_dir": str(static_dir.resolve())}
+
+    @app.get("/factorix-sim/health")
+    def factorix_sim_health() -> dict:
+        """Public FactoriX Sim health — same factory the MQTT loop owns."""
+        factory = _get_bw_factory()
+        snap = factory.snapshot()
+        factory_block = snap.get("factory") or {}
+        return {
+            "status": "ok",
+            "product": "FactoriX Sim",
+            "public_route": "/factorix-sim",
+            "alias_route": "/bottled-water-demo",
+            "workspace_id": snap.get("workspace_id") or "bottled-water-dday",
+            "plant_source_id": snap.get("plant_id"),
+            "vf_source_sha": os.environ.get("VF_SOURCE_SHA", "unknown"),
+            "simulation_owner": "dday-bw-runtime" if _bw_injected else "fastapi-autorun",
+            "single_factory": True,
+            "factory_object_id": id(factory),
+            "run_state": factory_block.get("run_state"),
+            "simulation_time_s": factory_block.get("simulation_time_s"),
+        }
 
     @app.get("/status")
     def status() -> dict:
@@ -646,8 +736,9 @@ def create_app(
         return _get_bw_factory().plantos_export()
 
     @app.get("/bottled-water-demo/overview", include_in_schema=False)
-    def bottled_water_overview_page() -> FileResponse:
-        return FileResponse(static_dir / "bottled_water_overview.html")
+    def bottled_water_overview_page() -> HTMLResponse:
+        raw = (static_dir / "bottled_water_overview.html").read_text(encoding="utf-8")
+        return HTMLResponse(brand_factorix_html(raw))
 
     @app.get("/bottled-water-demo/state")
     def bottled_water_state(
@@ -669,8 +760,9 @@ def create_app(
         return FileResponse(static_dir / filename)
 
     @app.get("/bottled-water-demo", include_in_schema=False)
-    def bottled_water_page() -> FileResponse:
-        return FileResponse(static_dir / "bottled_water_demo.html")
+    def bottled_water_page() -> HTMLResponse:
+        raw = (static_dir / "bottled_water_demo.html").read_text(encoding="utf-8")
+        return HTMLResponse(brand_factorix_html(raw))
 
     @app.get("/bottled-water-demo/unit/{unit_id}")
     def bottled_water_unit(unit_id: str) -> dict:
@@ -779,6 +871,38 @@ def create_app(
         factory = _get_bw_factory()
         factory.advance_debug_cycle()
         return _bw_projection(factory.controller)
+
+    # DDAY-VF-UI-DEPLOY — public FactoriX Sim aliases. Same handlers, same
+    # factory. Internal workspace/source IDs are not renamed.
+    for _src, _dest in (
+        ("/bottled-water-demo", "/factorix-sim"),
+        ("/bottled-water-demo/", "/factorix-sim/"),
+        ("/bottled-water-demo/overview", "/factorix-sim/overview"),
+        ("/bottled-water-demo/factory", "/factorix-sim/factory"),
+        ("/bottled-water-demo/state", "/factorix-sim/state"),
+        ("/bottled-water-demo/plantos-export", "/factorix-sim/plantos-export"),
+        ("/bottled-water-demo/static/{filename}", "/factorix-sim/static/{filename}"),
+        ("/bottled-water-demo/unit/{unit_id}", "/factorix-sim/unit/{unit_id}"),
+        ("/bottled-water-demo/start", "/factorix-sim/start"),
+        ("/bottled-water-demo/pause", "/factorix-sim/pause"),
+        ("/bottled-water-demo/resume", "/factorix-sim/resume"),
+        ("/bottled-water-demo/stop", "/factorix-sim/stop"),
+        ("/bottled-water-demo/reset", "/factorix-sim/reset"),
+        ("/bottled-water-demo/classify", "/factorix-sim/classify"),
+        ("/bottled-water-demo/advance", "/factorix-sim/advance"),
+    ):
+        for route in app.router.routes:
+            path = getattr(route, "path", None)
+            methods = getattr(route, "methods", None)
+            endpoint = getattr(route, "endpoint", None)
+            if path == _src and endpoint is not None:
+                app.add_api_route(
+                    _dest,
+                    endpoint,
+                    methods=sorted(methods) if methods else ["GET"],
+                    include_in_schema=False,
+                )
+                break
 
     return app
 

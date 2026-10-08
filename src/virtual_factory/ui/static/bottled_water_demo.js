@@ -14,7 +14,14 @@
 
 'use strict';
 
-const BW_API = '/bottled-water-demo';
+function bwPublicPrefix() {
+  const path = (typeof location !== 'undefined' && location.pathname) || '';
+  if (path === '/factorix-sim' || path.indexOf('/factorix-sim/') === 0) {
+    return '/factorix-sim';
+  }
+  return '/bottled-water-demo';
+}
+const BW_API = bwPublicPrefix();
 
 /* Full canvas reference box (viewBox; not a fixed pixel size). */
 const BW_CANVAS = { w: 1920, h: 640 };
@@ -1047,6 +1054,9 @@ function bwResume() { return bwAction('/resume'); }
 function bwStop() { return bwAction('/stop'); }
 
 function bwReset() {
+  if (!window.confirm('RESET returns the factory to t=0 and cannot be undone. Continue?')) {
+    return;
+  }
   BW.events = [];
   BW.eventKeys.clear();
   BW.motion.clear();
@@ -1054,6 +1064,15 @@ function bwReset() {
   BW.bottles.clear();
   bwClosePopup();
   return bwAction('/reset');
+}
+
+function bwPresentAdvancedControls() {
+  const panel = bwEl('bw-sim-advanced-body');
+  const resume = bwEl('bw-btn-resume');
+  const reset = bwEl('bw-btn-reset');
+  if (!panel) return;
+  if (resume) panel.appendChild(resume);
+  if (reset) panel.appendChild(reset);
 }
 
 function bwSetRate(value) {
@@ -1183,4 +1202,9 @@ async function bwInit() {
   bwRestartClock();
 }
 
-document.addEventListener('DOMContentLoaded', bwInit);
+document.addEventListener('DOMContentLoaded', () => {
+  const factoryLink = document.getElementById('bw-factory-link');
+  if (factoryLink) factoryLink.setAttribute('href', `${BW_API}/overview`);
+  bwPresentAdvancedControls();
+  bwInit();
+});
