@@ -15,7 +15,8 @@
     "operator_surface": "SA comments 6033350048 / 6033350676: primary visible controls are START/PAUSE/STOP only. Resume/Reset stay available under collapsed Advanced. Classify stays on the station popup. Advance is not added to the operator skin because B4 forbids /advance in bottled_water_demo.js; the existing debug HTTP seam remains. RESET asks for window.confirm. No auth/RBAC. B3/B4 button id order in demo.html is preserved; Resume/Reset are relocated in the browser.",
     "no_id_rename": "workspace bottled-water-dday, plant BW-DEMO-01, line BW-FP, MQTT topics, dday-bw-b1-v2 stay unchanged.",
     "no_kpi": "FactoriX Sim remains raw-fact visualization. PlantOS keeps KPI/OEE.",
-    "restart_required": "virtual-factory-dday must be recreated to load the HTTP listener. Restart may replay deterministic source timestamps; that is the accepted C01 behavior."
+    "restart_required": "virtual-factory-dday must be recreated to load the HTTP listener. Restart may replay deterministic source timestamps; that is the accepted C01 behavior.",
+    "evidence_refresh": "SA comments 6050598056 / 6050598477: product/UX at 2a50760 PASSed. Refresh committed evidence only so deployed SHA/image, browser wording (START/PAUSE/STOP primary, Advanced, RESET confirm), and PlantOS MQTT health match live UAT. Do not change product code."
   },
   "explicit_non_objectives": [
     "Do not rebuild the simulator or 8-station skin",
@@ -28,6 +29,7 @@
     "Do not merge to main",
     "Do not add authentication or RBAC",
     "Do not remove Resume/Reset/Classify capabilities or the Advance HTTP debug seam",
+    "Do not change product code in this evidence-refresh pass",
     "Do not self-certify COMPLETE / CLOSED / SA APPROVED / NEXT SLICE AUTHORIZED"
   ],
   "required_branch": "cursor/dday-vf-ui-deploy-3dc0",

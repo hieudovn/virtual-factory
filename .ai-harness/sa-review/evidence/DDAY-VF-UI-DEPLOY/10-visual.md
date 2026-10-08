@@ -1,6 +1,7 @@
-# DDAY-VF-UI-DEPLOY — browser proof
+# DDAY-VF-UI-DEPLOY — browser proof (evidence refresh)
 
 Public host: `http://157.10.52.54`
+Captured: 2026-10-08 against deployed executable `2a507606bd63fbc7a27ef543cbaaf54469cc631b`.
 
 ## FactoriX Sim whole-factory
 
@@ -8,11 +9,13 @@ URL: `/factorix-sim/overview`
 
 - Title / top bar: **FactoriX Sim / FACTORIX SIM** (no VIRTUAL FACTORY)
 - Plant: Bottled Water Factory / `BW-DEMO-01`
-- Run state RUNNING, simulation time advancing without browser clock
+- Run state RUNNING, simulation time advancing (~102065 s) without a browser clock
 - Five accepted areas: BW-WT, BW-BP, BW-FP, BW-WH, BW-UT
-- Filling & Packaging showed WARNING during the Capper scenario
+- Filling & Packaging showed RECOVERY during the Capper scenario
+- Primary controls: **START / PAUSE / STOP** only. Resume and Reset stay under collapsed **Advanced**.
 
-Screenshot: `browser/factorix_sim_overview_fb34d36.webp`
+Screenshot: `browser/factorix_sim_overview_primary_2a50760.webp`
+Advanced expanded: `browser/factorix_sim_overview_advanced_2a50760.webp`
 
 The C01-frozen overview drilldown `href` stays `/bottled-water-demo`. That alias
 serves the same FactoriX Sim factory. Direct `/factorix-sim` remains the
@@ -24,19 +27,24 @@ URL: `/factorix-sim`
 
 Stations: Blower, Rinser, Filler, Capper (`BW-FP-CAP01`), Inspection, Labeler, Case Packer, Palletizer.
 
-LIVE chip, bottles on the conveyor, counts advancing, START/PAUSE/RESUME/STOP present
-(accepted D-Day controls). PAUSE then RESUME was exercised; RESET was not used
-as the D-Day path.
+LIVE chip, bottles on the conveyor, counts advancing. Primary Line control
+buttons are **START / PAUSE / STOP**. Resume and Reset are not on the primary
+row; they appear only after expanding **Advanced**. RESET is danger-styled and
+opens `window.confirm` (`RESET returns the factory to t=0 and cannot be undone.`).
+The dialog was cancelled; the factory was not reset. Classify remains on the
+station popup. Advance is not on the operator skin.
 
-Screenshot: `browser/factorix_sim_line_fb34d36.webp`
+Screenshots:
+- primary collapsed: `browser/factorix_sim_line_primary_2a50760.webp`
+- Advanced expanded: `browser/factorix_sim_line_advanced_2a50760.webp`
+- RESET confirm (cancelled): `browser/factorix_sim_reset_confirm_2a50760.webp`
 
 ## Capper abnormal scenario
 
-Scenario `BW-CAP-DEG-01` on `BW-FP-CAP01`. Browser showed recover / fault marks
-and line events (scenario phase, alarm, downtime). Header: Capper recover,
-compressor fault during the same run.
+Scenario `BW-CAP-DEG-01` on `BW-FP-CAP01`. Header showed Capper recover /
+compressor recover. Station popup for Capper remains classify-on-selection.
 
-Screenshot: `browser/factorix_sim_capper_fault_fb34d36.webp`
+Screenshot: `browser/factorix_sim_capper_2a50760.webp`
 
 ## PlantOS still distinct and live
 
@@ -44,7 +52,7 @@ Screenshot: `browser/factorix_sim_capper_fault_fb34d36.webp`
 - `/health` → `{"status":"healthy","version":"0.1.0"}`
 - Edge healthy; MQTT family still consumed.
 
-Screenshots: `browser/plantos_center_login_fb34d36.webp`, `browser/plantos_health_fb34d36.webp`
+Screenshots: `browser/plantos_center_login_2a50760.webp`, `browser/plantos_health_2a50760.webp`
 
 ## Boundary
 

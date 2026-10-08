@@ -17,15 +17,20 @@ Report line after a READY derivation:
 - HTTP observer on the MQTT `dday-bw-runtime` factory (`factory_autorun=False`)
 - UAT nginx + loopback `127.0.0.1:8090`
 - MQTT path unchanged; PlantOS images unchanged (`a1695c5`)
+- Operator surface: primary START / PAUSE / STOP; Resume/Reset under Advanced; RESET confirms
 
 ## SHA distinction
 
 | Kind | SHA |
 |---|---|
 | Canonical main / Issue #121 baseline | `ee838b0b00704e8f0ed7cd965ac48440cca2b26e` |
-| Deployed VF executable | `fb34d3618d9f51c0aa9b236a5913c8af094e7ac5` |
+| Product / UX SHA (operator surface) | `2a507606bd63fbc7a27ef543cbaaf54469cc631b` |
+| Deployed VF executable | `2a507606bd63fbc7a27ef543cbaaf54469cc631b` |
 | Previous MQTT executable | `d7db6d0909da968c2b4a4ea2cdb712e5d7601282` |
 | PlantOS UAT | `a1695c5457515e2b565a5f9fe107c1e18b3e0879` |
+
+An evidence-only commit may sit after `2a50760` on this branch. It does not
+change product code. Live UAT `VF_SOURCE_SHA` remains `2a50760`.
 
 ## Browser
 

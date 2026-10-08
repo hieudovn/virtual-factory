@@ -28,3 +28,10 @@ HTTP is an optional listener on the MQTT process (`factory_autorun=False`).
 
 Overview HTML/JS stay at the accepted C01 frozen hashes. FactoriX Sim chrome
 is applied at HTML serve time.
+
+Operator surface (SA 6033350048 / 6033350676): primary START / PAUSE / STOP.
+Resume / Reset under Advanced; RESET confirms. Classify stays on the station
+popup. Advance is not on the operator skin.
+
+Evidence refresh (SA 6050598056 / 6050598477): committed SHA/image and browser
+wording must match live UAT `2a50760`. No product-code change.
