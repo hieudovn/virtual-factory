@@ -7,13 +7,21 @@
   "approval_issue": 125,
   "authority": "SA_DESIGN_DRAFT",
   "status": "MIXED_APPROVED_ROADMAP_AND_DRAFT_DETAIL__PR_REVIEW_REQUIRED",
-  "description": "Publish PO-approved roadmap+G1A architecture direction, with explicit SA DRAFT detailed contracts and G1B/C proposal, on a stacked SA design branch. No PM runtime/consumer writes.",
+  "description": "Publish PO-approved roadmap+G1A architecture direction, with explicit SA DRAFT detailed contracts and G1B/C proposal, on a stacked SA design branch. No PM runtime/consumer writes. Add G1A machine-readable candidate schemas and two specification-level deterministic fixture oracles; not executed tests nor accepted C1–C5 wire schema.",
   "allowed_paths": [
     ".ai-harness/sa-design/tasks/TIPA-VF-G1-DOC-01.json",
     "docs/plans/TIPA_VF_DIGITAL_TWIN_ROADMAP_V1.md",
     "docs/architecture/TIPA_VF_G1A_FACTORY_ORCHESTRATION_DESIGN_V1.md",
     "docs/design/TIPA_VF_G1B_G1C_DESIGN_DRAFT_V1.md",
-    "docs/reports/TIPA_VF_G1_DOC_01_REPORT.md"
+    "docs/reports/TIPA_VF_G1_DOC_01_REPORT.md",
+    "docs/design/tipa-g1/factory-run-v0.1.schema.json",
+    "docs/design/tipa-g1/module-manifest-v0.1.schema.json",
+    "docs/design/tipa-g1/factory-event-v0.1.schema.json",
+    "docs/design/tipa-g1/material-transaction-v0.1.schema.json",
+    "docs/design/tipa-g1/factory-scenario-fixture-v0.1.schema.json",
+    "docs/design/tipa-g1/fixtures/T01_TWO_PRODUCERS_JOIN.json",
+    "docs/design/tipa-g1/fixtures/T02_UPSTREAM_STARVATION.json",
+    "docs/design/tipa-g1/G1A_SCHEMA_AND_FIXTURE_REGISTER_v0_1.md"
   ],
   "forbidden_actions": [
     "write directly to main",

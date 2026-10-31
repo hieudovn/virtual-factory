@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factorix.vn/contracts/vf/tipa-g1/module-manifest-v0.1.schema.json",
+  "title": "module-manifest-v0.1.schema.json",
+  "description": "SA DETAIL DRAFT: each independent simulator advertises ports, fidelity and time boundary capabilities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "module_id",
+    "workspace_id",
+    "model_type",
+    "model_revision",
+    "fidelity",
+    "supported_modes",
+    "capabilities",
+    "ports"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "vf-module-manifest-v0.1"
+    },
+    "module_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "workspace_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "model_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "model_revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "fidelity": {
+      "enum": [
+        "F0",
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    "supported_modes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "STANDALONE",
+          "INTEGRATED"
+        ]
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "EXTERNAL_MATERIAL_INPUT",
+          "SNAPSHOT_RESTORE",
+          "ADVANCE_TO_EVENT_BOUNDARY",
+          "RESOURCE_RESERVATION",
+          "BATCH_FLOW",
+          "QUALITY_EVIDENCE"
+        ]
+      }
+    },
+    "ports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "port_id",
+          "direction",
+          "material_types",
+          "unit",
+          "buffer_id",
+          "eligibility_policy"
+        ],
+        "properties": {
+          "port_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "direction": {
+            "enum": [
+              "IN",
+              "OUT"
+            ]
+          },
+          "material_types": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          "unit": {
+            "enum": [
+              "EA",
+              "KG",
+              "L",
+              "M",
+              "BATCH"
+            ]
+          },
+          "buffer_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "eligibility_policy": {
+            "enum": [
+              "QUALIFIED_ONLY",
+              "INSPECTION_PENDING_ALLOWED",
+              "NO_QUALITY_GATE"
+            ]
+          },
+          "capacity": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          }
+        }
+      }
+    }
+  }
+}

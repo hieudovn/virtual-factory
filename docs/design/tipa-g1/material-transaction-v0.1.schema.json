@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factorix.vn/contracts/vf/tipa-g1/material-transaction-v0.1.schema.json",
+  "title": "material-transaction-v0.1.schema.json",
+  "description": "SA DETAIL DRAFT: a single atomic, idempotent ledger commit, possibly with multiple material accounting legs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "factory_run_id",
+    "generation",
+    "transaction_id",
+    "idempotency_key",
+    "simulation_tick_us",
+    "ledger_expected_version",
+    "transaction_type",
+    "operation_execution_id",
+    "transfer_id",
+    "recipe_revision",
+    "legs",
+    "parent_refs",
+    "child_refs",
+    "source_provenance"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "vf-material-transaction-v0.1"
+    },
+    "factory_run_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "transaction_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "simulation_tick_us": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ledger_expected_version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "transaction_type": {
+      "enum": [
+        "PRODUCE",
+        "RESERVE",
+        "RELEASE_RESERVATION",
+        "SHIP",
+        "RECEIVE",
+        "CONSUME",
+        "TRANSFORM",
+        "SCRAP",
+        "REJECT",
+        "RETURN"
+      ]
+    },
+    "operation_execution_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "transfer_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recipe_revision": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "legs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "material_id",
+          "material_type",
+          "quantity",
+          "unit",
+          "from_location",
+          "to_location"
+        ],
+        "properties": {
+          "material_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "material_type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "unit": {
+            "enum": [
+              "EA",
+              "KG",
+              "L",
+              "M",
+              "BATCH"
+            ]
+          },
+          "from_location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "to_location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "parent_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "child_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "source_provenance": {
+      "enum": [
+        "PDF_EXPLICIT",
+        "VF_ACCEPTED_BASELINE",
+        "MES_AS_BUILT",
+        "SA_INFERENCE",
+        "SYNTHETIC_ASSUMPTION",
+        "PENDING_TIPA"
+      ]
+    }
+  }
+}
