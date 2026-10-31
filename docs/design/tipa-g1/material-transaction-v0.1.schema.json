@@ -20,7 +20,8 @@
     "legs",
     "parent_refs",
     "child_refs",
-    "source_provenance"
+    "source_kind",
+    "definition_provenance"
   ],
   "properties": {
     "contract_version": {
@@ -111,8 +112,10 @@
             "maxLength": 256
           },
           "quantity": {
-            "type": "number",
-            "exclusiveMinimum": 0
+            "type": "string",
+            "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$",
+            "minLength": 1,
+            "description": "Strict positive decimal string for a material leg; the nonzero rule, precision by UOM, capacity and BOM reconciliation are semantic validations."
           },
           "unit": {
             "enum": [
@@ -156,7 +159,13 @@
         "maxLength": 256
       }
     },
-    "source_provenance": {
+    "source_kind": {
+      "enum": [
+        "SIMULATED",
+        "REPLAYED_SOURCE"
+      ]
+    },
+    "definition_provenance": {
       "enum": [
         "PDF_EXPLICIT",
         "VF_ACCEPTED_BASELINE",

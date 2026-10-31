@@ -42,3 +42,7 @@
 - `definition_digest` in examples uses a placeholder all-zero SHA: it must be recomputed from canonical manifest/config before execution.
 - JSON Schema refs are relative and can be checked with jsonschema Draft 2020-12 resolver; this document is not a Python API.
 - These fixtures are **specification examples**. Exact event IDs, step durations, serialized byte-level oracle and lineage digest still need G1A fixture freeze; do not mark G2 READY until then.
+
+
+## SA DD-01 contract clarification (2026-10-31)
+Authoritative material quantities and buffer capacities in the draft JSON Schemas are now decimal strings, never binary float; semantic validator must check positive, UOM-specific precision and BOM conversions. SourceKind (SIMULATED/REPLAYED_SOURCE) is separate from DefinitionProvenance (PDF_EXPLICIT etc.); a synthetic event is SIMULATED even if its process model is sourced from the permit PDF. See [G1A Core DD-01](G1A_CORE_DETAILED_DESIGN_DECISION_DD01.md). The original T01/T02 fixtures are **non-executable specification examples** with placeholder zero digest. Contract QA is an explicit gate prior to PM G2A development.

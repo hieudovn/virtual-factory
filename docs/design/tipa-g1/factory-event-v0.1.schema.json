@@ -21,7 +21,8 @@
     "wip_id",
     "lot_id",
     "equipment_id",
-    "source_provenance",
+    "source_kind",
+    "definition_provenance",
     "definition_digest",
     "payload"
   ],
@@ -102,7 +103,21 @@
         "null"
       ]
     },
-    "source_provenance": {
+    "definition_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "source_kind": {
+      "enum": [
+        "SIMULATED",
+        "REPLAYED_SOURCE"
+      ],
+      "description": "Actual origin of this runtime event, independent from the provenance of configuration that shaped it."
+    },
+    "definition_provenance": {
       "enum": [
         "PDF_EXPLICIT",
         "VF_ACCEPTED_BASELINE",
@@ -110,14 +125,8 @@
         "SA_INFERENCE",
         "SYNTHETIC_ASSUMPTION",
         "PENDING_TIPA"
-      ]
-    },
-    "definition_digest": {
-      "type": "string",
-      "pattern": "^sha256:[a-f0-9]{64}$"
-    },
-    "payload": {
-      "type": "object"
+      ],
+      "description": "Evidence status for configuration/model assumptions; must not be mistaken for runtime source."
     }
   }
 }
