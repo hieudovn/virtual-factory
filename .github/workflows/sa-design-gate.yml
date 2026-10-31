@@ -1,0 +1,32 @@
+name: SA Design Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  sa-design-scope:
+    if: ${{ startsWith(github.event.pull_request.head.ref, 'sa/design/') || startsWith(github.event.pull_request.head.ref, 'sa/governance/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify SA checker unit tests
+        run: python -m unittest discover -s .ai-harness/tests -p 'test_sa_design_gate.py' -v
+      - name: Enforce SA design or governance scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          python .ai-harness/scripts/sa_design_gate.py \
+            --base "$BASE_SHA" --head "$HEAD_SHA" \
+            --branch "$HEAD_BRANCH" --repository "$REPO"

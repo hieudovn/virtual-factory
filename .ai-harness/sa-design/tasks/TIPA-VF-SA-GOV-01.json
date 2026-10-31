@@ -1,0 +1,33 @@
+{
+  "task_id": "TIPA-VF-SA-GOV-01",
+  "class": "governance",
+  "repository": "hieudovn/virtual-factory",
+  "branch": "sa/governance/remote-design-v1",
+  "expected_base_sha": "04fb9413bd5af3c4f0457047267a60b3ea4e94fe",
+  "approval_issue": 130,
+  "authority": "PO_APPROVED_GOVERNANCE",
+  "status": "PO_APPROVED_SCOPE__PENDING_EXACT_HEAD_CI_AND_MERGE",
+  "description": "One-time bootstrap of SA remote design workflow under PO directive; preserve PM harness; no runtime implementation.",
+  "allowed_paths": [
+    "AGENTS.md",
+    ".ai-harness/README.md",
+    ".ai-harness/SA-DESIGN-WORKFLOW.md",
+    ".ai-harness/scripts/sa_design_gate.py",
+    ".ai-harness/tests/test_sa_design_gate.py",
+    ".ai-harness/sa-design/tasks/TIPA-VF-SA-GOV-01.json",
+    ".github/workflows/sa-design-gate.yml",
+    "docs/reports/TIPA_VF_SA_GOV_WORKFLOW_01.md"
+  ],
+  "forbidden_actions": [
+    "main direct write",
+    "modify PM runtime gate",
+    "modify runtime/config/test files",
+    "auto merge",
+    "deploy"
+  ],
+  "required_remote_evidence": [
+    "branch head equals PR head",
+    "SA Design Gate on exact PR head",
+    "approved design vs governance separation"
+  ]
+}

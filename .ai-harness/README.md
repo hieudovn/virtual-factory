@@ -86,3 +86,16 @@ python .ai-harness/scripts/preflight.py \
 ## Dependencies
 
 Python 3.11+ standard library. No external frameworks.
+
+
+---
+
+## SA Remote Design Workflow (separate from PM execution)
+
+For SA-owned docs, architecture, planning, contract specifications and governance changes, see [SA-DESIGN-WORKFLOW.md](SA-DESIGN-WORKFLOW.md).
+
+- Design work: branch sa/design/*, explicit approved/draft authority issue, atomic SA contract and document commit, GitHub-API remote preflight, exact-head PR diff + SA Design Gate CI.
+- Harness/CI governance: branch sa/governance/* only with explicit PO authorization and controlled paths.
+- The SA gate is [scripts/sa_design_gate.py](scripts/sa_design_gate.py), triggered by [.github/workflows/sa-design-gate.yml](../.github/workflows/sa-design-gate.yml).
+- This does not apply to PM source edits, test execution or deployment: those remain under PM-EXECUTION-CONTRACT.md and run_task_gate.py. A passing SA gate means documentation scope and baseline validated, **not** implementation approved, runtime tested or merged.
+- Missing GitHub API or exact-head CI evidence blocks READY and must be reported UNKNOWN. No direct main write or automatic merge.
