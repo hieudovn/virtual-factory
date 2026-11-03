@@ -3,6 +3,16 @@
 All probes were executed read-only against `main@04fb9413bd5af3c4f0457047267a60b3ea4e94fe`.
 No repository file was modified by a probe.
 
+## Local full-suite environment note
+
+A local full-suite run with an authenticated `gh` token that can see the private
+`hieudovn/PlantOS` repository makes the legacy probe
+`tests/test_dday_b6_c01_contract_fidelity.py::test_c01_06_plantos_compatibility_records_exact_gap`
+fail because that test asserts PlantOS is absent. The task did not modify the
+test, the probe module, or PlantOS. Exact-head CI (whose token cannot see
+PlantOS) passed all 1840 tests. The final local task gate runs with `gh` auth
+neutralised so the local visibility baseline matches CI.
+
 ## Environment
 
 ```text

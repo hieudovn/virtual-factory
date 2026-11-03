@@ -243,6 +243,7 @@ No test was skipped or deleted. No production code was changed.
 | Current-runtime gap | No exact event-boundary API; no global lockstep. |
 | Current-runtime gap | AP04 has no reservation/rollback and raises instead of waiting. |
 | Governance | G3-A implementation is **not authorized** by this report. A separate SA Design Lock/Issue is required. |
+| Local environment note | With an authenticated `gh` token that can see the private `hieudovn/PlantOS` repo, legacy `tests/test_dday_b6_c01_contract_fidelity.py::test_c01_06_plantos_compatibility_records_exact_gap` fails because it asserts PlantOS is absent. This task did not change that test or PlantOS. Exact-head CI (no PlantOS visibility) passes all 1840 tests. The final local gate neutralises `gh` auth so the local suite matches the CI visibility baseline. |
 | Design input | PR #132 is unmerged design input, not main; it is referenced, not treated as implementation truth. |
 
 ## 14. Final status
