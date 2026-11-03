@@ -3,7 +3,7 @@
   "class": "governance",
   "repository": "hieudovn/virtual-factory",
   "branch": "sa/governance/opencode-issue-compat-v1",
-  "expected_base_sha": "6ca569b4362235edd4d05e61feccba7ddadcbb4b",
+  "expected_base_sha": "848eb1c11bd305a98877573fabeff64350a885e4",
   "approval_issue": 139,
   "authority": "PO_APPROVED_GOVERNANCE",
   "allowed_paths": [
@@ -11,6 +11,6 @@
     "docs/governance/VF_OPENCODE_VPS_TASK_AUTHORING_ADDENDUM_v1.md",
     "docs/reports/VF_OC_SA_GOV_01_REPORT.md"
   ],
-  "description": "PO-approved additive policy describing OpenCode/VPS issue authorship and staged PM harness compatibility; no modification of executable harness or CI.",
+  "description": "PO-authorized VF-specific advisory OpenCode/VPS issue guidance; inherit existing P01–P24 and design workflow. No executable harness or CI changes.",
   "status": "SA_GOVERNANCE_REVIEW"
 }
