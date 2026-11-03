@@ -1,0 +1,84 @@
+{
+  "task_id": "TIPA-VF-G1B-COMPAT-01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "READ-ONLY CROSS-PROJECT CONTRACT AUDIT",
+  "objective": "Audit as-built VF C1-C5 projections against the actual MES supported fields and PlantOS synthetic publisher boundary, on verified remote SHAs, and produce a field-level compatibility/rejection/authority matrix. C5 remains NEW_PLANNED; no adapter, QMS integration, MES/PlantOS write or approval is authorized.",
+  "explicit_non_objectives": [
+    "Do not modify VF production code, configs, tests, deployment or the C4 contract",
+    "Do not modify the MES or PlantOS repositories",
+    "Do not implement a C5/QMS adapter",
+    "Do not write to a live MES, MQTT broker or PlantOS instance",
+    "Do not approve G1B, C5 implementation or G2",
+    "Do not invent fields, foreign keys or calibration semantics"
+  ],
+  "required_branch": "reports/tipa-vf-g1b-compat",
+  "expected_base_sha": "04fb9413bd5af3c4f0457047267a60b3ea4e94fe",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/TIPA-VF-G1B-COMPAT-01.json",
+    "docs/reports/TIPA_VF_G1B_COMPATIBILITY_AUDIT.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1B-COMPAT-01/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "tests/",
+    "simulators/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/tasks/TIPA-VF-G1B-COMPAT-01.json",
+    "docs/reports/TIPA_VF_G1B_COMPATIBILITY_AUDIT.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1B-COMPAT-01/01-source-ownership-and-sha.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1B-COMPAT-01/02-c1-c2-c2b-c3-mapping.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1B-COMPAT-01/03-c4-field-matrix.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1B-COMPAT-01/04-c5-and-hold-authority.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1B-COMPAT-01/05-negative-and-static-checks.md"
+  ],
+  "required_tests": [
+    "VF C4 bridge/evidence tests read-only (pytest)",
+    "VF C4 allowlist/message-type static check against MES adapter allowlist",
+    "MES adapter/Odoo tests: NOT RUN if no Odoo test runtime is available; record explicitly",
+    "Static negative check: C5 candidate and mes.instrument_calibration are not in the C4 allowlist"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [
+    "VF remote branch head equals PR head equals CI head",
+    "PR base main",
+    "Exact-head VF-DM CI success",
+    "MES and PlantOS remote heads recorded at execution"
+  ],
+  "forbidden_actions": [
+    "Modify production code (VF, MES, PlantOS)",
+    "Write to a running MES, MQTT broker or PlantOS",
+    "Implement or approve C5/QMS integration",
+    "Invent field mappings, AA10 crosswalks or calibration semantics",
+    "Push directly to main",
+    "Merge or deploy"
+  ],
+  "stop_conditions": [
+    "VF main differs from 04fb9413bd5af3c4f0457047267a60b3ea4e94fe",
+    "MES/PlantOS remote head cannot be read or changes materially during the audit",
+    "A required external repository is inaccessible",
+    "The audit would require writing to VF/MES/PlantOS production code",
+    "A field-level decision depends on unavailable TIPA/QMS authority"
+  ],
+  "acceptance_criteria": [
+    {"id": "P01", "phase": "pre_status", "description": "Required tests pass", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "P02", "phase": "pre_status", "description": "Zero test failures", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "P03", "phase": "pre_status", "description": "Exact-head CI succeeds", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "F01", "phase": "final", "description": "Compatibility audit committed", "rule": {"field": "implementation.changed_files", "operator": "contains", "expected": "docs/reports/TIPA_VF_G1B_COMPATIBILITY_AUDIT.md"}},
+    {"id": "F02", "phase": "final", "description": "Task contract committed", "rule": {"field": "implementation.changed_files", "operator": "contains", "expected": ".ai-harness/tasks/TIPA-VF-G1B-COMPAT-01.json"}},
+    {"id": "F03", "phase": "final", "description": "No forbidden action performed", "rule": {"field": "forbidden_actions.performed", "operator": "is_false", "expected": null}},
+    {"id": "F04", "phase": "final", "description": "All canonical pipeline steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
+    {"id": "F05", "phase": "final", "description": "All required pipeline steps pass", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
+    {"id": "F06", "phase": "final", "description": "Remote commit exists", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": true, "may_merge": false, "may_start_next_task": false}
+}
