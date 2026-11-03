@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factorix.vn/contracts/vf/tipa-g1/factory-event-v0.1.schema.json",
+  "title": "factory-event-v0.1.schema.json",
+  "description": "SA DETAIL DRAFT: append-only committed factory event; projection is not business writer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "factory_run_id",
+    "generation",
+    "event_id",
+    "source_event_id",
+    "module_id",
+    "simulation_tick_us",
+    "occurred_at_utc",
+    "event_type",
+    "causation_id",
+    "correlation_id",
+    "operation_execution_id",
+    "wip_id",
+    "lot_id",
+    "equipment_id",
+    "source_kind",
+    "definition_provenance",
+    "definition_digest",
+    "payload"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "vf-factory-event-v0.1"
+    },
+    "factory_run_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "source_event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "module_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "simulation_tick_us": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "occurred_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "causation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "correlation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "operation_execution_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "wip_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lot_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "equipment_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "definition_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "source_kind": {
+      "enum": [
+        "SIMULATED",
+        "REPLAYED_SOURCE"
+      ],
+      "description": "Actual origin of this runtime event, independent from the provenance of configuration that shaped it."
+    },
+    "definition_provenance": {
+      "enum": [
+        "PDF_EXPLICIT",
+        "VF_ACCEPTED_BASELINE",
+        "MES_AS_BUILT",
+        "SA_INFERENCE",
+        "SYNTHETIC_ASSUMPTION",
+        "PENDING_TIPA"
+      ],
+      "description": "Evidence status for configuration/model assumptions; must not be mistaken for runtime source."
+    }
+  }
+}

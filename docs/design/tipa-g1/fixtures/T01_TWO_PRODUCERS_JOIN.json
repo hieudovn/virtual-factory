@@ -1,0 +1,219 @@
+{
+  "contract_version": "vf-scenario-fixture-v0.1",
+  "fixture_id": "T01-TWO-PRODUCERS-ONE-CONSUMER",
+  "run_header": {
+    "contract_version": "vf-factory-run-v0.1",
+    "factory_run_id": "TIPA-P0-T01",
+    "generation": 1,
+    "workspace_id": "tipa-manufacturing-p0",
+    "definition_revision": "P0-DEMO-v0.1",
+    "definition_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "seed": 42,
+    "epoch_utc": "2026-10-31T00:00:00Z",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "production_day_start": "06:00",
+    "mode": "INTEGRATED",
+    "shift_calendar_revision": "TIPA-3SHIFTS-v1",
+    "scenario_revision": "T01-v0.1",
+    "model_revisions": {
+      "SSO2": "P0v0.1",
+      "RSO2": "P0v0.1",
+      "ASSY": "P0v0.1"
+    }
+  },
+  "modules": [
+    {
+      "contract_version": "vf-module-manifest-v0.1",
+      "module_id": "SSO2",
+      "workspace_id": "tipa-manufacturing-p0",
+      "model_type": "DISCRETE_MODULE",
+      "model_revision": "P0v0.1",
+      "fidelity": "F2",
+      "supported_modes": [
+        "STANDALONE",
+        "INTEGRATED"
+      ],
+      "capabilities": [
+        "EXTERNAL_MATERIAL_INPUT",
+        "SNAPSHOT_RESTORE",
+        "ADVANCE_TO_EVENT_BOUNDARY"
+      ],
+      "ports": [
+        {
+          "port_id": "SSO2-OUT",
+          "direction": "OUT",
+          "material_types": [
+            "STATOR_ASSEMBLY"
+          ],
+          "unit": "EA",
+          "buffer_id": "SSO2-OUT",
+          "eligibility_policy": "QUALIFIED_ONLY",
+          "capacity": 20
+        }
+      ]
+    },
+    {
+      "contract_version": "vf-module-manifest-v0.1",
+      "module_id": "RSO2",
+      "workspace_id": "tipa-manufacturing-p0",
+      "model_type": "DISCRETE_MODULE",
+      "model_revision": "P0v0.1",
+      "fidelity": "F2",
+      "supported_modes": [
+        "STANDALONE",
+        "INTEGRATED"
+      ],
+      "capabilities": [
+        "EXTERNAL_MATERIAL_INPUT",
+        "SNAPSHOT_RESTORE",
+        "ADVANCE_TO_EVENT_BOUNDARY"
+      ],
+      "ports": [
+        {
+          "port_id": "RSO2-OUT",
+          "direction": "OUT",
+          "material_types": [
+            "ROTOR_ASSEMBLY"
+          ],
+          "unit": "EA",
+          "buffer_id": "RSO2-OUT",
+          "eligibility_policy": "QUALIFIED_ONLY",
+          "capacity": 20
+        }
+      ]
+    },
+    {
+      "contract_version": "vf-module-manifest-v0.1",
+      "module_id": "ASSY",
+      "workspace_id": "tipa-manufacturing-p0",
+      "model_type": "DISCRETE_MODULE",
+      "model_revision": "P0v0.1",
+      "fidelity": "F3",
+      "supported_modes": [
+        "STANDALONE",
+        "INTEGRATED"
+      ],
+      "capabilities": [
+        "EXTERNAL_MATERIAL_INPUT",
+        "SNAPSHOT_RESTORE",
+        "ADVANCE_TO_EVENT_BOUNDARY"
+      ],
+      "ports": [
+        {
+          "port_id": "ASSY-SSO2-IN",
+          "direction": "IN",
+          "material_types": [
+            "STATOR_ASSEMBLY"
+          ],
+          "unit": "EA",
+          "buffer_id": "ASSY-IN",
+          "eligibility_policy": "QUALIFIED_ONLY",
+          "capacity": 20
+        },
+        {
+          "port_id": "ASSY-RSO2-IN",
+          "direction": "IN",
+          "material_types": [
+            "ROTOR_ASSEMBLY"
+          ],
+          "unit": "EA",
+          "buffer_id": "ASSY-IN",
+          "eligibility_policy": "QUALIFIED_ONLY",
+          "capacity": 20
+        },
+        {
+          "port_id": "ASSY-OUT",
+          "direction": "OUT",
+          "material_types": [
+            "MOTOR"
+          ],
+          "unit": "EA",
+          "buffer_id": "ASSY-OUT",
+          "eligibility_policy": "QUALIFIED_ONLY",
+          "capacity": 20
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "tick_us": 1000000,
+      "module_id": "SSO2",
+      "action": "PRODUCE",
+      "subject_id": "SSO2-WIP-001"
+    },
+    {
+      "tick_us": 1200000,
+      "module_id": "RSO2",
+      "action": "PRODUCE",
+      "subject_id": "RSO2-WIP-001"
+    },
+    {
+      "tick_us": 2000000,
+      "module_id": "ASSY",
+      "action": "RECEIVE",
+      "subject_id": "SSO2-WIP-001"
+    },
+    {
+      "tick_us": 2300000,
+      "module_id": "ASSY",
+      "action": "RECEIVE",
+      "subject_id": "RSO2-WIP-001"
+    },
+    {
+      "tick_us": 2500000,
+      "module_id": "ASSY",
+      "action": "REQUEST_JOIN",
+      "subject_id": "AP04-JOIN-001"
+    },
+    {
+      "tick_us": 2500000,
+      "module_id": "ASSY",
+      "action": "START_JOIN",
+      "subject_id": "AP04-JOIN-001"
+    },
+    {
+      "tick_us": 4500000,
+      "module_id": "ASSY",
+      "action": "COMPLETE_JOIN",
+      "subject_id": "MTR-001"
+    }
+  ],
+  "oracles": [
+    {
+      "id": "O01",
+      "rule": "material_conservation_no_phantom",
+      "expected": true
+    },
+    {
+      "id": "O02",
+      "rule": "join_input_parent_count",
+      "expected": 2
+    },
+    {
+      "id": "O03",
+      "rule": "join_output_motor_count",
+      "expected": 1
+    },
+    {
+      "id": "O04",
+      "rule": "one_consumption_per_parent",
+      "expected": true
+    },
+    {
+      "id": "O05",
+      "rule": "replay_same_seed_same_canonical_digest",
+      "expected": true
+    },
+    {
+      "id": "O06",
+      "rule": "no_consume_before_transfer_received",
+      "expected": true
+    }
+  ],
+  "known_limitations": [
+    "Fixture tick values and simulated parent IDs are synthetic and illustrative, not exact plant cycle times.",
+    "Expected output counters are proposed test oracles, not observed runtime output.",
+    "Detailed transaction legs and expected event digest to be frozen before PM G2 execution."
+  ]
+}

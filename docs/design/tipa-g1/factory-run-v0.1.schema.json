@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factorix.vn/contracts/vf/tipa-g1/factory-run-v0.1.schema.json",
+  "title": "factory-run-v0.1.schema.json",
+  "description": "SA DETAIL DRAFT: immutable run header. Simulation tick stored in committed runtime state, not in this header.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "factory_run_id",
+    "generation",
+    "workspace_id",
+    "definition_revision",
+    "definition_digest",
+    "seed",
+    "epoch_utc",
+    "timezone",
+    "production_day_start",
+    "mode",
+    "shift_calendar_revision",
+    "scenario_revision",
+    "model_revisions"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "vf-factory-run-v0.1"
+    },
+    "factory_run_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "workspace_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "definition_revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "definition_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "epoch_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timezone": {
+      "const": "Asia/Ho_Chi_Minh"
+    },
+    "production_day_start": {
+      "const": "06:00"
+    },
+    "mode": {
+      "enum": [
+        "STANDALONE",
+        "INTEGRATED"
+      ]
+    },
+    "shift_calendar_revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "scenario_revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "model_revisions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    }
+  }
+}
