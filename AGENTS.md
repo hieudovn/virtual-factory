@@ -1,14 +1,31 @@
 # Repository Agent Instructions
 
-Before executing any task in this repository:
+Two separate governed roles operate in this repository.
 
-1. Read `.ai-harness/PM-EXECUTION-CONTRACT.md`.
-2. Require a task contract under `.ai-harness/tasks/`.
-3. Run harness preflight before modifying files.
-4. Stop on preflight failure, baseline mismatch, task ambiguity or required tool failure.
-5. Do not silently broaden task scope.
-6. Do not push directly to `main`.
-7. Do not merge without explicit SA authorization for the exact PR head SHA.
-8. Run the full task gate before final reporting.
-9. Use only the machine-derived status.
-10. Do not report COMPLETE, CLOSED, SA APPROVED or NEXT SLICE AUTHORIZED unless explicitly issued by the SA.
+## PM / coding-agent execution (unchanged)
+
+Before any PM implementation, code change, execution/test, deployment, or runtime operation:
+
+1. Read .ai-harness/PM-EXECUTION-CONTRACT.md.
+2. Require the PM task contract under .ai-harness/tasks/.
+3. Run the existing local harness preflight before modifying tracked files.
+4. STOP on failed preflight, mismatched baseline, ambiguous task, or unavailable mandatory tool.
+5. Follow the PM task allowlist, full run_task_gate.py evidence flow, exact-head CI, and machine-derived status.
+6. No direct main push; no merge without explicit SA authorization on the exact PR head; no silent next slice.
+7. PM cannot self-approve design, production readiness, task closure, or merge.
+
+## SA / Lead Designer remote design workflow
+
+SA may write **only approved design-domain artifacts** (plans, architecture, design/contract specifications and reports) using a remote GitHub connector/API when local git is unavailable, provided that:
+
+1. An issue records the relevant SA/PO authority and task scope. A machine-readable SA task contract is included under .ai-harness/sa-design/tasks/ in the *same atomic change*.
+2. Before mutation SA verifies remote repository/permissions, current main SHA, absence of conflicting branch/PR, planned file allowlist, and expected baseline; publishes the remote-preflight evidence in the issue. Unknown => STOP.
+3. SA uses a dedicated sa/design/* branch, never main, and publishes a PR with a full diff. SA records distinction between approved decisions and pending draft designs; source code, tests, runtime configuration, deployment and PM harness implementation are forbidden in ordinary SA design tasks.
+4. The separate SA Design Gate validates the changed paths and task authority on the exact PR head. SA verifies remote commit/PR SHA equality and exact-head CI status before reporting readiness.
+5. The complete design workflow and permitted paths are defined in .ai-harness/SA-DESIGN-WORKFLOW.md. Its gate is distinct from and does **not** replace PM run_task_gate.py.
+6. Any change to AGENTS.md, the harness, or CI must use a dedicated sa/governance/* PR with **explicit PO authorization**, restricted governance allowlist, human review, and CI proof. SA design permissions alone are not permission to change governance.
+7. Merges of any class still require explicit SA authorization for the exact current PR head SHA, with PO involvement where a governance/domain decision requires it. No automatic merge or deploy.
+
+**Bootstrap exception (Issue #130):** PO explicitly authorized the initial creation of this remote-only SA workflow. Issue #130 contains connector-derived remote preflight evidence made *before* any branch/file mutation. This one-time exception does not waive exact-head PR review, branch isolation, or code/PM restrictions.
+
+**Status vocabulary:** SA may record design DRAFT / APPROVED as a **document decision**, not PM implementation readiness. Never claim GitHub merge, runtime execution, or CI PASS without matching remote evidence.
