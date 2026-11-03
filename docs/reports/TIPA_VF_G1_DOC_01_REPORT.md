@@ -17,3 +17,7 @@
 - #126 read-only ASSY feasibility and #129 cross-consumer compatibility are queued; no test execution from this SA documentation commit.
 - #127/#128 code slices remain BLOCKED until G1 Design Lock. W3 F0/F1 scope preserved. Synthetic facts not physical TIPA certification.
 - This is a **stacked PR**: must only merge into main after governance PR #131 completes and head/base are reverified/retargeted as needed. Do not auto-merge.
+
+## Post-#131 merge baseline reconciliation — 2026-11-03
+
+PR #131 has been merged into `main` at `52e5dc83ffbca049f02868159f66f05e55b64a15`. This design branch now includes that merged commit as a parent, and its SA design task `expected_base_sha` has been repinned to the exact main SHA. PR #132 targets `main`. Original G1A schemas and fixtures remain design-only until #133 executes; no runtime claim. SA Design Gate must rerun against the new PR base; an earlier failed CI run used the old stacked `base.sha` and is **not** accepted as evidence.
