@@ -1,0 +1,88 @@
+{
+  "task_id": "TIPA-VF-G1-ASSY-FEAS-01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "READ-ONLY FEASIBILITY / TEST-ONLY EVIDENCE",
+  "objective": "Determine with code and reproducible test evidence whether the current six-sub-line TIPA ASSY runtime supports an additive external SSO2/RSO2 feed and an exact factory-clock integration seam without rewriting core; inventory every local seed/replenish path and state NO SUPPORT where an exact-time API is absent. This is a feasibility gate before G2/G3-A, not implementation.",
+  "explicit_non_objectives": [
+    "Do not modify production code, configs, tests, simulators, deployment or contracts",
+    "Do not implement G2/G3-A or the external-input adapter",
+    "Do not change the frozen tipa-assy-demo-v1.1 C4 wire contract",
+    "Do not merge, deploy, or start the next slice",
+    "Do not claim integrated ASSY support where the runtime has no seam",
+    "Do not certify TIPA as-built or physical layout"
+  ],
+  "required_branch": "reports/tipa-vf-g1-assy-feasibility",
+  "expected_base_sha": "04fb9413bd5af3c4f0457047267a60b3ea4e94fe",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/TIPA-VF-G1-ASSY-FEAS-01.json",
+    "docs/reports/TIPA_VF_G1_ASSY_EXTERNAL_INPUT_FEASIBILITY.md",
+    ".ai-harness/sa-review/reports/TIPA-VF-G1-ASSY-FEAS-01.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1-ASSY-FEAS-01/"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "tests/",
+    "simulators/",
+    "deploy/",
+    "examples/",
+    "pyproject.toml",
+    "docker-compose.yml",
+    "docker-compose.assy.yml",
+    "Dockerfile"
+  ],
+  "required_deliverables": [
+    ".ai-harness/tasks/TIPA-VF-G1-ASSY-FEAS-01.json",
+    "docs/reports/TIPA_VF_G1_ASSY_EXTERNAL_INPUT_FEASIBILITY.md",
+    ".ai-harness/sa-review/reports/TIPA-VF-G1-ASSY-FEAS-01.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1-ASSY-FEAS-01/01-feed-replenish-callgraph.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1-ASSY-FEAS-01/02-clock-and-advance-seam.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1-ASSY-FEAS-01/03-reservation-join-and-buffers.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1-ASSY-FEAS-01/04-snapshot-reset-compatibility.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1-ASSY-FEAS-01/05-regression-oracle-and-seams.md",
+    ".ai-harness/sa-review/evidence/TIPA-VF-G1-ASSY-FEAS-01/06-probe-commands-and-output.md"
+  ],
+  "required_tests": [
+    "python -m pytest -q tests/test_sim_val_01_feed.py tests/test_demo_composition.py tests/test_assy_mes_bridge_v1.py tests/test_assy_mes_03_evidence.py tests/test_vf_contract_finality_01.py",
+    "python -m pytest -q tests/test_dday_b2_bottled_water_line.py tests/test_assy_line.py tests/test_demo_assy_mes_v1.py tests/test_m6_int_01.py",
+    "Offline probe: zero external RSO2 input fails closed at AP04",
+    "Offline probe: external WIP injection and exact-time API absence",
+    "Offline probe: six contexts own independent RSO2 buffers",
+    "Offline probe: reset/replay trace fingerprint and run generation"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [
+    "Remote branch head equals PR head equals CI head",
+    "Draft or open PR base main",
+    "Exact-head VF-DM CI success"
+  ],
+  "forbidden_actions": [
+    "Modify production code (src/, configs/, tests/, simulators/)",
+    "Modify the frozen C4 wire contract",
+    "Push directly to main",
+    "Merge or deploy",
+    "Start G2/G3-A implementation",
+    "Report integrated ASSY support as already implemented"
+  ],
+  "stop_conditions": [
+    "Baseline main SHA differs from 04fb9413bd5af3c4f0457047267a60b3ea4e94fe",
+    "PR #132 design head differs from ff485d5bb50e55e91b90008465e4cc87ab7a9f22 without SA rebaseline",
+    "A required test cannot be executed and the gap cannot be explicitly recorded",
+    "The feasibility decision would require changing production code during this gate",
+    "Any local feed path cannot be identified or suppressed by a bounded additive seam"
+  ],
+  "acceptance_criteria": [
+    {"id": "P01", "phase": "pre_status", "description": "Required tests pass", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "P02", "phase": "pre_status", "description": "Zero test failures", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "P03", "phase": "pre_status", "description": "Exact-head CI succeeds", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "F01", "phase": "final", "description": "Feasibility report committed", "rule": {"field": "implementation.changed_files", "operator": "contains", "expected": "docs/reports/TIPA_VF_G1_ASSY_EXTERNAL_INPUT_FEASIBILITY.md"}},
+    {"id": "F02", "phase": "final", "description": "Task contract committed", "rule": {"field": "implementation.changed_files", "operator": "contains", "expected": ".ai-harness/tasks/TIPA-VF-G1-ASSY-FEAS-01.json"}},
+    {"id": "F03", "phase": "final", "description": "No forbidden action performed", "rule": {"field": "forbidden_actions.performed", "operator": "is_false", "expected": null}},
+    {"id": "F04", "phase": "final", "description": "All canonical pipeline steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
+    {"id": "F05", "phase": "final", "description": "All required pipeline steps pass", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
+    {"id": "F06", "phase": "final", "description": "Remote commit exists", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": true, "may_merge": false, "may_start_next_task": false}
+}
