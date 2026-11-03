@@ -3,11 +3,11 @@
   "class": "design",
   "repository": "hieudovn/virtual-factory",
   "branch": "sa/design/tipa-vf-g1-approved-baseline",
-  "expected_base_sha": "6ca569b4362235edd4d05e61feccba7ddadcbb4b",
+  "expected_base_sha": "52e5dc83ffbca049f02868159f66f05e55b64a15",
   "approval_issue": 125,
   "authority": "SA_DESIGN_DRAFT",
   "status": "MIXED_APPROVED_ROADMAP_AND_DRAFT_DETAIL__PR_REVIEW_REQUIRED",
-  "description": "Publish PO-approved roadmap+G1A architecture direction, with explicit SA DRAFT detailed contracts and G1B/C proposal, on a stacked SA design branch. No PM runtime/consumer writes. Add G1A machine-readable candidate schemas and two specification-level deterministic fixture oracles; not executed tests nor accepted C1–C5 wire schema. DD-01 adds deterministic time/priority, Decimal material quantity, and SourceKind vs DefinitionProvenance decision; still design only.",
+  "description": "Publish PO-approved roadmap+G1A architecture direction, with explicit SA DRAFT detailed contracts and G1B/C proposal, on a SA design branch retargeted after governance PR #131 merge. No PM runtime/consumer writes. Add G1A machine-readable candidate schemas and two specification-level deterministic fixture oracles; not executed tests nor accepted C1–C5 wire schema. DD-01 adds deterministic time/priority, Decimal material quantity, and SourceKind vs DefinitionProvenance decision; still design only.",
   "allowed_paths": [
     ".ai-harness/sa-design/tasks/TIPA-VF-G1-DOC-01.json",
     "docs/plans/TIPA_VF_DIGITAL_TWIN_ROADMAP_V1.md",
