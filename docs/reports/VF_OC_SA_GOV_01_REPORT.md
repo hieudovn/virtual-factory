@@ -14,3 +14,7 @@ Current VF `required_branch` vs reference `work_branch`; resume and budget only 
 
 ## Evidence and status
 SA remote preflight recorded on #139 before mutation. GitHub exact-head PR and CI results are tracked on its PR/issue comments **after** the commit; no assertion of tests/merge in this report. No production changes; no deployments or edits to external repositories.
+
+## Post-design merged baseline reconciliation — 2026-11-03
+
+PR #131 governance and PR #132 G1A Design have been merged into `main`. Current baseline for PR #140 is `848eb1c11bd305a98877573fabeff64350a885e4`; this branch includes that main commit as a parent (no history rewrite) and SA task expected_base_sha has been repinned accordingly. PR #140 now targets `main`. The older stacked-base CI cannot count for this new base; repeat exact-head SA Design Gate and full VF CI before merge. Scope remains three governance docs/SA task paths, with no executable harness changes.
