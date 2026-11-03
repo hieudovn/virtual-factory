@@ -1,0 +1,42 @@
+{
+  "task_id": "TIPA-VF-G1-DOC-01",
+  "class": "design",
+  "repository": "hieudovn/virtual-factory",
+  "branch": "sa/design/tipa-vf-g1-approved-baseline",
+  "expected_base_sha": "52e5dc83ffbca049f02868159f66f05e55b64a15",
+  "approval_issue": 125,
+  "authority": "SA_DESIGN_DRAFT",
+  "status": "MIXED_APPROVED_ROADMAP_AND_DRAFT_DETAIL__PR_REVIEW_REQUIRED",
+  "description": "Publish PO-approved roadmap+G1A architecture direction, with explicit SA DRAFT detailed contracts and G1B/C proposal, on a SA design branch retargeted after governance PR #131 merge. No PM runtime/consumer writes. Add G1A machine-readable candidate schemas and two specification-level deterministic fixture oracles; not executed tests nor accepted C1–C5 wire schema. DD-01 adds deterministic time/priority, Decimal material quantity, and SourceKind vs DefinitionProvenance decision; still design only.",
+  "allowed_paths": [
+    ".ai-harness/sa-design/tasks/TIPA-VF-G1-DOC-01.json",
+    "docs/plans/TIPA_VF_DIGITAL_TWIN_ROADMAP_V1.md",
+    "docs/architecture/TIPA_VF_G1A_FACTORY_ORCHESTRATION_DESIGN_V1.md",
+    "docs/design/TIPA_VF_G1B_G1C_DESIGN_DRAFT_V1.md",
+    "docs/reports/TIPA_VF_G1_DOC_01_REPORT.md",
+    "docs/design/tipa-g1/factory-run-v0.1.schema.json",
+    "docs/design/tipa-g1/module-manifest-v0.1.schema.json",
+    "docs/design/tipa-g1/factory-event-v0.1.schema.json",
+    "docs/design/tipa-g1/material-transaction-v0.1.schema.json",
+    "docs/design/tipa-g1/factory-scenario-fixture-v0.1.schema.json",
+    "docs/design/tipa-g1/fixtures/T01_TWO_PRODUCERS_JOIN.json",
+    "docs/design/tipa-g1/fixtures/T02_UPSTREAM_STARVATION.json",
+    "docs/design/tipa-g1/G1A_SCHEMA_AND_FIXTURE_REGISTER_v0_1.md",
+    "docs/design/tipa-g1/G1A_CORE_DETAILED_DESIGN_DECISION_DD01.md"
+  ],
+  "forbidden_actions": [
+    "write directly to main",
+    "merge without exact-head SA authorization",
+    "source or runtime modifications",
+    "change PM harness/CI",
+    "deploy/publish to production",
+    "self certify G1B/C approved"
+  ],
+  "required_remote_evidence": [
+    "remote preflight before write in Issue #125",
+    "branch HEAD = PR HEAD",
+    "exact-head SA Design Gate success",
+    "separately verify VF full CI",
+    "PR scope equals allowed paths"
+  ]
+}
