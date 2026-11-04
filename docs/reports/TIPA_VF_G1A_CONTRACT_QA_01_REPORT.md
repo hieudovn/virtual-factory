@@ -1,49 +1,56 @@
-# TIPA-VF-G1A-CONTRACT-QA-01 — Executable schema / fixture QA report
+# TIPA-VF-G1A-CONTRACT-QA-01 — Executable schema / fixture QA report (resume)
 
 **Issue:** [#133](https://github.com/hieudovn/virtual-factory/issues/133)  
 **Task contract:** `.ai-harness/tasks/TIPA-VF-G1A-CONTRACT-QA-01.json`  
-**Governance:** `.ai-harness/PM-EXECUTION-CONTRACT.md`, VF OpenCode/VPS authoring addendum  
-**Mode:** Tier A supervised, single issue. Read-only against published G1A designs.
+**Branch / PR:** `test/tipa-g1a-contract-qa` / [#146](https://github.com/hieudovn/virtual-factory/pull/146)  
+**Mode:** Tier A supervised, single issue; resume of the existing branch/PR.
 
 ## 1. Status
 
 ```text
-BLOCKED — SCHEMA/FIXTURE CONTRADICTION
-Focused contract QA: FAIL (2 failed, 40 passed)
-Full regression: FAIL (2 failed, 1880 passed)
+PM RESUME EVIDENCE — FOCUSED AND FULL REGRESSION PASS
+Exact-head CI and P01–P24 gate: recorded in the PR/issue comment after push.
 ```
 
-The failure is **not** a runtime regression. The published T01/T02 fixtures use
-numeric `capacity: 20`, while the published module-manifest schema (after the
-DD-01 decimal-string clarification) accepts only a decimal **string** or `null`
-for `capacity`. The QA tests fail exactly on that contradiction. This report does
-not edit either published file.
+This report supersedes the earlier blocker report. The earlier red CI on
+`11e35fa99dbfd2b3a9d37d2d25ccbc7471cdd263` is retained as pre-correction
+evidence. The blocker was accepted by SA, corrected by Issue #147 / PR #148, and
+merged to `main@d7d7aee1a226613dafc8d4db02e559634ccecd70`.
 
-Per Issue #133 stop conditions, PM stops here: no schema/fixture rewrite, no
-runtime implementation, no merge/deploy, no next Issue.
+## 2. Resume protocol performed
 
-## 2. Baseline and environment
+| Step | Result |
+|---|---|
+| Clean worktree and exact remote branch head verified | PASS (`11e35fa99dbfd2b3a9d37d2d25ccbc7471cdd263` before resume) |
+| Existing PR #146 ownership/state verified | OPEN, non-draft, base `main` |
+| New main fetched | `d7d7aee1a226613dafc8d4db02e559634ccecd70` |
+| Task JSON `expected_base_sha` reconciled | `2d876fd…` → `d7d7aee…` |
+| Non-rewriting merge of `origin/main` | PASS; no conflicts; no rebase/reset/amend/force-push |
+| New PR | NOT created |
+| Merge/deploy/next Issue | NOT performed |
+
+Ordered history on the resumed branch:
+
+1. `11e35fa` — original tests/report (pre-correction evidence).
+2. `a5b26cc` — baseline-reconciliation edit to the task JSON.
+3. `5c49ff1` — non-rewriting merge of corrected `origin/main` (T01/T02 capacity strings).
+
+## 3. Baseline, environment and preflight
 
 | Field | Value |
 |---|---|
 | Repository | `hieudovn/virtual-factory` |
-| Required branch | `test/tipa-g1a-contract-qa` |
-| Expected baseline | `2d876fd4bb9ce060dd72cc5b2db0dd959b09ef9e` |
-| Actual `origin/main` at preflight | `2d876fd4bb9ce060dd72cc5b2db0dd959b09ef9e` |
-| Remote work branch before start | absent |
-| Working tree before mutation | clean |
-| Preflight | **PASS** (`preflight.py --task .ai-harness/tasks/TIPA-VF-G1A-CONTRACT-QA-01.json`) |
+| Required/current branch | `test/tipa-g1a-contract-qa` |
+| Expected baseline | `d7d7aee1a226613dafc8d4db02e559634ccecd70` |
+| `origin/main` at preflight | `d7d7aee1a226613dafc8d4db02e559634ccecd70` |
 | Python | 3.12.3 |
-| Test environment | repo-local `.venv` (`python -m venv .venv` + `pip install -e '.[dev]'`); no OS packages installed |
+| Environment | repo-local `.venv`; `pip install -e '.[dev]'`; no OS packages |
 | `jsonschema` | 4.26.0 (Draft 2020-12) |
 | `pytest` | 9.2.0 |
-| GitHub CLI/token | authenticated; read-only design inspection |
-| Network schema fetch | none; in-memory `referencing.Registry` only |
+| Network schema fetch | none; in-memory `referencing.Registry` |
+| Preflight | PASS |
 
-Task JSON was the only file committed before preflight, as the explicitly
-permitted bootstrap.
-
-## 3. Design inputs inspected (read-only)
+## 4. Design inputs (read-only)
 
 - `docs/design/tipa-g1/factory-run-v0.1.schema.json`
 - `docs/design/tipa-g1/module-manifest-v0.1.schema.json`
@@ -54,145 +61,75 @@ permitted bootstrap.
 - `docs/design/tipa-g1/fixtures/T02_UPSTREAM_STARVATION.json`
 - `docs/design/tipa-g1/G1A_SCHEMA_AND_FIXTURE_REGISTER_v0_1.md`
 - `docs/design/tipa-g1/G1A_CORE_DETAILED_DESIGN_DECISION_DD01.md`
-- PR #132 design source / merged documentation baseline
 
-## 4. Deliverables
+The SA correction changed only ten T01/T02 port capacities from numeric `20` to
+decimal string `"20"` (Issue #147 / PR #148). No schema, test, DD-01 or runtime
+change was made by this PM task.
+
+## 5. Deliverables
 
 | File | Purpose |
 |---|---|
-| `.ai-harness/tasks/TIPA-VF-G1A-CONTRACT-QA-01.json` | VF-native task contract |
+| `.ai-harness/tasks/TIPA-VF-G1A-CONTRACT-QA-01.json` | VF-native task contract, baseline reconciled to `d7d7aee` |
 | `tests/contracts/test_tipa_g1a_schemas.py` | 5 meta-schema checks, local `$ref` resolution, T01/T02 validation, design-oracle structure |
 | `tests/contracts/test_tipa_g1a_semantics.py` | Cross-record semantic negative tests |
 | `tests/contracts/fixtures/tipa_g1a_invalid_cases.json` | Deterministic negative-case matrix |
 | `docs/reports/TIPA_VF_G1A_CONTRACT_QA_01_REPORT.md` | This report |
 
-No file outside the Issue #133 allowlist was modified. `.venv/` is gitignored and
-is not a deliverable.
+No file outside the Issue #133 allowlist was modified by the PM. `.venv/` is
+gitignored and is not a deliverable.
 
-## 5. Executable results
+## 6. Executable results
 
-### 5.1 Focused contract QA
+### 6.1 Focused contract QA
 
 ```text
 .venv/bin/python -m pytest -q tests/contracts/
-# 2 failed, 40 passed, 1 warning
-# exit 1
+# 42 passed
+# exit 0
 ```
 
-Only these two tests fail:
+Includes:
 
-- `tests/contracts/test_tipa_g1a_schemas.py::test_published_t01_t02_fixtures_validate[T01_TWO_PRODUCERS_JOIN.json]`
-- `tests/contracts/test_tipa_g1a_schemas.py::test_published_t01_t02_fixtures_validate[T02_UPSTREAM_STARVATION.json]`
+- five Draft 2020-12 meta-schemas validate;
+- scenario `$ref`s resolve through an in-memory registry with no network;
+- T01 and T02 validate after the SA capacity correction;
+- T01/T02 structural oracle checks (design expectation only);
+- 29 data-driven invalid cases plus direct idempotency/EA/T02 checks.
 
-Each fixture produces 5 identical-capacity errors (one per port):
-
-```text
-['modules', 0, 'ports', 0, 'capacity']: 20 is not valid under any of the given schemas
-['modules', 1, 'ports', 0, 'capacity']: 20 is not valid under any of the given schemas
-['modules', 2, 'ports', 0, 'capacity']: 20 is not valid under any of the given schemas
-['modules', 2, 'ports', 1, 'capacity']: 20 is not valid under any of the given schemas
-['modules', 2, 'ports', 2, 'capacity']: 20 is not valid under any of the given schemas
-```
-
-### 5.2 Full regression
+### 6.2 Full regression
 
 ```text
 .venv/bin/python -m pytest -q
-# 2 failed, 1880 passed, 1 warning in 932.53s
-# exit 1
+# 1882 passed, 1 warning in 888.15s
+# exit 0
 ```
 
-The two failures are the same published-fixture capacity cases. No legacy ASSY,
-Bottled Water, discrete, MES bridge, UI or other test regressed. The full suite
-was run with `gh` authentication neutralised to match the CI visibility baseline;
-this is **not** a multi-repo compatibility claim (see Issue #137). It is only
-used to keep the unrelated PlantOS-visibility test deterministic.
-
-## 6. Contradiction analysis
-
-### 6.1 Schema side
-
-`docs/design/tipa-g1/module-manifest-v0.1.schema.json:132-145` defines port
-`capacity` as:
-
-```json
-"anyOf": [
-  {
-    "type": "string",
-    "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
-  },
-  { "type": "null" }
-]
-```
-
-The description says: decimal quantity in port unit, never floating point;
-non-negative decimal string; nonzero/UOM precision checked semantically.
-
-DD-01 §2 reinforces: authoritative material quantities **and buffer capacities**
-are base-10 decimal strings, parse as `Decimal`, reject exponent/NaN/signed
-negative, and `EA` is integral.
-
-### 6.2 Fixture side
-
-T01 and T02 each declare five module ports with numeric capacity:
-
-```json
-"capacity": 20
-```
-
-Examples:
-
-- `docs/design/tipa-g1/fixtures/T01_TWO_PRODUCERS_JOIN.json:51,80,111,122,133`
-- `docs/design/tipa-g1/fixtures/T02_UPSTREAM_STARVATION.json:51,80,111,122,133`
-
-JSON Schema Draft 2020-12 does not coerce `20` into `"20"`. Therefore the
-fixtures fail the published schema; the failure is reproduced with
-`jsonschema==4.26.0` and an in-memory local registry (no network).
-
-### 6.3 Impact
-
-- A01 cannot pass: the five meta-schemas and local `$ref`s are valid, but T01/T02
-  do not validate.
-- Any downstream G2A implementation that consumes the published fixtures would
-  receive invalid capacities unless it silently coerces numbers to strings.
-  Silent coercion is not authorized: DD-01 requires explicit Decimal strings and
-  semantic validation, not float/JSON-number normalization.
-- The contradiction is confined to published design artifacts; no production
-  code is implicated.
-
-### 6.4 Required SA decision
-
-SA must resolve one of:
-
-1. republish T01/T02 with `"capacity": "20"` (and any other decimal strings), or
-2. revise the schema if numeric capacity is intentionally allowed (contradicts
-   DD-01 as written).
-
-PM must not choose either. This task is forbidden from editing `docs/design/`.
+No legacy ASSY, Bottled Water, discrete, MES bridge, UI or other regression. The
+full suite was run with `gh` authentication neutralised to match CI visibility;
+this is not a multi-repo compatibility claim (Issue #137).
 
 ## 7. Acceptance matrix
 
 | Issue criterion | Result | Evidence |
 |---|---|---|
-| A01 Five Draft 2020-12 meta-schemas validate | **PASS** | 5/5 `check_schema`; local registry |
-| A01 Local `$ref` resolves without network | **PASS** | `referencing.Registry`; no HTTP |
-| A01 T01/T02 specifications validate | **FAIL** | 10 capacity errors (5 per fixture) |
-| A02 Negative semantic cases reject bad input | **PASS** | 40 passed contract tests; matrix below |
-| A03 Schema PASS separated from runtime oracle | **PASS** | T01/T02 oracle tests assert structure only; engine status `NOT_EXECUTED` |
-| A04 Focused tests exit 0 | **FAIL** | 2 failed, 40 passed |
-| A04 Full regression exit 0 | **FAIL** | 2 failed, 1880 passed (only fixture contradiction) |
-| A04 Allowed paths only | **PASS** | Git diff restricted to task/tests/report |
-| A04 Exact-head CI success | **FAIL / PENDING at authoring** | CI must be red because committed QA tests reproduce the blocker |
-| A04 Remote SHA equality | **PENDING at authoring** | Recorded from PR/CI after push |
+| A01 Five Draft 2020-12 meta-schemas validate | **PASS** | 5/5 `check_schema` |
+| A01 Local `$ref` resolves without network | **PASS** | in-memory `referencing.Registry` |
+| A01 T01/T02 specifications validate | **PASS** | capacity correction merged from `d7d7aee` |
+| A02 Negative semantic cases reject bad input | **PASS** | 42 passed focused tests |
+| A03 Schema PASS separated from runtime oracle | **PASS** | oracle structure only; engine status `NOT_EXECUTED` |
+| A04 Focused tests exit 0 | **PASS** | 42 passed |
+| A04 Full regression exit 0 | **PASS** | 1882 passed |
+| A04 Allowed paths only | **PASS** | task/tests/report only vs `d7d7aee` |
+| A04 Exact-head CI success | **PENDING AT REPORT COMMIT** | recorded in PR/issue comment |
+| A04 Remote SHA equality | **PENDING AT REPORT COMMIT** | recorded in PR/issue comment |
 
 ## 8. Negative semantic coverage (A02)
 
-`tests/contracts/fixtures/tipa_g1a_invalid_cases.json` contains deterministic
-cases for:
+`tests/contracts/fixtures/tipa_g1a_invalid_cases.json` covers:
 
 - absent identity (`factory_run_id`, `event_id`);
-- bad contract version;
-- bad generation / bad digest;
+- bad contract version, generation, digest;
 - numeric capacity, exponent, signed negative, leading-zero and bad-unit
   decimals;
 - nonpositive and fractional `EA` quantity/capacity;
@@ -203,11 +140,9 @@ cases for:
 - wrong/naive/non-UTC time and epoch+tick mismatch;
 - transaction idempotency: same key/same payload = no-op, same key/different
   payload = conflict, same transaction/different key = conflict;
-- TRANSFORM requires parent and child refs;
+- `TRANSFORM` requires parent and child refs;
 - KG decimal quantity allowed while EA fractional quantity rejected;
 - T02 has no phantom RSO2 `PRODUCE` event.
-
-All of these pass. Only the published-fixture validation fails.
 
 ## 9. Design oracles — NOT EXECUTED
 
@@ -216,26 +151,28 @@ All of these pass. Only the published-fixture validation fails.
 | T01 | Two parents received → one AP04 join → one Motor; `join_input_parent_count=2`, `join_output_motor_count=1`; no phantom material | **NOT_EXECUTED** — no G1A factory engine |
 | T02 | RSO2 outage → AP04 `WAITING_FOR_MATERIAL`; zero join during starvation; zero local ASSY RSO2 replenish; no phantom WIP | **NOT_EXECUTED** — no G1A factory engine |
 
-These are specification expectations, not engine PASS. No runtime implementation
-was added by this task.
+These are specification expectations, not engine PASS.
 
 ## 10. Remote evidence
 
 | Field | Value |
 |---|---|
-| Task/bootstrap commit | `4958262c24f3b5be19cf7531ffe93463fb4042f1` |
-| Final branch HEAD | recorded in PR/issue comment after push |
-| PR | recorded in issue comment |
-| Exact-head CI | expected **FAILED** because the committed contract tests reproduce the blocker; the run id/SHA are recorded in the issue comment |
+| Pre-correction evidence | `11e35fa…`; VF-DM CI `41756813688` FAILURE (2 failed, 1880 passed) |
+| Baseline-reconciliation commit | `a5b26cc…` |
+| Non-rewriting merge commit | `5c49ff1…` (`origin/main@d7d7aee`) |
+| Final branch HEAD / PR head / CI head | recorded in PR/issue comment after push |
+| Exact-head VF-DM CI | recorded in PR/issue comment |
+| P01–P24 gate | recorded in issue comment / `.ai-harness/traces/TIPA-VF-G1A-CONTRACT-QA-01/` |
 | Merge/deploy | **NOT PERFORMED** |
+| New PR | **NOT CREATED** |
 | Next Issue | **NOT STARTED** |
 
 ## 11. Final status
 
 ```text
-BLOCKED — SCHEMA/FIXTURE CONTRADICTION
+PM RESUME EVIDENCE — LOCAL FOCUSED/FULL PASS — EXACT-HEAD CI/GATE PENDING AT REPORT COMMIT
 ```
 
-The QA tests are committed as executable evidence. They must remain red until SA
-either republishes the fixtures with decimal-string capacities or changes the
-schema/DD-01 policy. PM does not self-certify, merge, deploy or proceed.
+The PR/issue comment is authoritative for the final SHA, CI conclusion and the
+P01–P24 gate result. PM does not self-certify COMPLETE/CLOSED, merge, deploy or
+start the next Issue.
