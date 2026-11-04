@@ -6,6 +6,7 @@ import pytest
 from virtual_factory.factory import (
     CausalPhase,
     CheckpointError,
+    CommitError,
     EventProposal,
     FactoryHeader,
     FactoryRunContext,
@@ -152,6 +153,100 @@ class CounterModule(ISimulationModule):
         self._applied = list(state["applied"])
 
 
+class MutatingProposeModule(ISimulationModule):
+    def __init__(self):
+        self.manifest = _manifest("mutating-propose")
+        self._counter = 0
+        self._committed = []
+
+    def initialize(self):
+        return None
+
+    def next_event_time(self, horizon):
+        return SimTick(10)
+
+    def propose(self, horizon, read_snapshot):
+        self._counter += 1
+        return (
+            EventProposal(
+                tick=SimTick(10),
+                causal_phase=CausalPhase.PROCESS,
+                module_id=self.manifest.module_id,
+                local_sequence=0,
+                event_id="mutating-event",
+                event_type="mutating",
+                definition_digest="fixture-v1",
+            ),
+        )
+
+    def apply_committed(self, event, read_snapshot):
+        self._committed.append(event.event_id)
+
+    def snapshot(self):
+        return {
+            "counter": self._counter,
+            "committed": list(self._committed),
+        }
+
+    def restore(self, state):
+        self._counter = int(state["counter"])
+        self._committed = list(state["committed"])
+
+
+class MutatingThenExplodingModule(MutatingProposeModule):
+    def __init__(self):
+        super().__init__()
+        self.manifest = _manifest("mutating-exploding")
+
+    def propose(self, horizon, read_snapshot):
+        self._counter += 1
+        raise RuntimeError("controlled failure after mutation")
+
+
+class ApplyExplodingModule(ISimulationModule):
+    def __init__(self):
+        self.manifest = _manifest("apply-exploding")
+        self._applied = []
+
+    def initialize(self):
+        return None
+
+    def next_event_time(self, horizon):
+        return SimTick(10)
+
+    def propose(self, horizon, read_snapshot):
+        return (
+            EventProposal(
+                tick=SimTick(10),
+                causal_phase=CausalPhase.PROCESS,
+                module_id=self.manifest.module_id,
+                local_sequence=0,
+                event_id="apply-event",
+                event_type="apply",
+                definition_digest="fixture-v1",
+            ),
+        )
+
+    def apply_committed(self, event, read_snapshot):
+        self._applied.append(event.event_id)
+        raise RuntimeError("controlled apply failure")
+
+    def snapshot(self):
+        return {"applied": list(self._applied)}
+
+    def restore(self, state):
+        self._applied = list(state["applied"])
+
+
+class ApplyAndRestoreExplodingModule(ApplyExplodingModule):
+    def __init__(self):
+        super().__init__()
+        self.manifest = _manifest("apply-restore-exploding")
+
+    def restore(self, state):
+        raise RuntimeError("controlled restore failure")
+
+
 def test_proposals_are_pure_and_snapshots_are_immutable():
     module = PurityModule()
     coordinator = _running_coordinator(module)
@@ -176,6 +271,43 @@ def test_controlled_module_exception_creates_no_partial_event():
     assert coordinator.ledger.cursor == 0
     assert coordinator.ledger.trace() == ()
     assert module.snapshot() == before
+
+
+def test_mutating_propose_is_rejected_and_restored_without_commit():
+    module = MutatingProposeModule()
+    coordinator = _running_coordinator(module)
+    with pytest.raises(ProposalError, match="mutated"):
+        coordinator.run_until(SimTick(10))
+    assert module.snapshot() == {"counter": 0, "committed": []}
+    assert coordinator.ledger.cursor == 0
+
+
+def test_mutating_then_exploding_propose_is_restored_without_commit():
+    module = MutatingThenExplodingModule()
+    coordinator = _running_coordinator(module)
+    with pytest.raises(ProposalError, match="propose failed"):
+        coordinator.run_until(SimTick(10))
+    assert module.snapshot() == {"counter": 0, "committed": []}
+    assert coordinator.ledger.cursor == 0
+
+
+def test_apply_exception_restores_module_and_commits_nothing():
+    module = ApplyExplodingModule()
+    coordinator = _running_coordinator(module)
+    with pytest.raises(CommitError, match="apply_committed failed"):
+        coordinator.run_until(SimTick(10))
+    assert module.snapshot() == {"applied": []}
+    assert coordinator.ledger.cursor == 0
+    assert coordinator.context.state is LifecycleState.RUNNING
+
+
+def test_apply_and_restore_failure_fails_closed_without_commit():
+    module = ApplyAndRestoreExplodingModule()
+    coordinator = _running_coordinator(module)
+    with pytest.raises(CommitError, match="restore also failed"):
+        coordinator.run_until(SimTick(10))
+    assert coordinator.ledger.cursor == 0
+    assert coordinator.context.state is LifecycleState.FAILED
 
 
 def test_pause_checkpoint_restore_preserves_order_cursor_and_replay():
@@ -207,7 +339,7 @@ def test_pause_checkpoint_restore_preserves_order_cursor_and_replay():
     assert coordinator.ledger.digest() == full_digest
 
 
-def test_checkpoint_rejects_wrong_generation_and_revision():
+def test_checkpoint_rejects_wrong_generation():
     coordinator = _running_coordinator(CounterModule())
     coordinator.run_until(SimTick(10))
     coordinator.context.pause()
@@ -218,7 +350,46 @@ def test_checkpoint_rejects_wrong_generation_and_revision():
     with pytest.raises(CheckpointError):
         coordinator.restore(wrong_generation)
 
-    wrong_revision = copy.deepcopy(checkpoint)
-    wrong_revision["model_revision"] = "model-r2"
+
+@pytest.mark.parametrize(
+    ("field", "tampered"),
+    [
+        ("workspace_digest", "sha256:tampered"),
+        ("config_digest", "sha256:tampered"),
+        ("seed", 999),
+        ("model_revision", "model-r2"),
+        ("epoch_utc", "2026-01-02T00:00:00+00:00"),
+        ("mode", "INTEGRATED"),
+        ("shift_timezone", "UTC"),
+    ],
+)
+def test_checkpoint_rejects_any_frozen_header_mismatch(field, tampered):
+    coordinator = _running_coordinator(CounterModule())
+    coordinator.run_until(SimTick(10))
+    coordinator.context.pause()
+    checkpoint = coordinator.checkpoint()
+
+    wrong_header = copy.deepcopy(checkpoint)
+    wrong_header["header"][field] = tampered
     with pytest.raises(CheckpointError):
-        coordinator.restore(wrong_revision)
+        coordinator.restore(wrong_header)
+    assert coordinator.ledger.cursor == 1
+    assert coordinator.context.state is LifecycleState.PAUSED
+
+
+def test_checkpoint_rejects_tampered_cursor_and_pending_events():
+    coordinator = _running_coordinator(CounterModule())
+    coordinator.run_until(SimTick(10))
+    coordinator.context.pause()
+    checkpoint = coordinator.checkpoint()
+
+    wrong_cursor = copy.deepcopy(checkpoint)
+    wrong_cursor["ledger_cursor"] += 1
+    with pytest.raises(CheckpointError):
+        coordinator.restore(wrong_cursor)
+
+    wrong_pending = copy.deepcopy(checkpoint)
+    wrong_pending["pending_events"] = [{"event_id": "pending"}]
+    with pytest.raises(CheckpointError):
+        coordinator.restore(wrong_pending)
+    assert coordinator.ledger.cursor == 1

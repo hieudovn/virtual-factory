@@ -161,6 +161,31 @@ class SerialFactoryCoordinator:
             self._context.tick, self._context.generation
         )
 
+    def _mark_failed(self, reason: str) -> None:
+        if self._context.state in (
+            LifecycleState.RUNNING,
+            LifecycleState.PAUSED,
+        ):
+            try:
+                self._context.fail(reason)
+            except Exception:
+                pass
+
+    def _detached_snapshot(
+        self, module_id: str, module: ISimulationModule
+    ) -> dict[str, Any]:
+        raw = module.snapshot()
+        if not isinstance(raw, Mapping):
+            raise ProposalError(
+                f"module {module_id!r} snapshot must be a mapping"
+            )
+        try:
+            return thaw_payload(freeze_payload(dict(raw)))
+        except ModuleContractError as exc:
+            raise ProposalError(
+                f"module {module_id!r} snapshot is not canonical: {exc}"
+            ) from exc
+
     def _proposal_from_module(
         self,
         module_id: str,
@@ -168,12 +193,52 @@ class SerialFactoryCoordinator:
         horizon: SimTick,
         snapshot: ReadSnapshot,
     ) -> tuple[EventProposal, ...]:
+        before = self._detached_snapshot(module_id, module)
+        before_digest = canonical_digest(before)
         try:
             raw = module.propose(horizon, snapshot)
         except Exception as exc:
+            try:
+                module.restore(before)
+            except Exception as restore_exc:
+                self._mark_failed(
+                    f"module {module_id!r} propose and restore failed"
+                )
+                raise ProposalError(
+                    f"module {module_id!r} propose failed: {exc}; "
+                    f"restore also failed: {restore_exc}"
+                ) from exc
             raise ProposalError(
                 f"module {module_id!r} propose failed: {exc}"
             ) from exc
+        try:
+            after = self._detached_snapshot(module_id, module)
+        except ProposalError as exc:
+            try:
+                module.restore(before)
+            except Exception as restore_exc:
+                self._mark_failed(
+                    f"module {module_id!r} post-propose snapshot/restore failed"
+                )
+                raise ProposalError(
+                    f"module {module_id!r} post-propose snapshot failed: {exc}; "
+                    f"restore also failed: {restore_exc}"
+                ) from exc
+            raise
+        if canonical_digest(after) != before_digest:
+            try:
+                module.restore(before)
+            except Exception as restore_exc:
+                self._mark_failed(
+                    f"module {module_id!r} propose mutation/restore failed"
+                )
+                raise ProposalError(
+                    f"module {module_id!r} propose mutated state and restore "
+                    f"failed: {restore_exc}"
+                ) from restore_exc
+            raise ProposalError(
+                f"module {module_id!r} propose mutated module state"
+            )
         if not isinstance(raw, (tuple, list)):
             raise ProposalError(
                 f"module {module_id!r} propose must return a tuple/list"
@@ -273,18 +338,36 @@ class SerialFactoryCoordinator:
             definition_provenance=proposal.definition_provenance,
         )
         self._ledger.check_append(event)
-        before = module.snapshot()
+        before = self._detached_snapshot(proposal.module_id, module)
         try:
             module.apply_committed(event, self.read_snapshot())
         except Exception as exc:
-            module.restore(before)
+            try:
+                module.restore(before)
+            except Exception as restore_exc:
+                self._mark_failed(
+                    f"module {proposal.module_id!r} apply and restore failed"
+                )
+                raise CommitError(
+                    f"module {proposal.module_id!r} apply_committed failed: "
+                    f"{exc}; restore also failed: {restore_exc}"
+                ) from exc
             raise CommitError(
                 f"module {proposal.module_id!r} apply_committed failed: {exc}"
             ) from exc
         try:
             self._ledger.append(event)
-        except Exception:
-            module.restore(before)
+        except Exception as exc:
+            try:
+                module.restore(before)
+            except Exception as restore_exc:
+                self._mark_failed(
+                    f"module {proposal.module_id!r} ledger append and restore failed"
+                )
+                raise CommitError(
+                    f"ledger append failed: {exc}; module restore also failed: "
+                    f"{restore_exc}"
+                ) from exc
             raise
         return event
 
@@ -345,6 +428,18 @@ class SerialFactoryCoordinator:
 
         return tuple(committed)
 
+    def _header_payload(self) -> dict[str, Any]:
+        header = self._context.header
+        return {
+            "workspace_digest": header.workspace_digest,
+            "config_digest": header.config_digest,
+            "seed": header.seed,
+            "model_revision": header.model_revision,
+            "epoch_utc": header.epoch_utc.isoformat(),
+            "mode": header.mode.value,
+            "shift_timezone": header.shift_timezone,
+        }
+
     def checkpoint(self) -> dict[str, Any]:
         if self._context.state is LifecycleState.RUNNING:
             raise CheckpointError("checkpoint requires a non-RUNNING safe point")
@@ -361,7 +456,7 @@ class SerialFactoryCoordinator:
         return {
             "schema_version": "1.0",
             "factory_run_id": self._context.run_id,
-            "model_revision": self._context.header.model_revision,
+            "header": self._header_payload(),
             "generation": self._context.generation,
             "run_state": self._context.state.value,
             "tick_us": self._context.tick.tick_us,
@@ -378,8 +473,15 @@ class SerialFactoryCoordinator:
             raise CheckpointError("unsupported checkpoint schema_version")
         if data.get("factory_run_id") != self._context.run_id:
             raise CheckpointError("checkpoint factory_run_id mismatch")
-        if data.get("model_revision") != self._context.header.model_revision:
-            raise CheckpointError("checkpoint model_revision mismatch")
+        expected_header = self._header_payload()
+        header_data = _require_mapping(data.get("header"), "header")
+        if set(header_data) != set(expected_header):
+            raise CheckpointError("checkpoint header fields mismatch")
+        for field, expected in expected_header.items():
+            if header_data.get(field) != expected:
+                raise CheckpointError(
+                    f"checkpoint header {field} mismatch"
+                )
         generation = _require_int(data.get("generation"), "generation")
         if generation != self._context.generation:
             raise CheckpointError("checkpoint generation mismatch")
@@ -390,9 +492,21 @@ class SerialFactoryCoordinator:
             raise CheckpointError(f"invalid run_state: {state_value!r}") from exc
         tick = SimTick(_require_int(data.get("tick_us"), "tick_us"))
 
+        pending_events = data.get("pending_events")
+        if not isinstance(pending_events, list):
+            raise CheckpointError("checkpoint pending_events must be a list")
+        if pending_events:
+            raise CheckpointError(
+                "checkpoint pending_events are not supported and must be empty"
+            )
+        ledger_cursor = _require_int(
+            data.get("ledger_cursor"), "ledger_cursor"
+        )
         ledger_data = data.get("ledger")
         if not isinstance(ledger_data, list):
             raise CheckpointError("checkpoint ledger must be a list")
+        if ledger_cursor != len(ledger_data):
+            raise CheckpointError("checkpoint ledger_cursor mismatch")
         temp = EventLedger(factory_run_id=self._context.run_id)
         try:
             for item in ledger_data:

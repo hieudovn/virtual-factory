@@ -42,6 +42,19 @@ class CausalPhase(IntEnum):
     RECEIPT = 40
 
 
+SOURCE_KINDS = frozenset({"SIMULATED", "REPLAYED_SOURCE"})
+DEFINITION_PROVENANCES = frozenset(
+    {
+        "PDF_EXPLICIT",
+        "VF_ACCEPTED_BASELINE",
+        "MES_AS_BUILT",
+        "SA_INFERENCE",
+        "SYNTHETIC_ASSUMPTION",
+        "PENDING_TIPA",
+    }
+)
+
+
 def freeze_payload(value: Any, path: str = "payload") -> Any:
     """Return a deeply immutable JSON-compatible copy of *value*."""
     if callable(value):
@@ -161,8 +174,8 @@ class EventProposal:
     causation_id: str | None = None
     correlation_id: str | None = None
     source_id: str | None = None
-    source_kind: str = "simulation"
-    definition_provenance: str = "module"
+    source_kind: str = "SIMULATED"
+    definition_provenance: str = "SYNTHETIC_ASSUMPTION"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "tick", coerce_tick(self.tick))
@@ -185,6 +198,17 @@ class EventProposal:
         _require_text(self.definition_digest, "definition_digest")
         _require_text(self.source_kind, "source_kind")
         _require_text(self.definition_provenance, "definition_provenance")
+        if self.source_kind not in SOURCE_KINDS:
+            raise ProposalError(
+                f"source_kind must be one of {sorted(SOURCE_KINDS)}, "
+                f"got {self.source_kind!r}"
+            )
+        if self.definition_provenance not in DEFINITION_PROVENANCES:
+            raise ProposalError(
+                "definition_provenance must be one of "
+                f"{sorted(DEFINITION_PROVENANCES)}, "
+                f"got {self.definition_provenance!r}"
+            )
         for name, value in (
             ("causation_id", self.causation_id),
             ("correlation_id", self.correlation_id),

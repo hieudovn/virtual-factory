@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from virtual_factory.factory.module_contract import (
+    DEFINITION_PROVENANCES,
+    SOURCE_KINDS,
     CausalPhase,
     freeze_payload,
     thaw_payload,
@@ -79,8 +81,8 @@ class CommittedEvent:
     causation_id: str | None = None
     correlation_id: str | None = None
     source_id: str | None = None
-    source_kind: str = "simulation"
-    definition_provenance: str = "module"
+    source_kind: str = "SIMULATED"
+    definition_provenance: str = "SYNTHETIC_ASSUMPTION"
 
     def __post_init__(self) -> None:
         _require_text(self.factory_run_id, "factory_run_id")
@@ -106,6 +108,17 @@ class CommittedEvent:
         _require_text(self.definition_digest, "definition_digest")
         _require_text(self.source_kind, "source_kind")
         _require_text(self.definition_provenance, "definition_provenance")
+        if self.source_kind not in SOURCE_KINDS:
+            raise LedgerError(
+                f"source_kind must be one of {sorted(SOURCE_KINDS)}, "
+                f"got {self.source_kind!r}"
+            )
+        if self.definition_provenance not in DEFINITION_PROVENANCES:
+            raise LedgerError(
+                "definition_provenance must be one of "
+                f"{sorted(DEFINITION_PROVENANCES)}, "
+                f"got {self.definition_provenance!r}"
+            )
         for name, value in (
             ("causation_id", self.causation_id),
             ("correlation_id", self.correlation_id),

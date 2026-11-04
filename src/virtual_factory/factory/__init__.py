@@ -12,6 +12,8 @@ from virtual_factory.factory.event_ledger import (
     canonical_json,
 )
 from virtual_factory.factory.module_contract import (
+    DEFINITION_PROVENANCES,
+    SOURCE_KINDS,
     CausalPhase,
     EventProposal,
     ISimulationModule,
@@ -59,6 +61,8 @@ __all__ = [
     "ReadSnapshot",
     "canonical_digest",
     "canonical_json",
+    "DEFINITION_PROVENANCES",
+    "SOURCE_KINDS",
     "CausalPhase",
     "EventProposal",
     "ISimulationModule",

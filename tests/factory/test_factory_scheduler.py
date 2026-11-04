@@ -4,15 +4,18 @@ import pytest
 
 from virtual_factory.factory import (
     CausalPhase,
+    CommittedEvent,
     DuplicateEventError,
     EventProposal,
     FactoryHeader,
     FactoryRunContext,
     IdempotencyConflictError,
     ISimulationModule,
+    LedgerError,
     ModuleCapability,
     ModuleManifest,
     PastEventError,
+    ProposalError,
     SameTickBoundError,
     SchedulerError,
     SerialFactoryCoordinator,
@@ -251,6 +254,53 @@ class EmptyModule(ISimulationModule):
 
     def restore(self, state):
         return None
+
+
+def test_proposal_uses_g1a_vocabulary_and_rejects_legacy_values():
+    base = {
+        "tick": SimTick(1),
+        "causal_phase": CausalPhase.PROCESS,
+        "module_id": "module-a",
+        "local_sequence": 0,
+        "event_id": "vocabulary-event",
+        "event_type": "vocabulary",
+        "definition_digest": "fixture-v1",
+    }
+    proposal = EventProposal(**base)
+    assert proposal.source_kind == "SIMULATED"
+    assert proposal.definition_provenance == "SYNTHETIC_ASSUMPTION"
+    with pytest.raises(ProposalError):
+        EventProposal(**base, source_kind="simulation")
+    with pytest.raises(ProposalError):
+        EventProposal(**base, definition_provenance="module")
+    replay = EventProposal(
+        **base,
+        source_kind="REPLAYED_SOURCE",
+        definition_provenance="PDF_EXPLICIT",
+    )
+    assert replay.source_kind == "REPLAYED_SOURCE"
+
+
+def test_committed_event_uses_g1a_vocabulary_and_rejects_legacy_values():
+    base = {
+        "factory_run_id": "run-1",
+        "generation": 0,
+        "module_id": "module-a",
+        "local_sequence": 0,
+        "tick": SimTick(1),
+        "event_id": "committed-event",
+        "event_type": "committed",
+        "sequence": 1,
+        "causal_phase": CausalPhase.PROCESS,
+        "definition_digest": "fixture-v1",
+    }
+    event = CommittedEvent(**base)
+    assert event.source_kind == "SIMULATED"
+    assert event.definition_provenance == "SYNTHETIC_ASSUMPTION"
+    with pytest.raises(LedgerError):
+        CommittedEvent(**base, source_kind="simulation")
+    with pytest.raises(LedgerError):
+        CommittedEvent(**base, definition_provenance="module")
 
 
 def test_shuffled_registration_order_yields_identical_trace_and_digest():
