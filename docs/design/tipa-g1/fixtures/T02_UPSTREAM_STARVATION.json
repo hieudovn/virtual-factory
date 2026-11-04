@@ -48,7 +48,7 @@
           "unit": "EA",
           "buffer_id": "SSO2-OUT",
           "eligibility_policy": "QUALIFIED_ONLY",
-          "capacity": 20
+          "capacity": "20"
         }
       ]
     },
@@ -78,7 +78,7 @@
           "unit": "EA",
           "buffer_id": "RSO2-OUT",
           "eligibility_policy": "QUALIFIED_ONLY",
-          "capacity": 20
+          "capacity": "20"
         }
       ]
     },
@@ -108,7 +108,7 @@
           "unit": "EA",
           "buffer_id": "ASSY-IN",
           "eligibility_policy": "QUALIFIED_ONLY",
-          "capacity": 20
+          "capacity": "20"
         },
         {
           "port_id": "ASSY-RSO2-IN",
@@ -119,7 +119,7 @@
           "unit": "EA",
           "buffer_id": "ASSY-IN",
           "eligibility_policy": "QUALIFIED_ONLY",
-          "capacity": 20
+          "capacity": "20"
         },
         {
           "port_id": "ASSY-OUT",
@@ -130,7 +130,7 @@
           "unit": "EA",
           "buffer_id": "ASSY-OUT",
           "eligibility_policy": "QUALIFIED_ONLY",
-          "capacity": 20
+          "capacity": "20"
         }
       ]
     }

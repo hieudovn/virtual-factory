@@ -1,0 +1,17 @@
+{
+  "task_id": "TIPA-VF-G1A-SA-C01",
+  "class": "design",
+  "repository": "hieudovn/virtual-factory",
+  "branch": "sa/design/tipa-g1a-capacity-fixture-c01",
+  "expected_base_sha": "2d876fd4bb9ce060dd72cc5b2db0dd959b09ef9e",
+  "approval_issue": 147,
+  "authority": "SA_APPROVED_DESIGN",
+  "status": "SA_DESIGN_CORRECTION_PR_REVIEW",
+  "description": "Correct T01/T02 ten invalid numeric port capacities to decimal strings, preserving DD-01/schema; no runtime/test/schema changes.",
+  "allowed_paths": [
+    ".ai-harness/sa-design/tasks/TIPA-VF-G1A-SA-C01.json",
+    "docs/design/tipa-g1/fixtures/T01_TWO_PRODUCERS_JOIN.json",
+    "docs/design/tipa-g1/fixtures/T02_UPSTREAM_STARVATION.json",
+    "docs/reports/TIPA_VF_G1A_SA_C01_REPORT.md"
+  ]
+}
