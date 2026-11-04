@@ -191,8 +191,13 @@ class MaterialFlowLedger:
         }
         self._journal = Journal(journal_dir)
         self._state = _LedgerState()
-        for record in self._journal.initialize(self._header):
-            self._replay(record)
+        self._journal.acquire_writer()
+        try:
+            for record in self._journal.initialize(self._header):
+                self._replay(record)
+        except Exception:
+            self._journal.release_writer()
+            raise
 
     def _coerce_buffers(
         self, buffers: Mapping[str, Buffer | Mapping[str, Any]]
@@ -245,6 +250,9 @@ class MaterialFlowLedger:
     @property
     def journal_path(self) -> Path:
         return self._journal.path
+
+    def close(self) -> None:
+        self._journal.release_writer()
 
     @property
     def items(self) -> Mapping[str, MaterialItem]:

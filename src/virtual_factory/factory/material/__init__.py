@@ -12,6 +12,7 @@ from virtual_factory.factory.material.journal import (
     Journal,
     JournalError,
     JournalHeaderError,
+    JournalWriterLockError,
     canonical_digest,
     canonical_json,
 )
@@ -69,6 +70,7 @@ __all__ = [
     "Journal",
     "JournalError",
     "JournalHeaderError",
+    "JournalWriterLockError",
     "canonical_digest",
     "canonical_json",
     "MaterialFlowLedger",

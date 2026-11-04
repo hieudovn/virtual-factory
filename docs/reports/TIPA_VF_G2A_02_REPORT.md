@@ -15,13 +15,31 @@
 ## 1. Status
 
 ```text
-IMPLEMENTED — LOCAL TESTS PASS — DRAFT PR/CI/GATE PENDING
+IMPLEMENTED — LOCAL REGRESSION PASS — PR/CI/GATE PENDING
 ```
 
 This report is committed at the implementation head. It does not claim
 exact-head CI success, P01–P24 gate success, SA approval, merge or production
-readiness. Per the operator instruction for this run, the PR is opened as a
-draft and CI is not awaited; the operator watches the run.
+readiness. The PR is opened non-draft only after the local implementation is
+ready for SA review; CI is not awaited as a blocking step in this run.
+
+### SA review remediation on PR #150
+
+The SA review at `5e72d3fe41d3a726d32d1958be5a72537098b0a0` required two fixes,
+both inside the existing allowlist:
+
+1. **Torn-tail restart safety.** Journal recovery now identifies a partial
+   final frame, truncates it to the last complete frame, flushes and fsyncs the
+   file and directory before any append. A valid record is therefore never
+   appended behind an old partial frame. The regression test runs
+   `tx1 -> torn tx2 -> reopen -> retry tx2 -> reopen again` and verifies version
+   2, exactly one stock item per material, two outbox rows, and the stored
+   receipt. A complete checksum-corrupt frame still fails closed.
+2. **Single-writer safety.** `MaterialFlowLedger` acquires a nonblocking
+   exclusive `flock` on `material.journal.lock` before reading or appending and
+   holds it for the ledger lifetime. A second in-process or cross-process
+   writer fails with `JournalWriterLockError`; it cannot validate stale version
+   state and append a competing version-1 frame. `close()` releases the lock.
 
 ## 2. Baseline and bootstrap
 
@@ -47,7 +65,7 @@ force-pushed or deleted. No source coordinator file was edited.
 | `src/virtual_factory/factory/material/__init__.py` | Public material package exports |
 | `src/virtual_factory/factory/material/models.py` | Identities, canonical Decimal/UOM policy, items, reservations, transfers, recipes, buffers, receipts and the published transaction schema |
 | `src/virtual_factory/factory/material/accounting.py` | Stock, reservation availability, buffer capacity and recipe conservation checks |
-| `src/virtual_factory/factory/material/journal.py` | Length-framed SHA-256 journal, fsync, torn-tail recovery and corrupt-record fail-closed handling |
+| `src/virtual_factory/factory/material/journal.py` | Length-framed SHA-256 journal, fsync, safe torn-tail truncation, exclusive writer lock and corrupt-record fail-closed handling |
 | `src/virtual_factory/factory/material/transfer.py` | Transfer state machine and declared simulated latency policy |
 | `src/virtual_factory/factory/material/ledger.py` | Atomic `apply_transaction` entry point, versioning, idempotency, replay, genealogy and ledger-owned outbox |
 | `tests/factory/test_material_ledger.py` | Unit/lot accounting, Decimal, capacity, quality, versioning and idempotency |
@@ -91,8 +109,12 @@ Only allowlisted paths were changed.
   `1 stator + 1 rotor = 2 motors` request is rejected by recipe validation.
 - The journal uses append-only 8-byte length framing plus SHA-256, flushes and
   fsyncs before exposing a receipt, and fsyncs the directory when created.
-  Replay validates the receipt and full state digest. A truncated final frame is
-  ignored; a checksum failure in a complete committed frame fails closed.
+  Replay validates the receipt and full state digest. A torn final frame is
+  truncated to the last complete frame and fsynced before any later append; a
+  checksum failure in a complete committed frame fails closed.
+- One nonblocking exclusive `flock` writer lock is held for the ledger lifetime.
+  A second in-process or cross-process writer fails before reading or appending,
+  so it cannot append a competing frame from stale expected-version state.
 - A subprocess crash hook (`VF_MATERIAL_CRASH_STAGE` / `VF_MATERIAL_CRASH_TYPE`)
   is present only for deterministic tests. It is not a production control.
 
@@ -104,28 +126,34 @@ Only allowlisted paths were changed.
 .venv/bin/python -m pytest -q tests/factory/test_material_ledger.py \
   tests/factory/test_material_transfer.py tests/factory/test_material_join.py \
   tests/factory/test_material_recovery.py
-34 passed in 1.96s
+35 passed in 2.13s
 ```
 
 ### 5.2 Factory partition
 
 ```text
 .venv/bin/python -m pytest -q tests/factory/
-67 passed in 2.04s
+68 passed in 2.26s
 ```
 
-### 5.3 Full regression
+### 5.3 Full regression in bounded partitions
+
+Each command stayed below the 8-minute per-command limit. `GH_TOKEN` was
+neutralised to `definitely-invalid` to match CI visibility for the pre-existing
+live-probe test.
 
 ```text
-.venv/bin/python -m pytest -q
+# contracts, factory and all non-DDAY-B4/B5/B6/B7/FR1/UAT/UI-deploy tests
+1803 passed in 50.56s
+
+# DDAY B5 through UI deploy
+117 passed in 350.88s (0:05:50)
+
+# DDAY B4 bottled-water factory
+30 passed in 415.50s (0:06:55)
 ```
 
-The single full-suite command exceeded the operator's 10-minute per-command
-limit and was terminated at about 22% progress. No failure was observed before
-termination, but the full suite is **not** claimed as PASS. Bounded partitions
-were not substituted because the operator instruction for this run limits test
-execution to the Issue-named commands and this report must be truthful about
-the unfinished command.
+Total local regression coverage: **1950 passed, 0 failed**.
 
 ### 5.4 Recovery and crash evidence
 
@@ -138,10 +166,15 @@ the unfinished command.
   sender/destination, child, two-edge genealogy and single outbox state; replay
   does not create a second child or edge.
 - Truncating the final journal frame discards that uncommitted intent without
-  phantom stock; retrying commits it once.
+  phantom stock; recovery truncates and fsyncs the torn tail, retrying commits
+  it once, and a second restart still reads version 2 with exactly one stock
+  item, outbox row and receipt per retried transaction.
 - Flipping a byte in a complete committed record raises `CorruptJournalError`
   instead of silently skipping the record.
 - Reopening after reservations and after a join reproduces the same state digest.
+- A second in-process ledger and a second cross-process ledger both fail with
+  `JournalWriterLockError` while the first writer holds the journal; the first
+  writer can still commit one version-1 frame and restart cleanly.
 
 ## 6. Negative oracles covered
 
@@ -158,14 +191,16 @@ the unfinished command.
   receive, return then receive and loss then receive.
 - Two same-tick competing reservations with reversed input order; one stable
   winner and one `WAITING_FOR_MATERIAL` loser.
+- Torn tail followed by a retry and a second restart; complete corrupt frame
+  fail-closed; duplicate in-process and cross-process writers fail closed.
 
 ## 7. Acceptance matrix
 
 | ID | Result | Evidence |
 |---|---|---|
-| P01 Focused material tests pass | **PASS** | 34 passed, exit 0 |
-| P02 Zero required test failures | **UNKNOWN** | Focused and factory partitions pass; full-suite command exceeded the 10-minute cap |
-| P03 Exact-head CI succeeds | **UNKNOWN** | CI not awaited per operator instruction |
+| P01 Focused material tests pass | **PASS** | 35 passed, exit 0 |
+| P02 Zero required test failures | **PASS** | 1950 passed, 0 failed in bounded exhaustive partitions |
+| P03 Exact-head CI succeeds | **UNKNOWN** | CI not awaited as a blocking step in this run |
 | F01 Material report committed | **PASS** | This file in the implementation commit |
 | F02 Task contract committed | **PASS** | Bootstrap commit `9f3feb7` plus implementation commit |
 | F03 No forbidden action | **PASS** | Allowlist-only changes; no merge, deploy, OS install or next Issue |
@@ -178,6 +213,8 @@ the unfinished command.
 - The journal is a local file-backed reference. It relies on local `fsync` and
   directory `fsync`; it does not prove power-loss safety on every OS, file
   system or storage device.
+- The writer lock is a local POSIX `flock`. It excludes other processes on the
+  same host/file system; it is not a distributed or network-filesystem lease.
 - No external database, broker, MES, QMS, PlantOS, UI, live input or production
   persistence path is used.
 - The ledger is standalone. It does not change or claim atomicity for the G2A-01
@@ -191,13 +228,11 @@ the unfinished command.
 
 ## 9. Blockers and unknown evidence
 
-- The full-suite command exceeded the 10-minute per-command limit; its result is
-  **UNKNOWN**, not PASS.
-- Exact-head VF-DM CI has not been awaited; its result is **UNKNOWN** at report
-  commit.
-- The P01–P24 gate was not completed because it invokes the same full suite and
-  requires remote PR/CI evidence.
-- Per the operator instruction, the PR is a draft and the operator watches the
-  run; the Issue text's non-draft wording is not claimed as satisfied.
+- Exact-head VF-DM CI has not been awaited as a blocking step; its result is
+  **UNKNOWN** at report commit.
+- The P01–P24 gate result is recorded separately in the final PR evidence
+  comment; it requires remote PR/CI evidence.
+- The PR is marked non-draft only after the local implementation and bounded
+  regression are ready for SA review.
 - No SA review, merge authorization, deployment or next Issue authorization is
   claimed.

@@ -8,6 +8,7 @@ import pytest
 
 from virtual_factory.factory.material import (
     CorruptJournalError,
+    JournalWriterLockError,
     MaterialFlowLedger,
     TransferPolicy,
     TransferState,
@@ -247,6 +248,42 @@ def _run_child(directory, transaction, expected_version, stage, tx_type):
     )
 
 
+def _run_lock_probe(directory):
+    code = (
+        "from virtual_factory.factory.material import MaterialFlowLedger, "
+        "JournalWriterLockError, TransferPolicy\n"
+        "try:\n"
+        f"    MaterialFlowLedger({str(directory)!r}, "
+        "factory_run_id='run-1', generation=1, "
+        "definition_digest='sha256:definition', "
+        "config_digest='sha256:config', model_revision='model-r1', seed=7, "
+        "buffers={'buffer:producer': {'capacity': None}, "
+        "'buffer:join': {'capacity': '2', 'unit': 'EA'}, "
+        "'buffer:sender': {'capacity': None}, "
+        "'buffer:receiver': {'capacity': None}}, "
+        "recipes={'motor-recipe-v1': {'recipe_revision': 'motor-recipe-v1', "
+        "'inputs': [{'material_type': 'stator', 'unit': 'EA', "
+        "'quantity': '1'}, {'material_type': 'rotor', 'unit': 'EA', "
+        "'quantity': '1'}], 'outputs': [{'material_type': 'motor', "
+        "'unit': 'EA', 'quantity': '1'}], 'yield_ratio': '1'}}, "
+        "quality_fixture={'stator-1': 'ACCEPTED', 'rotor-1': 'ACCEPTED', "
+        "'motor-1': 'ACCEPTED', 'mover': 'ACCEPTED'}, "
+        "transfer_policy=TransferPolicy(default_latency_us=100))\n"
+        "except JournalWriterLockError:\n"
+        "    raise SystemExit(0)\n"
+        "raise SystemExit(1)\n"
+    )
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(ROOT / "src")
+    return subprocess.run(
+        [sys.executable, "-c", code],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+
 def test_reopen_preserves_reservation_then_join_state(tmp_path):
     directory = tmp_path / "journal"
     ledger = _open(directory)
@@ -255,6 +292,7 @@ def test_reopen_preserves_reservation_then_join_state(tmp_path):
     _reserve(ledger, "stator-1", "stator", 1, 2, "consumer-op")
     _reserve(ledger, "rotor-1", "rotor", 1, 3, "consumer-op")
     digest_before = ledger.state_digest()
+    ledger.close()
 
     reopened = _open(directory)
     assert reopened.state_digest() == digest_before
@@ -265,6 +303,7 @@ def test_reopen_preserves_reservation_then_join_state(tmp_path):
     join = _join_tx(4)
     reopened.apply_transaction(join, 4)
     digest_after = reopened.state_digest()
+    reopened.close()
 
     recovered = _open(directory)
     assert recovered.state_digest() == digest_after
@@ -278,7 +317,8 @@ def test_reopen_preserves_reservation_then_join_state(tmp_path):
 
 def test_precommit_crash_leaves_no_state_and_retry_commits(tmp_path):
     directory = tmp_path / "journal"
-    _open(directory)
+    seed = _open(directory)
+    seed.close()
     tx = _tx(
         "tx-produce",
         "key-produce",
@@ -303,7 +343,8 @@ def test_precommit_crash_leaves_no_state_and_retry_commits(tmp_path):
 
 def test_postdurable_crash_replays_original_receipt_without_duplicates(tmp_path):
     directory = tmp_path / "journal"
-    _open(directory)
+    seed = _open(directory)
+    seed.close()
     tx = _tx(
         "tx-produce",
         "key-produce",
@@ -334,7 +375,7 @@ def test_transfer_crash_after_durable_is_recovered_and_replayable(tmp_path):
     _produce(
         ledger, "mover", "mover", "buffer:sender", 0, 0, quantity="2"
     )
-    ledger = _open(directory)
+    ledger.close()
     tx = _ship_tx(1)
     result = _run_child(directory, tx, 1, "transfer-postdurable", "SHIP")
     assert result.returncode == 23
@@ -381,6 +422,7 @@ def test_join_crash_after_durable_has_no_phantom_child_or_edges(tmp_path):
     ledger = _open(directory)
     _produce(ledger, "stator-1", "stator", "buffer:producer", 0, 0)
     _produce(ledger, "rotor-1", "rotor", "buffer:producer", 0, 1)
+    ledger.close()
     tx = _join_tx(2)
     result = _run_child(directory, tx, 2, "join-postdurable", "TRANSFORM")
     assert result.returncode == 23
@@ -411,7 +453,7 @@ def test_join_crash_after_durable_has_no_phantom_child_or_edges(tmp_path):
     ) == 1
 
 
-def test_torn_final_record_is_ignored_without_phantom_state(tmp_path):
+def test_torn_final_record_is_truncated_and_retry_survives_restart(tmp_path):
     directory = tmp_path / "journal"
     ledger = _open(directory)
     _produce(ledger, "m-1", "part", "buffer:producer", 0, 0)
@@ -427,6 +469,7 @@ def test_torn_final_record_is_ignored_without_phantom_state(tmp_path):
     ledger.apply_transaction(second_tx, 1)
     data = ledger.journal_path.read_bytes()
     ledger.journal_path.write_bytes(data[:-5])
+    ledger.close()
 
     recovered = _open(directory)
     assert recovered.version == 1
@@ -437,6 +480,17 @@ def test_torn_final_record_is_ignored_without_phantom_state(tmp_path):
     recovered.apply_transaction(second_tx, 1)
     assert recovered.version == 2
     assert set(recovered.items) == {"m-1", "m-2"}
+    assert len(recovered.outbox) == 2
+    assert recovered.get_receipt("key-produce-m-2") is not None
+    recovered.close()
+
+    final = _open(directory)
+    assert final.version == 2
+    assert set(final.items) == {"m-1", "m-2"}
+    assert len(final.outbox) == 2
+    assert final.get_receipt("key-produce-m-2") is not None
+    assert final.get_item("m-2").quantity == Decimal("1")
+    final.close()
 
 
 def test_corrupt_committed_record_fails_closed(tmp_path):
@@ -446,6 +500,36 @@ def test_corrupt_committed_record_fails_closed(tmp_path):
     data = bytearray(ledger.journal_path.read_bytes())
     data[-1] ^= 0xFF
     ledger.journal_path.write_bytes(bytes(data))
+    ledger.close()
 
     with pytest.raises(CorruptJournalError):
         _open(directory)
+
+
+def test_journal_writer_lock_is_exclusive_in_process_and_across_processes(
+    tmp_path,
+):
+    directory = tmp_path / "journal"
+    owner = _open(directory)
+    with pytest.raises(JournalWriterLockError):
+        _open(directory)
+    result = _run_lock_probe(directory)
+    assert result.returncode == 0, result.stderr
+
+    tx = _tx(
+        "tx-produce",
+        "key-produce",
+        0,
+        0,
+        "PRODUCE",
+        [_leg("mover", "mover", "1", "EA", to_location="buffer:sender")],
+        child_refs=["mover"],
+    )
+    owner.apply_transaction(tx, 0)
+    owner.close()
+
+    recovered = _open(directory)
+    assert recovered.version == 1
+    assert len(recovered.outbox) == 1
+    assert recovered.get_item("mover").quantity == Decimal("1")
+    recovered.close()
