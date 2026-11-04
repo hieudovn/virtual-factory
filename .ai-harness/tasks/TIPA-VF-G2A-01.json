@@ -1,0 +1,177 @@
+{
+  "task_id": "TIPA-VF-G2A-01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "Implement a serial deterministic FactoryRunContext and two synthetic module coordinator with pinned integer microsecond clock, side-effect-free module proposals, canonical event commit ordering and checkpoint/replay; no material ledger or ASSY integration.",
+  "base_branch": "main",
+  "expected_base_sha": "6ac764948d3e2e2e5fad11cf46aced5d16d67bb8",
+  "work_branch": "feature/tipa-g2a-factory-coordinator",
+  "required_branch": "feature/tipa-g2a-factory-coordinator",
+  "resume_policy": "continue_if_branch_exists",
+  "allowed_paths": [
+    ".ai-harness/tasks/TIPA-VF-G2A-01.json",
+    "src/virtual_factory/factory/__init__.py",
+    "src/virtual_factory/factory/run_context.py",
+    "src/virtual_factory/factory/module_contract.py",
+    "src/virtual_factory/factory/scheduler_adapter.py",
+    "src/virtual_factory/factory/event_ledger.py",
+    "tests/factory/test_factory_run_context.py",
+    "tests/factory/test_factory_scheduler.py",
+    "tests/factory/test_module_isolation.py",
+    "docs/reports/TIPA_VF_G2A_01_REPORT.md"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/observation/",
+    "configs/",
+    "deploy/",
+    "simulators/",
+    ".github/",
+    "tests/test_demo_composition.py",
+    "any other repository"
+  ],
+  "done_when": ".venv/bin/python -m pytest -q tests/factory/",
+  "environment": {
+    "setup": "python3 -m venv .venv && .venv/bin/python -m pip install -e '.[dev]'",
+    "run_tests": ".venv/bin/python -m pytest -q tests/factory/",
+    "note": "Reuse existing provisioned repo-local .venv if available; verify Python>=3.11, GitHub access, worktree and dependencies before mutation. No OS packages/root/services/credentials changes. Use OpenCode native read/grep/edit tools, not shell reading via cat/sed/grep. /tmp scratch only, no deliverables or secret material."
+  },
+  "required_deliverables": [
+    "src/virtual_factory/factory/run_context.py",
+    "src/virtual_factory/factory/module_contract.py",
+    "src/virtual_factory/factory/scheduler_adapter.py",
+    "src/virtual_factory/factory/event_ledger.py",
+    "tests/factory/test_factory_run_context.py",
+    "tests/factory/test_factory_scheduler.py",
+    "tests/factory/test_module_isolation.py",
+    "docs/reports/TIPA_VF_G2A_01_REPORT.md",
+    ".ai-harness/tasks/TIPA-VF-G2A-01.json"
+  ],
+  "required_tests": [
+    ".venv/bin/python -m pytest -q tests/factory/",
+    ".venv/bin/python -m pytest -q"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [
+    "GitHub branch HEAD, PR head, exact-head CI and report SHA all equal",
+    "VF task gate P01-P24 exit 0; non-draft OPEN PR on main"
+  ],
+  "explicit_non_objectives": [
+    "No MaterialFlowLedger, inventory, BOM, reservation, genealogy or material transactions",
+    "No ASSY/Water Bottle/discrete implementation edit and no common-clock claim for six ASSY sublines",
+    "No parallel worker pool, broker, UI, MES/QMS/PlantOS writes, production data or deployment",
+    "No claims of durable crash recovery or material-atomic snapshots (later #128)"
+  ],
+  "budget": {
+    "max_bash_commands": 65
+  },
+  "depends_on": [
+    "PR-146-MERGED-POST-CI-SUCCESS",
+    "G1A-CORE-DD01-FROZEN-FOR-G2A-01"
+  ],
+  "touch": [
+    "src/virtual_factory/factory/run_context.py",
+    "src/virtual_factory/factory/module_contract.py",
+    "src/virtual_factory/factory/scheduler_adapter.py",
+    "src/virtual_factory/factory/event_ledger.py",
+    "tests/factory/"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "P01",
+      "phase": "pre_status",
+      "description": "Focused tests pass",
+      "rule": {
+        "field": "tests.result",
+        "operator": "equals",
+        "expected": "PASS"
+      }
+    },
+    {
+      "id": "P02",
+      "phase": "pre_status",
+      "description": "Zero test failures",
+      "rule": {
+        "field": "tests.failed",
+        "operator": "equals",
+        "expected": 0
+      }
+    },
+    {
+      "id": "P03",
+      "phase": "pre_status",
+      "description": "Exact head CI succeeds",
+      "rule": {
+        "field": "ci.conclusion",
+        "operator": "equals",
+        "expected": "success"
+      }
+    },
+    {
+      "id": "F01",
+      "phase": "final",
+      "description": "Report committed",
+      "rule": {
+        "field": "implementation.changed_files",
+        "operator": "contains",
+        "expected": "docs/reports/TIPA_VF_G2A_01_REPORT.md"
+      }
+    },
+    {
+      "id": "F02",
+      "phase": "final",
+      "description": "Task contract committed",
+      "rule": {
+        "field": "implementation.changed_files",
+        "operator": "contains",
+        "expected": ".ai-harness/tasks/TIPA-VF-G2A-01.json"
+      }
+    },
+    {
+      "id": "F03",
+      "phase": "final",
+      "description": "No forbidden action",
+      "rule": {
+        "field": "forbidden_actions.performed",
+        "operator": "is_false",
+        "expected": null
+      }
+    },
+    {
+      "id": "F04",
+      "phase": "final",
+      "description": "All canonical steps executed",
+      "rule": {
+        "field": "pipeline_integrity.all_required_steps_executed",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "F05",
+      "phase": "final",
+      "description": "All required steps pass",
+      "rule": {
+        "field": "pipeline_integrity.all_required_steps_pass",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "F06",
+      "phase": "final",
+      "description": "Remote commit exists",
+      "rule": {
+        "field": "implementation.commit_exists_remotely",
+        "operator": "is_true",
+        "expected": null
+      }
+    }
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
