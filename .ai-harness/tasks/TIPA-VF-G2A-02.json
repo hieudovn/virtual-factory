@@ -1,0 +1,185 @@
+{
+  "task_id": "TIPA-VF-G2A-02",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "Implement a deterministic, journal-backed MaterialFlowLedger reference with Decimal quantities, versioned reservations, idempotent transfer, atomic two-parent join, genealogy and commit-bound outbox, plus crash/replay tests, without changing the existing Factory Coordinator.",
+  "base_branch": "main",
+  "expected_base_sha": "fe6d007bb4b744999245ee47e5d7de6c5551f015",
+  "work_branch": "feature/tipa-g2a-material-ledger",
+  "required_branch": "feature/tipa-g2a-material-ledger",
+  "resume_policy": "continue_if_branch_exists",
+  "allowed_paths": [
+    ".ai-harness/tasks/TIPA-VF-G2A-02.json",
+    "src/virtual_factory/factory/material/__init__.py",
+    "src/virtual_factory/factory/material/models.py",
+    "src/virtual_factory/factory/material/ledger.py",
+    "src/virtual_factory/factory/material/transfer.py",
+    "src/virtual_factory/factory/material/accounting.py",
+    "src/virtual_factory/factory/material/journal.py",
+    "tests/factory/test_material_ledger.py",
+    "tests/factory/test_material_transfer.py",
+    "tests/factory/test_material_join.py",
+    "tests/factory/test_material_recovery.py",
+    "docs/reports/TIPA_VF_G2A_02_REPORT.md"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/factory/scheduler_adapter.py",
+    "src/virtual_factory/factory/event_ledger.py",
+    "src/virtual_factory/factory/module_contract.py",
+    "src/virtual_factory/factory/run_context.py",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/observation/",
+    "configs/",
+    "deploy/",
+    ".github/",
+    "any other repository"
+  ],
+  "done_when": ".venv/bin/python -m pytest -q tests/factory/test_material_ledger.py tests/factory/test_material_transfer.py tests/factory/test_material_join.py tests/factory/test_material_recovery.py",
+  "environment": {
+    "setup": "python3 -m venv .venv && .venv/bin/python -m pip install -e '.[dev]'",
+    "run_tests": ".venv/bin/python -m pytest -q tests/factory/test_material_ledger.py tests/factory/test_material_transfer.py tests/factory/test_material_join.py tests/factory/test_material_recovery.py",
+    "note": "Verify existing .venv, Python>=3.11 and remote baseline; reuse environment. Do not install OS packages, elevate privilege, access live factory/MES/PlantOS or change VPS services. Native read/grep/edit preferred; /tmp scratch only and not deliverable or credential storage."
+  },
+  "required_deliverables": [
+    "src/virtual_factory/factory/material/models.py",
+    "src/virtual_factory/factory/material/ledger.py",
+    "src/virtual_factory/factory/material/transfer.py",
+    "src/virtual_factory/factory/material/accounting.py",
+    "src/virtual_factory/factory/material/journal.py",
+    "tests/factory/test_material_ledger.py",
+    "tests/factory/test_material_transfer.py",
+    "tests/factory/test_material_join.py",
+    "tests/factory/test_material_recovery.py",
+    ".ai-harness/tasks/TIPA-VF-G2A-02.json",
+    "docs/reports/TIPA_VF_G2A_02_REPORT.md"
+  ],
+  "required_tests": [
+    ".venv/bin/python -m pytest -q tests/factory/test_material_ledger.py tests/factory/test_material_transfer.py tests/factory/test_material_join.py tests/factory/test_material_recovery.py",
+    ".venv/bin/python -m pytest -q tests/factory/",
+    ".venv/bin/python -m pytest -q"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [
+    "remote branch HEAD = non-draft open PR HEAD = successful exact-head VF-DM CI SHA = reported review HEAD",
+    "VF PM gate P01–P24 exit 0; report includes journal crash/replay evidence and unresolved limits"
+  ],
+  "explicit_non_objectives": [
+    "No modifications to existing G2A-01 coordinator/event ledger, ASSY, Water Bottle, discrete or adapters",
+    "No actual MES/QMS/PlantOS or broker writes; no UI or new DB service",
+    "No whole-tick coordinator atomicity; material transaction atomicity only inside ledger-owned journal/commit boundary",
+    "No full-plant T01/T02 runtime oracle or real-world line capacity claims; synthetic test fixtures only",
+    "No automatic start of #136, #141–#145 or #129"
+  ],
+  "budget": {
+    "max_bash_commands": 80
+  },
+  "depends_on": [
+    "PR-149-MERGED-POST-CI-SUCCESS",
+    "DD01-MATERIAL-BOUNDARY-SA-LOCKED"
+  ],
+  "touch": [
+    "src/virtual_factory/factory/material/",
+    "tests/factory/test_material_ledger.py",
+    "tests/factory/test_material_transfer.py",
+    "tests/factory/test_material_join.py",
+    "tests/factory/test_material_recovery.py"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "P01",
+      "phase": "pre_status",
+      "description": "Focused material tests pass",
+      "rule": {
+        "field": "tests.result",
+        "operator": "equals",
+        "expected": "PASS"
+      }
+    },
+    {
+      "id": "P02",
+      "phase": "pre_status",
+      "description": "Zero required test failures",
+      "rule": {
+        "field": "tests.failed",
+        "operator": "equals",
+        "expected": 0
+      }
+    },
+    {
+      "id": "P03",
+      "phase": "pre_status",
+      "description": "Exact-head CI success",
+      "rule": {
+        "field": "ci.conclusion",
+        "operator": "equals",
+        "expected": "success"
+      }
+    },
+    {
+      "id": "F01",
+      "phase": "final",
+      "description": "Material report committed",
+      "rule": {
+        "field": "implementation.changed_files",
+        "operator": "contains",
+        "expected": "docs/reports/TIPA_VF_G2A_02_REPORT.md"
+      }
+    },
+    {
+      "id": "F02",
+      "phase": "final",
+      "description": "VF task contract committed",
+      "rule": {
+        "field": "implementation.changed_files",
+        "operator": "contains",
+        "expected": ".ai-harness/tasks/TIPA-VF-G2A-02.json"
+      }
+    },
+    {
+      "id": "F03",
+      "phase": "final",
+      "description": "No forbidden actions",
+      "rule": {
+        "field": "forbidden_actions.performed",
+        "operator": "is_false",
+        "expected": null
+      }
+    },
+    {
+      "id": "F04",
+      "phase": "final",
+      "description": "All canonical gate steps executed",
+      "rule": {
+        "field": "pipeline_integrity.all_required_steps_executed",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "F05",
+      "phase": "final",
+      "description": "All canonical gate steps pass",
+      "rule": {
+        "field": "pipeline_integrity.all_required_steps_pass",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "F06",
+      "phase": "final",
+      "description": "Remote commit exists",
+      "rule": {
+        "field": "implementation.commit_exists_remotely",
+        "operator": "is_true",
+        "expected": null
+      }
+    }
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
