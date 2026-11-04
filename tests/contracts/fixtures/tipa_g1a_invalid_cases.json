@@ -1,0 +1,211 @@
+{
+  "contract_version": "vf-g1a-invalid-cases-v0.1",
+  "description": "Deterministic negative cases for TIPA G1A Draft 2020-12 contracts. Each case patches one valid base document. 'schema' cases must be rejected by JSON Schema; 'semantic' cases pass format validation but must be rejected by the cross-field semantic validator.",
+  "cases": [
+    {
+      "id": "run-missing-factory-run-id",
+      "base": "run",
+      "layer": "schema",
+      "rule": "absent_identity",
+      "patch": [{"path": "factory_run_id", "delete": true}]
+    },
+    {
+      "id": "run-bad-contract-version",
+      "base": "run",
+      "layer": "schema",
+      "rule": "bad_contract_version",
+      "patch": [{"path": "contract_version", "value": "vf-factory-run-v9"}]
+    },
+    {
+      "id": "run-bad-generation",
+      "base": "run",
+      "layer": "schema",
+      "rule": "bad_generation",
+      "patch": [{"path": "generation", "value": 0}]
+    },
+    {
+      "id": "run-bad-definition-digest",
+      "base": "run",
+      "layer": "schema",
+      "rule": "bad_digest",
+      "patch": [{"path": "definition_digest", "value": "sha256:not-a-digest"}]
+    },
+    {
+      "id": "module-numeric-capacity",
+      "base": "module",
+      "layer": "schema",
+      "rule": "decimal_uom_error",
+      "patch": [{"path": "ports.0.capacity", "value": 20}]
+    },
+    {
+      "id": "module-bad-port-direction",
+      "base": "module",
+      "layer": "schema",
+      "rule": "port_direction",
+      "patch": [{"path": "ports.0.direction", "value": "SIDEWAYS"}]
+    },
+    {
+      "id": "event-missing-event-id",
+      "base": "event",
+      "layer": "schema",
+      "rule": "absent_identity",
+      "patch": [{"path": "event_id", "delete": true}]
+    },
+    {
+      "id": "event-bad-source-kind",
+      "base": "event",
+      "layer": "schema",
+      "rule": "source_provenance_confusion",
+      "patch": [{"path": "source_kind", "value": "SYNTHETIC_ASSUMPTION"}]
+    },
+    {
+      "id": "event-bad-definition-provenance",
+      "base": "event",
+      "layer": "schema",
+      "rule": "source_provenance_confusion",
+      "patch": [{"path": "definition_provenance", "value": "SIMULATED"}]
+    },
+    {
+      "id": "event-negative-tick",
+      "base": "event",
+      "layer": "schema",
+      "rule": "bad_tick",
+      "patch": [{"path": "simulation_tick_us", "value": -1}]
+    },
+    {
+      "id": "tx-exponent-quantity",
+      "base": "transaction",
+      "layer": "schema",
+      "rule": "decimal_uom_error",
+      "patch": [{"path": "legs.0.quantity", "value": "1e3"}]
+    },
+    {
+      "id": "tx-signed-quantity",
+      "base": "transaction",
+      "layer": "schema",
+      "rule": "decimal_uom_error",
+      "patch": [{"path": "legs.0.quantity", "value": "-1"}]
+    },
+    {
+      "id": "tx-leading-zero-quantity",
+      "base": "transaction",
+      "layer": "schema",
+      "rule": "decimal_uom_error",
+      "patch": [{"path": "legs.0.quantity", "value": "01"}]
+    },
+    {
+      "id": "tx-bad-unit",
+      "base": "transaction",
+      "layer": "schema",
+      "rule": "invalid_unit",
+      "patch": [{"path": "legs.0.unit", "value": "BOX"}]
+    },
+    {
+      "id": "tx-bad-source-kind",
+      "base": "transaction",
+      "layer": "schema",
+      "rule": "source_provenance_confusion",
+      "patch": [{"path": "source_kind", "value": "PDF_EXPLICIT"}]
+    },
+    {
+      "id": "scenario-bad-contract-version",
+      "base": "scenario",
+      "layer": "schema",
+      "rule": "bad_contract_version",
+      "patch": [{"path": "contract_version", "value": "vf-scenario-fixture-v9"}]
+    },
+    {
+      "id": "run-epoch-not-utc",
+      "base": "run",
+      "layer": "semantic",
+      "rule": "utc_tick",
+      "patch": [{"path": "epoch_utc", "value": "2026-10-31T07:00:00+07:00"}]
+    },
+    {
+      "id": "module-duplicate-port-id",
+      "base": "module",
+      "layer": "semantic",
+      "rule": "duplicate_identity",
+      "patch": [{"path": "ports.1.port_id", "value": "SSO2-OUT"}]
+    },
+    {
+      "id": "module-fractional-ea-capacity",
+      "base": "module",
+      "layer": "semantic",
+      "rule": "fractional_ea",
+      "patch": [{"path": "ports.0.capacity", "value": "1.5"}]
+    },
+    {
+      "id": "module-zero-ea-capacity",
+      "base": "module",
+      "layer": "semantic",
+      "rule": "nonpositive_ea",
+      "patch": [{"path": "ports.0.capacity", "value": "0"}]
+    },
+    {
+      "id": "event-tick-time-mismatch",
+      "base": "event",
+      "layer": "semantic",
+      "rule": "utc_tick",
+      "patch": [{"path": "occurred_at_utc", "value": "2026-10-31T00:00:02Z"}]
+    },
+    {
+      "id": "event-time-not-utc",
+      "base": "event",
+      "layer": "semantic",
+      "rule": "utc_tick",
+      "patch": [{"path": "occurred_at_utc", "value": "2026-10-31T07:00:01+07:00"}]
+    },
+    {
+      "id": "tx-zero-ea-quantity",
+      "base": "transaction",
+      "layer": "semantic",
+      "rule": "nonpositive_ea",
+      "patch": [{"path": "legs.0.quantity", "value": "0"}]
+    },
+    {
+      "id": "tx-fractional-ea-quantity",
+      "base": "transaction",
+      "layer": "semantic",
+      "rule": "fractional_ea",
+      "patch": [{"path": "legs.0.quantity", "value": "1.5"}]
+    },
+    {
+      "id": "scenario-duplicate-module-id",
+      "base": "scenario",
+      "layer": "semantic",
+      "rule": "duplicate_identity",
+      "patch": [{"path": "modules.1.module_id", "value": "SSO2"}]
+    },
+    {
+      "id": "scenario-duplicate-event-signature",
+      "base": "scenario",
+      "layer": "semantic",
+      "rule": "duplicate_identity",
+      "patch": [
+        {"path": "events.1.tick_us", "value": 1000000},
+        {"path": "events.1.module_id", "value": "SSO2"},
+        {"path": "events.1.action", "value": "PRODUCE"},
+        {"path": "events.1.subject_id", "value": "SSO2-WIP-001"}
+      ]
+    },
+    {
+      "id": "scenario-unknown-module-reference",
+      "base": "scenario",
+      "layer": "semantic",
+      "rule": "unknown_reference",
+      "patch": [{"path": "events.0.module_id", "value": "UNKNOWN"}]
+    },
+    {
+      "id": "scenario-incompatible-shared-buffer",
+      "base": "scenario",
+      "layer": "semantic",
+      "rule": "incompatible_ports",
+      "patch": [
+        {"path": "modules.0.ports.0.buffer_id", "value": "SHARED"},
+        {"path": "modules.1.ports.0.buffer_id", "value": "SHARED"},
+        {"path": "modules.1.ports.0.material_types", "value": ["ROTOR_ASSEMBLY"]}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "task_id": "TIPA-VF-G1A-CONTRACT-QA-01",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "gate_type": "EXECUTABLE CONTRACT QA / READ-ONLY SCHEMA-FIXTURE EVIDENCE",
+  "objective": "Write deterministic G1A schema, fixture and cross-record negative semantic tests against the approved TIPA Digital Twin design; report gaps without implementing factory runtime.",
+  "explicit_non_objectives": [
+    "No Factory Core/runtime, ASSY, discrete, MQTT or Water Bottle changes",
+    "No edits to published G1A schema or fixture reference files; contradictions reported as blockers",
+    "No external MES/QMS/PlantOS write or network schema resolution",
+    "Do not merge, deploy, install OS packages or start next task"
+  ],
+  "required_branch": "test/tipa-g1a-contract-qa",
+  "expected_base_sha": "d7d7aee1a226613dafc8d4db02e559634ccecd70",
+  "working_tree_requirement": "clean_or_read_only",
+  "allowed_paths": [
+    ".ai-harness/tasks/TIPA-VF-G1A-CONTRACT-QA-01.json",
+    "tests/contracts/test_tipa_g1a_schemas.py",
+    "tests/contracts/test_tipa_g1a_semantics.py",
+    "tests/contracts/fixtures/tipa_g1a_invalid_cases.json",
+    "docs/reports/TIPA_VF_G1A_CONTRACT_QA_01_REPORT.md"
+  ],
+  "forbidden_paths": [
+    "src/",
+    "configs/",
+    "simulators/",
+    "deploy/",
+    ".github/",
+    "docs/design/"
+  ],
+  "required_deliverables": [
+    ".ai-harness/tasks/TIPA-VF-G1A-CONTRACT-QA-01.json",
+    "tests/contracts/test_tipa_g1a_schemas.py",
+    "tests/contracts/test_tipa_g1a_semantics.py",
+    "tests/contracts/fixtures/tipa_g1a_invalid_cases.json",
+    "docs/reports/TIPA_VF_G1A_CONTRACT_QA_01_REPORT.md"
+  ],
+  "required_tests": [
+    ".venv/bin/python -m pytest -q tests/contracts/",
+    ".venv/bin/python -m pytest -q"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [
+    "remote branch HEAD equals PR head SHA equals CI SHA equals reported SHA",
+    "open non-draft PR targeting main, exact-head VF-DM CI success"
+  ],
+  "forbidden_actions": [
+    "direct push to main",
+    "merge",
+    "deploy",
+    "modify other repository",
+    "rewrite branch under review",
+    "install OS packages"
+  ],
+  "stop_conditions": [
+    "baseline drift or unclean workspace",
+    "missing environment dependency or GitHub API/CI access",
+    "schema or fixture contradicts SA semantics",
+    "needed modification outside allowlist",
+    "unknown test result at required acceptance"
+  ],
+  "acceptance_criteria": [
+    {"id": "P01", "phase": "pre_status", "description": "Focused contract tests pass", "rule": {"field": "tests.result", "operator": "equals", "expected": "PASS"}},
+    {"id": "P02", "phase": "pre_status", "description": "Zero test failures", "rule": {"field": "tests.failed", "operator": "equals", "expected": 0}},
+    {"id": "P03", "phase": "pre_status", "description": "Exact-head CI succeeds", "rule": {"field": "ci.conclusion", "operator": "equals", "expected": "success"}},
+    {"id": "F01", "phase": "final", "description": "Contract QA report committed", "rule": {"field": "implementation.changed_files", "operator": "contains", "expected": "docs/reports/TIPA_VF_G1A_CONTRACT_QA_01_REPORT.md"}},
+    {"id": "F02", "phase": "final", "description": "Task contract committed", "rule": {"field": "implementation.changed_files", "operator": "contains", "expected": ".ai-harness/tasks/TIPA-VF-G1A-CONTRACT-QA-01.json"}},
+    {"id": "F03", "phase": "final", "description": "No forbidden action performed", "rule": {"field": "forbidden_actions.performed", "operator": "is_false", "expected": null}},
+    {"id": "F04", "phase": "final", "description": "All canonical pipeline steps executed", "rule": {"field": "pipeline_integrity.all_required_steps_executed", "operator": "is_true", "expected": null}},
+    {"id": "F05", "phase": "final", "description": "All required pipeline steps pass", "rule": {"field": "pipeline_integrity.all_required_steps_pass", "operator": "is_true", "expected": null}},
+    {"id": "F06", "phase": "final", "description": "Remote commit exists", "rule": {"field": "implementation.commit_exists_remotely", "operator": "is_true", "expected": null}}
+  ],
+  "authorization": {"may_open_pr": true, "may_merge": false, "may_start_next_task": false}
+}
