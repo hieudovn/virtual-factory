@@ -11,7 +11,7 @@
     "Do not merge, deploy, install OS packages or start next task"
   ],
   "required_branch": "test/tipa-g1a-contract-qa",
-  "expected_base_sha": "2d876fd4bb9ce060dd72cc5b2db0dd959b09ef9e",
+  "expected_base_sha": "d7d7aee1a226613dafc8d4db02e559634ccecd70",
   "working_tree_requirement": "clean_or_read_only",
   "allowed_paths": [
     ".ai-harness/tasks/TIPA-VF-G1A-CONTRACT-QA-01.json",
