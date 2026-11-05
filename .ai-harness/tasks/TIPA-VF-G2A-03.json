@@ -1,0 +1,185 @@
+{
+  "task_id": "TIPA-VF-G2A-03",
+  "repository": "hieudovn/virtual-factory",
+  "requested_gate": "ready_for_sa_review",
+  "objective": "Add a narrow deterministic synthetic Coordinator↔MaterialFlowLedger adapter that commits material facts in the durable ledger first, projects committed outbox entries through an ISimulationModule to the existing event ledger, replays after interruption, and rejects stale or incompatible run/checkpoint identity without changing either G2A core.",
+  "base_branch": "main",
+  "expected_base_sha": "baa30099c0772686236c9b64390e27097bf48585",
+  "work_branch": "feature/tipa-g2a-material-bridge",
+  "required_branch": "feature/tipa-g2a-material-bridge",
+  "resume_policy": "continue_if_branch_exists",
+  "allowed_paths": [
+    ".ai-harness/tasks/TIPA-VF-G2A-03.json",
+    "src/virtual_factory/factory/integration/__init__.py",
+    "src/virtual_factory/factory/integration/contracts.py",
+    "src/virtual_factory/factory/integration/outbox_projection.py",
+    "src/virtual_factory/factory/integration/material_bridge.py",
+    "src/virtual_factory/factory/integration/checkpoint.py",
+    "tests/factory/test_material_bridge_contract.py",
+    "tests/factory/test_material_bridge_projection.py",
+    "tests/factory/test_material_bridge_recovery.py",
+    "tests/factory/test_material_bridge_contention.py",
+    "docs/reports/TIPA_VF_G2A_03_REPORT.md"
+  ],
+  "forbidden_paths": [
+    "src/virtual_factory/factory/scheduler_adapter.py",
+    "src/virtual_factory/factory/run_context.py",
+    "src/virtual_factory/factory/event_ledger.py",
+    "src/virtual_factory/factory/module_contract.py",
+    "src/virtual_factory/factory/material/",
+    "src/virtual_factory/assembly/",
+    "src/virtual_factory/discrete/",
+    "src/virtual_factory/observation/",
+    "configs/",
+    "deploy/",
+    ".github/",
+    "any other repository"
+  ],
+  "done_when": ".venv/bin/python -m pytest -q tests/factory/test_material_bridge_contract.py tests/factory/test_material_bridge_projection.py tests/factory/test_material_bridge_recovery.py tests/factory/test_material_bridge_contention.py",
+  "environment": {
+    "setup": "python3 -m venv .venv && .venv/bin/python -m pip install -e '.[dev]'",
+    "run_tests": ".venv/bin/python -m pytest -q tests/factory/test_material_bridge_contract.py tests/factory/test_material_bridge_projection.py tests/factory/test_material_bridge_recovery.py tests/factory/test_material_bridge_contention.py",
+    "note": "Reuse verified provisioned repo-local .venv/Python>=3.11, no root/OS/service/credentials modification, no live MES/QMS/PlantOS access. Only task-local /tmp scratch, not a deliverable. Use OpenCode native read/search/edit."
+  },
+  "required_deliverables": [
+    "src/virtual_factory/factory/integration/__init__.py",
+    "src/virtual_factory/factory/integration/contracts.py",
+    "src/virtual_factory/factory/integration/outbox_projection.py",
+    "src/virtual_factory/factory/integration/material_bridge.py",
+    "src/virtual_factory/factory/integration/checkpoint.py",
+    "tests/factory/test_material_bridge_contract.py",
+    "tests/factory/test_material_bridge_projection.py",
+    "tests/factory/test_material_bridge_recovery.py",
+    "tests/factory/test_material_bridge_contention.py",
+    "docs/reports/TIPA_VF_G2A_03_REPORT.md",
+    ".ai-harness/tasks/TIPA-VF-G2A-03.json"
+  ],
+  "required_tests": [
+    ".venv/bin/python -m pytest -q tests/factory/test_material_bridge_contract.py tests/factory/test_material_bridge_projection.py tests/factory/test_material_bridge_recovery.py tests/factory/test_material_bridge_contention.py",
+    ".venv/bin/python -m pytest -q tests/factory/",
+    ".venv/bin/python -m pytest -q"
+  ],
+  "required_smoke_checks": [],
+  "required_remote_evidence": [
+    "GitHub remote branch head = non-draft PR head = successful exact-head CI SHA = reported review HEAD",
+    "VF PM P01-P24 exit 0 with all canonical steps and 9/9 final criteria PASS; evidence points to test coverage and report committed"
+  ],
+  "explicit_non_objectives": [
+    "No two-journal distributed atomicity or durable coordinator/event-ledger state claim; material journal is sole durable material authority",
+    "No edits to existing Coordinator, EventLedger, RunContext, MaterialFlowLedger or old simulation sources",
+    "No ASSY/Water Bottle/discrete/Facility/SSO2/RSO2 adapters, real T01/T02 or actual MES/QMS/PlantOS writes",
+    "No worker concurrency, broker or external DB, deploy, or next Issue"
+  ],
+  "budget": {
+    "max_bash_commands": 70
+  },
+  "depends_on": [
+    "PR-150-MERGED-POST-CI-SUCCESS",
+    "PR-149-MERGED-VERIFIED",
+    "G2A-03-SA-DESIGN-LOCK-v1"
+  ],
+  "touch": [
+    "src/virtual_factory/factory/integration/",
+    "tests/factory/test_material_bridge_contract.py",
+    "tests/factory/test_material_bridge_projection.py",
+    "tests/factory/test_material_bridge_recovery.py",
+    "tests/factory/test_material_bridge_contention.py"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "P01",
+      "phase": "pre_status",
+      "description": "Focused bridge tests pass",
+      "rule": {
+        "field": "tests.result",
+        "operator": "equals",
+        "expected": "PASS"
+      }
+    },
+    {
+      "id": "P02",
+      "phase": "pre_status",
+      "description": "Zero required regression failures",
+      "rule": {
+        "field": "tests.failed",
+        "operator": "equals",
+        "expected": 0
+      }
+    },
+    {
+      "id": "P03",
+      "phase": "pre_status",
+      "description": "Exact-head CI succeeds",
+      "rule": {
+        "field": "ci.conclusion",
+        "operator": "equals",
+        "expected": "success"
+      }
+    },
+    {
+      "id": "F01",
+      "phase": "final",
+      "description": "Bridge report committed",
+      "rule": {
+        "field": "implementation.changed_files",
+        "operator": "contains",
+        "expected": "docs/reports/TIPA_VF_G2A_03_REPORT.md"
+      }
+    },
+    {
+      "id": "F02",
+      "phase": "final",
+      "description": "Task JSON committed",
+      "rule": {
+        "field": "implementation.changed_files",
+        "operator": "contains",
+        "expected": ".ai-harness/tasks/TIPA-VF-G2A-03.json"
+      }
+    },
+    {
+      "id": "F03",
+      "phase": "final",
+      "description": "No forbidden actions",
+      "rule": {
+        "field": "forbidden_actions.performed",
+        "operator": "is_false",
+        "expected": null
+      }
+    },
+    {
+      "id": "F04",
+      "phase": "final",
+      "description": "All canonical gate steps executed",
+      "rule": {
+        "field": "pipeline_integrity.all_required_steps_executed",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "F05",
+      "phase": "final",
+      "description": "All required steps passed",
+      "rule": {
+        "field": "pipeline_integrity.all_required_steps_pass",
+        "operator": "is_true",
+        "expected": null
+      }
+    },
+    {
+      "id": "F06",
+      "phase": "final",
+      "description": "Review HEAD exists remotely",
+      "rule": {
+        "field": "implementation.commit_exists_remotely",
+        "operator": "is_true",
+        "expected": null
+      }
+    }
+  ],
+  "authorization": {
+    "may_open_pr": true,
+    "may_merge": false,
+    "may_start_next_task": false
+  }
+}
