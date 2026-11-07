@@ -1,0 +1,18 @@
+{
+  "task_id": "VF-ARCH-CONSTITUTION-01",
+  "class": "governance",
+  "repository": "hieudovn/virtual-factory",
+  "branch": "sa/governance/vf-architecture-constitution-01",
+  "expected_base_sha": "3c4277a900ec397e746d0f7250a8ecaa85695b53",
+  "approval_issue": 156,
+  "authority": "PO_APPROVED_GOVERNANCE",
+  "allowed_paths": [
+    "AGENTS.md",
+    "docs/governance/ARCHITECTURE_CONSTITUTION.md",
+    "docs/governance/ARCHITECTURE_GOVERNANCE_PLAN.md",
+    "docs/reports/VF_ARCH_CONSTITUTION_01_REPORT.md",
+    ".ai-harness/sa-design/tasks/VF-ARCH-CONSTITUTION-01.json"
+  ],
+  "description": "Mandatory architecture first-read constitution and staged governance rollout, without source/harness changes",
+  "status": "DRAFT_PR_REVIEW"
+}

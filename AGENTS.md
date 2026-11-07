@@ -1,3 +1,15 @@
+## Mandatory Architecture Constitution — FIRST READ (PO directive 2026-11-08; Issue #156)
+
+**STOP BEFORE ARCHITECTURE DECISIONS.** At the start of every AI session, SA design task, PM task interpretation, or architecture-significant review, read in order:
+1. `docs/governance/ARCHITECTURE_CONSTITUTION.md` (binding architecture decision process).
+2. `ARCHITECTURE.md` (existing approved foundation, not proof of all current runtime features).
+3. `docs/governance/ARCHITECTURE_GOVERNANCE_PLAN.md`, active architecture ADR/ownership/capability registers *when published*, and relevant HOLD/decision issues (currently #155).
+4. Existing role-specific contracts below; PM must still obey local preflight and P01–P24, SA still obeys remote design gate.
+
+**Evidence:** Record the exact Constitution Git blob SHA (or verifiable content digest), the remote `main` SHA, related architecture decision/ADR, existing-capability reuse assessment, owner-impact assessment, and any unresolved conflicts **before** deciding or issuing an implementation contract. A checkbox or merely claiming “read” does not prove enforcement. On inaccessible/stale/conflicting artifacts, missing ownership, or architectural uncertainty, mark `ARCHITECTURE_HOLD`, perform read-only audit, and DO NOT design-lock/dispatch/merge. New root session, scheduler, lifecycle, material authority, event writer or mutating API requires explicit ADR and PO approval. #155 one-platform HOLD takes precedence over older TIPA assumptions.
+
+The process Constitution does not by itself establish CI enforcement or settle #155. Any changes to these rules follow the existing governance PR process and human review; never modify `main` directly.
+
 # Repository Agent Instructions
 
 Two separate governed roles operate in this repository.
