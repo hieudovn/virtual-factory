@@ -1,0 +1,4 @@
+# VF-PAGA-02 — Strategic memory seed / context resolver design report
+Date: 2026-11-08. Scope: SA design only under Issue #161. Exact base main `3c4277a900ec397e746d0f7250a8ecaa85695b53`.
+References: Issue #123 / roadmap blob `841b46763eb41fc3ea249a77943b08bfa8706b2d`, Architecture blob `b38694647a1decfaa0367512a571e5b643090f5e`, AGENTS blob `a47d3865e9aca4b85bede781fac2dcb2ce2c0496`, active HOLD #155, proposed governance #156/#157, proposed Guardian #159/#160.
+Output includes source-linked index with status distinctions and executable-acceptance *specification* for cold sessions; deliberately does not claim tested bootstrap or automatic memory synchronization. Do not merge without exact-head gate, independent review and authorized signoff. No runtime, CI/harness or cross-repo writes. Critical ownership conflict remains unresolved until #155 accepted.
