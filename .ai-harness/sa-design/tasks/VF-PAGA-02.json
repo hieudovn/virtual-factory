@@ -1,0 +1,17 @@
+{
+  "task_id": "VF-PAGA-02",
+  "class": "design",
+  "repository": "hieudovn/virtual-factory",
+  "branch": "sa/design/vf-paga-02",
+  "expected_base_sha": "3c4277a900ec397e746d0f7250a8ecaa85695b53",
+  "approval_issue": 161,
+  "authority": "SA_DESIGN_DRAFT",
+  "allowed_paths": [
+    "docs/governance/VF_PAGA_STRATEGIC_MEMORY_SEED_V1.md",
+    "docs/governance/VF_PAGA_CONTEXT_RESOLVER_DESIGN_V1.md",
+    "docs/reports/VF_PAGA_02_REPORT.md",
+    ".ai-harness/sa-design/tasks/VF-PAGA-02.json"
+  ],
+  "description": "Source-linked strategic memory index and bounded context resolver design for cold-session architecture governance",
+  "status": "DRAFT_PR_REVIEW"
+}
