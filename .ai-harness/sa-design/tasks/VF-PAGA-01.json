@@ -1,0 +1,18 @@
+{
+  "task_id": "VF-PAGA-01",
+  "class": "design",
+  "repository": "hieudovn/virtual-factory",
+  "branch": "sa/design/vf-paga-01",
+  "expected_base_sha": "3c4277a900ec397e746d0f7250a8ecaa85695b53",
+  "approval_issue": 159,
+  "authority": "SA_DESIGN_DRAFT",
+  "allowed_paths": [
+    "docs/governance/VF_PAGA_GUARDIAN_CHARTER_V1.md",
+    "docs/governance/VF_PAGA_STRATEGIC_MEMORY_SCHEMA_V1.md",
+    "docs/governance/VF_PAGA_COLD_SESSION_BOOTSTRAP_V1.md",
+    "docs/reports/VF_PAGA_01_REPORT.md",
+    ".ai-harness/sa-design/tasks/VF-PAGA-01.json"
+  ],
+  "description": "Guardian role/long-horizon strategic memory/cold-session architecture governance design, no runtime or harness change",
+  "status": "DRAFT_PR_REVIEW"
+}
